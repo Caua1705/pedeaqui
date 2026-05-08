@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PedeAqui — Seu restaurante no comando</title>
+<meta name="description" content="Crie o cardápio online do seu restaurante, receba pedidos direto e gerencie tudo em um só lugar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#E67E22;--orange-d:#d06b17;--orange-glow:rgba(230,126,34,.22);
+  --bg:#111113;--bg-card:#1a1a1e;--bg-el:#222226;
+  --fg:#F7F7F7;--fg2:#a0a0a8;--fg3:#6b6b73;
+  --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.13);
+  --r:14px;--r-sm:10px;--r-xs:8px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:var(--orange);color:#fff}
+
+/* HEADER */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;background:rgba(17,17,19,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);transition:background .3s}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
+.logo svg{width:32px;height:32px}
+.logo-txt{font-size:1.15rem;font-weight:700;letter-spacing:-.02em;color:var(--fg)}
+.logo-txt span{color:var(--orange)}
+.nav{display:flex;align-items:center;gap:28px;list-style:none}
+.nav a{font-size:.82rem;font-weight:500;color:var(--fg2);text-decoration:none;transition:color .2s}
+.nav a:hover{color:var(--fg)}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.btn-ghost{font-size:.82rem;font-weight:500;color:var(--fg2);background:none;border:none;cursor:pointer;padding:8px 10px;transition:color .2s;white-space:nowrap}
+.btn-ghost:hover{color:var(--fg)}
+.btn-hdr{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--orange);color:#fff;font-size:.82rem;font-weight:600;border:none;border-radius:9px;cursor:pointer;transition:all .25s;white-space:nowrap;min-height:40px}
+.btn-hdr:hover{background:var(--orange-d);transform:translateY(-1px)}
+.btn-hdr:active{transform:scale(.97)}
+
+/* HERO */
+.hero{position:relative;min-height:100svh;display:flex;align-items:center;padding:80px clamp(16px,5vw,64px) 56px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-bg::before{content:'';position:absolute;top:-20%;right:-5%;width:600px;height:600px;background:radial-gradient(circle,rgba(230,126,34,.09) 0%,transparent 70%)}
+.hero-bg::after{content:'';position:absolute;bottom:-20%;left:-10%;width:450px;height:450px;background:radial-gradient(circle,rgba(230,126,34,.04) 0%,transparent 70%)}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,black 20%,transparent 100%)}
+.hero-inner{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,5vw,80px);align-items:center;max-width:1280px;margin:0 auto;width:100%}
+
+/* LEFT */
+.hero-l{display:flex;flex-direction:column;gap:24px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;background:rgba(230,126,34,.1);border:1px solid rgba(230,126,34,.22);border-radius:100px;font-size:.72rem;font-weight:600;color:var(--orange);width:fit-content;letter-spacing:.02em}
+.badge .dot{width:7px;height:7px;background:var(--orange);border-radius:50%;animation:blink 2s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+.h1{font-size:clamp(2rem,3.8vw,3.4rem);font-weight:800;line-height:1.1;letter-spacing:-.034em;color:var(--fg)}
+.h1 .ac{color:var(--orange)}
+.sub{font-size:clamp(.9rem,1.1vw,1.05rem);line-height:1.72;color:var(--fg2);max-width:500px;letter-spacing:-.01em}
+.ctas{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn-p{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px 30px;background:var(--orange);color:#fff;font-size:.92rem;font-weight:700;border:none;border-radius:12px;cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 24px var(--orange-glow);letter-spacing:-.01em;min-height:52px;white-space:nowrap}
+.btn-p:hover{background:var(--orange-d);transform:translateY(-2px);box-shadow:0 12px 36px rgba(230,126,34,.32)}
+.btn-p:active{transform:scale(.97)}
+.btn-s{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 24px;background:transparent;color:var(--fg2);font-size:.88rem;font-weight:600;border:1px solid var(--bd2);border-radius:12px;cursor:pointer;transition:all .28s;letter-spacing:-.01em;min-height:52px;white-space:nowrap}
+.btn-s:hover{color:var(--fg);border-color:rgba(255,255,255,.24);background:rgba(255,255,255,.04)}
+.pills{display:flex;flex-wrap:wrap;gap:8px;padding-top:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:var(--bg-card);border:1px solid var(--bd);border-radius:100px;font-size:.76rem;font-weight:500;color:var(--fg2);transition:all .25s}
+.pill:hover{border-color:rgba(230,126,34,.28);color:var(--fg);background:rgba(230,126,34,.06)}
+.pill .ic{color:var(--orange);flex-shrink:0;display:flex}
+
+/* Mockup context label (mobile only) */
+.mockup-label{
+  display:none; /* shown via mobile media query */
+  align-items:center;justify-content:center;gap:6px;
+  font-size:.65rem;font-weight:500;
+  color:var(--fg3);letter-spacing:.02em;
+  text-align:center;
+  margin-bottom:10px;
+}
+.mockup-label::before,.mockup-label::after{
+  content:'';
+  flex:1;max-width:40px;
+  height:1px;
+  background:var(--bd);
+}
+
+/* RIGHT — MOCKUP */
+.hero-r{position:relative;display:flex;justify-content:center;align-items:center;min-height:520px}
+.mc{position:relative;width:100%;max-width:500px}
+
+/* Phone */
+.phone{background:var(--bg-card);border:1px solid var(--bd);border-radius:22px;padding:14px;box-shadow:0 32px 72px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);position:relative;z-index:3}
+.ph-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.ri{display:flex;align-items:center;gap:9px}
+.av{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),#c0612e);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;color:#fff;flex-shrink:0}
+.rname{font-size:.8rem;font-weight:700;color:var(--fg);letter-spacing:-.01em}
+.rst{font-size:.62rem;color:#4ade80;display:flex;align-items:center;gap:3px}
+.rst::before{content:'';width:4px;height:4px;background:#4ade80;border-radius:50%;flex-shrink:0}
+.cats{display:flex;gap:6px;padding:2px 0 10px;overflow:hidden}
+.chip{padding:5px 12px;border-radius:100px;font-size:.67rem;font-weight:600;white-space:nowrap;border:1px solid var(--bd);color:var(--fg3);background:transparent}
+.chip.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.items{display:flex;flex-direction:column;gap:8px}
+.mi{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-sm);background:var(--bg-el);border:1px solid var(--bd)}
+.mi-img{width:48px;height:48px;border-radius:var(--r-xs);background:linear-gradient(135deg,#2a2a2e,#1e1e22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem}
+.mi-info{flex:1;min-width:0}
+.mi-name{font-size:.76rem;font-weight:600;color:var(--fg);letter-spacing:-.01em}
+.mi-desc{font-size:.64rem;color:var(--fg3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-price{font-size:.76rem;font-weight:700;color:var(--orange);white-space:nowrap;flex-shrink:0}
+
+/* Float cards */
+.fc{position:absolute;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-sm);padding:11px 14px;box-shadow:0 16px 40px rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fc-cart{top:24px;right:-36px;min-width:162px;z-index:5}
+.fc-ttl{font-size:.68rem;font-weight:700;color:var(--fg);margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.fc-ttl .ic{color:var(--orange)}
+.cl{display:flex;justify-content:space-between;font-size:.65rem;color:var(--fg2);padding:2px 0}
+.ct{display:flex;justify-content:space-between;font-size:.76rem;font-weight:700;border-top:1px solid var(--bd);padding-top:7px;margin-top:5px;color:var(--fg)}
+.fc-order{bottom:56px;left:-44px;min-width:172px;z-index:6}
+.os{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.osd{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 2s ease infinite;flex-shrink:0}
+.ost{font-size:.7rem;font-weight:700;color:#4ade80}
+.od{font-size:.65rem;color:var(--fg2)}
+.fc-adm{bottom:-8px;right:-16px;min-width:152px;z-index:4}
+.adm-h{font-size:.62rem;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.adm-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0}
+.adm-lbl{font-size:.67rem;color:var(--fg2)}
+.adm-val{font-size:.74rem;font-weight:700;color:var(--fg)}
+.adm-val.up{color:#4ade80}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fly{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes fly2{0%,100%{transform:translateY(0) rotate(-.4deg)}50%{transform:translateY(-7px) rotate(.4deg)}}
+.a0{opacity:0;animation:fadeUp .85s cubic-bezier(.16,1,.3,1) forwards}
+.d1{animation-delay:.12s}.d2{animation-delay:.26s}.d3{animation-delay:.4s}
+.d4{animation-delay:.54s}.d5{animation-delay:.68s}.d6{animation-delay:.82s}
+.fly{animation:fly 5s ease-in-out infinite}
+.fly2{animation:fly2 6s ease-in-out infinite}
+
+/* ── TABLET ── */
+@media(max-width:1100px){
+  .hdr{padding:0 24px}
+  .nav{gap:20px}
+  .hero{padding:80px 24px 48px}
+  .fc-cart{right:-16px}
+  .fc-order{left:-16px}
+  .fc-adm{right:-8px}
+}
+
+/* ── STACK (≤900px) ── */
+@media(max-width:900px){
+  .nav{display:none}
+  .hero-inner{grid-template-columns:1fr;gap:40px}
+  .hero-l{align-items:center;text-align:center}
+  .sub{margin:0 auto;max-width:520px}
+  .pills{justify-content:center}
+  .hero-r{min-height:auto}
+  .mc{max-width:420px;margin:0 auto}
+  .fc-cart{right:-8px;top:16px}
+  .fc-order{left:-8px;bottom:36px}
+  .fc-adm{right:-4px;bottom:-4px}
+}
+
+/* ── MOBILE (\u2264640px) ── */
+@media(max-width:640px){
+  /* ── Header ── */
+  .hdr{height:58px;padding:0 18px;gap:0}
+  .logo svg{width:26px;height:26px}
+  .logo-txt{font-size:1rem}
+
+  /* "Entrar" — premium dark-glass pill */
+  .btn-ghost{
+    display:inline-flex;align-items:center;
+    padding:8px 18px;font-size:.76rem;font-weight:500;
+    color:var(--fg);letter-spacing:-.01em;
+    background:rgba(230,126,34,.05);
+    border:1px solid rgba(230,126,34,.22);
+    border-radius:10px;               /* controlled, not inflated */
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 1px 12px rgba(230,126,34,.07),inset 0 1px 0 rgba(255,255,255,.04);
+    transition:all .24s cubic-bezier(.16,1,.3,1);
+    min-height:38px;white-space:nowrap;
+  }
+  .btn-ghost:hover{
+    background:rgba(230,126,34,.1);
+    border-color:rgba(230,126,34,.45);
+    box-shadow:0 2px 18px rgba(230,126,34,.14),inset 0 1px 0 rgba(255,255,255,.05);
+    color:var(--fg);
+  }
+  .btn-ghost:active{transform:translateY(1px) scale(.97)}
+  .btn-hdr{display:none}
+
+  /* ── Hero shell ── */
+  .hero{padding:76px 20px 28px;min-height:auto;align-items:flex-start}
+  .hero-inner{gap:22px}
+
+  /* ── Left column ── */
+  .hero-l{align-items:center;text-align:center;gap:14px}
+
+  /* Badge */
+  .badge{
+    font-size:.65rem;padding:5px 13px 5px 9px;gap:7px;
+    border-radius:8px;                /* refined — not a pill, not a square */
+    background:rgba(230,126,34,.08);
+    border-color:rgba(230,126,34,.2);
+  }
+  .badge .dot{width:6px;height:6px}
+
+  /* Headline */
+  .h1{font-size:1.58rem;line-height:1.1;letter-spacing:-.026em;max-width:340px}
+
+  /* Subtitle */
+  .sub{font-size:.84rem;line-height:1.64;max-width:300px;margin:0 auto}
+
+  /* ── CTAs ── */
+  .ctas{flex-direction:column;width:100%;gap:0;align-items:center}
+
+  /* Primary CTA — premium orange surface */
+  .btn-p{
+    width:100%;padding:16px 20px;
+    font-size:.92rem;font-weight:700;
+    border-radius:13px;              /* premium — larger than pills, smaller than card */
+    min-height:54px;margin-bottom:12px;
+    box-shadow:0 4px 20px rgba(230,126,34,.32),
+               0 1px 0 rgba(255,255,255,.06) inset;
+    letter-spacing:-.015em;
+  }
+  .btn-p:active{transform:scale(.97);box-shadow:0 2px 10px rgba(230,126,34,.22)}
+
+  /* Secondary — ghost text link */
+  .btn-s{
+    width:auto;background:none;border:none;
+    padding:2px 0;font-size:.8rem;font-weight:500;
+    color:var(--fg2);min-height:auto;
+    display:inline-flex;align-items:center;gap:5px;
+    text-decoration:underline;text-underline-offset:3px;
+    text-decoration-color:rgba(160,160,168,.26);
+  }
+  .btn-s:hover{color:var(--fg);text-decoration-color:var(--fg2)}
+  .btn-s i{width:14px;height:14px;flex-shrink:0}
+
+  /* ── Benefit pills ── */
+  .pills{gap:6px;justify-content:center;padding-top:0}
+  .pill{
+    font-size:.69rem;padding:6px 13px;gap:5px;
+    border-radius:8px;               /* matches badge — same tier */
+    background:rgba(255,255,255,.03);
+    border-color:rgba(255,255,255,.09);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .pill:hover{
+    border-color:rgba(230,126,34,.26);
+    background:rgba(230,126,34,.05);
+  }
+  .pill-hide{display:none}
+
+  /* ── Mockup label ── */
+  .mockup-label{display:flex}
+
+  /* ── Mockup container ── */
+  .hero-r{width:100%;min-height:auto}
+  .mc{max-width:96%;margin:0 auto;padding:0}
+  .fc{display:none}
+
+  /* Phone card — premium surface */
+  .phone{
+    border-radius:20px;padding:14px;
+    background:var(--bg-card);
+    border:1px solid rgba(255,255,255,.07);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,.55),
+      0 1px 0 rgba(255,255,255,.05) inset,
+      0 0 0 1px rgba(230,126,34,.06);  /* very faint orange halo */
+  }
+
+  /* Restaurant header inside mockup */
+  .ph-hdr{
+    padding:8px 10px;margin-bottom:8px;
+    border-bottom-color:rgba(255,255,255,.06);
+  }
+  .av{
+    width:30px;height:30px;font-size:.62rem;
+    border-radius:8px;               /* matches button tier */
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .rname{font-size:.73rem}
+  .rst{font-size:.57rem}
+
+  /* Category chips */
+  .cats{padding:2px 0 9px;gap:6px}
+  .chip{
+    padding:5px 12px;font-size:.64rem;
+    border-radius:7px;               /* slightly less than card, more than text */
+    border-color:rgba(255,255,255,.07);
+    background:transparent;
+  }
+  .chip.on{
+    box-shadow:0 1px 8px rgba(230,126,34,.2);
+  }
+  .chip-hide{display:none}
+
+  /* Menu item rows */
+  .items{gap:7px}
+  .mi{
+    padding:10px 11px;gap:10px;
+    border-radius:11px;              /* card-tier: softer than outer card */
+    background:var(--bg-el);
+    border-color:rgba(255,255,255,.06);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .mi-img{
+    width:40px;height:40px;font-size:1.1rem;
+    border-radius:8px;               /* consistent with avatar tier */
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .mi-name{font-size:.73rem}
+  .mi-desc{font-size:.6rem}
+  .mi-price{font-size:.73rem}
+  .mi-hide{display:none}
+}
+
+/* ── VERY SMALL (≤380px) ── */
+@media(max-width:380px){
+  .h1{font-size:1.4rem;max-width:100%}
+  .btn-p{font-size:.88rem;padding:14px 16px}
+  .sub{max-width:100%}
+}
+
+/* Reduce motion */
+@media(prefers-reduced-motion:reduce){
+  .a0{animation:none;opacity:1}
+  .fly,.fly2{animation:none}
+  .dot{animation:none}
+  .osd{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr" id="hdr">
+  <a href="/" class="logo" aria-label="PedeAqui">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pin outer shape -->
+      <path d="M55 4C36 4 21 19 21 38C21 52 28.5 64.5 40 71.5L53 91C54 92.5 56 92.5 57 91L70 71.5C81.5 64.5 89 52 89 38C89 19 74 4 55 4Z" fill="#E67E22"/>
+      <!-- Speed lines -->
+      <line x1="19" y1="32" x2="8" y2="32" stroke="#E67E22" stroke-width="3.2" stroke-linecap="round"/>
+      <line x1="19" y1="38" x2="4" y2="38" stroke="#E67E22" stroke-width="3.2" stroke-linecap="round"/>
+      <line x1="19" y1="44" x2="8" y2="44" stroke="#E67E22" stroke-width="3.2" stroke-linecap="round"/>
+      <!-- Dark inner circle -->
+      <circle cx="55" cy="37" r="21" fill="#111113"/>
+      <!-- Fork: 3 prongs -->
+      <line x1="45" y1="23" x2="45" y2="30" stroke="#E67E22" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="48.5" y1="23" x2="48.5" y2="30" stroke="#E67E22" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="52" y1="23" x2="52" y2="30" stroke="#E67E22" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Fork: neck arc -->
+      <path d="M45 30 Q45 34 48.5 34 Q52 34 52 30" stroke="#E67E22" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <!-- Fork: handle -->
+      <line x1="48.5" y1="34" x2="48.5" y2="51" stroke="#E67E22" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Knife: blade -->
+      <path d="M58 23 C58 23 65 25 65 33 L61.5 33 L61.5 23 Z" fill="#E67E22"/>
+      <!-- Knife: handle -->
+      <rect x="60" y="33" width="3" height="18" rx="1.5" fill="#E67E22"/>
+    </svg>
+    <span class="logo-txt">Pede<span>Aqui</span></span>
+  </a>
+  <nav>
+    <ul class="nav">
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#recursos">Recursos</a></li>
+      <li><a href="#demo">Demonstração</a></li>
+    </ul>
+  </nav>
+  <div class="hdr-right">
+    <button class="btn-ghost">Entrar</button>
+    <button class="btn-hdr" id="cta-hdr">
+      <span class="lbl-long">Criar meu cardápio</span>
+      <span class="lbl-short" style="display:none">Criar cardápio</span>
+      <i data-lucide="arrow-right" style="width:15px;height:15px"></i>
+    </button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-bg"><div class="grid-bg"></div></div>
+  <div class="hero-inner">
+
+    <!-- LEFT -->
+    <div class="hero-l">
+      <div class="badge a0 d1">
+        <span class="dot"></span>
+        Plataforma para restaurantes
+      </div>
+      <h1 class="h1 a0 d2">
+        Crie o cardápio online do seu restaurante e receba <span class="ac">pedidos direto.</span>
+      </h1>
+      <p class="sub a0 d3" id="hero-sub">
+        Com o PedeAqui, seu restaurante tem sua própria página de pedidos — com cardápio, sacola, checkout, entrega ou retirada — e você gerencia tudo em um painel simples.
+      </p>
+      <div class="ctas a0 d4">
+        <button class="btn-p" id="cta-hero">
+          Criar meu cardápio
+          <i data-lucide="arrow-right" style="width:17px;height:17px"></i>
+        </button>
+        <button class="btn-s" id="cta-demo">
+          <i data-lucide="play-circle" style="width:17px;height:17px"></i>
+          Ver demonstração
+        </button>
+      </div>
+      <div class="pills a0 d5">
+        <div class="pill"><span class="ic"><i data-lucide="utensils" style="width:13px;height:13px"></i></span> Cardápio online</div>
+        <div class="pill"><span class="ic"><i data-lucide="package-check" style="width:13px;height:13px"></i></span> Pedidos diretos</div>
+        <div class="pill pill-hide"><span class="ic"><i data-lucide="truck" style="width:13px;height:13px"></i></span> Entrega ou retirada</div>
+        <div class="pill pill-hide"><span class="ic"><i data-lucide="layout-dashboard" style="width:13px;height:13px"></i></span> Gestão simples</div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="hero-r a0 d4">
+      <div class="mc">
+
+        <!-- Float: Cart -->
+        <div class="fc fc-cart a0 d5 fly">
+          <div class="fc-ttl">
+            <span class="ic"><i data-lucide="shopping-bag" style="width:13px;height:13px"></i></span>
+            Sacola
+          </div>
+          <div class="cl"><span>Picanha especial</span><span>R$ 52,90</span></div>
+          <div class="cl"><span>Refrigerante 600ml</span><span>R$ 8,00</span></div>
+          <div class="ct"><span>Total</span><span style="color:var(--orange)">R$ 60,90</span></div>
+        </div>
+
+        <!-- Float: Order -->
+        <div class="fc fc-order a0 d6 fly2">
+          <div class="os">
+            <span class="osd"></span>
+            <span class="ost">Pedido aceito</span>
+          </div>
+          <div class="od"><strong style="color:var(--fg);font-weight:600">#1587</strong> · Mesa 4</div>
+          <div class="od" style="margin-top:2px">Preparando · 12min</div>
+        </div>
+
+        <!-- Float: Admin -->
+        <div class="fc fc-adm a0 d6 fly" style="animation-delay:1.05s">
+          <div class="adm-h">Hoje</div>
+          <div class="adm-row"><span class="adm-lbl">Pedidos</span><span class="adm-val">47</span></div>
+          <div class="adm-row"><span class="adm-lbl">Faturamento</span><span class="adm-val up">R$ 3.280</span></div>
+        </div>
+
+        <!-- Mockup context label (mobile only) -->
+        <div class="mockup-label">Exemplo de página gerada pelo PedeAqui</div>
+
+        <!-- Phone mockup -->
+        <div class="phone a0 d3">
+          <div class="ph-hdr">
+            <div class="ri">
+              <div class="av">JP</div>
+              <div>
+                <div class="rname">Júnior da Picanha</div>
+                <div class="rst">Aberto agora</div>
+              </div>
+            </div>
+            <i data-lucide="search" style="width:17px;height:17px;color:var(--fg3)"></i>
+          </div>
+          <div class="cats">
+            <span class="chip on">Picanhas</span>
+            <span class="chip">Combos</span>
+            <span class="chip chip-hide">Bebidas</span>
+            <span class="chip chip-hide">Sobremesas</span>
+          </div>
+          <div class="items">
+            <div class="mi">
+              <div class="mi-img">🥩</div>
+              <div class="mi-info">
+                <div class="mi-name">Picanha na Brasa 400g</div>
+                <div class="mi-desc">Acompanha arroz, farofa e vinagrete</div>
+              </div>
+              <div class="mi-price">R$ 52,90</div>
+            </div>
+            <div class="mi">
+              <div class="mi-img">🍖</div>
+              <div class="mi-info">
+                <div class="mi-name">Combo Família</div>
+                <div class="mi-desc">Picanha 800g + acompanhamentos</div>
+              </div>
+              <div class="mi-price">R$ 129,90</div>
+            </div>
+            <div class="mi mi-hide">
+              <div class="mi-img">🥤</div>
+              <div class="mi-info">
+                <div class="mi-name">Refrigerante 600ml</div>
+                <div class="mi-desc">Coca-Cola, Guaraná ou Sprite</div>
+              </div>
+              <div class="mi-price">R$ 8,00</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+lucide.createIcons();
+
+// Header scroll opacity
+window.addEventListener('scroll', () => {
+  document.getElementById('hdr').style.background =
+    window.scrollY > 40 ? 'rgba(17,17,19,.94)' : 'rgba(17,17,19,.75)';
+}, { passive: true });
+
+// Shorten subtitle on small screens
+if (window.innerWidth <= 640) {
+  var el = document.getElementById('hero-sub');
+  if (el) el.textContent = 'Monte seu cardápio, receba pedidos e gerencie tudo em um painel simples.';
+}
+
+// Desktop mouse parallax only
+if (window.innerWidth > 1024 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const floats = document.querySelectorAll('.fc');
+  const phone  = document.querySelector('.phone');
+  document.addEventListener('mousemove', e => {
+    const dx = (e.clientX / window.innerWidth  - .5) * 2;
+    const dy = (e.clientY / window.innerHeight - .5) * 2;
+    floats.forEach((el, i) => {
+      el.style.transform = `translate(${dx*(i+1)*3}px,${dy*(i+1)*3}px)`;
+    });
+    if (phone) phone.style.transform = `translate(${dx*-2}px,${dy*-2}px)`;
+  });
+}
+</script>
+</body>
+</html>

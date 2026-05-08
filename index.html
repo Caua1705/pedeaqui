@@ -135,17 +135,53 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
   .flow-connector{display:none}
 }
 @media(max-width:768px){
+  /* Nav */
   .nav-links,.btn-spin.desktop-only{display:none}
-  .btn-enter{padding:8px 16px;border:1px solid var(--bd2);border-radius:9px}
-  .h1{font-size:clamp(2rem,8vw,3rem)}
-  .hero-label,.benefits{display:none}
-  .hero-sub{margin-bottom:28px}
-  .cta-group{flex-direction:column;width:100%}
-  .btn-spin,.btn-ghost-lg{width:100%;justify-content:center}
-  .hero{padding:90px 20px 50px}
+  nav{height:56px}
+  .logo-img{width:28px;height:28px}
+  .logo-name{font-size:.88rem}
+  .btn-enter{padding:8px 16px;border:1px solid var(--bd2);border-radius:10px;font-size:.76rem;font-weight:600;color:var(--fg2);backdrop-filter:blur(8px);background:rgba(255,255,255,.04)}
+
+  /* Hero layout */
+  .hero{padding:76px 20px 36px;justify-content:flex-start;min-height:auto}
+  .hero::before{width:500px;height:300px}
+
+  /* Label & headline */
+  .hero-label{display:none}
+  .hero-head{margin-bottom:16px}
+  .h1{font-size:clamp(1.85rem,7.2vw,2.6rem);line-height:1.1;letter-spacing:-.035em}
+  .h1 br{display:none}
+
+  /* Subtitle */
+  .hero-sub{font-size:.84rem;line-height:1.6;margin-bottom:22px;max-width:400px}
+
+  /* CTAs */
+  .cta-group{flex-direction:column;width:100%;gap:10px;margin-bottom:16px}
+  .btn-spin{width:100%;justify-content:center;box-shadow:0 0 18px var(--og)}
+  .btn-spin-label{padding:12px 20px 12px 14px;font-size:.84rem}
+  .btn-ghost-lg{width:100%;justify-content:center;padding:12px 20px;font-size:.82rem;border-radius:12px}
+
+  /* Benefits — show mobile version */
+  .benefits{display:none}
+  .benefits-mobile{display:flex!important}
+
+  /* Flow cards — show only card 1 */
+  .flow{max-width:100%;gap:0}
+  .flow-card.mobile-hide{display:none}
+  .flow-card{border-radius:14px;padding:16px}
+  .fc-step{font-size:.55rem;margin-bottom:10px}
+  .fc-head{font-size:.74rem;margin-bottom:10px}
+  .mi-row{padding:7px 8px;border-radius:8px;margin-bottom:4px}
+  .mi-emoji{font-size:1rem}
+  .mi-name{font-size:.66rem}
+  .mi-desc{font-size:.54rem}
+  .mi-price{font-size:.66rem}
+  .mi-add{width:18px;height:18px;border-radius:4px;font-size:.8rem}
+  .open-badge{font-size:.56rem;padding:2px 7px;margin-bottom:8px}
 }
 @media(max-width:380px){
-  .h1{font-size:1.8rem}
+  .h1{font-size:1.65rem}
+  .hero-sub{font-size:.8rem}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
@@ -258,6 +294,24 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
     </span>
   </div>
 
+  <!-- Mobile-only compact benefits -->
+  <div class="benefits-mobile" style="display:none;justify-content:center;gap:16px;margin-bottom:20px;opacity:0;animation:fu .8s .5s both">
+    <span class="ben" style="padding:4px 0;font-size:.7rem">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Cardápio online
+    </span>
+    <span class="ben-sep"></span>
+    <span class="ben" style="padding:4px 0;font-size:.7rem">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Pedidos diretos
+    </span>
+    <span class="ben-sep"></span>
+    <span class="ben" style="padding:4px 0;font-size:.7rem">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Gestão simples
+    </span>
+  </div>
+
   <!-- FLOW CARDS -->
   <div class="flow" id="demo">
 
@@ -287,7 +341,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
     </div>
 
     <!-- Card 2: Sacola / Checkout -->
-    <div class="flow-card">
+    <div class="flow-card mobile-hide">
       <div class="fc-step"><span class="fc-step-num">02</span> Sacola e checkout</div>
       <div class="fc-head">Pedido confirmado</div>
       <div class="cart-item"><span>1× Picanha Executiva</span><span>R$ 39,90</span></div>
@@ -302,7 +356,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
     </div>
 
     <!-- Card 3: Painel do restaurante -->
-    <div class="flow-card">
+    <div class="flow-card mobile-hide">
       <div class="fc-step"><span class="fc-step-num">03</span> Painel do restaurante</div>
       <div class="fc-head">Restaurante recebe</div>
       <div class="order-card">

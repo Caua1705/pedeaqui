@@ -186,6 +186,94 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
+
+/* ── SECTIONS SHARED ── */
+.section{position:relative;padding:clamp(64px,10vw,120px) clamp(20px,5vw,48px);overflow:hidden}
+.section-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1}
+.section-tag{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--o);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-tag::before{content:'';width:18px;height:1px;background:var(--o)}
+.section-title{font-size:clamp(1.6rem,3.2vw,2.8rem);font-weight:800;line-height:1.1;letter-spacing:-.04em;color:var(--fg);margin-bottom:14px}
+.section-sub{font-size:clamp(.86rem,1vw,1rem);line-height:1.7;color:var(--fg2);max-width:560px;margin-bottom:52px}
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--bd2),transparent);margin-bottom:0}
+
+/* ── PROBLEM ── */
+.prob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.prob-card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s,box-shadow .3s}
+.prob-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+.prob-card:hover{border-color:rgba(230,126,34,.25);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.prob-icon{width:36px;height:36px;border-radius:10px;background:rgba(230,126,34,.1);border:1px solid rgba(230,126,34,.2);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.prob-icon svg{color:var(--o)}
+.prob-title{font-size:.88rem;font-weight:700;color:var(--fg);margin-bottom:8px;letter-spacing:-.01em}
+.prob-text{font-size:.8rem;line-height:1.65;color:var(--fg2)}
+
+/* ── HOW IT WORKS ── */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+.steps::before{content:'';position:absolute;top:28px;left:calc(12.5% + 8px);right:calc(12.5% + 8px);height:1px;background:linear-gradient(90deg,transparent,var(--bd2) 20%,var(--bd2) 80%,transparent);z-index:0}
+.step{padding:24px 16px;position:relative;z-index:1;text-align:center}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--s1);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:.8rem;font-weight:800;color:var(--o);position:relative;transition:border-color .3s,box-shadow .3s}
+.step:hover .step-num{border-color:var(--o);box-shadow:0 0 20px var(--og)}
+.step-num::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(230,126,34,.12)}
+.step-title{font-size:.86rem;font-weight:700;color:var(--fg);margin-bottom:8px}
+.step-text{font-size:.76rem;line-height:1.6;color:var(--fg2)}
+
+/* ── DEMO ── */
+.demo-wrap{background:var(--s1);border:1px solid var(--bd);border-radius:20px;overflow:hidden;position:relative;box-shadow:0 0 60px rgba(230,126,34,.06),0 24px 80px rgba(0,0,0,.5)}
+.demo-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent)}
+.demo-video{width:100%;display:block;border-radius:0;background:#000;max-height:520px;object-fit:cover}
+.demo-video-mobile{display:none}
+.demo-flow{display:flex;justify-content:center;gap:0;padding:24px 20px;border-top:1px solid var(--bd)}
+.demo-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center;padding:0 8px;position:relative}
+.demo-step+.demo-step::before{content:'→';position:absolute;left:-8px;top:10px;font-size:.7rem;color:var(--fg3)}
+.demo-step-num{width:28px;height:28px;border-radius:50%;background:rgba(230,126,34,.1);border:1px solid rgba(230,126,34,.2);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:var(--o)}
+.demo-step-txt{font-size:.62rem;color:var(--fg2);line-height:1.4}
+
+/* ── BENEFITS ── */
+.ben-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ben-card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s,box-shadow .3s}
+.ben-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+.ben-card:hover{border-color:rgba(230,126,34,.22);transform:translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,.4)}
+.ben-icon{width:36px;height:36px;border-radius:10px;background:rgba(230,126,34,.08);border:1px solid rgba(230,126,34,.18);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.ben-icon svg{color:var(--o)}
+.ben-title{font-size:.88rem;font-weight:700;color:var(--fg);margin-bottom:7px;letter-spacing:-.01em}
+.ben-text{font-size:.78rem;line-height:1.65;color:var(--fg2)}
+
+/* ── RESOURCES ── */
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.res-item{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:10px;transition:border-color .25s,background .25s}
+.res-item:hover{border-color:rgba(230,126,34,.2);background:rgba(230,126,34,.03)}
+.res-check{width:20px;height:20px;border-radius:50%;background:rgba(230,126,34,.1);border:1px solid rgba(230,126,34,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.res-check svg{color:var(--o)}
+.res-lbl{font-size:.8rem;font-weight:500;color:var(--fg)}
+
+/* ── FINAL CTA ── */
+.cta-section{text-align:center;position:relative}
+.cta-section::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(230,126,34,.07),transparent 70%);pointer-events:none}
+.cta-box{background:var(--s1);border:1px solid var(--bd);border-radius:24px;padding:clamp(40px,6vw,72px) clamp(24px,5vw,72px);position:relative;overflow:hidden;max-width:720px;margin:0 auto}
+.cta-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
+.cta-box::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:300px;height:1px;background:linear-gradient(90deg,transparent,rgba(230,126,34,.3),transparent)}
+.cta-title{font-size:clamp(1.5rem,3vw,2.4rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-bottom:14px}
+.cta-sub{font-size:clamp(.84rem,.95vw,.96rem);line-height:1.68;color:var(--fg2);max-width:440px;margin:0 auto 32px}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* ── SECTION RESPONSIVE ── */
+@media(max-width:960px){
+  .prob-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr;gap:16px}
+  .steps::before{display:none}
+  .ben-grid{grid-template-columns:1fr 1fr}
+  .res-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:768px){
+  .prob-grid,.ben-grid,.res-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .demo-video-desktop{display:none}
+  .demo-video-mobile{display:block;max-height:520px}
+  .demo-flow{flex-direction:column;align-items:center;gap:12px;padding:20px}
+  .demo-step+.demo-step::before{display:none}
+  .cta-btns{flex-direction:column;width:100%}
+  .cta-btns .btn-spin,.cta-btns .btn-ghost-lg{width:100%;justify-content:center}
+  .section-sub{margin-bottom:36px}
+}
 </style>
 </head>
 <body>
@@ -381,7 +469,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 </section>
 
 <script>
-  // Subtle tilt on flow cards (desktop only)
   if (matchMedia('(min-width:961px) and (hover:hover)').matches) {
     document.querySelectorAll('.flow-card').forEach(card => {
       card.addEventListener('mousemove', e => {
@@ -390,11 +477,225 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
         const y = (e.clientY - r.top) / r.height - .5;
         card.style.transform = `translateY(-4px) rotateY(${x * 4}deg) rotateX(${-y * 3}deg)`;
       });
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-      });
+      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
     });
   }
 </script>
+
+<!-- ══ SECTION DIVIDER ══ -->
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 1: PROBLEMA ══ -->
+<section class="section" id="problema">
+  <div class="section-inner">
+    <div class="section-tag">O problema</div>
+    <h2 class="section-title">Seu restaurante não precisa depender<br>só de marketplace.</h2>
+    <p class="section-sub">Taxas altas, pedidos espalhados e pouca relação com o cliente dificultam o crescimento de quem vende comida todos os dias.</p>
+    <div class="prob-grid">
+      <div class="prob-card">
+        <div class="prob-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="prob-title">Taxas que apertam a margem</div>
+        <div class="prob-text">Quando o pedido depende só de terceiros, parte importante da margem fica fora do restaurante.</div>
+      </div>
+      <div class="prob-card">
+        <div class="prob-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div class="prob-title">Pedidos espalhados</div>
+        <div class="prob-text">WhatsApp, Instagram, ligação e marketplace deixam a operação mais confusa e difícil de controlar.</div>
+      </div>
+      <div class="prob-card">
+        <div class="prob-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="prob-title">Cliente longe da marca</div>
+        <div class="prob-text">O cliente compra, mas a relação muitas vezes fica com a plataforma, não com o restaurante.</div>
+      </div>
+      <div class="prob-card">
+        <div class="prob-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="prob-title">Falta de controle</div>
+        <div class="prob-text">Sem um canal próprio, fica mais difícil acompanhar pedidos, cardápio e a operação do dia a dia.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 2: COMO FUNCIONA ══ -->
+<section class="section" id="como-funciona">
+  <div class="section-inner">
+    <div class="section-tag">Como funciona</div>
+    <h2 class="section-title">Como funciona o PedeAqui</h2>
+    <p class="section-sub">Em poucos passos, o restaurante ganha uma página própria de pedidos e começa a receber pedidos direto.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Cadastre o restaurante</div>
+        <div class="step-text">Adicione nome, logo, horários, formas de pagamento, entrega e retirada.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Monte o cardápio</div>
+        <div class="step-text">Organize categorias, produtos, preços, imagens e disponibilidade.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Compartilhe o link</div>
+        <div class="step-text">Envie o cardápio para clientes pelo WhatsApp, Instagram, bio ou QR Code.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Receba pedidos</div>
+        <div class="step-text">O cliente monta a sacola, finaliza o pedido e o restaurante acompanha tudo no painel.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 3: DEMONSTRAÇÃO ══ -->
+<section class="section" id="demo">
+  <div class="section-inner">
+    <div class="section-tag">Demonstração</div>
+    <h2 class="section-title">Veja como funciona na prática</h2>
+    <p class="section-sub">Do cardápio ao pedido recebido, o fluxo foi pensado para ser simples para o cliente e para o restaurante.</p>
+    <div class="demo-wrap">
+      <video class="demo-video demo-video-desktop" controls preload="metadata" poster="assets/videos/demo-desktop-poster.jpg">
+        <source src="assets/videos/demo-desktop.mp4" type="video/mp4">
+        Seu navegador não suporta vídeo HTML5.
+      </video>
+      <video class="demo-video demo-video-mobile" controls preload="metadata" poster="assets/videos/demo-mobile-poster.jpg">
+        <source src="assets/videos/demo-mobile.mp4" type="video/mp4">
+        Seu navegador não suporta vídeo HTML5.
+      </video>
+      <div class="demo-flow">
+        <div class="demo-step">
+          <div class="demo-step-num">1</div>
+          <div class="demo-step-txt">Cliente acessa o cardápio</div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-num">2</div>
+          <div class="demo-step-txt">Monta a sacola</div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-num">3</div>
+          <div class="demo-step-txt">Finaliza o pedido</div>
+        </div>
+        <div class="demo-step">
+          <div class="demo-step-num">4</div>
+          <div class="demo-step-txt">Restaurante recebe no painel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 4: BENEFÍCIOS ══ -->
+<section class="section" id="beneficios">
+  <div class="section-inner">
+    <div class="section-tag">Benefícios</div>
+    <h2 class="section-title">Mais controle para vender direto</h2>
+    <p class="section-sub">O PedeAqui foi pensado para simplificar o pedido online sem complicar a operação do restaurante.</p>
+    <div class="ben-grid">
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div class="ben-title">Cardápio próprio</div>
+        <div class="ben-text">Uma página de pedidos com a identidade e informações do restaurante.</div>
+      </div>
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        <div class="ben-title">Pedido direto</div>
+        <div class="ben-text">O cliente acessa o link, monta a sacola e faz o pedido sem depender de marketplace.</div>
+      </div>
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <div class="ben-title">Entrega ou retirada</div>
+        <div class="ben-text">O restaurante define se aceita entrega, retirada ou os dois.</div>
+      </div>
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div class="ben-title">Gestão simples</div>
+        <div class="ben-text">Pedidos, cardápio e configurações em um painel fácil de usar.</div>
+      </div>
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+        <div class="ben-title">Formas de pagamento</div>
+        <div class="ben-text">Pix, crédito, débito e vale-refeição conforme o restaurante ativar.</div>
+      </div>
+      <div class="ben-card">
+        <div class="ben-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+        <div class="ben-title">Cliente do restaurante</div>
+        <div class="ben-text">O canal direto aproxima o cliente da marca do restaurante.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 5: RECURSOS ══ -->
+<section class="section" id="recursos">
+  <div class="section-inner">
+    <div class="section-tag">Recursos do MVP</div>
+    <h2 class="section-title">O essencial para começar a vender online</h2>
+    <p class="section-sub">O MVP do PedeAqui foca no que realmente importa: cardápio, sacola, checkout e controle de pedidos.</p>
+    <div class="res-grid">
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Página pública do restaurante</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Cardápio online</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Categorias e produtos</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Sacola / carrinho</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Checkout simples</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Entrega ou retirada</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Pedido mínimo configurável</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Formas de pagamento configuráveis</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Pedido aceito pelo restaurante</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Painel de pedidos</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Edição de cardápio</span></div>
+      <div class="res-item"><div class="res-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="res-lbl">Taxa de entrega por bairro</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ SECTION 6: CTA FINAL ══ -->
+<section class="section cta-section" id="cta-final">
+  <div class="section-inner">
+    <div class="cta-box">
+      <h2 class="cta-title">Pronto para criar seu<br>cardápio online?</h2>
+      <p class="cta-sub">Comece com uma página simples, profissional e feita para receber pedidos direto.</p>
+      <div class="cta-btns">
+        <a href="#" class="btn-spin">
+          <div class="btn-spin-ring"><div class="btn-spin-conic"></div></div>
+          <div class="btn-spin-inner"></div>
+          <span class="btn-spin-label">
+            <span class="btn-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </span>
+            Criar meu cardápio
+          </span>
+        </a>
+        <a href="#demo" class="btn-ghost-lg">
+          Ver demonstração
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="text-align:center;padding:32px 24px;border-top:1px solid var(--bd);color:var(--fg3);font-size:.72rem">
+  © 2025 PedeAqui. Todos os direitos reservados.
+</footer>
+
 </body>
 </html>

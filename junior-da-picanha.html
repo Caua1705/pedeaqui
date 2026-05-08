@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Júnior da Picanha — Cardápio Online | PedeAqui</title>
+<meta name="description" content="Peça online na Júnior da Picanha. Cardápio completo com entrega e retirada em Fortaleza - CE.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#C8520A;--brand-d:#A0420A;--brand2:#8B1A1A;
+  --bg:#0F0A06;--s1:#1C1007;--s2:#26160A;--s3:#301D0D;
+  --bd:rgba(255,210,140,.07);--bd2:rgba(255,210,140,.13);--bd3:rgba(255,210,140,.22);
+  --fg:#F5EDD8;--fg2:rgba(245,237,216,.62);--fg3:rgba(245,237,216,.32);
+  --glow:rgba(200,82,10,.22);--r:12px;--r2:999px
+}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh}
+::selection{background:var(--brand);color:#fff}
+img{display:block;max-width:100%}
+
+/* ── KEYFRAMES ── */
+@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.a1{opacity:0;animation:fu .6s .05s ease-out both}
+.a2{opacity:0;animation:fu .6s .15s ease-out both}
+.a3{opacity:0;animation:fu .6s .28s ease-out both}
+.a4{opacity:0;animation:fu .6s .42s ease-out both}
+.a5{opacity:0;animation:fu .7s .56s ease-out both}
+
+/* ── TOP NAV ── */
+.top-nav{position:sticky;top:0;z-index:100;height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(15,10,6,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
+.nav-left{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-back{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fg2);transition:.2s;text-decoration:none}
+.nav-back:hover{background:var(--s2);color:var(--fg)}
+.nav-brand{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);text-decoration:none;transition:.2s}
+.nav-brand:hover{color:var(--fg2)}
+.nav-brand span{color:var(--brand)}
+.nav-actions{display:flex;align-items:center;gap:6px}
+.nav-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--bd2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fg2);transition:.2s;position:relative}
+.nav-btn:hover{background:var(--s2);color:var(--fg);border-color:var(--bd3)}
+.cart-btn{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 12px var(--glow)}
+.cart-btn:hover{background:var(--brand-d);border-color:var(--brand-d)}
+.cart-count{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:#fff;color:var(--brand);font-size:.55rem;font-weight:800;display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg)}
+.cart-count.show{display:flex}
+
+/* ── BANNER ── */
+.banner{position:relative;height:200px;overflow:hidden;background:linear-gradient(135deg,#2C1205 0%,#1A0A04 40%,#0D0602 100%)}
+.banner-pattern{position:absolute;inset:0;background-image:radial-gradient(circle at 30% 50%,rgba(200,82,10,.12),transparent 60%),radial-gradient(circle at 80% 30%,rgba(139,26,26,.1),transparent 50%);pointer-events:none}
+.banner-grill{position:absolute;inset:0;opacity:.04;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px)}
+.banner-fade{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,var(--bg))}
+.banner-ember{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--brand);animation:ember 3s ease-in infinite;opacity:0}
+@keyframes ember{0%{opacity:0;transform:translateY(0)}20%{opacity:.8}80%{opacity:.3}100%{opacity:0;transform:translateY(-60px) translateX(15px)}}
+.banner-ember:nth-child(1){bottom:20%;left:25%;animation-delay:0s}
+.banner-ember:nth-child(2){bottom:15%;left:45%;animation-delay:.8s;background:#E8621A}
+.banner-ember:nth-child(3){bottom:10%;left:65%;animation-delay:1.6s}
+.banner-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:24px}
+.banner-tagline{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,237,216,.35)}
+.banner-title-big{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:800;letter-spacing:-.03em;color:var(--fg);text-align:center;text-shadow:0 2px 20px rgba(0,0,0,.8)}
+.banner-since{font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin-top:2px}
+
+/* ── IDENTITY BLOCK ── */
+.identity{padding:0 clamp(16px,4vw,32px);margin-top:-32px;position:relative;z-index:2}
+.identity-inner{max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:flex-end}
+.rest-logo-wrap{width:72px;height:72px;border-radius:14px;border:2px solid var(--bd3);background:var(--s2);overflow:hidden;flex-shrink:0;box-shadow:0 4px 24px rgba(0,0,0,.6)}
+.rest-logo-wrap img{width:100%;height:100%;object-fit:contain;padding:4px}
+.rest-logo-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:var(--brand);background:var(--s2)}
+.rest-info{flex:1;min-width:0;padding-bottom:4px}
+.rest-name{font-size:clamp(1.1rem,3vw,1.5rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:4px}
+.rest-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.rest-status{display:inline-flex;align-items:center;gap:4px;font-size:.64rem;font-weight:700;color:#4ade80}
+.rest-status::before{content:'';width:5px;height:5px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.rest-loc{font-size:.68rem;color:var(--fg3)}
+.rest-desc{font-size:.72rem;color:var(--fg2)}
+
+/* ── INFO PILLS ── */
+.info-bar{padding:14px clamp(16px,4vw,32px);position:relative;z-index:2;border-bottom:1px solid var(--bd)}
+.info-bar-inner{max-width:900px;margin:0 auto;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.info-bar-inner::-webkit-scrollbar{display:none}
+.info-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r2);white-space:nowrap;font-size:.68rem;font-weight:500;color:var(--fg2);flex-shrink:0;transition:.2s}
+.info-pill svg{color:var(--brand);flex-shrink:0}
+.info-pill.highlight{background:rgba(200,82,10,.1);border-color:rgba(200,82,10,.25);color:var(--fg)}
+
+/* ── SEARCH + CATEGORIES ── */
+.search-cat{position:sticky;top:52px;z-index:90;background:rgba(15,10,6,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:10px clamp(16px,4vw,32px)}
+.search-cat-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:9px 14px;cursor:text;transition:.2s}
+.search-bar:focus-within{border-color:var(--bd3);background:var(--s2)}
+.search-bar svg{color:var(--fg3);flex-shrink:0}
+.search-bar input{flex:1;background:transparent;border:none;outline:none;font-size:.84rem;color:var(--fg);font-family:inherit}
+.search-bar input::placeholder{color:var(--fg3)}
+.cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px}
+.cats::-webkit-scrollbar{display:none}
+.cat{display:inline-flex;align-items:center;padding:6px 14px;border-radius:var(--r2);font-size:.74rem;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--fg2);transition:.2s;flex-shrink:0}
+.cat:hover{border-color:var(--bd3);color:var(--fg);background:var(--s1)}
+.cat.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 10px var(--glow)}
+
+/* ── HERO CTA AREA ── */
+.hero-cta{padding:20px clamp(16px,4vw,32px) 16px;position:relative;z-index:2}
+.hero-cta-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:var(--brand);border:none;border-radius:var(--r);font-size:.88rem;font-weight:700;color:#fff;cursor:pointer;text-decoration:none;transition:.25s;box-shadow:0 3px 16px var(--glow)}
+.btn-primary:hover{background:var(--brand-d);transform:translateY(-1px);box-shadow:0 6px 24px rgba(200,82,10,.4)}
+.btn-secondary{display:inline-flex;align-items:center;gap:7px;padding:12px 18px;background:transparent;border:1px solid var(--bd2);border-radius:var(--r);font-size:.82rem;font-weight:500;color:var(--fg2);cursor:pointer;text-decoration:none;transition:.25s}
+.btn-secondary:hover{border-color:var(--bd3);color:var(--fg);background:var(--s1)}
+.sacola-empty{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--fg3)}
+.sacola-empty svg{color:var(--fg3)}
+
+/* ── SECTION PLACEHOLDER ── */
+.menu-placeholder{padding:clamp(32px,6vw,64px) clamp(16px,4vw,32px);text-align:center}
+.menu-placeholder-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:10px}
+.menu-placeholder-icon{width:56px;height:56px;border-radius:14px;background:var(--s1);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:4px}
+.menu-placeholder-title{font-size:1rem;font-weight:700}
+.menu-placeholder-sub{font-size:.8rem;color:var(--fg2);max-width:300px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .banner{height:150px}
+  .banner-title-big{font-size:1.4rem}
+  .rest-logo-wrap{width:60px;height:60px;border-radius:12px}
+  .identity-inner{gap:12px}
+  .rest-name{font-size:1.1rem}
+  .hero-cta-inner{flex-direction:column;align-items:stretch}
+  .btn-primary,.btn-secondary{width:100%;justify-content:center}
+  .sacola-empty{justify-content:center}
+}
+@media(max-width:380px){
+  .rest-name{font-size:1rem}
+  .info-pill{font-size:.62rem;padding:5px 10px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<nav class="top-nav a1">
+  <div class="nav-left">
+    <a href="index.html" class="nav-back" aria-label="Voltar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+    </a>
+    <a href="index.html" class="nav-brand">Pede<span>Aqui</span></a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn" aria-label="Compartilhar" onclick="shareRestaurant()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="nav-btn cart-btn" aria-label="Sacola" onclick="openCart()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── BANNER ── -->
+<div class="banner a2" aria-hidden="true">
+  <div class="banner-pattern"></div>
+  <div class="banner-grill"></div>
+  <div class="banner-ember"></div>
+  <div class="banner-ember"></div>
+  <div class="banner-ember"></div>
+  <div class="banner-fade"></div>
+  <div class="banner-txt">
+    <span class="banner-tagline">Na brasa desde</span>
+    <h1 class="banner-title-big">Júnior da Picanha</h1>
+    <span class="banner-since">● 2013 ●</span>
+  </div>
+</div>
+
+<!-- ── IDENTITY ── -->
+<div class="identity a3">
+  <div class="identity-inner">
+    <div class="rest-logo-wrap">
+      <img src="logo.png" alt="Júnior da Picanha" onerror="this.parentNode.innerHTML='<div class=rest-logo-placeholder>JP</div>'">
+    </div>
+    <div class="rest-info">
+      <div class="rest-name">Júnior da Picanha</div>
+      <div class="rest-meta">
+        <span class="rest-status">Aberto agora</span>
+        <span class="rest-loc">Fortaleza - CE</span>
+      </div>
+      <div class="rest-desc">Churrascaria · Picanhas · Executivos</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── INFO BAR ── -->
+<div class="info-bar a3">
+  <div class="info-bar-inner">
+    <div class="info-pill highlight">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      35–50 min
+    </div>
+    <div class="info-pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      Entrega e retirada
+    </div>
+    <div class="info-pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Pedido mín. R$ 30,00
+    </div>
+    <div class="info-pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Pix · Crédito · Débito · Vale
+    </div>
+    <div class="info-pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Taxa calculada no checkout
+    </div>
+  </div>
+</div>
+
+<!-- ── SEARCH + CATEGORIES ── -->
+<div class="search-cat a4">
+  <div class="search-cat-inner">
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar no cardápio" id="searchInput" aria-label="Buscar produto">
+    </div>
+    <div class="cats" role="tablist" id="catNav">
+      <button class="cat active" data-cat="destaques" role="tab" onclick="setCategory(this)">Destaques</button>
+      <button class="cat" data-cat="picanhas" role="tab" onclick="setCategory(this)">Picanhas</button>
+      <button class="cat" data-cat="executivos" role="tab" onclick="setCategory(this)">Executivos</button>
+      <button class="cat" data-cat="combos" role="tab" onclick="setCategory(this)">Combos</button>
+      <button class="cat" data-cat="bebidas" role="tab" onclick="setCategory(this)">Bebidas</button>
+      <button class="cat" data-cat="sobremesas" role="tab" onclick="setCategory(this)">Sobremesas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── HERO CTA ── -->
+<div class="hero-cta a5">
+  <div class="hero-cta-inner">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="#cardapio" class="btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Ver cardápio
+      </a>
+      <button class="btn-secondary" onclick="openInfo()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Informações da loja
+      </button>
+    </div>
+    <div class="sacola-empty" id="sacolaEmpty">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      Sua sacola está vazia
+    </div>
+  </div>
+</div>
+
+<!-- ── MENU AREA PLACEHOLDER ── -->
+<div class="menu-placeholder a5" id="cardapio">
+  <div class="menu-placeholder-inner">
+    <div class="menu-placeholder-icon">🥩</div>
+    <div class="menu-placeholder-title">Cardápio em breve</div>
+    <div class="menu-placeholder-sub">Os produtos do restaurante aparecerão aqui. Esta é a seção de hero da página de pedidos.</div>
+  </div>
+</div>
+
+<!-- ── SCRIPT ── -->
+<script>
+  // Category selection
+  function setCategory(el) {
+    document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const cat = el.dataset.cat;
+    // Scroll to section if it exists
+    const sec = document.getElementById('sec-' + cat);
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Share
+  function shareRestaurant() {
+    if (navigator.share) {
+      navigator.share({ title: 'Júnior da Picanha', text: 'Peça online na Júnior da Picanha!', url: window.location.href });
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(() => alert('Link copiado!'));
+    }
+  }
+
+  // Open info placeholder
+  function openInfo() {
+    alert('Júnior da Picanha\nFortaleza - CE\nAberto: Seg-Dom, 11h às 22h\nWhatsApp: (85) 9 9999-0000');
+  }
+
+  // Open cart placeholder
+  function openCart() {
+    alert('Sacola vazia. Adicione produtos do cardápio para continuar.');
+  }
+
+  // Search input debounce placeholder
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    // Product filtering will be wired when menu section is added
+  });
+</script>
+</body>
+</html>

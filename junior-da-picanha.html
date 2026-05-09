@@ -2,41 +2,41 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Júnior da Picanha — Cardápio Online | PedeAqui</title>
-<meta name="description" content="Peça online na Júnior da Picanha. Cardápio completo com entrega e retirada em Fortaleza - CE.">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
+<title>Júnior da Picanha — Pedido Online | PedeAqui</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* Existing styles */
+/* Reset & Vars */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --brand:#C8520A;--brand-d:#A0420A;--brand2:#8B1A1A;
   --bg:#0F0A06;--s1:#1C1007;--s2:#26160A;--s3:#301D0D;
   --bd:rgba(255,210,140,.07);--bd2:rgba(255,210,140,.13);--bd3:rgba(255,210,140,.22);
   --fg:#F5EDD8;--fg2:rgba(245,237,216,.62);--fg3:rgba(245,237,216,.32);
-  --glow:rgba(200,82,10,.22);--r:12px;--r2:999px
+  --glow:rgba(200,82,10,.22);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 html{scroll-behavior:smooth}
-body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:100px}
-body.modal-open{overflow:hidden;}
-::selection{background:var(--brand);color:#fff}
-img{display:block;max-width:100%}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-bottom:calc(100px + var(--safe-bottom))}
+body.modal-open{overflow:hidden}
+button,input,textarea{font-family:inherit;outline:none}
+a{text-decoration:none;color:inherit}
 
-/* ── KEYFRAMES ── */
-@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fi{from{opacity:0}to{opacity:1}}
-.a1{opacity:0;animation:fu .6s .05s ease-out both}
-.a2{opacity:0;animation:fu .6s .15s ease-out both}
-.a3{opacity:0;animation:fu .6s .28s ease-out both}
-.a4{opacity:0;animation:fu .6s .42s ease-out both}
-.a5{opacity:0;animation:fu .7s .56s ease-out both}
+/* Utility Animations */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.a1{opacity:0;animation:slideUp .6s .05s ease-out both}
+.a2{opacity:0;animation:slideUp .6s .15s ease-out both}
+.a3{opacity:0;animation:slideUp .6s .28s ease-out both}
+.a4{opacity:0;animation:slideUp .6s .42s ease-out both}
+.a5{opacity:0;animation:slideUp .7s .56s ease-out both}
 
-/* ── TOP NAV ── */
+/* Top Navigation */
 .top-nav{position:sticky;top:0;z-index:80;height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(15,10,6,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
 .nav-left{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.nav-back{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fg2);transition:.2s;text-decoration:none}
+.nav-back{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fg2);transition:.2s}
 .nav-back:hover{background:var(--s2);color:var(--fg)}
-.nav-brand{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);text-decoration:none;transition:.2s}
+.nav-brand{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);transition:.2s}
 .nav-brand:hover{color:var(--fg2)}
 .nav-brand span{color:var(--brand)}
 .nav-actions{display:flex;align-items:center;gap:6px}
@@ -47,7 +47,7 @@ img{display:block;max-width:100%}
 .cart-count{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:#fff;color:var(--brand);font-size:.55rem;font-weight:800;display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg)}
 .cart-count.show{display:flex}
 
-/* ── BANNER ── */
+/* Banner */
 .banner{position:relative;height:200px;overflow:hidden;background:linear-gradient(135deg,#2C1205 0%,#1A0A04 40%,#0D0602 100%)}
 .banner-pattern{position:absolute;inset:0;background-image:radial-gradient(circle at 30% 50%,rgba(200,82,10,.12),transparent 60%),radial-gradient(circle at 80% 30%,rgba(139,26,26,.1),transparent 50%);pointer-events:none}
 .banner-grill{position:absolute;inset:0;opacity:.04;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 40px)}
@@ -62,12 +62,11 @@ img{display:block;max-width:100%}
 .banner-title-big{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:800;letter-spacing:-.03em;color:var(--fg);text-align:center;text-shadow:0 2px 20px rgba(0,0,0,.8)}
 .banner-since{font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin-top:2px}
 
-/* ── IDENTITY BLOCK ── */
+/* Identity Block */
 .identity{padding:0 clamp(16px,4vw,32px);margin-top:-32px;position:relative;z-index:2}
 .identity-inner{max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:flex-end}
-.rest-logo-wrap{width:72px;height:72px;border-radius:14px;border:2px solid var(--bd3);background:var(--s2);overflow:hidden;flex-shrink:0;box-shadow:0 4px 24px rgba(0,0,0,.6)}
-.rest-logo-wrap img{width:100%;height:100%;object-fit:contain;padding:4px}
-.rest-logo-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:var(--brand);background:var(--s2)}
+.rest-logo-wrap{width:80px;height:80px;border-radius:16px;border:1px solid var(--bd3);background:var(--s2);overflow:hidden;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.rest-logo-wrap img{width:100%;height:100%;object-fit:cover}
 .rest-info{flex:1;min-width:0;padding-bottom:4px}
 .rest-name{font-size:clamp(1.1rem,3vw,1.5rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:4px}
 .rest-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -75,18 +74,17 @@ img{display:block;max-width:100%}
 .rest-status::before{content:'';width:5px;height:5px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .rest-loc{font-size:.68rem;color:var(--fg3)}
-.rest-desc{font-size:.72rem;color:var(--fg2)}
 
-/* ── INFO PILLS ── */
+/* Info Pills */
 .info-bar{padding:14px clamp(16px,4vw,32px);position:relative;z-index:2;border-bottom:1px solid var(--bd)}
 .info-bar-inner{max-width:900px;margin:0 auto;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .info-bar-inner::-webkit-scrollbar{display:none}
-.info-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r2);white-space:nowrap;font-size:.68rem;font-weight:500;color:var(--fg2);flex-shrink:0;transition:.2s}
+.info-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--s1);border:1px solid var(--bd2);border-radius:999px;white-space:nowrap;font-size:.68rem;font-weight:500;color:var(--fg2);flex-shrink:0;transition:.2s}
 .info-pill svg{color:var(--brand);flex-shrink:0}
 .info-pill.highlight{background:rgba(200,82,10,.1);border-color:rgba(200,82,10,.25);color:var(--fg)}
 
-/* ── SEARCH + CATEGORIES ── */
-.search-cat{position:sticky;top:52px;z-index:80;background:rgba(15,10,6,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:10px clamp(16px,4vw,32px)}
+/* Search + Categories */
+.search-cat{position:sticky;top:52px;z-index:70;background:rgba(15,10,6,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:10px clamp(16px,4vw,32px)}
 .search-cat-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .search-bar{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:9px 14px;cursor:text;transition:.2s}
 .search-bar:focus-within{border-color:var(--bd3);background:var(--s2)}
@@ -95,28 +93,25 @@ img{display:block;max-width:100%}
 .search-bar input::placeholder{color:var(--fg3)}
 .cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px;scroll-behavior:smooth}
 .cats::-webkit-scrollbar{display:none}
-.cat{display:inline-flex;align-items:center;padding:6px 14px;border-radius:var(--r2);font-size:.74rem;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--fg2);transition:.2s;flex-shrink:0}
+.cat{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;font-size:.74rem;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid var(--bd2);background:transparent;color:var(--fg2);transition:.2s;flex-shrink:0}
 .cat:hover{border-color:var(--bd3);color:var(--fg);background:var(--s1)}
 .cat.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 10px var(--glow)}
 
-/* ── HERO CTA AREA ── */
+/* Hero CTA Area */
 .hero-cta{padding:20px clamp(16px,4vw,32px) 16px;position:relative;z-index:2}
 .hero-cta-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:var(--brand);border:none;border-radius:var(--r);font-size:.88rem;font-weight:700;color:#fff;cursor:pointer;text-decoration:none;transition:.25s;box-shadow:0 3px 16px var(--glow);width:auto;justify-content:center}
-.btn-primary:hover{background:var(--brand-d);transform:translateY(-1px);box-shadow:0 6px 24px rgba(200,82,10,.4)}
-.btn-secondary{display:inline-flex;align-items:center;gap:7px;padding:12px 18px;background:transparent;border:1px solid var(--bd2);border-radius:var(--r);font-size:.82rem;font-weight:500;color:var(--fg2);cursor:pointer;text-decoration:none;transition:.25s;justify-content:center}
-.btn-secondary:hover{border-color:var(--bd3);color:var(--fg);background:var(--s1)}
-.sacola-empty{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--fg3)}
-.sacola-empty svg{color:var(--fg3)}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:var(--brand);border:none;border-radius:12px;font-size:.88rem;font-weight:700;color:#fff;cursor:pointer;transition:.25s;box-shadow:0 3px 16px var(--glow);justify-content:center}
+.btn-primary:active{transform:scale(0.96)}
+.btn-secondary{display:inline-flex;align-items:center;gap:7px;padding:12px 18px;background:transparent;border:1px solid var(--bd2);border-radius:12px;font-size:.82rem;font-weight:500;color:var(--fg2);cursor:pointer;transition:.25s;justify-content:center}
+.btn-secondary:active{background:var(--s1);transform:scale(0.96)}
 
-/* ── MENU AREA ── */
-.menu-area{padding:0 clamp(16px,4vw,32px) 40px;max-width:900px;margin:0 auto;}
-.menu-section{padding-top:20px;margin-bottom:20px;}
+/* Menu Area */
+.menu-area{padding:0 clamp(16px,4vw,32px) 40px;max-width:964px;margin:0 auto}
+.menu-section{padding-top:20px;margin-bottom:20px;scroll-margin-top:140px}
 .menu-section-title{font-size:1.2rem;font-weight:800;color:var(--fg);margin-bottom:16px;letter-spacing:-.02em}
-.products-grid{display:grid;grid-template-columns:1fr;gap:12px;}
-@media(min-width:640px){.products-grid{grid-template-columns:repeat(2, 1fr);gap:16px;}}
+.products-grid{display:grid;grid-template-columns:1fr;gap:12px}
 
-/* ── PRODUCT CARD ── */
+/* Product Card - Desktop Default */
 .prod-card{display:flex;flex-direction:column;background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:16px;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
 .prod-card:hover{border-color:var(--bd3);background:var(--s2)}
 .prod-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
@@ -128,11 +123,16 @@ img{display:block;max-width:100%}
 .prod-add{width:28px;height:28px;border-radius:8px;background:var(--s2);border:1px solid var(--bd3);color:var(--fg);display:flex;align-items:center;justify-content:center;transition:.2s}
 .prod-card:hover .prod-add{background:var(--brand);border-color:var(--brand);color:#fff}
 
-/* ── MODALS ── */
+@media(min-width:640px){
+  .products-grid{grid-template-columns:repeat(2, 1fr);gap:16px}
+}
+
+/* Modals */
 .overlay{position:fixed;inset:0;background:rgba(15,10,6,.8);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.3s ease}
 .overlay.active{opacity:1;pointer-events:auto}
 .modal{background:var(--bg);width:100%;max-width:600px;border-radius:20px 20px 0 0;border:1px solid var(--bd3);border-bottom:none;display:flex;flex-direction:column;max-height:90vh;transform:translateY(100%);transition:.3s cubic-bezier(0.2,0.8,0.2,1);position:relative}
 .overlay.active .modal{transform:translateY(0)}
+.sheet-drag{width:40px;height:4px;background:var(--bd3);border-radius:4px;margin:12px auto 4px;display:none}
 @media(min-width:640px){
   .overlay{align-items:center}
   .modal{border-radius:20px;border-bottom:1px solid var(--bd3);max-height:85vh}
@@ -144,24 +144,25 @@ img{display:block;max-width:100%}
 .modal-body{padding:20px;overflow-y:auto;flex:1}
 .modal-footer{padding:16px 20px;border-top:1px solid var(--bd);background:var(--bg);padding-bottom:max(16px, env(safe-area-inset-bottom))}
 
-/* ── PRODUCT MODAL ── */
+/* Product Modal */
 .pm-name{font-size:1.2rem;font-weight:800;margin-bottom:6px;line-height:1.2}
 .pm-desc{font-size:.85rem;color:var(--fg2);line-height:1.5;margin-bottom:16px}
 .pm-price{font-size:1.1rem;font-weight:700;color:var(--brand);margin-bottom:20px}
 .pm-label{display:block;font-size:.8rem;font-weight:600;margin-bottom:8px;color:var(--fg)}
-.pm-obs{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px;color:var(--fg);font-family:inherit;font-size:.85rem;resize:vertical;min-height:80px;outline:none;transition:.2s}
+.pm-obs{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px;color:var(--fg);font-size:.85rem;resize:vertical;min-height:80px;outline:none;transition:.2s}
 .pm-obs:focus{border-color:var(--brand)}
-.pm-obs::placeholder{color:var(--fg3)}
 .qty-bar{display:flex;align-items:center;gap:16px;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:4px 12px;width:fit-content}
 .qty-btn{width:32px;height:32px;border:none;background:transparent;color:var(--brand);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .qty-val{font-size:1rem;font-weight:700;min-width:24px;text-align:center}
 
-/* ── CART ── */
+/* Cart Sticky - Desktop Default */
 .cart-sticky{position:fixed;bottom:0;left:0;right:0;padding:16px;background:rgba(15,10,6,.95);backdrop-filter:blur(10px);border-top:1px solid var(--bd3);z-index:90;transform:translateY(100%);transition:.3s cubic-bezier(0.2,0.8,0.2,1);padding-bottom:max(16px, env(safe-area-inset-bottom))}
 .cart-sticky.show{transform:translateY(0)}
 .cart-sticky-inner{max-width:900px;margin:0 auto}
 .btn-cart{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--brand);color:#fff;border:none;padding:14px 20px;border-radius:12px;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow);transition:.2s}
-.btn-cart:hover{background:var(--brand-d)}
+.btn-cart:active{transform:scale(0.98)}
+
+/* Cart Items List */
 .cart-item{display:flex;justify-content:space-between;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--bd)}
 .ci-info{flex:1;padding-right:12px}
 .ci-name{font-weight:700;font-size:.9rem;margin-bottom:4px;color:var(--fg)}
@@ -173,21 +174,18 @@ img{display:block;max-width:100%}
 .cs-row{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:8px;color:var(--fg2)}
 .cs-total{display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:var(--fg);margin-top:12px;padding-top:12px;border-top:1px solid var(--bd2)}
 
-/* ── CHECKOUT ── */
-.input-group{margin-bottom:16px}
-.input{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;color:var(--fg);font-family:inherit;font-size:.9rem;outline:none;transition:.2s}
+/* Checkout Fields */
+.input{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;color:var(--fg);font-size:.9rem;outline:none;transition:.2s;margin-bottom:12px}
 .input:focus{border-color:var(--brand)}
-.input::placeholder{color:var(--fg3)}
 .type-toggle{display:flex;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:4px;margin-bottom:20px}
-.type-btn{flex:1;padding:8px;text-align:center;border-radius:6px;font-size:.85rem;font-weight:600;color:var(--fg2);cursor:pointer;border:none;background:transparent;transition:.2s}
+.type-btn{flex:1;padding:8px;text-align:center;border-radius:6px;font-size:.85rem;font-weight:600;color:var(--fg2);cursor:pointer;transition:.2s}
 .type-btn.active{background:var(--s2);color:var(--fg);border:1px solid var(--bd3)}
 .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-.pay-btn{background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px;font-size:.8rem;font-weight:600;color:var(--fg2);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.2s;text-align:left}
+.pay-btn{background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px;font-size:.8rem;font-weight:600;color:var(--fg2);cursor:pointer;text-align:left}
 .pay-btn.active{border-color:var(--brand);color:var(--brand);background:rgba(200,82,10,.1)}
-.pay-btn svg{width:16px;height:16px;flex-shrink:0}
 
-/* ── FOOTER ── */
-.footer{background:var(--s1);border-top:1px solid var(--bd);padding:40px clamp(16px,4vw,32px);margin-top:40px}
+/* Footer */
+.footer{background:var(--s1);border-top:1px solid var(--bd);padding:40px clamp(16px,4vw,32px);margin-top:20px}
 .footer-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:32px}
 @media(min-width:640px){.footer-inner{grid-template-columns:repeat(3,1fr)}}
 .ft-col h4{font-size:.9rem;font-weight:700;color:var(--fg);margin-bottom:12px}
@@ -195,48 +193,70 @@ img{display:block;max-width:100%}
 .ft-col span{display:block;font-size:.75rem;color:var(--fg3);margin-top:4px}
 .ft-bottom{max-width:900px;margin:32px auto 0;padding-top:24px;border-top:1px solid var(--bd2);text-align:center;font-size:.75rem;color:var(--fg3)}
 
-/* ── RESPONSIVE ── */
+/* ── MOBILE SPECIFIC ADJUSTMENTS ── */
 @media(max-width:640px){
-  .banner{height:150px}
-  .banner-title-big{font-size:1.4rem}
-  .rest-logo-wrap{width:60px;height:60px;border-radius:12px}
+  /* Hero / Identity */
+  .banner{height:120px}
+  .banner-title-big{font-size:1.5rem}
+  .identity{margin-top:-24px;padding:0 16px}
   .identity-inner{gap:12px}
-  .rest-name{font-size:1.1rem}
+  .rest-logo-wrap{width:64px;height:64px;border-radius:12px}
+  .rest-name{font-size:1.2rem;margin-bottom:2px}
+  
+  /* Hero CTA */
   .hero-cta-inner{flex-direction:column;align-items:stretch}
-  .btn-primary,.btn-secondary{width:100%;justify-content:center}
-  .sacola-empty{justify-content:center}
+  .btn-primary,.btn-secondary{width:100%}
+
+  /* Product Cards: Convert grid to list format */
+  .prod-card{flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:16px;gap:12px}
+  .prod-top{margin-bottom:0}
+  .prod-info{display:flex;flex-direction:column;flex:1}
+  .prod-desc{margin-bottom:6px;font-size:.7rem}
+  .prod-action{flex-shrink:0}
+  .prod-bottom{display:none} /* Hide old grid bottom layout */
+  
+  .prod-card-mobile-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .prod-price-mobile{font-size:.85rem;font-weight:800;color:var(--fg)}
+  .prod-add-mobile{width:32px;height:32px;border-radius:10px;background:var(--s2);border:1px solid var(--bd3);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:.2s}
+  
+  /* Cart Sticky: Pill format */
+  .cart-sticky{bottom:16px;left:16px;right:16px;padding:0;background:transparent;border:none}
+  .btn-cart{border-radius:20px;padding:16px 20px;box-shadow:0 8px 32px rgba(200,82,10,.5)}
+  
+  /* Modals: Bottom Sheet styles */
+  .sheet-drag{display:block}
 }
-@media(max-width:380px){
-  .rest-name{font-size:1rem}
-  .info-pill{font-size:.62rem;padding:5px 10px}
-}
-@media(prefers-reduced-motion:reduce){
-  *{animation:none!important;transition:none!important}
+
+/* Hide desktop elements on mobile and vice versa */
+.mobile-only{display:none}
+@media(max-width:640px){
+  .mobile-only{display:block}
+  .desktop-only{display:none}
 }
 </style>
 </head>
 <body>
 
-<!-- ── TOP NAV ── -->
+<!-- TOP NAV -->
 <nav class="top-nav a1">
   <div class="nav-left">
     <a href="index.html" class="nav-back" aria-label="Voltar">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
     </a>
     <a href="index.html" class="nav-brand">Pede<span>Aqui</span></a>
   </div>
   <div class="nav-actions">
-    <button class="nav-btn" aria-label="Compartilhar" onclick="shareRestaurant()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    <button class="nav-btn" onclick="openModal('infoModal')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </button>
-    <button class="nav-btn cart-btn" aria-label="Sacola" onclick="openModal('cartModal')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <button class="nav-btn cart-btn" onclick="openModal('cartModal')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <span class="cart-count" id="cartCountTop">0</span>
     </button>
   </div>
 </nav>
 
-<!-- ── BANNER ── -->
+<!-- BANNER -->
 <div class="banner a2" aria-hidden="true">
   <div class="banner-pattern"></div>
   <div class="banner-grill"></div>
@@ -251,150 +271,138 @@ img{display:block;max-width:100%}
   </div>
 </div>
 
-<!-- ── IDENTITY ── -->
+<!-- IDENTITY -->
 <div class="identity a3">
   <div class="identity-inner">
     <div class="rest-logo-wrap">
-      <img src="logo.png" alt="Júnior da Picanha" onerror="this.parentNode.innerHTML='<div class=rest-logo-placeholder>JP</div>'">
+      <img src="Logo Júnior da picanha .png" alt="Júnior da Picanha" onerror="this.parentNode.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:var(--brand)\'>JP</div>'">
     </div>
     <div class="rest-info">
       <div class="rest-name">Júnior da Picanha</div>
       <div class="rest-meta">
-        <span class="rest-status">Aberto agora</span>
+        <span class="rest-status">Aberto</span>
+        <span>•</span>
         <span class="rest-loc">Fortaleza - CE</span>
       </div>
-      <div class="rest-desc">Todos os dias, de 11h às 00h</div>
     </div>
   </div>
 </div>
 
-<!-- ── INFO BAR ── -->
+<!-- INFO BAR -->
 <div class="info-bar a3">
   <div class="info-bar-inner">
     <div class="info-pill highlight">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      35–50 min
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      40–55 min
     </div>
     <div class="info-pill">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       Entrega e retirada
     </div>
     <div class="info-pill">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       Pix · Cartões · VR/VA
     </div>
   </div>
 </div>
 
-<!-- ── SEARCH + CATEGORIES ── -->
+<!-- SEARCH + CATEGORIES -->
 <div class="search-cat a4">
   <div class="search-cat-inner">
     <div class="search-bar">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Buscar no cardápio" id="searchInput" aria-label="Buscar produto">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar no cardápio" id="searchInput">
     </div>
-    <div class="cats" role="tablist" id="catNav">
-      <!-- Categories injected via JS -->
+    <div class="cats" id="catNav">
+      <!-- Populated by JS -->
     </div>
   </div>
 </div>
 
-<!-- ── HERO CTA ── -->
+<!-- HERO CTA -->
 <div class="hero-cta a5">
   <div class="hero-cta-inner">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%">
-      <a href="#menu-area" class="btn-primary" style="flex:1;text-align:center;justify-content:center">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Ver cardápio
-      </a>
-      <button class="btn-secondary" style="flex:1" onclick="openModal('infoModal')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Informações da loja
-      </button>
-    </div>
+    <a href="#menu-area" class="btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Ver cardápio
+    </a>
   </div>
 </div>
 
-<!-- ── MENU AREA ── -->
+<!-- MENU AREA -->
 <div class="menu-area a5" id="menu-area">
-  <div id="emptySearch" style="display:none;text-align:center;padding:40px 0;color:var(--fg2);font-size:.9rem">
-    Nenhum item encontrado.
-  </div>
+  <div id="emptySearch" style="display:none;text-align:center;padding:40px 0;color:var(--fg2);font-size:.9rem">Nenhum item encontrado.</div>
   <div id="menuContainer">
-    <!-- Products injected via JS -->
+    <!-- Populated by JS -->
   </div>
 </div>
 
-<!-- ── FOOTER ── -->
+<!-- FOOTER -->
 <footer class="footer">
   <div class="footer-inner">
     <div class="ft-col">
       <h4>Matriz</h4>
-      <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza - CE</p>
-      <span>(85) 3025 3303 / 3025 7808<br>WhatsApp: (85) 9 9754 6465</span>
+      <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza</p>
+      <span>WhatsApp: (85) 9 9754-6465</span>
     </div>
     <div class="ft-col">
       <h4>Unidade Varjota</h4>
-      <p>Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza - CE</p>
-      <span>(85) 3393 7177 / 3393 7179<br>WhatsApp: (85) 9 9622 8030</span>
+      <p>Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza</p>
+      <span>WhatsApp: (85) 9 9622-8030</span>
     </div>
     <div class="ft-col">
       <h4>Informações</h4>
       <p>Todos os dias, de 11h às 00h</p>
-      <span>Taxa de 10% opcional<br>Cobramos couvert artístico<br>Proibida a venda de bebidas alcoólicas para menores de 18 anos</span>
+      <span>Taxa de 10% opcional<br>Cobramos couvert artístico</span>
     </div>
   </div>
-  <div class="ft-bottom">
-    Powered by PedeAqui
-  </div>
+  <div class="ft-bottom">Powered by PedeAqui</div>
 </footer>
 
-<!-- ── BOTTOM CART (MOBILE/STICKY) ── -->
+<!-- CART STICKY -->
 <div class="cart-sticky" id="cartSticky">
   <div class="cart-sticky-inner">
     <button class="btn-cart" onclick="openModal('cartModal')">
-      <div style="display:flex;align-items:center;gap:8px">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <span>Ver sacola • <span id="cartCountSticky">0</span> itens</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2">
+          <span>Ver sacola</span>
+          <span style="font-size:.7rem;font-weight:600;opacity:.9" id="cartCountSticky">0 itens</span>
+        </div>
       </div>
-      <span id="cartTotalSticky">R$ 0,00</span>
+      <span id="cartTotalSticky" style="font-size:1.05rem">R$ 0,00</span>
     </button>
   </div>
 </div>
 
-<!-- ── MODAL: LOJA INFO ── -->
+<!-- MODAL: INFO -->
 <div class="overlay" id="infoModal" onclick="closeModal(event, 'infoModal')">
   <div class="modal">
+    <div class="sheet-drag"></div>
     <div class="modal-header">
       <h2 class="modal-title">Informações da Loja</h2>
-      <button class="modal-close" onclick="closeModalId('infoModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" onclick="closeModalId('infoModal')">✕</button>
     </div>
     <div class="modal-body" style="font-size:.85rem;color:var(--fg2);line-height:1.6">
-      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Júnior da Picanha (Matriz)</h3>
-      <p style="margin-bottom:16px">Av. Nila Gomes de Soárez, 201 — Manoel Dias Branco — Fortaleza - CE<br>Tel: (85) 3025 3303 / 3025 7808<br>WhatsApp: (85) 9 9754 6465</p>
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Matriz</h3>
+      <p style="margin-bottom:16px">Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza - CE<br>WhatsApp: (85) 9 9754-6465</p>
 
-      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Júnior da Picanha (Varjota)</h3>
-      <p style="margin-bottom:16px">Rua Tavares Coutinho, 2124 — Varjota — Fortaleza - CE<br>Tel: (85) 3393 7177 / 3393 7179<br>WhatsApp: (85) 9 9622 8030</p>
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Varjota</h3>
+      <p style="margin-bottom:16px">Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza - CE<br>WhatsApp: (85) 9 9622-8030</p>
 
-      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Horário de Funcionamento</h3>
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Funcionamento</h3>
       <p style="margin-bottom:16px">Todos os dias, de 11h às 00h</p>
-
-      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Avisos</h3>
-      <ul style="padding-left:20px;margin-bottom:16px">
-        <li>Taxa de 10% opcional.</li>
-        <li>Cobramos couvert artístico.</li>
-        <li>Proibida a venda de bebidas alcoólicas para menores de 18 anos.</li>
-      </ul>
     </div>
   </div>
 </div>
 
-<!-- ── MODAL: PRODUTO ── -->
+<!-- MODAL: PRODUTO -->
 <div class="overlay" id="productModal" onclick="closeModal(event, 'productModal')">
   <div class="modal">
+    <div class="sheet-drag"></div>
     <div class="modal-header">
       <h2 class="modal-title">Detalhes do Produto</h2>
-      <button class="modal-close" onclick="closeModalId('productModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" onclick="closeModalId('productModal')">✕</button>
     </div>
     <div class="modal-body">
       <h3 class="pm-name" id="pmName"></h3>
@@ -405,131 +413,119 @@ img{display:block;max-width:100%}
         Consulte a disponibilidade e o valor com o restaurante.
       </div>
 
-      <label class="pm-label" id="pmObsLabel">Alguma observação?</label>
-      <textarea class="pm-obs" id="pmObs" placeholder="Ex: sem cebola, ponto da carne, sem farofa..."></textarea>
+      <div id="pmForm">
+        <label class="pm-label">Alguma observação?</label>
+        <textarea class="pm-obs" id="pmObs" placeholder="Ex: sem cebola, ponto da carne, sem farofa..."></textarea>
+      </div>
     </div>
-    <div class="modal-footer" style="display:flex;gap:12px">
-      <div class="qty-bar" id="pmQtyBar">
+    <div class="modal-footer" id="pmFooter" style="display:flex;gap:12px">
+      <div class="qty-bar">
         <button class="qty-btn" onclick="changeQty(-1)">-</button>
         <span class="qty-val" id="pmQty">1</span>
         <button class="qty-btn" onclick="changeQty(1)">+</button>
       </div>
-      <button class="btn-primary" style="flex:1;border-radius:10px" id="pmAddBtn" onclick="addToCart()">Adicionar • R$ 0,00</button>
+      <button class="btn-primary" style="flex:1" id="pmAddBtn" onclick="addToCart()">Adicionar • R$ 0,00</button>
     </div>
   </div>
 </div>
 
-<!-- ── MODAL: CART ── -->
+<!-- MODAL: CART -->
 <div class="overlay" id="cartModal" onclick="closeModal(event, 'cartModal')">
   <div class="modal">
+    <div class="sheet-drag"></div>
     <div class="modal-header">
       <h2 class="modal-title">Sua Sacola</h2>
-      <button class="modal-close" onclick="closeModalId('cartModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="modal-close" onclick="closeModalId('cartModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div id="cartEmpty" style="text-align:center;padding:40px 0;color:var(--fg2)">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;opacity:0.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        Sua sacola está vazia
+      <div id="cartEmpty" style="text-align:center;padding:40px 0;color:var(--fg3)">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 16px;opacity:0.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <div style="font-weight:600;font-size:.9rem;color:var(--fg2)">Sua sacola está vazia</div>
       </div>
       <div id="cartContent" style="display:none">
         <div id="cartList"></div>
         <div class="cart-summary">
-          <div class="cs-row">
-            <span>Subtotal</span>
-            <span id="csSub">R$ 0,00</span>
-          </div>
-          <div class="cs-row">
-            <span>Taxa de entrega</span>
-            <span>A calcular</span>
-          </div>
-          <div class="cs-total">
-            <span>Total</span>
-            <span id="csTotal">R$ 0,00</span>
-          </div>
+          <div class="cs-row"><span>Subtotal</span><span id="csSub">R$ 0,00</span></div>
+          <div class="cs-row"><span>Taxa de entrega</span><span>A calcular</span></div>
+          <div class="cs-total"><span>Total</span><span id="csTotal">R$ 0,00</span></div>
         </div>
       </div>
     </div>
     <div class="modal-footer" id="cartFooter" style="display:none">
-      <button class="btn-primary" style="width:100%;border-radius:10px" onclick="openCheckout()">Finalizar pedido</button>
+      <button class="btn-primary" style="width:100%" onclick="openCheckout()">Finalizar pedido</button>
     </div>
   </div>
 </div>
 
-<!-- ── MODAL: CHECKOUT ── -->
+<!-- MODAL: CHECKOUT -->
 <div class="overlay" id="checkoutModal" onclick="closeModal(event, 'checkoutModal')">
   <div class="modal">
+    <div class="sheet-drag"></div>
     <div class="modal-header">
-      <h2 class="modal-title">Finalizar Pedido</h2>
-      <button class="modal-close" onclick="closeModalId('checkoutModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <h2 class="modal-title">Checkout</h2>
+      <button class="modal-close" onclick="closeModalId('checkoutModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="input-group">
-        <label class="pm-label">Seus dados</label>
-        <input type="text" id="chkName" class="input" placeholder="Nome completo" style="margin-bottom:8px">
-        <input type="tel" id="chkPhone" class="input" placeholder="WhatsApp">
+      <label class="pm-label">Seus dados</label>
+      <input type="text" id="chkName" class="input" placeholder="Nome completo">
+      <input type="tel" id="chkPhone" class="input" placeholder="WhatsApp">
+
+      <label class="pm-label" style="margin-top:8px">Como deseja receber?</label>
+      <div class="type-toggle">
+        <button class="type-btn active" id="btnDel" onclick="setDeliveryType('delivery')">Entrega</button>
+        <button class="type-btn" id="btnPick" onclick="setDeliveryType('pickup')">Retirada</button>
       </div>
-      <div class="input-group">
-        <label class="pm-label">Como deseja receber?</label>
-        <div class="type-toggle">
-          <button class="type-btn active" id="btnDel" onclick="setDeliveryType('delivery')">Entrega</button>
-          <button class="type-btn" id="btnPick" onclick="setDeliveryType('pickup')">Retirada</button>
-        </div>
-      </div>
-      <div class="input-group" id="addressGroup">
+
+      <div id="addressGroup">
         <label class="pm-label">Endereço de entrega</label>
-        <input type="text" id="chkRua" class="input" placeholder="Rua" style="margin-bottom:8px">
-        <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="text" id="chkRua" class="input" placeholder="Rua">
+        <div style="display:flex;gap:8px">
           <input type="text" id="chkNum" class="input" placeholder="Número" style="width:100px">
           <input type="text" id="chkBairro" class="input" placeholder="Bairro" style="flex:1">
         </div>
         <input type="text" id="chkComp" class="input" placeholder="Complemento e Referência">
       </div>
-      <div class="input-group">
-        <label class="pm-label">Forma de pagamento</label>
-        <div class="pay-grid">
-          <button class="pay-btn active" onclick="setPayment(this, 'Pix')">Pix</button>
-          <button class="pay-btn" onclick="setPayment(this, 'Crédito')">Crédito</button>
-          <button class="pay-btn" onclick="setPayment(this, 'Débito')">Débito</button>
-          <button class="pay-btn" onclick="setPayment(this, 'Dinheiro')">Dinheiro</button>
-          <button class="pay-btn" onclick="setPayment(this, 'VR/VA')" style="grid-column: span 2">Vale-refeição / Alimentação</button>
-        </div>
+
+      <label class="pm-label" style="margin-top:8px">Forma de pagamento</label>
+      <div class="pay-grid">
+        <button class="pay-btn active" onclick="setPayment(this, 'Pix')">Pix</button>
+        <button class="pay-btn" onclick="setPayment(this, 'Crédito')">Crédito</button>
+        <button class="pay-btn" onclick="setPayment(this, 'Débito')">Débito</button>
+        <button class="pay-btn" onclick="setPayment(this, 'Dinheiro')">Dinheiro</button>
+        <button class="pay-btn" onclick="setPayment(this, 'VR/VA')" style="grid-column: span 2">Vale-refeição / Alimentação</button>
       </div>
-      <div class="input-group">
-        <label class="pm-label">Observação geral (opcional)</label>
-        <textarea id="chkObs" class="input" placeholder="Troco para R$ 100, deixar na portaria..." style="resize:vertical;min-height:60px"></textarea>
-      </div>
+
+      <label class="pm-label" style="margin-top:8px">Observação geral (opcional)</label>
+      <textarea id="chkObs" class="input" placeholder="Troco para R$ 100, deixar na portaria..." style="resize:vertical;min-height:60px"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" style="width:100%;border-radius:10px" onclick="submitOrder()">Enviar pedido</button>
+      <button class="btn-primary" style="width:100%" onclick="submitOrder()">Enviar pedido</button>
     </div>
   </div>
 </div>
 
-<!-- ── MODAL: CONFIRMATION ── -->
+<!-- MODAL: CONFIRMATION -->
 <div class="overlay" id="confirmModal">
-  <div class="modal" style="margin:auto;max-width:400px;border-radius:20px;border:1px solid var(--bd3)">
+  <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;border:1px solid var(--bd3)">
     <div class="modal-body" style="text-align:center;padding:40px 24px">
       <div style="width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,.1);color:#4ade80;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:8px;color:var(--fg)">Pedido enviado</h2>
       <p style="font-size:.85rem;color:var(--fg2);margin-bottom:24px">Aguardando confirmação do restaurante.</p>
       
       <div style="background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:16px;text-align:left;font-size:.8rem;color:var(--fg2);margin-bottom:24px">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Pedido:</span><strong style="color:var(--fg)">#1042</strong></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Cliente:</span><strong style="color:var(--fg)" id="confName"></strong></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Total:</span><strong style="color:var(--fg)" id="confTotal"></strong></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Tipo:</span><strong style="color:var(--fg)" id="confType"></strong></div>
         <div style="display:flex;justify-content:space-between"><span>Pagamento:</span><strong style="color:var(--fg)" id="confPay"></strong></div>
       </div>
       
-      <p style="font-size:.75rem;color:var(--fg3);margin-bottom:24px">Seu pedido foi enviado para o restaurante. Aguarde a confirmação para acompanhar o preparo.</p>
-      <button class="btn-primary" style="width:100%;border-radius:10px" onclick="window.location.reload()">Fazer novo pedido</button>
+      <button class="btn-primary" style="width:100%" onclick="window.location.reload()">Fazer novo pedido</button>
     </div>
   </div>
 </div>
 
-<!-- ── SCRIPT ── -->
 <script>
   const fmt = (val) => val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
   const parsePrice = (price) => typeof price === 'number' ? fmt(price) : 'Consultar';
@@ -581,10 +577,6 @@ img{display:block;max-width:100%}
   let deliveryType = 'delivery';
   let paymentMethod = 'Pix';
 
-  function init() {
-    renderMenu();
-  }
-
   function slugify(text) {
     return text.toString().toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -600,10 +592,8 @@ img{display:block;max-width:100%}
 
     menuData.forEach((cat, idx) => {
       const catId = slugify(cat.category);
-      // Nav
-      nav.innerHTML += `<button class="cat ${idx === 0 ? 'active' : ''}" data-target="${catId}" onclick="scrollToCategory('${catId}', this)">${cat.category}</button>`;
+      nav.innerHTML += `<button class="cat ${idx === 0 ? 'active' : ''}" onclick="scrollToCategory('${catId}', this)">${cat.category}</button>`;
       
-      // Section
       let html = `<div class="menu-section" id="${catId}">
         <h2 class="menu-section-title">${cat.category}</h2>
         <div class="products-grid">`;
@@ -612,17 +602,32 @@ img{display:block;max-width:100%}
         const pStr = parsePrice(item.price);
         html += `
           <div class="prod-card" onclick="openProduct(${item.id})">
-            <div class="prod-top">
-              <div>
-                ${item.code ? `<span class="prod-code">${item.code}</span>` : ''}
-                <h3 class="prod-name">${item.name}</h3>
+            <div class="prod-info desktop-only">
+              <div class="prod-top">
+                <div>
+                  ${item.code ? `<span class="prod-code">${item.code}</span>` : ''}
+                  <h3 class="prod-name">${item.name}</h3>
+                </div>
+              </div>
+              ${item.desc ? `<p class="prod-desc">${item.desc}</p>` : ''}
+              <div class="prod-bottom">
+                <span class="prod-price">${pStr}</span>
+                <button class="prod-add">+</button>
               </div>
             </div>
-            ${item.desc ? `<p class="prod-desc">${item.desc}</p>` : ''}
-            <div class="prod-bottom">
-              <span class="prod-price">${pStr}</span>
-              <button class="prod-add">+</button>
+            
+            <div class="prod-info mobile-only">
+              ${item.code ? `<span class="prod-code">${item.code}</span>` : ''}
+              <h3 class="prod-name">${item.name}</h3>
+              ${item.desc ? `<p class="prod-desc">${item.desc}</p>` : ''}
             </div>
+            <div class="prod-action mobile-only">
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <span style="font-weight:800;font-size:.85rem;color:var(--fg)">${pStr}</span>
+                <div class="prod-add">+</div
+              </div>
+            </div>
+            
           </div>
         `;
       });
@@ -661,7 +666,6 @@ img{display:block;max-width:100%}
     document.getElementById('emptySearch').style.display = foundAny ? 'none' : 'block';
   });
 
-  /* ── MODALS ── */
   function openModal(id) {
     document.getElementById(id).classList.add('active');
     document.body.classList.add('modal-open');
@@ -674,7 +678,6 @@ img{display:block;max-width:100%}
     if(e.target.id === id) closeModalId(id);
   }
 
-  /* ── PRODUCT ── */
   function getProductById(id) {
     for(let cat of menuData) {
       for(let item of cat.items) {
@@ -694,16 +697,12 @@ img{display:block;max-width:100%}
     
     if (typeof currentProd.price !== 'number') {
       document.getElementById('pmWarning').style.display = 'block';
-      document.getElementById('pmQtyBar').style.display = 'none';
-      document.getElementById('pmAddBtn').style.display = 'none';
-      document.getElementById('pmObsLabel').style.display = 'none';
-      document.getElementById('pmObs').style.display = 'none';
+      document.getElementById('pmForm').style.display = 'none';
+      document.getElementById('pmFooter').style.display = 'none';
     } else {
       document.getElementById('pmWarning').style.display = 'none';
-      document.getElementById('pmQtyBar').style.display = 'flex';
-      document.getElementById('pmAddBtn').style.display = 'block';
-      document.getElementById('pmObsLabel').style.display = 'block';
-      document.getElementById('pmObs').style.display = 'block';
+      document.getElementById('pmForm').style.display = 'block';
+      document.getElementById('pmFooter').style.display = 'flex';
       updatePmUI();
     }
     openModal('productModal');
@@ -720,7 +719,6 @@ img{display:block;max-width:100%}
     document.getElementById('pmAddBtn').innerText = `Adicionar • ${fmt(currentProd.price * pmQty)}`;
   }
 
-  /* ── CART ── */
   function addToCart() {
     if(typeof currentProd.price !== 'number') return;
     const obs = document.getElementById('pmObs').value;
@@ -738,23 +736,20 @@ img{display:block;max-width:100%}
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
     const totalVal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    // Top Nav
     const badge = document.getElementById('cartCountTop');
     badge.innerText = totalQty;
     if(totalQty > 0) badge.classList.add('show');
     else badge.classList.remove('show');
 
-    // Sticky Bottom
     const sticky = document.getElementById('cartSticky');
     if(totalQty > 0) {
       sticky.classList.add('show');
-      document.getElementById('cartCountSticky').innerText = totalQty;
+      document.getElementById('cartCountSticky').innerText = `${totalQty} ite${totalQty>1?'ns':'m'}`;
       document.getElementById('cartTotalSticky').innerText = fmt(totalVal);
     } else {
       sticky.classList.remove('show');
     }
 
-    // Modal
     const empty = document.getElementById('cartEmpty');
     const content = document.getElementById('cartContent');
     const footer = document.getElementById('cartFooter');
@@ -767,7 +762,7 @@ img{display:block;max-width:100%}
     } else {
       empty.style.display = 'none';
       content.style.display = 'block';
-      footer.style.display = 'block';
+      footer.style.display = 'flex';
       
       list.innerHTML = '';
       cart.forEach(item => {
@@ -794,7 +789,6 @@ img{display:block;max-width:100%}
     updateCartUI();
   }
 
-  /* ── CHECKOUT ── */
   function openCheckout() {
     closeModalId('cartModal');
     setTimeout(() => {
@@ -845,7 +839,6 @@ img{display:block;max-width:100%}
 
     const totalVal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    document.getElementById('confName').innerText = name;
     document.getElementById('confTotal').innerText = fmt(totalVal);
     document.getElementById('confType').innerText = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
     document.getElementById('confPay').innerText = paymentMethod;
@@ -858,8 +851,7 @@ img{display:block;max-width:100%}
     }, 300);
   }
 
-  // Init
-  init();
+  renderMenu();
 </script>
 </body>
 </html>

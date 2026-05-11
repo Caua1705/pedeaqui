@@ -1,0 +1,2408 @@
+[
+  {
+    "category": "Promoções",
+    "items": [
+      {
+        "id": 1,
+        "name": "Frango à Parmegiana",
+        "desc": "Arroz branco e purê de batatas",
+        "price": 65.9
+      },
+      {
+        "id": 2,
+        "name": "Filé à Parmegiana",
+        "desc": "Arroz branco e purê de batatas",
+        "price": 82.4
+      },
+      {
+        "id": 3,
+        "name": "Picanha Suína",
+        "desc": "Arroz de brócolis e batata frita",
+        "price": 76.15
+      },
+      {
+        "id": 4,
+        "name": "Maminha à Moda",
+        "desc": "Baião e batata frita",
+        "price": 103.2
+      }
+    ]
+  },
+  {
+    "category": "Combos",
+    "items": [
+      {
+        "id": 5,
+        "name": "Sortidão 1kg",
+        "desc": "Picanha, maminha, sobrepaleta suína, costela suína, coxa e sobrecoxa desossada e 3 linguiças. Acompanha 2 porções de baião e 2 porções de batata frita.",
+        "price": 167.9
+      },
+      {
+        "id": 6,
+        "name": "Picanha Suína 1kg",
+        "desc": "Arroz à piamontese, arroz com brócolis e batata frita",
+        "price": 132.1
+      },
+      {
+        "id": 7,
+        "name": "Coxa e Sobrecoxa Desossada 1kg",
+        "desc": "Baião, arroz à grega e batata frita",
+        "price": 103.85
+      },
+      {
+        "id": 8,
+        "name": "Combo Picanha Importada 1kg",
+        "desc": "Baião, arroz à grega e batata frita",
+        "price": 259.9
+      },
+      {
+        "id": 9,
+        "name": "Combo Maminha Importada 1kg",
+        "desc": "Baião, farofa de ovos e macaxeira frita",
+        "price": 210.9
+      }
+    ]
+  },
+  {
+    "category": "Quinta do Caranguejo",
+    "items": [
+      {
+        "id": 10,
+        "name": "Kit com 3 unidades",
+        "desc": "Caranguejo — kit promocional",
+        "price": 29.8
+      }
+    ]
+  },
+  {
+    "category": "Pratos Executivos",
+    "items": [
+      {
+        "id": 11,
+        "name": "Maminha 200g",
+        "desc": "Com baião e batata frita",
+        "price": 31.1
+      },
+      {
+        "id": 12,
+        "name": "Carne de Sol em Cubos",
+        "desc": "Com baião, macaxeira e banana frita",
+        "price": 31.1
+      },
+      {
+        "id": 13,
+        "name": "Tilápia à Delícia",
+        "desc": "Com arroz branco e purê de batatas",
+        "price": 37.3
+      },
+      {
+        "id": 14,
+        "name": "Picanha Suína",
+        "desc": "Com arroz com brócolis e batata frita",
+        "price": 31.1
+      },
+      {
+        "id": 15,
+        "name": "Tilápia ao Molho de Laranja",
+        "desc": "Com panqueca de legumes gratinados",
+        "price": 37.3
+      },
+      {
+        "id": 16,
+        "name": "Filé à Parmegiana",
+        "desc": "Com espaguete ao molho de tomate e purê",
+        "price": 35.1
+      },
+      {
+        "id": 17,
+        "name": "Filé à Cavalo",
+        "desc": "Com ovo frito, arroz branco e batata sauté",
+        "price": 40.1
+      },
+      {
+        "id": 18,
+        "name": "Coxa e Sobrecoxa Desossada",
+        "desc": "Com baião e batata frita",
+        "price": 28.3
+      },
+      {
+        "id": 19,
+        "name": "Strogonoff de Filé",
+        "desc": "Com arroz branco e batata sauté",
+        "price": 35.1
+      },
+      {
+        "id": 20,
+        "name": "Contra Filé Acebolado",
+        "desc": "Com arroz branco e batata frita",
+        "price": 31.1
+      },
+      {
+        "id": 21,
+        "name": "Filé de Tilápia",
+        "desc": "Com arroz de brócolis e salada",
+        "price": 35.3
+      },
+      {
+        "id": 22,
+        "name": "Sobrepaleta Suína 200g",
+        "desc": "Com arroz à grega e farofa de ovos",
+        "price": 28.3
+      },
+      {
+        "id": 23,
+        "name": "Peito de Frango ao Molho de Laranja",
+        "desc": "Com arroz branco e salada à moda",
+        "price": 28.3
+      },
+      {
+        "id": 24,
+        "name": "Picanha 200g",
+        "desc": "Com baião e batata frita",
+        "price": 52.9
+      },
+      {
+        "id": 25,
+        "name": "Bombom de Filé",
+        "desc": "Com bacon, molho madeira, arroz no próprio molho e batatas coradas",
+        "price": 37
+      },
+      {
+        "id": 26,
+        "name": "Assado de Panela",
+        "desc": "Com arroz branco e purê",
+        "price": 31.1
+      },
+      {
+        "id": 27,
+        "name": "Salmão ao Molho de Alcaparras",
+        "desc": "Com arroz com brócolis e purê",
+        "price": 52.8
+      },
+      {
+        "id": 28,
+        "name": "Filé Mignon 200g",
+        "desc": "Com arroz à grega e batata frita",
+        "price": 40.85
+      },
+      {
+        "id": 29,
+        "name": "Tilápia à Belle Meuniere",
+        "desc": "Com arroz de alho e salada",
+        "price": 38.3
+      },
+      {
+        "id": 30,
+        "name": "Escalope de Filé Mignon 200g",
+        "desc": "Com arroz de queijo e batata sauté",
+        "price": 42.8
+      }
+    ]
+  },
+  {
+    "category": "Feijoada",
+    "items": [
+      {
+        "id": 31,
+        "name": "Feijoada Completa",
+        "desc": "Para 2 pessoas",
+        "price": 79.9
+      }
+    ]
+  },
+  {
+    "category": "Entradas",
+    "items": [
+      {
+        "id": 32,
+        "name": "Lagosta Júnior da Picanha",
+        "desc": "Lagosta grelhada with manteiga da terra, castanha granulada and salsinha",
+        "price": 96.4
+      },
+      {
+        "id": 33,
+        "name": "Polvo ao Vinagrete",
+        "desc": "Porção",
+        "price": null
+      },
+      {
+        "id": 34,
+        "name": "Gurjão de Peixe",
+        "desc": "Porção",
+        "price": 83.4
+      },
+      {
+        "id": 35,
+        "name": "Piaba Frita",
+        "desc": "Porção",
+        "price": 38
+      },
+      {
+        "id": 36,
+        "name": "Camarão Panko",
+        "desc": "Porção",
+        "price": 29.2
+      },
+      {
+        "id": 37,
+        "name": "Camarão Alho and Óleo",
+        "desc": "Porção",
+        "price": 79.4
+      },
+      {
+        "id": 38,
+        "name": "Casquinha de Bacalhau",
+        "desc": "2 unidades",
+        "price": 79.4
+      },
+      {
+        "id": 39,
+        "name": "Casquinha de Caranguejo",
+        "desc": "2 unidades",
+        "price": 40.65
+      },
+      {
+        "id": 40,
+        "name": "Casquinha de Pizza",
+        "desc": "Parmesão ou calabresa",
+        "price": 37.7
+      },
+      {
+        "id": 41,
+        "name": "Carpaccio de Salmão",
+        "desc": "Porção",
+        "price": 20.6
+      },
+      {
+        "id": 42,
+        "name": "Carpaccio de Carne",
+        "desc": "Porção",
+        "price": 51.25
+      },
+      {
+        "id": 43,
+        "name": "Filé Aperitivo with Fritas",
+        "desc": "Porção",
+        "price": 47.05
+      },
+      {
+        "id": 44,
+        "name": "Filé do Léo 400g",
+        "desc": "With alho frito and gratinado with mussarela",
+        "price": 78.25
+      },
+      {
+        "id": 45,
+        "name": "Carne de Sol with Macaxeira",
+        "desc": "Porção",
+        "price": null
+      },
+      {
+        "id": 46,
+        "name": "Frango à Passarinha with Fritas",
+        "desc": "Porção",
+        "price": 71.3
+      },
+      {
+        "id": 47,
+        "name": "Tulipa de Frango 400g",
+        "desc": "Porção",
+        "price": 51.15
+      },
+      {
+        "id": 48,
+        "name": "Croquete de Bacalhau",
+        "desc": "12 unidades",
+        "price": 28.15
+      },
+      {
+        "id": 49,
+        "name": "Bolinha de Peixe",
+        "desc": "12 unidades",
+        "price": 72.15
+      },
+      {
+        "id": 50,
+        "name": "Bolinha de Queijo",
+        "desc": "12 unidades",
+        "price": 40.65
+      },
+      {
+        "id": 51,
+        "name": "Croquete de Carne de Sol",
+        "desc": "12 unidades",
+        "price": 40.65
+      },
+      {
+        "id": 52,
+        "name": "Queijo na Brasa with Mel de Cana",
+        "desc": "Unidade",
+        "price": 43.7
+      },
+      {
+        "id": 53,
+        "name": "Queijo à Milanesa",
+        "desc": "Porção",
+        "price": 25.3
+      },
+      {
+        "id": 54,
+        "name": "Pastel de Queijo and Carne de Sol",
+        "desc": "12 unidades",
+        "price": 37.7
+      },
+      {
+        "id": 55,
+        "name": "Pastel de Carne de Sol",
+        "desc": "12 unidades",
+        "price": 29.7
+      },
+      {
+        "id": 56,
+        "name": "Pastel de Queijo",
+        "desc": "12 unidades",
+        "price": 29.7
+      },
+      {
+        "id": 57,
+        "name": "Pastel de Camarão",
+        "desc": "12 unidades",
+        "price": 29.7
+      },
+      {
+        "id": 58,
+        "name": "Pão de Alho",
+        "desc": "Unidade",
+        "price": 39.6
+      },
+      {
+        "id": 59,
+        "name": "Coração de Frango",
+        "desc": "20 unidades",
+        "price": 8.7
+      },
+      {
+        "id": 60,
+        "name": "Linguiça",
+        "desc": "Unidade",
+        "price": 24.6
+      },
+      {
+        "id": 61,
+        "name": "Linguiça Apimentada",
+        "desc": "Unidade",
+        "price": 8.3
+      },
+      {
+        "id": 62,
+        "name": "Linguiça Cuiabana Suína",
+        "desc": "Unidade",
+        "price": 9.3
+      },
+      {
+        "id": 63,
+        "name": "Linguiça Cuiabana de Frango with Queijo",
+        "desc": "Unidade",
+        "price": 10.4
+      },
+      {
+        "id": 64,
+        "name": "Linguiça de Cordeiro",
+        "desc": "100g",
+        "price": 11
+      },
+      {
+        "id": 65,
+        "name": "Tábua de Frios",
+        "desc": "Salame, queijos coalho, gorgonzola, parmesão, azeitona, presunto and tomate seco",
+        "price": 52.4
+      },
+      {
+        "id": 66,
+        "name": "Calabresa Acebolada",
+        "desc": "Porção",
+        "price": 36.25
+      }
+    ]
+  },
+  {
+    "category": "Carnes no Kg",
+    "items": [
+      {
+        "id": 67,
+        "name": "Maminha Importada",
+        "desc": "200g",
+        "price": 32.13
+      },
+      {
+        "id": 68,
+        "name": "Picanha Importada",
+        "desc": "200g",
+        "price": 48.4
+      },
+      {
+        "id": 69,
+        "name": "Maminha Black Angus",
+        "desc": "200g",
+        "price": 43.36
+      },
+      {
+        "id": 70,
+        "name": "Picanha Black Angus",
+        "desc": "200g",
+        "price": 67.56
+      },
+      {
+        "id": 71,
+        "name": "Picanha Suína",
+        "desc": "200g",
+        "price": 20.14
+      },
+      {
+        "id": 72,
+        "name": "Costela Suína",
+        "desc": "200g",
+        "price": 17.95
+      },
+      {
+        "id": 73,
+        "name": "Sobrepaleta Suína",
+        "desc": "200g",
+        "price": 16.42
+      },
+      {
+        "id": 74,
+        "name": "Carne de Sol",
+        "desc": "200g",
+        "price": 27.72
+      },
+      {
+        "id": 75,
+        "name": "Filé Mignon",
+        "desc": "200g",
+        "price": 39.57
+      },
+      {
+        "id": 76,
+        "name": "Pernil de Carneiro sem Osso",
+        "desc": "200g",
+        "price": 30.31
+      },
+      {
+        "id": 77,
+        "name": "Filé de Peito de Frango",
+        "desc": "200g",
+        "price": 13.5
+      },
+      {
+        "id": 78,
+        "name": "Coxa and Sobrecoxa Desossada",
+        "desc": "200g",
+        "price": 11.34
+      },
+      {
+        "id": 79,
+        "name": "Filé de Sirigado",
+        "desc": "200g",
+        "price": 40.47
+      },
+      {
+        "id": 80,
+        "name": "Filé de Salmão",
+        "desc": "200g",
+        "price": 41.86
+      },
+      {
+        "id": 81,
+        "name": "French Rack de Cordeiro",
+        "desc": "200g",
+        "price": 44.62
+      },
+      {
+        "id": 82,
+        "name": "Baby Beef",
+        "desc": "200g",
+        "price": 19.18
+      }
+    ]
+  },
+  {
+    "category": "Guarnições",
+    "items": [
+      {
+        "id": 83,
+        "name": "Arroz Branco",
+        "desc": "350g",
+        "price": 19.5
+      },
+      {
+        "id": 84,
+        "name": "Arroz à Grega",
+        "desc": "350g",
+        "price": 29.1
+      },
+      {
+        "id": 85,
+        "name": "Arroz Carreteiro",
+        "desc": "350g",
+        "price": 30.65
+      },
+      {
+        "id": 86,
+        "name": "Arroz do Chefe",
+        "desc": "350g",
+        "price": 32.45
+      },
+      {
+        "id": 87,
+        "name": "Arroz de Espinafre",
+        "desc": "350g",
+        "price": 32.45
+      },
+      {
+        "id": 88,
+        "name": "Arroz Maria Isabel",
+        "desc": "350g",
+        "price": 33.8
+      },
+      {
+        "id": 89,
+        "name": "Arroz à Piamontese",
+        "desc": "400g",
+        "price": 31
+      },
+      {
+        "id": 90,
+        "name": "Arroz Maluco",
+        "desc": "350g",
+        "price": 31
+      },
+      {
+        "id": 91,
+        "name": "Arroz de Carneiro",
+        "desc": "400g",
+        "price": 62.6
+      },
+      {
+        "id": 92,
+        "name": "Arroz with Brócolis",
+        "desc": "350g",
+        "price": 31.2
+      },
+      {
+        "id": 93,
+        "name": "Arroz de Alho",
+        "desc": "350g",
+        "price": 27.8
+      },
+      {
+        "id": 94,
+        "name": "Baião de Dois",
+        "desc": "350g",
+        "price": 29
+      },
+      {
+        "id": 95,
+        "name": "Purê de Batata",
+        "desc": "350g",
+        "price": 32.25
+      },
+      {
+        "id": 96,
+        "name": "Batata Frita",
+        "desc": "350g",
+        "price": 29.7
+      },
+      {
+        "id": 97,
+        "name": "Batata Portuguesa",
+        "desc": "250g",
+        "price": 29.2
+      },
+      {
+        "id": 98,
+        "name": "Batata Sauté",
+        "desc": "350g",
+        "price": 31.8
+      },
+      {
+        "id": 99,
+        "name": "Batata Rosti",
+        "desc": "350g",
+        "price": 31.8
+      },
+      {
+        "id": 100,
+        "name": "Macaxeira Frita",
+        "desc": "350g",
+        "price": 25
+      },
+      {
+        "id": 101,
+        "name": "Feijão Tropeiro",
+        "desc": "400g",
+        "price": 36.55
+      },
+      {
+        "id": 102,
+        "name": "Feijão Verde",
+        "desc": "400g",
+        "price": 39
+      },
+      {
+        "id": 103,
+        "name": "Paçoca",
+        "desc": "300g",
+        "price": 39
+      },
+      {
+        "id": 104,
+        "name": "Farofa de Ovos",
+        "desc": "350g",
+        "price": 26.7
+      },
+      {
+        "id": 105,
+        "name": "Banana à Milanesa",
+        "desc": "3 unidades",
+        "price": 29.8
+      },
+      {
+        "id": 106,
+        "name": "Espaguete ao Alho and Óleo",
+        "desc": "350g",
+        "price": 35.8
+      },
+      {
+        "id": 107,
+        "name": "Torresmo",
+        "desc": "250g",
+        "price": 29.5
+      },
+      {
+        "id": 108,
+        "name": "Arroz de Salmão",
+        "desc": "",
+        "price": 35.9
+      },
+      {
+        "id": 109,
+        "name": "Cebola Assada",
+        "desc": "Unidade",
+        "price": 6.7
+      },
+      {
+        "id": 110,
+        "name": "Legumes ao Vapor",
+        "desc": "",
+        "price": 41.9
+      }
+    ]
+  },
+  {
+    "category": "Saladas Especiais",
+    "items": [
+      {
+        "id": 111,
+        "name": "Salada de Maionese",
+        "desc": "350g",
+        "price": 30.9
+      },
+      {
+        "id": 112,
+        "name": "Salada de Palmito",
+        "desc": "Alface, tomate and palmito",
+        "price": 44.5
+      },
+      {
+        "id": 113,
+        "name": "Salada Mista",
+        "desc": "Alface, tomate, cebola, pimentão, palmito, cenoura ralada, beterraba ralada, ovos cozidos, batata cozida, presunto and queijo coalho em cubos",
+        "price": 41.6
+      },
+      {
+        "id": 114,
+        "name": "Salada do Chefe",
+        "desc": "Alface crespa and americana, rúcula, manjericão, parmesão ralado, salmão laminado, palmito, tomate seco and redução balsâmica",
+        "price": 42.75
+      },
+      {
+        "id": 115,
+        "name": "Salada Simples",
+        "desc": "Alface, tomate, cebola and pimentão",
+        "price": 30.15
+      },
+      {
+        "id": 116,
+        "name": "Salada à Moda da Casa",
+        "desc": "Alface, tomate, cenoura ralada, abacaxi em cubos and palmito with molho de mostarda",
+        "price": 32.15
+      }
+    ]
+  },
+  {
+    "category": "Guarnições — 1/2 Porção",
+    "items": [
+      {
+        "id": 117,
+        "name": "Baião de Dois",
+        "desc": "200g",
+        "price": 17.35
+      },
+      {
+        "id": 118,
+        "name": "Arroz Branco",
+        "desc": "200g",
+        "price": 15
+      },
+      {
+        "id": 119,
+        "name": "Arroz with Brócolis",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 120,
+        "name": "Arroz Carreteiro",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 121,
+        "name": "Arroz à Piamontese",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 122,
+        "name": "Arroz Maria Isabel",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 123,
+        "name": "Arroz à Grega",
+        "desc": "200g",
+        "price": 16.7
+      },
+      {
+        "id": 124,
+        "name": "Batata Frita",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 125,
+        "name": "Purê de Batata",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 126,
+        "name": "Batata with Maionese",
+        "desc": "200g",
+        "price": 17.45
+      },
+      {
+        "id": 127,
+        "name": "Salada de Palmito",
+        "desc": "200g",
+        "price": 23.95
+      }
+    ]
+  },
+  {
+    "category": "Cortes Especiais",
+    "items": [
+      {
+        "id": 128,
+        "name": "Bife de Tiras",
+        "desc": "400g",
+        "price": 110.75
+      },
+      {
+        "id": 129,
+        "name": "Bife de Tiras",
+        "desc": "With arroz chinês, cuscuz marroquino and molho chimichurri",
+        "price": 159.4
+      },
+      {
+        "id": 130,
+        "name": "Bife de Chorizo",
+        "desc": "500g",
+        "price": null
+      },
+      {
+        "id": 131,
+        "name": "Bife de Chorizo",
+        "desc": "With arroz with brócolis, batata noisette and molho chimichurri",
+        "price": 104.9
+      },
+      {
+        "id": 132,
+        "name": "Prime Rib",
+        "desc": "450g",
+        "price": 149.3
+      },
+      {
+        "id": 133,
+        "name": "Prime Rib",
+        "desc": "With arroz de alho, batata em lascas and molho chimichurri",
+        "price": null
+      },
+      {
+        "id": 134,
+        "name": "T-Bone",
+        "desc": "450g",
+        "price": 103.1
+      },
+      {
+        "id": 135,
+        "name": "T-Bone",
+        "desc": "With arroz tropeiro, batata recheada and molho chimichurri",
+        "price": 141.65
+      },
+      {
+        "id": 136,
+        "name": "Costela de Cordeiro",
+        "desc": "500g",
+        "price": null
+      },
+      {
+        "id": 137,
+        "name": "Costela de Cordeiro",
+        "desc": "With arroz de alho and batatas coradas",
+        "price": 103.1
+      },
+      {
+        "id": 138,
+        "name": "Bolinhas de Filé",
+        "desc": "120g",
+        "price": 138.8
+      },
+      {
+        "id": 139,
+        "name": "Franguito",
+        "desc": "120g",
+        "price": null
+      }
+    ]
+  },
+  {
+    "category": "Pratos Infantis",
+    "items": [
+      {
+        "id": 140,
+        "name": "Filé Grelhado",
+        "desc": "With arroz branco and batata frita",
+        "price": 31.9
+      },
+      {
+        "id": 141,
+        "name": "Filé de Frango Grelhado",
+        "desc": "With espaguete ao molho de tomate and batata frita",
+        "price": 25.9
+      }
+    ]
+  },
+  {
+    "category": "Frango — 2 Pessoas",
+    "items": [
+      {
+        "id": 142,
+        "name": "Frango Grelhado",
+        "desc": "600g, with arroz à grega and batata frita",
+        "price": 98.2
+      },
+      {
+        "id": 143,
+        "name": "Frango à Parmegiana",
+        "desc": "400g, with arroz branco and purê",
+        "price": 91.5
+      },
+      {
+        "id": 144,
+        "name": "Supremo de Frango à Cubana",
+        "desc": "With bacon, arroz branco, banana à milanesa, guarnição à francesa and batata frita",
+        "price": 91.9
+      },
+      {
+        "id": 145,
+        "name": "Filé de Frango à Francesa",
+        "desc": "With arroz branco and guarnição à francesa",
+        "price": 91.8
+      }
+    ]
+  },
+  {
+    "category": "Carnes — 2 Pessoas",
+    "items": [
+      {
+        "id": 146,
+        "name": "Picanha à Moda",
+        "desc": "400g, with baião and batata frita",
+        "price": 141.5
+      },
+      {
+        "id": 147,
+        "name": "Maminha à Moda",
+        "desc": "400g, with baião and batata frita",
+        "price": 108.7
+      },
+      {
+        "id": 148,
+        "name": "Churrasco Misto",
+        "desc": "600g, maminha, sobrepaleta suína, coxa and sobrecoxa desossada, 2 linguiças, with baião and batata frita",
+        "price": 129.8
+      },
+      {
+        "id": 149,
+        "name": "Sortidão",
+        "desc": "1kg, picanha, maminha, sobrepaleta suína, costela suína, coxa and sobrecoxa desossada and 3 linguiças, with 2 porções de baião and 2 porções de batata frita",
+        "price": 189.8
+      },
+      {
+        "id": 150,
+        "name": "Picanha Suína",
+        "desc": "400g, arroz with brócolis and batata rosti",
+        "price": 103.7
+      },
+      {
+        "id": 151,
+        "name": "Filé no Sal Grosso",
+        "desc": "400g, with arroz à grega and batata frita",
+        "price": 142.38
+      },
+      {
+        "id": 152,
+        "name": "Filé ao Poivre",
+        "desc": "400g, with arroz no próprio molho and batata sauté",
+        "price": 145.7
+      },
+      {
+        "id": 153,
+        "name": "Filé ao Funghi",
+        "desc": "400g, with talharim no próprio molho",
+        "price": 145.65
+      },
+      {
+        "id": 154,
+        "name": "Brochete de Filé",
+        "desc": "400g, with arroz à grega and farofa de ovos",
+        "price": 141.5
+      },
+      {
+        "id": 155,
+        "name": "Filé à Medalhão",
+        "desc": "400g, with arroz à piamontese and purê",
+        "price": 141.5
+      },
+      {
+        "id": 156,
+        "name": "Filé à Parmegiana",
+        "desc": "Gratinado with mussarela, with arroz branco and purê",
+        "price": 100.7
+      },
+      {
+        "id": 157,
+        "name": "Escalopinho de Filé ao Molho Roquefort",
+        "desc": "400g, with arroz no próprio molho",
+        "price": 142.3
+      },
+      {
+        "id": 158,
+        "name": "Filé do Chef ao Molho Madeira",
+        "desc": "400g, with spaghetti no próprio molho and batatas coradas",
+        "price": 142.3
+      },
+      {
+        "id": 159,
+        "name": "Filé à Francesa",
+        "desc": "With arroz à grega, guarnição à francesa and batata frita",
+        "price": 144.5
+      },
+      {
+        "id": 160,
+        "name": "Carne de Sol Sertaneja",
+        "desc": "400g, with baião, macaxeira frita and paçoca",
+        "price": 125.9
+      },
+      {
+        "id": 161,
+        "name": "Escondidinho de Carne de Sol",
+        "desc": "400g, with arroz branco",
+        "price": 100.5
+      },
+      {
+        "id": 162,
+        "name": "Carneiro Cozido",
+        "desc": "400g, with arroz branco and pirão",
+        "price": 99.4
+      }
+    ]
+  },
+  {
+    "category": "Peixes and Mariscos — 2 Pessoas",
+    "items": [
+      {
+        "id": 163,
+        "name": "Sirigado à Moda da Casa",
+        "desc": "400g, with arroz with brócolis, salada verde ao molho de mostarda and batatas coradas",
+        "price": 176.7
+      },
+      {
+        "id": 164,
+        "name": "Sirigado ao Thermidor",
+        "desc": "400g, gratinado with molho branco, mostarda and arroz branco",
+        "price": 176.1
+      },
+      {
+        "id": 165,
+        "name": "Sirigado à Belle Meuniere",
+        "desc": "Ao molho de alcaparras with champignon and camarão, arroz branco and batata rosti",
+        "price": 170.2
+      },
+      {
+        "id": 166,
+        "name": "Sirigado Delicatessen",
+        "desc": "Grelhado and gratinado with camarões, purê and banana ao molho branco and arroz branco",
+        "price": 170.2
+      },
+      {
+        "id": 167,
+        "name": "Peixada de Sirigado",
+        "desc": "500g, with arroz branco and pirão",
+        "price": 194.1
+      },
+      {
+        "id": 168,
+        "name": "Salmão ao Molho de Maracujá",
+        "desc": "With arroz puxado no próprio molho and batatas coradas",
+        "price": 160
+      },
+      {
+        "id": 169,
+        "name": "Salmão ao Molho de Limão",
+        "desc": "With arroz puxado no próprio molho and batatas coradas",
+        "price": 160
+      },
+      {
+        "id": 170,
+        "name": "Salmão Grelhado",
+        "desc": "400g, with molho de alcaparras and champignon, arroz with brócolis and salada de batata with palmito",
+        "price": 156
+      },
+      {
+        "id": 171,
+        "name": "Peixe à Delícia",
+        "desc": "400g, with banana, gratinado ao molho branco, arroz branco and purê",
+        "price": 148.8
+      },
+      {
+        "id": 172,
+        "name": "Filé de Peixe with Creme de Nata",
+        "desc": "Gratinado and arroz branco",
+        "price": 148.8
+      },
+      {
+        "id": 173,
+        "name": "Filé de Peixe Grelhado with Legumes",
+        "desc": "400g, with arroz branco and legumes ao vapor",
+        "price": 145.9
+      },
+      {
+        "id": 174,
+        "name": "Filé de Peixe ao Molho de Camarão",
+        "desc": "With arroz branco and purê",
+        "price": 145.9
+      },
+      {
+        "id": 175,
+        "name": "Tilápia Desossada Frita",
+        "desc": "1kg, with baião and batata frita",
+        "price": 124.4
+      },
+      {
+        "id": 176,
+        "name": "Pargo Frito",
+        "desc": "1kg, with baião and batata frita",
+        "price": 162.5
+      },
+      {
+        "id": 177,
+        "name": "Camarão à Grega",
+        "desc": "Arroz à grega with camarões empanados and gratinados",
+        "price": 171.4
+      },
+      {
+        "id": 178,
+        "name": "Camarão à Moda da Casa",
+        "desc": "Gratinado with molho branco, ervilha, batata palha and arroz branco",
+        "price": 180.8
+      },
+      {
+        "id": 179,
+        "name": "Camarão Tropical",
+        "desc": "Servido no abacaxi, with azeite and cebola flambada with conhaque, molho branco with abacaxi em cubos and arroz no próprio molho",
+        "price": 180.8
+      },
+      {
+        "id": 180,
+        "name": "Arroz de Camarão",
+        "desc": "400g",
+        "price": 98.4
+      },
+      {
+        "id": 181,
+        "name": "Polvo à Lagareiro",
+        "desc": "300g, with arroz with brócolis and batata ao murro",
+        "price": 171.4
+      },
+      {
+        "id": 182,
+        "name": "Bacalhau à Lagareiro",
+        "desc": "400g, with cebola, brócolis, batata no azeite, ovo cozido and arroz with brócolis",
+        "price": 215.6
+      },
+      {
+        "id": 183,
+        "name": "Bacalhau à Gomes de Sá",
+        "desc": "400g, with arroz branco and ovo cozido",
+        "price": 164.5
+      },
+      {
+        "id": 184,
+        "name": "Bacalhau with Natas",
+        "desc": "400g, with arroz branco",
+        "price": 184.4
+      },
+      {
+        "id": 185,
+        "name": "Lagosta à Thermidor",
+        "desc": "Gratinada with molho branco, mostarda and arroz branco",
+        "price": 216.5
+      },
+      {
+        "id": 186,
+        "name": "Lagosta Tropical",
+        "desc": "Servida no abacaxi, with azeite and cebola flambada with conhaque, molho branco with abacaxi em cubos and arroz no próprio molho",
+        "price": 216.5
+      }
+    ]
+  },
+  {
+    "category": "Massas — 2 Pessoas",
+    "items": [
+      {
+        "id": 187,
+        "name": "Espaguete with Camarão",
+        "desc": "300g, ao molho de tomate",
+        "price": 135.8
+      },
+      {
+        "id": 188,
+        "name": "Espaguete aos Frutos do Mar",
+        "desc": "Filé de sirigado, filé de pargo, camarão, lula, polvo and mexilhão ao molho de tomate",
+        "price": 129.8
+      },
+      {
+        "id": 189,
+        "name": "Penne à Moda da Casa",
+        "desc": "400g, with carne de sol desfiada ao molho funghi and queijo gorgonzola",
+        "price": 84.3
+      },
+      {
+        "id": 190,
+        "name": "Talharim à Parisiense",
+        "desc": "400g, with filé de frango em tiras and presunto ao molho branco",
+        "price": 77.8
+      },
+      {
+        "id": 191,
+        "name": "Lagosta ao Fetuccine",
+        "desc": "With azeite, mostarda, cebola and molho branco gratinado",
+        "price": 209.6
+      }
+    ]
+  },
+  {
+    "category": "Pizzas Promocionais",
+    "items": [
+      {
+        "id": 192,
+        "name": "Margherita",
+        "desc": "Molho de tomate, mussarela, manjericão, tomate and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 193,
+        "name": "Calabresa",
+        "desc": "Molho de tomate, mussarela, calabresa, cebola and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 194,
+        "name": "Portuguesa",
+        "desc": "Molho de tomate, mussarela, presunto, cebola, pimentão, ovo cozido ralado and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 195,
+        "name": "Frango",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 196,
+        "name": "Mista",
+        "desc": "Molho de tomate, mussarela, presunto, tomate and orégano",
+        "price": 47.9
+      }
+    ]
+  },
+  {
+    "category": "Pizzas Tradicionais",
+    "items": [
+      {
+        "id": 197,
+        "name": "Mista (Individual)",
+        "desc": "Molho de tomate, mussarela, presunto, tomate and orégano",
+        "price": 26.9
+      },
+      {
+        "id": 198,
+        "name": "Mista (Grande)",
+        "desc": "Molho de tomate, mussarela, presunto, tomate and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 199,
+        "name": "Mussarela (Individual)",
+        "desc": "Molho de tomate, mussarela, tomate and orégano",
+        "price": 26.9
+      },
+      {
+        "id": 200,
+        "name": "Mussarela (Grande)",
+        "desc": "Molho de tomate, mussarela, tomate and orégano",
+        "price": 47.9
+      },
+      {
+        "id": 201,
+        "name": "Margherita (Individual)",
+        "desc": "Molho de tomate, mussarela, manjericão, tomate and orégano",
+        "price": 28.9
+      },
+      {
+        "id": 202,
+        "name": "Margherita (Grande)",
+        "desc": "Molho de tomate, mussarela, manjericão, tomate and orégano",
+        "price": 49.9
+      },
+      {
+        "id": 203,
+        "name": "Portuguesa (Individual)",
+        "desc": "Molho de tomate, mussarela, presunto, cebola, pimentão, ovo cozido and orégano",
+        "price": 30.9
+      },
+      {
+        "id": 204,
+        "name": "Portuguesa (Grande)",
+        "desc": "Molho de tomate, mussarela, presunto, cebola, pimentão, ovo cozido and orégano",
+        "price": 54.2
+      },
+      {
+        "id": 205,
+        "name": "Calabresa with Catupiry (Individual)",
+        "desc": "Molho de tomate, mussarela, calabresa, cebola, catupiry and orégano",
+        "price": 30.9
+      },
+      {
+        "id": 206,
+        "name": "Calabresa with Catupiry (Grande)",
+        "desc": "Molho de tomate, mussarela, calabresa, cebola, catupiry and orégano",
+        "price": 54.3
+      },
+      {
+        "id": 207,
+        "name": "Calabresa (Individual)",
+        "desc": "Molho de tomate, mussarela, calabresa, cebola and orégano",
+        "price": 28.9
+      },
+      {
+        "id": 208,
+        "name": "Calabresa (Grande)",
+        "desc": "Molho de tomate, mussarela, calabresa, cebola and orégano",
+        "price": 49.2
+      },
+      {
+        "id": 209,
+        "name": "Carne de Sol (Individual)",
+        "desc": "Molho de tomate, mussarela, carne de sol desfiada, cebola and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 210,
+        "name": "Carne de Sol (Grande)",
+        "desc": "Molho de tomate, mussarela, carne de sol desfiada, cebola and orégano",
+        "price": 61.9
+      },
+      {
+        "id": 211,
+        "name": "Frango (Individual)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde and orégano",
+        "price": 32.9
+      },
+      {
+        "id": 212,
+        "name": "Frango (Grande)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde and orégano",
+        "price": 58.2
+      },
+      {
+        "id": 213,
+        "name": "Frango with Catupiry (Individual)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde, catupiry and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 214,
+        "name": "Frango with Catupiry (Grande)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde, catupiry and orégano",
+        "price": 61.9
+      },
+      {
+        "id": 215,
+        "name": "Frango Cream (Individual)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde, cream cheese and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 216,
+        "name": "Frango Cream (Grande)",
+        "desc": "Molho de tomate, mussarela, frango desfiado, milho verde, cream cheese and orégano",
+        "price": 61.9
+      },
+      {
+        "id": 217,
+        "name": "Quatro Queijos (Individual)",
+        "desc": "Molho de tomate, mussarela, catupiry, parmesão, gorgonzola and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 218,
+        "name": "Quatro Queijos (Grande)",
+        "desc": "Molho de tomate, mussarela, catupiry, parmesão, gorgonzola and orégano",
+        "price": 61.9
+      }
+    ]
+  },
+  {
+    "category": "Pizzas Especiais",
+    "items": [
+      {
+        "id": 219,
+        "name": "Nordestina Especial (Individual)",
+        "desc": "Molho de tomate, mussarela, carne de sol, queijo coalho, pimenta biquinho and melaço de cana",
+        "price": 39.9
+      },
+      {
+        "id": 220,
+        "name": "Nordestina Especial (Grande)",
+        "desc": "Molho de tomate, mussarela, carne de sol, queijo coalho, pimenta biquinho and melaço de cana",
+        "price": 72.2
+      },
+      {
+        "id": 221,
+        "name": "Júnior da Picanha (Individual)",
+        "desc": "Molho de tomate, mussarela, picanha and molho barbecue",
+        "price": 44.9
+      },
+      {
+        "id": 222,
+        "name": "Júnior da Picanha (Grande)",
+        "desc": "Molho de tomate, mussarela, picanha and molho barbecue",
+        "price": 82.2
+      },
+      {
+        "id": 223,
+        "name": "Bacon Royal (Individual)",
+        "desc": "Molho de tomate, mussarela, bacon, catupiry and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 224,
+        "name": "Bacon Royal (Grande)",
+        "desc": "Molho de tomate, mussarela, bacon, catupiry and orégano",
+        "price": 61.9
+      },
+      {
+        "id": 225,
+        "name": "Salmon Cream (Individual)",
+        "desc": "Molho de tomate, mussarela, salmão, cream cheese, couve frita and molho tarê",
+        "price": 42.9
+      },
+      {
+        "id": 226,
+        "name": "Salmon Cream (Grande)",
+        "desc": "Molho de tomate, mussarela, salmão, cream cheese, couve frita and molho tarê",
+        "price": 79.9
+      },
+      {
+        "id": 227,
+        "name": "Camarão (Individual)",
+        "desc": "Molho de tomate, mussarela, camarão, catupiry and orégano",
+        "price": 37.9
+      },
+      {
+        "id": 228,
+        "name": "Camarão (Grande)",
+        "desc": "Molho de tomate, mussarela, camarão, catupiry and orégano",
+        "price": 65.2
+      },
+      {
+        "id": 229,
+        "name": "Pepperoni (Individual)",
+        "desc": "Molho de tomate, mussarela, pepperoni and orégano",
+        "price": 33.9
+      },
+      {
+        "id": 230,
+        "name": "Pepperoni (Grande)",
+        "desc": "Molho de tomate, mussarela, pepperoni and orégano",
+        "price": 61.9
+      },
+      {
+        "id": 231,
+        "name": "Pepperoni Cream (Individual)",
+        "desc": "Molho de tomate, mussarela, pepperoni, cream cheese and orégano",
+        "price": 38.9
+      },
+      {
+        "id": 232,
+        "name": "Pepperoni Cream (Grande)",
+        "desc": "Molho de tomate, mussarela, pepperoni, cream cheese and orégano",
+        "price": 70.9
+      },
+      {
+        "id": 233,
+        "name": "Paulista (Individual)",
+        "desc": "Molho de tomate, mussarela, frango, bacon, champignon, milho verde, catupiry and orégano",
+        "price": 36.9
+      },
+      {
+        "id": 234,
+        "name": "Paulista (Grande)",
+        "desc": "Molho de tomate, mussarela, frango, bacon, champignon, milho verde, catupiry and orégano",
+        "price": 67.6
+      },
+      {
+        "id": 235,
+        "name": "Rúcula with Tomate Seco (Individual)",
+        "desc": "Molho de tomate, mussarela, tomate seco, rúcula and orégano",
+        "price": 30.9
+      },
+      {
+        "id": 236,
+        "name": "Rúcula with Tomate Seco (Grande)",
+        "desc": "Molho de tomate, mussarela, tomate seco, rúcula and orégano",
+        "price": 55.9
+      }
+    ]
+  },
+  {
+    "category": "Pizzas Doces",
+    "items": [
+      {
+        "id": 237,
+        "name": "Banoffe (Individual)",
+        "desc": "Mussarela, doce de leite, banana and canela",
+        "price": 35.9
+      },
+      {
+        "id": 238,
+        "name": "Banoffe (Grande)",
+        "desc": "Mussarela, doce de leite, banana and canela",
+        "price": 65.2
+      },
+      {
+        "id": 239,
+        "name": "Choco Duo (Individual)",
+        "desc": "Mussarela, chocolate ao leite and chocolate branco",
+        "price": 35.9
+      },
+      {
+        "id": 240,
+        "name": "Choco Duo (Grande)",
+        "desc": "Mussarela, chocolate ao leite and chocolate branco",
+        "price": 65.9
+      },
+      {
+        "id": 241,
+        "name": "Chocolate (Individual)",
+        "desc": "Mussarela and chocolate",
+        "price": 32.9
+      },
+      {
+        "id": 242,
+        "name": "Chocolate (Grande)",
+        "desc": "Mussarela and chocolate",
+        "price": 58.7
+      },
+      {
+        "id": 243,
+        "name": "Moreninha (Individual)",
+        "desc": "Mussarela, banana em rodelas, chocolate and canela",
+        "price": 32.9
+      },
+      {
+        "id": 244,
+        "name": "Moreninha (Grande)",
+        "desc": "Mussarela, banana em rodelas, chocolate and canela",
+        "price": 58.7
+      },
+      {
+        "id": 245,
+        "name": "Romeu and Julieta (Individual)",
+        "desc": "Mussarela and goiabada",
+        "price": 32.9
+      },
+      {
+        "id": 246,
+        "name": "Romeu and Julieta (Grande)",
+        "desc": "Mussarela and goiabada",
+        "price": 58.7
+      }
+    ]
+  },
+  {
+    "category": "Bordas Recheadas",
+    "items": [
+      {
+        "id": 247,
+        "name": "Catupiry",
+        "desc": "",
+        "price": 15.5
+      },
+      {
+        "id": 248,
+        "name": "Chocolate",
+        "desc": "",
+        "price": 15.5
+      },
+      {
+        "id": 249,
+        "name": "Goiabada",
+        "desc": "",
+        "price": 15.5
+      }
+    ]
+  },
+  {
+    "category": "Sobremesas",
+    "items": [
+      {
+        "id": 250,
+        "name": "Pudim",
+        "desc": "",
+        "price": 13.1
+      },
+      {
+        "id": 251,
+        "name": "Pudim Grande",
+        "desc": "",
+        "price": 95.2
+      },
+      {
+        "id": 252,
+        "name": "Cocada de Forno",
+        "desc": "",
+        "price": 24.9
+      },
+      {
+        "id": 253,
+        "name": "Rocambole de Goiabada",
+        "desc": "",
+        "price": 25.9
+      },
+      {
+        "id": 254,
+        "name": "Rocambole de Chocolate with Doce de Leite",
+        "desc": "",
+        "price": 25.9
+      },
+      {
+        "id": 255,
+        "name": "Brownie with Sorvete",
+        "desc": "",
+        "price": 26.9
+      },
+      {
+        "id": 256,
+        "name": "Petit Gateau",
+        "desc": "",
+        "price": 30.6
+      },
+      {
+        "id": 257,
+        "name": "Bola de Sorvete",
+        "desc": "Unidade",
+        "price": 8.9
+      },
+      {
+        "id": 258,
+        "name": "Banana Split",
+        "desc": "",
+        "price": 24.1
+      },
+      {
+        "id": 259,
+        "name": "Torta de Limão",
+        "desc": "",
+        "price": 18.6
+      }
+    ]
+  },
+  {
+    "category": "Bebidas Diversas",
+    "items": [
+      {
+        "id": 260,
+        "name": "Refrigerante Fys",
+        "desc": "Produzido pelo grupo Heineken",
+        "price": 5
+      },
+      {
+        "id": 261,
+        "name": "Refrigerante Fys Zero",
+        "desc": "Produzido pelo grupo Heineken",
+        "price": 5
+      },
+      {
+        "id": 262,
+        "name": "Água sem Gás",
+        "desc": "330ml",
+        "price": 4.9
+      },
+      {
+        "id": 263,
+        "name": "Água with Gás",
+        "desc": "330ml",
+        "price": 5.6
+      },
+      {
+        "id": 264,
+        "name": "Água de Coco",
+        "desc": "Copo",
+        "price": 5.5
+      },
+      {
+        "id": 265,
+        "name": "Água de Coco",
+        "desc": "Jarra",
+        "price": 15.9
+      },
+      {
+        "id": 266,
+        "name": "Água Tônica",
+        "desc": "Lata",
+        "price": 7.5
+      },
+      {
+        "id": 267,
+        "name": "Refrigerante",
+        "desc": "Lata",
+        "price": 7.5
+      },
+      {
+        "id": 268,
+        "name": "Refrigerante",
+        "desc": "KS",
+        "price": 6.1
+      },
+      {
+        "id": 269,
+        "name": "Refrigerante",
+        "desc": "1L — Guaraná Antarctica, Pepsi, Sukita and São Geraldo",
+        "price": 13.5
+      },
+      {
+        "id": 270,
+        "name": "H2O",
+        "desc": "",
+        "price": 6.6
+      },
+      {
+        "id": 271,
+        "name": "Red Bull",
+        "desc": "",
+        "price": 18.1
+      },
+      {
+        "id": 272,
+        "name": "Monster",
+        "desc": "",
+        "price": 14.9
+      },
+      {
+        "id": 273,
+        "name": "Soda Italiana",
+        "desc": "Maçã verde ou frutas vermelhas",
+        "price": 17.1
+      },
+      {
+        "id": 274,
+        "name": "Café Expresso",
+        "desc": "",
+        "price": 8.9
+      },
+      {
+        "id": 275,
+        "name": "Sumo de Limão",
+        "desc": "50ml",
+        "price": 3.5
+      }
+    ]
+  },
+  {
+    "category": "Sucos",
+    "items": [
+      {
+        "id": 276,
+        "name": "Laranja (Copo)",
+        "desc": "",
+        "price": 8.7
+      },
+      {
+        "id": 277,
+        "name": "Laranja (Jarra)",
+        "desc": "",
+        "price": 21.9
+      },
+      {
+        "id": 278,
+        "name": "Cajá (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 279,
+        "name": "Cajá (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 280,
+        "name": "Graviola (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 281,
+        "name": "Graviola (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 282,
+        "name": "Maracujá (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 283,
+        "name": "Maracujá (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 284,
+        "name": "Acerola (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 285,
+        "name": "Acerola (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 286,
+        "name": "Morango (Copo)",
+        "desc": "",
+        "price": 12.8
+      },
+      {
+        "id": 287,
+        "name": "Morango (Jarra)",
+        "desc": "",
+        "price": 25.8
+      },
+      {
+        "id": 288,
+        "name": "Manga (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 289,
+        "name": "Manga (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 290,
+        "name": "Goiaba (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 291,
+        "name": "Goiaba (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 292,
+        "name": "Abacaxi with Hortelã (Copo)",
+        "desc": "",
+        "price": 11.9
+      },
+      {
+        "id": 293,
+        "name": "Abacaxi with Hortelã (Jarra)",
+        "desc": "",
+        "price": 24.3
+      },
+      {
+        "id": 294,
+        "name": "Caju (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 295,
+        "name": "Caju (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 296,
+        "name": "Limonada Suíça (Copo)",
+        "desc": "",
+        "price": 14.8
+      },
+      {
+        "id": 297,
+        "name": "Limonada Suíça (Jarra)",
+        "desc": "",
+        "price": 27.9
+      },
+      {
+        "id": 298,
+        "name": "Limonada (Copo)",
+        "desc": "",
+        "price": 9.9
+      },
+      {
+        "id": 299,
+        "name": "Limonada (Jarra)",
+        "desc": "",
+        "price": 23.4
+      },
+      {
+        "id": 300,
+        "name": "Laranja with Morango (Copo)",
+        "desc": "",
+        "price": 14.8
+      },
+      {
+        "id": 301,
+        "name": "Laranja with Morango (Jarra)",
+        "desc": "",
+        "price": 27.9
+      }
+    ]
+  },
+  {
+    "category": "Drinks",
+    "items": [
+      {
+        "id": 302,
+        "name": "Aperol Spritz",
+        "desc": "",
+        "price": 26.1
+      },
+      {
+        "id": 303,
+        "name": "Sagacitrus",
+        "desc": "",
+        "price": 20.9
+      },
+      {
+        "id": 304,
+        "name": "Negroni",
+        "desc": "",
+        "price": 25.9
+      },
+      {
+        "id": 305,
+        "name": "Caipirinha",
+        "desc": "75ml",
+        "price": 11.3
+      },
+      {
+        "id": 306,
+        "name": "Caipiroska",
+        "desc": "75ml",
+        "price": 14.7
+      },
+      {
+        "id": 307,
+        "name": "Caipifruta",
+        "desc": "Abacaxi, cajá, kiwi, morango and maracujá",
+        "price": 19.8
+      },
+      {
+        "id": 308,
+        "name": "Caipiroska de Absolut",
+        "desc": "75ml",
+        "price": 22.9
+      },
+      {
+        "id": 309,
+        "name": "Caipifruta de Absolut",
+        "desc": "Abacaxi, cajá, kiwi, morango and maracujá",
+        "price": 29.9
+      },
+      {
+        "id": 310,
+        "name": "Coquetel de Frutas",
+        "desc": "75ml",
+        "price": 17.6
+      },
+      {
+        "id": 311,
+        "name": "Tanqueray and Tônica",
+        "desc": "75ml",
+        "price": 29.9
+      },
+      {
+        "id": 312,
+        "name": "Kir Royal",
+        "desc": "",
+        "price": 23.1
+      },
+      {
+        "id": 313,
+        "name": "Piña Colada",
+        "desc": "",
+        "price": 25.9
+      },
+      {
+        "id": 314,
+        "name": "Mojito",
+        "desc": "",
+        "price": 22.9
+      }
+    ]
+  },
+  {
+    "category": "Licores",
+    "items": [
+      {
+        "id": 315,
+        "name": "Frangélico",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 316,
+        "name": "Drambuie",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 317,
+        "name": "Tia Maria",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 318,
+        "name": "Amarula",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 319,
+        "name": "Licor 43",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 320,
+        "name": "Cointreau",
+        "desc": "40ml",
+        "price": 23.9
+      },
+      {
+        "id": 321,
+        "name": "Malibu",
+        "desc": "40ml",
+        "price": 14.9
+      },
+      {
+        "id": 322,
+        "name": "Peach Tree",
+        "desc": "40ml",
+        "price": 24.9
+      },
+      {
+        "id": 323,
+        "name": "Baileys",
+        "desc": "40ml",
+        "price": 23.9
+      }
+    ]
+  },
+  {
+    "category": "Aperitivos",
+    "items": [
+      {
+        "id": 324,
+        "name": "Martini Doce",
+        "desc": "50ml",
+        "price": 5.8
+      },
+      {
+        "id": 325,
+        "name": "Martini Rosé",
+        "desc": "50ml",
+        "price": 5.8
+      },
+      {
+        "id": 326,
+        "name": "Martini Seco",
+        "desc": "50ml",
+        "price": 5.8
+      },
+      {
+        "id": 327,
+        "name": "Menta",
+        "desc": "50ml",
+        "price": 5.8
+      },
+      {
+        "id": 328,
+        "name": "Conhaque Macieira",
+        "desc": "50ml",
+        "price": 13.5
+      },
+      {
+        "id": 329,
+        "name": "Conhaque Domecq",
+        "desc": "50ml",
+        "price": 13.5
+      },
+      {
+        "id": 330,
+        "name": "Vodka Orloff",
+        "desc": "50ml",
+        "price": 6.5
+      },
+      {
+        "id": 331,
+        "name": "Vodka Smirnoff",
+        "desc": "50ml",
+        "price": 6.9
+      },
+      {
+        "id": 332,
+        "name": "Vodka Absolut",
+        "desc": "50ml",
+        "price": 15.5
+      },
+      {
+        "id": 333,
+        "name": "Vodka Wyborowa",
+        "desc": "50ml",
+        "price": 15.5
+      },
+      {
+        "id": 334,
+        "name": "Ron Montilla",
+        "desc": "50ml",
+        "price": 4.9
+      },
+      {
+        "id": 335,
+        "name": "Ron Bacardi",
+        "desc": "50ml",
+        "price": 9.3
+      },
+      {
+        "id": 336,
+        "name": "Gin Nacional",
+        "desc": "50ml",
+        "price": 6.5
+      },
+      {
+        "id": 337,
+        "name": "Gin Importado",
+        "desc": "50ml",
+        "price": 15.5
+      },
+      {
+        "id": 338,
+        "name": "Campari",
+        "desc": "50ml",
+        "price": 6.5
+      },
+      {
+        "id": 339,
+        "name": "Ypióca Prata",
+        "desc": "50ml",
+        "price": 5.9
+      },
+      {
+        "id": 340,
+        "name": "Ypióca 150 Anos",
+        "desc": "50ml",
+        "price": 9.1
+      },
+      {
+        "id": 341,
+        "name": "Ypióca 160 Anos",
+        "desc": "50ml",
+        "price": 11.2
+      },
+      {
+        "id": 342,
+        "name": "Sagatiba",
+        "desc": "50ml",
+        "price": 9.1
+      },
+      {
+        "id": 343,
+        "name": "Tequila",
+        "desc": "50ml",
+        "price": 15.3
+      },
+      {
+        "id": 344,
+        "name": "Steinhaeger",
+        "desc": "50ml",
+        "price": 14.2
+      },
+      {
+        "id": 345,
+        "name": "Vinho do Porto",
+        "desc": "50ml",
+        "price": 13.9
+      }
+    ]
+  },
+  {
+    "category": "Cervejas",
+    "items": [
+      {
+        "id": 346,
+        "name": "Baden Baden",
+        "desc": "",
+        "price": 25
+      },
+      {
+        "id": 347,
+        "name": "Heineken",
+        "desc": "600ml",
+        "price": 15.9
+      },
+      {
+        "id": 348,
+        "name": "Eisenbahn",
+        "desc": "600ml",
+        "price": 12.9
+      },
+      {
+        "id": 349,
+        "name": "Amstel",
+        "desc": "600ml",
+        "price": 11.9
+      },
+      {
+        "id": 350,
+        "name": "Devassa Puro Malte",
+        "desc": "600ml",
+        "price": 12.3
+      },
+      {
+        "id": 351,
+        "name": "Heineken",
+        "desc": "Long neck",
+        "price": 11.9
+      },
+      {
+        "id": 352,
+        "name": "Heineken 0.0",
+        "desc": "Long neck",
+        "price": 11.9
+      },
+      {
+        "id": 353,
+        "name": "Sol",
+        "desc": "Long neck",
+        "price": 10.9
+      },
+      {
+        "id": 354,
+        "name": "Cerveja Júnior da Picanha IPA",
+        "desc": "600ml",
+        "price": 19.9
+      },
+      {
+        "id": 355,
+        "name": "Cerveja Júnior da Picanha Lager",
+        "desc": "600ml",
+        "price": 19.9
+      },
+      {
+        "id": 356,
+        "name": "Smirnoff Ice",
+        "desc": "Long neck",
+        "price": 12.45
+      }
+    ]
+  },
+  {
+    "category": "Whisky",
+    "items": [
+      {
+        "id": 357,
+        "name": "Teacher's",
+        "desc": "50ml — 8 anos",
+        "price": 5.99
+      },
+      {
+        "id": 358,
+        "name": "Red Label",
+        "desc": "Garrafa 500ml",
+        "price": 94
+      },
+      {
+        "id": 359,
+        "name": "Red Label",
+        "desc": "50ml",
+        "price": 10.6
+      },
+      {
+        "id": 360,
+        "name": "Black White",
+        "desc": "50ml",
+        "price": 6.9
+      },
+      {
+        "id": 361,
+        "name": "White Horse",
+        "desc": "50ml",
+        "price": 10.2
+      },
+      {
+        "id": 362,
+        "name": "Ballantine's",
+        "desc": "50ml",
+        "price": 10.9
+      },
+      {
+        "id": 363,
+        "name": "Jack Daniel's",
+        "desc": "50ml — 12 anos",
+        "price": 17.4
+      },
+      {
+        "id": 364,
+        "name": "Black Label",
+        "desc": "50ml",
+        "price": 18.1
+      },
+      {
+        "id": 365,
+        "name": "Logan",
+        "desc": "50ml",
+        "price": 18.1
+      },
+      {
+        "id": 366,
+        "name": "Buchanan's",
+        "desc": "50ml",
+        "price": 18.1
+      },
+      {
+        "id": 367,
+        "name": "Chivas Regal",
+        "desc": "50ml",
+        "price": 17.5
+      },
+      {
+        "id": 368,
+        "name": "Old Parr",
+        "desc": "50ml",
+        "price": 17.4
+      }
+    ]
+  },
+  {
+    "category": "Club do Whisky",
+    "items": [
+      {
+        "id": 369,
+        "name": "Club Teacher's",
+        "desc": "",
+        "price": 95
+      },
+      {
+        "id": 370,
+        "name": "Red Label",
+        "desc": "",
+        "price": 190
+      },
+      {
+        "id": 371,
+        "name": "Black White",
+        "desc": "",
+        "price": 120
+      },
+      {
+        "id": 372,
+        "name": "Chivas Regal",
+        "desc": "",
+        "price": 285
+      },
+      {
+        "id": 373,
+        "name": "Old Parr",
+        "desc": "",
+        "price": 280
+      },
+      {
+        "id": 374,
+        "name": "Buchanan's",
+        "desc": "",
+        "price": 290
+      },
+      {
+        "id": 375,
+        "name": "Black Label",
+        "desc": "",
+        "price": 290
+      },
+      {
+        "id": 376,
+        "name": "Jack Daniel's",
+        "desc": "",
+        "price": 290
+      }
+    ]
+  }
+]

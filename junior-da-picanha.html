@@ -156,6 +156,111 @@ a{text-decoration:none;color:inherit}
 .cs-row{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:8px;color:var(--fg2)}
 .cs-total{display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:var(--fg);margin-top:12px;padding-top:12px;border-top:1px solid var(--bd2)}
 
+/* ── NEW CART MODAL ── */
+.modal--cart{display:flex;flex-direction:column}
+/* Cart header */
+.cart-hdr{display:flex;align-items:center;padding:14px 16px 12px;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.cart-hdr-back{width:36px;height:36px;border-radius:50%;border:none;background:#f5f5f5;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#444;flex-shrink:0;transition:background .15s}
+.cart-hdr-back:active{background:#ebebeb}
+.cart-hdr-title{flex:1;text-align:center;font-size:.95rem;font-weight:800;color:#1a1a1a}
+.cart-hdr-spacer{width:36px;flex-shrink:0}
+/* Cart tabs */
+.cart-tabs{display:flex;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.cart-tab{flex:1;padding:12px 0;text-align:center;font-size:.88rem;font-weight:700;color:#aaa;border:none;background:transparent;border-bottom:2.5px solid transparent;cursor:pointer;transition:all .2s;margin-bottom:-1px;font-family:inherit}
+.cart-tab.active{color:#C8520A;border-bottom-color:#C8520A}
+/* Cart body */
+.cart-scroll{flex:1;overflow-y:auto;background:#f5f5f5}
+/* Empty state */
+.cart-empty-state{text-align:center;padding:64px 24px 40px}
+.cart-empty-icon{width:80px;height:80px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;color:#ccc}
+.cart-empty-title{font-size:1.05rem;font-weight:800;color:#1a1a1a;margin-bottom:8px}
+.cart-empty-text{font-size:.84rem;color:#999;line-height:1.5;margin-bottom:28px}
+.cart-empty-btn{background:#C8520A;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+.cart-empty-btn:active{background:#a0420a}
+/* Address block */
+.cart-addr-block{background:#fff;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.cart-addr-inner{display:flex;align-items:center;gap:12px}
+.cart-addr-icon{width:36px;height:36px;border-radius:10px;background:rgba(200,82,10,.08);display:flex;align-items:center;justify-content:center;color:#C8520A;flex-shrink:0}
+.cart-addr-label{font-size:.67rem;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.cart-addr-val{font-size:.84rem;font-weight:600;color:#1a1a1a}
+.cart-addr-chevron{color:#ccc;flex-shrink:0}
+/* Pickup block */
+.cart-pickup-block{background:#fff;padding:14px 16px;border-bottom:1px solid #f0f0f0}
+/* Delivery option */
+.cart-delivery-section{background:#fff;padding:14px 16px;border-bottom:1px solid #f0f0f0}
+.cart-delivery-label{font-size:.7rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.cart-delivery-card{display:flex;align-items:center;border:1.5px solid #C8520A;border-radius:12px;padding:12px 14px;background:rgba(200,82,10,.03)}
+.cdc-dot{width:16px;height:16px;border-radius:50%;background:#C8520A;flex-shrink:0;margin-right:12px;display:flex;align-items:center;justify-content:center}
+.cdc-info{flex:1}
+.cdc-name{font-size:.88rem;font-weight:700;color:#1a1a1a}
+.cdc-time{font-size:.76rem;color:#888;margin-top:2px}
+.cdc-price{font-size:.9rem;font-weight:800;color:#1a1a1a}
+/* Restaurant block */
+.cart-rest-block{display:flex;align-items:center;gap:10px;background:#fff;padding:13px 16px;border-top:6px solid #f5f5f5;border-bottom:1px solid #f0f0f0}
+.cart-rest-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#C8520A,#a0420a);color:#fff;font-size:.58rem;font-weight:900;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cart-rest-name{font-size:.84rem;font-weight:700;color:#1a1a1a}
+/* Cart items list */
+.cart-items-list{background:#fff}
+.cart-item-row{display:flex;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #f8f8f8;gap:12px}
+.cir-qty-badge{min-width:28px;height:28px;background:#C8520A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0;margin-top:1px}
+.cir-info{flex:1;min-width:0}
+.cir-name{font-size:.9rem;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.cir-obs{font-size:.75rem;color:#C8520A;margin-top:2px}
+.cir-actions{display:flex;gap:8px;margin-top:8px}
+.cir-price{font-size:.88rem;font-weight:800;color:#1a1a1a;flex-shrink:0;margin-top:2px}
+.cir-edit-btn{font-size:.72rem;color:#666;background:#f5f5f5;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:background .15s}
+.cir-edit-btn:active{background:#ebebeb}
+.cir-remove-btn{font-size:.72rem;color:#ea1d2c;background:rgba(234,29,44,.07);border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit}
+/* Add more items */
+.cart-add-more-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 16px;background:#fff;border:none;border-top:1px solid #f5f5f5;font-size:.88rem;font-weight:700;color:#C8520A;cursor:pointer;font-family:inherit}
+/* Price summary */
+.cart-price-summary{background:#fff;margin-top:8px;padding:18px 16px}
+.cps-row{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;color:#666;margin-bottom:10px}
+.cps-divider{height:1px;background:#f0f0f0;margin:12px 0}
+.cps-total{display:flex;justify-content:space-between;font-size:1rem;font-weight:800;color:#1a1a1a}
+/* Cart footer */
+.cart-footer{background:#fff;padding:14px 16px;border-top:1px solid #f0f0f0;flex-shrink:0;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+.cart-cta-btn{width:100%;background:#C8520A;color:#fff;border:none;border-radius:14px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;transition:background .2s;letter-spacing:-.01em}
+.cart-cta-btn:active{background:#a0420a}
+
+/* ── FULL-SCREEN CHECKOUT / REVIEW MODALS ── */
+.modal--fs{display:flex;flex-direction:column}
+.fs-section{background:#fff;margin-bottom:8px;padding:18px 16px}
+.fs-section-title{font-size:.7rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.fs-field-group{display:flex;gap:8px}
+.fs-input{width:100%;background:#f7f7f7;border:1.5px solid #efefef;border-radius:12px;padding:13px 14px;color:#1a1a1a;font-size:.9rem;outline:none;transition:border-color .2s,background .2s;font-family:inherit;box-sizing:border-box;margin-bottom:10px;display:block}
+.fs-input:focus{border-color:#C8520A;background:#fff}
+.fs-input:last-child{margin-bottom:0}
+.fs-textarea{resize:vertical;min-height:70px}
+.fs-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fs-type-card{padding:14px 12px;border:1.5px solid #e8e8e8;border-radius:14px;background:#fafafa;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .2s,background .2s;width:100%}
+.fs-type-card.active{border-color:#C8520A;background:rgba(200,82,10,.04)}
+.fs-type-card-icon{font-size:1.2rem;margin-bottom:6px}
+.fs-type-card-name{font-size:.88rem;font-weight:700;color:#1a1a1a}
+.fs-type-card-sub{font-size:.74rem;color:#999;margin-top:2px}
+.fs-type-card.active .fs-type-card-name{color:#C8520A}
+.fs-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fs-pay-btn{background:#f7f7f7;border:1.5px solid #efefef;border-radius:12px;padding:13px 12px;font-size:.82rem;font-weight:700;color:#555;cursor:pointer;text-align:left;font-family:inherit;transition:all .15s}
+.fs-pay-btn.active{border-color:#C8520A;color:#C8520A;background:rgba(200,82,10,.05)}
+.fs-pay-btn--full{grid-column:span 2}
+.fs-cta-secondary{width:100%;background:transparent;border:1.5px solid #e0e0e0;border-radius:14px;padding:14px;font-size:.9rem;font-weight:700;color:#666;cursor:pointer;font-family:inherit;margin-top:10px;transition:border-color .2s,color .2s}
+.fs-cta-secondary:active{border-color:#C8520A;color:#C8520A}
+.rev-block{display:flex;align-items:flex-start;gap:12px;padding:15px 16px;background:#fff;border-bottom:1px solid #f5f5f5}
+.rev-block-icon{width:36px;height:36px;border-radius:10px;background:#fef4ee;display:flex;align-items:center;justify-content:center;color:#C8520A;flex-shrink:0;font-size:1rem}
+.rev-block-content{flex:1;min-width:0}
+.rev-block-label{font-size:.68rem;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.rev-block-val{font-size:.9rem;font-weight:700;color:#1a1a1a}
+.rev-block-sub{font-size:.77rem;color:#888;margin-top:2px}
+.rev-edit-btn{font-size:.72rem;color:#C8520A;background:rgba(200,82,10,.07);border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;flex-shrink:0;margin-top:2px}
+.success-body{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 24px 32px}
+.success-icon-wrap{width:76px;height:76px;border-radius:50%;background:rgba(74,222,128,.1);color:#4ade80;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.success-title{font-size:1.35rem;font-weight:800;color:#1a1a1a;margin-bottom:6px}
+.success-subtitle{font-size:.85rem;color:#888;margin-bottom:28px;line-height:1.5}
+.success-card{width:100%;background:#fafafa;border:1px solid #efefef;border-radius:16px;padding:16px;text-align:left;margin-bottom:28px}
+.success-card-row{display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:#666;padding:7px 0;border-bottom:1px solid #f0f0f0}
+.success-card-row:last-child{border-bottom:none}
+.success-card-row strong{color:#1a1a1a;font-weight:700}
+
 /* Checkout Fields */
 .input{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;color:var(--fg);font-size:.9rem;outline:none;transition:.2s;margin-bottom:12px}
 .input:focus{border-color:var(--brand)}
@@ -371,6 +476,143 @@ a{text-decoration:none;color:inherit}
     margin-bottom:6px;
   }
   .mob-prof-section p:last-child{margin-bottom:0}
+
+  /* ── PROFILE VIEW OVERRIDES ── */
+  .mob-view--profile{overflow:hidden !important;padding-bottom:0 !important}
+  .prof-hub-wrap{
+    height:100%;overflow-y:auto;
+    padding-bottom:calc(80px + var(--safe-bottom));
+  }
+  /* Profile Hero Card */
+  .prof-hero{
+    background:#fff;margin:12px 14px;border-radius:16px;
+    padding:18px;border:1px solid #f0f0f0;
+    display:flex;align-items:center;gap:14px;
+  }
+  .prof-hero-avatar{
+    width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(135deg,rgba(200,82,10,.1),rgba(200,82,10,.05));
+    border:1.5px solid rgba(200,82,10,.18);
+    display:flex;align-items:center;justify-content:center;
+    color:#C8520A;flex-shrink:0;
+  }
+  .prof-hero-label{font-size:.9rem;font-weight:800;color:#1a1a1a;margin-bottom:2px}
+  .prof-hero-sub{font-size:.74rem;color:#999}
+  /* Options groups */
+  .prof-options-group{
+    background:#fff;border-radius:16px;
+    margin:0 14px 12px;border:1px solid #f0f0f0;overflow:hidden;
+  }
+  .prof-option-row{
+    display:flex;align-items:center;gap:13px;padding:14px 16px;
+    border:none;background:transparent;width:100%;text-align:left;
+    cursor:pointer;transition:background .15s;
+    border-top:1px solid #f7f7f7;font-family:inherit;
+  }
+  .prof-option-row:first-child{border-top:none}
+  .prof-option-row:active{background:#fafafa}
+  .prof-option-icon{
+    width:38px;height:38px;border-radius:10px;background:#fef4ee;
+    display:flex;align-items:center;justify-content:center;
+    color:#C8520A;flex-shrink:0;
+  }
+  .prof-option-title{font-size:.88rem;font-weight:700;color:#1a1a1a}
+  .prof-option-desc{font-size:.72rem;color:#aaa;margin-top:1px}
+  .prof-option-chevron{color:#ddd;flex-shrink:0}
+  /* Sub-page panels */
+  .prof-sub{
+    position:absolute;inset:0;background:#f5f5f5;
+    z-index:10;transform:translateX(100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;padding-bottom:calc(80px + var(--safe-bottom));
+  }
+  .prof-sub.active{transform:translateX(0)}
+  .prof-sub-header{
+    position:sticky;top:0;background:#fff;
+    border-bottom:1px solid #e8e8e8;padding:0 14px;
+    height:52px;display:flex;align-items:center;gap:10px;z-index:5;
+  }
+  .prof-sub-back{
+    width:36px;height:36px;border-radius:10px;border:none;
+    background:#f5f5f5;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;color:#444;flex-shrink:0;
+    transition:background .15s;
+  }
+  .prof-sub-back:active{background:#ebebeb}
+  .prof-sub-title{font-size:.95rem;font-weight:800;color:#1a1a1a;flex:1}
+  .prof-sub-body{padding:14px 14px}
+  /* Info cards inside sub-pages */
+  .prof-info-card{
+    background:#fff;border-radius:14px;border:1px solid #f0f0f0;
+    margin-bottom:12px;overflow:hidden;
+  }
+  .prof-info-card-header{
+    padding:13px 16px 10px;display:flex;align-items:center;
+    gap:10px;border-bottom:1px solid #f5f5f5;
+  }
+  .prof-info-card-icon{
+    width:30px;height:30px;border-radius:8px;
+    background:rgba(200,82,10,.08);color:#C8520A;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .prof-info-card-title{
+    font-size:.75rem;font-weight:800;text-transform:uppercase;
+    letter-spacing:.07em;color:#C8520A;
+  }
+  .prof-info-row{
+    padding:11px 16px;display:flex;align-items:flex-start;gap:10px;
+    border-bottom:1px solid #f8f8f8;
+  }
+  .prof-info-row:last-child{border-bottom:none}
+  .prof-info-row-icon{color:#ccc;flex-shrink:0;margin-top:2px}
+  .prof-info-row-label{
+    font-size:.68rem;font-weight:700;color:#bbb;
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;
+  }
+  .prof-info-row-val{font-size:.85rem;font-weight:600;color:#1a1a1a;line-height:1.45}
+  .prof-info-row-link{
+    font-size:.85rem;font-weight:700;color:#C8520A;text-decoration:none;
+    line-height:1.4;display:inline-flex;align-items:center;gap:5px;
+  }
+  .prof-pay-chips{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px}
+  .prof-pay-chip{
+    display:flex;align-items:center;gap:7px;background:#f9f9f9;
+    border:1px solid #efefef;border-radius:8px;padding:7px 12px;
+    font-size:.78rem;font-weight:700;color:#444;
+  }
+  .prof-pay-chip-dot{width:7px;height:7px;border-radius:50%;background:#C8520A;flex-shrink:0}
+  /* Empty state */
+  .prof-empty{text-align:center;padding:56px 20px 40px}
+  .prof-empty-icon{
+    width:72px;height:72px;border-radius:50%;background:#f0f0f0;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 20px;color:#ccc;
+  }
+  .prof-empty-title{font-size:1rem;font-weight:800;color:#1a1a1a;margin-bottom:8px}
+  .prof-empty-text{font-size:.82rem;color:#aaa;line-height:1.55;max-width:220px;margin:0 auto}
+  /* Placeholder card */
+  .prof-placeholder-card{
+    background:#fff;border-radius:14px;border:1px solid #f0f0f0;
+    padding:18px;margin-bottom:12px;
+  }
+  .prof-placeholder-title{
+    font-size:.75rem;font-weight:800;text-transform:uppercase;
+    letter-spacing:.07em;color:#C8520A;margin-bottom:10px;
+  }
+  .prof-placeholder-text{font-size:.84rem;color:#666;line-height:1.6}
+  /* Form fields */
+  .prof-form-row{margin-bottom:14px}
+  .prof-form-label{
+    font-size:.7rem;font-weight:700;color:#666;margin-bottom:6px;
+    display:block;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .prof-form-input{
+    width:100%;padding:11px 14px;border:1.5px solid #e8e8e8;border-radius:10px;
+    font-size:.88rem;font-family:inherit;color:#1a1a1a;background:#f9f9f9;
+    box-sizing:border-box;outline:none;transition:border-color .15s;
+  }
+  .prof-form-input:focus{border-color:#C8520A;background:#fff}
+
   /* Pedidos view cart items */
   .mob-pedidos-item{
     background:#fff;
@@ -623,10 +865,19 @@ a{text-decoration:none;color:inherit}
   cursor:pointer;color:#999;transition:.2s;
   padding:0;font-family:inherit;
 }
-.mob-nav-item.active{color:var(--m-red,#ea1d2c)}
+.mob-nav-item.active{color:var(--m-accent)}
 .mob-nav-item:hover{color:#C8520A}
 .mob-nav-item span{font-size:.6rem;font-weight:600;letter-spacing:.01em}
 .mob-nav-icon{width:22px;height:22px}
+
+/* ── CART / CHECKOUT / REVIEW MODALS — MOBILE FULL-SCREEN ── */
+.modal--cart,.modal--fs{
+  max-height:calc(100dvh - 52px);
+  height:calc(100dvh - 52px);
+  background:#fff;
+}
+.modal--cart .sheet-drag,.modal--fs .sheet-drag{display:none}
+}
 </style>
 </head>
 <body>
@@ -812,37 +1063,442 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <!-- MOBILE VIEW: PERFIL -->
-<div class="mob-view" id="mobViewProfile">
-  <div class="mob-view-header">Informações do Restaurante</div>
-  <div class="mob-view-body">
-    <div class="mob-prof-section">
-      <h3>Matriz</h3>
-      <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza - CE</p>
-      <p>Telefone: (85) 3025 3303 / 3025 7808</p>
-      <p>WhatsApp: (85) 9 9754 6465</p>
+<div class="mob-view mob-view--profile" id="mobViewProfile">
+
+  <!-- ── HUB (scrollable hub screen) ── -->
+  <div class="prof-hub-wrap" id="profHubWrap">
+    <div class="mob-view-header" style="font-size:1.05rem;position:sticky;top:0;z-index:2">Perfil</div>
+
+    <!-- Restaurant identity card -->
+    <div class="prof-hero">
+      <div class="prof-hero-avatar">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <div class="prof-hero-label">Júnior da Picanha</div>
+        <div class="prof-hero-sub">Sua conta e preferências</div>
+      </div>
     </div>
-    <div class="mob-prof-section">
-      <h3>Unidade Varjota</h3>
-      <p>Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza - CE</p>
-      <p>Telefone: (85) 3393 7177 / 3393 7179</p>
-      <p>WhatsApp: (85) 9 9622 8030</p>
+
+    <!-- Group 1: Restaurant & Orders -->
+    <div class="prof-options-group">
+      <button class="prof-option-row" onclick="openProfSub('info')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Informações do restaurante</div>
+          <div class="prof-option-desc">Endereços, horários e contato</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('pedidos')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Pedidos</div>
+          <div class="prof-option-desc">Histórico de pedidos realizados</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('pagamento')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Pagamento</div>
+          <div class="prof-option-desc">Formas de pagamento aceitas</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('cupons')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Cupons</div>
+          <div class="prof-option-desc">Seus descontos disponíveis</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
     </div>
-    <div class="mob-prof-section">
-      <h3>Horário</h3>
-      <p>Todos os dias, de 11h às 00h</p>
+
+    <!-- Group 2: Account & Support -->
+    <div class="prof-options-group">
+      <button class="prof-option-row" onclick="openProfSub('ajuda')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Ajuda</div>
+          <div class="prof-option-desc">Suporte e contato</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('meusdados')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Meus dados</div>
+          <div class="prof-option-desc">Informações da sua conta</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('seguranca')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Segurança</div>
+          <div class="prof-option-desc">Privacidade e conta</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
     </div>
-    <div class="mob-prof-section">
-      <h3>Informações</h3>
-      <p>Taxa de 10% opcional</p>
-      <p>Cobramos couvert artístico</p>
-      <p>Proibida a venda de bebidas alcoólicas para menores de 18 anos</p>
+
+    <!-- Footer note -->
+    <div style="text-align:center;padding:8px 0 6px">
+      <div style="font-size:.68rem;color:#ccc;font-weight:600;letter-spacing:.04em">PedeAqui • Júnior da Picanha</div>
     </div>
-    <div class="mob-prof-section">
-      <h3>Pagamentos</h3>
-      <p>Pix • Cartão de Crédito • Débito • Vale-refeição / Alimentação • Dinheiro</p>
+  </div><!-- /prof-hub-wrap -->
+
+  <!-- ── SUB: Informações do restaurante ── -->
+  <div class="prof-sub" id="profSubinfo">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Informações do restaurante</span>
     </div>
-  </div>
-</div>
+    <div class="prof-sub-body">
+
+      <!-- Matriz -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Matriz</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza, CE</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone</div>
+            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">
+              (85) 9 9754 6465
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Varjota -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Unidade Varjota</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza, CE</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone</div>
+            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">
+              (85) 9 9622 8030
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horário -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <span class="prof-info-card-title">Horário de funcionamento</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div>
+            <div class="prof-info-row-label">Dias</div>
+            <div class="prof-info-row-val">Todos os dias da semana</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div class="prof-info-row-label">Horário</div>
+            <div class="prof-info-row-val">11h00 às 00h00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informações -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <span class="prof-info-card-title">Informações</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div>
+            <div class="prof-info-row-label">Taxa de serviço</div>
+            <div class="prof-info-row-val">10% opcional</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Couvert artístico</div>
+            <div class="prof-info-row-val">Cobrado durante apresentações</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <div class="prof-info-row-label">Aviso legal</div>
+            <div class="prof-info-row-val">Proibida a venda de bebidas alcoólicas para menores de 18 anos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagamentos -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <span class="prof-info-card-title">Formas de pagamento</span>
+        </div>
+        <div class="prof-pay-chips">
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /profSubinfo -->
+
+  <!-- ── SUB: Pedidos ── -->
+  <div class="prof-sub" id="profSubpedidos">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Meus Pedidos</span>
+    </div>
+    <div class="prof-sub-body" id="profSubPedidosBody">
+      <!-- populated by renderProfPedidos() -->
+    </div>
+  </div><!-- /profSubpedidos -->
+
+  <!-- ── SUB: Pagamento ── -->
+  <div class="prof-sub" id="profSubpagamento">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Pagamento</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Formas de pagamento aceitas</div>
+        <div class="prof-placeholder-text">O pagamento é realizado diretamente no estabelecimento, na retirada ou na entrega. Aceitamos as seguintes formas:</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-pay-chips">
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubpagamento -->
+
+  <!-- ── SUB: Cupons ── -->
+  <div class="prof-sub" id="profSubcupons">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Cupons</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-empty">
+        <div class="prof-empty-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div class="prof-empty-title">Nenhum cupom disponível</div>
+        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do Júnior da Picanha.</div>
+      </div>
+    </div>
+  </div><!-- /profSubcupons -->
+
+  <!-- ── SUB: Ajuda ── -->
+  <div class="prof-sub" id="profSubajuda">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Ajuda</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Fale com o restaurante</div>
+        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o Júnior da Picanha pelos canais abaixo.</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Contato</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp — Matriz</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">(85) 9 9754 6465 →</a>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp — Varjota</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">(85) 9 9622 8030 →</a>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone — Matriz</div>
+            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone — Varjota</div>
+            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubajuda -->
+
+  <!-- ── SUB: Meus dados ── -->
+  <div class="prof-sub" id="profSubmeusdados">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Meus dados</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Informações pessoais</div>
+        <div class="prof-placeholder-text">Seus dados são usados para facilitar seus pedidos. Você pode atualizar as informações no momento do checkout.</div>
+      </div>
+      <div class="prof-info-card" style="padding:18px">
+        <div class="prof-form-row">
+          <label class="prof-form-label">Nome completo</label>
+          <input class="prof-form-input" type="text" placeholder="Seu nome" readonly>
+        </div>
+        <div class="prof-form-row">
+          <label class="prof-form-label">WhatsApp</label>
+          <input class="prof-form-input" type="tel" placeholder="(85) 9 0000-0000" readonly>
+        </div>
+        <div class="prof-form-row" style="margin-bottom:0">
+          <label class="prof-form-label">Endereço de entrega</label>
+          <input class="prof-form-input" type="text" placeholder="Seu endereço" readonly>
+        </div>
+      </div>
+      <p style="font-size:.73rem;color:#bbb;text-align:center;line-height:1.5;padding:4px 16px 0">Dados salvos localmente no dispositivo e usados apenas para seus pedidos.</p>
+    </div>
+  </div><!-- /profSubmeusdados -->
+
+  <!-- ── SUB: Segurança ── -->
+  <div class="prof-sub" id="profSubseguranca">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Segurança</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Privacidade e segurança</div>
+        <div class="prof-placeholder-text">Suas informações são tratadas com responsabilidade. Não compartilhamos seus dados com terceiros sem seu consentimento.</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Armazenamento</div>
+            <div class="prof-info-row-val">Dados salvos localmente no dispositivo</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Privacidade</div>
+            <div class="prof-info-row-val">Dados usados exclusivamente para seus pedidos</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div>
+            <div class="prof-info-row-label">Conformidade</div>
+            <div class="prof-info-row-val">Em conformidade com a LGPD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubseguranca -->
+
+</div><!-- /mobViewProfile -->
 
 <!-- MODAL: INFO -->
 <div class="overlay" id="infoModal" onclick="closeModal(event, 'infoModal')">
@@ -900,125 +1556,266 @@ a{text-decoration:none;color:inherit}
 
 <!-- MODAL: CART -->
 <div class="overlay" id="cartModal" onclick="closeModal(event, 'cartModal')">
-  <div class="modal">
+  <div class="modal modal--cart">
     <div class="sheet-drag"></div>
-    <div class="modal-header">
-      <h2 class="modal-title">Júnior da Picanha</h2>
-      <button class="modal-close" onclick="closeModalId('cartModal')">✕</button>
+
+    <!-- 1. Cart Header -->
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('cartModal')" aria-label="Fechar sacola">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Sua sacola</h2>
+      <div class="cart-hdr-spacer"></div>
     </div>
-    <div class="modal-body">
-      <!-- delivery calc row -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;border-bottom:1px solid var(--bd);margin-bottom:14px;cursor:pointer" onclick="alert('Calcule a taxa no checkout')">
-        <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--fg2)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          Calcular taxa e tempo de entrega
+
+    <!-- 2. Delivery type tabs -->
+    <div class="cart-tabs">
+      <button class="cart-tab active" id="cartTabEntrega" onclick="setCartTab('delivery')">Entrega</button>
+      <button class="cart-tab" id="cartTabRetirada" onclick="setCartTab('pickup')">Retirada</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="cart-scroll" id="cartScroll">
+
+      <!-- Empty state -->
+      <div class="cart-empty-state" id="cartEmpty">
+        <div class="cart-empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        <div class="cart-empty-title">Sua sacola está vazia</div>
+        <div class="cart-empty-text">Adicione itens do cardápio para continuar.</div>
+        <button class="cart-empty-btn" onclick="closeModalId('cartModal')">Ver cardápio</button>
       </div>
-      <!-- empty state -->
-      <div id="cartEmpty" style="text-align:center;padding:40px 0;color:var(--fg3)">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 16px;display:block;opacity:0.4"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <div style="font-weight:600;font-size:.9rem;color:var(--fg2)">Sua sacola está vazia</div>
-        <div style="font-size:.8rem;color:var(--fg3);margin-top:6px">Adicione itens do cardápio</div>
-      </div>
-      <!-- cart content -->
+
+      <!-- Cart content (has items) -->
       <div id="cartContent" style="display:none">
-        <div class="cart-section-title">
-          <span>Sua sacola</span>
-          <button class="cart-clear-btn" onclick="clearCart()">LIMPAR</button>
-        </div>
-        <div id="cartList"></div>
-        <button class="cart-add-more" onclick="closeModalId('cartModal')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          ADICIONAR MAIS ITENS
-        </button>
-        <!-- coupon -->
-        <div class="cart-coupon">
-          <div class="cart-coupon-left">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Tem um cupom?
+
+        <!-- 3. Delivery address block -->
+        <div class="cart-addr-block" id="cartAddrBlock">
+          <div class="cart-addr-inner">
+            <div class="cart-addr-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div style="flex:1">
+              <div class="cart-addr-label">Entregar em</div>
+              <div class="cart-addr-val">Defina seu endereço no checkout</div>
+            </div>
+            <svg class="cart-addr-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </div>
-          <div class="cart-coupon-right">Clique e insira o código →</div>
         </div>
-        <!-- summary -->
-        <div class="cart-summary">
-          <div class="cs-row"><span>Subtotal</span><span id="csSub">R$ 0,00</span></div>
-          <div class="cs-row"><span>Taxa de entrega</span><span>A definir</span></div>
-          <div class="cs-total"><span>Total</span><span id="csTotal">R$ 0,00</span></div>
+
+        <!-- 4. Delivery time option -->
+        <div class="cart-delivery-section" id="cartDeliveryOpt">
+          <div class="cart-delivery-label">Opção de entrega</div>
+          <div class="cart-delivery-card">
+            <div class="cdc-dot">
+              <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#fff"/></svg>
+            </div>
+            <div class="cdc-info">
+              <div class="cdc-name">Padrão</div>
+              <div class="cdc-time">Hoje, 90–100 min</div>
+            </div>
+            <div class="cdc-price">R$ 13,00</div>
+          </div>
         </div>
-      </div>
+
+        <!-- Pickup block (Retirada) -->
+        <div class="cart-pickup-block" id="cartPickupBlock" style="display:none">
+          <div class="cart-addr-inner">
+            <div class="cart-addr-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+              <div class="cart-addr-label">Retirar em</div>
+              <div class="cart-addr-val">Júnior da Picanha — Matriz</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Restaurant block -->
+        <div class="cart-rest-block">
+          <div class="cart-rest-avatar">JdP</div>
+          <div class="cart-rest-name">Júnior da Picanha</div>
+        </div>
+
+        <!-- 6. Cart items -->
+        <div id="cartList" class="cart-items-list"></div>
+
+        <!-- 7. Add more items -->
+        <button class="cart-add-more-btn" onclick="closeModalId('cartModal')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar mais itens
+        </button>
+
+        <!-- 8. Price summary -->
+        <div class="cart-price-summary">
+          <div class="cps-row">
+            <span>Subtotal</span>
+            <span id="csSub">R$ 0,00</span>
+          </div>
+          <div class="cps-row">
+            <span>Taxa de serviço <span style="font-size:.72rem;color:#bbb">(10%, opcional)</span></span>
+            <span style="color:#bbb">a definir</span>
+          </div>
+          <div class="cps-row" id="csDeliveryRow">
+            <span>Taxa de entrega</span>
+            <span id="csDelivery">A definir</span>
+          </div>
+          <div class="cps-divider"></div>
+          <div class="cps-total">
+            <span>Total</span>
+            <span id="csTotal">R$ 0,00</span>
+          </div>
+        </div>
+
+      </div><!-- /cartContent -->
+
+    </div><!-- /cart-scroll -->
+
+    <!-- 9. Footer CTA -->
+    <div class="cart-footer" id="cartFooter" style="display:none">
+      <button class="cart-cta-btn" onclick="openCheckout()">Fazer pedido</button>
     </div>
-    <div class="modal-footer" id="cartFooter" style="display:none">
-      <button class="btn-primary" style="width:100%" onclick="openCheckout()">Continuar pedido</button>
-    </div>
+
   </div>
 </div>
 
-<!-- MODAL: CHECKOUT -->
-<div class="overlay" id="checkoutModal" onclick="closeModal(event, 'checkoutModal')">
-  <div class="modal">
+<!-- MODAL: CHECKOUT FORM (full-screen) -->
+<div class="overlay" id="checkoutModal">
+  <div class="modal modal--fs">
     <div class="sheet-drag"></div>
-    <div class="modal-header">
-      <h2 class="modal-title">Checkout</h2>
-      <button class="modal-close" onclick="closeModalId('checkoutModal')">✕</button>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="backToCart()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Finalizar pedido</h2>
+      <div class="cart-hdr-spacer"></div>
     </div>
-    <div class="modal-body">
-      <label class="pm-label">Seus dados</label>
-      <input type="text" id="chkName" class="input" placeholder="Nome completo">
-      <input type="tel" id="chkPhone" class="input" placeholder="WhatsApp">
-
-      <label class="pm-label" style="margin-top:8px">Como deseja receber?</label>
-      <div class="type-toggle">
-        <button class="type-btn active" id="btnDel" onclick="setDeliveryType('delivery')">Entrega</button>
-        <button class="type-btn" id="btnPick" onclick="setDeliveryType('pickup')">Retirada</button>
+    <div class="cart-scroll">
+      <div class="fs-section">
+        <div class="fs-section-title">Seus dados</div>
+        <input type="text" id="chkName" class="fs-input" placeholder="Nome completo">
+        <input type="tel" id="chkPhone" class="fs-input" placeholder="WhatsApp (com DDD)">
       </div>
-
-      <div id="addressGroup">
-        <label class="pm-label">Endereço de entrega</label>
-        <input type="text" id="chkRua" class="input" placeholder="Rua">
-        <div style="display:flex;gap:8px">
-          <input type="text" id="chkNum" class="input" placeholder="Número" style="width:100px">
-          <input type="text" id="chkBairro" class="input" placeholder="Bairro" style="flex:1">
+      <div class="fs-section">
+        <div class="fs-section-title">Como deseja receber?</div>
+        <div class="fs-type-grid">
+          <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
+            <div class="fs-type-card-icon">🛵</div>
+            <div class="fs-type-card-name">Entrega</div>
+            <div class="fs-type-card-sub">90–100 min · R$ 13,00</div>
+          </button>
+          <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
+            <div class="fs-type-card-icon">🏪</div>
+            <div class="fs-type-card-name">Retirada</div>
+            <div class="fs-type-card-sub">~30 min · Grátis</div>
+          </button>
         </div>
-        <input type="text" id="chkComp" class="input" placeholder="Complemento e Referência">
       </div>
-
-      <label class="pm-label" style="margin-top:8px">Forma de pagamento</label>
-      <div class="pay-grid">
-        <button class="pay-btn active" onclick="setPayment(this, 'Pix')">Pix</button>
-        <button class="pay-btn" onclick="setPayment(this, 'Crédito')">Crédito</button>
-        <button class="pay-btn" onclick="setPayment(this, 'Débito')">Débito</button>
-        <button class="pay-btn" onclick="setPayment(this, 'Dinheiro')">Dinheiro</button>
-        <button class="pay-btn" onclick="setPayment(this, 'VR/VA')" style="grid-column: span 2">Vale-refeição / Alimentação</button>
+      <div class="fs-section" id="addressGroup">
+        <div class="fs-section-title">Endereço de entrega</div>
+        <input type="text" id="chkRua" class="fs-input" placeholder="Rua / Avenida">
+        <div class="fs-field-group">
+          <input type="text" id="chkNum" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0">
+          <input type="text" id="chkBairro" class="fs-input" placeholder="Bairro" style="flex:1">
+        </div>
+        <input type="text" id="chkComp" class="fs-input" placeholder="Complemento e referência (opcional)">
       </div>
-
-      <label class="pm-label" style="margin-top:8px">Observação geral (opcional)</label>
-      <textarea id="chkObs" class="input" placeholder="Troco para R$ 100, deixar na portaria..." style="resize:vertical;min-height:60px"></textarea>
+      <div class="fs-section">
+        <div class="fs-section-title">Forma de pagamento</div>
+        <div class="fs-pay-grid">
+          <button class="fs-pay-btn active" onclick="setPayment(this,'Pix')">Pix</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Crédito')">Crédito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Débito')">Débito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Dinheiro')">Dinheiro</button>
+          <button class="fs-pay-btn fs-pay-btn--full" onclick="setPayment(this,'VR/VA')">Vale-refeição / Alimentação</button>
+        </div>
+      </div>
+      <div class="fs-section" style="margin-bottom:0">
+        <div class="fs-section-title">Observação geral (opcional)</div>
+        <textarea id="chkObs" class="fs-input fs-textarea" placeholder="Troco para R$ 100, deixar na portaria..."></textarea>
+      </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-primary" style="width:100%" onclick="submitOrder()">Enviar pedido</button>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" onclick="openOrderReview()">Revisar pedido</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: CONFIRMATION -->
+<!-- MODAL: ORDER REVIEW (full-screen) -->
+<div class="overlay" id="orderReviewModal">
+  <div class="modal modal--fs">
+    <div class="sheet-drag"></div>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="backToCheckout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Revisar pedido</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="cart-scroll">
+      <div id="revDeliveryBlock" class="rev-block">
+        <div class="rev-block-icon" id="revTypeIcon">🛵</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Tipo</div>
+          <div class="rev-block-val" id="revTypeName">Entrega</div>
+          <div class="rev-block-sub" id="revTypeSub">Hoje, 90–100 min · R$ 13,00</div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div id="revAddrBlock" class="rev-block">
+        <div class="rev-block-icon">📍</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Endereço</div>
+          <div class="rev-block-val" id="revAddrVal"></div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div class="rev-block">
+        <div class="rev-block-icon">💳</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Pagamento</div>
+          <div class="rev-block-val" id="revPayVal"></div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div class="cart-rest-block" style="margin-top:8px">
+        <div class="cart-rest-avatar">JdP</div>
+        <div class="cart-rest-name">Júnior da Picanha</div>
+      </div>
+      <div id="revItemsList" class="cart-items-list"></div>
+      <div class="cart-price-summary">
+        <div class="cps-row"><span>Subtotal</span><span id="revSub"></span></div>
+        <div class="cps-row"><span>Taxa de serviço <span style="color:#bbb">(opcional)</span></span><span style="color:#bbb">a definir</span></div>
+        <div class="cps-row" id="revDeliveryRow"><span>Taxa de entrega</span><span id="revDelivery"></span></div>
+        <div class="cps-divider"></div>
+        <div class="cps-total"><span>Total</span><span id="revTotal"></span></div>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" onclick="submitOrder()">Confirmar e fazer pedido</button>
+      <button class="fs-cta-secondary" onclick="backToCheckout()">Alterar dados</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SUCCESS -->
 <div class="overlay" id="confirmModal">
-  <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;border:1px solid var(--bd3)">
-    <div class="modal-body" style="text-align:center;padding:40px 24px">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,.1);color:#4ade80;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;overflow:hidden">
+    <div class="success-body">
+      <div class="success-icon-wrap">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:8px;color:var(--fg)">Pedido enviado</h2>
-      <p style="font-size:.85rem;color:var(--fg2);margin-bottom:24px">Aguardando confirmação do restaurante.</p>
-      
-      <div style="background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:16px;text-align:left;font-size:.8rem;color:var(--fg2);margin-bottom:24px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Pedido:</span><strong style="color:var(--fg)">#1042</strong></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Total:</span><strong style="color:var(--fg)" id="confTotal"></strong></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Tipo:</span><strong style="color:var(--fg)" id="confType"></strong></div>
-        <div style="display:flex;justify-content:space-between"><span>Pagamento:</span><strong style="color:var(--fg)" id="confPay"></strong></div>
+      <div class="success-title">Pedido enviado!</div>
+      <div class="success-subtitle">Aguardando confirmação do restaurante.<br>Acompanhe pelo WhatsApp.</div>
+      <div class="success-card">
+        <div class="success-card-row"><span>Pedido</span><strong>#1042</strong></div>
+        <div class="success-card-row"><span>Cliente</span><strong id="confName"></strong></div>
+        <div class="success-card-row"><span>Total</span><strong id="confTotal"></strong></div>
+        <div class="success-card-row"><span>Tipo</span><strong id="confType"></strong></div>
+        <div class="success-card-row"><span>Pagamento</span><strong id="confPay"></strong></div>
       </div>
-      
-      <button class="btn-primary" style="width:100%" onclick="window.location.reload()">Fazer novo pedido</button>
+      <button class="cart-cta-btn" style="max-width:320px" onclick="window.location.reload()">Fazer novo pedido</button>
     </div>
   </div>
 </div>
@@ -3638,20 +4435,26 @@ a{text-decoration:none;color:inherit}
     updateCartUI();
   }
 
+  const DELIVERY_FEE = 13.00;
+
   function updateCartUI() {
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
     const totalVal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    
+    const deliveryFee = deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+    const grandTotal = totalVal + deliveryFee;
+
+    // Top badge
     const badge = document.getElementById('cartCountTop');
     badge.innerText = totalQty;
     if(totalQty > 0) badge.classList.add('show');
     else badge.classList.remove('show');
 
+    // Sticky bar
     const sticky = document.getElementById('cartSticky');
     if(totalQty > 0) {
       sticky.classList.add('show');
       document.getElementById('cartCountSticky').innerText = totalQty;
-      document.getElementById('cartTotalSticky').innerText = fmt(totalVal);
+      document.getElementById('cartTotalSticky').innerText = fmt(grandTotal);
     } else {
       sticky.classList.remove('show');
     }
@@ -3668,28 +4471,53 @@ a{text-decoration:none;color:inherit}
     } else {
       empty.style.display = 'none';
       content.style.display = 'block';
-      footer.style.display = 'flex';
-      
+      footer.style.display = 'block';
+
+      // Build items list with new design
       list.innerHTML = '';
       cart.forEach(item => {
         list.innerHTML += `
-          <div class="cart-item">
-            <div class="ci-info">
-              <div class="ci-qty">${item.qty}x</div>
-              <div class="ci-name">${item.name}</div>
-              ${item.obs ? `<div class="ci-obs">Obs: ${item.obs}</div>` : ''}
-              <div class="ci-price">${fmt(item.price * item.qty)}</div>
-              <div class="ci-actions">
-                <button class="ci-btn" onclick="editCartItem(${item.uid})">Editar</button>
-                <button class="ci-remove" onclick="removeCartItem(${item.uid})">Remover</button>
+          <div class="cart-item-row">
+            <div class="cir-qty-badge">${item.qty}×</div>
+            <div class="cir-info">
+              <div class="cir-name">${item.name}</div>
+              ${item.obs ? `<div class="cir-obs">Obs: ${item.obs}</div>` : ''}
+              <div class="cir-actions">
+                <button class="cir-edit-btn" onclick="editCartItem(${item.uid})">Editar</button>
+                <button class="cir-remove-btn" onclick="removeCartItem(${item.uid})">Remover</button>
               </div>
             </div>
+            <div class="cir-price">${fmt(item.price * item.qty)}</div>
           </div>
         `;
       });
-      document.getElementById('csSub').innerText = fmt(totalVal);
-      document.getElementById('csTotal').innerText = fmt(totalVal);
+
+      // Summary
+      const csSubEl = document.getElementById('csSub');
+      const csTotalEl = document.getElementById('csTotal');
+      const csDeliveryEl = document.getElementById('csDelivery');
+      if(csSubEl) csSubEl.innerText = fmt(totalVal);
+      if(csDeliveryEl) csDeliveryEl.innerText = deliveryType === 'delivery' ? fmt(DELIVERY_FEE) : 'R$ 0,00';
+      if(csTotalEl) csTotalEl.innerText = fmt(grandTotal);
     }
+  }
+
+  function setCartTab(type) {
+    deliveryType = type;
+    const isDelivery = type === 'delivery';
+    const tabEnt = document.getElementById('cartTabEntrega');
+    const tabRet = document.getElementById('cartTabRetirada');
+    if(tabEnt) tabEnt.classList.toggle('active', isDelivery);
+    if(tabRet) tabRet.classList.toggle('active', !isDelivery);
+    const addrBlock = document.getElementById('cartAddrBlock');
+    const delivOpt = document.getElementById('cartDeliveryOpt');
+    const pickupBlock = document.getElementById('cartPickupBlock');
+    const delivRow = document.getElementById('csDeliveryRow');
+    if(addrBlock) addrBlock.style.display = isDelivery ? 'block' : 'none';
+    if(delivOpt) delivOpt.style.display = isDelivery ? 'block' : 'none';
+    if(pickupBlock) pickupBlock.style.display = isDelivery ? 'none' : 'block';
+    if(delivRow) delivRow.style.display = isDelivery ? 'flex' : 'none';
+    updateCartUI();
   }
 
   function removeCartItem(uid) {
@@ -3736,12 +4564,22 @@ a{text-decoration:none;color:inherit}
       document.getElementById('chkBairro').value = '';
       document.getElementById('chkComp').value = '';
       document.getElementById('chkObs').value = '';
-      setDeliveryType('delivery');
+      setDeliveryType(deliveryType);
       selectedPayment = 'Pix';
-      document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.pay-btn').classList.add('active');
+      document.querySelectorAll('.fs-pay-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.fs-pay-btn').classList.add('active');
       openModal('checkoutModal');
     }, 300);
+  }
+
+  function backToCart() {
+    closeModalId('checkoutModal');
+    setTimeout(() => openModal('cartModal'), 300);
+  }
+
+  function backToCheckout() {
+    closeModalId('orderReviewModal');
+    setTimeout(() => openModal('checkoutModal'), 300);
   }
 
   function setDeliveryType(type) {
@@ -3753,42 +4591,78 @@ a{text-decoration:none;color:inherit}
 
   function setPayment(btn, type) {
     paymentMethod = type;
-    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.fs-pay-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }
 
-  function submitOrder() {
+  function openOrderReview() {
     const name = document.getElementById('chkName').value.trim();
     const phone = document.getElementById('chkPhone').value.trim();
-    if(!name || !phone) {
-      alert('Por favor, preencha nome e WhatsApp.');
-      return;
-    }
+    if(!name || !phone) { alert('Por favor, preencha nome e WhatsApp.'); return; }
     if(deliveryType === 'delivery') {
       const rua = document.getElementById('chkRua').value.trim();
       const num = document.getElementById('chkNum').value.trim();
       const bairro = document.getElementById('chkBairro').value.trim();
-      if(!rua || !num || !bairro) {
-        alert('Por favor, preencha os dados de endereço obrigatórios.');
-        return;
-      }
+      if(!rua || !num || !bairro) { alert('Por favor, preencha os dados de endereço obrigatórios.'); return; }
     }
+    const isDelivery = deliveryType === 'delivery';
+    document.getElementById('revTypeIcon').innerText = isDelivery ? '🛵' : '🏪';
+    document.getElementById('revTypeName').innerText = isDelivery ? 'Entrega' : 'Retirada';
+    document.getElementById('revTypeSub').innerText = isDelivery ? 'Hoje, 90–100 min · R$ 13,00' : '~30 min · Retirada no local';
+    const addrBlock = document.getElementById('revAddrBlock');
+    if(isDelivery) {
+      const rua = document.getElementById('chkRua').value.trim();
+      const num = document.getElementById('chkNum').value.trim();
+      const bairro = document.getElementById('chkBairro').value.trim();
+      const comp = document.getElementById('chkComp').value.trim();
+      let addrStr = `${rua}, ${num} — ${bairro}`;
+      if(comp) addrStr += ` (${comp})`;
+      document.getElementById('revAddrVal').innerText = addrStr;
+      addrBlock.style.display = 'flex';
+    } else {
+      addrBlock.style.display = 'none';
+    }
+    document.getElementById('revPayVal').innerText = paymentMethod;
+    const itemsHtml = cart.map(item => `
+      <div class="cart-item-row">
+        <div class="cir-qty-badge">${item.qty}</div>
+        <div class="cir-info">
+          <div class="cir-name">${item.name}</div>
+          ${item.obs ? `<div class="cir-obs">${item.obs}</div>` : ''}
+        </div>
+        <div class="cir-price">${fmt(item.price * item.qty)}</div>
+      </div>
+    `).join('');
+    document.getElementById('revItemsList').innerHTML = itemsHtml;
+    const totalVal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+    const deliveryFee = isDelivery ? DELIVERY_FEE : 0;
+    document.getElementById('revSub').innerText = fmt(totalVal);
+    document.getElementById('revDelivery').innerText = isDelivery ? fmt(DELIVERY_FEE) : 'Grátis';
+    document.getElementById('revTotal').innerText = fmt(totalVal + deliveryFee);
+    document.getElementById('revDeliveryRow').style.display = 'flex';
+    closeModalId('checkoutModal');
+    setTimeout(() => openModal('orderReviewModal'), 300);
+  }
 
-    const totalVal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    
-    document.getElementById('confTotal').innerText = fmt(totalVal);
+  function submitOrder() {
+    const name = document.getElementById('chkName').value.trim();
+    const totalVal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+    const deliveryFee = deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+    const grandTotal = totalVal + deliveryFee;
+
+    document.getElementById('confName').innerText = name;
+    document.getElementById('confTotal').innerText = fmt(grandTotal);
     document.getElementById('confType').innerText = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
     document.getElementById('confPay').innerText = paymentMethod;
 
-    // Save for Pedidos tab
     submittedOrder = {
       items: cart.map(i => ({...i})),
-      total: totalVal,
+      total: grandTotal,
       type: deliveryType === 'delivery' ? 'Entrega' : 'Retirada',
       payment: paymentMethod
     };
 
-    closeModalId('checkoutModal');
+    closeModalId('orderReviewModal');
     setTimeout(() => {
       openModal('confirmModal');
       cart = [];
@@ -3837,8 +4711,74 @@ a{text-decoration:none;color:inherit}
   function mobNavProfile() {
     closeMobViews();
     setMobNavActive('mobNavProfile');
+    closeProfSub();
     const v = document.getElementById('mobViewProfile');
     if(v) v.classList.add('active');
+  }
+
+  function openProfSub(subId) {
+    document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
+    const sub = document.getElementById('profSub' + subId);
+    if(!sub) return;
+    if(subId === 'pedidos') renderProfPedidos();
+    sub.classList.add('active');
+    sub.scrollTop = 0;
+  }
+
+  function closeProfSub() {
+    document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
+    const hub = document.getElementById('profHubWrap');
+    if(hub) hub.scrollTop = 0;
+  }
+
+  function renderProfPedidos() {
+    const body = document.getElementById('profSubPedidosBody');
+    if(!body) return;
+    if(submittedOrder) {
+      body.innerHTML = `
+        <div class="prof-info-card" style="margin-bottom:12px">
+          <div style="padding:22px;text-align:center">
+            <div style="width:56px;height:56px;border-radius:50%;background:rgba(80,167,115,.1);color:#50a773;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="font-size:1.05rem;font-weight:800;color:#1a1a1a;margin-bottom:5px">Pedido enviado!</div>
+            <div style="font-size:.8rem;color:#aaa">Aguardando confirmação do restaurante</div>
+          </div>
+        </div>
+        <div class="prof-info-card">
+          <div class="prof-info-card-header">
+            <div class="prof-info-card-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+            <span class="prof-info-card-title">Itens do pedido</span>
+          </div>
+          ${submittedOrder.items.map(i => `
+            <div class="prof-info-row">
+              <div style="width:24px;height:24px;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#666;flex-shrink:0">${i.qty}×</div>
+              <div style="flex:1">
+                <div class="prof-info-row-val" style="font-size:.84rem">${i.name}</div>
+                <div style="font-size:.78rem;color:#C8520A;font-weight:700;margin-top:2px">${fmt(i.price*i.qty)}</div>
+              </div>
+            </div>
+          `).join('')}
+          <div style="padding:13px 16px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:.72rem;color:#aaa;margin-bottom:2px">${submittedOrder.type} · ${submittedOrder.payment}</div>
+            </div>
+            <div style="font-size:1rem;font-weight:800;color:#1a1a1a">${fmt(submittedOrder.total)}</div>
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:4px" onclick="submittedOrder=null;cart=[];updateCartUI();renderProfPedidos()">Fazer novo pedido</button>
+      `;
+      return;
+    }
+    body.innerHTML = `
+      <div class="prof-empty">
+        <div class="prof-empty-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        </div>
+        <div class="prof-empty-title">Nenhum pedido encontrado</div>
+        <div class="prof-empty-text">Seus pedidos aparecerão aqui após serem finalizados.</div>
+      </div>
+    `;
   }
 
   function mobFocusSearch() {

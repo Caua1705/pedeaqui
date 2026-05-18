@@ -1,0 +1,973 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
+<title>PedeAqui â€” Pedido Online</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/restaurant.css">
+<link rel="stylesheet" href="styles/cart.css">
+<link rel="stylesheet" href="styles/checkout.css">
+<link rel="stylesheet" href="styles/mobile.css">
+<link rel="stylesheet" href="styles/utilities.css">
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav a1">
+  <div class="nav-left">
+    <a href="index.html" class="nav-back" aria-label="Voltar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+    </a>
+    <a href="index.html" class="nav-brand">Pede<span>Aqui</span></a>
+  </div>
+  <div class="nav-center">
+    <h1 class="nav-title">Júnior da Picanha</h1>
+  </div>
+  <div class="nav-actions">
+    <button class="mob-search-btn" id="mobSearchBtn" aria-label="Buscar" onclick="mobFocusSearch()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button class="nav-btn" onclick="openModal('infoModal')" aria-label="Informações">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </button>
+    <button class="nav-btn cart-btn" onclick="openModal('cartModal')" aria-label="Sacola">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span class="cart-count" id="cartCountTop">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE COVER BANNER -->
+<div class="mob-cover" aria-hidden="true">
+  <div class="mob-cover-grill"></div>
+  <div class="mob-cover-inner">
+    <h2>Júnior da Picanha</h2>
+    <span>•desde 2013•</span>
+  </div>
+</div>
+
+<!-- RESTAURANT IDENTITY BLOCK -->
+<div class="mob-identity-wrap">
+  <div class="mob-identity" id="mobIdentity">
+    <div class="mob-logo">
+      <img src="assets/restaurants/junior-da-picanha/logo.png" alt="JP" onerror="this.parentNode.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#C8520A\'>JP</div>'">
+    </div>
+    <div class="mob-rest-details">
+      <div class="mob-rest-name">Júnior da Picanha</div>
+      <div class="mob-rest-row2">
+        <button class="mob-verMais" onclick="openModal('infoModal')">Ver mais</button>
+        <span style="color:#ddd">•</span>
+        <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
+        <span class="mob-rating">★ 4.8</span>
+      </div>
+      <div class="mob-rest-row3">
+        <span class="mob-badge-open">Aberto agora</span>
+        <span class="mob-loc">Fortaleza - CE</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELIVERY CARD -->
+<div class="mob-delivery-wrap">
+  <div class="mob-delivery-card" id="mobDeliveryCard">
+    <div class="mob-delivery-row">
+      <div class="mob-delivery-col">
+        <svg class="mob-delivery-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span class="mob-delivery-label">Entrega</span>
+        <span class="mob-delivery-val">Hoje</span>
+        <span class="mob-delivery-sub">35–50 min • Taxa no checkout</span>
+      </div>
+      <div class="mob-delivery-col">
+        <svg class="mob-delivery-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span class="mob-delivery-label">Retirada</span>
+        <span class="mob-delivery-val">Disponível</span>
+        <span class="mob-delivery-sub">Grátis</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH + CATEGORIES -->
+<div class="search-cat a4" id="searchCat">
+  <div class="search-cat-inner">
+    <div class="cats" id="catNav">
+      <!-- Populated by JS -->
+    </div>
+    <div class="search-bar-wrap">
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar no cardápio" id="searchInput">
+        <button onclick="closeSearch()" style="background:none;border:none;cursor:pointer;color:#999;font-size:1.1rem;line-height:1;padding:0 2px" aria-label="Fechar busca">×</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO CTA -->
+<div class="hero-cta a5">
+  <div class="hero-cta-inner">
+    <a href="#menu-area" class="btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Ver cardápio
+    </a>
+  </div>
+</div>
+
+<!-- MENU AREA -->
+<div class="menu-area a5" id="menu-area">
+  <div id="emptySearch" style="display:none;text-align:center;padding:56px 24px 40px;color:#bbb">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" style="margin:0 auto 14px;display:block;opacity:.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <div style="font-size:.92rem;font-weight:700;color:#1a1a1a;margin-bottom:5px">Nenhum item encontrado</div>
+    <div style="font-size:.78rem;color:#bbb">Tente buscar por outro nome ou categoria.</div>
+  </div>
+  <div id="menuContainer">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="ft-col">
+      <h4>Matriz</h4>
+      <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza</p>
+      <span>WhatsApp: (85) 9 9754-6465</span>
+    </div>
+    <div class="ft-col">
+      <h4>Unidade Varjota</h4>
+      <p>Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza</p>
+      <span>WhatsApp: (85) 9 9622-8030</span>
+    </div>
+    <div class="ft-col">
+      <h4>Informações</h4>
+      <p>Todos os dias, de 11h às 00h</p>
+      <span>Taxa de serviço: R$ 0,99<br>Cobramos couvert artístico</span>
+    </div>
+  </div>
+  <div class="ft-bottom">Powered by PedeAqui</div>
+</footer>
+
+<!-- CART STICKY -->
+<div class="cart-sticky" id="cartSticky">
+  <button class="btn-cart" onclick="openModal('cartModal')" id="cartStickyBtn">
+    <div style="position:relative;display:flex;align-items:center;width:60px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span id="cartCountSticky" style="position:absolute;top:-6px;left:14px;background:#fff;color:#C8520A;font-size:.62rem;font-weight:800;padding:0 5px;border-radius:10px;border:1.5px solid rgba(255,255,255,.6);min-width:18px;text-align:center;line-height:1.6"></span>
+    </div>
+    <div style="flex:1;text-align:center">Ver sacola</div>
+    <div id="cartTotalSticky" style="width:70px;text-align:right"></div>
+  </button>
+</div>
+
+<!-- MOBILE BOTTOM NAVIGATION -->
+<nav class="mob-bottom-nav" id="mobBottomNav" aria-label="Navegação principal">
+  <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="mob-nav-item" id="mobNavPromos" onclick="mobNavPromos()">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    <span>Promoções</span>
+  </button>
+  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+    <span>Pedidos</span>
+  </button>
+  <button class="mob-nav-item" id="mobNavProfile" onclick="mobNavProfile()">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span>Perfil</span>
+  </button>
+</nav>
+
+<!-- MOBILE VIEW: PROMOÇÕES -->
+<div class="mob-view" id="mobViewPromos">
+  <div class="mob-view-header">Promoções</div>
+  <div class="mob-view-body" id="mobPromosBody">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- MOBILE VIEW: PEDIDOS -->
+<div class="mob-view" id="mobViewOrders">
+  <div class="mob-view-header">Meus Pedidos</div>
+  <div class="mob-view-body" id="mobOrdersBody">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- MOBILE VIEW: PERFIL -->
+<div class="mob-view mob-view--profile" id="mobViewProfile">
+
+  <!-- ── HUB (scrollable hub screen) ── -->
+  <div class="prof-hub-wrap" id="profHubWrap">
+    <div class="mob-view-header" style="font-size:1.05rem;position:sticky;top:0;z-index:2">Perfil</div>
+
+    <!-- Restaurant identity card -->
+    <div class="prof-hero">
+      <div class="prof-hero-avatar">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <div class="prof-hero-label">Júnior da Picanha</div>
+        <div class="prof-hero-sub">Sua conta e preferências</div>
+      </div>
+    </div>
+
+    <!-- Group 1: Restaurant & Orders -->
+    <div class="prof-options-group">
+      <button class="prof-option-row" onclick="openProfSub('info')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Informações do restaurante</div>
+          <div class="prof-option-desc">Endereços, horários e contato</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('pedidos')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Pedidos</div>
+          <div class="prof-option-desc">Histórico de pedidos realizados</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('pagamento')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Pagamento</div>
+          <div class="prof-option-desc">Formas de pagamento aceitas</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('cupons')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Cupons</div>
+          <div class="prof-option-desc">Seus descontos disponíveis</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- Group 2: Account & Support -->
+    <div class="prof-options-group">
+      <button class="prof-option-row" onclick="openProfSub('ajuda')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Ajuda</div>
+          <div class="prof-option-desc">Suporte e contato</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('meusdados')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Meus dados</div>
+          <div class="prof-option-desc">Informações da sua conta</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="prof-option-row" onclick="openProfSub('seguranca')">
+        <div class="prof-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Segurança</div>
+          <div class="prof-option-desc">Privacidade e conta</div>
+        </div>
+        <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- Footer note -->
+    <div style="text-align:center;padding:8px 0 6px">
+      <div style="font-size:.68rem;color:#ccc;font-weight:600;letter-spacing:.04em">PedeAqui • Júnior da Picanha</div>
+    </div>
+  </div><!-- /prof-hub-wrap -->
+
+  <!-- ── SUB: Informações do restaurante ── -->
+  <div class="prof-sub" id="profSubinfo">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Informações do restaurante</span>
+    </div>
+    <div class="prof-sub-body">
+
+      <!-- Matriz -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Matriz</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza, CE</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone</div>
+            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">
+              (85) 9 9754 6465
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Varjota -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Unidade Varjota</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza, CE</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone</div>
+            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">
+              (85) 9 9622 8030
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horário -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <span class="prof-info-card-title">Horário de funcionamento</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div>
+            <div class="prof-info-row-label">Dias</div>
+            <div class="prof-info-row-val">Todos os dias da semana</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div class="prof-info-row-label">Horário</div>
+            <div class="prof-info-row-val">11h00 às 00h00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informações -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <span class="prof-info-card-title">Informações</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div>
+            <div class="prof-info-row-label">Taxa de serviço</div>
+            <div class="prof-info-row-val">R$ 0,99</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Couvert artístico</div>
+            <div class="prof-info-row-val">Cobrado durante apresentações</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <div class="prof-info-row-label">Aviso legal</div>
+            <div class="prof-info-row-val">Proibida a venda de bebidas alcoólicas para menores de 18 anos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagamentos -->
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <span class="prof-info-card-title">Formas de pagamento</span>
+        </div>
+        <div class="prof-pay-chips">
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /profSubinfo -->
+
+  <!-- ── SUB: Pedidos ── -->
+  <div class="prof-sub" id="profSubpedidos">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Meus Pedidos</span>
+    </div>
+    <div class="prof-sub-body" id="profSubPedidosBody">
+      <!-- populated by renderProfPedidos() -->
+    </div>
+  </div><!-- /profSubpedidos -->
+
+  <!-- ── SUB: Pagamento ── -->
+  <div class="prof-sub" id="profSubpagamento">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Pagamento</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Formas de pagamento aceitas</div>
+        <div class="prof-placeholder-text">O pagamento é realizado diretamente no estabelecimento, na retirada ou na entrega. Aceitamos as seguintes formas:</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-pay-chips">
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubpagamento -->
+
+  <!-- ── SUB: Cupons ── -->
+  <div class="prof-sub" id="profSubcupons">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Cupons</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-empty">
+        <div class="prof-empty-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div class="prof-empty-title">Nenhum cupom disponível</div>
+        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do Júnior da Picanha.</div>
+      </div>
+    </div>
+  </div><!-- /profSubcupons -->
+
+  <!-- ── SUB: Ajuda ── -->
+  <div class="prof-sub" id="profSubajuda">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Ajuda</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Fale com o restaurante</div>
+        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o Júnior da Picanha pelos canais abaixo.</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-info-card-header">
+          <div class="prof-info-card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+          <span class="prof-info-card-title">Contato</span>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp — Matriz</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">(85) 9 9754 6465 →</a>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <div>
+            <div class="prof-info-row-label">WhatsApp — Varjota</div>
+            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">(85) 9 9622 8030 →</a>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone — Matriz</div>
+            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Telefone — Varjota</div>
+            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubajuda -->
+
+  <!-- ── SUB: Meus dados ── -->
+  <div class="prof-sub" id="profSubmeusdados">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Meus dados</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Informações pessoais</div>
+        <div class="prof-placeholder-text">Seus dados são usados para facilitar seus pedidos. Você pode atualizar as informações no momento do checkout.</div>
+      </div>
+      <div class="prof-info-card" style="padding:18px">
+        <div class="prof-form-row">
+          <label class="prof-form-label">Nome completo</label>
+          <input class="prof-form-input" type="text" placeholder="Seu nome" readonly>
+        </div>
+        <div class="prof-form-row">
+          <label class="prof-form-label">WhatsApp</label>
+          <input class="prof-form-input" type="tel" placeholder="(85) 9 0000-0000" readonly>
+        </div>
+        <div class="prof-form-row" style="margin-bottom:0">
+          <label class="prof-form-label">Endereço de entrega</label>
+          <input class="prof-form-input" type="text" placeholder="Seu endereço" readonly>
+        </div>
+      </div>
+      <p style="font-size:.73rem;color:#bbb;text-align:center;line-height:1.5;padding:4px 16px 0">Dados salvos localmente no dispositivo e usados apenas para seus pedidos.</p>
+    </div>
+  </div><!-- /profSubmeusdados -->
+
+  <!-- ── SUB: Segurança ── -->
+  <div class="prof-sub" id="profSubseguranca">
+    <div class="prof-sub-header">
+      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </button>
+      <span class="prof-sub-title">Segurança</span>
+    </div>
+    <div class="prof-sub-body">
+      <div class="prof-placeholder-card">
+        <div class="prof-placeholder-title">Privacidade e segurança</div>
+        <div class="prof-placeholder-text">Suas informações são tratadas com responsabilidade. Não compartilhamos seus dados com terceiros sem seu consentimento.</div>
+      </div>
+      <div class="prof-info-card">
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div>
+            <div class="prof-info-row-label">Armazenamento</div>
+            <div class="prof-info-row-val">Dados salvos localmente no dispositivo</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div>
+            <div class="prof-info-row-label">Privacidade</div>
+            <div class="prof-info-row-val">Dados usados exclusivamente para seus pedidos</div>
+          </div>
+        </div>
+        <div class="prof-info-row">
+          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div>
+            <div class="prof-info-row-label">Conformidade</div>
+            <div class="prof-info-row-val">Em conformidade com a LGPD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /profSubseguranca -->
+
+</div><!-- /mobViewProfile -->
+
+<!-- MODAL: INFO -->
+<div class="overlay" id="infoModal" onclick="closeModal(event, 'infoModal')">
+  <div class="modal">
+    <div class="sheet-drag"></div>
+    <div class="modal-header">
+      <h2 class="modal-title">Informações da Loja</h2>
+      <button class="modal-close" onclick="closeModalId('infoModal')">✕</button>
+    </div>
+    <div class="modal-body" style="font-size:.85rem;color:var(--fg2);line-height:1.6">
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Matriz</h3>
+      <p style="margin-bottom:16px">Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza - CE<br>WhatsApp: (85) 9 9754-6465</p>
+
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Varjota</h3>
+      <p style="margin-bottom:16px">Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza - CE<br>WhatsApp: (85) 9 9622-8030</p>
+
+      <h3 style="color:var(--fg);font-size:.95rem;margin-bottom:8px">Funcionamento</h3>
+      <p style="margin-bottom:16px">Todos os dias, de 11h às 00h</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PRODUTO -->
+<div class="overlay" id="productModal" onclick="closeModal(event, 'productModal')">
+  <div class="modal">
+    <div class="sheet-drag"></div>
+    <div class="modal-header">
+      <h2 class="modal-title">Detalhes do Produto</h2>
+      <button class="modal-close" onclick="closeModalId('productModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3 class="pm-name" id="pmName"></h3>
+      <p class="pm-desc" id="pmDesc"></p>
+      <div class="pm-price" id="pmPrice"></div>
+      
+      <div id="pmWarning" style="display:none;background:rgba(200,82,10,.1);border:1px solid var(--bd3);padding:12px;border-radius:10px;font-size:.8rem;color:var(--brand);margin-bottom:20px">
+        Consulte a disponibilidade e o valor com o restaurante.
+      </div>
+
+      <div id="pmForm">
+        <label class="pm-label">Alguma observação?</label>
+        <textarea class="pm-obs" id="pmObs" placeholder="Ex: sem cebola, ponto da carne, sem farofa..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" id="pmFooter" style="display:flex;gap:12px">
+      <div class="qty-bar">
+        <button class="qty-btn" onclick="changeQty(-1)">-</button>
+        <span class="qty-val" id="pmQty">1</span>
+        <button class="qty-btn" onclick="changeQty(1)">+</button>
+      </div>
+      <button class="btn-primary" style="flex:1" id="pmAddBtn" onclick="addToCart()">Adicionar • R$ 0,00</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CART -->
+<div class="overlay" id="cartModal" onclick="closeModal(event, 'cartModal')">
+  <div class="modal modal--cart">
+    <div class="sheet-drag"></div>
+
+    <!-- 1. Cart Header -->
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('cartModal')" aria-label="Fechar sacola">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Sua sacola</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+
+    <!-- 2. Delivery type tabs -->
+    <div class="cart-tabs">
+      <button class="cart-tab active" id="cartTabEntrega" onclick="setCartTab('delivery')">Entrega</button>
+      <button class="cart-tab" id="cartTabRetirada" onclick="setCartTab('pickup')">Retirada</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="cart-scroll" id="cartScroll">
+
+      <!-- Empty state -->
+      <div class="cart-empty-state" id="cartEmpty">
+        <div class="cart-empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div class="cart-empty-title">Sua sacola está vazia</div>
+        <div class="cart-empty-text">Adicione itens do cardápio para continuar.</div>
+        <button class="cart-empty-btn" onclick="closeModalId('cartModal')">Ver cardápio</button>
+      </div>
+
+      <!-- Cart content (has items) -->
+      <div id="cartContent" style="display:none">
+
+        <!-- 3. Delivery address block -->
+        <div class="cart-addr-block" id="cartAddrBlock">
+          <div class="cart-addr-inner">
+            <div class="cart-addr-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div style="flex:1">
+              <div class="cart-addr-label">Entregar em</div>
+              <div class="cart-addr-val">Defina seu endereço no checkout</div>
+            </div>
+            <svg class="cart-addr-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </div>
+
+        <!-- 4. Delivery time option -->
+        <div class="cart-delivery-section" id="cartDeliveryOpt">
+          <div class="cart-delivery-label">Opção de entrega</div>
+          <div class="cart-delivery-card">
+            <div class="cdc-dot">
+              <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#fff"/></svg>
+            </div>
+            <div class="cdc-info">
+              <div class="cdc-name">Padrão</div>
+              <div class="cdc-time">Hoje, 90–100 min</div>
+            </div>
+            <div class="cdc-price">R$ 13,00</div>
+          </div>
+        </div>
+
+        <!-- Pickup block (Retirada) -->
+        <div class="cart-pickup-block" id="cartPickupBlock" style="display:none">
+          <div class="cart-addr-inner">
+            <div class="cart-addr-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+              <div class="cart-addr-label">Retirar em</div>
+              <div class="cart-addr-val">Júnior da Picanha — Matriz</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Restaurant block -->
+        <div class="cart-rest-block">
+          <div class="cart-rest-avatar">JdP</div>
+          <div class="cart-rest-name">Júnior da Picanha</div>
+        </div>
+
+        <!-- 6. Cart items -->
+        <div id="cartList" class="cart-items-list"></div>
+
+        <!-- 7. Add more items -->
+        <button class="cart-add-more-btn" onclick="closeModalId('cartModal')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar mais itens
+        </button>
+
+        <!-- 8. Price summary -->
+        <div class="cart-price-summary">
+          <div class="cps-row">
+            <span>Subtotal</span>
+            <span id="csSub">R$ 0,00</span>
+          </div>
+          <div class="cps-row">
+            <span>Taxa de serviço</span>
+            <span id="csSvcFeeBtn">R$ 0,99</span>
+          </div>
+          <div class="cps-row" id="csDeliveryRow">
+            <span>Taxa de entrega</span>
+            <span id="csDelivery">A definir</span>
+          </div>
+          <div class="cps-divider"></div>
+          <div class="cps-total">
+            <span>Total</span>
+            <span id="csTotal">R$ 0,00</span>
+          </div>
+        </div>
+
+      </div><!-- /cartContent -->
+
+    </div><!-- /cart-scroll -->
+
+    <!-- 9. Footer CTA -->
+    <div class="cart-footer" id="cartFooter" style="display:none">
+      <button class="cart-cta-btn" onclick="openCheckout()">Fazer pedido</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: CHECKOUT FORM (full-screen) -->
+<div class="overlay" id="checkoutModal">
+  <div class="modal modal--fs">
+    <div class="sheet-drag"></div>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="backToCart()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Finalizar pedido</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="cart-scroll">
+      <div class="fs-section">
+        <div class="fs-section-title">Seus dados</div>
+        <input type="text" id="chkName" class="fs-input" placeholder="Nome completo">
+        <input type="tel" id="chkPhone" class="fs-input" placeholder="WhatsApp (com DDD)">
+      </div>
+      <div class="fs-section">
+        <div class="fs-section-title">Como deseja receber?</div>
+        <div class="fs-type-grid">
+          <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
+            <div class="fs-type-card-icon">🛵</div>
+            <div class="fs-type-card-name">Entrega</div>
+            <div class="fs-type-card-sub">90–100 min · R$ 13,00</div>
+          </button>
+          <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
+            <div class="fs-type-card-icon">🏪</div>
+            <div class="fs-type-card-name">Retirada</div>
+            <div class="fs-type-card-sub">~30 min · Grátis</div>
+          </button>
+        </div>
+      </div>
+      <div class="fs-section" id="addressGroup">
+        <div class="fs-section-title">Endereço de entrega</div>
+        <input type="text" id="chkRua" class="fs-input" placeholder="Rua / Avenida">
+        <div class="fs-field-group">
+          <input type="text" id="chkNum" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0">
+          <input type="text" id="chkBairro" class="fs-input" placeholder="Bairro" style="flex:1">
+        </div>
+        <input type="text" id="chkComp" class="fs-input" placeholder="Complemento e referência (opcional)">
+      </div>
+      <div class="fs-section">
+        <div class="fs-section-title">Forma de pagamento</div>
+        <div class="fs-pay-grid">
+          <button class="fs-pay-btn active" onclick="setPayment(this,'Pix')">Pix</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Crédito')">Crédito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Débito')">Débito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Dinheiro')">Dinheiro</button>
+          <button class="fs-pay-btn fs-pay-btn--full" onclick="setPayment(this,'VR/VA')">Vale-refeição / Alimentação</button>
+        </div>
+      </div>
+      <div class="fs-section" style="margin-bottom:0">
+        <div class="fs-section-title">Observação geral (opcional)</div>
+        <textarea id="chkObs" class="fs-input fs-textarea" placeholder="Troco para R$ 100, deixar na portaria..."></textarea>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" onclick="openOrderReview()">Revisar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ORDER REVIEW (full-screen) -->
+<div class="overlay" id="orderReviewModal">
+  <div class="modal modal--fs">
+    <div class="sheet-drag"></div>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="backToCheckout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Revisar pedido</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="cart-scroll">
+      <div id="revDeliveryBlock" class="rev-block">
+        <div class="rev-block-icon" id="revTypeIcon">🛵</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Tipo</div>
+          <div class="rev-block-val" id="revTypeName">Entrega</div>
+          <div class="rev-block-sub" id="revTypeSub">Hoje, 90–100 min · R$ 13,00</div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div id="revAddrBlock" class="rev-block">
+        <div class="rev-block-icon">📍</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Endereço</div>
+          <div class="rev-block-val" id="revAddrVal"></div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div class="rev-block">
+        <div class="rev-block-icon">💳</div>
+        <div class="rev-block-content">
+          <div class="rev-block-label">Pagamento</div>
+          <div class="rev-block-val" id="revPayVal"></div>
+        </div>
+        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
+      </div>
+      <div class="cart-rest-block" style="margin-top:8px">
+        <div class="cart-rest-avatar">JdP</div>
+        <div class="cart-rest-name">Júnior da Picanha</div>
+      </div>
+      <div id="revItemsList" class="cart-items-list"></div>
+      <div class="cart-price-summary">
+        <div class="cps-row"><span>Subtotal</span><span id="revSub"></span></div>
+        <div class="cps-row" id="revSvcFeeRow"><span>Taxa de serviço</span><span id="revSvcFeeVal"></span></div>
+        <div class="cps-row" id="revDeliveryRow"><span>Taxa de entrega</span><span id="revDelivery"></span></div>
+        <div class="cps-divider"></div>
+        <div class="cps-total"><span>Total</span><span id="revTotal"></span></div>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" onclick="submitOrder()">Confirmar e fazer pedido</button>
+      <button class="fs-cta-secondary" onclick="backToCheckout()">Alterar dados</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SUCCESS -->
+<div class="overlay" id="confirmModal">
+  <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;overflow:hidden">
+    <div class="success-body">
+      <div class="success-icon-wrap">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title">Pedido enviado!</div>
+      <div class="success-subtitle">Aguardando confirmação do restaurante.<br>Acompanhe pelo WhatsApp.</div>
+      <div class="success-card">
+        <div class="success-card-row"><span>Pedido</span><strong>#1042</strong></div>
+        <div class="success-card-row"><span>Cliente</span><strong id="confName"></strong></div>
+        <div class="success-card-row"><span>Total</span><strong id="confTotal"></strong></div>
+        <div class="success-card-row"><span>Tipo</span><strong id="confType"></strong></div>
+        <div class="success-card-row"><span>Pagamento</span><strong id="confPay"></strong></div>
+      </div>
+      <button class="cart-cta-btn" style="max-width:320px" onclick="window.location.reload()">Fazer novo pedido</button>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/config/app-config.js"></script>
+<script src="scripts/config/routes.js"></script>
+<script src="scripts/services/api.js"></script>
+<script src="scripts/services/restaurant-service.js"></script>
+<script src="scripts/services/menu-service.js"></script>
+<script src="scripts/services/order-service.js"></script>
+<script src="scripts/state/cart-state.js"></script>
+<script src="scripts/state/order-state.js"></script>
+<script src="scripts/state/ui-state.js"></script>
+<script src="scripts/pages/restaurant-page.js"></script>
+</body>
+</html>

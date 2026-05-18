@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir *)",
+      "PowerShell(Write-Output \"PWD: $PWD\"; Get-ChildItem | ForEach-Object { Write-Output $_.Name })"
+    ]
+  }
+}

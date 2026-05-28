@@ -1,9 +1,9 @@
 ﻿{
     "restaurant":  {
                        "id":  "junior-da-picanha",
-                       "name":  "JÃºnior da Picanha",
+                       "name":  "Júnior da Picanha",
                        "slug":  "junior-da-picanha",
-                       "description":  "Churrascaria â€¢ Picanhas â€¢ Executivos",
+                       "description":  "Churrascaria • Picanhas • Executivos",
                        "logo_path":  "assets/restaurants/junior-da-picanha/logo.png",
                        "cover_path":  "assets/restaurants/junior-da-picanha/cover.webp",
                        "primary_color":  "#D95C04",
@@ -28,10 +28,59 @@
                                              "cash"
                                          ]
                  },
+    "banners":  [
+                    {
+                        "title":  "Especial da Casa",
+                        "subtitle":  "Picanhas, executivos e cortes selecionados",
+                        "image_path":  "",
+                        "action_type":  "category",
+                        "action_value":  "pratos-executivos",
+                        "sort_order":  1,
+                        "is_active":  true
+                    },
+                    {
+                        "title":  "Combos para compartilhar",
+                        "subtitle":  "Cortes grelhados com acompanhamentos",
+                        "image_path":  "",
+                        "action_type":  "category",
+                        "action_value":  "combos",
+                        "sort_order":  2,
+                        "is_active":  true
+                    }
+                ],
+    "coupons":  [
+                    {
+                        "code":  "FRETEGRATIS",
+                        "title":  "Frete Grátis",
+                        "description":  "Em pedidos selecionados acima de R$ 50",
+                        "discount_type":  "free_delivery",
+                        "discount_value":  0,
+                        "min_order_value":  50,
+                        "is_active":  true
+                    },
+                    {
+                        "code":  "PICANHA12",
+                        "title":  "12% OFF",
+                        "description":  "Para entrar no clima da casa",
+                        "discount_type":  "percentage",
+                        "discount_value":  12,
+                        "min_order_value":  80,
+                        "is_active":  true
+                    },
+                    {
+                        "code":  "DOBROCLUBE",
+                        "title":  "Cashback em dobro",
+                        "description":  "Benefício para clientes identificados",
+                        "discount_type":  "cashback",
+                        "discount_value":  2,
+                        "min_order_value":  60,
+                        "is_active":  true
+                    }
+                ],
     "branches":  [
                      {
                          "name":  "Matriz",
-                         "address":  "Av. Nila Gomes de SoÃ¡rez, 201",
+                         "address":  "Av. Nila Gomes de Soárez, 201",
                          "neighborhood":  "Manoel Dias Branco",
                          "city":  "Fortaleza",
                          "state":  "CE",
@@ -208,7 +257,12 @@
                          "name":  "Frango à Parmegiana",
                          "description":  "Arroz branco e purê de batatas",
                          "price":  65.9,
+                         "slug":  "frango-a-parmegiana",
                          "image_path":  null,
+                         "category_slug":  "promoções",
+                         "is_featured":  true,
+                         "badge":  "Especial",
+                         "highlight_order":  1,
                          "is_available":  true
                      },
                      {
@@ -218,7 +272,12 @@
                          "name":  "Filé à Parmegiana",
                          "description":  "Arroz branco e purê de batatas",
                          "price":  82.4,
+                         "slug":  "file-a-parmegiana",
                          "image_path":  null,
+                         "category_slug":  "promoções",
+                         "is_featured":  true,
+                         "badge":  "Mais pedido",
+                         "highlight_order":  2,
                          "is_available":  true
                      },
                      {
@@ -228,7 +287,12 @@
                          "name":  "Picanha Suína",
                          "description":  "Arroz de brócolis e batata frita",
                          "price":  76.15,
+                         "slug":  "picanha-suina",
                          "image_path":  null,
+                         "category_slug":  "promoções",
+                         "is_featured":  true,
+                         "badge":  "Destaque",
+                         "highlight_order":  3,
                          "is_available":  true
                      },
                      {

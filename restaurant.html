@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
-<title>PedeAqui â€” Pedido Online</title>
+<title>PedeAqui — Pedido Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">
@@ -42,56 +42,58 @@
   </div>
 </nav>
 
-<!-- MOBILE COVER BANNER -->
-<div class="mob-cover" aria-hidden="true">
-  <div class="mob-cover-grill"></div>
-  <div class="mob-cover-inner">
-    <h2>Júnior da Picanha</h2>
-    <span>•desde 2013•</span>
-  </div>
-</div>
+<!-- MOBILE RESTAURANT HOME -->
+<main class="mobile-home">
+  <button class="address-card" onclick="openAddressScreen()">
+    <span class="address-card-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    </span>
+    <span class="address-card-copy">
+      <strong id="homeAddressTitle">DELIVERY | JÚNIOR DA PICANHA | VARJOTA</strong>
+      <small id="homeAddressSub">Use seu endereço para melhores resultados</small>
+    </span>
+    <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
 
-<!-- RESTAURANT IDENTITY BLOCK -->
-<div class="mob-identity-wrap">
-  <div class="mob-identity" id="mobIdentity">
-    <div class="mob-logo">
-      <img src="assets/restaurants/junior-da-picanha/logo.png" alt="JP" onerror="this.parentNode.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#C8520A\'>JP</div>'">
-    </div>
+  <section class="mob-identity" id="mobIdentity">
+    <div class="mob-logo"></div>
     <div class="mob-rest-details">
       <div class="mob-rest-name">Júnior da Picanha</div>
       <div class="mob-rest-row2">
-        <button class="mob-verMais" onclick="openModal('infoModal')">Ver mais</button>
-        <span style="color:#ddd">•</span>
-        <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
+        <span class="mob-badge-open">Aberto agora</span>
         <span class="mob-rating">★ 4.8</span>
+        <button class="mob-verMais" onclick="openModal('infoModal')">Ver mais</button>
       </div>
       <div class="mob-rest-row3">
-        <span class="mob-badge-open">Aberto agora</span>
+        <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
         <span class="mob-loc">Fortaleza - CE</span>
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- DELIVERY CARD -->
-<div class="mob-delivery-wrap">
-  <div class="mob-delivery-card" id="mobDeliveryCard">
-    <div class="mob-delivery-row">
-      <div class="mob-delivery-col">
-        <svg class="mob-delivery-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        <span class="mob-delivery-label">Entrega</span>
-        <span class="mob-delivery-val">Hoje</span>
-        <span class="mob-delivery-sub">35–50 min • Taxa no checkout</span>
-      </div>
-      <div class="mob-delivery-col">
-        <svg class="mob-delivery-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        <span class="mob-delivery-label">Retirada</span>
-        <span class="mob-delivery-val">Disponível</span>
-        <span class="mob-delivery-sub">Grátis</span>
-      </div>
+  <section class="home-section home-section--banners">
+    <div class="banner-carousel" id="bannerCarousel"></div>
+  </section>
+
+  <section class="home-section">
+    <div class="home-section-head">
+      <h2>Cupons pra você!</h2>
+      <button onclick="openLoginScreen()">Clube</button>
     </div>
-  </div>
-</div>
+    <div class="coupon-rail" id="couponRail"></div>
+  </section>
+
+  <section class="home-section">
+    <div class="home-section-head">
+      <h2 id="highlightTitle">Destaques</h2>
+    </div>
+    <div class="highlight-rail" id="highlightRail"></div>
+  </section>
+
+  <section class="home-cta">
+    <button class="home-cta-btn" onclick="scrollToMenu()">Fazer meu pedido</button>
+  </section>
+</main>
 
 <!-- SEARCH + CATEGORIES -->
 <div class="search-cat a4" id="searchCat">
@@ -167,19 +169,25 @@
 
 <!-- MOBILE BOTTOM NAVIGATION -->
 <nav class="mob-bottom-nav" id="mobBottomNav" aria-label="Navegação principal">
-  <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()">
+  <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()" style="position:absolute;left:0;top:0;bottom:0;width:20%">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Início</span>
   </button>
-  <button class="mob-nav-item" id="mobNavPromos" onclick="mobNavPromos()">
-    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-    <span>Promoções</span>
+  <button class="mob-nav-item" id="mobNavMenu" onclick="mobNavMenu()" style="position:absolute;left:20%;top:0;bottom:0;width:20%">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span>Cardápio</span>
   </button>
-  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()">
+  <button class="mob-nav-item mob-nav-center" id="mobNavCenter" onclick="mobNavCenter()" style="position:absolute;left:40%;top:0;bottom:0;width:20%">
+    <span class="mob-center-circle">
+      <svg id="mobNavCenterIcon" class="mob-nav-icon" data-mode="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </span>
+    <span id="mobNavCenterLabel">Pedir</span>
+  </button>
+  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()" style="position:absolute;left:60%;top:0;bottom:0;width:20%">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
     <span>Pedidos</span>
   </button>
-  <button class="mob-nav-item" id="mobNavProfile" onclick="mobNavProfile()">
+  <button class="mob-nav-item" id="mobNavProfile" onclick="mobNavProfile()" style="position:absolute;left:80%;top:0;bottom:0;width:20%">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     <span>Perfil</span>
   </button>
@@ -213,7 +221,7 @@
       <div class="prof-hero-avatar">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
-      <div>
+      <div id="profileIdentity">
         <div class="prof-hero-label">Júnior da Picanha</div>
         <div class="prof-hero-sub">Sua conta e preferências</div>
       </div>
@@ -662,10 +670,10 @@
 
 <!-- MODAL: PRODUTO -->
 <div class="overlay" id="productModal" onclick="closeModal(event, 'productModal')">
-  <div class="modal">
-    <div class="sheet-drag"></div>
+  <div class="modal modal--product">
+    <div class="product-hero" id="pmHero"></div>
     <div class="modal-header">
-      <h2 class="modal-title">Detalhes do Produto</h2>
+      <h2 class="modal-title">Detalhes</h2>
       <button class="modal-close" onclick="closeModalId('productModal')">✕</button>
     </div>
     <div class="modal-body">
@@ -737,7 +745,7 @@
             </div>
             <div style="flex:1">
               <div class="cart-addr-label">Entregar em</div>
-              <div class="cart-addr-val">Defina seu endereço no checkout</div>
+              <div class="cart-addr-val" id="cartAddrText">Defina seu endereço para entrega</div>
             </div>
             <svg class="cart-addr-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </div>
@@ -793,7 +801,7 @@
             <span id="csSub">R$ 0,00</span>
           </div>
           <div class="cps-row">
-            <span>Taxa de serviço</span>
+            <span>Taxa de serviço <button class="fee-info-btn" onclick="openServiceFeeInfo()" aria-label="Sobre a taxa de serviço">?</button></span>
             <span id="csSvcFeeBtn">R$ 0,99</span>
           </div>
           <div class="cps-row" id="csDeliveryRow">
@@ -955,6 +963,69 @@
         <div class="success-card-row"><span>Pagamento</span><strong id="confPay"></strong></div>
       </div>
       <button class="cart-cta-btn" style="max-width:320px" onclick="window.location.reload()">Fazer novo pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: ADDRESS -->
+<div class="overlay" id="addressModal">
+  <div class="modal modal--fs">
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('addressModal')" aria-label="Fechar endereço">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Informe seu endereço</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="cart-scroll">
+      <div class="address-choice">
+        <button class="address-choice-btn">
+          <span>Localização atual</span>
+          <small>Disponível quando a integração de geolocalização estiver ativa.</small>
+        </button>
+        <button class="address-choice-btn active">
+          <span>Outra localização</span>
+          <small>Digite manualmente para simular a entrega agora.</small>
+        </button>
+      </div>
+      <div class="fs-section">
+        <div class="fs-section-title">Endereço manual</div>
+        <input type="text" id="addrStreet" class="fs-input" placeholder="Rua / Avenida">
+        <div class="fs-field-group">
+          <input type="text" id="addrNumber" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0">
+          <input type="text" id="addrNeighborhood" class="fs-input" placeholder="Bairro" style="flex:1">
+        </div>
+        <input type="text" id="addrComplement" class="fs-input" placeholder="Complemento e referência (opcional)">
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" onclick="saveAddressMock()">Salvar endereço</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: LOGIN / IDENTIFICATION -->
+<div class="overlay" id="loginModal">
+  <div class="modal modal--login">
+    <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">✕</button>
+    <div class="login-logo" id="loginLogo"></div>
+    <h2 class="login-rest-name">Júnior da Picanha</h2>
+    <p>Entre para usar cupons, clube e acompanhar seus pedidos.</p>
+    <button class="cart-cta-btn" onclick="mockLogin('signup')">Cadastre-se</button>
+    <button class="login-secondary" onclick="mockLogin('signin')">Entrar</button>
+    <a href="#" class="login-privacy">Política de privacidade</a>
+  </div>
+</div>
+
+<!-- MODAL: SERVICE FEE -->
+<div class="overlay" id="serviceFeeModal" onclick="closeModal(event, 'serviceFeeModal')">
+  <div class="modal modal--info">
+    <div class="modal-header">
+      <h2 class="modal-title">Taxa de serviço</h2>
+      <button class="modal-close" onclick="closeModalId('serviceFeeModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>A taxa de serviço contribui para custos operacionais da plataforma, manutenção, melhorias contínuas e suporte ao sistema.</p>
     </div>
   </div>
 </div>

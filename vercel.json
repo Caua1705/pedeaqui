@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/restaurantes/:slug",
+      "destination": "/restaurant.html?slug=:slug"
+    },
+    {
+      "source": "/r/:slug",
+      "destination": "/restaurant.html?slug=:slug"
+    }
+  ]
+}

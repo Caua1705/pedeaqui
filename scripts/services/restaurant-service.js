@@ -1,7 +1,11 @@
-﻿(function () {
-  async function getRestaurantMenu(slug) {
-    return window.PedeAquiApi.getRestaurantMenu(slug);
+(function () {
+  async function getRestaurant(slug) {
+    return window.PedeAquiApi.getRestaurant(slug);
   }
 
-  window.PedeAquiRestaurantService = { getRestaurantMenu };
+  async function getRestaurantMenu(slug) {
+    return window.PedeAquiMenuService.getRestaurantMenu(slug);
+  }
+
+  window.PedeAquiRestaurantService = { getRestaurant, getRestaurantMenu };
 })();

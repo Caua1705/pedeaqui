@@ -1,10 +1,16 @@
 # Architecture
 
-PedeAqui is split into two public surfaces:
+The frontend is a static, mobile-first white-label ordering app.
 
-- Landing: `index.html`, `styles/landing.css`, `scripts/pages/landing-page.js`.
-- Restaurant app: `restaurant.html`, restaurant CSS, service/state/component scripts, and JSON data.
+`restaurant.html` reads the restaurant slug from `?slug=...` and requests the complete menu payload from the backend. Restaurant identity, theme colors, branches, banners, coupons, categories, products, and checkout settings come from that payload.
 
-The restaurant app is white-label-ready. It reads a slug from `restaurant.html?slug=...`, asks the service layer for the restaurant menu payload, applies theme variables from the restaurant record, and renders the existing menu/cart/checkout/profile flows.
+The API layer is centralized:
 
-The current service layer uses local JSON. The future backend switch should happen in `scripts/services/api.js`, not inside components.
+- `scripts/services/api-client.js`: low-level HTTP helper.
+- `scripts/services/api.js`: backend route wrapper plus optional local fallback.
+- `scripts/services/menu-service.js`: normalizes backend menu data.
+- `scripts/services/order-service.js`: creates and fetches orders.
+
+`scripts/pages/restaurant-page.js` owns the current page orchestration and binds existing DOM elements to service/state data.
+
+Local JSON is only a development fallback when `APP_CONFIG.USE_MOCK_DATA` is `true`.

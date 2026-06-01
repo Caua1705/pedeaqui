@@ -30,67 +30,18 @@
 
   function getRestaurantSlug() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('slug') || window.PEDEAQUI_RESTAURANT_SLUG || 'junior-da-picanha';
+    return params.get('slug') || window.PEDEAQUI_RESTAURANT_SLUG || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG || 'junior-da-picanha';
   }
 
   function normalizePayload(raw) {
-    const cats = Array.isArray(raw.categories) ? raw.categories.map(c => ({
-      id: c.id || c.slug || slug(c.name),
-      name: c.name || c.category,
-      slug: c.slug || slug(c.name || c.category),
-      sort_order: c.sort_order || 0
-    })) : [];
-
-    let normalizedProducts = Array.isArray(raw.products) ? raw.products.map((p, idx) => ({
-      id: String(p.id),
-      name: p.name,
-      slug: p.slug || slug(p.name),
-      description: p.description || p.desc || '',
-      price: typeof p.price === 'number' ? p.price : Number(p.price),
-      image_path: p.image_path || '',
-      category_slug: p.category_slug || p.category_id || slug(p.category),
-      category: p.category,
-      is_featured: Boolean(p.is_featured),
-      badge: p.badge || '',
-      highlight_order: Number(p.highlight_order || idx),
-      is_available: p.is_available !== false
-    })) : [];
-
-    if ((!cats.length || !normalizedProducts.length) && raw.menu) {
-      const menuList = Array.isArray(raw.menu) ? raw.menu : Object.values(raw.menu).filter(v => v && Array.isArray(v.items));
-      menuList.forEach((section, catIdx) => {
-        const catSlug = slug(section.category);
-        if (!cats.find(c => c.slug === catSlug)) cats.push({ id: catSlug, name: section.category, slug: catSlug, sort_order: catIdx });
-        (section.items || []).forEach(item => normalizedProducts.push({
-          id: String(item.id),
-          name: item.name,
-          slug: item.slug || slug(item.name),
-          description: item.description || item.desc || '',
-          price: typeof item.price === 'number' ? item.price : Number(item.price),
-          image_path: item.image_path || '',
-          category_slug: catSlug,
-          category: section.category,
-          is_featured: Boolean(item.is_featured),
-          badge: item.badge || '',
-          highlight_order: Number(item.highlight_order || item.id || 0),
-          is_available: item.is_available !== false
-        }));
-      });
-    }
-
-    return {
-      restaurant: raw.restaurant || {},
-      settings: raw.settings || {},
-      branches: raw.branches || [],
-      categories: cats,
-      products: normalizedProducts,
-      banners: (raw.banners || []).filter(b => b.is_active !== false).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
-      coupons: (raw.coupons || []).filter(c => c.is_active !== false)
-    };
+    return window.PedeAquiMenuService?.normalizeMenuPayload
+      ? window.PedeAquiMenuService.normalizeMenuPayload(raw)
+      : raw;
   }
 
   function productImage(product, className = 'prod-photo') {
-    if (product.image_path) return `<img class="${className}" src="${product.image_path}" alt="${product.name}">`;
+    const image = product.image_url || product.image_path;
+    if (image) return `<img class="${className}" src="${image}" alt="${product.name}">`;
     return `<div class="${className} prod-photo--placeholder"><span>${initials(product.name)}</span></div>`;
   }
 
@@ -127,14 +78,15 @@
   }
 
   function renderRestaurantShell() {
-    const branch = branches.find(b => slug(b.neighborhood) === 'varjota') || branches[0] || {};
+    const branch = branches[0] || {};
     const restName = restaurant.name || 'Restaurante';
     document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label,.hero-rest-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || 'Pedido online');
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
-    const logoHtml = restaurant.logo_path
-      ? `<img src="${restaurant.logo_path}" alt="${restName}">`
+    const logoUrl = restaurant.logo_url || restaurant.logo_path;
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="${restName}">`
       : `<div class="mob-logo-fallback">${initials(restName)}</div>`;
     const logo = document.querySelector('.mob-logo');
     if (logo) logo.innerHTML = logoHtml;
@@ -143,7 +95,8 @@
     const infoLogo = $('infoStoreLogo');
     if (infoLogo) infoLogo.innerHTML = logoHtml;
 
-    const status = restaurant.is_open === false ? 'Fechado no momento' : 'Aberto agora';
+    const isOpen = settings.is_open ?? restaurant.is_open;
+    const status = isOpen === false ? 'Fechado no momento' : 'Aberto agora';
     const statusEl = document.querySelector('.mob-badge-open');
     if (statusEl) statusEl.textContent = status;
     document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Pedido mínimo ${fmt(settings.min_order_value || 0)}`);
@@ -151,15 +104,30 @@
     if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
     const neighborhood = $('mobRestNeighborhood');
     if (neighborhood) neighborhood.textContent = branch.neighborhood || branch.name || '';
-    const closeTime = restaurant.closing_time || settings.closing_time || settings.close_time || '22h30';
+    document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
+    document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
+    document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
+    document.querySelectorAll('.store-info-email').forEach(el => el.textContent = restaurant.email || settings.email || 'E-mail não informado');
+    document.querySelectorAll('.store-info-whatsapp').forEach(el => el.textContent = branch.whatsapp || 'WhatsApp não informado');
+    document.querySelectorAll('.pickup-restaurant-name').forEach(el => el.textContent = `${restName}${branch.name ? ' — ' + branch.name : ''}`);
+    const infoAddress = $('storeInfoAddress');
+    if (infoAddress) infoAddress.innerHTML = branches.length
+      ? branches.map(unit => [unit.address, unit.neighborhood, unit.city, unit.state].filter(Boolean).join(' - ')).join('<br><br>')
+      : 'Endereço não informado';
+    const primaryAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
+    if ($('footerBranchPrimary')) $('footerBranchPrimary').textContent = primaryAddress || 'Endereço não informado';
+    if ($('footerContactPrimary')) $('footerContactPrimary').textContent = branch.whatsapp || branch.phone || 'Contato não informado';
+    if ($('footerBranchSecondary')) $('footerBranchSecondary').textContent = branches[1] ? [branches[1].address, branches[1].neighborhood, branches[1].city, branches[1].state].filter(Boolean).join(' - ') : 'Informações da loja';
+    if ($('footerContactSecondary')) $('footerContactSecondary').textContent = branches[1]?.whatsapp || branches[1]?.phone || '';
+    const closeTime = restaurant.closing_time || settings.closing_time || settings.close_time || '';
     const closeEl = $('mobCloseTime');
     if (closeEl) {
-      closeEl.style.display = restaurant.is_open === false || !closeTime ? 'none' : '';
+      closeEl.style.display = isOpen === false || !closeTime ? 'none' : '';
       closeEl.textContent = closeTime ? `fecha às ${closeTime}` : '';
     }
     const heroImg = $('restaurantHeroImg');
     if (heroImg) {
-      const cover = restaurant.hero_image_path || restaurant.campaign_image_path || banners.find(b => b.image_path)?.image_path || '';
+      const cover = restaurant.cover_url || banners.find(b => b.image_url)?.image_url || restaurant.hero_image_path || restaurant.cover_path || banners.find(b => b.image_path)?.image_path || '';
       if (cover) {
         heroImg.src = cover;
         heroImg.alt = restName;
@@ -183,19 +151,13 @@
   function renderBanners() {
     const wrap = $('bannerCarousel');
     if (!wrap) return;
-    const data = banners.length ? banners : [{
-      title: 'Especial da Casa',
-      subtitle: 'Picanhas, executivos e cortes selecionados',
-      action_type: 'category',
-      action_value: categories[0]?.slug,
-      is_active: true
-    }];
+    const data = banners;
     wrap.innerHTML = data.map(banner => `
       <button class="home-banner" onclick="handleBannerAction('${banner.action_type || ''}','${banner.action_value || ''}')">
-        ${banner.image_path ? `<img src="${banner.image_path}" alt="${banner.title}">` : ''}
+        ${banner.image_url || banner.image_path ? `<img src="${banner.image_url || banner.image_path}" alt="${banner.title || restaurant.name || 'Banner'}">` : ''}
         <div class="home-banner-copy">
-          <span>${restaurant.name || 'PedeAqui'}</span>
-          <strong>${banner.title}</strong>
+          <span>${restaurant.name || 'Restaurante'}</span>
+          <strong>${banner.title || 'Promoção'}</strong>
           <small>${banner.subtitle || 'Oferta selecionada para hoje'}</small>
         </div>
       </button>
@@ -210,28 +172,8 @@
       <button class="coupon-card" onclick="useCoupon('${coupon.code}')">
         <span>${coupon.discount_type === 'free_delivery' ? 'Frete grátis' : coupon.title}</span>
         <strong>${coupon.title}</strong>
-        <small>${coupon.description || 'Benefício disponível no app'}</small>
+        <small>${coupon.description || 'Promocao disponivel no app'}</small>
         <em>Usar cupom</em>
-      </button>
-    `).join('');
-    updatePromosEmptyState();
-  }
-
-  function renderHighlights() {
-    const wrap = $('highlightRail');
-    if (!wrap) return;
-    const featured = products
-      .filter(p => p.is_featured && p.is_available)
-      .sort((a, b) => a.highlight_order - b.highlight_order)
-      .slice(0, 8);
-    const fallback = products.filter(p => p.is_available && typeof p.price === 'number').slice(0, 8);
-    const list = featured.length ? featured : fallback;
-    wrap.innerHTML = list.map(product => `
-      <button class="highlight-card" onclick="openProduct('${product.id}')">
-        ${productImage(product, 'highlight-photo')}
-        <span>${product.badge || 'Mais pedido'}</span>
-        <strong>${product.name}</strong>
-        <small>${fmt(product.price)}</small>
       </button>
     `).join('');
     updatePromosEmptyState();
@@ -240,7 +182,7 @@
   function updatePromosEmptyState() {
     const empty = $('promosEmpty');
     if (!empty) return;
-    const hasContent = Boolean($('bannerCarousel')?.children.length || $('couponRail')?.children.length || $('highlightRail')?.children.length);
+    const hasContent = Boolean($('bannerCarousel')?.children.length || $('couponRail')?.children.length);
     empty.style.display = hasContent ? 'none' : 'block';
   }
 
@@ -262,7 +204,6 @@
             ${catProducts.map(product => `
               <article class="prod-card" onclick="openProduct('${product.id}')">
                 <div class="prod-info">
-                  ${product.badge ? `<span class="prod-badge">${product.badge}</span>` : ''}
                   <h3 class="prod-name">${product.name}</h3>
                   ${product.description ? `<p class="prod-desc">${product.description}</p>` : ''}
                   <div class="prod-price">${Number.isFinite(product.price) ? fmt(product.price) : 'Consultar'}</div>
@@ -539,26 +480,36 @@
   }
 
   async function submitOrder() {
-    const totals = cartTotals();
+    const branch = branches[0] || {};
     const orderPayload = {
-      restaurant_id: restaurant.id,
-      customer,
-      address: deliveryType === 'delivery' ? customerAddress : null,
-      items: cart.map(i => ({ ...i })),
-      subtotal: totals.subtotal,
-      service_fee: totals.svc,
-      delivery_fee: totals.delivery,
-      total: totals.total,
-      type: deliveryType === 'delivery' ? 'Entrega' : 'Retirada',
-      payment: paymentMethod,
-      coupon: selectedCoupon
+      branch_id: branch.id || branch.uuid || null,
+      customer: {
+        name: customer?.name || '',
+        phone: customer?.phone || ''
+      },
+      order_type: deliveryType,
+      payment_method: paymentMethod,
+      address: deliveryType === 'delivery' ? {
+        street: customerAddress?.street || '',
+        number: customerAddress?.number || '',
+        neighborhood: customerAddress?.neighborhood || '',
+        complement: customerAddress?.complement || '',
+        reference: customerAddress?.reference || ''
+      } : null,
+      notes: $('chkObs')?.value?.trim() || '',
+      coupon_code: selectedCoupon?.code || null,
+      items: cart.map(item => ({
+        product_id: item.id,
+        quantity: item.qty,
+        observation: item.obs || ''
+      }))
     };
-    submittedOrder = await window.PedeAquiOrderService.createOrder(orderPayload);
+    submittedOrder = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
     window.PedeAquiOrderState?.saveOrder(submittedOrder);
     $('confName').textContent = customer.name;
-    $('confTotal').textContent = fmt(totals.total);
-    $('confType').textContent = submittedOrder.type;
-    $('confPay').textContent = paymentMethod;
+    $('confTotal').textContent = fmt(submittedOrder.total ?? submittedOrder.total_amount ?? cartTotals().total);
+    $('confType').textContent = submittedOrder.order_type || submittedOrder.type || (deliveryType === 'delivery' ? 'Entrega' : 'Retirada');
+    $('confPay').textContent = submittedOrder.payment_method || paymentMethod;
     closeModalId('orderReviewModal');
     openModal('confirmModal');
     cart = [];
@@ -736,20 +687,20 @@
   }
 
   async function initRestaurantApp() {
-    payload = normalizePayload(await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug()));
-    restaurant = payload.restaurant;
-    settings = payload.settings;
-    branches = payload.branches;
-    categories = payload.categories;
-    products = payload.products;
-    banners = payload.banners;
-    coupons = payload.coupons;
+    if ($('menuContainer')) $('menuContainer').innerHTML = '<div class="empty-search">Carregando cardapio...</div>';
+    payload = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
+    restaurant = payload.restaurant || {};
+    settings = payload.settings || {};
+    branches = Array.isArray(payload.branches) ? payload.branches : [];
+    categories = Array.isArray(payload.categories) ? payload.categories : [];
+    products = Array.isArray(payload.products) ? payload.products : [];
+    banners = Array.isArray(payload.banners) ? payload.banners : [];
+    coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     applyTheme();
     renderRestaurantShell();
     renderBanners();
     renderCoupons();
-    renderHighlights();
     renderMenu();
     renderProfileView();
     initSearch();

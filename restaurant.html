@@ -25,7 +25,7 @@
     </a>
   </div>
   <div class="nav-center">
-    <h1 class="nav-title">Júnior da Picanha</h1>
+    <h1 class="nav-title">Restaurante</h1>
   </div>
   <div class="nav-actions">
     <button class="mob-search-btn" id="mobSearchBtn" aria-label="Buscar" onclick="mobFocusSearch()">
@@ -56,10 +56,10 @@
 
   <section class="restaurant-hero" id="restaurantHero">
     <div class="restaurant-hero-cover" id="restaurantHeroCover">
-      <img class="restaurant-hero-img" id="restaurantHeroImg" alt="Júnior da Picanha">
+      <img class="restaurant-hero-img" id="restaurantHeroImg" alt="Restaurante">
       <div class="restaurant-hero-fallback" id="restaurantHeroFallback" aria-hidden="true">
-        <span>Picanhas na brasa</span>
-        <strong>Júnior da Picanha</strong>
+        <span>Pedido online</span>
+        <strong class="hero-rest-name">Restaurante</strong>
       </div>
       <div class="restaurant-hero-dots" id="restaurantHeroDots"><span class="active"></span><span></span></div>
     </div>
@@ -68,8 +68,8 @@
   <section class="mob-identity" id="mobIdentity">
     <div class="mob-logo"></div>
     <div class="mob-rest-details">
-      <div class="mob-rest-name">Júnior da Picanha</div>
-      <div class="mob-rest-sub" id="mobRestNeighborhood">Varjota</div>
+      <div class="mob-rest-name">Restaurante</div>
+      <div class="mob-rest-sub" id="mobRestNeighborhood"></div>
       <div class="mob-rest-row2">
         <span class="mob-badge-open">Aberto agora</span>
         <span class="mob-close-time" id="mobCloseTime">fecha às 22h30</span>
@@ -123,7 +123,6 @@
     </div>
     <div class="banner-carousel" id="bannerCarousel"></div>
     <div class="coupon-rail" id="couponRail"></div>
-    <div class="highlight-rail" id="highlightRail"></div>
     <div class="promos-empty" id="promosEmpty" style="display:none">
       Nenhuma promoção ativa no momento.
     </div>
@@ -134,14 +133,14 @@
 <footer class="footer">
   <div class="footer-inner">
     <div class="ft-col">
-      <h4>Matriz</h4>
-      <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza</p>
-      <span>WhatsApp: (85) 9 9754-6465</span>
+      <h4>Unidade principal</h4>
+      <p id="footerBranchPrimary">Endereço carregado pela loja</p>
+      <span id="footerContactPrimary">Contato carregado pela loja</span>
     </div>
     <div class="ft-col">
-      <h4>Unidade Varjota</h4>
-      <p>Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza</p>
-      <span>WhatsApp: (85) 9 9622-8030</span>
+      <h4>Atendimento</h4>
+      <p id="footerBranchSecondary">Informações da loja</p>
+      <span id="footerContactSecondary">WhatsApp e telefone</span>
     </div>
     <div class="ft-col">
       <h4>Informações</h4>
@@ -205,7 +204,7 @@
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
       <div id="profileIdentity">
-        <div class="prof-hero-label">Júnior da Picanha</div>
+        <div class="prof-hero-label">Restaurante</div>
         <div class="prof-hero-sub">Sua conta e preferências</div>
       </div>
     </div>
@@ -316,56 +315,56 @@
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <div>
             <div class="prof-info-row-label">Endereço</div>
-            <div class="prof-info-row-val">Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco — Fortaleza, CE</div>
+            <div class="prof-info-row-val">Endereço carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
           <div>
             <div class="prof-info-row-label">Telefone</div>
-            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+            <div class="prof-info-row-val">Telefone carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
             <div class="prof-info-row-label">WhatsApp</div>
-            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">
-              (85) 9 9754 6465
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">
+              WhatsApp carregado pela API
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
           </div>
         </div>
       </div>
 
-      <!-- Varjota -->
+      <!-- Unidade adicional -->
       <div class="prof-info-card">
         <div class="prof-info-card-header">
           <div class="prof-info-card-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
           </div>
-          <span class="prof-info-card-title">Unidade Varjota</span>
+          <span class="prof-info-card-title">Unidade adicional</span>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <div>
             <div class="prof-info-row-label">Endereço</div>
-            <div class="prof-info-row-val">Rua Tavares Coutinho, 2124<br>Varjota — Fortaleza, CE</div>
+            <div class="prof-info-row-val">Endereço carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
           <div>
             <div class="prof-info-row-label">Telefone</div>
-            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+            <div class="prof-info-row-val">Telefone carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
             <div class="prof-info-row-label">WhatsApp</div>
-            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">
-              (85) 9 9622 8030
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">
+              WhatsApp carregado pela API
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
           </div>
@@ -501,7 +500,7 @@
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </div>
         <div class="prof-empty-title">Nenhum cupom disponível</div>
-        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do Júnior da Picanha.</div>
+        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do restaurante.</div>
       </div>
     </div>
   </div><!-- /profSubcupons -->
@@ -517,7 +516,7 @@
     <div class="prof-sub-body">
       <div class="prof-placeholder-card">
         <div class="prof-placeholder-title">Fale com o restaurante</div>
-        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o Júnior da Picanha pelos canais abaixo.</div>
+        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o restaurante pelos canais abaixo.</div>
       </div>
       <div class="prof-info-card">
         <div class="prof-info-card-header">
@@ -530,28 +529,28 @@
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
             <div class="prof-info-row-label">WhatsApp — Matriz</div>
-            <a class="prof-info-row-link" href="https://wa.me/5585997546465" target="_blank" rel="noopener">(85) 9 9754 6465 →</a>
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
-            <div class="prof-info-row-label">WhatsApp — Varjota</div>
-            <a class="prof-info-row-link" href="https://wa.me/5585996228030" target="_blank" rel="noopener">(85) 9 9622 8030 →</a>
+            <div class="prof-info-row-label">WhatsApp</div>
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
           <div>
             <div class="prof-info-row-label">Telefone — Matriz</div>
-            <div class="prof-info-row-val">(85) 3025 3303 / 3025 7808</div>
+            <div class="prof-info-row-val">Telefone da loja</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
           <div>
-            <div class="prof-info-row-label">Telefone — Varjota</div>
-            <div class="prof-info-row-val">(85) 3393 7177 / 3393 7179</div>
+            <div class="prof-info-row-label">Telefone</div>
+            <div class="prof-info-row-val">Telefone da loja</div>
           </div>
         </div>
       </div>
@@ -641,20 +640,20 @@
     <div class="store-info-body">
       <section class="store-info-card">
         <div class="store-info-logo" id="infoStoreLogo"></div>
-        <h3 class="store-info-name">Júnior da Picanha</h3>
-        <p class="store-info-neighborhood">Varjota</p>
+        <h3 class="store-info-name">Restaurante</h3>
+        <p class="store-info-neighborhood"></p>
         <div class="store-contact-list">
           <div class="store-contact-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.6a2 2 0 0 1-.45 2.11L8 9.7a16 16 0 0 0 6.3 6.3l1.27-1.27a2 2 0 0 1 2.11-.45c.83.29 1.7.5 2.6.62A2 2 0 0 1 22 16.92z"/></svg>
-            <span>(85) 3393-7177</span>
+            <span class="store-info-phone">Telefone não informado</span>
           </div>
           <div class="store-contact-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>
-            <span>E-MAIL NÃO INFORMADO</span>
+            <span class="store-info-email">E-mail não informado</span>
           </div>
-          <a class="store-contact-row store-contact-row--wa" href="https://wa.me/5585996228030" target="_blank" rel="noopener">
+          <a class="store-contact-row store-contact-row--wa" href="#" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg>
-            <span>(85) 9 9622-8030</span>
+            <span class="store-info-whatsapp">WhatsApp não informado</span>
           </a>
         </div>
       </section>
@@ -677,8 +676,7 @@
 
       <section class="store-address-card">
         <h3>Endereço</h3>
-        <p>Rua Tavares Coutinho, 2124<br>Varjota - Fortaleza - CE</p>
-        <p>Av. Nila Gomes de Soárez, 201<br>Manoel Dias Branco - Fortaleza - CE</p>
+        <p id="storeInfoAddress">Endereço não informado</p>
       </section>
     </div>
   </div>
@@ -790,7 +788,7 @@
             </div>
             <div>
               <div class="cart-addr-label">Retirar em</div>
-              <div class="cart-addr-val">Júnior da Picanha — Matriz</div>
+              <div class="cart-addr-val pickup-restaurant-name">Restaurante</div>
             </div>
           </div>
         </div>
@@ -798,7 +796,7 @@
         <!-- 5. Restaurant block -->
         <div class="cart-rest-block">
           <div class="cart-rest-avatar">JdP</div>
-          <div class="cart-rest-name">Júnior da Picanha</div>
+          <div class="cart-rest-name">Restaurante</div>
         </div>
 
         <!-- 6. Cart items -->
@@ -944,7 +942,7 @@
       </div>
       <div class="cart-rest-block" style="margin-top:8px">
         <div class="cart-rest-avatar">JdP</div>
-        <div class="cart-rest-name">Júnior da Picanha</div>
+        <div class="cart-rest-name">Restaurante</div>
       </div>
       <div id="revItemsList" class="cart-items-list"></div>
       <div class="cart-price-summary">
@@ -1025,7 +1023,7 @@
   <div class="modal modal--login">
     <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">✕</button>
     <div class="login-logo" id="loginLogo"></div>
-    <h2 class="login-rest-name">Júnior da Picanha</h2>
+    <h2 class="login-rest-name">Restaurante</h2>
     <button class="cart-cta-btn" onclick="mockLogin('signup')">Cadastre-se</button>
     <button class="login-secondary" onclick="mockLogin('signin')">Entrar</button>
     <a href="#" class="login-privacy">Política de privacidade</a>
@@ -1047,11 +1045,15 @@
 
 <script src="scripts/config/app-config.js"></script>
 <script src="scripts/config/routes.js"></script>
+<script src="scripts/utils/slugify.js"></script>
+<script src="scripts/utils/validators.js"></script>
+<script src="scripts/services/api-client.js"></script>
 <script src="scripts/services/api.js"></script>
 <script src="scripts/services/restaurant-service.js"></script>
 <script src="scripts/services/menu-service.js"></script>
 <script src="scripts/services/order-service.js"></script>
 <script src="scripts/state/cart-state.js"></script>
+<script src="scripts/state/customer-state.js"></script>
 <script src="scripts/state/order-state.js"></script>
 <script src="scripts/state/ui-state.js"></script>
 <script src="scripts/pages/restaurant-page.js"></script>

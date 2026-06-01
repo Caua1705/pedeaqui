@@ -886,13 +886,11 @@ a{text-decoration:none;color:inherit}
   .mobile-home{padding:22px 24px 4px}
   .home-banner{min-width:420px}
   .coupon-card{min-width:210px}
-  .highlight-card{min-width:170px}
 }
 
 @media(max-width:380px){
   .address-card-copy strong{font-size:.66rem}
   .home-banner{height:138px}
-  .highlight-card{min-width:132px}
 }
 /* Premium white-label restaurant home */
 .mobile-home{
@@ -944,7 +942,7 @@ a{text-decoration:none;color:inherit}
 .home-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .home-section-head h2{font-size:1rem;font-weight:850;letter-spacing:0;color:#151515}
 .home-section-head button{border:none;background:transparent;color:var(--brand);font-size:.78rem;font-weight:800;cursor:pointer}
-.banner-carousel,.coupon-rail,.highlight-rail{
+.banner-carousel,.coupon-rail{
   display:flex;
   gap:12px;
   overflow-x:auto;
@@ -953,7 +951,7 @@ a{text-decoration:none;color:inherit}
   margin:0 -14px;
   padding:0 14px 2px;
 }
-.banner-carousel::-webkit-scrollbar,.coupon-rail::-webkit-scrollbar,.highlight-rail::-webkit-scrollbar{display:none}
+.banner-carousel::-webkit-scrollbar,.coupon-rail::-webkit-scrollbar{display:none}
 .home-banner{
   position:relative;
   min-width:86%;
@@ -993,32 +991,12 @@ a{text-decoration:none;color:inherit}
 .coupon-card strong{display:block;color:#171717;font-size:.95rem;font-weight:900;margin-bottom:4px}
 .coupon-card small{display:block;color:#777;font-size:.72rem;line-height:1.35;min-height:30px}
 .coupon-card em{display:block;color:var(--brand);font-size:.75rem;font-style:normal;font-weight:850;margin-top:10px}
-.highlight-card{
-  min-width:142px;
-  border:1px solid #efefef;
-  border-radius:18px;
-  background:#fff;
-  padding:10px;
-  text-align:left;
-  cursor:pointer;
-  scroll-snap-align:start;
-}
-.highlight-photo{
-  width:100%;
-  aspect-ratio:1.15/1;
-  border-radius:14px;
-  object-fit:cover;
-  margin-bottom:10px;
-}
-.highlight-photo.prod-photo--placeholder,.prod-photo.prod-photo--placeholder,.pm-hero-photo.prod-photo--placeholder{
+.prod-photo.prod-photo--placeholder,.pm-hero-photo.prod-photo--placeholder{
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#fff7f0,#f2f2f2);
   color:var(--brand);
 }
-.highlight-photo span,.prod-photo--placeholder span{font-weight:900}
-.highlight-card span,.prod-badge{display:inline-flex;color:var(--brand);background:rgba(200,82,10,.08);border-radius:999px;padding:3px 7px;font-size:.62rem;font-weight:850;margin-bottom:6px}
-.highlight-card strong{display:block;font-size:.82rem;font-weight:850;color:#171717;line-height:1.25;min-height:34px}
-.highlight-card small{display:block;margin-top:6px;color:#171717;font-size:.82rem;font-weight:900}
+.prod-photo--placeholder span{font-weight:900}
 .home-cta{padding:18px 0 8px}
 .home-cta-btn{
   width:100%;
@@ -1450,19 +1428,10 @@ a{text-decoration:none;color:inherit}
     width:20%;
     min-width:0;
   }
-  #mobNavHome{left:0}
-  #mobNavMenu{left:20%}
-  #mobNavCenter{left:40%}
-  #mobNavOrders{left:60%}
-  #mobNavProfile{left:80%;display:flex !important;z-index:3}
-  .mob-nav-center{position:relative;margin-top:-18px;color:var(--brand)}
-  .mob-center-circle{
-    width:52px;height:52px;border-radius:18px;
-    display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(135deg,var(--brand),#ff8a2a);
-    color:#fff;
-    box-shadow:0 10px 22px rgba(200,82,10,.22);
-  }
+  #mobNavMenu{left:0}
+  #mobNavPromos{left:25%}
+  #mobNavOrders{left:50%}
+  #mobNavProfile{left:75%;display:flex !important;z-index:3}
   .modal--product{
     position:fixed;inset:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;
     border-radius:0;background:#fff;transform:translateY(100%);
@@ -2120,7 +2089,7 @@ a{text-decoration:none;color:inherit}
     background:#f6f6f6;
   }
   .promos-inner{padding-top:20px}
-  .banner-carousel,.coupon-rail,.highlight-rail{
+  .banner-carousel,.coupon-rail{
     margin:0 -14px 12px;
     padding:0 14px 2px;
   }
@@ -2134,10 +2103,6 @@ a{text-decoration:none;color:inherit}
     min-width:168px;
     border-radius:14px;
     box-shadow:none;
-  }
-  .highlight-card{
-    min-width:134px;
-    border-radius:14px;
   }
   .cart-sticky{
     bottom:calc(64px + var(--safe-bottom));

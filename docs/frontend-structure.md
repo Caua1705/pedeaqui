@@ -1,23 +1,23 @@
 # Frontend Structure
 
-## Styles
+Root production files:
 
-- `tokens.css`: global CSS variables.
-- `base.css`: reset and browser defaults.
-- `layout.css`: reusable layout helpers.
-- `components.css`: shared component utilities.
-- `landing.css`: landing-only styles.
-- `restaurant.css`: extracted restaurant ordering UI styles.
-- `cart.css`, `checkout.css`, `mobile.css`: reserved layer files as the extracted restaurant CSS is split further.
-- `utilities.css`: small utility classes.
+- `index.html`: PedeAqui landing page.
+- `restaurant.html`: generic white-label restaurant ordering page.
+- `junior-da-picanha.html`: compatibility redirect to `restaurant.html?slug=junior-da-picanha`.
+- `vercel.json`: optional clean URL rewrites.
 
-## Scripts
+Runtime folders:
 
-- `config/`: app constants and route helpers.
-- `services/`: local JSON/API boundary.
-- `state/`: cart, order and UI state primitives.
-- `utils/`: shared formatting, DOM, slug and storage helpers.
-- `components/`: component ownership boundaries.
-- `pages/`: page entry points.
+- `assets/`: brand assets and restaurant/media assets.
+- `scripts/config/`: app configuration and route helpers.
+- `scripts/services/`: API client and domain services.
+- `scripts/state/`: local UI/cart/order state.
+- `scripts/pages/`: page orchestration.
+- `scripts/utils/`: small shared helpers.
+- `styles/`: CSS split by concern.
 
-The first refactor keeps the proven restaurant behavior in `restaurant-page.js` while moving data loading and assets out of the HTML.
+Reference and archived material:
+
+- `references/imagens_referencia/`: visual and extracted reference assets.
+- `docs/archive/`: old local scratch/reference files that are not part of production runtime.

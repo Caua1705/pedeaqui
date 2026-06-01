@@ -1,33 +1,46 @@
 # PedeAqui Frontend
 
-Static white-label frontend for PedeAqui, a digital menu and ordering platform for restaurants.
+Static white-label frontend for PedeAqui, a restaurant ordering SaaS.
 
-## How to open
+## Pages
 
-- Landing page: `index.html`
-- Reusable restaurant page: `restaurant.html?slug=junior-da-picanha`
-- Compatibility URL: `junior-da-picanha.html`
+- `index.html`: PedeAqui landing page.
+- `restaurant.html?slug=junior-da-picanha`: generic restaurant ordering page loaded by slug.
+- `junior-da-picanha.html`: compatibility redirect only.
 
-Use Live Server or any static server. `restaurant.html` loads restaurant data from `data/restaurants/{slug}.json`, so opening directly with `file://` may block `fetch` in some browsers.
+## API Configuration
 
-## Structure
+Edit `scripts/config/app-config.js`:
 
-- `index.html` is only the PedeAqui landing page.
-- `restaurant.html` is the reusable ordering app.
-- `junior-da-picanha.html` redirects to the reusable restaurant route.
-- `data/restaurants/` stores local mock restaurant/menu payloads.
-- `assets/brand/` stores PedeAqui brand assets.
-- `assets/restaurants/{slug}/` stores restaurant logos, covers and product images.
-- `styles/` stores extracted CSS layers.
-- `scripts/services/` centralizes data and future API calls.
-- `scripts/state/` contains cart, order and UI state helpers.
-- `scripts/components/` contains component boundaries for the restaurant UI.
-- `scripts/pages/` contains page entry scripts.
+```js
+const APP_CONFIG = {
+  API_BASE_URL: 'http://localhost:8000',
+  DEFAULT_RESTAURANT_SLUG: 'junior-da-picanha',
+  STORAGE_MODE: 'api',
+  USE_MOCK_DATA: false
+};
+```
 
-## Add Another Restaurant
+Set `USE_MOCK_DATA: true` only for local development with `data/restaurants/{slug}.json`.
 
-1. Add assets in `assets/restaurants/{restaurant-slug}/`.
-2. Add data in `data/restaurants/{restaurant-slug}.json`.
-3. Open `restaurant.html?slug={restaurant-slug}`.
+## Local Run
 
-No duplicated full HTML page is needed.
+Use any static server:
+
+```powershell
+python -m http.server 4174 --bind 127.0.0.1
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4174/restaurant.html?slug=junior-da-picanha
+```
+
+## Architecture
+
+See:
+
+- `docs/architecture.md`
+- `docs/frontend-structure.md`
+- `docs/api-contract.md`

@@ -129,7 +129,8 @@
   function renderRestaurantShell() {
     const branch = branches.find(b => slug(b.neighborhood) === 'varjota') || branches[0] || {};
     const restName = restaurant.name || 'Restaurante';
-    document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label').forEach(el => el.textContent = restName);
+    document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label,.hero-rest-name').forEach(el => el.textContent = restName);
+    document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || 'Pedido online');
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
     const logoHtml = restaurant.logo_path
@@ -139,6 +140,8 @@
     if (logo) logo.innerHTML = logoHtml;
     const loginLogo = $('loginLogo');
     if (loginLogo) loginLogo.innerHTML = logoHtml;
+    const infoLogo = $('infoStoreLogo');
+    if (infoLogo) infoLogo.innerHTML = logoHtml;
 
     const status = restaurant.is_open === false ? 'Fechado no momento' : 'Aberto agora';
     const statusEl = document.querySelector('.mob-badge-open');
@@ -146,11 +149,30 @@
     document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Pedido mínimo ${fmt(settings.min_order_value || 0)}`);
     const loc = document.querySelector('.mob-loc');
     if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
+    const neighborhood = $('mobRestNeighborhood');
+    if (neighborhood) neighborhood.textContent = branch.neighborhood || branch.name || '';
+    const closeTime = restaurant.closing_time || settings.closing_time || settings.close_time || '22h30';
+    const closeEl = $('mobCloseTime');
+    if (closeEl) {
+      closeEl.style.display = restaurant.is_open === false || !closeTime ? 'none' : '';
+      closeEl.textContent = closeTime ? `fecha às ${closeTime}` : '';
+    }
+    const heroImg = $('restaurantHeroImg');
+    if (heroImg) {
+      const cover = restaurant.hero_image_path || restaurant.campaign_image_path || banners.find(b => b.image_path)?.image_path || '';
+      if (cover) {
+        heroImg.src = cover;
+        heroImg.alt = restName;
+      } else {
+        heroImg.removeAttribute('src');
+      }
+    }
 
     const addrMain = $('homeAddressTitle');
     const addrSub = $('homeAddressSub');
-    if (addrMain) addrMain.textContent = customerAddress ? customerAddress.summary : `DELIVERY | ${restName.toUpperCase()} | ${(branch.neighborhood || 'Unidade').toUpperCase()}`;
-    if (addrSub) addrSub.textContent = customerAddress ? 'Toque para alterar seu endereço' : 'Use seu endereço para melhores resultados';
+    const branchAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
+    if (addrMain) addrMain.textContent = customerAddress ? customerAddress.summary : (branchAddress || 'Use seu endereço para melhores resultados');
+    if (addrSub) addrSub.textContent = '';
 
     document.querySelectorAll('.delivery-time-text').forEach(el => {
       el.textContent = `${settings.estimated_delivery_time_min || 90}-${settings.estimated_delivery_time_max || 100} min`;
@@ -178,6 +200,7 @@
         </div>
       </button>
     `).join('');
+    updatePromosEmptyState();
   }
 
   function renderCoupons() {
@@ -191,11 +214,11 @@
         <em>Usar cupom</em>
       </button>
     `).join('');
+    updatePromosEmptyState();
   }
 
   function renderHighlights() {
     const wrap = $('highlightRail');
-    const title = $('highlightTitle');
     if (!wrap) return;
     const featured = products
       .filter(p => p.is_featured && p.is_available)
@@ -203,7 +226,6 @@
       .slice(0, 8);
     const fallback = products.filter(p => p.is_available && typeof p.price === 'number').slice(0, 8);
     const list = featured.length ? featured : fallback;
-    if (title) title.textContent = `Destaques ${restaurant.name || ''}`.trim();
     wrap.innerHTML = list.map(product => `
       <button class="highlight-card" onclick="openProduct('${product.id}')">
         ${productImage(product, 'highlight-photo')}
@@ -212,6 +234,14 @@
         <small>${fmt(product.price)}</small>
       </button>
     `).join('');
+    updatePromosEmptyState();
+  }
+
+  function updatePromosEmptyState() {
+    const empty = $('promosEmpty');
+    if (!empty) return;
+    const hasContent = Boolean($('bannerCarousel')?.children.length || $('couponRail')?.children.length || $('highlightRail')?.children.length);
+    empty.style.display = hasContent ? 'none' : 'block';
   }
 
   function renderMenu() {
@@ -253,7 +283,17 @@
   function scrollToMenu() {
     closeMobViews();
     setMobNavActive('mobNavMenu');
-    $('menu-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = $('menu-area');
+    if (!el) return;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 96, behavior: 'smooth' });
+  }
+
+  function scrollToPromos() {
+    closeMobViews();
+    setMobNavActive('mobNavPromos');
+    const el = $('promos-section');
+    if (!el) return;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 76, behavior: 'smooth' });
   }
 
   function scrollToCategory(id, btn) {
@@ -261,7 +301,7 @@
     document.querySelectorAll('.cat').forEach(b => b.classList.remove('active'));
     btn?.classList.add('active');
     const el = $(id);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 112, behavior: 'smooth' });
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 92, behavior: 'smooth' });
     setTimeout(() => { isClickScrolling = false; }, 700);
   }
 
@@ -283,6 +323,7 @@
   function initSearch() {
     $('searchInput')?.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
+      e.target.closest('.search-bar')?.classList.toggle('has-value', Boolean(q));
       let foundAny = false;
       document.querySelectorAll('.menu-section').forEach(sec => {
         let secFound = false;
@@ -347,10 +388,6 @@
     $('cartSticky')?.classList.toggle('show', qty > 0);
     if ($('cartCountSticky')) $('cartCountSticky').textContent = qty;
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
-    const centerIcon = $('mobNavCenterIcon');
-    const centerLabel = $('mobNavCenterLabel');
-    if (centerIcon) centerIcon.dataset.mode = qty > 0 ? 'cart' : 'menu';
-    if (centerLabel) centerLabel.textContent = qty > 0 ? 'Sacola' : 'Pedir';
 
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
     $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');
@@ -591,19 +628,12 @@
     $(id)?.classList.add('active');
   }
 
-  function mobNavHome() {
-    closeMobViews();
-    setMobNavActive('mobNavHome');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   function mobNavMenu() {
     scrollToMenu();
   }
 
-  function mobNavCenter() {
-    if (cart.length) openModal('cartModal');
-    else scrollToMenu();
+  function mobNavPromos() {
+    scrollToPromos();
   }
 
   function mobNavOrders() {
@@ -617,6 +647,10 @@
   function mobNavProfile() {
     closeMobViews();
     setMobNavActive('mobNavProfile');
+    if (!isLogged()) {
+      openLoginScreen();
+      return;
+    }
     renderProfileView();
     $('mobViewProfile')?.classList.add('active');
     document.body.classList.add('modal-open');
@@ -644,7 +678,7 @@
     if (box) {
       box.innerHTML = isLogged()
         ? `<div class="prof-hero-label">${customer.name}</div><div class="prof-hero-sub">Cliente identificado</div>`
-        : `<div class="prof-hero-label">${restaurant.name || 'Restaurante'}</div><div class="prof-hero-sub">Entre para acessar clube, cupons e dados</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
+        : `<div class="prof-hero-label">${restaurant.name || 'Restaurante'}</div><div class="prof-hero-sub">Entre para acessar promoções e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
     }
   }
 
@@ -686,7 +720,7 @@
     setMobNavActive('mobNavMenu');
     $('searchCat')?.classList.add('search-open');
     $('searchInput')?.focus();
-    $('menu-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToMenu();
   }
 
   function closeSearch() {
@@ -728,7 +762,7 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, openLoginScreen, mockLogin,
-    useCoupon, handleBannerAction, mobNavHome, mobNavMenu, mobNavCenter, mobNavOrders, mobNavProfile,
+    useCoupon, handleBannerAction, mobNavMenu, mobNavPromos, mobNavOrders, mobNavProfile,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo
   });
 

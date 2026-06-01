@@ -88,6 +88,7 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .prod-price{font-size:14px!important;line-height:18px!important;font-weight:700!important}
 .prod-add-btn{font-size:20px!important;line-height:20px!important;font-weight:600!important}
 .mob-nav-item span{font-size:12px!important;line-height:15px!important;font-weight:600!important}
+.mob-nav-icon{width:24px!important;height:24px!important;stroke-width:1.8!important}
 .btn-cart,.cart-cta-btn,.login-secondary{font-size:14px!important;line-height:18px!important;font-weight:700!important}
 .cart-hdr-title,.modal-title,.store-info-header h2{font-size:16px!important;line-height:22px!important;font-weight:600!important}
 .store-info-name{font-size:14px!important;line-height:18px!important;font-weight:600!important}

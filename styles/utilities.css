@@ -117,7 +117,7 @@ body.menu-tab .menu-area{display:block!important}
   max-width:430px!important;
   min-height:0!important;
   margin:0 auto!important;
-  padding:0 0 calc(18px + var(--safe-bottom))!important;
+  padding:0!important;
   background:#fff!important;
 }
 .restaurant-app-shell::before{
@@ -388,10 +388,7 @@ body.menu-tab .menu-area{display:block!important}
 .home-highlights-section{
   position:relative!important;
   overflow:hidden!important;
-  display:flex!important;
-  flex-direction:column!important;
-  flex:1 1 auto!important;
-  padding:20px 22px 0!important;
+  padding:22px 22px 0!important;
   background:#fff!important;
 }
 .highlight-rail{
@@ -402,12 +399,17 @@ body.menu-tab .menu-area{display:block!important}
 .highlight-banner{
   flex:0 0 290px!important;
   width:290px!important;
-  height:116px!important;
+  height:134px!important;
   border-radius:8px!important;
   overflow:hidden!important;
   background:#fff3ea!important;
 }
 .highlight-banner img{width:100%!important;height:100%!important;display:block!important;object-fit:cover!important}
+.home-highlight-gray-space{
+  height:146px!important;
+  margin:20px -22px 0!important;
+  background:#f4f4f4!important;
+}
 .highlight-fallback{
   height:100%!important;
   display:flex!important;
@@ -424,7 +426,7 @@ body.menu-tab .menu-area{display:block!important}
 .home-order-cta{
   position:fixed!important;
   right:16px!important;
-  bottom:calc(64px + var(--safe-bottom) + 14px)!important;
+  bottom:calc(64px + var(--safe-bottom) + 10px)!important;
   z-index:70!important;
   display:block!important;
   width:154px!important;

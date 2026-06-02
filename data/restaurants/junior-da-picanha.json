@@ -260,9 +260,6 @@
                          "slug":  "frango-a-parmegiana",
                          "image_path":  null,
                          "category_slug":  "promoções",
-                         "is_featured":  true,
-                         "badge":  "Especial",
-                         "highlight_order":  1,
                          "is_available":  true
                      },
                      {
@@ -275,9 +272,6 @@
                          "slug":  "file-a-parmegiana",
                          "image_path":  null,
                          "category_slug":  "promoções",
-                         "is_featured":  true,
-                         "badge":  "Mais pedido",
-                         "highlight_order":  2,
                          "is_available":  true
                      },
                      {
@@ -290,9 +284,6 @@
                          "slug":  "picanha-suina",
                          "image_path":  null,
                          "category_slug":  "promoções",
-                         "is_featured":  true,
-                         "badge":  "Destaque",
-                         "highlight_order":  3,
                          "is_available":  true
                      },
                      {

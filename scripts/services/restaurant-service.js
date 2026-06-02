@@ -1,6 +1,6 @@
 (function () {
   async function getRestaurant(slug) {
-    return window.PedeAquiApi.getRestaurant(slug);
+    return window.PedeAquiApiClient.get(window.PedeAquiApiRoutes.restaurant(slug));
   }
 
   async function getRestaurantMenu(slug) {

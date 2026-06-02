@@ -10,16 +10,7 @@ Static white-label frontend for PedeAqui, a restaurant ordering SaaS.
 
 ## API Configuration
 
-Edit `scripts/config/app-config.js`:
-
-```js
-const APP_CONFIG = {
-  API_BASE_URL: 'http://localhost:8000',
-  DEFAULT_RESTAURANT_SLUG: 'junior-da-picanha',
-  STORAGE_MODE: 'api',
-  USE_MOCK_DATA: false
-};
-```
+Edit `scripts/config/app-config.js`. Keep `API_BASE_URL` centralized there and do not duplicate the production API URL in page or component files.
 
 Set `USE_MOCK_DATA: true` only for local development with `data/restaurants/{slug}.json`.
 

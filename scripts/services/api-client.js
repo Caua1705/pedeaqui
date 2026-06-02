@@ -7,21 +7,28 @@
     return String(config().API_BASE_URL || '').replace(/\/+$/, '');
   }
 
-  function buildUrl(path) {
+  function buildApiUrl(path) {
     const normalizedPath = path.startsWith('/') ? path : '/' + path;
     return apiBaseUrl() + normalizedPath;
   }
 
-  async function request(path, options = {}) {
+  async function apiFetch(path, options = {}) {
     if (!apiBaseUrl()) throw new Error('API_BASE_URL is not configured.');
-    const response = await fetch(buildUrl(path), {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
-    });
+    let response;
 
+    try {
+      response = await fetch(buildApiUrl(path), {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+    } catch (error) {
+      throw new Error('Não foi possível conectar à API.');
+    }
+
+    if (response.status === 204) return null;
     let data = null;
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) data = await response.json();
@@ -38,12 +45,16 @@
     return data;
   }
 
-  function get(path) {
-    return request(path, { method: 'GET' });
+  function apiGet(path) {
+    return apiFetch(path, { method: 'GET' });
   }
 
-  function post(path, body) {
-    return request(path, { method: 'POST', body: JSON.stringify(body) });
+  function apiPost(path, body) {
+    return apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  function apiPatch(path, body) {
+    return apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
   }
 
   async function getLocalJson(path) {
@@ -52,5 +63,22 @@
     return response.json();
   }
 
-  window.PedeAquiApiClient = { get, post, request, getLocalJson, buildUrl };
+  window.buildApiUrl = buildApiUrl;
+  window.apiFetch = apiFetch;
+  window.apiGet = apiGet;
+  window.apiPost = apiPost;
+  window.apiPatch = apiPatch;
+  window.PedeAquiApiClient = {
+    get: apiGet,
+    post: apiPost,
+    patch: apiPatch,
+    request: apiFetch,
+    getLocalJson,
+    buildUrl: buildApiUrl,
+    buildApiUrl,
+    apiFetch,
+    apiGet,
+    apiPost,
+    apiPatch
+  };
 })();

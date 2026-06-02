@@ -1,6 +1,6 @@
 (function () {
   const APP_CONFIG = {
-    API_BASE_URL: 'http://localhost:8000',
+    API_BASE_URL: 'https://api.pederapidex.com',
     DEFAULT_RESTAURANT_SLUG: 'junior-da-picanha',
     STORAGE_MODE: 'api',
     USE_MOCK_DATA: false,

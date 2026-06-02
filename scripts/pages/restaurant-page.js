@@ -29,8 +29,10 @@
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
   function getRestaurantSlug() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('slug') || window.PEDEAQUI_RESTAURANT_SLUG || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG || 'junior-da-picanha';
+    return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
+      || window.PEDEAQUI_RESTAURANT_SLUG
+      || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
+      || 'junior-da-picanha';
   }
 
   function normalizePayload(raw) {

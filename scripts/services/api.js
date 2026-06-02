@@ -1,21 +1,22 @@
 (function () {
   const cfg = () => window.APP_CONFIG || {};
+  const routes = () => window.PedeAquiApiRoutes || window.API_ROUTES;
 
   function useMockData() {
     return cfg().USE_MOCK_DATA === true || cfg().STORAGE_MODE === 'mock';
   }
 
   async function getRestaurant(slug) {
-    return window.PedeAquiApiClient.get(`/restaurants/${encodeURIComponent(slug)}`);
+    return window.PedeAquiApiClient.get(routes().restaurant(slug));
   }
 
   async function getHealth() {
-    return window.PedeAquiApiClient.get('/health');
+    return window.PedeAquiApiClient.get(routes().health);
   }
 
   async function getRestaurantMenu(slug) {
     if (!useMockData()) {
-      return window.PedeAquiApiClient.get(`/restaurants/${encodeURIComponent(slug)}/menu`);
+      return window.PedeAquiApiClient.get(routes().menu(slug));
     }
 
     const base = cfg().MOCK_DATA_BASE_PATH || 'data/restaurants';
@@ -23,15 +24,11 @@
   }
 
   async function getCategoryProducts(slug, categorySlug) {
-    return window.PedeAquiApiClient.get(
-      `/restaurants/${encodeURIComponent(slug)}/categories/${encodeURIComponent(categorySlug)}/products`
-    );
+    return window.PedeAquiApiClient.get(routes().productsByCategory(slug, categorySlug));
   }
 
   async function getProduct(slug, productSlug) {
-    return window.PedeAquiApiClient.get(
-      `/restaurants/${encodeURIComponent(slug)}/products/${encodeURIComponent(productSlug)}`
-    );
+    return window.PedeAquiApiClient.get(routes().productDetail(slug, productSlug));
   }
 
   async function createOrder(slug, payload) {
@@ -46,7 +43,7 @@
       };
     }
 
-    return window.PedeAquiApiClient.post(`/restaurants/${encodeURIComponent(slug)}/orders`, payload);
+    return window.PedeAquiApiClient.post(routes().createOrder(slug), payload);
   }
 
   async function getOrder(slug, orderNumber, phone) {
@@ -55,10 +52,7 @@
       return orders.find(order => String(order.order_number) === String(orderNumber)) || null;
     }
 
-    const query = phone ? `?phone=${encodeURIComponent(phone)}` : '';
-    return window.PedeAquiApiClient.get(
-      `/restaurants/${encodeURIComponent(slug)}/orders/${encodeURIComponent(orderNumber)}${query}`
-    );
+    return window.PedeAquiApiClient.get(routes().getOrder(slug, orderNumber, phone || ''));
   }
 
   window.PedeAquiApi = {

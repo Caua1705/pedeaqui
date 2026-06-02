@@ -173,14 +173,19 @@
     const section = $('homeCouponsSection');
     if (section) section.style.display = coupons.length ? '' : 'none';
     wrap.innerHTML = coupons.map(coupon => {
+      const image = coupon.image_url || coupon.image_path || '';
       const discount = coupon.discount_type === 'percentage'
         ? `${Number(coupon.discount_value || 0)}% off`
         : coupon.discount_type === 'free_delivery'
           ? 'Frete gratis'
           : coupon.title || 'Cupom';
+      // Fixed template: backend supplies the coupon artwork (image) + title.
+      // The gradient + discount text is only a fallback when there's no image
+      // (or it fails to load — onerror reverts to the fallback).
       return `
         <article class="coupon-card">
-          <div class="coupon-art">
+          <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
+            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.title || 'Cupom')}" onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>

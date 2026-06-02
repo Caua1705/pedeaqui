@@ -318,7 +318,9 @@ body.menu-tab .menu-area{display:block!important}
 .coupon-card::before{left:-1px!important;border-left:0!important;border-radius:0 10px 10px 0!important}
 .coupon-card::after{right:-1px!important;border-right:0!important;border-radius:10px 0 0 10px!important}
 .coupon-art{
+  position:relative!important;
   height:88px!important;
+  overflow:hidden!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
@@ -327,6 +329,20 @@ body.menu-tab .menu-area{display:block!important}
   border-radius:7px!important;
   background:linear-gradient(135deg,#ff7b32,#ffb62d)!important;
   color:#fff!important;
+}
+/* Backend image fills the art block; gradient + text become the fallback. */
+.coupon-art--has-img{
+  border:0!important;
+  background:#fff3ea!important;
+}
+.coupon-art--has-img span,
+.coupon-art--has-img strong{display:none!important}
+.coupon-art img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  border-radius:7px!important;
+  display:block!important;
 }
 .coupon-art span{
   margin:0 0 3px!important;
@@ -372,19 +388,16 @@ body.menu-tab .menu-area{display:block!important}
 .home-highlights-section{
   position:relative!important;
   overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
   padding:20px 22px 0!important;
   background:#fff!important;
-}
-.home-cta-band{
-  display:flex!important;
-  justify-content:flex-end!important;
-  margin:14px -22px 0!important;
-  padding:14px 22px!important;
-  background:#f4f4f4!important;
 }
 .highlight-rail{
   gap:10px!important;
   margin-top:8px!important;
+  padding-bottom:0!important;
 }
 .highlight-banner{
   flex:0 0 290px!important;
@@ -404,10 +417,18 @@ body.menu-tab .menu-area{display:block!important}
   color:#fff!important;
   background:linear-gradient(135deg,var(--brand),#ff8b22)!important;
 }
+/* Fixed floating "Faça seu pedido" pill: lower-right, just above the bottom
+   nav, always visible while scrolling the Início tab. It lives inside the
+   home shell, so it's hidden on the Cardápio tab (shell is display:none) and
+   sits below the Pedidos/Perfil overlays + nav (z-index). */
 .home-order-cta{
+  position:fixed!important;
+  right:16px!important;
+  bottom:calc(64px + var(--safe-bottom) + 14px)!important;
+  z-index:70!important;
   display:block!important;
   width:154px!important;
-  max-width:calc(100vw - 40px)!important;
+  max-width:calc(100vw - 32px)!important;
   height:44px!important;
   margin:0!important;
   border:0!important;
@@ -416,6 +437,11 @@ body.menu-tab .menu-area{display:block!important}
   color:#fff!important;
   font-size:12px!important;
   font-weight:900!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+}
+/* Keep the pill inside the 430px frame on wider screens. */
+@media(min-width:768px){
+  .home-order-cta{right:calc(50% - 215px + 16px)!important}
 }
 
 .mob-bottom-nav{
@@ -459,11 +485,19 @@ body.menu-tab .menu-area{display:block!important}
 
 @media(max-width:767px){
   html,body{width:100%!important;overflow-x:hidden!important}
+  /* Home tab: reserve exactly the fixed bottom nav's height so tall content
+     (the "Faça seu pedido" band) can scroll clear of the nav, while short
+     content still fills to the nav via the shell min-height below — no gray
+     void (the old 126px reserved too much and peeked above the nav). */
+  body:not(.menu-tab){padding-bottom:calc(64px + var(--safe-bottom))!important}
   .restaurant-app-shell{
     width:100vw!important;
     max-width:none!important;
     margin-left:0!important;
     margin-right:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    min-height:calc(100dvh - 64px - var(--safe-bottom))!important;
   }
   .restaurant-app-shell::before{
     left:0!important;

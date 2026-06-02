@@ -54,22 +54,11 @@
     <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
   </button>
 
-  <section class="restaurant-hero" id="restaurantHero">
-    <div class="restaurant-hero-cover" id="restaurantHeroCover">
-      <img class="restaurant-hero-img" id="restaurantHeroImg" alt="Restaurante">
-      <div class="restaurant-hero-fallback" id="restaurantHeroFallback" aria-hidden="true">
-        <span>Pedido online</span>
-        <strong class="hero-rest-name">Restaurante</strong>
-      </div>
-      <div class="restaurant-hero-dots" id="restaurantHeroDots"><span class="active"></span><span></span></div>
-    </div>
-  </section>
-
   <section class="mob-identity" id="mobIdentity">
     <div class="mob-logo"></div>
     <div class="mob-rest-details">
       <div class="mob-rest-name">Restaurante</div>
-      <div class="mob-rest-sub" id="mobRestNeighborhood"></div>
+      <button class="mob-rest-sub" id="homeLoginPrompt" onclick="openLoginScreen()">Entre ou cadastre-se</button>
       <div class="mob-rest-row2">
         <span class="mob-badge-open">Aberto agora</span>
         <span class="mob-close-time" id="mobCloseTime">fecha às 22h30</span>
@@ -80,6 +69,33 @@
         <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
       </div>
     </div>
+    <button class="home-cart-pill" onclick="openModal('cartModal')" aria-label="Abrir sacola">
+      <span id="homeCartTotal">R$ 0,00</span>
+    </button>
+  </section>
+
+  <section class="restaurant-hero" id="restaurantHero">
+    <div class="restaurant-hero-cover" id="restaurantHeroCover">
+      <img class="restaurant-hero-img" id="restaurantHeroImg" alt="Restaurante">
+      <div class="restaurant-hero-fallback" id="restaurantHeroFallback">
+        <span>Pedido online</span>
+        <strong class="hero-rest-name">Restaurante</strong>
+      </div>
+      <div class="restaurant-hero-dots" id="restaurantHeroDots"></div>
+    </div>
+  </section>
+
+  <section class="home-section home-coupons-section" id="homeCouponsSection">
+    <h2>Cupons pra você!</h2>
+    <div class="coupon-rail" id="couponRail"></div>
+  </section>
+
+  <div class="home-separator" aria-hidden="true"></div>
+
+  <section class="home-section home-highlights-section" id="homeHighlightsSection">
+    <h2 id="homeHighlightsTitle">Destaques</h2>
+    <div class="highlight-rail" id="highlightRail"></div>
+    <button class="home-order-cta" onclick="goToMenuTab()">Faça seu pedido</button>
   </section>
 </main>
 
@@ -110,24 +126,6 @@
     <!-- Populated by JS -->
   </div>
 </div>
-
-<!-- PROMOÇÕES -->
-<section class="promos-section a5" id="promos-section">
-  <div class="promos-inner">
-    <div class="promos-head">
-      <div>
-        <span>Ofertas da casa</span>
-        <h2>Promoções</h2>
-      </div>
-      <button onclick="scrollToMenu()">Ver cardápio</button>
-    </div>
-    <div class="banner-carousel" id="bannerCarousel"></div>
-    <div class="coupon-rail" id="couponRail"></div>
-    <div class="promos-empty" id="promosEmpty" style="display:none">
-      Nenhuma promoção ativa no momento.
-    </div>
-  </div>
-</section>
 
 <!-- FOOTER -->
 <footer class="footer">
@@ -165,13 +163,13 @@
 
 <!-- MOBILE BOTTOM NAVIGATION -->
 <nav class="mob-bottom-nav" id="mobBottomNav" aria-label="Navegação principal">
-  <button class="mob-nav-item active" id="mobNavMenu" onclick="mobNavMenu()">
+  <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()">
+    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="mob-nav-item" id="mobNavMenu" onclick="mobNavMenu()">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8"/><path d="M4.5 3v5.2A2.5 2.5 0 0 0 7 10.7a2.5 2.5 0 0 0 2.5-2.5V3"/><path d="M7 11v10"/><path d="M17 3v18"/><path d="M17 3c-2.4 1.5-3.6 3.6-3.6 6.2V12H17"/></svg>
     <span>Cardápio</span>
-  </button>
-  <button class="mob-nav-item" id="mobNavPromos" onclick="mobNavPromos()">
-    <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20v-8"/><path d="M3 8h18v4H3z"/><path d="M12 8v13.5"/><path d="M12 8H8.5A2.5 2.5 0 1 1 12 4.5V8z"/><path d="M12 8h3.5A2.5 2.5 0 1 0 12 4.5V8z"/></svg>
-    <span>Promoções</span>
   </button>
   <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1.5 1.5 0 0 1 1.5 1.5V21l-2.2-1.4L14 21l-2-1.4L10 21l-2.3-1.4L5.5 21V4.5A1.5 1.5 0 0 1 7 3z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>

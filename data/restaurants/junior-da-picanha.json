@@ -48,6 +48,22 @@
                         "is_active":  true
                     }
                 ],
+    "highlight_banners":  [
+                              {
+                                  "title":  "Destaque da casa",
+                                  "subtitle":  "Banner visual de destaque",
+                                  "image_url":  "assets/restaurants/junior-da-picanha/cover.webp",
+                                  "sort_order":  1,
+                                  "is_active":  true
+                              },
+                              {
+                                  "title":  "Peça seu favorito",
+                                  "subtitle":  "Banner visual de destaque",
+                                  "image_url":  "assets/restaurants/junior-da-picanha/cover.webp",
+                                  "sort_order":  2,
+                                  "is_active":  true
+                              }
+                          ],
     "coupons":  [
                     {
                         "code":  "FRETEGRATIS",

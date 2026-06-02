@@ -10,6 +10,7 @@
   let categories = [];
   let products = [];
   let banners = [];
+  let highlightBanners = [];
   let coupons = [];
   let cart = [];
   let currentProd = null;
@@ -27,6 +28,7 @@
   const deliveryFee = () => deliveryType === 'delivery' ? Number(settings.default_delivery_fee ?? 13) : 0;
   const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const esc = (text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
   function getRestaurantSlug() {
     return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
@@ -104,8 +106,8 @@
     document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Pedido mínimo ${fmt(settings.min_order_value || 0)}`);
     const loc = document.querySelector('.mob-loc');
     if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
-    const neighborhood = $('mobRestNeighborhood');
-    if (neighborhood) neighborhood.textContent = branch.neighborhood || branch.name || '';
+    const loginPrompt = $('homeLoginPrompt');
+    if (loginPrompt) loginPrompt.textContent = isLogged() ? customer.name : 'Entre ou cadastre-se';
     document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
     document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
@@ -127,22 +129,13 @@
       closeEl.style.display = isOpen === false || !closeTime ? 'none' : '';
       closeEl.textContent = closeTime ? `fecha às ${closeTime}` : '';
     }
-    const heroImg = $('restaurantHeroImg');
-    if (heroImg) {
-      const cover = restaurant.cover_url || banners.find(b => b.image_url)?.image_url || restaurant.hero_image_path || restaurant.cover_path || banners.find(b => b.image_path)?.image_path || '';
-      if (cover) {
-        heroImg.src = cover;
-        heroImg.alt = restName;
-      } else {
-        heroImg.removeAttribute('src');
-      }
-    }
-
     const addrMain = $('homeAddressTitle');
     const addrSub = $('homeAddressSub');
     const branchAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
-    if (addrMain) addrMain.textContent = customerAddress ? customerAddress.summary : (branchAddress || 'Use seu endereço para melhores resultados');
+    if (addrMain) addrMain.textContent = customerAddress ? customerAddress.summary : (branchAddress || 'Informe seu endereço e loja');
     if (addrSub) addrSub.textContent = '';
+    const highlightsTitle = $('homeHighlightsTitle');
+    if (highlightsTitle) highlightsTitle.textContent = `Destaques ${restName}`;
 
     document.querySelectorAll('.delivery-time-text').forEach(el => {
       el.textContent = `${settings.estimated_delivery_time_min || 90}-${settings.estimated_delivery_time_max || 100} min`;
@@ -151,41 +144,68 @@
   }
 
   function renderBanners() {
-    const wrap = $('bannerCarousel');
-    if (!wrap) return;
-    const data = banners;
-    wrap.innerHTML = data.map(banner => `
-      <button class="home-banner" onclick="handleBannerAction('${banner.action_type || ''}','${banner.action_value || ''}')">
-        ${banner.image_url || banner.image_path ? `<img src="${banner.image_url || banner.image_path}" alt="${banner.title || restaurant.name || 'Banner'}">` : ''}
-        <div class="home-banner-copy">
-          <span>${restaurant.name || 'Restaurante'}</span>
-          <strong>${banner.title || 'Promoção'}</strong>
-          <small>${banner.subtitle || 'Oferta selecionada para hoje'}</small>
-        </div>
-      </button>
-    `).join('');
-    updatePromosEmptyState();
+    const img = $('restaurantHeroImg');
+    const dots = $('restaurantHeroDots');
+    const fallback = $('restaurantHeroFallback');
+    if (!img) return;
+    const hero = banners.find(banner => banner.image_url || banner.image_path) || banners[0] || {};
+    const image = hero.image_url || hero.image_path || '';
+    if (image) {
+      img.src = image;
+      img.alt = hero.title || hero.subtitle || restaurant.name || 'Banner promocional';
+    } else {
+      img.removeAttribute('src');
+      img.alt = restaurant.name || 'Restaurante';
+    }
+    if (fallback) fallback.setAttribute('aria-hidden', image ? 'true' : 'false');
+    if (dots) {
+      const count = Math.max(banners.length, image ? 1 : 0);
+      dots.innerHTML = count > 1
+        ? banners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}"></span>`).join('')
+        : '';
+    }
   }
 
   function renderCoupons() {
     const wrap = $('couponRail');
     if (!wrap) return;
-    wrap.innerHTML = coupons.map(coupon => `
-      <button class="coupon-card" onclick="useCoupon('${coupon.code}')">
-        <span>${coupon.discount_type === 'free_delivery' ? 'Frete grátis' : coupon.title}</span>
-        <strong>${coupon.title}</strong>
-        <small>${coupon.description || 'Promocao disponivel no app'}</small>
-        <em>Usar cupom</em>
-      </button>
-    `).join('');
-    updatePromosEmptyState();
+    const section = $('homeCouponsSection');
+    if (section) section.style.display = coupons.length ? '' : 'none';
+    wrap.innerHTML = coupons.map(coupon => {
+      const discount = coupon.discount_type === 'percentage'
+        ? `${Number(coupon.discount_value || 0)}% off`
+        : coupon.discount_type === 'free_delivery'
+          ? 'Frete gratis'
+          : coupon.title || 'Cupom';
+      return `
+        <article class="coupon-card">
+          <div class="coupon-art">
+            <span>Cupom</span>
+            <strong>${esc(discount)}</strong>
+          </div>
+          <div class="coupon-title">${esc(coupon.title || coupon.code || 'Cupom')}</div>
+          <div class="coupon-dash"></div>
+          <button type="button" class="coupon-use-btn" onclick="useCoupon('${esc(coupon.code)}')">Usar cupom</button>
+        </article>
+      `;
+    }).join('');
   }
 
-  function updatePromosEmptyState() {
-    const empty = $('promosEmpty');
-    if (!empty) return;
-    const hasContent = Boolean($('bannerCarousel')?.children.length || $('couponRail')?.children.length);
-    empty.style.display = hasContent ? 'none' : 'block';
+  function renderHighlights() {
+    const wrap = $('highlightRail');
+    if (!wrap) return;
+    wrap.style.display = highlightBanners.length ? '' : 'none';
+    wrap.innerHTML = highlightBanners.map(highlight => {
+      const image = highlight.image_url || highlight.image_path || '';
+      const alt = highlight.title || highlight.subtitle || restaurant.name || 'Destaque';
+      return `
+        <article class="highlight-banner">
+          ${image
+            ? `<img src="${esc(image)}" alt="${esc(alt)}">`
+            : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || restaurant.name || '')}</span></div>`}
+        </article>
+      `;
+    }).join('');
   }
 
   function renderMenu() {
@@ -223,20 +243,30 @@
   }
 
   let isClickScrolling = false;
+  function showHomeTab() {
+    document.body.classList.remove('menu-tab');
+    document.body.classList.add('home-tab');
+    setMobNavActive('mobNavHome');
+  }
+
+  function showMenuTab() {
+    document.body.classList.remove('home-tab');
+    document.body.classList.add('menu-tab');
+    setMobNavActive('mobNavMenu');
+  }
+
   function scrollToMenu() {
     closeMobViews();
-    setMobNavActive('mobNavMenu');
+    showMenuTab();
     const el = $('menu-area');
     if (!el) return;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 96, behavior: 'smooth' });
   }
 
-  function scrollToPromos() {
+  function scrollToHome() {
     closeMobViews();
-    setMobNavActive('mobNavPromos');
-    const el = $('promos-section');
-    if (!el) return;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 76, behavior: 'smooth' });
+    showHomeTab();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function scrollToCategory(id, btn) {
@@ -331,6 +361,7 @@
     $('cartSticky')?.classList.toggle('show', qty > 0);
     if ($('cartCountSticky')) $('cartCountSticky').textContent = qty;
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
+    if ($('homeCartTotal')) $('homeCartTotal').textContent = fmt(totals.total);
 
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
     $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');
@@ -585,8 +616,8 @@
     scrollToMenu();
   }
 
-  function mobNavPromos() {
-    scrollToPromos();
+  function mobNavHome() {
+    scrollToHome();
   }
 
   function mobNavOrders() {
@@ -670,7 +701,7 @@
 
   function mobFocusSearch() {
     closeMobViews();
-    setMobNavActive('mobNavMenu');
+    showMenuTab();
     $('searchCat')?.classList.add('search-open');
     $('searchInput')?.focus();
     scrollToMenu();
@@ -697,25 +728,28 @@
     categories = Array.isArray(payload.categories) ? payload.categories : [];
     products = Array.isArray(payload.products) ? payload.products : [];
     banners = Array.isArray(payload.banners) ? payload.banners : [];
+    highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
     coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     applyTheme();
     renderRestaurantShell();
     renderBanners();
     renderCoupons();
+    renderHighlights();
     renderMenu();
     renderProfileView();
     initSearch();
     initScrollSpy();
     setCartTab('delivery');
     updateCartUI();
+    showHomeTab();
   }
 
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, openLoginScreen, mockLogin,
-    useCoupon, handleBannerAction, mobNavMenu, mobNavPromos, mobNavOrders, mobNavProfile,
+    useCoupon, handleBannerAction, mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo
   });
 

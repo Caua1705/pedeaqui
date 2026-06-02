@@ -1,4 +1,4 @@
 (function () {
-  const items = ['home', 'promos', 'orders', 'profile'];
+  const items = ['home', 'menu', 'orders', 'profile'];
   window.PedeAquiBottomNav = { items };
 })();

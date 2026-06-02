@@ -1,4 +1,5 @@
 .u-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
 /* Restaurant page final mobile layout fixes. utilities.css is loaded last. */
 .mobile-home,.search-cat,.menu-area,.promos-section{opacity:1!important;animation:none!important}
 .mob-rest-details{overflow:visible!important;min-width:0!important;max-width:calc(100% - 70px)!important}
@@ -111,6 +112,7 @@ body.menu-tab .search-cat,
 body.menu-tab .menu-area{display:block!important}
 
 .restaurant-app-shell{
+  box-sizing:border-box!important;
   width:100%!important;
   max-width:430px!important;
   min-height:0!important;
@@ -118,22 +120,40 @@ body.menu-tab .menu-area{display:block!important}
   padding:0 0 calc(18px + var(--safe-bottom))!important;
   background:#fff!important;
 }
+.restaurant-app-shell::before{
+  content:''!important;
+  position:fixed!important;
+  top:0!important;
+  left:50%!important;
+  width:min(100vw,430px)!important;
+  height:136px!important;
+  transform:translateX(-50%)!important;
+  z-index:82!important;
+  background:#fff!important;
+  pointer-events:none!important;
+}
 .address-strip.address-card{
-  margin:10px 14px 8px!important;
-  width:calc(100% - 28px)!important;
-  min-height:42px!important;
+  box-sizing:border-box!important;
+  position:fixed!important;
+  top:10px!important;
+  left:50%!important;
+  z-index:84!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+  width:min(calc(100vw - 28px),402px)!important;
+  min-height:44px!important;
   padding:0 12px!important;
-  border:1px solid #ffe0cf!important;
-  border-radius:10px!important;
+  border:1px solid #ffd8c2!important;
+  border-radius:14px!important;
   background:#fff6ef!important;
 }
-.address-strip.has-address{background:#fff!important;border-color:#eeeeee!important}
+.address-strip.has-address{background:#fff6ef!important;border-color:#ffd8c2!important}
 .address-strip .address-card-icon,
 .address-strip .address-card-chevron{color:var(--brand)!important}
 .address-strip .address-card-copy strong{
   color:#404040!important;
   font-size:12px!important;
-  font-weight:650!important;
+  font-weight:500!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -141,26 +161,33 @@ body.menu-tab .menu-area{display:block!important}
 
 .mobile-home .mob-identity,
 .mob-identity{
-  position:relative!important;
+  box-sizing:border-box!important;
+  position:fixed!important;
+  top:64px!important;
+  left:50%!important;
+  z-index:83!important;
+  transform:translateX(-50%)!important;
   display:flex!important;
   align-items:center!important;
-  gap:10px!important;
-  padding:8px 104px 10px 14px!important;
+  gap:12px!important;
+  padding:10px 92px 12px 14px!important;
   margin:0!important;
-  width:100%!important;
-  max-width:100%!important;
+  width:min(100vw,430px)!important;
+  max-width:430px!important;
   border:0!important;
-  border-bottom:1px solid #f0f0f0!important;
+  border-bottom:1px solid #eeeeee!important;
   background:#fff!important;
 }
 .mob-logo{
-  width:42px!important;
-  height:42px!important;
-  flex:0 0 42px!important;
+  width:50px!important;
+  height:50px!important;
+  flex:0 0 50px!important;
   border-radius:50%!important;
   overflow:hidden!important;
+  background:#fff3ea!important;
 }
 .mob-logo img{width:100%!important;height:100%!important;object-fit:cover!important}
+.mob-logo-fallback{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;background:#fff3ea!important;color:var(--brand)!important;font-size:15px!important;font-weight:900!important}
 .mob-rest-details{max-width:none!important;flex:1!important;min-width:0!important}
 .mob-rest-name{
   margin:0 0 2px!important;
@@ -190,24 +217,27 @@ body.menu-tab .menu-area{display:block!important}
   right:14px!important;
   top:50%!important;
   transform:translateY(-50%)!important;
-  flex:0 0 82px!important;
-  min-width:0!important;
+  flex:0 0 auto!important;
+  min-width:58px!important;
+  max-width:68px!important;
   height:34px!important;
+  padding:0 13px!important;
   border:0!important;
   border-radius:999px!important;
-  background:var(--brand)!important;
-  color:#fff!important;
-  font-size:12px!important;
-  font-weight:850!important;
+  background:#f3f3f3!important;
+  color:#d95c04!important;
+  font-size:11px!important;
+  font-weight:800!important;
 }
 
-.restaurant-hero{margin:0!important;background:#fff!important}
+.restaurant-hero{margin:136px 0 0!important;background:#fff!important}
 .restaurant-hero-cover{
   width:100%!important;
   height:183px!important;
   min-height:0!important;
   border-radius:0!important;
   box-shadow:none!important;
+  overflow:hidden!important;
   background:linear-gradient(135deg,var(--brand),#ff8b22)!important;
 }
 .restaurant-hero-img{
@@ -239,7 +269,8 @@ body.menu-tab .menu-area{display:block!important}
 .restaurant-hero-dots span.active{width:20px!important;background:#fff!important}
 
 .home-section{
-  padding:17px 20px 20px!important;
+  box-sizing:border-box!important;
+  padding:16px 22px 20px!important;
   background:#fff!important;
 }
 .home-section h2{
@@ -249,13 +280,13 @@ body.menu-tab .menu-area{display:block!important}
   line-height:24px!important;
   font-weight:850!important;
 }
-.home-separator{height:8px!important;background:#f4f4f4!important}
+.home-separator{height:10px!important;background:#f4f4f4!important}
 .coupon-rail,
 .highlight-rail{
   display:flex!important;
   gap:12px!important;
-  margin:0 -20px!important;
-  padding:0 20px 2px!important;
+  margin:0 -22px!important;
+  padding:0 22px 2px!important;
   overflow-x:auto!important;
   scrollbar-width:none!important;
 }
@@ -265,11 +296,12 @@ body.menu-tab .menu-area{display:block!important}
   position:relative!important;
   flex:0 0 162px!important;
   min-width:162px!important;
+  height:214px!important;
   min-height:214px!important;
   padding:6px 6px 14px!important;
   border:1px solid #ffd0b8!important;
   border-radius:9px!important;
-  background:#fffaf7!important;
+  background:#fff8f3!important;
   box-shadow:none!important;
   text-align:center!important;
 }
@@ -327,21 +359,46 @@ body.menu-tab .menu-area{display:block!important}
 }
 .coupon-dash{height:1px!important;margin:0 10px 13px!important;border-top:1px dashed #ffd0b8!important}
 .coupon-use-btn{
-  height:26px!important;
-  padding:0 12px!important;
+  height:28px!important;
+  padding:0 14px!important;
   border:0!important;
-  border-radius:5px!important;
-  background:#ffe1d2!important;
-  color:#444!important;
+  border-radius:6px!important;
+  background:#ffd9c8!important;
+  color:#3a3a3a!important;
   font-size:12px!important;
   font-weight:800!important;
 }
 
-.home-highlights-section{padding-bottom:92px!important;background:#fff!important}
+.home-highlights-section{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:20px 22px 16px!important;
+  background:#f4f4f4!important;
+}
+.home-highlights-section::before{
+  content:''!important;
+  position:absolute!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  height:194px!important;
+  background:#fff!important;
+  z-index:0!important;
+}
+.home-highlights-section h2,
+.home-highlights-section .highlight-rail,
+.home-highlights-section .home-order-cta{
+  position:relative!important;
+  z-index:1!important;
+}
+.highlight-rail{
+  gap:10px!important;
+  margin-top:8px!important;
+}
 .highlight-banner{
   flex:0 0 290px!important;
   width:290px!important;
-  height:134px!important;
+  height:116px!important;
   border-radius:8px!important;
   overflow:hidden!important;
   background:#fff3ea!important;
@@ -357,11 +414,13 @@ body.menu-tab .menu-area{display:block!important}
   background:linear-gradient(135deg,var(--brand),#ff8b22)!important;
 }
 .home-order-cta{
+  position:relative!important;
+  z-index:2!important;
   display:block!important;
   width:154px!important;
   max-width:calc(100vw - 40px)!important;
   height:44px!important;
-  margin:24px 0 0 auto!important;
+  margin:36px 0 0 auto!important;
   border:0!important;
   border-radius:9px!important;
   background:var(--brand)!important;
@@ -371,21 +430,36 @@ body.menu-tab .menu-area{display:block!important}
 }
 
 .mob-bottom-nav{
+  box-sizing:border-box!important;
+  display:flex!important;
+  height:calc(64px + var(--safe-bottom))!important;
+  padding:0 0 var(--safe-bottom)!important;
   max-width:430px!important;
   left:50%!important;
   right:auto!important;
   width:min(100vw,430px)!important;
   transform:translateX(-50%)!important;
   border-radius:0!important;
-  box-shadow:0 -2px 14px rgba(0,0,0,.08)!important;
+  background:#fff!important;
+  box-shadow:0 -2px 12px rgba(0,0,0,.06)!important;
 }
 .mob-bottom-nav .mob-nav-item{
+  box-sizing:border-box!important;
   position:static!important;
   flex:1 1 25%!important;
   width:auto!important;
   min-width:0!important;
 }
 .mob-nav-item.active{color:var(--brand)!important}
+.mob-bottom-nav .mob-nav-icon{
+  width:20px!important;
+  height:20px!important;
+}
+.mob-bottom-nav .mob-nav-item span{
+  font-size:11px!important;
+  line-height:15px!important;
+  font-weight:600!important;
+}
 
 @media(min-width:768px){
   .restaurant-app-shell,
@@ -402,12 +476,44 @@ body.menu-tab .menu-area{display:block!important}
     margin-left:0!important;
     margin-right:0!important;
   }
+  .restaurant-app-shell::before{
+    left:0!important;
+    width:100vw!important;
+    transform:none!important;
+  }
   .mob-bottom-nav{
+    display:flex!important;
+    left:0!important;
+    right:0!important;
+    width:100vw!important;
+    max-width:none!important;
+    transform:none!important;
+    overflow:hidden!important;
+  }
+  .home-cart-pill{
+    position:absolute!important;
+    top:50%!important;
+    right:14px!important;
+    left:auto!important;
+    width:68px!important;
+    padding:0!important;
+    transform:translateY(-50%)!important;
+    z-index:3!important;
+  }
+  .home-section{width:100vw!important;max-width:100vw!important}
+  .address-strip.address-card{
+    left:14px!important;
+    width:calc(100vw - 28px)!important;
+    transform:none!important;
+  }
+  .mobile-home .mob-identity,
+  .mob-identity{
     left:0!important;
     width:100vw!important;
     max-width:none!important;
     transform:none!important;
   }
-  .home-section{width:100vw!important;max-width:100vw!important}
-  .home-order-cta{margin-right:0!important}
+  .home-order-cta{
+    margin-right:0!important;
+  }
 }

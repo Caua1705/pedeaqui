@@ -89,8 +89,9 @@
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
     const logoUrl = restaurant.logo_url || restaurant.logo_path;
+    const fallbackLogo = `<div class="mob-logo-fallback">${initials(restName)}</div>`;
     const logoHtml = logoUrl
-      ? `<img src="${logoUrl}" alt="${restName}">`
+      ? `<img src="${esc(logoUrl)}" alt="${esc(restName)}" onerror="this.replaceWith(this.ownerDocument.createRange().createContextualFragment('${fallbackLogo}'))">`
       : `<div class="mob-logo-fallback">${initials(restName)}</div>`;
     const logo = document.querySelector('.mob-logo');
     if (logo) logo.innerHTML = logoHtml;
@@ -189,13 +190,16 @@
         </article>
       `;
     }).join('');
+    updateHomePromoVisibility();
   }
 
   function renderHighlights() {
     const wrap = $('highlightRail');
     if (!wrap) return;
-    wrap.style.display = highlightBanners.length ? '' : 'none';
-    wrap.innerHTML = highlightBanners.map(highlight => {
+    const highlightItems = getHomeHighlightItems();
+    const section = $('homeHighlightsSection');
+    if (section) section.style.display = highlightItems.length ? '' : 'none';
+    wrap.innerHTML = highlightItems.map(highlight => {
       const image = highlight.image_url || highlight.image_path || '';
       const alt = highlight.title || highlight.subtitle || restaurant.name || 'Destaque';
       return `
@@ -206,6 +210,24 @@
         </article>
       `;
     }).join('');
+    updateHomePromoVisibility();
+  }
+
+  function getHomeHighlightItems() {
+    return highlightBanners.length ? highlightBanners : banners;
+  }
+
+  function updateHomePromoVisibility() {
+    const hasCoupons = coupons.length > 0;
+    const hasHighlights = getHomeHighlightItems().length > 0;
+    const couponSection = $('homeCouponsSection');
+    const highlightsSection = $('homeHighlightsSection');
+    const heroSeparator = $('homeHeroSeparator');
+    const separator = $('homeSeparator');
+    if (couponSection) couponSection.style.display = hasCoupons ? '' : 'none';
+    if (highlightsSection) highlightsSection.style.display = hasHighlights ? '' : 'none';
+    if (heroSeparator) heroSeparator.style.display = '';
+    if (separator) separator.style.display = hasCoupons && hasHighlights ? '' : 'none';
   }
 
   function renderMenu() {
@@ -704,7 +726,8 @@
     showMenuTab();
     $('searchCat')?.classList.add('search-open');
     $('searchInput')?.focus();
-    scrollToMenu();
+    const el = $('menu-area');
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 96, behavior: 'smooth' });
   }
 
   function closeSearch() {
@@ -755,6 +778,9 @@
 
   initRestaurantApp().catch(error => {
     console.error('Falha ao carregar restaurante', error);
+    coupons = [];
+    highlightBanners = [];
+    updateHomePromoVisibility();
     if ($('menuContainer')) $('menuContainer').innerHTML = '<div class="empty-search">Não foi possível carregar o cardápio.</div>';
   });
 })();

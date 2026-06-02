@@ -9,18 +9,7 @@
     let sourceCategories = Array.isArray(raw.categories) ? raw.categories : [];
     let sourceProducts = Array.isArray(raw.products) ? raw.products : [];
     const sourceBanners = Array.isArray(raw.banners) ? raw.banners : [];
-    const sourceHighlightBanners = Array.isArray(raw.highlight_banners)
-      ? raw.highlight_banners
-      : Array.isArray(raw.highlightBanners)
-        ? raw.highlightBanners
-        : Array.isArray(raw.highlights)
-          ? raw.highlights
-          : Array.isArray(raw.destaques)
-            ? raw.destaques
-            : sourceBanners.filter(banner => {
-              const placement = String(banner.placement || banner.section || banner.type || banner.banner_type || '').toLowerCase();
-              return banner.is_highlight === true || banner.is_highlight_banner === true || ['highlight', 'highlights', 'destaque', 'destaques'].includes(placement);
-            });
+    const sourceHighlightBanners = Array.isArray(raw.highlight_banners) ? raw.highlight_banners : [];
 
     if ((!sourceCategories.length || !sourceProducts.length) && raw.menu) {
       const menuList = Array.isArray(raw.menu) ? raw.menu : Object.values(raw.menu).filter(section => section && Array.isArray(section.items));
@@ -74,7 +63,18 @@
       restaurant: raw.restaurant || {},
       settings: raw.settings || {},
       branches: Array.isArray(raw.branches) ? raw.branches : [],
-      banners: sourceBanners.filter(banner => banner.is_active !== false),
+      banners: sourceBanners
+        .filter(banner => banner.is_active !== false)
+        .map((banner, index) => ({
+          ...banner,
+          id: banner.id || banner.uuid || `banner-${index}`,
+          title: banner.title || banner.name || '',
+          subtitle: banner.subtitle || banner.description || '',
+          image_url: banner.image_url || banner.imageUrl || banner.image || banner.image_path || '',
+          image_path: banner.image_path || banner.image || banner.image_url || banner.imageUrl || '',
+          sort_order: Number(banner.sort_order || banner.order || index)
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order),
       highlight_banners: sourceHighlightBanners
         .filter(banner => banner.is_active !== false)
         .map((banner, index) => ({

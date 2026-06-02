@@ -426,7 +426,7 @@ body.menu-tab .menu-area{display:block!important}
 .home-order-cta{
   position:fixed!important;
   right:16px!important;
-  bottom:calc(64px + var(--safe-bottom) + 10px)!important;
+  bottom:calc(64px + var(--safe-bottom) + 18px)!important;
   z-index:70!important;
   display:block!important;
   width:154px!important;

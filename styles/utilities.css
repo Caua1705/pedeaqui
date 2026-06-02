@@ -595,16 +595,26 @@ body.menu-tab .menu-area{display:block!important}
   gap:10px!important;
   margin-top:8px!important;
   padding-bottom:0!important;
+  padding-left:22px!important;
+  scroll-padding-left:22px!important;
 }
 .highlight-banner{
-  flex:0 0 290px!important;
-  width:290px!important;
-  height:134px!important;
+  flex:0 0 320px!important;
+  width:320px!important;
+  aspect-ratio:2.5 / 1!important;
+  height:auto!important;
   border-radius:8px!important;
   overflow:hidden!important;
-  background:#fff3ea!important;
+  background:#f6f2ee!important;
 }
-.highlight-banner img{width:100%!important;height:100%!important;display:block!important;object-fit:cover!important}
+.highlight-banner:first-child{margin-left:0!important}
+.highlight-banner img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
 .home-highlight-gray-space{
   height:80px!important;
   margin:20px -22px 0!important;

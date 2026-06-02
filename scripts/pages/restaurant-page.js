@@ -308,7 +308,7 @@
   }
 
   function getHomeHighlightItems() {
-    return highlightBanners.length ? highlightBanners : banners;
+    return highlightBanners;
   }
 
   function updateHomePromoVisibility() {

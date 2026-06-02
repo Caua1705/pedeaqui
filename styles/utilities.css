@@ -53,6 +53,176 @@
 .modal--login .login-secondary{width:100%!important;height:40px!important;border:0!important;border-radius:8px!important;background:#e3ece6!important;color:#3f7d4f!important;font-size:.78rem!important;font-weight:900!important}
 .modal--login .login-privacy{margin-top:auto!important;color:#7a7a7a!important;font-size:.78rem!important;text-decoration:none!important}
 
+.coupon-detail-overlay{
+  position:fixed!important;
+  inset:0!important;
+  z-index:260!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:stretch!important;
+  background:rgba(0,0,0,.42)!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:opacity .22s ease!important;
+}
+.coupon-detail-overlay.active{
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.coupon-detail-screen{
+  width:min(100vw,430px)!important;
+  height:100dvh!important;
+  display:flex!important;
+  flex-direction:column!important;
+  background:#fff!important;
+  transform:translateX(100%)!important;
+  transition:transform .85s cubic-bezier(.22,.8,.24,1)!important;
+}
+.coupon-detail-overlay.active .coupon-detail-screen{transform:translateX(0)!important}
+.coupon-detail-header{
+  height:82px!important;
+  display:grid!important;
+  grid-template-columns:48px 1fr 48px!important;
+  align-items:center!important;
+  padding:18px 20px 12px!important;
+  border-bottom:1px solid #eeeeee!important;
+  background:#fff!important;
+}
+.coupon-detail-header strong{
+  text-align:center!important;
+  color:#232323!important;
+  font-size:16px!important;
+  font-weight:800!important;
+}
+.coupon-detail-back{
+  width:32px!important;
+  height:32px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:0!important;
+  border-radius:9px!important;
+  background:#eeeeee!important;
+  color:#555!important;
+}
+.coupon-detail-body{
+  flex:1!important;
+  overflow-y:auto!important;
+  background:#fff!important;
+}
+.coupon-detail-art{
+  height:230px!important;
+  margin:0!important;
+  padding:8px!important;
+  background:linear-gradient(135deg,#fb7a36,#ff8a36)!important;
+}
+.coupon-detail-art img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:cover!important;
+}
+.coupon-detail-art-fallback{
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:3px dotted rgba(255,255,255,.55)!important;
+  color:#fff!important;
+  text-align:center!important;
+}
+.coupon-detail-art-fallback span{
+  font-size:28px!important;
+  font-weight:900!important;
+}
+.coupon-detail-art-fallback strong{
+  color:#ffd95b!important;
+  font-size:58px!important;
+  line-height:1!important;
+  font-weight:900!important;
+}
+.coupon-detail-summary{
+  min-height:74px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  margin:18px 34px 20px!important;
+  padding:12px 12px!important;
+  border-radius:8px!important;
+  background:#fde1d4!important;
+}
+.coupon-detail-ticket-icon{
+  width:24px!important;
+  height:24px!important;
+  color:#fb641c!important;
+  flex:0 0 24px!important;
+}
+.coupon-detail-ticket-icon svg{width:100%!important;height:100%!important}
+.coupon-detail-main{
+  min-width:0!important;
+  flex:1!important;
+}
+.coupon-detail-main strong{
+  display:block!important;
+  color:#454545!important;
+  font-size:15px!important;
+  line-height:18px!important;
+  font-weight:850!important;
+}
+.coupon-detail-main span{
+  display:inline-flex!important;
+  margin-top:5px!important;
+  padding:3px 8px!important;
+  border-radius:999px!important;
+  background:#ffc49e!important;
+  color:#6b4b3c!important;
+  font-size:11px!important;
+  line-height:14px!important;
+  font-weight:800!important;
+}
+.coupon-detail-min{
+  max-width:145px!important;
+  color:#555!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  text-align:right!important;
+}
+.coupon-detail-rules{
+  border-top:8px solid #f7f5f3!important;
+  padding:24px 34px 120px!important;
+  color:#555!important;
+}
+.coupon-detail-rules strong{
+  display:block!important;
+  margin-bottom:16px!important;
+  font-size:13px!important;
+  font-weight:850!important;
+}
+.coupon-detail-rules ul{
+  margin:0!important;
+  padding-left:16px!important;
+}
+.coupon-detail-rules li{
+  margin:0 0 10px!important;
+  font-size:13px!important;
+  line-height:18px!important;
+}
+.coupon-detail-footer{
+  padding:20px 20px max(32px,env(safe-area-inset-bottom))!important;
+  background:#fff!important;
+}
+.coupon-detail-use{
+  width:100%!important;
+  height:44px!important;
+  border:0!important;
+  border-radius:8px!important;
+  background:var(--brand)!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+
 /* Typography imported from the provided reference assets. */
 @font-face{
   font-family:"ReferenceInter";
@@ -250,6 +420,36 @@ body.menu-tab .menu-area{display:block!important}
   object-position:center!important;
 }
 .restaurant-hero-img[src]{display:block!important}
+.restaurant-hero-cover.has-carousel .restaurant-hero-img{display:none!important}
+.restaurant-hero-track{
+  position:absolute!important;
+  inset:0!important;
+  display:flex!important;
+  width:100%!important;
+  height:100%!important;
+  transform:translateX(0)!important;
+  transition:transform .48s ease!important;
+  will-change:transform!important;
+  touch-action:pan-y!important;
+  cursor:grab!important;
+}
+.restaurant-hero-track.is-dragging{
+  transition:none!important;
+  cursor:grabbing!important;
+}
+.restaurant-hero-slide{
+  flex:0 0 100%!important;
+  width:100%!important;
+  height:100%!important;
+}
+.restaurant-hero-slide img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+.restaurant-hero-cover.has-carousel .restaurant-hero-fallback{display:none!important}
 .restaurant-hero-fallback{
   position:absolute!important;
   inset:0!important;

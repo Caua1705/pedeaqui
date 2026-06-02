@@ -21,6 +21,11 @@
   let customer = JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
   let customerAddress = JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null');
   let submittedOrder = null;
+  let heroBannerIndex = 0;
+  let heroBannerTimer = null;
+  let heroSwipeReady = false;
+  let heroDragStartX = 0;
+  let heroDragDeltaX = 0;
 
   const $ = (id) => document.getElementById(id);
   const isLogged = () => Boolean(customer);
@@ -146,25 +151,108 @@
 
   function renderBanners() {
     const img = $('restaurantHeroImg');
+    const cover = $('restaurantHeroCover');
+    const track = $('restaurantHeroTrack');
     const dots = $('restaurantHeroDots');
     const fallback = $('restaurantHeroFallback');
-    if (!img) return;
-    const hero = banners.find(banner => banner.image_url || banner.image_path) || banners[0] || {};
-    const image = hero.image_url || hero.image_path || '';
-    if (image) {
-      img.src = image;
-      img.alt = hero.title || hero.subtitle || restaurant.name || 'Banner promocional';
-    } else {
+    if (!img || !cover) return;
+    clearInterval(heroBannerTimer);
+    heroBannerTimer = null;
+    heroBannerIndex = 0;
+    const visualBanners = banners.filter(banner => banner.image_url || banner.image_path);
+
+    if (!visualBanners.length) {
+      cover.classList.remove('has-carousel');
+      if (track) track.innerHTML = '';
       img.removeAttribute('src');
       img.alt = restaurant.name || 'Restaurante';
+      if (fallback) fallback.setAttribute('aria-hidden', 'false');
+      if (dots) dots.innerHTML = '';
+      return;
     }
-    if (fallback) fallback.setAttribute('aria-hidden', image ? 'true' : 'false');
+
+    const first = visualBanners[0];
+    img.src = first.image_url || first.image_path || '';
+    img.alt = first.title || first.subtitle || restaurant.name || 'Banner promocional';
+    cover.classList.add('has-carousel');
+    if (fallback) fallback.setAttribute('aria-hidden', 'true');
+
+    if (track) {
+      track.innerHTML = visualBanners.map((banner, index) => {
+        const image = banner.image_url || banner.image_path || '';
+        const alt = banner.title || banner.subtitle || restaurant.name || `Banner ${index + 1}`;
+        return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}"></div>`;
+      }).join('');
+      updateHeroCarousel();
+      initHeroSwipe();
+    }
+
     if (dots) {
-      const count = Math.max(banners.length, image ? 1 : 0);
-      dots.innerHTML = count > 1
-        ? banners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}"></span>`).join('')
+      dots.innerHTML = visualBanners.length > 1
+        ? visualBanners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}" onclick="setHeroBanner(${index})"></span>`).join('')
         : '';
     }
+
+    if (visualBanners.length > 1) {
+      heroBannerTimer = setInterval(() => {
+        heroBannerIndex = (heroBannerIndex + 1) % visualBanners.length;
+        updateHeroCarousel();
+      }, 4200);
+    }
+  }
+
+  function setHeroBanner(index) {
+    const total = $('restaurantHeroTrack')?.children.length || 0;
+    if (!total) return;
+    heroBannerIndex = Math.max(0, Math.min(index, total - 1));
+    updateHeroCarousel();
+  }
+
+  function updateHeroCarousel() {
+    const track = $('restaurantHeroTrack');
+    if (!track) return;
+    track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
+    document.querySelectorAll('#restaurantHeroDots span').forEach((dot, index) => {
+      dot.classList.toggle('active', index === heroBannerIndex);
+    });
+  }
+
+  function initHeroSwipe() {
+    const track = $('restaurantHeroTrack');
+    if (!track || heroSwipeReady) return;
+    heroSwipeReady = true;
+
+    const endDrag = () => {
+      if (!track.classList.contains('is-dragging')) return;
+      const total = track.children.length;
+      track.classList.remove('is-dragging');
+      if (total > 1 && Math.abs(heroDragDeltaX) > 46) {
+        heroBannerIndex += heroDragDeltaX < 0 ? 1 : -1;
+        heroBannerIndex = (heroBannerIndex + total) % total;
+      }
+      heroDragDeltaX = 0;
+      updateHeroCarousel();
+    };
+
+    track.addEventListener('pointerdown', event => {
+      if (track.children.length <= 1) return;
+      clearInterval(heroBannerTimer);
+      heroBannerTimer = null;
+      heroDragStartX = event.clientX;
+      heroDragDeltaX = 0;
+      track.classList.add('is-dragging');
+      track.setPointerCapture?.(event.pointerId);
+    });
+
+    track.addEventListener('pointermove', event => {
+      if (!track.classList.contains('is-dragging')) return;
+      heroDragDeltaX = event.clientX - heroDragStartX;
+      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${heroDragDeltaX}px))`;
+    });
+
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    track.addEventListener('lostpointercapture', endDrag);
   }
 
   function renderCoupons() {
@@ -174,24 +262,25 @@
     if (section) section.style.display = coupons.length ? '' : 'none';
     wrap.innerHTML = coupons.map(coupon => {
       const image = coupon.image_url || coupon.image_path || '';
-      const discount = coupon.discount_type === 'percentage'
+      const discountType = String(coupon.discount_type || '').toLowerCase();
+      const discount = ['percent', 'percentage'].includes(discountType)
         ? `${Number(coupon.discount_value || 0)}% off`
-        : coupon.discount_type === 'free_delivery'
+        : discountType === 'free_delivery'
           ? 'Frete gratis'
-          : coupon.title || 'Cupom';
+          : coupon.name || coupon.title || 'Cupom';
       // Fixed template: backend supplies the coupon artwork (image) + title.
       // The gradient + discount text is only a fallback when there's no image
       // (or it fails to load — onerror reverts to the fallback).
       return `
-        <article class="coupon-card">
+        <article class="coupon-card" onclick="openCouponDetail('${esc(coupon.code)}')">
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.title || 'Cupom')}" onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
+            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
-          <div class="coupon-title">${esc(coupon.title || coupon.code || 'Cupom')}</div>
+          <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
           <div class="coupon-dash"></div>
-          <button type="button" class="coupon-use-btn" onclick="useCoupon('${esc(coupon.code)}')">Usar cupom</button>
+          <button type="button" class="coupon-use-btn" onclick="event.stopPropagation();openCouponDetail('${esc(coupon.code)}')">Usar cupom</button>
         </article>
       `;
     }).join('');
@@ -610,13 +699,67 @@
     renderProfileView();
   }
 
-  function useCoupon(code) {
-    selectedCoupon = coupons.find(c => c.code === code) || null;
+  function couponLabel(coupon) {
+    const type = String(coupon.discount_type || '').toLowerCase();
+    if (['percent', 'percentage'].includes(type)) return `${Number(coupon.discount_value || 0)}% OFF`;
+    if (type === 'free_delivery') return 'Frete grátis';
+    if (Number(coupon.discount_value) > 0) return `${fmt(coupon.discount_value)} OFF`;
+    return coupon.name || coupon.title || coupon.code || 'Cupom';
+  }
+
+  function couponRules(coupon) {
+    const rules = [];
+    if (Number(coupon.min_order_value) > 0) rules.push(`Pedido mínimo ${fmt(coupon.min_order_value)}`);
+    if (coupon.expires_at || coupon.valid_until) rules.push(`Válido até ${coupon.expires_at || coupon.valid_until}`);
+    if (coupon.description) rules.push(coupon.description);
+    rules.push('Disponível para pedidos neste restaurante');
+    rules.push('Sujeito à disponibilidade e regras do restaurante');
+    return rules;
+  }
+
+  function openCouponDetail(code) {
+    const coupon = coupons.find(c => String(c.code) === String(code));
+    if (!coupon) return;
+    selectedCoupon = coupon;
+    const image = coupon.image_url || coupon.image_path || '';
+    const label = couponLabel(coupon);
+    const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
+    const art = $('couponDetailArt');
+    if (art) {
+      art.innerHTML = image
+        ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || label)}">`
+        : `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
+    }
+    if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
+    if ($('couponDetailCode')) $('couponDetailCode').textContent = coupon.code || 'CUPOM';
+    if ($('couponDetailMin')) $('couponDetailMin').textContent = minText;
+    const rules = $('couponDetailRules');
+    if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
+    $('couponDetailOverlay')?.classList.add('active');
+    document.body.classList.add('modal-open');
+  }
+
+  function closeCouponDetail(event) {
+    if (event && event.currentTarget && event.target !== event.currentTarget) return;
+    $('couponDetailOverlay')?.classList.remove('active');
+    if (!document.querySelector('.overlay.active,.mob-view.active,.coupon-detail-overlay.active')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+
+  function confirmCouponDetail() {
+    if (!selectedCoupon) return;
     if (!isLogged()) {
+      closeCouponDetail();
       openLoginScreen();
       return;
     }
-    alert(`Cupom ${code} selecionado para uso futuro.`);
+    closeCouponDetail();
+    alert(`Cupom ${selectedCoupon.code} selecionado.`);
+  }
+
+  function useCoupon(code) {
+    openCouponDetail(code);
   }
 
   function handleBannerAction(type, value) {
@@ -777,8 +920,9 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, openLoginScreen, mockLogin,
-    useCoupon, handleBannerAction, mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo
+    useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
+    mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
+    openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner
   });
 
   initRestaurantApp().catch(error => {

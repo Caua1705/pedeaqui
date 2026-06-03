@@ -379,8 +379,8 @@ body.home-tab .menu-area,
 body.home-tab .footer,
 body:not(.menu-tab) .search-cat,
 body:not(.menu-tab) .menu-area{display:none!important}
-/* menu-tab: keep shell alive so fixed header stays visible */
-body.menu-tab .restaurant-app-shell{display:block!important;height:0!important;min-height:0!important;overflow:visible!important}
+/* menu-tab: shell in normal flow, header scrolls with page */
+body.menu-tab .restaurant-app-shell{display:block!important;height:auto!important;min-height:0!important;overflow:visible!important}
 /* hide home-only content */
 body.menu-tab .restaurant-hero,
 body.menu-tab .home-separator,
@@ -389,40 +389,18 @@ body.menu-tab .home-highlights-section,
 body.menu-tab .home-order-cta{display:none!important}
 body.menu-tab .search-cat,
 body.menu-tab .menu-area{display:block!important}
-/* header slides up when user scrolls (JS adds .menu-scrolled to body) */
-body.menu-tab .address-strip.address-card,
-body.menu-tab .delivery-widget,
-body.menu-tab .delivery-widget-bottom-line,
-body.menu-tab .mobile-home .mob-identity,
-body.menu-tab .mob-identity,
-body.menu-tab .restaurant-app-shell::before{
-  transition:transform .22s ease, opacity .22s ease!important;
-}
-body.menu-tab.menu-scrolled .address-strip.address-card,
-body.menu-tab.menu-scrolled .delivery-widget,
-body.menu-tab.menu-scrolled .delivery-widget-bottom-line,
-body.menu-tab.menu-scrolled .mobile-home .mob-identity,
-body.menu-tab.menu-scrolled .mob-identity,
-body.menu-tab.menu-scrolled .restaurant-app-shell::before{
-  transform:translateY(-160px)!important;
-  opacity:0!important;
-  pointer-events:none!important;
-}
-/* search-cat: fixed below header, slides to top when header hides */
+/* header scrolls with page — no slide-up animation needed */
+/* search-cat: in normal flow, no fixed positioning */
 body.menu-tab .search-cat{
-  position:fixed!important;
-  top:136px!important;
-  left:50%!important;
-  transform:translateX(-50%)!important;
-  width:min(100vw,390px)!important;
-  z-index:75!important;
-  transition:top .22s ease!important;
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
+  transform:none!important;
+  width:100%!important;
+  z-index:auto!important;
 }
-body.menu-tab.menu-scrolled .search-cat{
-  top:0!important;
-}
-/* push menu-area below fixed search-cat */
-body.menu-tab .menu-area{padding-top:117px!important}
+/* menu-area: no padding needed since search-cat is in normal flow */
+body.menu-tab .menu-area{padding-top:0!important}
 body.menu-tab .menu-section{scroll-margin-top:260px!important}
 /* on mobile, full-width search-cat */
 @media(max-width:767px){
@@ -605,7 +583,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   font-weight:800!important;
 }
 
-.restaurant-hero{margin:166px 0 0!important;background:#fff!important}
+.restaurant-hero{margin:0!important;background:transparent!important}
 .restaurant-hero-cover{
   width:100%!important;
   height:auto!important;
@@ -704,9 +682,9 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   height:210px!important;
   min-height:210px!important;
   padding:6px 6px 12px!important;
-  border:1.5px dashed #f5c9ae!important;
+  border:1.5px dashed #f0b898!important;
   border-radius:12px!important;
-  background:#ffffff!important;
+  background:#fff8f5!important;
   box-shadow:none!important;
   text-align:center!important;
   display:flex!important;
@@ -719,8 +697,8 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   top:157px!important;
   width:7px!important;
   height:13px!important;
-  border:1.5px dashed #f5c9ae!important;
-  background:#f9f9f9!important;
+  border:1.5px dashed #f0b898!important;
+  background:#fff8f5!important;
 }
 .coupon-card::before{left:-2px!important;border-left:0!important;border-radius:0 7px 7px 0!important}
 .coupon-card::after{right:-2px!important;border-right:0!important;border-radius:7px 0 0 7px!important}
@@ -735,7 +713,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   gap:2px!important;
   border:0!important;
   border-radius:9px!important;
-  background:linear-gradient(160deg,#f07020,#f5a030)!important;
+  background:linear-gradient(170deg,#f09030,#f5a535)!important;
   color:#fff!important;
 }
 /* Backend image fills the art block; gradient + text become the fallback. */
@@ -787,17 +765,17 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   text-transform:uppercase!important;
   letter-spacing:.03em!important;
 }
-.coupon-dash{flex:0 0 auto!important;height:0!important;margin:0 12px 8px!important;border:0!important;border-top:1.5px dashed #f5c9ae!important}
+.coupon-dash{flex:0 0 auto!important;height:0!important;margin:0 12px 8px!important;border:0!important;border-top:1.5px dashed #f0b898!important}
 .coupon-use-btn{
   flex:0 0 auto!important;
   height:25px!important;
   padding:0 8px!important;
   align-self:center!important;
   width:auto!important;
-  border:1.5px solid #f5d0bb!important;
+  border:1.5px solid #f0b898!important;
   border-radius:5px!important;
-  background:#fef5f0!important;
-  color:#444444!important;
+  background:#fff3ec!important;
+  color:#555555!important;
   font-size:11px!important;
   font-weight:600!important;
   cursor:pointer!important;
@@ -1094,9 +1072,9 @@ body{
 }
 .restaurant-hero{
   width:100%!important;
-  margin:166px 0 0!important;
+  margin:0!important;
   padding:0!important;
-  background:#ffffff!important;
+  background:transparent!important;
 }
 .restaurant-hero-cover{
   position:relative!important;
@@ -1169,8 +1147,8 @@ body{
   height:214px!important;
   min-height:214px!important;
   border-radius:10px!important;
-  border:1px solid rgba(0,0,0,.15)!important;
-  background:rgba(243,111,33,.05)!important;
+  border:1.5px dashed #f0b898!important;
+  background:#fff8f5!important;
   overflow:hidden!important;
   box-shadow:none!important;
   padding-bottom:16px!important;
@@ -1686,17 +1664,17 @@ body:not(.menu-tab) .home-order-cta,
 /* Take-style location widget: one compact gray card with tabs and address text. */
 .delivery-widget{
   box-sizing:border-box!important;
-  position:fixed!important;
-  top:8px!important;
-  left:50%!important;
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
   right:auto!important;
-  z-index:84!important;
-  transform:translateX(-50%)!important;
+  z-index:auto!important;
+  transform:none!important;
   width:calc(100% - 40px)!important;
   max-width:374px!important;
   min-height:75px!important;
   height:75px!important;
-  margin:0!important;
+  margin:8px auto 0!important;
   padding:12px 14px!important;
   border:0!important;
   border-radius:10px!important;
@@ -2018,8 +1996,8 @@ body:not(.menu-tab) .home-order-cta,
   padding:0!important;
   border-radius:10px!important;
   overflow:hidden!important;
-  background:#ffffff!important;
-  border:1px solid rgba(243,106,29,.18)!important;
+  background:#fff8f5!important;
+  border:1px solid rgba(240,184,152,0.5)!important;
   box-shadow:none!important;
   display:flex!important;
   flex-direction:column!important;
@@ -2048,14 +2026,14 @@ body:not(.menu-tab) .home-order-cta,
   border-radius:8px!important;
 }
 .coupon-title{
-  flex:1 1 auto!important;
+  flex:0 0 38px!important;
   display:flex!important;
-  align-items:flex-start!important;
+  align-items:center!important;
   justify-content:center!important;
-  padding:8px 10px 0!important;
+  padding:0 10px!important;
   margin:0!important;
   color:#505050!important;
-  font-size:13px!important;
+  font-size:12px!important;
   line-height:1.15!important;
   font-weight:700!important;
   text-align:center!important;
@@ -2065,7 +2043,7 @@ body:not(.menu-tab) .home-order-cta,
 .coupon-dash{
   flex:0 0 auto!important;
   height:0!important;
-  margin:0 12px 8px!important;
+  margin:0 12px 4px!important;
   border:0!important;
   border-top:1px dashed rgba(243,106,29,.2)!important;
 }
@@ -2074,11 +2052,11 @@ body:not(.menu-tab) .home-order-cta,
   min-width:88px!important;
   width:auto!important;
   height:25px!important;
-  margin:0 auto 10px!important;
+  margin:auto auto 10px!important;
   padding:0 12px!important;
-  border:0!important;
+  border:1px solid #f5c9a8!important;
   border-radius:5px!important;
-  background:#f6d7c8!important;
+  background:#fef0e6!important;
   color:#30343b!important;
   font-size:12px!important;
   line-height:1!important;
@@ -2091,13 +2069,13 @@ body:not(.menu-tab) .home-order-cta,
 .mobile-home .mob-identity,
 .mob-identity{
   box-sizing:border-box!important;
-  position:fixed!important;
-  top:94px!important;
-  left:50%!important;
-  z-index:83!important;
-  transform:translateX(-50%)!important;
-  width:min(100vw,430px)!important;
-  max-width:430px!important;
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
+  z-index:auto!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:none!important;
   min-height:74px!important;
   height:76px!important;
   margin:0!important;
@@ -2490,4 +2468,61 @@ body:not(.menu-tab) .home-order-cta,
     max-width:100vw!important;
     transform:none!important;
   }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   ROOT-CAUSE FIX — translucent gray bands above/around the header.
+   Cause: on mobile the <body> background is #f7f7f7 (gray), while the
+   restaurant-app-shell is only 390px wide and the header elements use
+   100vw/calc(100vw-...) widths. The gray body bled through above the
+   delivery widget, on its sides and in the gaps - reading as two
+   semi-transparent rectangles framing the header/hero.
+   Fix: on the mobile home tab paint body + shell white so the only
+   gray element is the delivery-widget card itself (Take-a-Juice style).
+   ─────────────────────────────────────────────────────────────── */
+@media(max-width:767px){
+  body.home-tab{background:#ffffff!important}
+  body.home-tab .restaurant-app-shell,
+  body.home-tab.restaurant-app-shell{
+    background:#ffffff!important;
+    max-width:430px!important;
+    margin:0 auto!important;
+  }
+  body.home-tab .delivery-widget{margin:10px auto 0!important}
+  body.home-tab .delivery-widget-bottom-line{display:none!important}
+  body.home-tab .mob-identity{border:0!important;box-shadow:none!important}
+  body.home-tab .restaurant-hero{background:transparent!important}
+}
+
+/* ───────────────────────────────────────────────────────────────
+   THREE TARGETED HOME FIXES (mobile)
+   1. "Faça seu pedido" CTA: float fixed just above the bottom nav,
+      removing the large white gap between the button and the nav.
+   2. Light divider line between the location widget and the header.
+   3. "Entre ou cadastre-se" subtitle color = footer text color (#999).
+   ─────────────────────────────────────────────────────────────── */
+@media(max-width:767px){
+  /* 1 — pin the order CTA above the nav (was relative + translateY, which
+        left a tall empty box between it and the nav) */
+  body.home-tab .home-order-cta,
+  .home-order-cta{
+    position:fixed!important;
+    top:auto!important;
+    left:auto!important;
+    right:16px!important;
+    bottom:calc(82px + var(--safe-bottom) + 12px)!important;
+    transform:none!important;
+    margin:0!important;
+    z-index:70!important;
+  }
+  /* drop the trailing gray spacer that padded the bottom of the home */
+  body.home-tab .home-highlight-gray-space{display:none!important}
+
+  /* 2 — subtle divider line between the gray location card and the header */
+  body.home-tab .mob-identity{
+    border-top:1px solid #e2e2e2!important;
+  }
+
+  /* 3 — subtitle color matches the footer text */
+  body.home-tab .mob-rest-sub{color:#999999!important}
 }

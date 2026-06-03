@@ -440,12 +440,27 @@
     setMobNavActive('mobNavMenu');
   }
 
+  function scrollToFast(targetTop, duration = 260) {
+    const startTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const distance = targetTop - startTop;
+    const startedAt = performance.now();
+    const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+    function step(now) {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      window.scrollTo(0, startTop + distance * easeOutCubic(progress));
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
   function scrollToMenu() {
     closeMobViews();
     showMenuTab();
     const el = $('menu-area');
     if (!el) return;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 96, behavior: 'smooth' });
+    scrollToFast(el.getBoundingClientRect().top + window.pageYOffset - 96);
   }
 
   function scrollToHome() {
@@ -757,7 +772,10 @@
     closeModalId('addressModal');
   }
 
-  function openLoginScreen() {
+  let _loginOrigin = 'profile';
+
+  function openLoginScreen(origin = 'profile') {
+    _loginOrigin = origin;
     openModal('loginModal');
   }
 
@@ -765,7 +783,36 @@
     customer = { name: mode === 'signup' ? 'Cliente PedeAqui' : 'Cliente identificado', phone: '' };
     localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
     closeModalId('loginModal');
-    renderProfileView();
+    if (_loginOrigin === 'orders') {
+      mobNavOrders();
+    } else {
+      renderProfileView();
+    }
+  }
+
+  function openPolicyScreen(type) {
+    const screen = $('privacyPolicyScreen');
+    const body = $('privacyPolicyBody');
+    const loyaltyIntro = window.PEDEAQUI_LOYALTY_POLICY_HTML
+      ? '<div class="policy-section-label">Programa de fidelidade, cashback e benefícios</div>'
+      : '';
+    const html = `${window.PEDEAQUI_PRIVACY_POLICY_HTML || ''}${loyaltyIntro}${window.PEDEAQUI_LOYALTY_POLICY_HTML || ''}`;
+    if (!screen || !body) return;
+    if (!body.innerHTML.trim()) body.innerHTML = html;
+    $('loginModal')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
+    document.querySelectorAll('.policy-screen').forEach(el => el.classList.remove('active'));
+    screen.classList.add('active');
+    body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  function closePolicyScreen(type) {
+    $('privacyPolicyScreen')?.classList.remove('active');
+    document.querySelector('#loginModal .modal--login')?.classList.remove('policy-hidden');
+    $('loginModal')?.classList.add('active');
+    document.body.classList.add('modal-open');
   }
 
   function couponLabel(coupon) {
@@ -860,6 +907,10 @@
   }
 
   function mobNavOrders() {
+    if (!isLogged()) {
+      openLoginScreen('orders');
+      return;
+    }
     closeMobViews();
     setMobNavActive('mobNavOrders');
     renderOrdersView();
@@ -991,6 +1042,7 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, openLoginScreen, mockLogin,
+    openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner

@@ -41,17 +41,125 @@
 .store-address-card h3{font-size:.9rem;color:#333;margin-bottom:10px}
 .store-address-card p{font-size:.8rem;color:#8a8a8a;line-height:1.55;margin-bottom:12px}
 
-#loginModal{background:#f2f2f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
-#loginModal .modal--login{position:relative!important;width:calc(100% - 16px)!important;max-width:430px!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;margin:10px auto!important;border:0!important;border-radius:12px!important;background:#fff!important;transform:translateY(0)!important;padding:84px 28px 28px!important;display:flex!important;flex-direction:column!important;align-items:center!important}
-.modal--login .login-close{position:absolute!important;top:22px!important;right:20px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:#f3f3f3!important;color:#999!important;border:0!important;font-size:1.35rem!important;font-weight:700!important}
-.modal--login .login-logo{width:150px!important;height:150px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:0 auto 28px!important;background:#fff3ea!important}
+#loginModal{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
+#loginModal .modal--login{position:relative!important;width:calc(100% - 16px)!important;max-width:430px!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;margin:10px auto!important;border:0!important;border-radius:12px!important;background:#fff!important;transform:translateY(0)!important;padding:80px 28px 28px!important;display:flex!important;flex-direction:column!important;align-items:center!important}
+.modal--login .login-close{position:absolute!important;top:16px!important;right:16px!important;width:34px!important;height:34px!important;border-radius:8px!important;background:#f3f3f3!important;color:#999!important;border:0!important;font-size:1.1rem!important;font-weight:700!important}
+.modal--login .login-logo{width:130px!important;height:130px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:0 auto 14px!important;background:var(--brand-accent)!important}
 .modal--login .login-logo img{width:100%!important;height:100%!important;object-fit:cover!important}
-.modal--login .login-logo .mob-logo-fallback{width:100%;height:100%;border-radius:50%;background:var(--brand);color:#fff;font-size:1.9rem}
-.modal--login .login-rest-name{font-size:1.7rem!important;line-height:1.15!important;font-weight:900!important;color:#050505!important;text-align:center!important;margin:0 0 68px!important}
+.modal--login .login-logo .mob-logo-fallback{width:100%;height:100%;border-radius:50%;background:var(--brand-accent);color:#fff;font-size:1.9rem}
+.modal--login .login-rest-name{font-size:18px!important;line-height:24px!important;font-weight:700!important;color:#111!important;text-align:center!important;margin:0 0 32px!important}
 .modal--login p{display:none!important}
-.modal--login .cart-cta-btn{height:40px!important;border-radius:8px!important;background:#3f7d4f!important;font-size:.78rem!important;font-weight:900!important;box-shadow:none!important;margin:0 0 10px!important}
-.modal--login .login-secondary{width:100%!important;height:40px!important;border:0!important;border-radius:8px!important;background:#e3ece6!important;color:#3f7d4f!important;font-size:.78rem!important;font-weight:900!important}
-.modal--login .login-privacy{margin-top:auto!important;color:#7a7a7a!important;font-size:.78rem!important;text-decoration:none!important}
+.modal--login .cart-cta-btn{height:50px!important;border-radius:50px!important;background:var(--brand-accent)!important;color:#fff!important;font-size:14px!important;font-weight:700!important;box-shadow:none!important;margin:0 0 8px!important;padding:0!important}
+.modal--login .login-secondary{width:100%!important;height:50px!important;border:1.5px solid var(--brand-accent)!important;border-radius:50px!important;background:#fff!important;color:var(--brand-accent)!important;font-size:14px!important;font-weight:700!important;padding:0!important}
+.modal--login.policy-hidden{display:none!important}
+.modal--login .login-privacy{display:none!important}
+.login-policy-links{margin-top:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important}
+.policy-link{border:0!important;background:transparent!important;color:#9a9a9a!important;font:inherit!important;font-size:12px!important;line-height:18px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer!important;padding:0!important}
+.policy-link:hover{color:var(--brand-accent)!important}
+
+.policy-screen{
+  position:fixed!important;
+  inset:0!important;
+  z-index:280!important;
+  width:100%!important;
+  max-width:430px!important;
+  min-height:100dvh!important;
+  margin:0 auto!important;
+  background:#ffffff!important;
+  color:#111827!important;
+  display:none!important;
+  flex-direction:column!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+}
+.policy-screen.active{display:flex!important}
+.policy-header{
+  height:82px!important;
+  display:grid!important;
+  grid-template-columns:48px 1fr 48px!important;
+  align-items:center!important;
+  padding:0 24px!important;
+  border-bottom:1px solid #eeeeee!important;
+  background:#ffffff!important;
+  position:sticky!important;
+  top:0!important;
+  z-index:10!important;
+  flex-shrink:0!important;
+}
+.policy-back{
+  width:36px!important;
+  height:36px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:#f1f1f1!important;
+  color:#333333!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  cursor:pointer!important;
+  padding:0!important;
+}
+.policy-title{
+  text-align:center!important;
+  font-size:16px!important;
+  line-height:22px!important;
+  font-weight:700!important;
+  color:#1f2937!important;
+  margin:0!important;
+}
+.policy-body{
+  flex:1!important;
+  overflow-y:auto!important;
+  padding:0 20px 44px!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.policy-section-label{
+  margin:28px 0 18px!important;
+  padding-top:20px!important;
+  border-top:1px solid #eeeeee!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+  font-weight:700!important;
+  color:#111827!important;
+}
+.policy-content h1,
+.privacy-policy-content h1,
+.loyalty-policy-content h1{display:none!important}
+.policy-content h2,
+.privacy-policy-content h2,
+.loyalty-policy-content h2{
+  display:grid!important;
+  grid-template-columns:28px 1fr!important;
+  gap:8px!important;
+  align-items:start!important;
+  margin:28px 0 18px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  color:#111827!important;
+  line-height:1.55!important;
+}
+.policy-content h2 span,
+.privacy-policy-content h2 span,
+.loyalty-policy-content h2 span{color:#9ca3af!important;font-weight:700!important}
+.policy-content h3,
+.privacy-policy-content h3,
+.loyalty-policy-content h3{
+  margin:24px 0 12px!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  color:#111827!important;
+  line-height:1.55!important;
+}
+.policy-content p,
+.privacy-policy-content p,
+.loyalty-policy-content p{
+  margin:0 0 11px!important;
+  font-size:12px!important;
+  line-height:1.85!important;
+  color:#111827!important;
+  letter-spacing:0!important;
+  text-align:left!important;
+}
 
 .coupon-detail-overlay{
   position:fixed!important;
@@ -265,8 +373,9 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .store-info-neighborhood{font-size:14px!important;line-height:18px!important;font-weight:500!important}
 .store-contact-row,.store-info-tabs button,.store-hours-row,.store-hours-row strong,.store-address-card p{font-size:12px!important;line-height:18px!important}
 .store-address-card h3{font-size:14px!important;line-height:18px!important;font-weight:700!important}
-.modal--login .login-rest-name{font-size:26px!important;line-height:33px!important;font-weight:800!important}
-.modal--login .cart-cta-btn,.modal--login .login-secondary,.modal--login .login-privacy{font-size:12px!important;line-height:18px!important}
+.modal--login .login-rest-name{font-size:18px!important;line-height:24px!important;font-weight:700!important}
+.modal--login .cart-cta-btn,.modal--login .login-secondary{font-size:14px!important;line-height:18px!important;font-weight:700!important}
+.modal--login .login-privacy{font-size:12px!important;line-height:18px!important}
 .prof-hero-label,.prof-option-title,.cart-rest-name,.cir-name,.pm-name{font-size:14px!important;line-height:18px!important;font-weight:600!important}
 .prof-hero-sub,.prof-option-desc,.cir-obs,.pm-desc,.cps-row,.cart-empty-text{font-size:12px!important;line-height:18px!important}
 .pm-price,.cps-total,.cs-total{font-size:16px!important;line-height:22px!important;font-weight:700!important}
@@ -697,14 +806,16 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .coupon-dash{flex:0 0 auto!important;height:0!important;margin:0 12px 8px!important;border:0!important;border-top:1.5px dashed #f5c9ae!important}
 .coupon-use-btn{
   flex:0 0 auto!important;
-  height:26px!important;
-  padding:0 14px!important;
-  border:1.5px solid #f5c9ae!important;
-  border-radius:999px!important;
-  background:#feeee6!important;
-  color:#f07020!important;
+  height:25px!important;
+  padding:0 8px!important;
+  align-self:center!important;
+  width:auto!important;
+  border:1.5px solid #f5d0bb!important;
+  border-radius:8px!important;
+  background:#fef5f0!important;
+  color:#444444!important;
   font-size:11px!important;
-  font-weight:700!important;
+  font-weight:600!important;
   cursor:pointer!important;
 }
 

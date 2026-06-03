@@ -403,7 +403,7 @@ body.menu-tab .menu-area{display:block!important}
 .restaurant-hero{margin:136px 0 0!important;background:#fff!important}
 .restaurant-hero-cover{
   width:100%!important;
-  height:183px!important;
+  height:164px!important;
   min-height:0!important;
   border-radius:0!important;
   box-shadow:none!important;
@@ -475,10 +475,10 @@ body.menu-tab .menu-area{display:block!important}
 }
 .home-section h2{
   margin:0 0 14px!important;
-  color:#32363d!important;
-  font-size:18px!important;
-  line-height:24px!important;
-  font-weight:850!important;
+  color:#30343b!important;
+  font-size:19px!important;
+  line-height:25px!important;
+  font-weight:700!important;
 }
 .home-separator{height:10px!important;background:#f4f4f4!important}
 .coupon-rail,
@@ -494,14 +494,14 @@ body.menu-tab .menu-area{display:block!important}
 .highlight-rail::-webkit-scrollbar{display:none!important}
 .coupon-card{
   position:relative!important;
-  flex:0 0 162px!important;
-  min-width:162px!important;
+  flex:0 0 160px!important;
+  min-width:160px!important;
   height:214px!important;
   min-height:214px!important;
   padding:6px 6px 14px!important;
-  border:1px solid #ffd0b8!important;
-  border-radius:9px!important;
-  background:#fff8f3!important;
+  border:1px solid #ffd2bd!important;
+  border-radius:8px!important;
+  background:#fffaf7!important;
   box-shadow:none!important;
   text-align:center!important;
 }
@@ -512,7 +512,7 @@ body.menu-tab .menu-area{display:block!important}
   top:134px!important;
   width:10px!important;
   height:18px!important;
-  border:1px solid #ffd0b8!important;
+  border:1px solid #ffd2bd!important;
   background:#fff!important;
 }
 .coupon-card::before{left:-1px!important;border-left:0!important;border-radius:0 10px 10px 0!important}
@@ -525,9 +525,9 @@ body.menu-tab .menu-area{display:block!important}
   flex-direction:column!important;
   align-items:center!important;
   justify-content:center!important;
-  border:1px dashed rgba(255,255,255,.58)!important;
+  border:1px dashed rgba(255,255,255,.45)!important;
   border-radius:7px!important;
-  background:linear-gradient(135deg,#ff7b32,#ffb62d)!important;
+  background:linear-gradient(135deg,#ef6c28,#f0a020)!important;
   color:#fff!important;
 }
 /* Backend image fills the art block; gradient + text become the fallback. */
@@ -567,13 +567,13 @@ body.menu-tab .menu-area{display:block!important}
   align-items:center!important;
   justify-content:center!important;
   padding:10px 8px 6px!important;
-  color:#555!important;
+  color:#444444!important;
   font-size:13px!important;
   line-height:16px!important;
-  font-weight:850!important;
+  font-weight:800!important;
   text-transform:uppercase!important;
 }
-.coupon-dash{height:1px!important;margin:0 10px 13px!important;border-top:1px dashed #ffd0b8!important}
+.coupon-dash{height:1px!important;margin:0 10px 13px!important;border-top:1px dashed #ffd2bd!important}
 .coupon-use-btn{
   height:28px!important;
   padding:0 14px!important;
@@ -599,8 +599,8 @@ body.menu-tab .menu-area{display:block!important}
   scroll-padding-left:22px!important;
 }
 .highlight-banner{
-  flex:0 0 320px!important;
-  width:320px!important;
+  flex:0 0 290px!important;
+  width:290px!important;
   aspect-ratio:2.5 / 1!important;
   height:auto!important;
   border-radius:8px!important;
@@ -636,20 +636,24 @@ body.menu-tab .menu-area{display:block!important}
 .home-order-cta{
   position:fixed!important;
   right:16px!important;
-  bottom:calc(64px + var(--safe-bottom) + 18px)!important;
+  bottom:calc(66px + var(--safe-bottom) + 18px)!important;
   z-index:70!important;
-  display:block!important;
-  width:154px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:148px!important;
   max-width:calc(100vw - 32px)!important;
-  height:44px!important;
+  height:42px!important;
   margin:0!important;
   border:0!important;
-  border-radius:9px!important;
-  background:var(--brand)!important;
-  color:#fff!important;
+  border-radius:8px!important;
+  background:#f07020!important;
+  color:#ffffff!important;
+  font-family:var(--ref-font)!important;
   font-size:12px!important;
-  font-weight:900!important;
-  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  box-shadow:none!important;
 }
 /* Keep the pill inside the 430px frame on wider screens. */
 @media(min-width:768px){
@@ -659,7 +663,7 @@ body.menu-tab .menu-area{display:block!important}
 .mob-bottom-nav{
   box-sizing:border-box!important;
   display:flex!important;
-  height:calc(64px + var(--safe-bottom))!important;
+  height:calc(66px + var(--safe-bottom))!important;
   padding:0 0 var(--safe-bottom)!important;
   max-width:430px!important;
   left:50%!important;
@@ -668,7 +672,8 @@ body.menu-tab .menu-area{display:block!important}
   transform:translateX(-50%)!important;
   border-radius:0!important;
   background:#fff!important;
-  box-shadow:0 -2px 12px rgba(0,0,0,.06)!important;
+  border-top:1px solid #eeeeee!important;
+  box-shadow:0 -2px 10px rgba(0,0,0,.04)!important;
 }
 .mob-bottom-nav .mob-nav-item{
   box-sizing:border-box!important;
@@ -681,12 +686,17 @@ body.menu-tab .menu-area{display:block!important}
 .mob-bottom-nav .mob-nav-icon{
   width:20px!important;
   height:20px!important;
+  stroke-width:1.8!important;
 }
 .mob-bottom-nav .mob-nav-item span{
   font-size:11px!important;
   line-height:15px!important;
-  font-weight:600!important;
+  font-weight:500!important;
 }
+.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.active span{color:var(--brand)!important}
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) span{color:#8d8d8d!important}
 
 @media(min-width:768px){
   .restaurant-app-shell,
@@ -701,7 +711,7 @@ body.menu-tab .menu-area{display:block!important}
      (the "Faça seu pedido" band) can scroll clear of the nav, while short
      content still fills to the nav via the shell min-height below — no gray
      void (the old 126px reserved too much and peeked above the nav). */
-  body:not(.menu-tab){padding-bottom:calc(64px + var(--safe-bottom))!important}
+  body:not(.menu-tab){padding-bottom:calc(66px + var(--safe-bottom))!important}
   .restaurant-app-shell{
     width:100vw!important;
     max-width:none!important;
@@ -709,7 +719,7 @@ body.menu-tab .menu-area{display:block!important}
     margin-right:0!important;
     display:flex!important;
     flex-direction:column!important;
-    min-height:calc(100dvh - 64px - var(--safe-bottom))!important;
+    min-height:calc(100dvh - 66px - var(--safe-bottom))!important;
   }
   .restaurant-app-shell::before{
     left:0!important;
@@ -724,6 +734,7 @@ body.menu-tab .menu-area{display:block!important}
     max-width:none!important;
     transform:none!important;
     overflow:hidden!important;
+    height:calc(66px + var(--safe-bottom))!important;
   }
   .home-cart-pill{
     position:absolute!important;

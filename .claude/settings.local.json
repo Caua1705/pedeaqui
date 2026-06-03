@@ -6,7 +6,9 @@
       "Bash(curl -s \"https://api.pederapidex.com/restaurants/junior-da-picanha/menu\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('keys:', list\\(d.keys\\(\\)\\)\\); print\\('coupons:', json.dumps\\(d.get\\('coupons'\\), ensure_ascii=False, indent=1\\)\\)\")",
       "Bash(python -c \"import json; d=json.load\\(open\\('data/restaurants/junior-da-picanha.json',encoding='utf-8'\\)\\); print\\('coupons:', json.dumps\\(d.get\\('coupons'\\), ensure_ascii=False\\)[:800]\\)\")",
-      "Bash(python -c \"import json; d=json.load\\(open\\('data/restaurants/junior-da-picanha.json',encoding='utf-8-sig'\\)\\); print\\('coupons count:', len\\(d.get\\('coupons'\\) or []\\)\\); print\\(json.dumps\\(d.get\\('coupons'\\), ensure_ascii=False\\)[:600]\\)\")"
+      "Bash(python -c \"import json; d=json.load\\(open\\('data/restaurants/junior-da-picanha.json',encoding='utf-8-sig'\\)\\); print\\('coupons count:', len\\(d.get\\('coupons'\\) or []\\)\\); print\\(json.dumps\\(d.get\\('coupons'\\), ensure_ascii=False\\)[:600]\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://127.0.0.1:5501/restaurant.html?slug=junior-da-picanha\")",
+      "PowerShell(ls \"$env:LOCALAPPDATA\\\\ms-playwright\\\\\" 2>$null)"
     ]
   }
 }

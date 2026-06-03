@@ -74,15 +74,15 @@
 
   function applyTheme() {
     const root = document.documentElement;
-    const primary = restaurant.primary_color || '#D95C04';
+    const primary = '#f07020';
     const secondary = restaurant.secondary_color || '#111111';
     root.style.setProperty('--brand-primary', primary);
     root.style.setProperty('--brand-secondary', secondary);
-    root.style.setProperty('--brand-accent', restaurant.accent_color || primary);
+    root.style.setProperty('--brand-accent', primary);
     root.style.setProperty('--brand', primary);
     root.style.setProperty('--brand-d', secondary);
     root.style.setProperty('--m-accent', primary);
-    root.style.setProperty('--m-accent-light', primary + '12');
+    root.style.setProperty('--m-accent-light', primary + '22');
     document.title = `${restaurant.name || 'Restaurante'} — Pedido Online | PedeAqui`;
   }
 
@@ -259,6 +259,13 @@
     track.addEventListener('lostpointercapture', endDrag);
   }
 
+  function initMenuHeaderHide() {
+    window.addEventListener('scroll', () => {
+      if (!document.body.classList.contains('menu-tab')) return;
+      document.body.classList.toggle('menu-scrolled', (window.scrollY || document.documentElement.scrollTop) > 40);
+    }, { passive: true });
+  }
+
   function initPageRubberBand() {
     let startX = 0, startY = 0, delta = 0, tracking = false, isHoriz = false;
     const SKIP = '.coupon-rail,.highlight-rail,.restaurant-hero-cover,.restaurant-hero-track,.restaurant-hero-slide';
@@ -411,7 +418,7 @@
 
   let isClickScrolling = false;
   function showHomeTab() {
-    document.body.classList.remove('menu-tab');
+    document.body.classList.remove('menu-tab', 'menu-scrolled');
     document.body.classList.add('home-tab');
     setMobNavActive('mobNavHome');
   }
@@ -966,6 +973,7 @@
     updateCartUI();
     showHomeTab();
     initPageRubberBand();
+    initMenuHeaderHide();
   }
 
   Object.assign(window, {

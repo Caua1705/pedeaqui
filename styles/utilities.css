@@ -90,7 +90,7 @@
   width:36px!important;
   height:36px!important;
   border:0!important;
-  border-radius:10px!important;
+  border-radius:8px!important;
   background:#f1f1f1!important;
   color:#333333!important;
   display:flex!important;
@@ -888,7 +888,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .mob-bottom-nav{
   box-sizing:border-box!important;
   display:flex!important;
-  height:calc(66px + var(--safe-bottom))!important;
+  height:calc(76px + var(--safe-bottom))!important;
   padding:0 0 var(--safe-bottom)!important;
   max-width:390px!important;
   left:50%!important;
@@ -936,7 +936,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
      (the "Faça seu pedido" band) can scroll clear of the nav, while short
      content still fills to the nav via the shell min-height below — no gray
      void (the old 126px reserved too much and peeked above the nav). */
-  body:not(.menu-tab){padding-bottom:calc(66px + var(--safe-bottom))!important}
+  body:not(.menu-tab){padding-bottom:calc(76px + var(--safe-bottom))!important}
   .restaurant-app-shell{
     width:100vw!important;
     max-width:none!important;
@@ -959,7 +959,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
     max-width:none!important;
     transform:none!important;
     overflow:hidden!important;
-    height:calc(66px + var(--safe-bottom))!important;
+    height:calc(76px + var(--safe-bottom))!important;
   }
   .home-cart-pill{
     position:absolute!important;
@@ -1046,7 +1046,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 }
 
 @media(max-width:767px){
-  body.menu-tab{padding-bottom:calc(66px + var(--safe-bottom))!important}
+  body.menu-tab{padding-bottom:calc(76px + var(--safe-bottom))!important}
   body.menu-tab .menu-area{padding-bottom:0!important}
   body:not(.menu-tab) .restaurant-app-shell{
     min-height:auto!important;
@@ -1111,7 +1111,7 @@ body{
   position:relative!important;
   width:100%!important;
   height:auto!important;
-  aspect-ratio:2.16 / 1!important;
+  aspect-ratio:1080 / 500!important;
   min-height:0!important;
   margin:0!important;
   border-radius:0!important;
@@ -1125,6 +1125,7 @@ body{
   height:100%!important;
   object-fit:cover!important;
   object-position:center center!important;
+  display:block!important;
   transform:none!important;
 }
 .restaurant-hero-dots{
@@ -1174,24 +1175,25 @@ body{
   flex:0 0 168px!important;
   width:168px!important;
   min-width:168px!important;
-  height:auto!important;
-  min-height:0!important;
+  height:214px!important;
+  min-height:214px!important;
   border-radius:10px!important;
   border:1px solid rgba(0,0,0,.15)!important;
   background:rgba(243,111,33,.05)!important;
   overflow:hidden!important;
   box-shadow:none!important;
+  padding-bottom:16px!important;
 }
 .coupon-card::before,
 .coupon-card::after{
   display:none!important;
 }
 .coupon-art{
-  aspect-ratio:5 / 3!important;
-  width:calc(100% - 12px)!important;
+  aspect-ratio:1.58 / 1!important;
+  width:calc(100% - 2px)!important;
   height:auto!important;
-  margin:6px!important;
-  border-radius:8px!important;
+  margin:3px 1px 4px!important;
+  border-radius:10px!important;
   overflow:hidden!important;
   background:#fff3ec!important;
 }
@@ -1200,7 +1202,7 @@ body{
   height:100%!important;
   object-fit:fill!important;
   display:block!important;
-  border-radius:8px!important;
+  border-radius:10px!important;
 }
 .home-highlights-section{
   position:relative!important;
@@ -1347,5 +1349,416 @@ body{
   }
   body:not(.menu-tab) .home-order-cta{
     right:16px!important;
+  }
+}
+
+/* Compact Destaques layout: cards, CTA and bottom nav stay visually connected. */
+body:not(.menu-tab) .home-highlights-section,
+.home-highlights-section{
+  position:relative!important;
+  padding:22px 0 18px!important;
+  background:#ffffff!important;
+  overflow:visible!important;
+}
+.home-highlights-section .home-section-title,
+.home-highlights-section .section-title,
+.home-highlights-section h2{
+  padding:0 16px!important;
+  margin:0 0 14px!important;
+  font-size:19px!important;
+  line-height:25px!important;
+  font-weight:700!important;
+  color:#30343b!important;
+}
+.highlight-rail{
+  display:flex!important;
+  gap:10px!important;
+  overflow-x:auto!important;
+  padding:0 16px!important;
+  margin:0!important;
+  scroll-padding-left:16px!important;
+  scroll-snap-type:x proximity!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.highlight-banner{
+  flex:0 0 78%!important;
+  width:78%!important;
+  height:auto!important;
+  aspect-ratio:2.16 / 1!important;
+  border-radius:8px!important;
+  overflow:hidden!important;
+  background:#f6f2ee!important;
+  box-shadow:none!important;
+  scroll-snap-align:start!important;
+}
+.highlight-banner img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  display:block!important;
+  background:#f6f2ee!important;
+  transform:none!important;
+}
+.home-highlight-gray-space{
+  height:64px!important;
+  margin:8px 0 0!important;
+  background:#f4f4f4!important;
+}
+body:not(.menu-tab) .home-order-cta,
+.home-order-cta{
+  position:relative!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  transform:translateY(-44px)!important;
+  z-index:3!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:162px!important;
+  max-width:calc(100vw - 32px)!important;
+  height:48px!important;
+  margin:0 16px 10px auto!important;
+  border-radius:10px!important;
+  background:#f36a1d!important;
+  color:#ffffff!important;
+  font-size:13px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+@media(min-width:768px){
+  body:not(.menu-tab) .home-order-cta,
+  .home-order-cta{
+    right:auto!important;
+    margin-right:16px!important;
+  }
+}
+
+/* Compact bottom navigation: Take-style proportions without changing behavior. */
+.mob-bottom-nav{
+  box-sizing:border-box!important;
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:0!important;
+  transform:translateX(-50%)!important;
+  width:100%!important;
+  max-width:430px!important;
+  height:calc(66px + var(--safe-bottom))!important;
+  padding:0 0 var(--safe-bottom)!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,1fr)!important;
+  align-items:center!important;
+  background:#ffffff!important;
+  border-top:1px solid rgba(0,0,0,.06)!important;
+  box-shadow:0 -4px 14px rgba(0,0,0,.04)!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  z-index:90!important;
+}
+.mob-bottom-nav .mob-nav-item{
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:66px!important;
+  min-height:66px!important;
+  padding:6px 0 5px!important;
+  border:0!important;
+  background:transparent!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  color:#8f939a!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:500!important;
+}
+.mob-bottom-nav .mob-nav-icon{
+  box-sizing:border-box!important;
+  width:18px!important;
+  height:18px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:999px!important;
+  color:currentColor!important;
+  stroke-width:1.8!important;
+}
+.mob-bottom-nav .mob-nav-item span{
+  margin:0!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:500!important;
+  color:currentColor!important;
+}
+.mob-bottom-nav .mob-nav-item.active{
+  color:#f36a1d!important;
+}
+.mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
+  width:34px!important;
+  height:34px!important;
+  padding:8px!important;
+  background:#fff0e8!important;
+  color:#f36a1d!important;
+}
+.mob-bottom-nav .mob-nav-item.active span{
+  color:#f36a1d!important;
+}
+.mob-bottom-nav .mob-nav-item:not(.active){
+  color:#8f939a!important;
+}
+.mob-bottom-nav .mob-nav-item:not(.active) span,
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
+  color:#8f939a!important;
+}
+@media(max-width:767px){
+  body:not(.menu-tab),
+  body.menu-tab{
+    padding-bottom:calc(66px + var(--safe-bottom))!important;
+  }
+  .mob-bottom-nav{
+    left:50%!important;
+    width:min(100vw,430px)!important;
+    max-width:430px!important;
+    transform:translateX(-50%)!important;
+    height:calc(66px + var(--safe-bottom))!important;
+  }
+}
+@media(max-width:430px){
+  .mob-bottom-nav{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+  }
+}
+
+/* Compact coupon cards: Take-style proportions without changing coupon logic. */
+.home-coupons-section{
+  padding:20px 0 22px!important;
+  background:#ffffff!important;
+}
+.home-coupons-section .home-section-title,
+.home-coupons-section .section-title,
+.home-coupons-section h2{
+  padding:0 16px!important;
+  margin:0 0 18px!important;
+}
+.coupon-rail{
+  display:flex!important;
+  gap:10px!important;
+  overflow-x:auto!important;
+  padding:0 16px 2px!important;
+  scroll-padding-left:16px!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.coupon-card{
+  flex:0 0 162px!important;
+  width:162px!important;
+  min-width:162px!important;
+  height:auto!important;
+  min-height:213px!important;
+  padding:0!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+  background:#ffffff!important;
+  border:1px solid rgba(243,106,29,.18)!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  text-align:center!important;
+}
+.coupon-card::before,
+.coupon-card::after{
+  display:none!important;
+}
+.coupon-art{
+  width:calc(100% - 12px)!important;
+  aspect-ratio:5 / 3!important;
+  height:auto!important;
+  margin:6px 6px 0!important;
+  border-radius:8px!important;
+  overflow:hidden!important;
+  background:#fff3ec!important;
+  flex-shrink:0!important;
+}
+.coupon-art img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  display:block!important;
+  border-radius:8px!important;
+}
+.coupon-title{
+  flex:1 1 auto!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  padding:8px 10px 0!important;
+  margin:0!important;
+  color:#505050!important;
+  font-size:13px!important;
+  line-height:1.15!important;
+  font-weight:700!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  letter-spacing:0!important;
+}
+.coupon-dash{
+  flex:0 0 auto!important;
+  height:0!important;
+  margin:0 12px 8px!important;
+  border:0!important;
+  border-top:1px dashed rgba(243,106,29,.2)!important;
+}
+.coupon-use-btn{
+  flex:0 0 auto!important;
+  min-width:88px!important;
+  width:auto!important;
+  height:25px!important;
+  margin:0 auto 10px!important;
+  padding:0 12px!important;
+  border:0!important;
+  border-radius:5px!important;
+  background:#f6d7c8!important;
+  color:#30343b!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  cursor:pointer!important;
+}
+
+/* Compact restaurant identity header: Take-style mobile proportions. */
+#mobIdentity,
+.mobile-home .mob-identity,
+.mob-identity{
+  box-sizing:border-box!important;
+  position:fixed!important;
+  top:94px!important;
+  left:50%!important;
+  z-index:83!important;
+  transform:translateX(-50%)!important;
+  width:min(100vw,430px)!important;
+  max-width:430px!important;
+  min-height:74px!important;
+  height:76px!important;
+  margin:0!important;
+  padding:10px 16px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  background:#ffffff!important;
+  border:0!important;
+  border-bottom:1px solid rgba(0,0,0,.04)!important;
+  box-shadow:none!important;
+}
+.mob-logo{
+  position:relative!important;
+  width:45px!important;
+  height:45px!important;
+  min-width:45px!important;
+  min-height:45px!important;
+  flex:0 0 45px!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  background:#fff3ea!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.mob-logo img,
+#mobIdentity img{
+  position:absolute!important;
+  inset:0!important;
+  width:45px!important;
+  height:45px!important;
+  min-width:45px!important;
+  min-height:45px!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  display:block!important;
+  margin:auto!important;
+  transform:none!important;
+}
+.mob-logo-fallback{
+  width:45px!important;
+  height:45px!important;
+  border-radius:50%!important;
+  font-size:14px!important;
+}
+.mob-rest-details{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:2px!important;
+  margin:0!important;
+  padding:0!important;
+}
+.mob-rest-name{
+  margin:0!important;
+  color:#222222!important;
+  font-size:16px!important;
+  line-height:1.15!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.mob-rest-sub{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#777777!important;
+  font-size:12px!important;
+  line-height:1.2!important;
+  font-weight:500!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.home-cart-pill{
+  position:static!important;
+  right:auto!important;
+  top:auto!important;
+  transform:none!important;
+  flex:0 0 auto!important;
+  min-width:74px!important;
+  max-width:none!important;
+  height:32px!important;
+  padding:0 12px!important;
+  margin-left:auto!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:#f2f2f2!important;
+  color:#e67a17!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+  white-space:nowrap!important;
+}
+@media(max-width:430px){
+  #mobIdentity,
+  .mobile-home .mob-identity,
+  .mob-identity{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
   }
 }

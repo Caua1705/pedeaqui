@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
-<title>PedeAqui â€” Pedido Online</title>
+<title>PedeAqui — Pedido Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">
@@ -31,7 +31,7 @@
     <button class="mob-search-btn" id="mobSearchBtn" aria-label="Buscar" onclick="mobFocusSearch()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
-    <button class="nav-btn" onclick="openModal('infoModal')" aria-label="InformaÃ§Ãµes">
+    <button class="nav-btn" onclick="openModal('infoModal')" aria-label="Informações">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </button>
     <button class="nav-btn cart-btn" onclick="openModal('cartModal')" aria-label="Sacola">
@@ -58,7 +58,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       </span>
       <span class="address-card-copy">
-        <strong id="homeAddressTitle">Use seu endereÃ§o para melhores resultados</strong>
+        <strong id="homeAddressTitle">Use seu endereço para melhores resultados</strong>
         <small id="homeAddressSub"></small>
       </span>
       <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
@@ -73,12 +73,12 @@
       <button class="mob-rest-sub" id="homeLoginPrompt" onclick="openLoginScreen()">Entre ou cadastre-se</button>
       <div class="mob-rest-row2">
         <span class="mob-badge-open">Aberto agora</span>
-        <span class="mob-close-time" id="mobCloseTime">fecha Ã s 22h30</span>
+        <span class="mob-close-time" id="mobCloseTime">fecha às 22h30</span>
         <button class="mob-verMais" onclick="openModal('infoModal')">Ver mais</button>
       </div>
       <div class="mob-rest-row3">
         <span class="delivery-time-text">90-100 min</span>
-        <span class="mob-pedido-min">Pedido mÃ­nimo R$ 30,00</span>
+        <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
       </div>
     </div>
     <button class="home-cart-pill" onclick="openModal('cartModal')" aria-label="Abrir sacola">
@@ -101,7 +101,7 @@
   <div class="home-separator" id="homeHeroSeparator" aria-hidden="true"></div>
 
   <section class="home-section home-coupons-section" id="homeCouponsSection" style="display:none">
-    <h2>Cupons pra vocÃª!</h2>
+    <h2>Cupons pra você!</h2>
     <div class="coupon-rail" id="couponRail"></div>
   </section>
 
@@ -113,7 +113,7 @@
     <div class="home-highlight-gray-space" aria-hidden="true"></div>
   </section>
 
-  <button class="home-order-cta" onclick="goToMenuTab()">FaÃ§a seu pedido</button>
+  <button class="home-order-cta" onclick="goToMenuTab()">Faça seu pedido</button>
 </main>
 
 <!-- SEARCH + CATEGORIES -->
@@ -122,8 +122,8 @@
     <div class="search-bar-wrap">
       <div class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Procurar no cardÃ¡pio..." id="searchInput">
-        <button class="search-clear-btn" id="searchClearBtn" onclick="closeSearch()" aria-label="Limpar busca">Ã—</button>
+        <input type="text" placeholder="Procurar no cardápio..." id="searchInput">
+        <button class="search-clear-btn" id="searchClearBtn" onclick="closeSearch()" aria-label="Limpar busca">×</button>
       </div>
     </div>
     <div class="cats" id="catNav">
@@ -149,18 +149,18 @@
   <div class="footer-inner">
     <div class="ft-col">
       <h4>Unidade principal</h4>
-      <p id="footerBranchPrimary">EndereÃ§o carregado pela loja</p>
+      <p id="footerBranchPrimary">Endereço carregado pela loja</p>
       <span id="footerContactPrimary">Contato carregado pela loja</span>
     </div>
     <div class="ft-col">
       <h4>Atendimento</h4>
-      <p id="footerBranchSecondary">InformaÃ§Ãµes da loja</p>
+      <p id="footerBranchSecondary">Informações da loja</p>
       <span id="footerContactSecondary">WhatsApp e telefone</span>
     </div>
     <div class="ft-col">
-      <h4>InformaÃ§Ãµes</h4>
-      <p>Todos os dias, de 11h Ã s 00h</p>
-      <span>Taxa de serviÃ§o: R$ 0,99<br>Cobramos couvert artÃ­stico</span>
+      <h4>Informações</h4>
+      <p>Todos os dias, de 11h às 00h</p>
+      <span>Taxa de serviço: R$ 0,99<br>Cobramos couvert artístico</span>
     </div>
   </div>
   <div class="ft-bottom">Tecnologia de pedidos por PedeAqui</div>
@@ -179,14 +179,14 @@
 </div>
 
 <!-- MOBILE BOTTOM NAVIGATION -->
-<nav class="mob-bottom-nav" id="mobBottomNav" aria-label="NavegaÃ§Ã£o principal">
+<nav class="mob-bottom-nav" id="mobBottomNav" aria-label="Navegação principal">
   <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-    <span>InÃ­cio</span>
+    <span>Início</span>
   </button>
   <button class="mob-nav-item" id="mobNavMenu" onclick="mobNavMenu()">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8"/><path d="M4.5 3v5.2A2.5 2.5 0 0 0 7 10.7a2.5 2.5 0 0 0 2.5-2.5V3"/><path d="M7 11v10"/><path d="M17 3v18"/><path d="M17 3c-2.4 1.5-3.6 3.6-3.6 6.2V12H17"/></svg>
-    <span>CardÃ¡pio</span>
+    <span>Cardápio</span>
   </button>
   <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()">
     <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1.5 1.5 0 0 1 1.5 1.5V21l-2.2-1.4L14 21l-2-1.4L10 21l-2.3-1.4L5.5 21V4.5A1.5 1.5 0 0 1 7 3z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
@@ -209,7 +209,7 @@
 <!-- MOBILE VIEW: PERFIL -->
 <div class="mob-view mob-view--profile" id="mobViewProfile">
 
-  <!-- â”€â”€ HUB (scrollable hub screen) â”€â”€ -->
+  <!-- -- HUB (scrollable hub screen) -- -->
   <div class="prof-hub-wrap" id="profHubWrap">
     <div class="mob-view-header" style="font-size:1.05rem;position:sticky;top:0;z-index:2">Perfil</div>
 
@@ -220,7 +220,7 @@
       </div>
       <div id="profileIdentity">
         <div class="prof-hero-label">Restaurante</div>
-        <div class="prof-hero-sub">Sua conta e preferÃªncias</div>
+        <div class="prof-hero-sub">Sua conta e preferências</div>
       </div>
     </div>
 
@@ -231,8 +231,8 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </div>
         <div style="flex:1;text-align:left">
-          <div class="prof-option-title">InformaÃ§Ãµes do restaurante</div>
-          <div class="prof-option-desc">EndereÃ§os, horÃ¡rios e contato</div>
+          <div class="prof-option-title">Informações do restaurante</div>
+          <div class="prof-option-desc">Endereços, horários e contato</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
@@ -242,7 +242,7 @@
         </div>
         <div style="flex:1;text-align:left">
           <div class="prof-option-title">Pedidos</div>
-          <div class="prof-option-desc">HistÃ³rico de pedidos realizados</div>
+          <div class="prof-option-desc">Histórico de pedidos realizados</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
@@ -262,7 +262,7 @@
         </div>
         <div style="flex:1;text-align:left">
           <div class="prof-option-title">Cupons</div>
-          <div class="prof-option-desc">Seus descontos disponÃ­veis</div>
+          <div class="prof-option-desc">Seus descontos disponíveis</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
@@ -286,7 +286,7 @@
         </div>
         <div style="flex:1;text-align:left">
           <div class="prof-option-title">Meus dados</div>
-          <div class="prof-option-desc">InformaÃ§Ãµes da sua conta</div>
+          <div class="prof-option-desc">Informações da sua conta</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
@@ -295,7 +295,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <div style="flex:1;text-align:left">
-          <div class="prof-option-title">SeguranÃ§a</div>
+          <div class="prof-option-title">Segurança</div>
           <div class="prof-option-desc">Privacidade e conta</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
@@ -308,13 +308,13 @@
     </div>
   </div><!-- /prof-hub-wrap -->
 
-  <!-- â”€â”€ SUB: InformaÃ§Ãµes do restaurante â”€â”€ -->
+  <!-- -- SUB: Informações do restaurante -- -->
   <div class="prof-sub" id="profSubinfo">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
-      <span class="prof-sub-title">InformaÃ§Ãµes do restaurante</span>
+      <span class="prof-sub-title">Informações do restaurante</span>
     </div>
     <div class="prof-sub-body">
 
@@ -329,8 +329,8 @@
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <div>
-            <div class="prof-info-row-label">EndereÃ§o</div>
-            <div class="prof-info-row-val">EndereÃ§o carregado pela API</div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Endereço carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
@@ -363,8 +363,8 @@
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <div>
-            <div class="prof-info-row-label">EndereÃ§o</div>
-            <div class="prof-info-row-val">EndereÃ§o carregado pela API</div>
+            <div class="prof-info-row-label">Endereço</div>
+            <div class="prof-info-row-val">Endereço carregado pela API</div>
           </div>
         </div>
         <div class="prof-info-row">
@@ -386,13 +386,13 @@
         </div>
       </div>
 
-      <!-- HorÃ¡rio -->
+      <!-- Horário -->
       <div class="prof-info-card">
         <div class="prof-info-card-header">
           <div class="prof-info-card-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <span class="prof-info-card-title">HorÃ¡rio de funcionamento</span>
+          <span class="prof-info-card-title">Horário de funcionamento</span>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -404,39 +404,39 @@
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <div>
-            <div class="prof-info-row-label">HorÃ¡rio</div>
-            <div class="prof-info-row-val">11h00 Ã s 00h00</div>
+            <div class="prof-info-row-label">Horário</div>
+            <div class="prof-info-row-val">11h00 às 00h00</div>
           </div>
         </div>
       </div>
 
-      <!-- InformaÃ§Ãµes -->
+      <!-- Informações -->
       <div class="prof-info-card">
         <div class="prof-info-card-header">
           <div class="prof-info-card-icon">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </div>
-          <span class="prof-info-card-title">InformaÃ§Ãµes</span>
+          <span class="prof-info-card-title">Informações</span>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           <div>
-            <div class="prof-info-row-label">Taxa de serviÃ§o</div>
+            <div class="prof-info-row-label">Taxa de serviço</div>
             <div class="prof-info-row-val">R$ 0,99</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
           <div>
-            <div class="prof-info-row-label">Couvert artÃ­stico</div>
-            <div class="prof-info-row-val">Cobrado durante apresentaÃ§Ãµes</div>
+            <div class="prof-info-row-label">Couvert artístico</div>
+            <div class="prof-info-row-val">Cobrado durante apresentações</div>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div>
             <div class="prof-info-row-label">Aviso legal</div>
-            <div class="prof-info-row-val">Proibida a venda de bebidas alcoÃ³licas para menores de 18 anos</div>
+            <div class="prof-info-row-val">Proibida a venda de bebidas alcoólicas para menores de 18 anos</div>
           </div>
         </div>
       </div>
@@ -451,10 +451,10 @@
         </div>
         <div class="prof-pay-chips">
           <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>CrÃ©dito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>DÃ©bito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeiÃ§Ã£o</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentaÃ§Ã£o</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
           <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
         </div>
       </div>
@@ -462,7 +462,7 @@
     </div>
   </div><!-- /profSubinfo -->
 
-  <!-- â”€â”€ SUB: Pedidos â”€â”€ -->
+  <!-- -- SUB: Pedidos -- -->
   <div class="prof-sub" id="profSubpedidos">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
@@ -475,7 +475,7 @@
     </div>
   </div><!-- /profSubpedidos -->
 
-  <!-- â”€â”€ SUB: Pagamento â”€â”€ -->
+  <!-- -- SUB: Pagamento -- -->
   <div class="prof-sub" id="profSubpagamento">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
@@ -486,22 +486,22 @@
     <div class="prof-sub-body">
       <div class="prof-placeholder-card">
         <div class="prof-placeholder-title">Formas de pagamento aceitas</div>
-        <div class="prof-placeholder-text">O pagamento Ã© realizado diretamente no estabelecimento, na retirada ou na entrega. Aceitamos as seguintes formas:</div>
+        <div class="prof-placeholder-text">O pagamento é realizado diretamente no estabelecimento, na retirada ou na entrega. Aceitamos as seguintes formas:</div>
       </div>
       <div class="prof-info-card">
         <div class="prof-pay-chips">
           <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>CartÃ£o de crÃ©dito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>CartÃ£o de dÃ©bito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeiÃ§Ã£o</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentaÃ§Ã£o</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de crédito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de débito</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
+          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
           <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
         </div>
       </div>
     </div>
   </div><!-- /profSubpagamento -->
 
-  <!-- â”€â”€ SUB: Cupons â”€â”€ -->
+  <!-- -- SUB: Cupons -- -->
   <div class="prof-sub" id="profSubcupons">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
@@ -514,13 +514,13 @@
         <div class="prof-empty-icon">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </div>
-        <div class="prof-empty-title">Nenhum cupom disponÃ­vel</div>
-        <div class="prof-empty-text">Fique atento Ã s promoÃ§Ãµes e ofertas especiais do restaurante.</div>
+        <div class="prof-empty-title">Nenhum cupom disponível</div>
+        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do restaurante.</div>
       </div>
     </div>
   </div><!-- /profSubcupons -->
 
-  <!-- â”€â”€ SUB: Ajuda â”€â”€ -->
+  <!-- -- SUB: Ajuda -- -->
   <div class="prof-sub" id="profSubajuda">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
@@ -531,7 +531,7 @@
     <div class="prof-sub-body">
       <div class="prof-placeholder-card">
         <div class="prof-placeholder-title">Fale com o restaurante</div>
-        <div class="prof-placeholder-text">Para dÃºvidas, sugestÃµes ou reclamaÃ§Ãµes, entre em contato diretamente com o restaurante pelos canais abaixo.</div>
+        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o restaurante pelos canais abaixo.</div>
       </div>
       <div class="prof-info-card">
         <div class="prof-info-card-header">
@@ -543,21 +543,21 @@
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
-            <div class="prof-info-row-label">WhatsApp â€” Matriz</div>
-            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja â†’</a>
+            <div class="prof-info-row-label">WhatsApp — Matriz</div>
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <div>
             <div class="prof-info-row-label">WhatsApp</div>
-            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja â†’</a>
+            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
           </div>
         </div>
         <div class="prof-info-row">
           <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
           <div>
-            <div class="prof-info-row-label">Telefone â€” Matriz</div>
+            <div class="prof-info-row-label">Telefone — Matriz</div>
             <div class="prof-info-row-val">Telefone da loja</div>
           </div>
         </div>
@@ -572,7 +572,7 @@
     </div>
   </div><!-- /profSubajuda -->
 
-  <!-- â”€â”€ SUB: Meus dados â”€â”€ -->
+  <!-- -- SUB: Meus dados -- -->
   <div class="prof-sub" id="profSubmeusdados">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
@@ -582,8 +582,8 @@
     </div>
     <div class="prof-sub-body">
       <div class="prof-placeholder-card">
-        <div class="prof-placeholder-title">InformaÃ§Ãµes pessoais</div>
-        <div class="prof-placeholder-text">Seus dados sÃ£o usados para facilitar seus pedidos. VocÃª pode atualizar as informaÃ§Ãµes no momento do checkout.</div>
+        <div class="prof-placeholder-title">Informações pessoais</div>
+        <div class="prof-placeholder-text">Seus dados são usados para facilitar seus pedidos. Você pode atualizar as informações no momento do checkout.</div>
       </div>
       <div class="prof-info-card" style="padding:18px">
         <div class="prof-form-row">
@@ -595,26 +595,26 @@
           <input class="prof-form-input" type="tel" placeholder="(85) 9 0000-0000" readonly>
         </div>
         <div class="prof-form-row" style="margin-bottom:0">
-          <label class="prof-form-label">EndereÃ§o de entrega</label>
-          <input class="prof-form-input" type="text" placeholder="Seu endereÃ§o" readonly>
+          <label class="prof-form-label">Endereço de entrega</label>
+          <input class="prof-form-input" type="text" placeholder="Seu endereço" readonly>
         </div>
       </div>
       <p style="font-size:.73rem;color:#bbb;text-align:center;line-height:1.5;padding:4px 16px 0">Dados salvos localmente no dispositivo e usados apenas para seus pedidos.</p>
     </div>
   </div><!-- /profSubmeusdados -->
 
-  <!-- â”€â”€ SUB: SeguranÃ§a â”€â”€ -->
+  <!-- -- SUB: Segurança -- -->
   <div class="prof-sub" id="profSubseguranca">
     <div class="prof-sub-header">
       <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
-      <span class="prof-sub-title">SeguranÃ§a</span>
+      <span class="prof-sub-title">Segurança</span>
     </div>
     <div class="prof-sub-body">
       <div class="prof-placeholder-card">
-        <div class="prof-placeholder-title">Privacidade e seguranÃ§a</div>
-        <div class="prof-placeholder-text">Suas informaÃ§Ãµes sÃ£o tratadas com responsabilidade. NÃ£o compartilhamos seus dados com terceiros sem seu consentimento.</div>
+        <div class="prof-placeholder-title">Privacidade e segurança</div>
+        <div class="prof-placeholder-text">Suas informações são tratadas com responsabilidade. Não compartilhamos seus dados com terceiros sem seu consentimento.</div>
       </div>
       <div class="prof-info-card">
         <div class="prof-info-row">
@@ -649,8 +649,8 @@
   <div class="modal modal--store-info">
     <div class="store-info-header">
       <div class="store-info-spacer"></div>
-      <h2>InformaÃ§Ãµes da loja</h2>
-      <button class="store-info-close" onclick="closeModalId('infoModal')" aria-label="Fechar">âœ•</button>
+      <h2>Informações da loja</h2>
+      <button class="store-info-close" onclick="closeModalId('infoModal')" aria-label="Fechar">✕</button>
     </div>
     <div class="store-info-body">
       <section class="store-info-card">
@@ -660,38 +660,38 @@
         <div class="store-contact-list">
           <div class="store-contact-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.6a2 2 0 0 1-.45 2.11L8 9.7a16 16 0 0 0 6.3 6.3l1.27-1.27a2 2 0 0 1 2.11-.45c.83.29 1.7.5 2.6.62A2 2 0 0 1 22 16.92z"/></svg>
-            <span class="store-info-phone">Telefone nÃ£o informado</span>
+            <span class="store-info-phone">Telefone não informado</span>
           </div>
           <div class="store-contact-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>
-            <span class="store-info-email">E-mail nÃ£o informado</span>
+            <span class="store-info-email">E-mail não informado</span>
           </div>
           <a class="store-contact-row store-contact-row--wa" href="#" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg>
-            <span class="store-info-whatsapp">WhatsApp nÃ£o informado</span>
+            <span class="store-info-whatsapp">WhatsApp não informado</span>
           </a>
         </div>
       </section>
 
       <div class="store-info-tabs">
-        <button class="active">HorÃ¡rios de atendimento</button>
-        <button>EndereÃ§o</button>
+        <button class="active">Horários de atendimento</button>
+        <button>Endereço</button>
         <button>Formas de pagamento</button>
       </div>
 
       <section class="store-hours-card">
-        <div class="store-hours-row active"><span>Segunda-feira</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>TerÃ§a-feira</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>Quarta-feira</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>Quinta-feira</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>Sexta-feira</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>SÃ¡bado</span><strong>11:00 Ã s 00:00</strong></div>
-        <div class="store-hours-row"><span>Domingo</span><strong>11:00 Ã s 00:00</strong></div>
+        <div class="store-hours-row active"><span>Segunda-feira</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Terça-feira</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Quarta-feira</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Quinta-feira</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Sexta-feira</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Sábado</span><strong>11:00 às 00:00</strong></div>
+        <div class="store-hours-row"><span>Domingo</span><strong>11:00 às 00:00</strong></div>
       </section>
 
       <section class="store-address-card">
-        <h3>EndereÃ§o</h3>
-        <p id="storeInfoAddress">EndereÃ§o nÃ£o informado</p>
+        <h3>Endereço</h3>
+        <p id="storeInfoAddress">Endereço não informado</p>
       </section>
     </div>
   </div>
@@ -703,7 +703,7 @@
     <div class="product-hero" id="pmHero"></div>
     <div class="modal-header">
       <h2 class="modal-title">Detalhes</h2>
-      <button class="modal-close" onclick="closeModalId('productModal')">âœ•</button>
+      <button class="modal-close" onclick="closeModalId('productModal')">✕</button>
     </div>
     <div class="modal-body">
       <h3 class="pm-name" id="pmName"></h3>
@@ -715,7 +715,7 @@
       </div>
 
       <div id="pmForm">
-        <label class="pm-label">Alguma observaÃ§Ã£o?</label>
+        <label class="pm-label">Alguma observação?</label>
         <textarea class="pm-obs" id="pmObs" placeholder="Ex: sem cebola, ponto da carne, sem farofa..."></textarea>
       </div>
     </div>
@@ -725,7 +725,7 @@
         <span class="qty-val" id="pmQty">1</span>
         <button class="qty-btn" onclick="changeQty(1)">+</button>
       </div>
-      <button class="btn-primary" style="flex:1" id="pmAddBtn" onclick="addToCart()">Adicionar â€¢ R$ 0,00</button>
+      <button class="btn-primary" style="flex:1" id="pmAddBtn" onclick="addToCart()">Adicionar • R$ 0,00</button>
     </div>
   </div>
 </div>
@@ -758,9 +758,9 @@
         <div class="cart-empty-icon">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         </div>
-        <div class="cart-empty-title">Sua sacola estÃ¡ vazia</div>
-        <div class="cart-empty-text">Adicione itens do cardÃ¡pio para continuar.</div>
-        <button class="cart-empty-btn" onclick="closeModalId('cartModal')">Ver cardÃ¡pio</button>
+        <div class="cart-empty-title">Sua sacola está vazia</div>
+        <div class="cart-empty-text">Adicione itens do cardápio para continuar.</div>
+        <button class="cart-empty-btn" onclick="closeModalId('cartModal')">Ver cardápio</button>
       </div>
 
       <!-- Cart content (has items) -->
@@ -774,7 +774,7 @@
             </div>
             <div style="flex:1">
               <div class="cart-addr-label">Entregar em</div>
-              <div class="cart-addr-val" id="cartAddrText">Defina seu endereÃ§o para entrega</div>
+              <div class="cart-addr-val" id="cartAddrText">Defina seu endereço para entrega</div>
             </div>
             <svg class="cart-addr-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </div>
@@ -782,14 +782,14 @@
 
         <!-- 4. Delivery time option -->
         <div class="cart-delivery-section" id="cartDeliveryOpt">
-          <div class="cart-delivery-label">OpÃ§Ã£o de entrega</div>
+          <div class="cart-delivery-label">Opção de entrega</div>
           <div class="cart-delivery-card">
             <div class="cdc-dot">
               <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#fff"/></svg>
             </div>
             <div class="cdc-info">
-              <div class="cdc-name">PadrÃ£o</div>
-              <div class="cdc-time">Hoje, 90â€“100 min</div>
+              <div class="cdc-name">Padrão</div>
+              <div class="cdc-time">Hoje, 90–100 min</div>
             </div>
             <div class="cdc-price">R$ 13,00</div>
           </div>
@@ -830,7 +830,7 @@
             <span id="csSub">R$ 0,00</span>
           </div>
           <div class="cps-row">
-            <span>Taxa de serviÃ§o <button class="fee-info-btn" onclick="openServiceFeeInfo()" aria-label="Sobre a taxa de serviÃ§o">?</button></span>
+            <span>Taxa de serviço <button class="fee-info-btn" onclick="openServiceFeeInfo()" aria-label="Sobre a taxa de serviço">?</button></span>
             <span id="csSvcFeeBtn">R$ 0,99</span>
           </div>
           <div class="cps-row" id="csDeliveryRow">
@@ -879,36 +879,36 @@
           <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
             <div class="fs-type-card-icon">ðŸ›µ</div>
             <div class="fs-type-card-name">Entrega</div>
-            <div class="fs-type-card-sub">90â€“100 min Â· R$ 13,00</div>
+            <div class="fs-type-card-sub">90–100 min · R$ 13,00</div>
           </button>
           <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
             <div class="fs-type-card-icon">ðŸª</div>
             <div class="fs-type-card-name">Retirada</div>
-            <div class="fs-type-card-sub">~30 min Â· GrÃ¡tis</div>
+            <div class="fs-type-card-sub">~30 min · Grátis</div>
           </button>
         </div>
       </div>
       <div class="fs-section" id="addressGroup">
-        <div class="fs-section-title">EndereÃ§o de entrega</div>
+        <div class="fs-section-title">Endereço de entrega</div>
         <input type="text" id="chkRua" class="fs-input" placeholder="Rua / Avenida">
         <div class="fs-field-group">
-          <input type="text" id="chkNum" class="fs-input" placeholder="NÃºmero" style="width:100px;flex-shrink:0">
+          <input type="text" id="chkNum" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0">
           <input type="text" id="chkBairro" class="fs-input" placeholder="Bairro" style="flex:1">
         </div>
-        <input type="text" id="chkComp" class="fs-input" placeholder="Complemento e referÃªncia (opcional)">
+        <input type="text" id="chkComp" class="fs-input" placeholder="Complemento e referência (opcional)">
       </div>
       <div class="fs-section">
         <div class="fs-section-title">Forma de pagamento</div>
         <div class="fs-pay-grid">
           <button class="fs-pay-btn active" onclick="setPayment(this,'Pix')">Pix</button>
-          <button class="fs-pay-btn" onclick="setPayment(this,'CrÃ©dito')">CrÃ©dito</button>
-          <button class="fs-pay-btn" onclick="setPayment(this,'DÃ©bito')">DÃ©bito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Crédito')">Crédito</button>
+          <button class="fs-pay-btn" onclick="setPayment(this,'Débito')">Débito</button>
           <button class="fs-pay-btn" onclick="setPayment(this,'Dinheiro')">Dinheiro</button>
-          <button class="fs-pay-btn fs-pay-btn--full" onclick="setPayment(this,'VR/VA')">Vale-refeiÃ§Ã£o / AlimentaÃ§Ã£o</button>
+          <button class="fs-pay-btn fs-pay-btn--full" onclick="setPayment(this,'VR/VA')">Vale-refeição / Alimentação</button>
         </div>
       </div>
       <div class="fs-section" style="margin-bottom:0">
-        <div class="fs-section-title">ObservaÃ§Ã£o geral (opcional)</div>
+        <div class="fs-section-title">Observação geral (opcional)</div>
         <textarea id="chkObs" class="fs-input fs-textarea" placeholder="Troco para R$ 100, deixar na portaria..."></textarea>
       </div>
     </div>
@@ -935,14 +935,14 @@
         <div class="rev-block-content">
           <div class="rev-block-label">Tipo</div>
           <div class="rev-block-val" id="revTypeName">Entrega</div>
-          <div class="rev-block-sub" id="revTypeSub">Hoje, 90â€“100 min Â· R$ 13,00</div>
+          <div class="rev-block-sub" id="revTypeSub">Hoje, 90–100 min · R$ 13,00</div>
         </div>
         <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
       </div>
       <div id="revAddrBlock" class="rev-block">
         <div class="rev-block-icon">ðŸ“</div>
         <div class="rev-block-content">
-          <div class="rev-block-label">EndereÃ§o</div>
+          <div class="rev-block-label">Endereço</div>
           <div class="rev-block-val" id="revAddrVal"></div>
         </div>
         <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
@@ -962,7 +962,7 @@
       <div id="revItemsList" class="cart-items-list"></div>
       <div class="cart-price-summary">
         <div class="cps-row"><span>Subtotal</span><span id="revSub"></span></div>
-        <div class="cps-row" id="revSvcFeeRow"><span>Taxa de serviÃ§o</span><span id="revSvcFeeVal"></span></div>
+        <div class="cps-row" id="revSvcFeeRow"><span>Taxa de serviço</span><span id="revSvcFeeVal"></span></div>
         <div class="cps-row" id="revDeliveryRow"><span>Taxa de entrega</span><span id="revDelivery"></span></div>
         <div class="cps-divider"></div>
         <div class="cps-total"><span>Total</span><span id="revTotal"></span></div>
@@ -983,7 +983,7 @@
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div class="success-title">Pedido enviado!</div>
-      <div class="success-subtitle">Aguardando confirmaÃ§Ã£o do restaurante.<br>Acompanhe pelo WhatsApp.</div>
+      <div class="success-subtitle">Aguardando confirmação do restaurante.<br>Acompanhe pelo WhatsApp.</div>
       <div class="success-card">
         <div class="success-card-row"><span>Pedido</span><strong>#1042</strong></div>
         <div class="success-card-row"><span>Cliente</span><strong id="confName"></strong></div>
@@ -1000,35 +1000,35 @@
 <div class="overlay" id="addressModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeModalId('addressModal')" aria-label="Fechar endereÃ§o">
+      <button class="cart-hdr-back" onclick="closeModalId('addressModal')" aria-label="Fechar endereço">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <h2 class="cart-hdr-title">Informe seu endereÃ§o</h2>
+      <h2 class="cart-hdr-title">Informe seu endereço</h2>
       <div class="cart-hdr-spacer"></div>
     </div>
     <div class="cart-scroll">
       <div class="address-choice">
         <button class="address-choice-btn">
-          <span>LocalizaÃ§Ã£o atual</span>
-          <small>DisponÃ­vel quando a integraÃ§Ã£o de geolocalizaÃ§Ã£o estiver ativa.</small>
+          <span>Localização atual</span>
+          <small>Disponível quando a integração de geolocalização estiver ativa.</small>
         </button>
         <button class="address-choice-btn active">
-          <span>Outra localizaÃ§Ã£o</span>
+          <span>Outra localização</span>
           <small>Digite manualmente para simular a entrega agora.</small>
         </button>
       </div>
       <div class="fs-section">
-        <div class="fs-section-title">EndereÃ§o manual</div>
+        <div class="fs-section-title">Endereço manual</div>
         <input type="text" id="addrStreet" class="fs-input" placeholder="Rua / Avenida">
         <div class="fs-field-group">
-          <input type="text" id="addrNumber" class="fs-input" placeholder="NÃºmero" style="width:100px;flex-shrink:0">
+          <input type="text" id="addrNumber" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0">
           <input type="text" id="addrNeighborhood" class="fs-input" placeholder="Bairro" style="flex:1">
         </div>
-        <input type="text" id="addrComplement" class="fs-input" placeholder="Complemento e referÃªncia (opcional)">
+        <input type="text" id="addrComplement" class="fs-input" placeholder="Complemento e referência (opcional)">
       </div>
     </div>
     <div class="cart-footer">
-      <button class="cart-cta-btn" onclick="saveAddressMock()">Salvar endereÃ§o</button>
+      <button class="cart-cta-btn" onclick="saveAddressMock()">Salvar endereço</button>
     </div>
   </div>
 </div>
@@ -1036,7 +1036,7 @@
 <!-- SCREEN: LOGIN / IDENTIFICATION -->
 <div class="overlay" id="loginModal">
   <div class="modal modal--login">
-    <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">âœ•</button>
+    <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">✕</button>
     <div class="login-logo" id="loginLogo"></div>
     <h2 class="login-rest-name">Restaurante</h2>
     <button class="cart-cta-btn" onclick="mockLogin('signup')">Cadastre-se</button>
@@ -1044,7 +1044,7 @@
     <div class="login-policy-links">
       <button id="privacyPolicyButton" type="button" class="policy-link" onclick="openPolicyScreen('privacy')">Política de privacidade</button>
     </div>
-    <a href="#" class="login-privacy">PolÃ­tica de privacidade</a>
+    <a href="#" class="login-privacy">Política de privacidade</a>
   </div>
 </div>
 
@@ -1096,11 +1096,11 @@
 <div class="overlay" id="serviceFeeModal" onclick="closeModal(event, 'serviceFeeModal')">
   <div class="modal modal--info">
     <div class="modal-header">
-      <h2 class="modal-title">Taxa de serviÃ§o</h2>
-      <button class="modal-close" onclick="closeModalId('serviceFeeModal')">âœ•</button>
+      <h2 class="modal-title">Taxa de serviço</h2>
+      <button class="modal-close" onclick="closeModalId('serviceFeeModal')">✕</button>
     </div>
     <div class="modal-body">
-      <p>A taxa de serviÃ§o contribui para custos operacionais da plataforma, manutenÃ§Ã£o, melhorias contÃ­nuas e suporte ao sistema.</p>
+      <p>A taxa de serviço contribui para custos operacionais da plataforma, manutenção, melhorias contínuas e suporte ao sistema.</p>
     </div>
   </div>
 </div>

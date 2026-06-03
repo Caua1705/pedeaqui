@@ -217,7 +217,7 @@
   height:44px!important;
   border:0!important;
   border-radius:8px!important;
-  background:var(--brand)!important;
+  background:#f07020!important;
   color:#fff!important;
   font-size:12px!important;
   font-weight:900!important;
@@ -403,12 +403,13 @@ body.menu-tab .menu-area{display:block!important}
 .restaurant-hero{margin:136px 0 0!important;background:#fff!important}
 .restaurant-hero-cover{
   width:100%!important;
-  height:164px!important;
+  height:auto!important;
+  aspect-ratio:2.3 / 1!important;
   min-height:0!important;
   border-radius:0!important;
   box-shadow:none!important;
   overflow:hidden!important;
-  background:linear-gradient(135deg,var(--brand),#ff8b22)!important;
+  background:#130802!important;
 }
 .restaurant-hero-img{
   display:none!important;
@@ -427,7 +428,6 @@ body.menu-tab .menu-area{display:block!important}
   display:flex!important;
   width:100%!important;
   height:100%!important;
-  transform:translateX(0)!important;
   transition:transform .48s ease!important;
   will-change:transform!important;
   touch-action:pan-y!important;
@@ -447,7 +447,9 @@ body.menu-tab .menu-area{display:block!important}
   height:100%!important;
   display:block!important;
   object-fit:cover!important;
-  object-position:center!important;
+  object-position:center center!important;
+  transform:scale(1.04)!important;
+  transform-origin:center center!important;
 }
 .restaurant-hero-cover.has-carousel .restaurant-hero-fallback{display:none!important}
 .restaurant-hero-fallback{
@@ -485,8 +487,8 @@ body.menu-tab .menu-area{display:block!important}
 .highlight-rail{
   display:flex!important;
   gap:12px!important;
-  margin:0 -22px!important;
-  padding:0 22px 2px!important;
+  margin:0!important;
+  padding:0 0 2px!important;
   overflow-x:auto!important;
   scrollbar-width:none!important;
 }
@@ -499,9 +501,9 @@ body.menu-tab .menu-area{display:block!important}
   height:214px!important;
   min-height:214px!important;
   padding:6px 6px 14px!important;
-  border:1px solid #ffd2bd!important;
-  border-radius:8px!important;
-  background:#fffaf7!important;
+  border:1.5px dashed #ffd2bd!important;
+  border-radius:12px!important;
+  background:#ffffff!important;
   box-shadow:none!important;
   text-align:center!important;
 }
@@ -509,14 +511,14 @@ body.menu-tab .menu-area{display:block!important}
 .coupon-card::after{
   content:''!important;
   position:absolute!important;
-  top:134px!important;
-  width:10px!important;
-  height:18px!important;
-  border:1px solid #ffd2bd!important;
-  background:#fff!important;
+  top:132px!important;
+  width:13px!important;
+  height:22px!important;
+  border:1.5px dashed #ffd2bd!important;
+  background:#f4f4f4!important;
 }
-.coupon-card::before{left:-1px!important;border-left:0!important;border-radius:0 10px 10px 0!important}
-.coupon-card::after{right:-1px!important;border-right:0!important;border-radius:10px 0 0 10px!important}
+.coupon-card::before{left:-2px!important;border-left:0!important;border-radius:0 12px 12px 0!important}
+.coupon-card::after{right:-2px!important;border-right:0!important;border-radius:12px 0 0 12px!important}
 .coupon-art{
   position:relative!important;
   height:88px!important;
@@ -575,14 +577,14 @@ body.menu-tab .menu-area{display:block!important}
 }
 .coupon-dash{height:1px!important;margin:0 10px 13px!important;border-top:1px dashed #ffd2bd!important}
 .coupon-use-btn{
-  height:28px!important;
-  padding:0 14px!important;
-  border:0!important;
-  border-radius:6px!important;
-  background:#ffd9c8!important;
-  color:#3a3a3a!important;
+  height:30px!important;
+  padding:0 16px!important;
+  border:1px solid #ffd2bd!important;
+  border-radius:7px!important;
+  background:#ffffff!important;
+  color:#444444!important;
   font-size:12px!important;
-  font-weight:800!important;
+  font-weight:600!important;
 }
 
 .home-highlights-section{
@@ -595,8 +597,7 @@ body.menu-tab .menu-area{display:block!important}
   gap:10px!important;
   margin-top:8px!important;
   padding-bottom:0!important;
-  padding-left:22px!important;
-  scroll-padding-left:22px!important;
+  scroll-padding-left:0!important;
 }
 .highlight-banner{
   flex:0 0 290px!important;

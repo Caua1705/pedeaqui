@@ -227,8 +227,8 @@
       const total = track.children.length;
       track.classList.remove('is-dragging');
       if (total > 1 && Math.abs(heroDragDeltaX) > 46) {
-        heroBannerIndex += heroDragDeltaX < 0 ? 1 : -1;
-        heroBannerIndex = (heroBannerIndex + total) % total;
+        const next = heroBannerIndex + (heroDragDeltaX < 0 ? 1 : -1);
+        if (next >= 0 && next < total) heroBannerIndex = next;
       }
       heroDragDeltaX = 0;
       updateHeroCarousel();
@@ -247,7 +247,11 @@
     track.addEventListener('pointermove', event => {
       if (!track.classList.contains('is-dragging')) return;
       heroDragDeltaX = event.clientX - heroDragStartX;
-      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${heroDragDeltaX}px))`;
+      const total = track.children.length;
+      const atEdge = (heroBannerIndex === 0 && heroDragDeltaX > 0) ||
+                     (heroBannerIndex === total - 1 && heroDragDeltaX < 0);
+      const visualDelta = atEdge ? heroDragDeltaX * 0.2 : heroDragDeltaX;
+      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${visualDelta}px))`;
     });
 
     track.addEventListener('pointerup', endDrag);

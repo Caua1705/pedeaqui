@@ -26,6 +26,7 @@
   let heroSwipeReady = false;
   let heroDragStartX = 0;
   let heroDragDeltaX = 0;
+  const HERO_BANNER_INTERVAL_MS = 5000;
 
   const $ = (id) => document.getElementById(id);
   const isLogged = () => Boolean(customer);
@@ -194,10 +195,7 @@
     }
 
     if (visualBanners.length > 1) {
-      heroBannerTimer = setInterval(() => {
-        heroBannerIndex = (heroBannerIndex + 1) % visualBanners.length;
-        updateHeroCarousel();
-      }, 4200);
+      startHeroAutoplay();
     }
   }
 
@@ -206,6 +204,7 @@
     if (!total) return;
     heroBannerIndex = Math.max(0, Math.min(index, total - 1));
     updateHeroCarousel();
+    startHeroAutoplay();
   }
 
   function updateHeroCarousel() {
@@ -215,6 +214,17 @@
     document.querySelectorAll('#restaurantHeroDots span').forEach((dot, index) => {
       dot.classList.toggle('active', index === heroBannerIndex);
     });
+  }
+
+  function startHeroAutoplay() {
+    const total = $('restaurantHeroTrack')?.children.length || 0;
+    clearInterval(heroBannerTimer);
+    heroBannerTimer = null;
+    if (total <= 1) return;
+    heroBannerTimer = setInterval(() => {
+      heroBannerIndex = (heroBannerIndex + 1) % total;
+      updateHeroCarousel();
+    }, HERO_BANNER_INTERVAL_MS);
   }
 
   function initHeroSwipe() {
@@ -232,6 +242,7 @@
       }
       heroDragDeltaX = 0;
       updateHeroCarousel();
+      startHeroAutoplay();
     };
 
     track.addEventListener('pointerdown', event => {

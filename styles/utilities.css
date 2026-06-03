@@ -341,7 +341,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   height:136px!important;
   transform:translateX(-50%)!important;
   z-index:82!important;
-  background:#fff!important;
+  background:#f4f4f4!important;
   pointer-events:none!important;
 }
 .address-strip.address-card{
@@ -355,11 +355,11 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   width:min(calc(100vw - 28px),362px)!important;
   min-height:44px!important;
   padding:0 12px!important;
-  border:1px solid #ffd8c2!important;
+  border:1px solid #e8e8e8!important;
   border-radius:14px!important;
-  background:#fff6ef!important;
+  background:#ffffff!important;
 }
-.address-strip.has-address{background:#fff6ef!important;border-color:#ffd8c2!important}
+.address-strip.has-address{background:#ffffff!important;border-color:#e8e8e8!important}
 .address-strip .address-card-icon,
 .address-strip .address-card-chevron{color:var(--brand)!important}
 .address-strip .address-card-copy strong{

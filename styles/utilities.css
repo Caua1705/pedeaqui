@@ -308,7 +308,7 @@ body.menu-tab .search-cat{
   top:136px!important;
   left:50%!important;
   transform:translateX(-50%)!important;
-  width:min(100vw,430px)!important;
+  width:min(100vw,390px)!important;
   z-index:75!important;
   transition:top .22s ease!important;
 }
@@ -326,7 +326,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .restaurant-app-shell{
   box-sizing:border-box!important;
   width:100%!important;
-  max-width:430px!important;
+  max-width:390px!important;
   min-height:0!important;
   margin:0 auto!important;
   padding:0!important;
@@ -337,7 +337,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   position:fixed!important;
   top:0!important;
   left:50%!important;
-  width:min(100vw,430px)!important;
+  width:min(100vw,390px)!important;
   height:136px!important;
   transform:translateX(-50%)!important;
   z-index:82!important;
@@ -352,7 +352,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   z-index:84!important;
   transform:translateX(-50%)!important;
   margin:0!important;
-  width:min(calc(100vw - 28px),402px)!important;
+  width:min(calc(100vw - 28px),362px)!important;
   min-height:44px!important;
   padding:0 12px!important;
   border:1px solid #ffd8c2!important;
@@ -384,9 +384,10 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   gap:12px!important;
   padding:10px 92px 12px 14px!important;
   margin:0!important;
-  width:min(100vw,430px)!important;
-  max-width:430px!important;
+  width:min(100vw,390px)!important;
+  max-width:390px!important;
   border:0!important;
+  border-top:3px solid var(--brand)!important;
   border-bottom:1px solid #eeeeee!important;
   background:#fff!important;
 }
@@ -446,7 +447,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .restaurant-hero-cover{
   width:100%!important;
   height:auto!important;
-  aspect-ratio:2.3 / 1!important;
+  aspect-ratio:1080 / 500!important;
   min-height:0!important;
   border-radius:0!important;
   box-shadow:none!important;
@@ -490,8 +491,6 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   display:block!important;
   object-fit:cover!important;
   object-position:center center!important;
-  transform:scale(1.04)!important;
-  transform-origin:center center!important;
 }
 .restaurant-hero-cover.has-carousel .restaurant-hero-fallback{display:none!important}
 .restaurant-hero-fallback{
@@ -700,7 +699,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 }
 /* Keep the pill inside the 430px frame on wider screens. */
 @media(min-width:768px){
-  .home-order-cta{right:calc(50% - 215px + 16px)!important}
+  .home-order-cta{right:calc(50% - 195px + 16px)!important}
 }
 
 .mob-bottom-nav{
@@ -708,10 +707,10 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   display:flex!important;
   height:calc(66px + var(--safe-bottom))!important;
   padding:0 0 var(--safe-bottom)!important;
-  max-width:430px!important;
+  max-width:390px!important;
   left:50%!important;
   right:auto!important;
-  width:min(100vw,430px)!important;
+  width:min(100vw,390px)!important;
   transform:translateX(-50%)!important;
   border-radius:0!important;
   background:#fff!important;
@@ -745,7 +744,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   .restaurant-app-shell,
   .search-cat,
   .menu-area,
-  .footer{max-width:430px!important;margin-left:auto!important;margin-right:auto!important}
+  .footer{max-width:390px!important;margin-left:auto!important;margin-right:auto!important}
 }
 
 @media(max-width:767px){

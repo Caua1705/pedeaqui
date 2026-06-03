@@ -289,12 +289,16 @@ body.menu-tab .search-cat,
 body.menu-tab .menu-area{display:block!important}
 /* header slides up when user scrolls (JS adds .menu-scrolled to body) */
 body.menu-tab .address-strip.address-card,
+body.menu-tab .delivery-widget,
+body.menu-tab .delivery-widget-bottom-line,
 body.menu-tab .mobile-home .mob-identity,
 body.menu-tab .mob-identity,
 body.menu-tab .restaurant-app-shell::before{
   transition:transform .22s ease, opacity .22s ease!important;
 }
 body.menu-tab.menu-scrolled .address-strip.address-card,
+body.menu-tab.menu-scrolled .delivery-widget,
+body.menu-tab.menu-scrolled .delivery-widget-bottom-line,
 body.menu-tab.menu-scrolled .mobile-home .mob-identity,
 body.menu-tab.menu-scrolled .mob-identity,
 body.menu-tab.menu-scrolled .restaurant-app-shell::before{
@@ -338,30 +342,95 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   top:0!important;
   left:50%!important;
   width:min(100vw,390px)!important;
-  height:136px!important;
+  height:166px!important;
   transform:translateX(-50%)!important;
   z-index:82!important;
-  background:#f4f4f4!important;
+  background:#ffffff!important;
   pointer-events:none!important;
 }
-.address-strip.address-card{
+/* Delivery widget: tabs row + address strip as one fixed block */
+.delivery-widget{
   box-sizing:border-box!important;
   position:fixed!important;
-  top:10px!important;
+  top:6px!important;
   left:50%!important;
   z-index:84!important;
   transform:translateX(-50%)!important;
-  margin:0!important;
   width:min(calc(100vw - 28px),362px)!important;
-  min-height:44px!important;
-  padding:0 12px!important;
+  background:#f2f2f2!important;
   border:1px solid #e8e8e8!important;
   border-radius:14px!important;
-  background:#ffffff!important;
+  overflow:hidden!important;
+}
+/* Tabs row inside the widget */
+.delivery-widget-tabs{
+  display:flex!important;
+  align-items:center!important;
+  padding:0 12px!important;
+  height:36px!important;
+  gap:0!important;
+}
+.delivery-widget-tab{
+  border:0!important;
+  background:transparent!important;
+  font-family:var(--ref-font)!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  color:#aaaaaa!important;
+  padding:0 10px!important;
+  height:100%!important;
+  cursor:pointer!important;
+  letter-spacing:.02em!important;
+  text-transform:uppercase!important;
+  transition:color .15s!important;
+  white-space:nowrap!important;
+}
+.delivery-widget-tab.active{
+  color:#C8520A!important;
+  font-weight:800!important;
+}
+.delivery-widget-chevron{
+  margin-left:auto!important;
+  color:#cccccc!important;
+  flex-shrink:0!important;
+}
+/* Divider between tabs and address row */
+.delivery-widget-divider{
+  height:1px!important;
+  background:rgba(0,0,0,.07)!important;
+  margin:0!important;
+}
+/* Address strip inside widget: no longer fixed, just a row */
+.address-strip.address-card{
+  box-sizing:border-box!important;
+  position:static!important;
+  display:flex!important;
+  width:100%!important;
+  min-height:40px!important;
+  padding:0 12px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  margin:0!important;
+  transform:none!important;
 }
 .address-strip.has-address{background:#ffffff!important;border-color:#e8e8e8!important}
 .address-strip .address-card-icon,
 .address-strip .address-card-chevron{color:var(--brand)!important}
+/* Near-transparent separator line below the delivery widget */
+.delivery-widget-bottom-line{
+  box-sizing:border-box!important;
+  position:fixed!important;
+  top:88px!important;
+  left:50%!important;
+  z-index:83!important;
+  transform:translateX(-50%)!important;
+  width:min(100vw,390px)!important;
+  height:1px!important;
+  background:rgba(0,0,0,.06)!important;
+  margin:0!important;
+  pointer-events:none!important;
+}
 .address-strip .address-card-copy strong{
   color:#404040!important;
   font-size:12px!important;
@@ -375,7 +444,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .mob-identity{
   box-sizing:border-box!important;
   position:fixed!important;
-  top:64px!important;
+  top:94px!important;
   left:50%!important;
   z-index:83!important;
   transform:translateX(-50%)!important;
@@ -387,7 +456,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   width:min(100vw,390px)!important;
   max-width:390px!important;
   border:0!important;
-  border-top:3px solid var(--brand)!important;
+  border-top:1px solid rgba(0,0,0,.07)!important;
   border-bottom:1px solid #eeeeee!important;
   background:#fff!important;
 }
@@ -443,7 +512,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   font-weight:800!important;
 }
 
-.restaurant-hero{margin:136px 0 0!important;background:#fff!important}
+.restaurant-hero{margin:166px 0 0!important;background:#fff!important}
 .restaurant-hero-cover{
   width:100%!important;
   height:auto!important;
@@ -537,40 +606,43 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .highlight-rail::-webkit-scrollbar{display:none!important}
 .coupon-card{
   position:relative!important;
-  flex:0 0 160px!important;
-  min-width:160px!important;
-  height:214px!important;
-  min-height:214px!important;
-  padding:6px 6px 14px!important;
-  border:1.5px dashed #ffd2bd!important;
+  flex:0 0 162px!important;
+  min-width:162px!important;
+  height:210px!important;
+  min-height:210px!important;
+  padding:6px 6px 12px!important;
+  border:1.5px dashed #f5c9ae!important;
   border-radius:12px!important;
   background:#ffffff!important;
   box-shadow:none!important;
   text-align:center!important;
+  display:flex!important;
+  flex-direction:column!important;
 }
 .coupon-card::before,
 .coupon-card::after{
   content:''!important;
   position:absolute!important;
-  top:132px!important;
-  width:13px!important;
-  height:22px!important;
-  border:1.5px dashed #ffd2bd!important;
-  background:#f4f4f4!important;
+  top:157px!important;
+  width:7px!important;
+  height:13px!important;
+  border:1.5px dashed #f5c9ae!important;
+  background:#f9f9f9!important;
 }
-.coupon-card::before{left:-2px!important;border-left:0!important;border-radius:0 12px 12px 0!important}
-.coupon-card::after{right:-2px!important;border-right:0!important;border-radius:12px 0 0 12px!important}
+.coupon-card::before{left:-2px!important;border-left:0!important;border-radius:0 7px 7px 0!important}
+.coupon-card::after{right:-2px!important;border-right:0!important;border-radius:7px 0 0 7px!important}
 .coupon-art{
   position:relative!important;
-  height:88px!important;
+  height:90px!important;
   overflow:hidden!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
   justify-content:center!important;
-  border:1px dashed rgba(255,255,255,.45)!important;
-  border-radius:7px!important;
-  background:linear-gradient(135deg,#ef6c28,#f0a020)!important;
+  gap:2px!important;
+  border:0!important;
+  border-radius:9px!important;
+  background:linear-gradient(160deg,#f07020,#f5a030)!important;
   color:#fff!important;
 }
 /* Backend image fills the art block; gradient + text become the fallback. */
@@ -584,48 +656,56 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   width:100%!important;
   height:100%!important;
   object-fit:cover!important;
-  border-radius:7px!important;
+  border-radius:9px!important;
   display:block!important;
 }
+/* "Cupom" label */
 .coupon-art span{
-  margin:0 0 3px!important;
+  margin:0!important;
   padding:0!important;
   border-radius:0!important;
   background:transparent!important;
-  color:#fff!important;
-  font-size:12px!important;
-  line-height:15px!important;
-  font-weight:850!important;
-}
-.coupon-art strong{
-  color:#fff!important;
-  font-size:22px!important;
-  line-height:24px!important;
-  font-weight:900!important;
-  text-transform:lowercase!important;
-}
-.coupon-title{
-  min-height:42px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  padding:10px 8px 6px!important;
-  color:#444444!important;
-  font-size:13px!important;
-  line-height:16px!important;
-  font-weight:800!important;
+  color:rgba(255,255,255,.9)!important;
+  font-size:11px!important;
+  line-height:14px!important;
+  font-weight:700!important;
+  letter-spacing:.04em!important;
   text-transform:uppercase!important;
 }
-.coupon-dash{height:1px!important;margin:0 10px 13px!important;border-top:1px dashed #ffd2bd!important}
-.coupon-use-btn{
-  height:30px!important;
-  padding:0 16px!important;
-  border:1px solid #ffd2bd!important;
-  border-radius:7px!important;
-  background:#ffffff!important;
-  color:#444444!important;
+/* Discount text — "12% off" style: large yellow number */
+.coupon-art strong{
+  color:#ffe066!important;
+  font-size:30px!important;
+  line-height:30px!important;
+  font-weight:900!important;
+  text-transform:lowercase!important;
+  letter-spacing:-.01em!important;
+}
+.coupon-title{
+  flex:1!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  padding:7px 8px 0!important;
+  color:#555555!important;
   font-size:12px!important;
-  font-weight:600!important;
+  line-height:15px!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:.03em!important;
+}
+.coupon-dash{flex:0 0 auto!important;height:0!important;margin:0 12px 8px!important;border:0!important;border-top:1.5px dashed #f5c9ae!important}
+.coupon-use-btn{
+  flex:0 0 auto!important;
+  height:26px!important;
+  padding:0 14px!important;
+  border:1.5px solid #f5c9ae!important;
+  border-radius:999px!important;
+  background:#feeee6!important;
+  color:#f07020!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  cursor:pointer!important;
 }
 
 .home-highlights-section{
@@ -788,11 +868,17 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
     z-index:3!important;
   }
   .home-section{width:100vw!important;max-width:100vw!important}
-  .address-strip.address-card{
+  .delivery-widget{
     left:14px!important;
     width:calc(100vw - 28px)!important;
     transform:none!important;
   }
+  .delivery-widget-bottom-line{
+    left:0!important;
+    width:100vw!important;
+    transform:none!important;
+  }
+
   .mobile-home .mob-identity,
   .mob-identity{
     left:0!important;
@@ -853,4 +939,9 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   background:var(--brand)!important;color:#fff!important;
   font-size:1.2rem!important;font-weight:400!important;
   border:0!important;
+}
+
+@media(max-width:767px){
+  body.menu-tab{padding-bottom:calc(66px + var(--safe-bottom))!important}
+  body.menu-tab .menu-area{padding-bottom:0!important}
 }

@@ -1,4 +1,4 @@
-﻿/* Reset & Vars */
+/* Reset & Vars */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --brand:#C8520A;--brand-d:#A0420A;--brand2:#8B1A1A;
@@ -2142,12 +2142,9 @@ a{text-decoration:none;color:inherit}
 
 /* Final restaurant reference overrides. utilities.css provides the Home visual source of truth. */
 .restaurant-app-shell{max-width:none!important;margin:0!important;padding:0!important;background:#fff!important}
-.address-strip.address-card{margin:10px 14px 8px!important;width:calc(100% - 28px)!important;min-height:44px!important;padding:0 12px!important;gap:10px!important;border:1px solid #ffd8c2!important;border-radius:14px!important;box-shadow:none!important;background:#fff6ef!important}
-.address-strip .address-card-icon{width:20px!important;height:20px!important;border-radius:0!important;background:transparent!important;color:var(--brand)!important}
-.address-strip .address-card-copy{display:block!important}
-.address-strip .address-card-copy strong{display:block!important;font-size:.78rem!important;font-weight:500!important;color:#4d4d4d!important;text-transform:none!important;letter-spacing:0!important;line-height:1.2!important}
-.address-strip .address-card-copy small{display:none!important}
-.address-strip .address-card-chevron{color:var(--brand)!important}
+/* address-strip and delivery-widget layout is controlled by utilities.css */
+
+
 .restaurant-hero{width:100%!important;margin:0!important;background:#fff!important}
 .restaurant-hero-cover{width:100%!important;height:183px!important;min-height:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;position:relative!important;background:#23100a!important}
 .restaurant-hero-cover::after{display:none!important}

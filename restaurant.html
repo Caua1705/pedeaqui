@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -43,16 +43,28 @@
 
 <!-- RESTAURANT APP HOME -->
 <main class="mobile-home restaurant-app-shell">
-  <button class="address-card address-strip" onclick="openAddressScreen()">
-    <span class="address-card-icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    </span>
-    <span class="address-card-copy">
-      <strong id="homeAddressTitle">Use seu endereço para melhores resultados</strong>
-      <small id="homeAddressSub"></small>
-    </span>
-    <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
-  </button>
+
+  <!-- DELIVERY MODE WIDGET -->
+  <div class="delivery-widget">
+    <div class="delivery-widget-tabs">
+      <button class="delivery-widget-tab active" id="dwTabDelivery">Delivery</button>
+      <button class="delivery-widget-tab" id="dwTabPickup" onclick="openAddressScreen()">Retirada</button>
+      <button class="delivery-widget-tab" id="dwTabBranch">LJ. SUL</button>
+      <svg class="delivery-widget-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+    <div class="delivery-widget-divider"></div>
+    <button class="address-card address-strip" onclick="openAddressScreen()">
+      <span class="address-card-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </span>
+      <span class="address-card-copy">
+        <strong id="homeAddressTitle">Use seu endereço para melhores resultados</strong>
+        <small id="homeAddressSub"></small>
+      </span>
+      <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
 
   <section class="mob-identity" id="mobIdentity">
     <div class="mob-logo"></div>

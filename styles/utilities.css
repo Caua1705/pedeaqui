@@ -944,4 +944,17 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 @media(max-width:767px){
   body.menu-tab{padding-bottom:calc(66px + var(--safe-bottom))!important}
   body.menu-tab .menu-area{padding-bottom:0!important}
+  body:not(.menu-tab) .restaurant-app-shell{
+    min-height:auto!important;
+    padding-bottom:0!important;
+    background:transparent!important;
+  }
+  body:not(.menu-tab) .home-order-cta{
+    bottom:calc(66px + var(--safe-bottom) + 18px)!important;
+    width:156px!important;
+    height:44px!important;
+  }
+  body:not(.menu-tab) .home-highlights-section{
+    padding-bottom:0!important;
+  }
 }

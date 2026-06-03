@@ -259,6 +259,53 @@
     track.addEventListener('lostpointercapture', endDrag);
   }
 
+  function initPageRubberBand() {
+    let startX = 0, startY = 0, delta = 0, tracking = false, isHoriz = false;
+    const SKIP = '.coupon-rail,.highlight-rail,.restaurant-hero-cover,.restaurant-hero-track,.restaurant-hero-slide';
+    const SNAP = 'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)';
+    const movables = () => document.querySelectorAll(
+      '.restaurant-hero, .home-section, .home-separator'
+    );
+
+    const applyMove = tx => movables().forEach(el => {
+      el.style.transition = 'none';
+      el.style.transform = `translateX(${tx}px)`;
+    });
+
+    const snapBack = () => {
+      if (!isHoriz) { tracking = false; return; }
+      tracking = false; isHoriz = false; delta = 0;
+      movables().forEach(el => {
+        el.style.transition = SNAP;
+        el.style.transform = 'translateX(0px)';
+      });
+    };
+
+    document.addEventListener('touchstart', e => {
+      if (document.body.classList.contains('modal-open')) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      delta = 0; tracking = true; isHoriz = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!isHoriz) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        if (Math.abs(dy) >= Math.abs(dx)) { tracking = false; return; }
+        if (e.target.closest(SKIP)) { tracking = false; return; }
+        isHoriz = true;
+      }
+      delta = dx;
+      applyMove(parseFloat((delta * 0.18).toFixed(1)));
+    }, { passive: true });
+
+    document.addEventListener('touchend', snapBack, { passive: true });
+    document.addEventListener('touchcancel', snapBack, { passive: true });
+  }
+
   function renderCoupons() {
     const wrap = $('couponRail');
     if (!wrap) return;
@@ -918,6 +965,7 @@
     setCartTab('delivery');
     updateCartUI();
     showHomeTab();
+    initPageRubberBand();
   }
 
   Object.assign(window, {

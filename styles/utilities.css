@@ -2519,8 +2519,28 @@ body:not(.menu-tab) .home-order-cta,
   body.home-tab .home-highlight-gray-space{display:none!important}
 
   /* 2 — subtle divider line between the gray location card and the header */
+  body.home-tab #mobIdentity,
+  body.home-tab .mobile-home #mobIdentity,
+  body.home-tab .mobile-home .mob-identity,
   body.home-tab .mob-identity{
-    border-top:1px solid #e2e2e2!important;
+    position:relative!important;
+    margin-top:10px!important;
+    border-top:0!important;
+  }
+  body.home-tab #mobIdentity::before,
+  body.home-tab .mobile-home #mobIdentity::before,
+  body.home-tab .mobile-home .mob-identity::before,
+  body.home-tab .mob-identity::before{
+    content:''!important;
+    display:block!important;
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    top:-5px!important;
+    height:1px!important;
+    background:#e1e1e1!important;
+    z-index:5!important;
+    pointer-events:none!important;
   }
 
   /* 3 — subtitle color matches the footer text */

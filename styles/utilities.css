@@ -3326,7 +3326,7 @@ body.home-tab .address-strip .address-card-copy strong{
 /* 7 — "Faça seu pedido" CTA (home-only element). */
 body.home-tab .home-order-cta,
 .home-order-cta{
-  font-size:13px!important;           /* was 12px */
+  font-size:12px!important;
   font-weight:700!important;
   border-radius:10px!important;
   background:#F36F21!important;        /* Rapidex brand orange */

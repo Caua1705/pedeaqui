@@ -11,7 +11,11 @@
       "PowerShell(ls \"$env:LOCALAPPDATA\\\\ms-playwright\\\\\" 2>$null)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Arenapc\\\\Desktop\\\\PROJETOS\\\\pedeaqui_front\" -Recurse -File -Filter \"*.html\")",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Arenapc\\\\Desktop\\\\PROJETOS\\\\pedeaqui_front\" -Recurse -File -Filter \"*.css\")"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Arenapc\\\\Desktop\\\\PROJETOS\\\\pedeaqui_front\" -Recurse -File -Filter \"*.css\")",
+      "Bash(npx playwright *)",
+      "Read(//c/tmp/**)",
+      "Bash(node scrolltest.js)",
+      "Bash(node verify.js)"
     ]
   }
 }

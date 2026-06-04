@@ -2783,3 +2783,78 @@ body:not(.menu-tab) .home-order-cta,
     margin-bottom:3px!important;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────
+   STICKY HOME HEADER (FINAL, AUTHORITATIVE)
+   Keep the location widget + identity (logo / "Entre ou cadastre-se")
+   pinned to the top of the Início screen while the hero/coupons/
+   destaques scroll underneath. This wrapper supersedes every earlier
+   position rule on .delivery-widget / .mob-identity in this file.
+   The wrapper carries a solid white full-width background so scrolling
+   content never peeks beside the narrower gray location card.
+   ─────────────────────────────────────────────────────────────── */
+.home-sticky-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:55!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:430px!important;
+  margin:0 auto!important;
+  background:#ffffff!important;
+}
+/* Inner blocks ride inside the sticky wrapper in normal flow — strip any
+   leftover fixed/relative offsets from the older layers above. */
+.home-sticky-header .delivery-widget,
+.home-sticky-header .mob-identity,
+.home-sticky-header #mobIdentity,
+body.home-tab .home-sticky-header .delivery-widget,
+body.home-tab .home-sticky-header .mob-identity,
+body.home-tab .home-sticky-header #mobIdentity{
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  z-index:auto!important;
+}
+
+@media(max-width:767px){
+  body.home-tab .home-sticky-header{
+    position:sticky!important;
+    top:0!important;
+    left:auto!important;
+    transform:none!important;
+    width:100%!important;
+    max-width:430px!important;
+    margin:0 auto!important;
+    padding-bottom:4px!important;
+    z-index:55!important;
+    background:#ffffff!important;
+    /* hide the 1px peek of scrolling content above the rounded card corners */
+    box-shadow:0 -20px 0 0 #ffffff!important;
+  }
+  /* the location card keeps its centered gray-card look inside the wrapper */
+  body.home-tab .home-sticky-header .delivery-widget{
+    margin:14px auto 12px!important;
+  }
+}
+
+/* Enable position:sticky on the home header.
+   The base layout sets html/body{overflow-x:hidden}, which silently turns
+   BOTH the root and body into scroll containers (overflow-y computes to
+   auto) — a classic setup that breaks position:sticky (the header scrolls
+   away instead of pinning). overflow-x:clip blocks horizontal scrolling
+   the same way but does NOT create a scroll container nor force overflow-y
+   to auto, so the viewport stays the single scroller and sticky pins
+   correctly. Scoped to the Início tab and disabled while a modal is open
+   so the existing body.modal-open scroll-lock still wins. */
+html:has(body.home-tab:not(.modal-open)){
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+}
+body.home-tab:not(.modal-open){
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+}

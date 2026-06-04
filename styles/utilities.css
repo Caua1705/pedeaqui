@@ -3231,7 +3231,7 @@ body.menu-tab .prod-img-box img{ width:100%!important;height:100%!important;obje
    Cardápio (menu-tab) layout stays exactly as it is. Softer grays,
    lighter font-weights, a calmer orange and gentler borders/shadows.
    Tokens (reference palette):
-     texto principal  #30343b   texto secundário #737985
+     texto principal  #3D434A   texto secundário #6B7280
      texto fraco      #9aa0a8   bordas           #edf0f2
      fundo leve       #f7f7f8   laranja          #F36F21 / #fff0e8
    ═══════════════════════════════════════════════════════════════ */
@@ -3246,21 +3246,21 @@ body,button,input,textarea,select{
 /* 3 — Restaurant identity header (Início only). */
 body.home-tab .mob-rest-name{
   font-size:16px!important;
-  font-weight:700!important;          /* was 800 — too heavy */
+  font-weight:650!important;
   line-height:1.2!important;
-  color:#30343b!important;            /* was near-black #222 */
+  color:#3D434A!important;
 }
 body.home-tab .mob-rest-sub{
   font-size:12px!important;           /* was 13px */
   font-weight:500!important;
   line-height:1.25!important;
-  color:#737985!important;            /* was #999 */
+  color:#6B7280!important;
 }
 /* Cart value pill: lighter fill, less heavy text. */
 body.home-tab .home-cart-pill,
 body.home-tab .home-cart-pill #homeCartTotal{
   background:#f7f7f8!important;       /* was #f2f2f2 */
-  color:#30343b!important;            /* was pure #000 */
+  color:#3D434A!important;
   font-weight:600!important;          /* was 700/800 */
 }
 
@@ -3294,11 +3294,11 @@ body.home-tab .address-strip .address-card-copy strong{
 .home-coupons-section h2,
 .home-highlights-section h2,
 #homeHighlightsTitle{
-  font-size:20px!important;
-  font-weight:700!important;          /* was 800 */
-  line-height:1.3!important;          /* more comfortable */
-  color:#30343b!important;
-  letter-spacing:0!important;
+  font-size:18px!important;
+  font-weight:650!important;
+  line-height:22px!important;
+  color:#454B52!important;
+  letter-spacing:-0.01em!important;
 }
 
 /* 6 — Coupons (the art block is a backend IMAGE — left untouched; only
@@ -3308,15 +3308,22 @@ body.home-tab .address-strip .address-card-copy strong{
   box-shadow:none!important;
 }
 .coupon-title{
-  font-weight:600!important;          /* was 700 */
-  color:#737985!important;            /* lower contrast (was #505050) */
-  letter-spacing:.01em!important;
+  font-size:14px!important;
+  line-height:17px!important;
+  font-weight:700!important;
+  color:#565656!important;
+  letter-spacing:0!important;
 }
 .coupon-use-btn{
   border:1px solid #f7d6c2!important; /* lighter border */
-  background:#fff0e8!important;
-  color:#F36F21!important;
-  font-weight:600!important;          /* was 700 */
+  background:#fbd9c8!important;
+  color:#14100e!important;
+  font-size:12.5px!important;
+  font-weight:700!important;
+  margin-top:6px!important;
+}
+.coupon-dash{
+  margin-top:24px!important;
 }
 /* Fallback discount number (only shows when a coupon has NO image). */
 .coupon-art strong{

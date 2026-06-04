@@ -3330,6 +3330,17 @@ body.home-tab .address-strip .address-card-copy strong{
   font-weight:800!important;          /* was 900 */
 }
 
+/* Home-only micro alignment: nudge non-banner content slightly right. */
+@media(max-width:767px){
+  body.home-tab .mob-identity,
+  body.home-tab .home-section h2,
+  body.home-tab .home-coupons-section h2,
+  body.home-tab .home-highlights-section h2,
+  body.home-tab #homeHighlightsTitle{
+    transform:translateX(4px)!important;
+  }
+}
+
 /* 7 — "Faça seu pedido" CTA (home-only element). */
 body.home-tab .home-order-cta,
 .home-order-cta{

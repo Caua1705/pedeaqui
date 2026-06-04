@@ -1,0 +1,128 @@
+/* ==========================================================================
+   Operation / location selector (Take-a-Juice style)
+   Scoped to #operationModal + the home delivery widget.
+   Loaded last so it owns these components without fighting utilities.css.
+   ========================================================================== */
+
+:root{
+  --op-orange:#FF5F01;
+  --op-orange-soft:#FFE9DC;
+  --op-orange-tint:#FFF3EC;
+  --op-border:#e5e7eb;
+  --op-ink:#1f2937;
+  --op-ink-soft:#6b7280;
+}
+
+/* ---- Home widget is fully clickable now ---- */
+.delivery-widget{cursor:pointer}
+.delivery-widget .address-strip{pointer-events:none}
+/* Brand pill holds the restaurant name from the API: clip with a real ellipsis
+   (the base flex centering clips both ends, so force inline-block truncation). */
+#dwTabBrand{
+  display:inline-block!important;
+  max-width:118px!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* ---- Modal shell tweaks (reuses .modal--fs / .cart-hdr / .cart-footer) ---- */
+#operationModal .modal--fs{max-width:430px;background:#fff}
+#operationModal .cart-scroll{background:#fff;padding:14px 16px 24px}
+#operationModal .cart-hdr-title{font-weight:800;color:#111}
+
+/* ---- Top address selector (peach card) ---- */
+.op-addr-card{
+  width:100%;display:flex;align-items:center;gap:10px;
+  background:var(--op-orange-tint);border:1px solid var(--op-orange-soft);
+  border-radius:12px;padding:14px 14px;margin:4px 0 14px;
+  cursor:pointer;text-align:left;font-family:inherit;transition:background .15s;
+}
+.op-addr-card:active{background:var(--op-orange-soft)}
+.op-addr-card .op-addr-pin{color:var(--op-orange);flex-shrink:0;display:flex}
+.op-addr-card .op-addr-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.op-addr-card .op-addr-copy strong{font-size:13px;font-weight:700;color:var(--op-ink);line-height:1.25}
+.op-addr-card .op-addr-copy small{font-size:11.5px;color:var(--op-ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op-addr-card .op-addr-chevron{color:#c2c2c2;flex-shrink:0}
+
+/* ---- Segmented control (Delivery / Retirada) ---- */
+.op-segment{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border:1px solid var(--op-border);border-radius:12px;overflow:hidden;
+  background:#fff;margin-bottom:18px;
+}
+.op-seg-tab{
+  appearance:none;border:none;background:#fff;font-family:inherit;
+  padding:13px 8px;font-size:13px;font-weight:700;color:var(--op-ink-soft);
+  cursor:pointer;transition:background .15s,color .15s;
+}
+.op-seg-tab.active{background:var(--op-orange-soft);color:var(--op-orange)}
+
+/* ---- Branch section ---- */
+.op-section-title{font-size:15px;font-weight:800;color:#374151;margin:4px 0 12px}
+
+.op-search{
+  display:flex;align-items:center;gap:9px;
+  border:1px solid var(--op-border);border-radius:10px;
+  padding:11px 13px;margin-bottom:14px;background:#fff;
+}
+.op-search svg{color:#9ca3af;flex-shrink:0}
+.op-search input{
+  flex:1;border:none;outline:none;background:transparent;font-family:inherit;
+  font-size:13.5px;color:var(--op-ink);
+}
+.op-search input::placeholder{color:#9ca3af}
+
+.op-branches{display:flex;flex-direction:column;gap:12px}
+
+.op-branch-card{
+  display:flex;align-items:flex-start;gap:12px;
+  border:1.5px solid var(--op-border);border-radius:12px;
+  padding:15px 14px;cursor:pointer;background:#fff;text-align:left;
+  font-family:inherit;transition:border-color .15s,box-shadow .15s;
+}
+.op-branch-card.selected{border-color:var(--op-orange);box-shadow:0 0 0 1px var(--op-orange) inset}
+
+.op-branch-radio{
+  width:20px;height:20px;border-radius:50%;border:2px solid #cfd3d8;
+  flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s;
+}
+.op-branch-card.selected .op-branch-radio{border-color:var(--op-orange)}
+.op-branch-card.selected .op-branch-radio::after{
+  content:"";width:10px;height:10px;border-radius:50%;background:var(--op-orange);
+}
+
+.op-branch-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.op-branch-name{font-size:14px;font-weight:800;color:#374151;line-height:1.2}
+.op-branch-addr{
+  font-size:12px;color:#9ca3af;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.op-branch-badge{
+  align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.04em;
+  padding:3px 9px;border-radius:6px;text-transform:uppercase;
+}
+.op-branch-badge.open{background:#dcefd9;color:#3f7d46}
+.op-branch-badge.closed{background:#f1d6d6;color:#a14b4b}
+
+.op-branch-chevron{color:#cfd3d8;flex-shrink:0;align-self:center}
+
+.op-branch-empty{
+  text-align:center;color:#9ca3af;font-size:13px;padding:30px 10px;
+}
+
+/* ---- Confirm button (fixed footer) ---- */
+#operationModal .cart-footer{background:#fff;border-top:1px solid #f0f0f0}
+.op-confirm{
+  width:100%;height:48px;border:none;border-radius:10px;
+  background:var(--op-orange);color:#fff;font-family:inherit;
+  font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.01em;
+  transition:background .15s,opacity .15s;
+}
+.op-confirm:active{background:#e35601}
+.op-confirm:disabled{background:#ffd9c4;color:#fff;cursor:not-allowed}
+
+/* ---- Address manual screen: enabled/disabled save button parity ---- */
+#addressModal .cart-cta-btn:disabled{background:#ffd9c4;cursor:not-allowed}

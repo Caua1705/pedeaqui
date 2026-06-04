@@ -5,6 +5,33 @@
     return normalizeMenuPayload(await window.PedeAquiApi.getRestaurantMenu(slug));
   }
 
+  function normalizeBranches(raw = {}) {
+    const source = Array.isArray(raw.branches) ? raw.branches : [];
+    return source.map((branch, index) => {
+      const name = branch.name || branch.branch_name || `Unidade ${index + 1}`;
+      const fullAddress = branch.full_address
+        || [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(', ');
+      return {
+        ...branch,
+        id: String(branch.id || branch.uuid || branch.branch_id || slugify(name) || index),
+        restaurant_id: branch.restaurant_id || raw.restaurant?.id || '',
+        name,
+        label: branch.label || `LJ. ${String(name).toUpperCase()}`,
+        address: branch.address || '',
+        full_address: fullAddress,
+        neighborhood: branch.neighborhood || '',
+        city: branch.city || '',
+        state: branch.state || '',
+        phone: branch.phone || '',
+        whatsapp: branch.whatsapp || '',
+        is_open: branch.is_open !== undefined ? branch.is_open !== false : branch.is_active !== false,
+        accepts_delivery: branch.accepts_delivery !== false,
+        accepts_pickup: branch.accepts_pickup !== false,
+        sort_order: Number(branch.sort_order ?? (branch.is_main ? -1 : index))
+      };
+    }).sort((a, b) => a.sort_order - b.sort_order);
+  }
+
   function normalizeMenuPayload(raw = {}) {
     let sourceCategories = Array.isArray(raw.categories) ? raw.categories : [];
     let sourceProducts = Array.isArray(raw.products) ? raw.products : [];
@@ -62,7 +89,7 @@
     return {
       restaurant: raw.restaurant || {},
       settings: raw.settings || {},
-      branches: Array.isArray(raw.branches) ? raw.branches : [],
+      branches: normalizeBranches(raw),
       banners: sourceBanners
         .filter(banner => banner.is_active !== false)
         .map((banner, index) => ({

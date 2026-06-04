@@ -136,11 +136,7 @@
       closeEl.style.display = isOpen === false || !closeTime ? 'none' : '';
       closeEl.textContent = closeTime ? `fecha às ${closeTime}` : '';
     }
-    const addrMain = $('homeAddressTitle');
-    const addrSub = $('homeAddressSub');
-    const branchAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
-    if (addrMain) addrMain.textContent = customerAddress ? customerAddress.summary : (branchAddress || 'Informe seu endereço e loja');
-    if (addrSub) addrSub.textContent = '';
+    renderWidget();
     const highlightsTitle = $('homeHighlightsTitle');
     if (highlightsTitle) highlightsTitle.textContent = `Destaques ${restName}`;
 
@@ -610,6 +606,7 @@
 
   function setCartTab(type) {
     deliveryType = type;
+    syncOrderTypeFromCart(type);
     $('cartTabEntrega')?.classList.toggle('active', type === 'delivery');
     $('cartTabRetirada')?.classList.toggle('active', type === 'pickup');
     if ($('cartAddrBlock')) $('cartAddrBlock').style.display = type === 'delivery' ? 'block' : 'none';
@@ -654,6 +651,7 @@
 
   function setDeliveryType(type) {
     deliveryType = type;
+    syncOrderTypeFromCart(type);
     $('btnDel')?.classList.toggle('active', type === 'delivery');
     $('btnPick')?.classList.toggle('active', type === 'pickup');
     if ($('addressGroup')) $('addressGroup').style.display = type === 'delivery' ? 'block' : 'none';
@@ -675,6 +673,14 @@
       if (!address.street || !address.number || !address.neighborhood) { alert('Informe seu endereço.'); return; }
       customerAddress = address;
       localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+      if (operationContext) {
+        operationContext.address = {
+          street: address.street, number: address.number, neighborhood: address.neighborhood,
+          complement: address.complement || '', reference: address.reference || ''
+        };
+        persistOperationContext();
+        renderWidget();
+      }
     }
     customer = { name, phone };
     localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
@@ -713,21 +719,27 @@
   }
 
   async function submitOrder() {
-    const branch = branches[0] || {};
+    if (!cart.length) { alert('Seu carrinho está vazio.'); return; }
+    if (!operationContext?.branch_id) { alert('Selecione uma unidade para continuar.'); openOperationScreen(); return; }
+    const orderType = operationContext.order_type;
+    if (orderType === 'delivery' && !operationContext.address) {
+      alert('Informe seu endereço de entrega.'); openAddressScreen(); return;
+    }
+    const address = operationContext.address;
     const orderPayload = {
-      branch_id: branch.id || branch.uuid || null,
+      branch_id: operationContext.branch_id,
       customer: {
         name: customer?.name || '',
         phone: customer?.phone || ''
       },
-      order_type: deliveryType,
+      order_type: orderType,
       payment_method: paymentMethod,
-      address: deliveryType === 'delivery' ? {
-        street: customerAddress?.street || '',
-        number: customerAddress?.number || '',
-        neighborhood: customerAddress?.neighborhood || '',
-        complement: customerAddress?.complement || '',
-        reference: customerAddress?.reference || ''
+      address: orderType === 'delivery' ? {
+        street: address?.street || '',
+        number: address?.number || '',
+        neighborhood: address?.neighborhood || '',
+        complement: address?.complement || '',
+        reference: address?.reference || ''
       } : null,
       notes: $('chkObs')?.value?.trim() || '',
       coupon_code: selectedCoupon?.code || null,
@@ -749,6 +761,220 @@
     updateCartUI();
   }
 
+  // ============================================================
+  //  Operation context — single source of truth (per restaurant)
+  // ============================================================
+  const OP_STORAGE_PREFIX = 'rapidex_operation_context_';
+  let operationContext = null;
+  let opDraft = null; // working copy edited while the operation modal is open
+
+  const opStorageKey = () => OP_STORAGE_PREFIX + getRestaurantSlug();
+
+  function loadOperationContext() {
+    try { return JSON.parse(localStorage.getItem(opStorageKey()) || 'null'); }
+    catch { return null; }
+  }
+
+  function persistOperationContext() {
+    if (operationContext) localStorage.setItem(opStorageKey(), JSON.stringify(operationContext));
+  }
+
+  function addressSummary(a) {
+    return a ? `${a.street}, ${a.number} - ${a.neighborhood}` : '';
+  }
+
+  function compatibleBranches(orderType) {
+    return branches.filter(b => orderType === 'pickup' ? b.accepts_pickup : b.accepts_delivery);
+  }
+
+  function defaultBranchFor(orderType) {
+    const list = compatibleBranches(orderType);
+    return list.find(b => b.is_open) || list[0] || branches[0] || null;
+  }
+
+  function branchById(id) {
+    return branches.find(b => String(b.id) === String(id)) || null;
+  }
+
+  function branchSnapshot(branch) {
+    return {
+      branch_id: branch?.id || null,
+      branch_label: branch?.label || '',
+      branch_name: branch?.name || '',
+      branch_address: branch?.full_address || ''
+    };
+  }
+
+  function branchAccepts(branch, orderType) {
+    return orderType === 'pickup' ? branch.accepts_pickup : branch.accepts_delivery;
+  }
+
+  function initOperationContext() {
+    const stored = loadOperationContext();
+    const orderType = stored?.order_type === 'pickup' ? 'pickup' : 'delivery';
+    let branch = stored?.branch_id ? branchById(stored.branch_id) : null;
+    if (!branch || !branchAccepts(branch, orderType)) branch = defaultBranchFor(orderType);
+    let address = stored?.address || null;
+    if (!address && customerAddress) {
+      address = {
+        street: customerAddress.street, number: customerAddress.number,
+        neighborhood: customerAddress.neighborhood,
+        complement: customerAddress.complement || '', reference: customerAddress.reference || ''
+      };
+    }
+    operationContext = { order_type: orderType, ...branchSnapshot(branch), address };
+    persistOperationContext();
+    applyOperationToLegacy();
+  }
+
+  function applyOperationToLegacy() {
+    deliveryType = operationContext.order_type;
+    customerAddress = operationContext.address
+      ? { ...operationContext.address, summary: addressSummary(operationContext.address) }
+      : null;
+    if (customerAddress) localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+  }
+
+  function operationValid(ctx) {
+    if (!ctx || !ctx.branch_id) return false;
+    if (ctx.order_type === 'delivery' && !ctx.address) return false;
+    return true;
+  }
+
+  // ---- Home location widget ----
+  function renderWidget() {
+    if (!operationContext) return;
+    const isPickup = operationContext.order_type === 'pickup';
+    const opTab = $('dwTabDelivery');
+    if (opTab) { opTab.textContent = isPickup ? 'RETIRADA' : 'DELIVERY'; opTab.classList.add('active'); }
+    const brandTab = $('dwTabBrand');
+    if (brandTab) brandTab.textContent = (restaurant.name || 'Restaurante').toUpperCase();
+    const branchTab = $('dwTabBranch');
+    if (branchTab) branchTab.textContent = operationContext.branch_label || 'UNIDADE';
+    const addrMain = $('homeAddressTitle');
+    let text;
+    if (isPickup) text = operationContext.branch_address || 'Selecione uma unidade';
+    else if (operationContext.address) text = addressSummary(operationContext.address);
+    else text = 'Use seu endereço para melhores resultados';
+    if (addrMain) addrMain.textContent = text;
+    document.querySelector('.delivery-widget .address-strip')
+      ?.classList.toggle('has-address', !isPickup && !!operationContext.address);
+  }
+
+  // ---- Operation / location modal ----
+  function openOperationScreen() {
+    if (!operationContext) return;
+    opDraft = JSON.parse(JSON.stringify(operationContext));
+    if ($('opBranchSearch')) $('opBranchSearch').value = '';
+    renderOperationScreen();
+    openModal('operationModal');
+  }
+
+  function renderOperationScreen() {
+    if (!opDraft) return;
+    const isPickup = opDraft.order_type === 'pickup';
+    $('opSegDelivery')?.classList.toggle('active', !isPickup);
+    $('opSegPickup')?.classList.toggle('active', isPickup);
+    const addrCard = $('opAddrCard');
+    if (addrCard) addrCard.style.display = isPickup ? 'none' : '';
+    const title = $('opAddrTitle');
+    const sub = $('opAddrSub');
+    if (opDraft.address) {
+      if (title) title.textContent = addressSummary(opDraft.address);
+      if (sub) {
+        sub.textContent = opDraft.address.complement || '';
+        sub.style.display = opDraft.address.complement ? '' : 'none';
+      }
+    } else {
+      if (title) title.textContent = 'Informe seu endereço';
+      if (sub) sub.style.display = 'none';
+    }
+    renderOperationBranches();
+  }
+
+  function setOperationType(type) {
+    if (!opDraft) return;
+    opDraft.order_type = type;
+    const current = branchById(opDraft.branch_id);
+    if (!current || !branchAccepts(current, type)) {
+      Object.assign(opDraft, branchSnapshot(defaultBranchFor(type)));
+    }
+    renderOperationScreen();
+  }
+
+  function renderOperationBranches() {
+    const list = $('opBranchList');
+    if (!list || !opDraft) return;
+    const query = ($('opBranchSearch')?.value || '').toLowerCase().trim();
+    let items = compatibleBranches(opDraft.order_type);
+    if (query) {
+      items = items.filter(b => `${b.name} ${b.full_address} ${b.neighborhood}`.toLowerCase().includes(query));
+    }
+    if (!items.length) {
+      list.innerHTML = '<div class="op-branch-empty">Nenhuma unidade disponível para esta operação.</div>';
+      updateConfirmButton();
+      return;
+    }
+    list.innerHTML = items.map(b => {
+      const selected = String(b.id) === String(opDraft.branch_id);
+      const badge = b.is_open
+        ? '<span class="op-branch-badge open">Aberto</span>'
+        : '<span class="op-branch-badge closed">Fechado</span>';
+      return `<button type="button" class="op-branch-card${selected ? ' selected' : ''}" onclick="selectBranch('${esc(b.id)}')">
+        <span class="op-branch-radio"></span>
+        <span class="op-branch-body">
+          <span class="op-branch-name">${esc(b.name)}</span>
+          <span class="op-branch-addr">${esc(b.full_address)}</span>
+          ${badge}
+        </span>
+        <svg class="op-branch-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+      </button>`;
+    }).join('');
+    updateConfirmButton();
+  }
+
+  function selectBranch(id) {
+    if (!opDraft) return;
+    const branch = branchById(id);
+    if (!branch) return;
+    Object.assign(opDraft, branchSnapshot(branch));
+    renderOperationBranches();
+  }
+
+  function updateConfirmButton() {
+    const btn = $('opConfirmBtn');
+    if (btn) btn.disabled = !operationValid(opDraft);
+  }
+
+  function confirmOperation() {
+    if (!operationValid(opDraft)) return;
+    operationContext = JSON.parse(JSON.stringify(opDraft));
+    persistOperationContext();
+    applyOperationToLegacy();
+    renderWidget();
+    setCartTab(operationContext.order_type);
+    updateCartUI();
+    closeModalId('operationModal');
+  }
+
+  // Keep operation context in sync when the cart/checkout tabs change order type
+  function syncOrderTypeFromCart(type) {
+    if (!operationContext || operationContext.order_type === type) return;
+    operationContext.order_type = type;
+    const current = branchById(operationContext.branch_id);
+    if (!current || !branchAccepts(current, type)) {
+      Object.assign(operationContext, branchSnapshot(defaultBranchFor(type)));
+    }
+    persistOperationContext();
+    renderWidget();
+  }
+
+  function validateAddressForm() {
+    const ok = $('addrStreet').value.trim() && $('addrNumber').value.trim() && $('addrNeighborhood').value.trim();
+    const btn = $('addrSaveBtn');
+    if (btn) btn.disabled = !ok;
+  }
+
   function openAddressScreen() {
     if (customerAddress) {
       $('addrStreet').value = customerAddress.street || '';
@@ -756,6 +982,7 @@
       $('addrNeighborhood').value = customerAddress.neighborhood || '';
       $('addrComplement').value = customerAddress.complement || '';
     }
+    validateAddressForm();
     openModal('addressModal');
   }
 
@@ -765,11 +992,15 @@
     const neighborhood = $('addrNeighborhood').value.trim();
     const complement = $('addrComplement').value.trim();
     if (!street || !number || !neighborhood) { alert('Informe rua, número e bairro.'); return; }
-    customerAddress = { street, number, neighborhood, complement, summary: `${street}, ${number} - ${neighborhood}` };
+    const address = { street, number, neighborhood, complement, reference: '' };
+    customerAddress = { ...address, summary: addressSummary(address) };
     localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
-    renderRestaurantShell();
+    if (opDraft) opDraft.address = address;
+    if (operationContext) { operationContext.address = address; persistOperationContext(); }
+    renderWidget();
     updateCartUI();
     closeModalId('addressModal');
+    if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
 
   let _loginOrigin = 'profile';
@@ -1024,6 +1255,7 @@
     highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
     coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
+    initOperationContext();
     applyTheme();
     renderRestaurantShell();
     renderBanners();
@@ -1033,7 +1265,7 @@
     renderProfileView();
     initSearch();
     initScrollSpy();
-    setCartTab('delivery');
+    setCartTab(operationContext?.order_type || 'delivery');
     updateCartUI();
     showHomeTab();
     initPageRubberBand();
@@ -1043,7 +1275,8 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, openLoginScreen, mockLogin,
+    setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
+    openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,

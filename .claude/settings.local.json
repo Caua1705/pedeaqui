@@ -17,7 +17,8 @@
       "Bash(node scrolltest.js)",
       "Bash(node verify.js)",
       "Bash(node probe5.js)",
-      "Bash(node verify2.js)"
+      "Bash(node verify2.js)",
+      "Bash(grep -c 'id=\"__TRACKED_VAR__\"' restaurant.html)"
     ]
   }
 }

@@ -325,7 +325,7 @@
   height:44px!important;
   border:0!important;
   border-radius:8px!important;
-  background:#f07020!important;
+  background:#F36F21!important;
   color:#fff!important;
   font-size:12px!important;
   font-weight:900!important;
@@ -457,7 +457,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   white-space:nowrap!important;
 }
 .delivery-widget-tab.active{
-  color:#C8520A!important;
+  color:#F36F21!important;
   font-weight:800!important;
 }
 .delivery-widget-chevron{
@@ -841,7 +841,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   margin:0!important;
   border:0!important;
   border-radius:8px!important;
-  background:#f07020!important;
+  background:#F36F21!important;
   color:#ffffff!important;
   font-family:var(--ref-font)!important;
   font-size:12px!important;
@@ -1390,7 +1390,7 @@ body:not(.menu-tab) .home-order-cta,
   height:48px!important;
   margin:0 16px 10px auto!important;
   border-radius:10px!important;
-  background:#f36a1d!important;
+  background:#F36F21!important;
   color:#ffffff!important;
   font-size:13px!important;
   line-height:18px!important;
@@ -1463,17 +1463,17 @@ body:not(.menu-tab) .home-order-cta,
   color:currentColor!important;
 }
 .mob-bottom-nav .mob-nav-item.active{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
   width:34px!important;
   height:34px!important;
   padding:8px!important;
   background:#fff0e8!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active span{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active){
   color:#8f939a!important;
@@ -1606,15 +1606,15 @@ body:not(.menu-tab) .home-order-cta,
   white-space:nowrap!important;
 }
 .mob-bottom-nav .mob-nav-item.active{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .nav-icon{
   background:#fff0e8!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active){
   color:#8f939a!important;
@@ -1731,7 +1731,7 @@ body:not(.menu-tab) .home-order-cta,
 }
 .delivery-widget-tab.active{
   background:#fff0e8!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
   font-weight:700!important;
 }
 .delivery-widget-chevron{
@@ -1742,7 +1742,7 @@ body:not(.menu-tab) .home-order-cta,
   width:14px!important;
   height:14px!important;
   margin:0!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
   display:block!important;
   flex:0 0 auto!important;
 }
@@ -1776,7 +1776,7 @@ body:not(.menu-tab) .home-order-cta,
   justify-self:center!important;
   width:10px!important;
   height:13px!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -1799,7 +1799,7 @@ body:not(.menu-tab) .home-order-cta,
   display:block!important;
   width:100%!important;
   margin:0!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
   font-size:12px!important;
   line-height:15px!important;
   font-weight:400!important;
@@ -1928,7 +1928,7 @@ body:not(.menu-tab) .home-order-cta,
   white-space:nowrap!important;
 }
 .mob-bottom-nav .mob-nav-item.active{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .nav-icon{
   width:32px!important;
@@ -1936,7 +1936,7 @@ body:not(.menu-tab) .home-order-cta,
   min-width:32px!important;
   min-height:32px!important;
   background:transparent!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
   width:19px!important;
@@ -1945,7 +1945,7 @@ body:not(.menu-tab) .home-order-cta,
   min-height:19px!important;
   padding:0!important;
   background:transparent!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 @media(max-width:767px){
   body:not(.menu-tab),
@@ -2283,7 +2283,7 @@ body:not(.menu-tab) .home-order-cta,
   white-space:nowrap!important;
 }
 .mob-bottom-nav .mob-nav-item.active{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .nav-icon{
   width:32px!important;
@@ -2291,7 +2291,7 @@ body:not(.menu-tab) .home-order-cta,
   min-width:32px!important;
   min-height:32px!important;
   background:#fff0e8!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
   width:19px!important;
@@ -2300,7 +2300,7 @@ body:not(.menu-tab) .home-order-cta,
   min-height:19px!important;
   padding:0!important;
   background:transparent!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active){
   color:#8f939a!important;
@@ -2433,15 +2433,15 @@ body:not(.menu-tab) .home-order-cta,
   white-space:nowrap!important;
 }
 .mob-bottom-nav .mob-nav-item.active{
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .nav-icon{
   background:#fff0e8!important;
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
-  color:#f36a1d!important;
+  color:#F36F21!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active),
 .mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
@@ -2916,7 +2916,7 @@ body.menu-tab .mob-identity .mob-badge-open::before{
   width:7px!important;
   height:7px!important;
   border-radius:50%!important;
-  background:var(--brand,#e8590c)!important;
+  background:var(--brand,#F36F21)!important;
   flex:0 0 7px!important;
 }
 body.menu-tab .mob-identity .mob-status-sep{
@@ -3071,7 +3071,7 @@ body.menu-tab .mob-identity .mob-badge-open{
   font-size:12px!important;
   font-weight:600!important;
   line-height:18px!important;
-  color:var(--brand,#f05a1a)!important;
+  color:var(--brand,#F36F21)!important;
 }
 body.menu-tab .mob-identity .mob-pedido-min{
   font-size:12px!important;
@@ -3148,8 +3148,8 @@ body.menu-tab .cat{
   border-radius:0!important;
 }
 body.menu-tab .cat.active{
-  color:#f05a1a!important;
-  border-bottom:3px solid #f05a1a!important;
+  color:#F36F21!important;
+  border-bottom:3px solid #F36F21!important;
 }
 
 /* 6 — category section title — drop the inherited 12px section inset so
@@ -3222,4 +3222,139 @@ body.menu-tab .prod-img-box img{ width:100%!important;height:100%!important;obje
   background:transparent!important;
   border:0!important;
   box-shadow:none!important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INÍCIO — SUAVIZAÇÃO VISUAL (Take-a-Juice tone, CSS-only).
+   Last block in the last-loaded stylesheet, so it wins over the
+   layers above. Scoped to body.home-tab / home-only sections so the
+   Cardápio (menu-tab) layout stays exactly as it is. Softer grays,
+   lighter font-weights, a calmer orange and gentler borders/shadows.
+   Tokens (reference palette):
+     texto principal  #30343b   texto secundário #737985
+     texto fraco      #9aa0a8   bordas           #edf0f2
+     fundo leve       #f7f7f8   laranja          #F36F21 / #fff0e8
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1 — Global typography: keep Inter, add font-smoothing for a softer text edge. */
+body,button,input,textarea,select{
+  -webkit-font-smoothing:antialiased!important;
+  -moz-osx-font-smoothing:grayscale!important;
+  text-rendering:optimizeLegibility!important;
+}
+
+/* 3 — Restaurant identity header (Início only). */
+body.home-tab .mob-rest-name{
+  font-size:16px!important;
+  font-weight:700!important;          /* was 800 — too heavy */
+  line-height:1.2!important;
+  color:#30343b!important;            /* was near-black #222 */
+}
+body.home-tab .mob-rest-sub{
+  font-size:12px!important;           /* was 13px */
+  font-weight:500!important;
+  line-height:1.25!important;
+  color:#737985!important;            /* was #999 */
+}
+/* Cart value pill: lighter fill, less heavy text. */
+body.home-tab .home-cart-pill,
+body.home-tab .home-cart-pill #homeCartTotal{
+  background:#f7f7f8!important;       /* was #f2f2f2 */
+  color:#30343b!important;            /* was pure #000 */
+  font-weight:600!important;          /* was 700/800 */
+}
+
+/* 4 — Location card. */
+body.home-tab .delivery-widget{
+  background:#f7f7f8!important;       /* was #f3f3f3 */
+  box-shadow:none!important;
+  border-radius:12px!important;
+}
+body.home-tab .delivery-widget-tab{
+  font-size:10px!important;
+  font-weight:700!important;          /* was 800 */
+}
+body.home-tab .delivery-widget-tab.active{
+  background:#fff0e8!important;
+  color:#F36F21!important;            /* Rapidex brand orange */
+}
+body.home-tab .delivery-widget-chevron,
+body.home-tab .address-strip .address-card-icon,
+body.home-tab .address-strip .address-card-icon svg{
+  color:#F36F21!important;
+}
+body.home-tab .address-strip .address-card-copy strong{
+  font-size:12px!important;
+  font-weight:400!important;          /* was 500 */
+  color:#F36F21!important;            /* brand orange (selected address) */
+}
+
+/* 5 — Section titles (Cupons / Destaques) — home-only sections. */
+.home-section h2,
+.home-coupons-section h2,
+.home-highlights-section h2,
+#homeHighlightsTitle{
+  font-size:20px!important;
+  font-weight:700!important;          /* was 800 */
+  line-height:1.3!important;          /* more comfortable */
+  color:#30343b!important;
+  letter-spacing:0!important;
+}
+
+/* 6 — Coupons (the art block is a backend IMAGE — left untouched; only
+       the HTML/CSS text + button + card chrome are softened). */
+.coupon-card{
+  border:1px solid rgba(243,111,33,.18)!important;  /* softer brand-orange tone */
+  box-shadow:none!important;
+}
+.coupon-title{
+  font-weight:600!important;          /* was 700 */
+  color:#737985!important;            /* lower contrast (was #505050) */
+  letter-spacing:.01em!important;
+}
+.coupon-use-btn{
+  border:1px solid #f7d6c2!important; /* lighter border */
+  background:#fff0e8!important;
+  color:#F36F21!important;
+  font-weight:600!important;          /* was 700 */
+}
+/* Fallback discount number (only shows when a coupon has NO image). */
+.coupon-art strong{
+  font-weight:800!important;          /* was 900 */
+}
+
+/* 7 — "Faça seu pedido" CTA (home-only element). */
+body.home-tab .home-order-cta,
+.home-order-cta{
+  font-size:13px!important;           /* was 12px */
+  font-weight:700!important;
+  border-radius:10px!important;
+  background:#F36F21!important;        /* Rapidex brand orange */
+  box-shadow:none!important;
+}
+
+/* 8 — Bottom nav: colour-only softening (structure/items untouched).
+       NOTE: the deliberate "no orange ball" rule above is preserved —
+       only the active orange and inactive gray are calmed here. */
+.mob-bottom-nav .mob-nav-item.active,
+.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
+  color:#F36F21!important;            /* Rapidex brand orange */
+}
+.mob-bottom-nav .mob-nav-item:not(.active),
+.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
+  color:#9aa0a8!important;            /* lighter inactive (was #8f939a) */
+}
+.mob-bottom-nav .mob-nav-icon{
+  stroke-width:1.6!important;         /* visually thinner stroke */
+}
+
+/* 9 — Borders & shadows: keep everything gentle on the Início screen.
+       (Identity dividers were deliberately removed earlier, so they are
+       left as-is; only the gray spacer bands are lightened.) */
+body.home-tab .home-separator,
+body.home-tab .home-highlight-gray-space{
+  background:#f7f7f8!important;        /* lighter than #f4f4f4 */
 }

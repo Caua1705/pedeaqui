@@ -3266,7 +3266,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
 
 /* 4 — Location card. */
 body.home-tab .delivery-widget{
-  background:#eeeeef!important;
+  background:#f2f2f3!important;
   box-shadow:none!important;
   border-radius:10px!important;
 }
@@ -3318,9 +3318,13 @@ body.home-tab .address-strip .address-card-copy strong{
   border:1px solid #f7d6c2!important; /* lighter border */
   background:#fbd9c8!important;
   color:#40342f!important;
-  font-size:12.5px!important;
+  font-size:12px!important;
   font-weight:700!important;
   margin-top:6px!important;
+  padding-left:9px!important;
+  padding-right:9px!important;
+  height:23px!important;
+  min-height:23px!important;
 }
 .coupon-dash{
   margin-top:24px!important;

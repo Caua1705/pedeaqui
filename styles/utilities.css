@@ -2748,3 +2748,38 @@ body:not(.menu-tab) .home-order-cta,
     background:#f4f4f4!important;
   }
 }
+
+/* Exact home cart value pill dimensions. */
+@media(max-width:767px){
+  .home-cart-pill{
+    width:80.75px!important;
+    min-width:80.75px!important;
+    max-width:80.75px!important;
+    height:30px!important;
+    min-height:30px!important;
+    max-height:30px!important;
+    padding:0!important;
+    border-radius:8px!important;
+    color:#000000!important;
+  }
+
+  .home-cart-pill #homeCartTotal{
+    display:block!important;
+    width:60.75px!important;
+    max-width:60.75px!important;
+    height:16px!important;
+    line-height:16px!important;
+    color:#000000!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+
+/* More breathing room between restaurant name and login prompt on home. */
+@media(max-width:767px){
+  body.home-tab .mob-rest-name{
+    margin-bottom:3px!important;
+  }
+}

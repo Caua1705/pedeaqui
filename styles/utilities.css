@@ -2706,3 +2706,35 @@ body:not(.menu-tab) .home-order-cta,
     background:#ffffff!important;
   }
 }
+
+/* Login screen buttons: fixed reference size with softer corners. */
+#loginModal .cart-cta-btn,
+#loginModal .login-secondary{
+  width:374px!important;
+  max-width:374px!important;
+  height:45px!important;
+  min-height:45px!important;
+  max-height:45px!important;
+  border-radius:8px!important;
+  padding:0!important;
+}
+
+#loginModal .modal--login{
+  padding-top:94px!important;
+}
+
+#loginModal .login-logo{
+  transform:translateY(-10px)!important;
+}
+
+#loginModal .cart-cta-btn{
+  margin-top:12px!important;
+}
+
+#loginModal .login-secondary{
+  margin-top:3px!important;
+}
+
+#loginModal .login-rest-name{
+  transform:translateY(-6px)!important;
+}

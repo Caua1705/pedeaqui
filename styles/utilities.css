@@ -3317,7 +3317,7 @@ body.home-tab .address-strip .address-card-copy strong{
 .coupon-use-btn{
   border:1px solid #f7d6c2!important; /* lighter border */
   background:#fbd9c8!important;
-  color:#14100e!important;
+  color:#40342f!important;
   font-size:12.5px!important;
   font-weight:700!important;
   margin-top:6px!important;
@@ -3333,11 +3333,18 @@ body.home-tab .address-strip .address-card-copy strong{
 /* Home-only micro alignment: nudge non-banner content slightly right. */
 @media(max-width:767px){
   body.home-tab .mob-identity,
+  body.home-tab .mob-logo,
+  body.home-tab .mob-rest-details,
   body.home-tab .home-section h2,
   body.home-tab .home-coupons-section h2,
   body.home-tab .home-highlights-section h2,
   body.home-tab #homeHighlightsTitle{
     transform:translateX(4px)!important;
+  }
+
+  body.home-tab .coupon-rail{
+    padding-left:20px!important;
+    scroll-padding-left:20px!important;
   }
 }
 

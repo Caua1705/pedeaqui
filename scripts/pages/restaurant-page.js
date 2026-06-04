@@ -110,7 +110,7 @@
     const status = isOpen === false ? 'Fechado no momento' : 'Aberto agora';
     const statusEl = document.querySelector('.mob-badge-open');
     if (statusEl) statusEl.textContent = status;
-    document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Pedido mínimo ${fmt(settings.min_order_value || 0)}`);
+    document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Mín ${fmt(settings.min_order_value || 0)}`);
     const loc = document.querySelector('.mob-loc');
     if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
     const loginPrompt = $('homeLoginPrompt');
@@ -899,7 +899,9 @@
   }
 
   function mobNavMenu() {
-    scrollToMenu();
+    closeMobViews();
+    showMenuTab();
+    window.scrollTo(0, 0);
   }
 
   function mobNavHome() {

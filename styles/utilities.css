@@ -2852,11 +2852,374 @@ body.home-tab .home-sticky-header #mobIdentity{
    to auto, so the viewport stays the single scroller and sticky pins
    correctly. Scoped to the Início tab and disabled while a modal is open
    so the existing body.modal-open scroll-lock still wins. */
-html:has(body.home-tab:not(.modal-open)){
+html:has(body.home-tab:not(.modal-open)),
+html:has(body.menu-tab:not(.modal-open)){
   overflow-x:clip!important;
   overflow-y:visible!important;
 }
-body.home-tab:not(.modal-open){
+body.home-tab:not(.modal-open),
+body.menu-tab:not(.modal-open){
   overflow-x:clip!important;
   overflow-y:visible!important;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CARDÁPIO / IDENTITY — match the Take-a-Juice reference exactly.
+   Identity row: logo + name + status line ("● Aberto agora | Mín R$ X")
+   + a round chevron "ver loja" button on the right (no login text, no
+   cart pill). Product rows: clean image, NO "+" add button. This block
+   is last in the file (loaded last) so it supersedes the older layers. */
+
+/* INÍCIO (home-tab): keep the original header untouched — login prompt +
+   cart pill visible, the new reference-only status line + chevron hidden. */
+body.home-tab .mob-identity .mob-rest-status,
+body.home-tab .mob-identity .mob-info-btn{
+  display:none!important;
+}
+
+/* CARDÁPIO (menu-tab) ONLY: reference identity — hide login + cart pill,
+   show the "● Aberto agora | Mín R$ X" status line + round chevron. */
+body.menu-tab .mob-identity .mob-rest-sub,
+body.menu-tab .mob-identity #homeLoginPrompt,
+body.menu-tab .mob-identity .home-cart-pill,
+body.menu-tab .mob-identity .mob-rest-row2,
+body.menu-tab .mob-identity .mob-rest-row3{
+  display:none!important;
+}
+body.menu-tab .mob-identity .mob-rest-status{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  margin-top:3px!important;
+  font-family:var(--ref-font,'Inter',sans-serif)!important;
+  font-size:13px!important;
+  line-height:18px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+body.menu-tab .mob-identity .mob-badge-open{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#3a3a3a!important;
+  font-size:13px!important;
+  font-weight:600!important;
+  line-height:18px!important;
+}
+body.menu-tab .mob-identity .mob-badge-open::before{
+  content:''!important;
+  width:7px!important;
+  height:7px!important;
+  border-radius:50%!important;
+  background:var(--brand,#e8590c)!important;
+  flex:0 0 7px!important;
+}
+body.menu-tab .mob-identity .mob-status-sep{
+  color:#d8d8d8!important;
+  font-size:13px!important;
+  font-weight:400!important;
+}
+body.menu-tab .mob-identity .mob-pedido-min{
+  color:#9a9a9a!important;
+  font-size:13px!important;
+  font-weight:500!important;
+  line-height:18px!important;
+}
+/* round chevron button on the right of the identity (opens store info) */
+body.menu-tab .mob-identity .mob-info-btn{
+  flex:0 0 32px!important;
+  width:32px!important;
+  height:32px!important;
+  margin-left:auto!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#f2f2f2!important;
+  color:#9a9a9a!important;
+  cursor:pointer!important;
+}
+body.menu-tab .mob-identity{
+  padding:10px 14px 12px 14px!important;
+}
+
+/* Product rows: remove the orange "+" add button (reference has none). */
+.prod-add-btn{ display:none!important; }
+.prod-img-box{
+  width:96px!important;
+  height:96px!important;
+  flex:0 0 96px!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+}
+/* allow up to 4 description lines like the reference combos */
+.prod-desc{
+  -webkit-line-clamp:4!important;
+  color:#9a9a9a!important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDÁPIO — sticky categories.
+   On the menu tab the location + identity header scrolls away normally,
+   and the search + categories bar pins to the very top once it reaches it.
+   (overflow:clip on html/body — added above for body.menu-tab — is what
+   makes position:sticky actually pin here instead of scrolling off.)
+   ═══════════════════════════════════════════════════════════════ */
+/* let the shared sticky header scroll on the menu tab (it stays sticky on
+   Início only) so the categories can reach the top of the screen */
+body.menu-tab .home-sticky-header{
+  position:static!important;
+}
+/* pin the search + categories bar to the top while products scroll under */
+body.menu-tab .search-cat{
+  position:sticky!important;
+  top:0!important;
+  left:auto!important;
+  transform:none!important;
+  width:100%!important;
+  z-index:40!important;
+  background:#ffffff!important;
+  border-top:1px solid #ececec!important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDÁPIO (menu-tab) — fixed, consistent metrics tuned to the
+   Take-a-Juice reference (base viewport 414px). EVERYTHING here is
+   scoped to body.menu-tab so the Início tab stays exactly as it was.
+   The shared bottom nav is refined globally (same on both tabs).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1 — mobile container: reserve room for the 82px bottom nav */
+body.menu-tab{ padding-bottom:calc(98px + var(--safe-bottom))!important; }
+body.menu-tab .restaurant-app-shell{
+  width:100%!important;
+  max-width:430px!important;
+  margin:0 auto!important;
+  background:#ffffff!important;
+  overflow-x:hidden!important;
+  padding-bottom:0!important;
+}
+
+/* 2 — location card (tighter top so the whole screen sits higher) */
+body.menu-tab .delivery-widget{
+  box-sizing:border-box!important;
+  width:calc(100% - 32px)!important;
+  max-width:none!important;
+  min-height:72px!important;
+  height:auto!important;
+  margin:6px auto 12px!important;
+  padding:10px 14px!important;
+  border-radius:12px!important;
+  background:#f7f7f7!important;
+  box-shadow:0 1px 2px rgba(0,0,0,.04)!important;
+}
+body.menu-tab .delivery-widget-tab{
+  font-size:10px!important;
+  font-weight:800!important;
+  text-transform:uppercase!important;
+  letter-spacing:.02em!important;
+}
+body.menu-tab .address-strip .address-card-copy strong,
+body.menu-tab #homeAddressTitle{
+  font-size:12px!important;
+  font-weight:500!important;
+  line-height:1.25!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* 3 — store header (logo + name + status + chevron) */
+body.menu-tab .mob-identity{
+  box-sizing:border-box!important;
+  height:76px!important;
+  min-height:76px!important;
+  padding:0 20px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  background:#ffffff!important;
+}
+body.menu-tab .mob-logo{
+  width:45px!important;
+  height:45px!important;
+  flex:0 0 45px!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+}
+body.menu-tab .mob-logo img{ width:100%!important;height:100%!important;object-fit:cover!important; }
+body.menu-tab .mob-rest-name{
+  font-size:16px!important;
+  font-weight:800!important;
+  line-height:20px!important;
+  color:#1f2933!important;
+}
+body.menu-tab .mob-identity .mob-rest-status{
+  margin-top:2px!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  gap:8px!important;
+}
+body.menu-tab .mob-identity .mob-badge-open{
+  font-size:12px!important;
+  font-weight:600!important;
+  line-height:18px!important;
+  color:var(--brand,#f05a1a)!important;
+}
+body.menu-tab .mob-identity .mob-pedido-min{
+  font-size:12px!important;
+  font-weight:500!important;
+  line-height:18px!important;
+  color:#6b7280!important;
+}
+body.menu-tab .mob-identity .mob-info-btn{
+  width:32px!important;
+  height:32px!important;
+  flex:0 0 32px!important;
+  border-radius:50%!important;
+  background:#f2f2f2!important;
+  color:#9aa0a6!important;
+}
+
+/* 4 + 5 — search + categories block */
+/* divider line between the logo/identity section and the search bar */
+body.menu-tab .search-cat{
+  background:#ffffff!important;
+  border-top:1px solid #ececec!important;
+}
+/* tighter top above the search, but a clear gap BELOW it so the categories
+   and products are visually separated from the search bar */
+body.menu-tab .search-cat-inner{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:20px!important;
+  padding:14px 20px 0!important;
+}
+body.menu-tab .search-bar-wrap{
+  max-height:none!important;
+  overflow:visible!important;
+  padding:0!important;
+  margin:0!important;
+}
+body.menu-tab .search-bar{
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:36px!important;
+  min-height:36px!important;
+  margin:0 auto!important;
+  padding:0 14px!important;
+  border:1px solid #e5e7eb!important;
+  border-radius:8px!important;
+  background:#ffffff!important;
+  gap:10px!important;
+}
+body.menu-tab .search-bar input{ font-size:13px!important; }
+body.menu-tab .search-bar svg{ width:16px!important;height:16px!important;color:#9ca3af!important; }
+body.menu-tab .cats{
+  height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:nowrap!important;
+  overflow-x:auto!important;
+  padding:0 20px!important;
+  gap:20px!important;
+  /* break out of the inner 20px padding so items align at 20px AND the
+     row can scroll edge-to-edge */
+  width:auto!important;
+  margin:0 -20px!important;
+}
+body.menu-tab .cat{
+  height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  padding:0!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  color:#6b7280!important;
+  white-space:nowrap!important;
+  border-bottom:3px solid transparent!important;
+  border-radius:0!important;
+}
+body.menu-tab .cat.active{
+  color:#f05a1a!important;
+  border-bottom:3px solid #f05a1a!important;
+}
+
+/* 6 — category section title — drop the inherited 12px section inset so
+   the title + products align at 20px with the search and categories */
+body.menu-tab .menu-section{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+body.menu-tab .menu-section-title{
+  font-size:18px!important;
+  font-weight:800!important;
+  line-height:22px!important;
+  margin:20px 0 18px!important;
+  padding:0 20px!important;
+}
+
+/* 7 + 8 — product card + image */
+body.menu-tab .products-grid{ padding:0!important; margin:0!important; }
+body.menu-tab .prod-card{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:175px!important;
+  padding:22px 20px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  border-bottom:1px solid #f0f0f0!important;
+  background:#ffffff!important;
+}
+body.menu-tab .prod-info{ flex:1 1 auto!important;min-width:0!important; }
+body.menu-tab .prod-name{
+  font-size:15px!important;
+  font-weight:800!important;
+  line-height:20px!important;
+  color:#111827!important;
+  margin-bottom:8px!important;
+}
+body.menu-tab .prod-desc{
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:19px!important;
+  color:#6b7280!important;
+  -webkit-line-clamp:3!important;
+}
+body.menu-tab .prod-price{
+  font-size:14px!important;
+  font-weight:800!important;
+  line-height:18px!important;
+  color:#111827!important;
+  margin-top:12px!important;
+}
+body.menu-tab .prod-img-box{
+  width:110px!important;
+  height:110px!important;
+  flex:0 0 110px!important;
+  border-radius:8px!important;
+  overflow:hidden!important;
+  align-self:center!important;
+}
+body.menu-tab .prod-img-box img{ width:100%!important;height:100%!important;object-fit:cover!important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   BOTTOM NAV — active state colours the ICON ONLY (no orange ball).
+   Earlier layers paint a light-orange circle (#fff0e8) behind the
+   active icon's .nav-icon wrapper; clear it so just the icon turns
+   orange. Applies to both tabs (shared nav). ═════════════════════ */
+.mob-bottom-nav .mob-nav-item.active .nav-icon,
+.mob-bottom-nav .mob-nav-item .nav-icon{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
 }

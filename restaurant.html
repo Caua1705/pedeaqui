@@ -74,18 +74,17 @@
     <div class="mob-rest-details">
       <div class="mob-rest-name">Restaurante</div>
       <button class="mob-rest-sub" id="homeLoginPrompt" onclick="openLoginScreen()">Entre ou cadastre-se</button>
-      <div class="mob-rest-row2">
+      <div class="mob-rest-status">
         <span class="mob-badge-open">Aberto agora</span>
-        <span class="mob-close-time" id="mobCloseTime">fecha às 22h30</span>
-        <button class="mob-verMais" onclick="openModal('infoModal')">Ver mais</button>
-      </div>
-      <div class="mob-rest-row3">
-        <span class="delivery-time-text">90-100 min</span>
-        <span class="mob-pedido-min">Pedido mínimo R$ 30,00</span>
+        <span class="mob-status-sep" aria-hidden="true">|</span>
+        <span class="mob-pedido-min">Mín R$ 0,00</span>
       </div>
     </div>
     <button class="home-cart-pill" onclick="openModal('cartModal')" aria-label="Abrir sacola">
       <span id="homeCartTotal">R$ 0,00</span>
+    </button>
+    <button class="mob-info-btn" onclick="openModal('infoModal')" aria-label="Informações da loja">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
     </button>
   </section>
   </div>
@@ -127,7 +126,7 @@
     <div class="search-bar-wrap">
       <div class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Procurar no cardápio..." id="searchInput">
+        <input type="text" placeholder="Buscar por..." id="searchInput">
         <button class="search-clear-btn" id="searchClearBtn" onclick="closeSearch()" aria-label="Limpar busca">×</button>
       </div>
     </div>

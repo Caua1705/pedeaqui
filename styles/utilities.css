@@ -2560,16 +2560,24 @@ body:not(.menu-tab) .home-order-cta,
     padding-bottom:96px!important;
   }
 
+  body.home-tab,
+  body.home-tab .restaurant-app-shell,
+  body.home-tab .mobile-home{
+    background:#ffffff!important;
+  }
+
   .delivery-widget{
     box-sizing:border-box!important;
-    width:calc(100% - 32px)!important;
+    width:min(374px,calc(100% - 32px))!important;
     max-width:none!important;
-    min-height:72px!important;
+    height:75px!important;
+    min-height:75px!important;
+    max-height:75px!important;
     margin:20px auto 14px!important;
     padding:10px 14px!important;
     border-radius:12px!important;
-    background:#ffffff!important;
-    box-shadow:0 8px 24px rgba(17,24,39,.08)!important;
+    background:#f3f3f3!important;
+    box-shadow:none!important;
   }
 
   .delivery-widget-tab{
@@ -2674,5 +2682,27 @@ body:not(.menu-tab) .home-order-cta,
     font-size:12px!important;
     right:20px!important;
     bottom:calc(82px + var(--safe-bottom) + 16px)!important;
+  }
+}
+
+/* Force a fully white home background around the location and identity header. */
+@media(max-width:767px){
+  html,
+  body,
+  body.home-tab,
+  body.home-tab .restaurant-app-shell,
+  body.home-tab .mobile-home,
+  body.home-tab .mobile-home.restaurant-app-shell,
+  body.home-tab .restaurant-hero,
+  body.home-tab .home-section,
+  body.home-tab .home-coupons-section,
+  body.home-tab .home-highlights-section,
+  body.home-tab .mob-identity{
+    background:#ffffff!important;
+  }
+
+  body.home-tab .restaurant-app-shell::before,
+  body.home-tab .restaurant-app-shell::after{
+    background:#ffffff!important;
   }
 }

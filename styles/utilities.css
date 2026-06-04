@@ -2538,7 +2538,7 @@ body:not(.menu-tab) .home-order-cta,
     right:0!important;
     top:-1px!important;
     height:1px!important;
-    background:#e1e1e1!important;
+    background:#eeeeee!important;
     z-index:5!important;
     pointer-events:none!important;
   }
@@ -3266,9 +3266,9 @@ body.home-tab .home-cart-pill #homeCartTotal{
 
 /* 4 — Location card. */
 body.home-tab .delivery-widget{
-  background:#f7f7f8!important;       /* was #f3f3f3 */
+  background:#eeeeef!important;
   box-shadow:none!important;
-  border-radius:12px!important;
+  border-radius:10px!important;
 }
 body.home-tab .delivery-widget-tab{
   font-size:10px!important;

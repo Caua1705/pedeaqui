@@ -3269,12 +3269,17 @@ body.home-tab .delivery-widget{
   background:#f2f2f3!important;
   box-shadow:none!important;
   border-radius:10px!important;
+  overflow:visible!important;
 }
 body.home-tab .delivery-widget-tab{
   font-size:9.5px!important;
   font-weight:700!important;          /* was 800 */
   padding-left:7px!important;
   padding-right:7px!important;
+}
+body.home-tab .delivery-widget-tabs{
+  overflow:visible!important;
+  z-index:30!important;
 }
 body.home-tab .delivery-widget-tab.active{
   background:#ffd9c4!important;
@@ -3288,12 +3293,13 @@ body.home-tab .address-strip .address-card-icon svg{
 }
 body.home-tab .delivery-widget-chevron{
   position:absolute!important;
-  right:1px!important;
+  right:-24px!important;
   left:auto!important;
   top:50%!important;
-  transform:translateY(calc(-50% + 12px))!important;
+  transform:translateY(calc(-50% + 15px))!important;
   margin:0!important;
-  z-index:3!important;
+  z-index:50!important;
+  pointer-events:none!important;
 }
 body.home-tab .address-strip .address-card-icon{
   transform:translateY(3px)!important;
@@ -3307,6 +3313,9 @@ body.home-tab .address-strip .address-card-copy strong{
 body.home-tab .delivery-widget-tabs,
 body.home-tab .address-strip.address-card{
   transform:translate(1px,4px)!important;
+}
+body.home-tab .address-strip.address-card{
+  z-index:1!important;
 }
 
 /* 5 — Section titles (Cupons / Destaques) — home-only sections. */

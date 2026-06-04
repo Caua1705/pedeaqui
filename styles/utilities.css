@@ -2536,7 +2536,7 @@ body:not(.menu-tab) .home-order-cta,
     position:absolute!important;
     left:0!important;
     right:0!important;
-    top:-5px!important;
+    top:-1px!important;
     height:1px!important;
     background:#e1e1e1!important;
     z-index:5!important;

@@ -2738,3 +2738,13 @@ body:not(.menu-tab) .home-order-cta,
 #loginModal .login-rest-name{
   transform:translateY(-6px)!important;
 }
+
+/* Home CTA gray area in the normal page flow. */
+@media(max-width:767px){
+  body.home-tab .home-highlight-gray-space{
+    display:block!important;
+    height:90px!important;
+    margin:10px 0 -24px!important;
+    background:#f4f4f4!important;
+  }
+}

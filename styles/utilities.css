@@ -2835,9 +2835,11 @@ body.home-tab .home-sticky-header #mobIdentity{
     /* hide the 1px peek of scrolling content above the rounded card corners */
     box-shadow:0 -20px 0 0 #ffffff!important;
   }
-  /* the location card keeps its centered gray-card look inside the wrapper */
+  /* the location card keeps its centered gray-card look inside the wrapper;
+     tight top margin so the whole home content sits higher (the fixed CTA
+     and bottom nav stay put). */
   body.home-tab .home-sticky-header .delivery-widget{
-    margin:14px auto 12px!important;
+    margin:9px auto 10px!important;
   }
 }
 

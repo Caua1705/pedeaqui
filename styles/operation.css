@@ -165,7 +165,7 @@
   width:100%!important;
   height:48px!important;
   display:grid!important;
-  grid-template-columns:176px 176px!important;
+  grid-template-columns:166px 166px!important;
   justify-content:center!important;
   align-content:center!important;
   gap:10px!important;
@@ -183,7 +183,7 @@
   position:relative!important;
   background:#fff;
   font-family:inherit;
-  width:176px!important;
+  width:166px!important;
   height:36px!important;
   padding:0 8px!important;
   font-size:12px!important;
@@ -218,7 +218,7 @@
   color:#3F454B!important;
   font-weight:600!important;
   border-radius:9px!important;
-  box-shadow:inset 10px 0 0 #fff,inset -10px 0 0 #fff!important;
+  box-shadow:none!important;
 }
 
 .op-separator{

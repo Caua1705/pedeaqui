@@ -808,7 +808,7 @@
     };
   }
 
-  function truncateAddress(text, max = 47) {
+  function truncateAddress(text, max = 40) {
     const value = String(text || '');
     return value.length > max ? `${value.slice(0, max)}...` : value;
   }

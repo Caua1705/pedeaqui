@@ -46,6 +46,7 @@
   overflow:hidden!important;
 }
 #operationModal .cart-hdr{
+  position:relative!important;
   width:100%!important;
   height:70px!important;
   padding:0 20px!important;
@@ -74,6 +75,10 @@
   text-shadow:none!important;
   transform:none!important;
   text-align:center!important;
+}
+#operationModal p.title{
+  width:166.22px!important;
+  height:66px!important;
 }
 #operationModal .cart-hdr-spacer{
   width:32px!important;

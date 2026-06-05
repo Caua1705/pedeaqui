@@ -1000,9 +1000,320 @@
     openModal('addressModal');
   }
 
+  let _adcSelection = null;
+
   function openAddressChoice() {
+    _adcSelection = null;
+    const geo = $('adcBtnGeo');
+    const manual = $('adcBtnManual');
+    const btn = $('adcConfirmBtn');
+    if (geo) geo.classList.remove('selected');
+    if (manual) manual.classList.remove('selected');
+    if (btn) btn.disabled = true;
     openModal('addAddressModal');
   }
+
+  function selectAdcOption(type) {
+    _adcSelection = type;
+    const geo = $('adcBtnGeo');
+    const manual = $('adcBtnManual');
+    if (geo) geo.classList.toggle('selected', type === 'geo');
+    if (manual) manual.classList.toggle('selected', type === 'manual');
+    const btn = $('adcConfirmBtn');
+    if (btn) btn.disabled = false;
+  }
+
+  function adcConfirm() {
+    if (_adcSelection === 'manual') {
+      openAddrSearch();
+    } else if (_adcSelection === 'geo') {
+      adcUseGeoSearch();
+    }
+  }
+
+  // ============================================================
+  //  Google Maps address flow (search → map → details)
+  // ============================================================
+
+  let _googleMapsLoading = false;
+  let _addrTempLoc = null;   // { lat, lng, formatted_address, place_id, street_name, number, street, neighborhood, city, state, postal_code }
+  let _addrMap = null;
+  let _addrMapMarker = null;
+  let _addrSearchDebounce = null;
+  let _autocompleteService = null;
+  let _geocoder = null;
+
+  function _loadGoogleMaps(cb) {
+    if (window.google && window.google.maps) { cb(); return; }
+    if (_googleMapsLoading) {
+      const t = setInterval(() => { if (window.google && window.google.maps) { clearInterval(t); cb(); } }, 120);
+      return;
+    }
+    const key = window.GOOGLE_MAPS_API_KEY || '';
+    if (!key) {
+      console.warn('[PedeAqui] Google Maps API key not configured. Edit scripts/config/maps-config.js.');
+      cb(); return;
+    }
+    _googleMapsLoading = true;
+    window._onGMapsReady = () => {
+      _googleMapsLoading = false;
+      _autocompleteService = new google.maps.places.AutocompleteService();
+      _geocoder = new google.maps.Geocoder();
+      cb();
+    };
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onGMapsReady`;
+    s.async = true;
+    s.onerror = () => { _googleMapsLoading = false; cb(); };
+    document.head.appendChild(s);
+  }
+
+  function openAddrSearch() {
+    const inp = $('addrSearchInput');
+    const sug = $('addrSuggestions');
+    if (inp) inp.value = '';
+    if (sug) sug.innerHTML = '';
+    openModal('addrSearchModal');
+    _loadGoogleMaps(() => setTimeout(() => { if (inp) inp.focus(); }, 200));
+  }
+
+  function onAddrSearchInput() {
+    clearTimeout(_addrSearchDebounce);
+    const val = ($('addrSearchInput') || {}).value?.trim() || '';
+    const sug = $('addrSuggestions');
+    if (!sug) return;
+    if (val.length < 2) { sug.innerHTML = ''; return; }
+    _renderAddrSkeleton();
+    _addrSearchDebounce = setTimeout(() => _fetchAddrSuggestions(val), 350);
+  }
+
+  function _renderAddrSkeleton() {
+    const sug = $('addrSuggestions');
+    if (!sug) return;
+    let h = '';
+    for (let i = 0; i < 4; i++) {
+      h += `<div class="addr-sug-skeleton">
+        <div class="addr-sug-sk-icon"></div>
+        <div class="addr-sug-sk-text">
+          <div class="addr-sug-sk-line addr-sug-sk-line--main"></div>
+          <div class="addr-sug-sk-line addr-sug-sk-line--sub"></div>
+        </div>
+      </div>`;
+    }
+    sug.innerHTML = h;
+  }
+
+  function _fetchAddrSuggestions(query) {
+    const sug = $('addrSuggestions');
+    if (!window.google || !_autocompleteService) {
+      if (sug) sug.innerHTML = '<p class="addr-no-results">Busca indisponível. Use "Não achei meu endereço".</p>';
+      return;
+    }
+    const req = { input: query, componentRestrictions: { country: 'br' }, types: ['address'] };
+    try { req.location = new google.maps.LatLng(-3.7318, -38.5236); req.radius = 150000; } catch(_) {}
+    _autocompleteService.getPlacePredictions(req, (preds) => _renderAddrSuggestions(preds || []));
+  }
+
+  function _esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function _renderAddrSuggestions(preds) {
+    const sug = $('addrSuggestions');
+    if (!sug) return;
+    if (!preds.length) { sug.innerHTML = '<p class="addr-no-results">Nenhum resultado encontrado.</p>'; return; }
+    sug.innerHTML = preds.map(p => {
+      const main = _esc(p.structured_formatting?.main_text || p.description || '');
+      const sub  = _esc(p.structured_formatting?.secondary_text || '');
+      const pid  = _esc(p.place_id || '');
+      return `<button class="addr-sug-item" onclick="selectAddrSuggestion('${pid}')">
+        <svg class="addr-sug-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="addr-sug-copy">
+          <span class="addr-sug-main">${main}</span>
+          <span class="addr-sug-sub">${sub}</span>
+        </div>
+      </button>`;
+    }).join('');
+  }
+
+  function selectAddrSuggestion(placeId) {
+    if (!_geocoder) return;
+    _geocoder.geocode({ placeId }, (results, status) => {
+      if (status !== 'OK' || !results?.[0]) return;
+      const r = results[0];
+      const lat = r.geometry.location.lat();
+      const lng = r.geometry.location.lng();
+      _addrTempLoc = { lat, lng, formatted_address: r.formatted_address || '', place_id: placeId, ..._parseAddrComponents(r.address_components || []) };
+      closeModalId('addrSearchModal');
+      _openAddrMapScreen(lat, lng);
+    });
+  }
+
+  function _parseAddrComponents(comps) {
+    const get = (...types) => { for (const t of types) { const c = comps.find(x => x.types.includes(t)); if (c) return c.long_name; } return ''; };
+    const route = get('route');
+    const sNum  = get('street_number');
+    return {
+      street_name: route,
+      number: sNum,
+      street: route ? (sNum ? `${route}, ${sNum}` : route) : '',
+      neighborhood: get('sublocality_level_1','sublocality','neighborhood','political'),
+      city: get('administrative_area_level_2','locality'),
+      state: get('administrative_area_level_1'),
+      postal_code: get('postal_code')
+    };
+  }
+
+  function adcUseGeoSearch() {
+    if (!navigator.geolocation) { alert('Geolocalização não disponível neste navegador.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        _addrTempLoc = { lat, lng, formatted_address:'', place_id:'', street_name:'', number:'', street:'', neighborhood:'', city:'', state:'', postal_code:'' };
+        _loadGoogleMaps(() => {
+          if (_geocoder) {
+            _geocoder.geocode({ location:{ lat, lng } }, (results, status) => {
+              if (status === 'OK' && results?.[0]) {
+                _addrTempLoc = { lat, lng, formatted_address: results[0].formatted_address || '', place_id: results[0].place_id||'', ..._parseAddrComponents(results[0].address_components||[]) };
+              }
+              closeModalId('addrSearchModal');
+              _openAddrMapScreen(lat, lng);
+            });
+          } else {
+            closeModalId('addrSearchModal');
+            _openAddrMapScreen(lat, lng);
+          }
+        });
+      },
+      () => alert('Não foi possível acessar sua localização. Digite seu endereço manualmente.')
+    );
+  }
+
+  function _openAddrMapScreen(lat, lng) {
+    openModal('addrMapModal');
+    _loadGoogleMaps(() => setTimeout(() => _initAddrMap(lat, lng), 160));
+  }
+
+  function _initAddrMap(lat, lng) {
+    if (!window.google) return;
+    const el = $('addrMapContainer');
+    if (!el) return;
+    _addrMap = new google.maps.Map(el, { center:{lat,lng}, zoom:17, disableDefaultUI:true, zoomControl:true, gestureHandling:'greedy' });
+    _addrMapMarker = new google.maps.Marker({ position:{lat,lng}, map:_addrMap, draggable:true, animation:google.maps.Animation.DROP });
+    _addrMapMarker.addListener('dragend', () => {
+      const p = _addrMapMarker.getPosition();
+      if (_addrTempLoc) { _addrTempLoc.lat = p.lat(); _addrTempLoc.lng = p.lng(); }
+    });
+  }
+
+  function confirmAddrMap() {
+    if (!_addrTempLoc?.lat) return;
+    if (_addrMapMarker) {
+      const p = _addrMapMarker.getPosition();
+      _addrTempLoc.lat = p.lat(); _addrTempLoc.lng = p.lng();
+    }
+    if (!_addrTempLoc.formatted_address && _geocoder) {
+      _geocoder.geocode({ location:{ lat:_addrTempLoc.lat, lng:_addrTempLoc.lng } }, (results, status) => {
+        if (status === 'OK' && results?.[0]) {
+          const parsed = _parseAddrComponents(results[0].address_components||[]);
+          _addrTempLoc = { ..._addrTempLoc, formatted_address: results[0].formatted_address||'', ...parsed };
+        }
+        closeModalId('addrMapModal');
+        _openAddrDetailsForm();
+      });
+      return;
+    }
+    closeModalId('addrMapModal');
+    _openAddrDetailsForm();
+  }
+
+  function _openAddrDetailsForm() {
+    const loc = _addrTempLoc || {};
+    const set = (id, v) => { const el = $(id); if (el) el.value = v; };
+    const setDis = (id, v) => { const el = $(id); if (el) { el.value = v; el.disabled = false; } };
+    setDis('addrDetStreet', loc.street_name || loc.street || '');
+    setDis('addrDetNumber', loc.number || '');
+    set('addrDetNeighborhood', loc.neighborhood || '');
+    set('addrDetCep', loc.postal_code ? _fmtCep(loc.postal_code) : '');
+    set('addrDetComplement', '');
+    set('addrDetReference', '');
+    const noNum = $('addrDetNoNumber');
+    if (noNum) noNum.checked = false;
+    const locTxt = loc.formatted_address || [loc.street, loc.neighborhood, loc.city].filter(Boolean).join(', ');
+    const lt = $('addrDetLocationText');
+    if (lt) lt.textContent = locTxt || '—';
+    validateAddrDetails();
+    openModal('addrDetailsModal');
+    _loadGoogleMaps(() => setTimeout(_initAddrDetailsMiniMap, 160));
+  }
+
+  function _initAddrDetailsMiniMap() {
+    if (!window.google || !_addrTempLoc?.lat) return;
+    const el = $('addrDetailsMiniMap');
+    if (!el) return;
+    const map = new google.maps.Map(el, { center:{lat:_addrTempLoc.lat,lng:_addrTempLoc.lng}, zoom:16, disableDefaultUI:true, gestureHandling:'none', clickableIcons:false });
+    new google.maps.Marker({ position:{lat:_addrTempLoc.lat,lng:_addrTempLoc.lng}, map });
+  }
+
+  function _fmtCep(cep) {
+    const d = String(cep).replace(/\D/g,'');
+    return d.length === 8 ? d.replace(/(\d{5})(\d{3})/,'$1-$2') : cep;
+  }
+
+  function maskCep(el) {
+    let v = el.value.replace(/\D/g,'').slice(0,8);
+    if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
+    el.value = v;
+  }
+
+  function toggleAddrNoNumber() {
+    const noNum = $('addrDetNoNumber');
+    const numEl = $('addrDetNumber');
+    if (!noNum || !numEl) return;
+    if (noNum.checked) { numEl.value = 'S/N'; numEl.disabled = true; }
+    else { numEl.value = ''; numEl.disabled = false; }
+    validateAddrDetails();
+  }
+
+  function validateAddrDetails() {
+    const v = id => ($( id)||{}).value?.trim()||'';
+    const street = v('addrDetStreet');
+    const number = v('addrDetNumber');
+    const neighborhood = v('addrDetNeighborhood');
+    const noNum = $('addrDetNoNumber')?.checked;
+    const btn = $('addrDetSaveBtn');
+    if (btn) btn.disabled = !(street && (number || noNum) && neighborhood);
+  }
+
+  function saveAddressDetails() {
+    const v = id => ($(id)||{}).value?.trim()||'';
+    const street       = v('addrDetStreet');
+    const rawNum       = v('addrDetNumber');
+    const noNum        = $('addrDetNoNumber')?.checked;
+    const number       = noNum ? 'S/N' : rawNum;
+    const neighborhood = v('addrDetNeighborhood');
+    const complement   = v('addrDetComplement');
+    const reference    = v('addrDetReference');
+    const postal_code  = v('addrDetCep').replace(/\D/g,'');
+    if (!street || (!number && !noNum) || !neighborhood) { alert('Preencha os campos obrigatórios.'); return; }
+    const loc = _addrTempLoc || {};
+    const address = { street, number, neighborhood, complement, reference, postal_code,
+      formatted_address: loc.formatted_address || `${street}, ${number} - ${neighborhood}`,
+      latitude: loc.lat || null, longitude: loc.lng || null, place_id: loc.place_id || '' };
+    customerAddress = { ...address, summary: addressSummary(address) };
+    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    if (opDraft) opDraft.address = address;
+    if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
+    renderWidget();
+    updateCartUI();
+    closeModalId('addrDetailsModal');
+    closeModalId('addrMapModal');
+    closeModalId('addrSearchModal');
+    closeModalId('addAddressModal');
+    if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
+  }
+
+  // ── end Google Maps address flow ──
 
   function openManualAddressForm() {
     if (customerAddress) {
@@ -1305,7 +1616,9 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
+    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, selectAdcOption, adcConfirm,
+    openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
+    openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

@@ -18,7 +18,10 @@
       "Bash(node verify.js)",
       "Bash(node probe5.js)",
       "Bash(node verify2.js)",
-      "Bash(grep -c 'id=\"__TRACKED_VAR__\"' restaurant.html)"
+      "Bash(grep -c 'id=\"__TRACKED_VAR__\"' restaurant.html)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Get-Content *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Arenapc\\\\Desktop\\\\PROJETOS\\\\pedeaqui_front\" -Force -File | Select-Object Name | Where-Object {$_.Name -match '^\\\\.'})"
     ]
   }
 }

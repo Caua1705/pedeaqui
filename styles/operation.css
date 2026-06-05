@@ -5,7 +5,7 @@
    ========================================================================== */
 
 :root{
-  --op-orange:#FF5F01;
+  --op-orange:#F36F21;
   --op-orange-soft:#FFE9DC;
   --op-orange-tint:#FFF3EC;
   --op-border:#e5e7eb;
@@ -302,7 +302,7 @@
   transition:border-color .15s,box-shadow .15s;
 }
 .op-branch-card.selected{
-  border:1px solid #FF5F01!important;
+  border:1px solid #F36F21!important;
   box-shadow:none!important;
   background:#fff!important;
 }
@@ -320,13 +320,13 @@
   justify-content:center;
   transition:border-color .15s;
 }
-.op-branch-card.selected .op-branch-radio{border-color:#FF5F01!important}
+.op-branch-card.selected .op-branch-radio{border-color:#F36F21!important}
 .op-branch-card.selected .op-branch-radio::after{
   content:"";
   width:8px!important;
   height:8px!important;
   border-radius:50%;
-  background:#FF5F01;
+  background:#F36F21;
 }
 
 .op-branch-body{
@@ -511,7 +511,7 @@
   font-size:22px!important;
   font-weight:700!important;
   line-height:30px!important;
-  color:#FF5F01!important;
+  color:#F36F21!important;
   text-align:center!important;
   margin:0 0 26px!important;
 }
@@ -541,17 +541,19 @@
   padding:0!important;
   transition:background .15s!important;
 }
-.adc-card:not(:disabled):active{background:#FFF3EE!important}
-.adc-card:disabled{
-  opacity:.45!important;
-  cursor:default!important;
-  pointer-events:none!important;
+.adc-card:not(.selected):active{background:#FFF3EE!important}
+.adc-card.selected{
+  background:#FFF0E8!important;
+  border-color:#F8CDB5!important;
 }
 .adc-card-icon{
   color:#9AA0A8!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
+}
+.adc-card.selected .adc-card-icon{
+  color:#F36F21!important;
 }
 .adc-card span{
   font-size:13px!important;
@@ -563,10 +565,11 @@
 /* Footer (buttons anchored at bottom) */
 .adc-footer{
   flex-shrink:0!important;
+  margin-top:auto!important;
   display:flex!important;
   flex-direction:column!important;
   gap:14px!important;
-  padding:16px 20px max(20px,env(safe-area-inset-bottom))!important;
+  padding:16px 20px max(32px,env(safe-area-inset-bottom))!important;
   background:#fff!important;
 }
 
@@ -579,7 +582,7 @@
   font-size:13px!important;
   font-weight:700!important;
   font-family:inherit!important;
-  background:#FF5F01!important;
+  background:#F36F21!important;
   color:#fff!important;
   cursor:pointer!important;
   transition:background .15s!important;
@@ -596,14 +599,405 @@
 .adc-account-btn{
   width:100%!important;
   height:45px!important;
-  border:1.5px solid #FF5F01!important;
+  border:1.5px solid #F36F21!important;
   border-radius:10px!important;
   background:#fff!important;
-  color:#FF5F01!important;
-  font-size:13px!important;
+  color:#F36F21!important;
+  font-size:11px!important;
   font-weight:700!important;
   font-family:inherit!important;
   cursor:pointer!important;
   transition:background .15s!important;
 }
 .adc-account-btn:active{background:#FFF3EE!important}
+
+/* ============================================================
+   ADDRESS SEARCH / MAP / DETAILS SCREENS
+   (#addrSearchModal, #addrMapModal, #addrDetailsModal)
+   ============================================================ */
+
+/* Shared modal shell */
+#addrSearchModal,
+#addrMapModal,
+#addrDetailsModal{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  align-items:stretch!important;
+}
+#addrSearchModal .modal--fs,
+#addrMapModal .modal--fs,
+#addrDetailsModal .modal--fs{
+  width:100%!important;
+  max-width:414px!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0 auto!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#fff!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+/* Shared header (same look as operationModal) */
+#addrSearchModal .cart-hdr,
+#addrMapModal .cart-hdr,
+#addrDetailsModal .cart-hdr{
+  position:relative!important;
+  width:100%!important;
+  height:70px!important;
+  padding:0 20px!important;
+  background:#fff!important;
+  border-bottom:1px solid #f1f1f1!important;
+  flex-shrink:0!important;
+}
+#addrSearchModal .cart-hdr-back,
+#addrMapModal .cart-hdr-back,
+#addrDetailsModal .cart-hdr-back{
+  width:32px!important;
+  height:32px!important;
+  border-radius:9px!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+#addrSearchModal .cart-hdr-back svg,
+#addrMapModal .cart-hdr-back svg,
+#addrDetailsModal .cart-hdr-back svg{
+  width:16px!important;
+  height:16px!important;
+  stroke-width:1.8!important;
+}
+#addrSearchModal .cart-hdr-title,
+#addrMapModal .cart-hdr-title,
+#addrDetailsModal .cart-hdr-title{
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  color:#2F343A!important;
+  letter-spacing:-0.01em!important;
+  font-synthesis:none!important;
+  text-shadow:none!important;
+  transform:none!important;
+  text-align:center!important;
+}
+#addrSearchModal .cart-hdr-spacer,
+#addrMapModal .cart-hdr-spacer,
+#addrDetailsModal .cart-hdr-spacer{
+  width:32px!important;
+}
+
+/* ── STEP 1: ADDRESS SEARCH ── */
+.addr-search-body{
+  flex:1!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding:24px 20px 24px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+.addr-search-body::-webkit-scrollbar{display:none!important}
+
+.addr-search-icon-wrap{
+  width:60px!important;
+  height:60px!important;
+  border-radius:50%!important;
+  background:#FFF1EA!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+  margin-bottom:14px!important;
+}
+.addr-search-title{
+  font-size:20px!important;
+  font-weight:700!important;
+  line-height:26px!important;
+  color:#1f2937!important;
+  text-align:center!important;
+  margin:0 0 8px!important;
+}
+.addr-search-sub{
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+  color:#6b7280!important;
+  text-align:center!important;
+  margin:0 0 20px!important;
+  max-width:320px!important;
+}
+
+/* Search input field */
+.addr-search-field{
+  width:100%!important;
+  height:44px!important;
+  border:1px solid #E1E3E6!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:0 12px!important;
+  box-sizing:border-box!important;
+  margin-bottom:10px!important;
+  transition:border-color .15s!important;
+}
+.addr-search-field:focus-within{border-color:#F36F21!important}
+.addr-search-field-icon{color:#9AA0A8!important;flex-shrink:0!important}
+.addr-search-input{
+  flex:1!important;
+  border:none!important;
+  outline:none!important;
+  font-size:13px!important;
+  font-family:inherit!important;
+  color:#1f2937!important;
+  background:transparent!important;
+  min-width:0!important;
+}
+.addr-search-input::placeholder{color:#9AA0A8!important}
+
+/* Geolocation button */
+.addr-geo-btn{
+  width:100%!important;
+  height:44px!important;
+  border:1px solid #E1E3E6!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:0 14px!important;
+  cursor:pointer!important;
+  font-family:inherit!important;
+  font-size:13px!important;
+  font-weight:600!important;
+  color:#F36F21!important;
+  margin-bottom:16px!important;
+  transition:background .15s!important;
+}
+.addr-geo-btn:active{background:#FFF3EE!important}
+.addr-geo-btn svg{color:#F36F21!important;flex-shrink:0!important}
+
+/* Suggestions container */
+.addr-suggestions{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+/* Suggestion item */
+.addr-sug-item{
+  width:100%!important;
+  border:none!important;
+  border-bottom:1px solid #f4f5f6!important;
+  background:#fff!important;
+  padding:12px 0!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  gap:10px!important;
+  cursor:pointer!important;
+  font-family:inherit!important;
+  text-align:left!important;
+  transition:background .1s!important;
+}
+.addr-sug-item:active{background:#FFF3EE!important}
+.addr-sug-pin{color:#9AA0A8!important;flex-shrink:0!important;margin-top:2px!important}
+.addr-sug-copy{flex:1!important;min-width:0!important}
+.addr-sug-main{
+  display:block!important;
+  font-size:13px!important;
+  font-weight:600!important;
+  color:#1f2937!important;
+  line-height:18px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.addr-sug-sub{
+  display:block!important;
+  font-size:11px!important;
+  font-weight:400!important;
+  color:#6b7280!important;
+  line-height:16px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* No results */
+.addr-no-results{
+  font-size:13px!important;
+  color:#6b7280!important;
+  text-align:center!important;
+  padding:16px 0!important;
+}
+
+/* Skeleton loading rows */
+.addr-sug-skeleton{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:12px 0!important;
+  border-bottom:1px solid #f4f5f6!important;
+}
+.addr-sug-sk-icon{
+  width:18px!important;
+  height:18px!important;
+  border-radius:50%!important;
+  flex-shrink:0!important;
+  background:linear-gradient(90deg,#e5e5e5 25%,#f0f0f0 50%,#e5e5e5 75%)!important;
+  background-size:400px 100%!important;
+  animation:addrSkShimmer 1.4s ease-in-out infinite!important;
+}
+.addr-sug-sk-text{
+  flex:1!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:6px!important;
+}
+.addr-sug-sk-line{
+  height:10px!important;
+  border-radius:5px!important;
+  background:linear-gradient(90deg,#e5e5e5 25%,#f0f0f0 50%,#e5e5e5 75%)!important;
+  background-size:400px 100%!important;
+  animation:addrSkShimmer 1.4s ease-in-out infinite!important;
+}
+.addr-sug-sk-line--main{width:68%!important}
+.addr-sug-sk-line--sub{width:42%!important;animation-delay:.18s!important}
+
+@keyframes addrSkShimmer{
+  0%{background-position:-400px 0}
+  100%{background-position:400px 0}
+}
+
+/* "Não achei meu endereço" link */
+.addr-notfound-btn{
+  margin-top:18px!important;
+  border:none!important;
+  background:transparent!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  color:#F36F21!important;
+  cursor:pointer!important;
+  font-family:inherit!important;
+  text-decoration:underline!important;
+  text-underline-offset:2px!important;
+}
+
+/* ── STEP 2: MAP CONFIRMATION ── */
+.addr-map-container{
+  flex:1!important;
+  min-height:0!important;
+  width:100%!important;
+  background:#e8ecef!important;
+}
+.addr-map-footer{
+  flex-shrink:0!important;
+  padding:16px 20px max(24px,env(safe-area-inset-bottom))!important;
+  background:#fff!important;
+  box-shadow:0 -1px 0 0 #f1f1f1!important;
+}
+
+/* ── STEP 3: ADDRESS DETAILS FORM ── */
+.addr-det-minimap{
+  height:150px!important;
+  width:100%!important;
+  flex-shrink:0!important;
+  background:#e8ecef!important;
+}
+.addr-det-location-strip{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:10px 16px!important;
+  background:#FFF1EA!important;
+  border-bottom:1px solid #FFD7BC!important;
+  flex-shrink:0!important;
+}
+.addr-det-location-pin{color:#F36F21!important;flex-shrink:0!important}
+.addr-det-location-text{
+  flex:1!important;
+  font-size:12px!important;
+  font-weight:500!important;
+  color:#1f2937!important;
+  line-height:16px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.addr-det-edit-btn{
+  width:28px!important;
+  height:28px!important;
+  border:none!important;
+  background:transparent!important;
+  color:#F36F21!important;
+  cursor:pointer!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+  padding:0!important;
+}
+
+/* Scrollable form area */
+.addr-det-scroll{
+  flex:1!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+.addr-det-scroll::-webkit-scrollbar{display:none!important}
+
+.addr-det-form{
+  padding:16px 20px 12px!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.addr-det-label{
+  font-size:11px!important;
+  font-weight:600!important;
+  color:#6b7280!important;
+  text-transform:uppercase!important;
+  letter-spacing:.04em!important;
+  margin-top:14px!important;
+  margin-bottom:4px!important;
+}
+.addr-det-form > .addr-det-label:first-child{margin-top:0!important}
+.addr-det-input{
+  width:100%!important;
+  height:42px!important;
+  border:1px solid #E1E3E6!important;
+  border-radius:8px!important;
+  padding:0 12px!important;
+  font-size:13px!important;
+  font-family:inherit!important;
+  color:#1f2937!important;
+  background:#fff!important;
+  outline:none!important;
+  transition:border-color .15s!important;
+  box-sizing:border-box!important;
+}
+.addr-det-input:focus{border-color:#F36F21!important}
+.addr-det-input:disabled{background:#f9f9f9!important;color:#9aa0a8!important}
+.addr-det-checkbox-label{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  font-size:12px!important;
+  font-weight:500!important;
+  color:#4b5563!important;
+  cursor:pointer!important;
+  padding:6px 0 0!important;
+}
+
+/* Details footer */
+.addr-det-footer{
+  flex-shrink:0!important;
+  padding:16px 20px max(24px,env(safe-area-inset-bottom))!important;
+  background:#fff!important;
+  box-shadow:0 -1px 0 0 #f1f1f1!important;
+}

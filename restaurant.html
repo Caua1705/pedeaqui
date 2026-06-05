@@ -1070,14 +1070,14 @@
       </div>
       <h3 class="adc-title">Informe seu endereço</h3>
       <div class="adc-cards">
-        <button class="adc-card" id="adcBtnGeo" disabled>
+        <button class="adc-card" id="adcBtnGeo" onclick="selectAdcOption('geo')">
           <svg class="adc-card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
           </svg>
           <span>Localização atual</span>
         </button>
-        <button class="adc-card" onclick="openManualAddressForm()">
+        <button class="adc-card" id="adcBtnManual" onclick="selectAdcOption('manual')">
           <svg class="adc-card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -1087,8 +1087,110 @@
       </div>
     </div>
     <div class="adc-footer">
-      <button class="adc-confirm-btn" id="adcConfirmBtn" disabled>Confirmar</button>
+      <button class="adc-confirm-btn" id="adcConfirmBtn" onclick="adcConfirm()" disabled>Confirmar</button>
       <button class="adc-account-btn" onclick="openLoginScreen('address')">Já possuo uma conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: ADDRESS SEARCH -->
+<div class="overlay" id="addrSearchModal">
+  <div class="modal modal--fs">
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('addrSearchModal')" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Endereço</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="addr-search-body">
+      <div class="addr-search-icon-wrap">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" fill="#FFD0B8" stroke="#F36F21" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle cx="12" cy="10" r="3" fill="#F36F21"/>
+        </svg>
+      </div>
+      <h3 class="addr-search-title">Endereço</h3>
+      <p class="addr-search-sub">Informe seu endereço e nos ajude a definir as melhores ofertas e oportunidades para você</p>
+      <div class="addr-search-field">
+        <svg class="addr-search-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="addrSearchInput" class="addr-search-input"
+               placeholder="Buscar endereço e número"
+               autocomplete="off"
+               oninput="onAddrSearchInput()">
+      </div>
+      <button class="addr-geo-btn" onclick="adcUseGeoSearch()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span>Localização atual</span>
+      </button>
+      <div id="addrSuggestions" class="addr-suggestions"></div>
+      <button class="addr-notfound-btn" onclick="closeModalId('addrSearchModal');openManualAddressForm()">Não achei meu endereço</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: MAP CONFIRMATION -->
+<div class="overlay" id="addrMapModal">
+  <div class="modal modal--fs">
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('addrMapModal')" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Confirme sua localização</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div id="addrMapContainer" class="addr-map-container"></div>
+    <div class="addr-map-footer">
+      <button class="adc-confirm-btn" onclick="confirmAddrMap()">Confirmar localização</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: ADDRESS DETAILS FORM -->
+<div class="overlay" id="addrDetailsModal">
+  <div class="modal modal--fs">
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" onclick="closeModalId('addrDetailsModal')" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Endereço de entrega</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div id="addrDetailsMiniMap" class="addr-det-minimap"></div>
+    <div class="addr-det-location-strip">
+      <svg class="addr-det-location-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="addrDetLocationText" class="addr-det-location-text">—</span>
+      <button class="addr-det-edit-btn" onclick="closeModalId('addrDetailsModal')" aria-label="Editar localização">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+    </div>
+    <div class="addr-det-scroll">
+      <div class="addr-det-form">
+        <label class="addr-det-label" for="addrDetCep">CEP</label>
+        <input type="text" id="addrDetCep" class="addr-det-input" placeholder="00000-000" maxlength="9" inputmode="numeric" oninput="maskCep(this);validateAddrDetails()">
+
+        <label class="addr-det-label" for="addrDetStreet">Logradouro *</label>
+        <input type="text" id="addrDetStreet" class="addr-det-input" placeholder="Rua, Avenida, Travessa..." oninput="validateAddrDetails()">
+
+        <label class="addr-det-label" for="addrDetNumber">Número *</label>
+        <input type="text" id="addrDetNumber" class="addr-det-input" placeholder="Ex: 123" inputmode="numeric" oninput="validateAddrDetails()">
+        <label class="addr-det-checkbox-label">
+          <input type="checkbox" id="addrDetNoNumber" onchange="toggleAddrNoNumber()">
+          <span>Sem número</span>
+        </label>
+
+        <label class="addr-det-label" for="addrDetComplement">Complemento</label>
+        <input type="text" id="addrDetComplement" class="addr-det-input" placeholder="Apto, Bloco, Casa...">
+
+        <label class="addr-det-label" for="addrDetNeighborhood">Bairro *</label>
+        <input type="text" id="addrDetNeighborhood" class="addr-det-input" placeholder="Nome do bairro" oninput="validateAddrDetails()">
+
+        <label class="addr-det-label" for="addrDetReference">Ponto de referência</label>
+        <input type="text" id="addrDetReference" class="addr-det-input" placeholder="Próximo a...">
+      </div>
+    </div>
+    <div class="addr-det-footer">
+      <button class="adc-confirm-btn" id="addrDetSaveBtn" onclick="saveAddressDetails()" disabled>Salvar endereço e concluir</button>
     </div>
   </div>
 </div>
@@ -1202,6 +1304,7 @@
   </div>
 </div>
 
+<script src="scripts/config/maps-config.js"></script>
 <script src="scripts/config/app-config.js"></script>
 <script src="scripts/config/routes.js"></script>
 <script src="scripts/services/api-routes.js"></script>

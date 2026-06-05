@@ -767,6 +767,7 @@
   const OP_STORAGE_PREFIX = 'rapidex_operation_context_';
   let operationContext = null;
   let opDraft = null; // working copy edited while the operation modal is open
+  let operationConfirmed = false;
 
   const opStorageKey = () => OP_STORAGE_PREFIX + getRestaurantSlug();
 
@@ -776,7 +777,9 @@
   }
 
   function persistOperationContext() {
-    if (operationContext) localStorage.setItem(opStorageKey(), JSON.stringify(operationContext));
+    if (operationContext) {
+      localStorage.setItem(opStorageKey(), JSON.stringify({ ...operationContext, confirmed: operationConfirmed }));
+    }
   }
 
   function addressSummary(a) {
@@ -811,6 +814,7 @@
 
   function initOperationContext() {
     const stored = loadOperationContext();
+    operationConfirmed = stored?.confirmed === true;
     const orderType = stored?.order_type === 'pickup' ? 'pickup' : 'delivery';
     let branch = stored?.branch_id ? branchById(stored.branch_id) : null;
     if (!branch || !branchAccepts(branch, orderType)) branch = defaultBranchFor(orderType);
@@ -823,7 +827,6 @@
       };
     }
     operationContext = { order_type: orderType, ...branchSnapshot(branch), address };
-    persistOperationContext();
     applyOperationToLegacy();
   }
 
@@ -845,6 +848,8 @@
   function renderWidget() {
     if (!operationContext) return;
     const isPickup = operationContext.order_type === 'pickup';
+    const widget = document.querySelector('.delivery-widget');
+    widget?.classList.toggle('pending-selection', !operationConfirmed);
     const opTab = $('dwTabDelivery');
     if (opTab) { opTab.textContent = isPickup ? 'RETIRADA' : 'DELIVERY'; opTab.classList.add('active'); }
     const brandTab = $('dwTabBrand');
@@ -853,12 +858,13 @@
     if (branchTab) branchTab.textContent = operationContext.branch_label || 'UNIDADE';
     const addrMain = $('homeAddressTitle');
     let text;
-    if (isPickup) text = operationContext.branch_address || 'Selecione uma unidade';
+    if (!operationConfirmed) text = 'Informe seu endereço e loja';
+    else if (isPickup) text = operationContext.branch_address || 'Selecione uma unidade';
     else if (operationContext.address) text = addressSummary(operationContext.address);
     else text = 'Use seu endereço para melhores resultados';
     if (addrMain) addrMain.textContent = text;
     document.querySelector('.delivery-widget .address-strip')
-      ?.classList.toggle('has-address', !isPickup && !!operationContext.address);
+      ?.classList.toggle('has-address', operationConfirmed && !isPickup && !!operationContext.address);
   }
 
   // ---- Operation / location modal ----
@@ -949,6 +955,7 @@
   function confirmOperation() {
     if (!operationValid(opDraft)) return;
     operationContext = JSON.parse(JSON.stringify(opDraft));
+    operationConfirmed = true;
     persistOperationContext();
     applyOperationToLegacy();
     renderWidget();
@@ -959,7 +966,7 @@
 
   // Keep operation context in sync when the cart/checkout tabs change order type
   function syncOrderTypeFromCart(type) {
-    if (!operationContext || operationContext.order_type === type) return;
+    if (!operationContext || !operationConfirmed || operationContext.order_type === type) return;
     operationContext.order_type = type;
     const current = branchById(operationContext.branch_id);
     if (!current || !branchAccepts(current, type)) {
@@ -996,7 +1003,7 @@
     customerAddress = { ...address, summary: addressSummary(address) };
     localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
     if (opDraft) opDraft.address = address;
-    if (operationContext) { operationContext.address = address; persistOperationContext(); }
+    if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
     renderWidget();
     updateCartUI();
     closeModalId('addressModal');

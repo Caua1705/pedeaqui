@@ -345,7 +345,7 @@
   --ref-line-xl:25px;
 }
 body,button,input,textarea,select{font-family:var(--ref-font)!important}
-.address-strip .address-card-copy strong{font-size:12px!important;line-height:18px!important;font-weight:500!important}
+.address-strip .address-card-copy strong{font-size:12px!important;line-height:17px!important;font-weight:100!important;font-synthesis-weight:none!important}
 .restaurant-hero-fallback span{font-size:12px!important;line-height:15px!important;font-weight:800!important}
 .restaurant-hero-fallback strong{font-size:24px!important;line-height:29px!important;font-weight:800!important}
 .mob-rest-name{font-size:18px!important;line-height:25px!important;font-weight:600!important}
@@ -503,9 +503,10 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   pointer-events:none!important;
 }
 .address-strip .address-card-copy strong{
-  color:#404040!important;
+  color:#8a8a8a!important;
   font-size:12px!important;
-  font-weight:500!important;
+  font-weight:100!important;
+  font-synthesis-weight:none!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -1714,8 +1715,8 @@ body:not(.menu-tab) .home-order-cta,
   padding:0 8px!important;
   border:0!important;
   border-radius:4px!important;
-  background:#eeeeee!important;
-  color:#6b7280!important;
+  background:#e9e9e9!important;
+  color:#4f5965!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -1730,7 +1731,7 @@ body:not(.menu-tab) .home-order-cta,
   cursor:pointer!important;
 }
 .delivery-widget-tab.active{
-  background:#fff0e8!important;
+  background:#ffe3d3!important;
   color:#F36F21!important;
   font-weight:700!important;
 }
@@ -1774,18 +1775,31 @@ body:not(.menu-tab) .home-order-cta,
   grid-row:1 / span 2!important;
   align-self:center!important;
   justify-self:center!important;
-  width:10px!important;
-  height:13px!important;
+  width:12px!important;
+  height:16px!important;
   color:#F36F21!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
   flex-shrink:0!important;
+  transform:translateX(-3px)!important;
 }
 .address-strip .address-card-icon svg{
-  width:10px!important;
-  height:13px!important;
+  width:12px!important;
+  height:16px!important;
   display:block!important;
+  stroke-width:.75!important;
+}
+.address-strip .address-card-icon svg path{
+  fill:#F36F21!important;
+  stroke:#F36F21!important;
+  stroke-width:1!important;
+}
+.address-strip .address-card-icon svg circle{
+  fill:#ffffff!important;
+  stroke:#ffffff!important;
+  r:2px!important;
+  stroke-width:.6!important;
 }
 .address-strip .address-card-copy{
   grid-column:2!important;
@@ -1799,10 +1813,12 @@ body:not(.menu-tab) .home-order-cta,
   display:block!important;
   width:100%!important;
   margin:0!important;
-  color:#F36F21!important;
+  transform:translate(1px,2px)!important;
+  color:#f39662!important;
   font-size:12px!important;
-  line-height:15px!important;
-  font-weight:400!important;
+  line-height:14px!important;
+  font-weight:100!important;
+  font-synthesis-weight:none!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -3053,6 +3069,7 @@ body.menu-tab .mob-logo{
   flex:0 0 45px!important;
   border-radius:50%!important;
   overflow:hidden!important;
+  transform:translateX(2px)!important;
 }
 body.menu-tab .mob-logo img{ width:100%!important;height:100%!important;object-fit:cover!important; }
 body.menu-tab .mob-rest-name{
@@ -3276,13 +3293,15 @@ body.home-tab .delivery-widget-tab{
   font-weight:700!important;          /* was 800 */
   padding-left:7px!important;
   padding-right:7px!important;
+  background:#e9e9e9!important;
 }
 body.home-tab .delivery-widget-tabs{
   overflow:visible!important;
   z-index:30!important;
+  transform:translate(1px,2px)!important;
 }
 body.home-tab .delivery-widget-tab.active{
-  background:#ffd9c4!important;
+  background:#ffe3d3!important;
   color:#F36F21!important;
 }
 body.home-tab .delivery-widget-chevron,
@@ -3302,15 +3321,29 @@ body.home-tab .delivery-widget-chevron{
   pointer-events:none!important;
 }
 body.home-tab .address-strip .address-card-icon{
-  transform:translateY(3px)!important;
+  transform:translate(-3px,3px)!important;
+}
+body.home-tab .address-strip .address-card-icon svg path{
+  fill:#F36F21!important;
+  stroke:#F36F21!important;
+  stroke-width:.75!important;
+}
+body.home-tab .address-strip .address-card-icon svg circle{
+  fill:#ffffff!important;
+  stroke:#ffffff!important;
+  r:2px!important;
+  stroke-width:.6!important;
 }
 body.home-tab .address-strip .address-card-copy strong{
-  font-size:11.5px!important;
-  font-weight:400!important;          /* was 500 */
-  color:#F36F21!important;
+  font-size:12px!important;
+  font-weight:100!important;          /* was 500 */
+  font-synthesis-weight:none!important;
+  color:#f39662!important;
   transform:translate(1px,2px)!important;
 }
-body.home-tab .delivery-widget-tabs,
+body.home-tab .delivery-widget-tabs{
+  transform:translate(1px,6px)!important;
+}
 body.home-tab .address-strip.address-card{
   transform:translate(1px,4px)!important;
 }
@@ -3319,6 +3352,82 @@ body.home-tab .address-strip.address-card{
 }
 
 /* 5 — Section titles (Cupons / Destaques) — home-only sections. */
+body.home-tab .address-strip.has-address .address-card-copy strong,
+body.home-tab .address-strip.has-address #homeAddressTitle{
+  color:#f39662!important;
+  font-size:12px!important;
+  font-weight:100!important;
+  font-synthesis-weight:none!important;
+}
+body.home-tab .delivery-widget .delivery-widget-chevron,
+body.home-tab .delivery-widget .delivery-widget-chevron path{
+  color:#F36F21!important;
+  stroke:#F36F21!important;
+}
+
+.delivery-widget.pending-selection{
+  width:min(calc(100vw - 40px),374px)!important;
+  min-height:42px!important;
+  height:42px!important;
+  padding:0 14px!important;
+  background:#fde8dd!important;
+  border-radius:9px!important;
+  display:flex!important;
+  align-items:center!important;
+  overflow:hidden!important;
+}
+body.home-tab .delivery-widget.pending-selection{
+  background:#fde8dd!important;
+}
+.delivery-widget.pending-selection .delivery-widget-tabs,
+.delivery-widget.pending-selection .delivery-widget-divider,
+.delivery-widget.pending-selection .delivery-widget-chevron{
+  display:none!important;
+}
+.delivery-widget.pending-selection .address-strip.address-card{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:16px minmax(0,1fr) 16px!important;
+  align-items:center!important;
+  column-gap:9px!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  transform:none!important;
+}
+.delivery-widget.pending-selection .address-strip .address-card-icon{
+  transform:translateX(-3px)!important;
+  width:12px!important;
+  height:16px!important;
+  background:transparent!important;
+}
+.delivery-widget.pending-selection .address-strip .address-card-copy{
+  grid-row:1!important;
+  align-self:center!important;
+  overflow:visible!important;
+  height:auto!important;
+}
+.delivery-widget.pending-selection .address-strip .address-card-copy strong,
+.delivery-widget.pending-selection .address-strip #homeAddressTitle{
+  color:#F36F21!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  font-weight:500!important;
+  overflow:visible!important;
+  transform:translate(3px,12px)!important;
+}
+.delivery-widget.pending-selection .address-card-chevron{
+  display:block!important;
+  grid-column:3!important;
+  width:15px!important;
+  height:15px!important;
+  color:#F36F21!important;
+  stroke:#F36F21!important;
+  transform:translateY(12px)!important;
+}
+
 .home-section h2,
 .home-coupons-section h2,
 .home-highlights-section h2,
@@ -3371,12 +3480,16 @@ body.home-tab .address-strip.address-card{
   body.home-tab .home-coupons-section h2,
   body.home-tab .home-highlights-section h2,
   body.home-tab #homeHighlightsTitle{
-    transform:translateX(4px)!important;
+    transform:translateX(2px)!important;
   }
 
   body.home-tab .coupon-rail{
     padding-left:20px!important;
     scroll-padding-left:20px!important;
+  }
+
+  body.home-tab .mob-logo{
+    transform:translateX(4px)!important;
   }
 }
 

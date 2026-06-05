@@ -1012,29 +1012,35 @@
       <div class="cart-hdr-spacer"></div>
     </div>
     <div class="cart-scroll">
-      <button class="op-addr-card" id="opAddrCard" onclick="openAddressScreen()">
-        <span class="op-addr-pin">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        </span>
-        <span class="op-addr-copy">
-          <strong id="opAddrTitle">Informe seu endereço</strong>
-          <small id="opAddrSub" style="display:none"></small>
-        </span>
-        <svg class="op-addr-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
+      <div class="op-top">
+        <button class="op-addr-card" id="opAddrCard" onclick="openAddressScreen()">
+          <span class="op-addr-pin">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <span class="op-addr-copy">
+            <strong id="opAddrTitle">Informe seu endereço</strong>
+            <small id="opAddrSub" style="display:none"></small>
+          </span>
+          <svg class="op-addr-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
 
-      <div class="op-segment">
-        <button class="op-seg-tab active" id="opSegDelivery" onclick="setOperationType('delivery')">Delivery</button>
-        <button class="op-seg-tab" id="opSegPickup" onclick="setOperationType('pickup')">Retirada</button>
+        <div class="op-segment">
+          <button class="op-seg-tab active" id="opSegDelivery" onclick="setOperationType('delivery')">Delivery</button>
+          <button class="op-seg-tab" id="opSegPickup" onclick="setOperationType('pickup')">Retirada</button>
+        </div>
       </div>
 
-      <h3 class="op-section-title">Escolha uma unidade</h3>
-      <div class="op-search">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="opBranchSearch" placeholder="Buscar por loja..." oninput="renderOperationBranches()">
-      </div>
+      <div class="op-separator" aria-hidden="true"></div>
 
-      <div class="op-branches" id="opBranchList"></div>
+      <div class="op-content">
+        <h3 class="op-section-title">Escolha uma unidade</h3>
+        <div class="op-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="opBranchSearch" placeholder="Buscar por loja..." oninput="renderOperationBranches()">
+        </div>
+
+        <div class="op-branches" id="opBranchList"></div>
+      </div>
     </div>
     <div class="cart-footer">
       <button class="op-confirm" id="opConfirmBtn" onclick="confirmOperation()" disabled>Confirmar</button>

@@ -881,8 +881,6 @@
     const isPickup = opDraft.order_type === 'pickup';
     $('opSegDelivery')?.classList.toggle('active', !isPickup);
     $('opSegPickup')?.classList.toggle('active', isPickup);
-    const addrCard = $('opAddrCard');
-    if (addrCard) addrCard.style.display = isPickup ? 'none' : '';
     const title = $('opAddrTitle');
     const sub = $('opAddrSub');
     if (opDraft.address) {
@@ -949,11 +947,15 @@
 
   function updateConfirmButton() {
     const btn = $('opConfirmBtn');
-    if (btn) btn.disabled = !operationValid(opDraft);
+    if (btn) btn.disabled = !opDraft?.branch_id;
   }
 
   function confirmOperation() {
-    if (!operationValid(opDraft)) return;
+    if (!opDraft?.branch_id) return;
+    if (opDraft.order_type === 'delivery' && !opDraft.address) {
+      openAddressScreen();
+      return;
+    }
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
     persistOperationContext();

@@ -1123,7 +1123,7 @@ body{
   background:#ffffff!important;
 }
 .home-coupons-section{
-  padding:20px 0 22px!important;
+  padding:12px 0 22px!important;
   background:#ffffff!important;
 }
 .home-coupons-section .home-section-title,
@@ -1986,7 +1986,7 @@ body:not(.menu-tab) .home-order-cta,
 
 /* Compact coupon cards: Take-style proportions without changing coupon logic. */
 .home-coupons-section{
-  padding:20px 0 22px!important;
+  padding:12px 0 22px!important;
   background:#ffffff!important;
 }
 .home-coupons-section .home-section-title,
@@ -3407,7 +3407,8 @@ body.home-tab .delivery-widget.pending-selection{
 .delivery-widget.pending-selection .address-strip .address-card-icon svg path,
 .delivery-widget.pending-selection .address-strip .address-card-icon svg circle{
   fill:none!important;
-  stroke:#B83A00!important;
+  stroke:#F36F21!important;
+  stroke-width:1.8!important;
 }
 .delivery-widget.pending-selection .address-strip .address-card-copy{
   grid-row:1!important;
@@ -3496,6 +3497,23 @@ body.home-tab .delivery-widget.pending-selection{
 
   body.home-tab .mob-logo{
     transform:translateX(4px)!important;
+  }
+
+  body.home-tab .mob-rest-name,
+  body.home-tab #homeLoginPrompt{
+    transform:translate(4px, 2px)!important;
+  }
+
+  body.home-tab .home-coupons-section{
+    transform:translateY(4px)!important;
+  }
+
+  body.home-tab .home-coupons-section h2{
+    transform:translate(4px, 2px)!important;
+  }
+
+  body.home-tab .home-coupons-section .coupon-rail{
+    transform:translate(-1px, 2px)!important;
   }
 }
 

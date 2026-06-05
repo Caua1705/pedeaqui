@@ -1000,6 +1000,21 @@
     openModal('addressModal');
   }
 
+  function openAddressChoice() {
+    openModal('addAddressModal');
+  }
+
+  function openManualAddressForm() {
+    if (customerAddress) {
+      $('addrStreet').value = customerAddress.street || '';
+      $('addrNumber').value = customerAddress.number || '';
+      $('addrNeighborhood').value = customerAddress.neighborhood || '';
+      $('addrComplement').value = customerAddress.complement || '';
+    }
+    validateAddressForm();
+    openModal('addressModal');
+  }
+
   function saveAddressMock() {
     const street = $('addrStreet').value.trim();
     const number = $('addrNumber').value.trim();
@@ -1014,6 +1029,7 @@
     renderWidget();
     updateCartUI();
     closeModalId('addressModal');
+    closeModalId('addAddressModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
 
@@ -1289,7 +1305,7 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
+    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

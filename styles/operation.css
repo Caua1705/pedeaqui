@@ -165,13 +165,12 @@
   width:100%!important;
   height:48px!important;
   display:grid!important;
-  grid-template-columns:166px 166px!important;
+  grid-template-columns:1fr 1fr!important;
   justify-content:center!important;
   align-content:center!important;
   gap:10px!important;
   border:1px solid #d8dbe0!important;
   border-radius:10px!important;
-  overflow:hidden!important;
   background:#fff!important;
   padding:5px!important;
   margin:4px 0 0!important;
@@ -183,7 +182,7 @@
   position:relative!important;
   background:#fff;
   font-family:inherit;
-  width:166px!important;
+  width:100%!important;
   height:36px!important;
   padding:0 8px!important;
   font-size:12px!important;
@@ -420,3 +419,191 @@
 
 /* ---- Address manual screen: enabled/disabled save button parity ---- */
 #addressModal .cart-cta-btn:disabled{background:#ffd9c4;cursor:not-allowed}
+
+/* ============================================================
+   ADD ADDRESS CHOICE SCREEN  (#addAddressModal)
+   Opens when user taps "Informe seu endereço" in operationModal.
+   ============================================================ */
+#addAddressModal{
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  align-items:stretch!important;
+}
+#addAddressModal .modal--fs{
+  width:100%!important;
+  max-width:414px!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0 auto!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#fff!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#addAddressModal .cart-hdr{
+  position:relative!important;
+  width:100%!important;
+  height:70px!important;
+  padding:0 20px!important;
+  background:#fff!important;
+  border-bottom:1px solid #f1f1f1!important;
+  flex-shrink:0!important;
+}
+#addAddressModal .cart-hdr-back{
+  width:32px!important;
+  height:32px!important;
+  border-radius:9px!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+#addAddressModal .cart-hdr-back svg{
+  width:16px!important;
+  height:16px!important;
+  stroke-width:1.8!important;
+}
+#addAddressModal .cart-hdr-title{
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  color:#2F343A!important;
+  letter-spacing:-0.01em!important;
+  font-synthesis:none!important;
+  text-shadow:none!important;
+  transform:none!important;
+  text-align:center!important;
+}
+#addAddressModal .cart-hdr-spacer{
+  width:32px!important;
+}
+
+/* Body */
+.adc-body{
+  flex:1!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding:26px 20px 20px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+.adc-body::-webkit-scrollbar{display:none!important}
+
+/* Icon circle */
+.adc-icon-wrap{
+  width:70px!important;
+  height:70px!important;
+  border-radius:50%!important;
+  background:#FFF1EA!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+  margin-bottom:18px!important;
+}
+
+/* Main orange title */
+.adc-title{
+  font-size:22px!important;
+  font-weight:700!important;
+  line-height:30px!important;
+  color:#FF5F01!important;
+  text-align:center!important;
+  margin:0 0 26px!important;
+}
+
+/* Cards container */
+.adc-cards{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+}
+
+/* Individual card */
+.adc-card{
+  width:100%!important;
+  height:94px!important;
+  border:1px solid #E1E3E6!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  cursor:pointer!important;
+  font-family:inherit!important;
+  padding:0!important;
+  transition:background .15s!important;
+}
+.adc-card:not(:disabled):active{background:#FFF3EE!important}
+.adc-card:disabled{
+  opacity:.45!important;
+  cursor:default!important;
+  pointer-events:none!important;
+}
+.adc-card-icon{
+  color:#9AA0A8!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.adc-card span{
+  font-size:13px!important;
+  font-weight:700!important;
+  line-height:16px!important;
+  color:#111827!important;
+}
+
+/* Footer (buttons anchored at bottom) */
+.adc-footer{
+  flex-shrink:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+  padding:16px 20px max(20px,env(safe-area-inset-bottom))!important;
+  background:#fff!important;
+}
+
+/* Confirm button */
+.adc-confirm-btn{
+  width:100%!important;
+  height:45px!important;
+  border:none!important;
+  border-radius:10px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  font-family:inherit!important;
+  background:#FF5F01!important;
+  color:#fff!important;
+  cursor:pointer!important;
+  transition:background .15s!important;
+}
+.adc-confirm-btn:disabled{
+  background:#FFE4D8!important;
+  color:#fff!important;
+  cursor:not-allowed!important;
+  pointer-events:none!important;
+}
+.adc-confirm-btn:not(:disabled):active{background:#D45E13!important}
+
+/* "Já possuo uma conta" outlined button */
+.adc-account-btn{
+  width:100%!important;
+  height:45px!important;
+  border:1.5px solid #FF5F01!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#FF5F01!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  font-family:inherit!important;
+  cursor:pointer!important;
+  transition:background .15s!important;
+}
+.adc-account-btn:active{background:#FFF3EE!important}

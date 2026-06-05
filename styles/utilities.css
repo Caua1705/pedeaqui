@@ -2731,7 +2731,7 @@ body:not(.menu-tab) .home-order-cta,
   height:45px!important;
   min-height:45px!important;
   max-height:45px!important;
-  border-radius:8px!important;
+  border-radius:10px!important;
   padding:0!important;
 }
 
@@ -3562,4 +3562,37 @@ body.home-tab .home-order-cta,
 body.home-tab .home-separator,
 body.home-tab .home-highlight-gray-space{
   background:#f7f7f8!important;        /* lighter than #f4f4f4 */
+}
+
+/* ── Bottom nav: icon size, stroke and colour tokens (authoritative) ── */
+.mob-bottom-nav svg,
+.mob-bottom-nav .mob-nav-icon{
+  width:21px!important;
+  height:21px!important;
+  stroke-width:1.5px!important;
+}
+.mob-bottom-nav .mob-nav-item:not(.active) svg,
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
+  color:#9AA0A8!important;
+  stroke:#9AA0A8!important;
+}
+.mob-bottom-nav .mob-nav-item:not(.active) span{
+  font-size:11px!important;
+  font-weight:500!important;
+  color:#8F96A0!important;
+}
+.mob-bottom-nav .mob-nav-item.active{
+  color:#FF5F01!important;
+  font-weight:500!important;
+}
+.mob-bottom-nav .mob-nav-item.active span{
+  color:#FF5F01!important;
+  font-weight:500!important;
+}
+.mob-bottom-nav .mob-nav-item.active .nav-icon{
+  width:36px!important;
+  height:36px!important;
+  border-radius:50%!important;
+  background:#FFF0E8!important;
+  box-shadow:none!important;
 }

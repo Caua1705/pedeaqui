@@ -3515,6 +3515,17 @@ body.home-tab .delivery-widget.pending-selection{
   body.home-tab .home-coupons-section .coupon-rail{
     transform:translate(-1px, 2px)!important;
   }
+
+  body.home-tab .home-highlights-section h2,
+  body.home-tab #homeHighlightsTitle{
+    transform:translate(4px, 2px)!important;
+  }
+
+  body.home-tab .home-highlights-section .highlight-rail{
+    padding-left:20px!important;
+    padding-right:20px!important;
+    scroll-padding-left:20px!important;
+  }
 }
 
 /* 7 — "Faça seu pedido" CTA (home-only element). */

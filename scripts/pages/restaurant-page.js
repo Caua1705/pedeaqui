@@ -808,6 +808,11 @@
     };
   }
 
+  function truncateAddress(text, max = 47) {
+    const value = String(text || '');
+    return value.length > max ? `${value.slice(0, max)}...` : value;
+  }
+
   function branchAccepts(branch, orderType) {
     return orderType === 'pickup' ? branch.accepts_pickup : branch.accepts_delivery;
   }
@@ -928,7 +933,7 @@
         <span class="op-branch-radio"></span>
         <span class="op-branch-body">
           <span class="op-branch-name">${esc(b.name)}</span>
-          <span class="op-branch-addr">${esc(b.full_address)}</span>
+          <span class="op-branch-addr" title="${esc(b.full_address)}">${esc(truncateAddress(b.full_address))}</span>
           ${badge}
         </span>
         <svg class="op-branch-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>

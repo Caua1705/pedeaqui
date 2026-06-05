@@ -3403,6 +3403,12 @@ body.home-tab .delivery-widget.pending-selection{
   height:16px!important;
   background:transparent!important;
 }
+.delivery-widget.pending-selection .address-strip .address-card-icon svg,
+.delivery-widget.pending-selection .address-strip .address-card-icon svg path,
+.delivery-widget.pending-selection .address-strip .address-card-icon svg circle{
+  fill:none!important;
+  stroke:#B83A00!important;
+}
 .delivery-widget.pending-selection .address-strip .address-card-copy{
   grid-row:1!important;
   align-self:center!important;
@@ -3416,7 +3422,7 @@ body.home-tab .delivery-widget.pending-selection{
   line-height:18px!important;
   font-weight:500!important;
   overflow:visible!important;
-  transform:translate(3px,12px)!important;
+  transform:translate(1px,11px)!important;
 }
 .delivery-widget.pending-selection .address-card-chevron{
   display:block!important;
@@ -3425,7 +3431,7 @@ body.home-tab .delivery-widget.pending-selection{
   height:15px!important;
   color:#F36F21!important;
   stroke:#F36F21!important;
-  transform:translateY(12px)!important;
+  transform:translate(5px,11px)!important;
 }
 
 .home-section h2,

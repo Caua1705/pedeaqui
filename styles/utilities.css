@@ -2726,8 +2726,8 @@ body:not(.menu-tab) .home-order-cta,
 /* Login screen buttons: fixed reference size with softer corners. */
 #loginModal .cart-cta-btn,
 #loginModal .login-secondary{
-  width:374px!important;
-  max-width:374px!important;
+  width:342px!important;
+  max-width:342px!important;
   height:45px!important;
   min-height:45px!important;
   max-height:45px!important;

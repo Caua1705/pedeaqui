@@ -3,3 +3,17 @@ html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; }
 img { max-width: 100%; display: block; }
 button, input, textarea, select { font: inherit; }
+button,
+[role="button"],
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible {
+  outline: none;
+}

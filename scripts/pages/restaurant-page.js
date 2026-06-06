@@ -1047,6 +1047,82 @@
   let _addrSuggestionCache = [];
   let _addrAutocompleteSessionToken = null;
   let _geocoder = null;
+  let _legacyAutocompleteService = null;
+
+  // ----------------------------------------------------------------
+  //  Places autocomplete: implementation switch + debug
+  // ----------------------------------------------------------------
+  // TEMPORARY ISOLATION FLAG.
+  //   true  -> legacy google.maps.places.AutocompleteService
+  //            (routes through maps.googleapis.com / "Places API")
+  //   false -> new AutocompleteSuggestion.fetchAutocompleteSuggestions
+  //            (routes through places.googleapis.com / "Places API (New)")
+  // The 403 "caller does not have permission" comes from the NEW path
+  // (AutocompletePlaces RPC). Keeping this true lets address search work
+  // through the legacy/JS endpoint while the Places API (New) key
+  // permission is sorted out in Google Cloud. Flip to false to retest New.
+  const USE_LEGACY_PLACES_AUTOCOMPLETE = true;
+
+  // Verbose, key-safe diagnostics in the console. Set to false to silence.
+  const MAPS_DEBUG = true;
+  let _mapsDebugLogged = false;
+
+  function _maskKey(k) {
+    if (!k) return '(none)';
+    return `${String(k).slice(0, 10)}…(len ${String(k).length})`;
+  }
+
+  function _loadedMapsScripts() {
+    return Array.from(document.querySelectorAll('script[src*="maps.googleapis.com"]'));
+  }
+
+  function _scriptKeyPrefix() {
+    const s = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    if (!s) return null;
+    try { return (new URL(s.src).searchParams.get('key') || '').slice(0, 10) || null; }
+    catch (_) { return null; }
+  }
+
+  function _logMapsDebug(stage, extra) {
+    if (!MAPS_DEBUG) return;
+    const cfgKey = window.GOOGLE_MAPS_API_KEY || '';
+    const scripts = _loadedMapsScripts();
+    const scriptKey = _scriptKeyPrefix();
+    /* eslint-disable no-console */
+    console.groupCollapsed(`[PedeAqui][maps-debug] ${stage}`);
+    console.log('location.href      :', window.location.href);
+    console.log('location.origin    :', window.location.origin);
+    console.log('document.referrer  :', document.referrer || '(empty)');
+    console.log('configured key     :', _maskKey(cfgKey));
+    console.log('loaded script key  :', scriptKey ? `${scriptKey}…` : '(no maps script yet)');
+    console.log('keys match         :', scriptKey ? cfgKey.startsWith(scriptKey) : 'n/a (script not injected yet)');
+    console.log('maps scripts count :', scripts.length, scripts.length > 1 ? '⚠ MULTIPLE — duplicate injection' : '(single — ok)');
+    scripts.forEach((s, i) => console.log(`  script[${i}]       :`, s.src.replace(/key=[^&]+/, 'key=***')));
+    console.log('google.maps        :', !!(window.google && window.google.maps));
+    console.log('importLibrary      :', !!(window.google && window.google.maps && window.google.maps.importLibrary));
+    console.log('autocomplete mode  :', USE_LEGACY_PLACES_AUTOCOMPLETE
+      ? 'LEGACY AutocompleteService → maps.googleapis.com (Places API)'
+      : 'NEW AutocompleteSuggestion → places.googleapis.com (Places API New)');
+    if (extra) Object.keys(extra).forEach(k => console.log(`${k.padEnd(19)}:`, extra[k]));
+    console.groupEnd();
+    /* eslint-enable no-console */
+  }
+
+  // Map raw Google errors / status codes to friendly Portuguese messages.
+  function _mapPlacesError(err) {
+    const msg = String((err && err.message) || err || '');
+    if (/Chave do Google Maps/i.test(msg) || /API key/i.test(msg))
+      return 'Chave do Google Maps nao configurada.';
+    if (/caller does not have permission|PERMISSION_DENIED/i.test(msg))
+      return 'Nao foi possivel buscar enderecos agora. Verifique a configuracao do Google Places.';
+    if (/RefererNotAllowed|referer|referrer/i.test(msg))
+      return 'Este dominio local nao esta autorizado na chave do Google Maps.';
+    if (/REQUEST_DENIED|not.*enabled|disabled|ApiNotActivated/i.test(msg))
+      return 'Google Places API nao esta ativada para este projeto.';
+    if (/ZERO_RESULTS|Nenhum/i.test(msg))
+      return 'Nenhum endereco encontrado.';
+    return 'Nao foi possivel buscar enderecos agora. Use "Nao achei meu endereco".';
+  }
 
   const FORTALEZA_LOCATION_BIAS = {
     north: -2.35,
@@ -1061,6 +1137,7 @@
   }
 
   function _ensureGoogleMapsLoader() {
+    if (!_mapsDebugLogged) { _mapsDebugLogged = true; _logMapsDebug('loader-start'); }
     if (window.google?.maps?.importLibrary) return Promise.resolve(window.google.maps);
     if (_googleMapsPromise) return _googleMapsPromise;
 
@@ -1154,9 +1231,16 @@
     _addrAutocompleteSessionToken = null;
     openModal('addrSearchModal');
     _loadPlacesLibrary()
+      .then(() => {
+        if (MAPS_DEBUG) _logMapsDebug('places-library-loaded', {
+          placesLibrary: 'loaded ok',
+          AutocompleteService: !!(window.google?.maps?.places?.AutocompleteService),
+          AutocompleteSuggestion: !!(window.google?.maps?.places?.AutocompleteSuggestion)
+        });
+      })
       .catch(err => {
         console.warn('[PedeAqui] Places library unavailable:', err);
-        _showAddrSearchMessage(err.message || 'Busca indisponivel. Use "Nao achei meu endereco".');
+        _showAddrSearchMessage(_mapPlacesError(err));
       })
       .finally(() => setTimeout(() => { if (inp) inp.focus(); }, 200));
   }
@@ -1191,25 +1275,99 @@
     const currentValue = ($('addrSearchInput') || {}).value?.trim() || '';
     if (query !== currentValue) return;
     try {
-      const { AutocompleteSuggestion, AutocompleteSessionToken } = await _loadPlacesLibrary();
-      if (!_addrAutocompleteSessionToken && AutocompleteSessionToken) {
-        _addrAutocompleteSessionToken = new AutocompleteSessionToken();
-      }
-      const req = {
-        input: query,
-        includedRegionCodes: ['br'],
-        language: 'pt-BR',
-        region: 'br',
-        locationBias: FORTALEZA_LOCATION_BIAS,
-        sessionToken: _addrAutocompleteSessionToken
-      };
-      const { suggestions = [] } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
+      const normalized = USE_LEGACY_PLACES_AUTOCOMPLETE
+        ? await _fetchLegacySuggestions(query)
+        : await _fetchNewSuggestions(query);
       if (query !== (($('addrSearchInput') || {}).value?.trim() || '')) return;
-      _renderAddrSuggestions(suggestions.filter(s => s.placePrediction));
+      _renderAddrSuggestions(normalized);
     } catch (err) {
       console.warn('[PedeAqui] Places autocomplete failed:', err);
-      _showAddrSearchMessage(err.message || 'Busca indisponivel. Use "Nao achei meu endereco".');
+      if (MAPS_DEBUG) _logMapsDebug('autocomplete-error', {
+        rawError: String((err && err.message) || err),
+        diagnosis: USE_LEGACY_PLACES_AUTOCOMPLETE
+          ? 'Legacy path failed — likely "Places API" (old) not enabled or key referrer/restriction issue.'
+          : 'New path failed — likely "Places API (New)" permission/restriction on the key (the AutocompletePlaces 403).'
+      });
+      _showAddrSearchMessage(_mapPlacesError(err));
     }
+  }
+
+  // NEW Places API (places.googleapis.com / AutocompletePlaces RPC).
+  // Returns normalized [{ main, sub, placeId, placePrediction }].
+  async function _fetchNewSuggestions(query) {
+    const { AutocompleteSuggestion, AutocompleteSessionToken } = await _loadPlacesLibrary();
+    if (!_addrAutocompleteSessionToken && AutocompleteSessionToken) {
+      _addrAutocompleteSessionToken = new AutocompleteSessionToken();
+    }
+    const req = {
+      input: query,
+      includedRegionCodes: ['br'],
+      language: 'pt-BR',
+      region: 'br',
+      locationBias: FORTALEZA_LOCATION_BIAS,
+      sessionToken: _addrAutocompleteSessionToken
+    };
+    const { suggestions = [] } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
+    return suggestions
+      .filter(s => s.placePrediction)
+      .map(s => {
+        const p = s.placePrediction;
+        return {
+          main: _predictionText(p.mainText) || _predictionText(p.text) || '',
+          sub: _predictionText(p.secondaryText) || '',
+          placeId: p.placeId || '',
+          placePrediction: p
+        };
+      });
+  }
+
+  // LEGACY AutocompleteService (maps.googleapis.com / "Places API").
+  // Returns normalized [{ main, sub, placeId, placePrediction:null }].
+  async function _fetchLegacySuggestions(query) {
+    await _loadPlacesLibrary();
+    if (!_legacyAutocompleteService) {
+      _legacyAutocompleteService = new google.maps.places.AutocompleteService();
+    }
+    const bounds = new google.maps.LatLngBounds(
+      { lat: FORTALEZA_LOCATION_BIAS.south, lng: FORTALEZA_LOCATION_BIAS.west },
+      { lat: FORTALEZA_LOCATION_BIAS.north, lng: FORTALEZA_LOCATION_BIAS.east }
+    );
+    return new Promise((resolve, reject) => {
+      _legacyAutocompleteService.getPlacePredictions({
+        input: query,
+        language: 'pt-BR',
+        region: 'br',
+        componentRestrictions: { country: 'br' },
+        bounds
+      }, (predictions, status) => {
+        const S = google.maps.places.PlacesServiceStatus;
+        if (status === S.ZERO_RESULTS) { resolve([]); return; }
+        if (status !== S.OK || !predictions) {
+          reject(new Error(`PLACES_STATUS_${status}`));
+          return;
+        }
+        resolve(predictions.map(p => ({
+          main: (p.structured_formatting && p.structured_formatting.main_text) || p.description || '',
+          sub: (p.structured_formatting && p.structured_formatting.secondary_text) || '',
+          placeId: p.place_id || '',
+          placePrediction: null
+        })));
+      });
+    });
+  }
+
+  // Legacy predictions carry only a placeId — resolve full details via Geocoder
+  // (Geocoding API), which is already enabled on the key.
+  async function _legacyPlaceIdToLocation(placeId) {
+    if (!placeId) throw new Error('Sugestao invalida.');
+    const r = await _geocodePlaceId(placeId);
+    return {
+      lat: r.geometry.location.lat(),
+      lng: r.geometry.location.lng(),
+      formatted_address: r.formatted_address || '',
+      place_id: placeId,
+      ..._parseAddrComponents(r.address_components || [])
+    };
   }
 
   function _esc(s) {
@@ -1286,9 +1444,8 @@
       return;
     }
     sug.innerHTML = _addrSuggestionCache.map((s, index) => {
-      const p = s.placePrediction || s;
-      const main = _esc(_predictionText(p.mainText) || _predictionText(p.text) || '');
-      const sub  = _esc(_predictionText(p.secondaryText) || '');
+      const main = _esc(s.main || '');
+      const sub  = _esc(s.sub || '');
       return `<button class="addr-sug-item" onclick="selectAddrSuggestion(${index})">
         <svg class="addr-sug-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <div class="addr-sug-copy">
@@ -1301,19 +1458,26 @@
 
   async function selectAddrSuggestion(index) {
     const suggestion = _addrSuggestionCache[Number(index)];
-    const placePrediction = suggestion?.placePrediction || suggestion;
-    if (!placePrediction) {
+    if (!suggestion) {
       _showAddrSearchMessage('Sugestao indisponivel. Tente buscar novamente.');
       return;
     }
     try {
-      _addrTempLoc = await _placePredictionToLocation(placePrediction);
+      if (suggestion.placePrediction) {
+        // NEW Places API prediction object.
+        _addrTempLoc = await _placePredictionToLocation(suggestion.placePrediction);
+      } else if (suggestion.placeId) {
+        // LEGACY prediction — resolve by placeId through the Geocoder.
+        _addrTempLoc = await _legacyPlaceIdToLocation(suggestion.placeId);
+      } else {
+        throw new Error('Sugestao invalida.');
+      }
       _addrAutocompleteSessionToken = null;
       closeModalId('addrSearchModal');
       _openAddrMapScreen(_addrTempLoc.lat, _addrTempLoc.lng);
     } catch (err) {
       console.warn('[PedeAqui] Failed to select address suggestion:', err);
-      _showAddrSearchMessage(err.message || 'Nao foi possivel carregar este endereco.');
+      _showAddrSearchMessage(_mapPlacesError(err));
     }
   }
   function _parseAddrComponents(comps) {

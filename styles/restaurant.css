@@ -545,6 +545,9 @@ a{text-decoration:none;color:inherit}
   .prof-option-title{font-size:.88rem;font-weight:700;color:#1a1a1a}
   .prof-option-desc{font-size:.72rem;color:#aaa;margin-top:1px}
   .prof-option-chevron{color:#ddd;flex-shrink:0}
+  /* Logout row */
+  .prof-logout-icon{background:#fdecec;color:#e23b3b}
+  .prof-logout-row .prof-option-title{color:#e23b3b}
   /* Sub-page panels */
   .prof-sub{
     position:absolute;inset:0;background:#f5f5f5;

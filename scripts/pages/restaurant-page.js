@@ -35,6 +35,7 @@
   const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = (text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const onlyDigits = (value) => String(value ?? '').replace(/\D/g, '');
 
   function getRestaurantSlug() {
     return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
@@ -1711,6 +1712,351 @@
     }
   }
 
+  /* ---------- Register screen ("Cadastre-se") ---------- */
+
+  function openRegisterScreen() {
+    closeModalId('loginModal');
+    $('registerScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    $('registerForm')?.scrollTo?.(0, 0);
+    clearAllRegErrors();
+  }
+
+  function closeRegisterScreen() {
+    $('registerScreen')?.classList.remove('active');
+    // Return to the login sheet the user came from.
+    openModal('loginModal');
+  }
+
+  function maskRegPhone(el) {
+    const d = onlyDigits(el.value).slice(0, 11);
+    let out = '';
+    if (d.length) out = '(' + d.slice(0, 2);
+    if (d.length >= 2) out += ') ';
+    if (d.length >= 3) out += d.slice(2, 3);
+    if (d.length >= 4) out += ' ' + d.slice(3, 7);
+    if (d.length >= 8) out += '-' + d.slice(7, 11);
+    el.value = out;
+  }
+
+  function maskRegCpf(el) {
+    const d = onlyDigits(el.value).slice(0, 11);
+    let out = d.slice(0, 3);
+    if (d.length >= 4) out += '.' + d.slice(3, 6);
+    if (d.length >= 7) out += '.' + d.slice(6, 9);
+    if (d.length >= 10) out += '-' + d.slice(9, 11);
+    el.value = out;
+  }
+
+  function maskRegBirth(el) {
+    const d = onlyDigits(el.value).slice(0, 8);
+    let out = d.slice(0, 2);
+    if (d.length >= 3) out += '/' + d.slice(2, 4);
+    if (d.length >= 5) out += '/' + d.slice(4, 8);
+    el.value = out;
+  }
+
+  const EYE_OPEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
+
+  function toggleRegPassword(inputId, btn) {
+    const input = $(inputId);
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OPEN_SVG : EYE_OFF_SVG;
+    btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+  }
+
+  function isValidCpf(digits) {
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(digits[i], 10) * (10 - i);
+    let d1 = (sum * 10) % 11;
+    if (d1 === 10) d1 = 0;
+    if (d1 !== parseInt(digits[9], 10)) return false;
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(digits[i], 10) * (11 - i);
+    let d2 = (sum * 10) % 11;
+    if (d2 === 10) d2 = 0;
+    return d2 === parseInt(digits[10], 10);
+  }
+
+  function isValidBirthDate(value) {
+    const d = onlyDigits(value);
+    if (d.length !== 8) return false;
+    const day = +d.slice(0, 2);
+    const month = +d.slice(2, 4);
+    const year = +d.slice(4, 8);
+    const dt = new Date(year, month - 1, day);
+    if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) return false;
+    return year >= 1900 && dt <= new Date();
+  }
+
+  // Field-level validators. Each returns '' when valid or an error message.
+  const REG_FIELDS = [
+    { id: 'regFullName', err: 'regFullNameErr', validate(v) {
+      // No strict validation — any non-empty value is accepted.
+      if (!(v || '').trim()) return 'Campo obrigatório';
+      return '';
+    } },
+    { id: 'regEmail', err: 'regEmailErr', validate(v) {
+      const s = (v || '').trim();
+      if (!s) return 'Campo obrigatório';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return 'Email inválido';
+      return '';
+    } },
+    { id: 'regPhone', err: 'regPhoneErr', validate(v) {
+      const d = onlyDigits(v);
+      if (!d) return 'Campo obrigatório';
+      if (d.length < 10 || d.length > 11) return 'Informe o telefone completo';
+      return '';
+    } },
+    { id: 'regBirth', err: 'regBirthErr', validate(v) {
+      if (!onlyDigits(v)) return 'Campo obrigatório';
+      if (!isValidBirthDate(v)) return 'O formato deve ser DD/MM/AAAA';
+      return '';
+    } },
+    { id: 'regCpf', err: 'regCpfErr', validate(v) {
+      const d = onlyDigits(v);
+      if (!d) return 'Campo obrigatório';
+      if (!isValidCpf(d)) return 'CPF inválido';
+      return '';
+    } },
+    { id: 'regPassword', err: 'regPasswordErr', validate(v) {
+      if (!v) return 'Campo obrigatório';
+      if (v.length < 8) return 'Informe ao menos 8 caracteres';
+      return '';
+    } },
+    { id: 'regPasswordConfirm', err: 'regPasswordConfirmErr', validate(v) {
+      if (!v) return 'Campo obrigatório';
+      if (v !== ($('regPassword')?.value || '')) return 'As senhas não coincidem';
+      return '';
+    } }
+  ];
+
+  function showRegError(errId, msg) {
+    const e = $(errId);
+    if (e) { e.textContent = msg; e.classList.add('show'); }
+  }
+  function hideRegError(errId) {
+    const e = $(errId);
+    if (e) { e.textContent = ''; e.classList.remove('show'); }
+  }
+  function setRegFieldError(def, msg) {
+    $(def.id)?.closest('.reg-field')?.classList.add('reg-field--error');
+    showRegError(def.err, msg);
+  }
+  function clearRegFieldError(def) {
+    $(def.id)?.closest('.reg-field')?.classList.remove('reg-field--error');
+    hideRegError(def.err);
+  }
+
+  // Tracks which fields the user has interacted with, so errors only show
+  // after a field has been touched/edited (or after submit).
+  const regTouched = new Set();
+
+  function clearAllRegErrors() {
+    document.querySelectorAll('#registerScreen .reg-field--error').forEach(el => el.classList.remove('reg-field--error'));
+    document.querySelectorAll('#registerScreen .reg-error').forEach(el => { el.textContent = ''; el.classList.remove('show'); });
+    $('regPrivacy')?.closest('.reg-check')?.classList.remove('reg-check--error');
+    $('regSummary')?.classList.remove('show');
+    regTouched.clear();
+  }
+
+  // Hide the generic summary once no field/checkbox is flagged anymore.
+  function maybeHideRegSummary() {
+    const anyError = document.querySelector('#registerScreen .reg-field--error, #registerScreen .reg-check--error');
+    if (!anyError) $('regSummary')?.classList.remove('show');
+  }
+
+  // Validate a single touched field and show/clear only its own error.
+  function validateRegField(id) {
+    const def = REG_FIELDS.find(f => f.id === id);
+    if (!def || !regTouched.has(id)) return;
+    const msg = def.validate($(id)?.value);
+    if (msg) setRegFieldError(def, msg);
+    else clearRegFieldError(def);
+  }
+
+  // Real-time validation: mark the field touched, validate it live, and keep
+  // the confirm-password field in sync when the password changes.
+  function handleRegFieldInput(id) {
+    regTouched.add(id);
+    validateRegField(id);
+    if (id === 'regPassword' && regTouched.has('regPasswordConfirm')) {
+      validateRegField('regPasswordConfirm');
+    }
+    maybeHideRegSummary();
+  }
+
+  // Validate on blur (the field counts as touched once it loses focus).
+  function handleRegFieldBlur(id) {
+    regTouched.add(id);
+    validateRegField(id);
+    maybeHideRegSummary();
+  }
+
+  function handleRegPrivacyInput() {
+    regTouched.add('regPrivacy');
+    const privacy = $('regPrivacy');
+    if (privacy?.checked) {
+      hideRegError('regPrivacyErr');
+      privacy.closest('.reg-check')?.classList.remove('reg-check--error');
+    } else {
+      showRegError('regPrivacyErr', 'Você precisa aceitar a política de privacidade');
+      privacy?.closest('.reg-check')?.classList.add('reg-check--error');
+    }
+    maybeHideRegSummary();
+  }
+
+  // Validate every field, render errors, and return the first invalid element.
+  function runRegisterValidation() {
+    let firstInvalid = null;
+    REG_FIELDS.forEach(def => {
+      const input = $(def.id);
+      if (!input) return;
+      regTouched.add(def.id);
+      const msg = def.validate(input.value);
+      if (msg) {
+        setRegFieldError(def, msg);
+        if (!firstInvalid) firstInvalid = input;
+      } else {
+        clearRegFieldError(def);
+      }
+    });
+    const privacy = $('regPrivacy');
+    regTouched.add('regPrivacy');
+    if (privacy && !privacy.checked) {
+      showRegError('regPrivacyErr', 'Você precisa aceitar a política de privacidade');
+      privacy.closest('.reg-check')?.classList.add('reg-check--error');
+      if (!firstInvalid) firstInvalid = privacy;
+    } else if (privacy) {
+      hideRegError('regPrivacyErr');
+      privacy.closest('.reg-check')?.classList.remove('reg-check--error');
+    }
+    $('regSummary')?.classList.toggle('show', !!firstInvalid);
+    return firstInvalid;
+  }
+
+  function submitRegister(event) {
+    if (event) event.preventDefault();
+    const firstInvalid = runRegisterValidation();
+    if (firstInvalid) {
+      const target = firstInvalid.closest('.reg-field') || firstInvalid.closest('.reg-check') || firstInvalid;
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
+      return;
+    }
+    // Valid — proceed with the (mock) registration. No API call happens above this line.
+    customer = { name: ($('regFullName').value || '').trim(), phone: onlyDigits($('regPhone').value) };
+    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    $('registerScreen')?.classList.remove('active');
+    closeModalId('loginModal');
+    if (_loginOrigin === 'orders') {
+      mobNavOrders();
+    } else {
+      renderProfileView();
+    }
+  }
+
+  /* ---------- Login screen ("Entrar") ---------- */
+
+  // Field-level validators for the sign-in form (same pattern as register).
+  const LOGIN_FIELDS = [
+    { id: 'loginEmail', err: 'loginEmailErr', validate(v) {
+      const s = (v || '').trim();
+      if (!s) return 'Campo obrigatório';
+      // Accept either a valid e-mail or a phone number (the field allows both).
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+      const isPhone = /^\d{10,11}$/.test(onlyDigits(s));
+      if (!isEmail && !isPhone) return 'Email inválido';
+      return '';
+    } },
+    { id: 'loginPassword', err: 'loginPasswordErr', validate(v) {
+      if (!v) return 'Campo obrigatório';
+      if (v.length < 8) return 'Informe ao menos 8 caracteres';
+      return '';
+    } }
+  ];
+
+  const loginTouched = new Set();
+
+  function setLgnFieldError(def, msg) {
+    $(def.id)?.closest('.lgn-field')?.classList.add('lgn-field--error');
+    const e = $(def.err);
+    if (e) { e.textContent = msg; e.classList.add('show'); }
+  }
+  function clearLgnFieldError(def) {
+    $(def.id)?.closest('.lgn-field')?.classList.remove('lgn-field--error');
+    const e = $(def.err);
+    if (e) { e.textContent = ''; e.classList.remove('show'); }
+  }
+  function clearAllLoginErrors() {
+    LOGIN_FIELDS.forEach(clearLgnFieldError);
+    loginTouched.clear();
+  }
+  function validateLoginField(id) {
+    const def = LOGIN_FIELDS.find(f => f.id === id);
+    if (!def || !loginTouched.has(id)) return;
+    const msg = def.validate($(id)?.value);
+    if (msg) setLgnFieldError(def, msg);
+    else clearLgnFieldError(def);
+  }
+  function handleLoginFieldInput(id) {
+    loginTouched.add(id);
+    validateLoginField(id);
+  }
+  function handleLoginFieldBlur(id) {
+    loginTouched.add(id);
+    validateLoginField(id);
+  }
+
+  function openSigninScreen() {
+    closeModalId('loginModal');
+    $('loginScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    $('loginForm')?.scrollTo?.(0, 0);
+    clearAllLoginErrors();
+  }
+
+  function closeSigninScreen() {
+    $('loginScreen')?.classList.remove('active');
+    // Return to the login sheet the user came from.
+    openModal('loginModal');
+  }
+
+  function loginForgotPassword() {
+    alert('A recuperação de senha estará disponível em breve.');
+  }
+
+  function submitLogin(event) {
+    if (event) event.preventDefault();
+    let firstInvalid = null;
+    LOGIN_FIELDS.forEach(def => {
+      const input = $(def.id);
+      if (!input) return;
+      loginTouched.add(def.id);
+      const msg = def.validate(input.value);
+      if (msg) {
+        setLgnFieldError(def, msg);
+        if (!firstInvalid) firstInvalid = input;
+      } else {
+        clearLgnFieldError(def);
+      }
+    });
+    if (firstInvalid) {
+      (firstInvalid.closest('.lgn-field') || firstInvalid).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
+      return;
+    }
+    // Valid — proceed with the existing authentication behaviour (mock sign-in).
+    $('loginScreen')?.classList.remove('active');
+    mockLogin('signin');
+  }
+
+  let _policyReturn = 'login';
+
   function openPolicyScreen(type) {
     const screen = $('privacyPolicyScreen');
     const body = $('privacyPolicyBody');
@@ -1720,9 +2066,13 @@
     const html = `${window.PEDEAQUI_PRIVACY_POLICY_HTML || ''}${loyaltyIntro}${window.PEDEAQUI_LOYALTY_POLICY_HTML || ''}`;
     if (!screen || !body) return;
     if (!body.innerHTML.trim()) body.innerHTML = html;
-    $('loginModal')?.classList.add('active');
+    // Remember which screen to return to when the policy screen closes.
+    _policyReturn = $('registerScreen')?.classList.contains('active') ? 'register' : 'login';
+    if (_policyReturn === 'login') {
+      $('loginModal')?.classList.add('active');
+      document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
+    }
     document.body.classList.add('modal-open');
-    document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
     document.querySelectorAll('.policy-screen').forEach(el => el.classList.remove('active'));
     screen.classList.add('active');
     body.scrollTop = 0;
@@ -1732,7 +2082,8 @@
   function closePolicyScreen(type) {
     $('privacyPolicyScreen')?.classList.remove('active');
     document.querySelector('#loginModal .modal--login')?.classList.remove('policy-hidden');
-    $('loginModal')?.classList.add('active');
+    // The register screen stays active underneath, so only restore the login modal.
+    if (_policyReturn !== 'register') $('loginModal')?.classList.add('active');
     document.body.classList.add('modal-open');
   }
 
@@ -1877,6 +2228,18 @@
         ? `<div class="prof-hero-label">${customer.name}</div><div class="prof-hero-sub">Cliente identificado</div>`
         : `<div class="prof-hero-label">${restaurant.name || 'Restaurante'}</div><div class="prof-hero-sub">Entre para acessar promoções e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
     }
+    const logoutGroup = $('profLogoutGroup');
+    if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
+  }
+
+  function logout() {
+    if (!confirm('Deseja sair da sua conta?')) return;
+    customer = null;
+    localStorage.removeItem(STORAGE_CUSTOMER);
+    closeProfSub();
+    renderProfileView();
+    const loginPrompt = $('homeLoginPrompt');
+    if (loginPrompt) loginPrompt.textContent = 'Entre ou cadastre-se';
   }
 
   function renderProfPedidos() {
@@ -1968,6 +2331,10 @@
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
+    openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,
+    toggleRegPassword, handleRegFieldInput, handleRegFieldBlur, handleRegPrivacyInput, submitRegister, logout,
+    openSigninScreen, closeSigninScreen, submitLogin, loginForgotPassword,
+    handleLoginFieldInput, handleLoginFieldBlur,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

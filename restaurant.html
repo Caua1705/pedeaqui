@@ -15,6 +15,8 @@
 <link rel="stylesheet" href="styles/mobile.css">
 <link rel="stylesheet" href="styles/utilities.css">
 <link rel="stylesheet" href="styles/operation.css">
+<link rel="stylesheet" href="styles/register.css">
+<link rel="stylesheet" href="styles/login.css">
 </head>
 <body>
 
@@ -304,6 +306,19 @@
           <div class="prof-option-desc">Privacidade e conta</div>
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- Group 3: Logout (only when logged in) -->
+    <div class="prof-options-group prof-logout-group" id="profLogoutGroup" style="display:none">
+      <button class="prof-option-row prof-logout-row" onclick="logout()">
+        <div class="prof-option-icon prof-logout-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <div style="flex:1;text-align:left">
+          <div class="prof-option-title">Sair da conta</div>
+          <div class="prof-option-desc">Encerrar sessão neste dispositivo</div>
+        </div>
       </button>
     </div>
 
@@ -1238,8 +1253,8 @@
     <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">✕</button>
     <div class="login-logo" id="loginLogo"></div>
     <h2 class="login-rest-name">Restaurante</h2>
-    <button class="cart-cta-btn" onclick="mockLogin('signup')">Cadastre-se</button>
-    <button class="login-secondary" onclick="mockLogin('signin')">Entrar</button>
+    <button class="cart-cta-btn" onclick="openRegisterScreen()">Cadastre-se</button>
+    <button class="login-secondary" onclick="openSigninScreen()">Entrar</button>
     <div class="login-policy-links">
       <button id="privacyPolicyButton" type="button" class="policy-link" onclick="openPolicyScreen('privacy')">Política de privacidade</button>
     </div>
@@ -1256,6 +1271,130 @@
     <div></div>
   </header>
   <main class="policy-body" id="privacyPolicyBody"></main>
+</section>
+
+<!-- SCREEN: REGISTER ("Cadastre-se") -->
+<section id="registerScreen" class="reg-screen" aria-label="Cadastre-se">
+  <header class="reg-header">
+    <button class="reg-back" type="button" onclick="closeRegisterScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="reg-title">Cadastre-se</h1>
+  </header>
+
+  <form id="registerForm" class="reg-scroll" novalidate onsubmit="submitRegister(event)">
+    <div class="reg-form">
+      <div class="reg-field">
+        <label class="reg-label" for="regFullName">Nome e Sobrenome</label>
+        <input class="reg-input" id="regFullName" type="text" autocomplete="name" oninput="handleRegFieldInput('regFullName')" onblur="handleRegFieldBlur('regFullName')">
+        <div class="reg-error" id="regFullNameErr"></div>
+      </div>
+
+      <div class="reg-field">
+        <label class="reg-label" for="regEmail">Email</label>
+        <input class="reg-input" id="regEmail" type="email" autocomplete="email" oninput="handleRegFieldInput('regEmail')" onblur="handleRegFieldBlur('regEmail')">
+        <div class="reg-error" id="regEmailErr"></div>
+      </div>
+
+      <div class="reg-row">
+        <div class="reg-field reg-field--half">
+          <label class="reg-label" for="regPhone">Seu número de celular</label>
+          <input class="reg-input" id="regPhone" type="tel" inputmode="numeric" placeholder="(00) 0 0000-0000" maxlength="16" oninput="maskRegPhone(this); handleRegFieldInput('regPhone')" onblur="handleRegFieldBlur('regPhone')">
+          <div class="reg-error" id="regPhoneErr"></div>
+        </div>
+        <div class="reg-field reg-field--half">
+          <label class="reg-label" for="regBirth">Data de nascimento</label>
+          <input class="reg-input" id="regBirth" type="tel" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" oninput="maskRegBirth(this); handleRegFieldInput('regBirth')" onblur="handleRegFieldBlur('regBirth')">
+          <div class="reg-error" id="regBirthErr"></div>
+        </div>
+      </div>
+
+      <div class="reg-field">
+        <label class="reg-label" for="regCpf">Informe o CPF</label>
+        <input class="reg-input" id="regCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="maskRegCpf(this); handleRegFieldInput('regCpf')" onblur="handleRegFieldBlur('regCpf')">
+        <div class="reg-error" id="regCpfErr"></div>
+      </div>
+
+      <div class="reg-field">
+        <label class="reg-label" for="regPassword">Senha</label>
+        <input class="reg-input reg-input--pw" id="regPassword" type="password" autocomplete="new-password" oninput="handleRegFieldInput('regPassword')" onblur="handleRegFieldBlur('regPassword')">
+        <button class="reg-eye" type="button" onclick="toggleRegPassword('regPassword', this)" aria-label="Mostrar senha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </button>
+        <div class="reg-error" id="regPasswordErr"></div>
+      </div>
+
+      <div class="reg-field">
+        <label class="reg-label" for="regPasswordConfirm">Confirme sua senha</label>
+        <input class="reg-input reg-input--pw" id="regPasswordConfirm" type="password" autocomplete="new-password" oninput="handleRegFieldInput('regPasswordConfirm')" onblur="handleRegFieldBlur('regPasswordConfirm')">
+        <button class="reg-eye" type="button" onclick="toggleRegPassword('regPasswordConfirm', this)" aria-label="Mostrar senha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </button>
+        <div class="reg-error" id="regPasswordConfirmErr"></div>
+      </div>
+
+      <label class="reg-check">
+        <input class="reg-check-input" id="regPromo" type="checkbox">
+        <span class="reg-check-box" aria-hidden="true"></span>
+        <span class="reg-check-label">Aceito receber e-mails e SMS's promocionais</span>
+      </label>
+
+      <label class="reg-check">
+        <input class="reg-check-input" id="regPrivacy" type="checkbox" onchange="handleRegPrivacyInput()">
+        <span class="reg-check-box" aria-hidden="true"></span>
+        <span class="reg-check-label">Declaro que li e concordo com a <span class="reg-privacy-link" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();openPolicyScreen('privacy')">política de privacidade</span></span>
+      </label>
+      <div class="reg-error reg-error--check" id="regPrivacyErr"></div>
+
+      <div class="reg-summary" id="regSummary" role="alert">
+        <span class="reg-summary-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
+        <span>Preencha todos os campos</span>
+      </div>
+    </div>
+  </form>
+
+  <div class="reg-bottom">
+    <button class="reg-submit" id="regSubmitBtn" type="submit" form="registerForm">Cadastre-se</button>
+  </div>
+</section>
+
+<!-- SCREEN: LOGIN ("Entrar") -->
+<section id="loginScreen" class="lgn-screen" aria-label="Entrar">
+  <header class="lgn-header">
+    <button class="lgn-back" type="button" onclick="closeSigninScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="lgn-title">Entrar</h1>
+  </header>
+
+  <form id="loginForm" class="lgn-scroll" novalidate onsubmit="submitLogin(event)">
+    <div class="lgn-form">
+      <div class="lgn-field">
+        <label class="lgn-label" for="loginEmail">Email ou número de telefone</label>
+        <input class="lgn-input" id="loginEmail" type="text" autocomplete="username" inputmode="email" oninput="handleLoginFieldInput('loginEmail')" onblur="handleLoginFieldBlur('loginEmail')">
+        <div class="lgn-error" id="loginEmailErr"></div>
+      </div>
+
+      <div class="lgn-field">
+        <label class="lgn-label" for="loginPassword">Senha</label>
+        <input class="lgn-input lgn-input--pw" id="loginPassword" type="password" autocomplete="current-password" oninput="handleLoginFieldInput('loginPassword')" onblur="handleLoginFieldBlur('loginPassword')">
+        <button class="lgn-eye" type="button" onclick="toggleRegPassword('loginPassword', this)" aria-label="Mostrar senha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </button>
+        <div class="lgn-error" id="loginPasswordErr"></div>
+      </div>
+
+      <div class="lgn-forgot-row">
+        <button class="lgn-forgot" type="button" onclick="loginForgotPassword()">Esqueceu a sua senha?</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="lgn-bottom">
+    <button class="lgn-submit" id="loginSubmitBtn" type="submit" form="loginForm">Entrar</button>
+  </div>
 </section>
 
 <!-- SCREEN: COUPON DETAILS -->

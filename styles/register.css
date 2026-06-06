@@ -1,0 +1,311 @@
+﻿/* ==========================================================================
+   REGISTER SCREEN ("Cadastre-se")
+   Mobile full-screen, centered on desktop (matches .policy-screen pattern).
+   Canvas: 414px wide. Header 85px, scroll form, fixed bottom action.
+   ========================================================================== */
+
+.reg-screen {
+  position: fixed;
+  inset: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 270;
+  width: 100%;
+  max-width: 414px;
+  height: 100dvh;
+  margin: 0 auto;
+  background: #FFFFFF;
+  color: #2F343A;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: none;
+  flex-direction: column;
+}
+.reg-screen.active { display: flex; }
+
+/* ---------- Header (414 x 85) ---------- */
+.reg-header {
+  position: relative;
+  flex-shrink: 0;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F1F1;
+}
+.reg-back {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: #F2F2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+.reg-back svg {
+  width: 16px;
+  height: 16px;
+  color: #555B62;
+}
+.reg-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 700;
+  color: #2F343A;
+  text-align: center;
+}
+
+/* ---------- Scrollable form container ---------- */
+.reg-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 20px 24px;
+  background: #FFFFFF;
+}
+.reg-form {
+  width: 100%;
+  max-width: 374px;
+  margin: 0 auto;
+}
+
+/* ---------- Fields ---------- */
+.reg-field {
+  position: relative;
+  margin-bottom: 18px;
+}
+.reg-input {
+  width: 100%;
+  height: 60px;
+  border: 1px solid #DCDCDC;
+  border-radius: 12px;
+  background: #FFFFFF;
+  padding: 0 18px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #2F343A;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s ease;
+}
+.reg-input::placeholder {
+  color: #B9B9B9;
+  font-size: 15px;
+  font-weight: 400;
+}
+/* No orange focus ring: keep the default grey border while typing.
+   The red error border (below) still wins for invalid fields. */
+.reg-input:focus {
+  border-color: #DCDCDC;
+  box-shadow: none;
+}
+
+/* Floating label sitting on the top border */
+.reg-label {
+  position: absolute;
+  top: -8px;
+  left: 18px;
+  background: #FFFFFF;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6F747A;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ---------- Two-column row (phone + birth date) ---------- */
+.reg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.reg-field--half {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* ---------- Password inputs ---------- */
+.reg-input--pw { padding-right: 52px; }
+.reg-eye {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #6F747A;
+  cursor: pointer;
+}
+.reg-eye svg { width: 20px; height: 20px; }
+
+/* ---------- Checkboxes ---------- */
+.reg-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+  cursor: pointer;
+  /* Remove the browser's blue text-selection / tap highlight on click. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.reg-check-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  margin: 0;
+}
+.reg-check-box {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #D0D0D0;
+  border-radius: 5px;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s ease, border-color .12s ease;
+}
+.reg-check-box::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  margin-bottom: 2px;
+  border: solid #FFFFFF;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform .12s ease;
+}
+.reg-check-input:checked + .reg-check-box {
+  background: #F36F21;
+  border-color: #F36F21;
+}
+.reg-check-input:checked + .reg-check-box::after {
+  transform: rotate(45deg) scale(1);
+}
+.reg-check-input:focus-visible + .reg-check-box {
+  outline: 2px solid #F36F21;
+  outline-offset: 2px;
+}
+.reg-check-label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  color: #8A8A8A;
+}
+.reg-privacy-link {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  color: #555555;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* ---------- Bottom action ---------- */
+.reg-bottom {
+  flex-shrink: 0;
+  padding: 12px 20px 24px;
+  background: #FFFFFF;
+}
+.reg-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 374px;
+  height: 41px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 8px;
+  background: #F36F21;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+.reg-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- Validation error states ---------- */
+.reg-error {
+  display: none;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #EF5A5A;
+  margin-top: 6px;
+}
+.reg-error.show { display: block; }
+/* Privacy checkbox error: align under the label text, tightened to the row */
+.reg-error--check {
+  margin-top: -6px;
+  margin-bottom: 14px;
+  padding-left: 30px;
+}
+.reg-field--error .reg-input,
+.reg-field--error .reg-input:focus { border-color: #EF5A5A; }
+/* Labels keep their normal colour even on error — only the border and the
+   message below turn red. */
+.reg-check--error .reg-check-box { border-color: #EF5A5A; }
+
+/* Generic summary banner (secondary to the field-level messages) */
+.reg-summary {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #FDECEC;
+  color: #C0392B;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.reg-summary.show { display: flex; }
+.reg-summary-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #EF5A5A;
+}
+.reg-summary-icon svg { width: 18px; height: 18px; }
+

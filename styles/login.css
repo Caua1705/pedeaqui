@@ -1,0 +1,210 @@
+/* ==========================================================================
+   LOGIN SCREEN ("Entrar")
+   Mobile full-screen, centered on desktop (matches .reg-screen / .policy-screen).
+   Canvas: 414px wide. Header 85px, top-aligned form, sticky bottom action.
+   ========================================================================== */
+
+.lgn-screen {
+  position: fixed;
+  inset: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 270;
+  width: 100%;
+  max-width: 414px;
+  height: 100dvh;
+  margin: 0 auto;
+  background: #FFFFFF;
+  color: #2F343A;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: none;
+  flex-direction: column;
+}
+.lgn-screen.active { display: flex; }
+
+/* ---------- Header (414 x 85) ---------- */
+.lgn-header {
+  position: relative;
+  flex-shrink: 0;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F1F1;
+}
+.lgn-back {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: #F2F2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+.lgn-back svg {
+  width: 16px;
+  height: 16px;
+  color: #555B62;
+}
+.lgn-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: #2F343A;
+  text-align: center;
+}
+
+/* ---------- Form container (top-aligned) ---------- */
+.lgn-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 38px 20px 24px;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+.lgn-form {
+  width: 100%;
+  max-width: 374px;
+  margin: 0 auto;
+}
+
+/* ---------- Fields ---------- */
+.lgn-field {
+  position: relative;
+  margin-bottom: 18px;
+}
+.lgn-input {
+  width: 100%;
+  height: 60px;
+  border: 1px solid #DCDCDC;
+  border-radius: 12px;
+  background: #FFFFFF;
+  padding: 0 18px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #2F343A;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s ease;
+}
+.lgn-input::placeholder {
+  color: #B9B9B9;
+  font-size: 15px;
+  font-weight: 400;
+}
+/* No orange focus ring: keep the default grey border while typing.
+   The red error border (below) wins for invalid fields. */
+.lgn-input:focus {
+  border-color: #DCDCDC;
+  box-shadow: none;
+}
+.lgn-field--error .lgn-input,
+.lgn-field--error .lgn-input:focus {
+  border-color: #EF5A5A;
+}
+.lgn-error {
+  display: none;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #EF5A5A;
+  margin-top: 6px;
+}
+.lgn-error.show { display: block; }
+
+/* Floating label sitting on the top border */
+.lgn-label {
+  position: absolute;
+  top: -8px;
+  left: 18px;
+  background: #FFFFFF;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #6F747A;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ---------- Password input ---------- */
+.lgn-input--pw { padding-right: 52px; }
+.lgn-eye {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #6F747A;
+  cursor: pointer;
+}
+.lgn-eye svg { width: 20px; height: 20px; }
+
+/* ---------- Forgot password link ---------- */
+.lgn-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: -8px;
+}
+.lgn-forgot {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 22px;
+  font-weight: 400;
+  color: #6F747A;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* ---------- Bottom action ---------- */
+.lgn-bottom {
+  flex-shrink: 0;
+  padding: 12px 20px 24px;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+.lgn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 374px;
+  height: 41px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 8px;
+  background: #F36F21;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+.lgn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

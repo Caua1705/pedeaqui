@@ -409,7 +409,7 @@
                 <div class="prod-info">
                   <h3 class="prod-name">${product.name}</h3>
                   ${product.description ? `<p class="prod-desc">${product.description}</p>` : ''}
-                  <div class="prod-price">${Number.isFinite(product.price) ? fmt(product.price) : 'Consultar'}</div>
+                  <div class="prod-price">${Number.isFinite(product.price) ? `<span class="price-from">A partir de</span> ${fmt(product.price)}` : 'Consultar'}</div>
                 </div>
                 <div class="prod-img-box">
                   ${productImage(product)}

@@ -3596,3 +3596,306 @@ body.home-tab .home-highlight-gray-space{
   background:#FFF0E8!important;
   box-shadow:none!important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDÁPIO — reference-calibrated final values.
+   Appended last so it supersedes every earlier !important layer.
+   Scoped to body.menu-tab only. Reference: Take-a-Juice 414px viewport.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1 — Location card: 76px height, 16px top margin, softer radius */
+body.menu-tab .home-sticky-header .delivery-widget,
+body.menu-tab .delivery-widget{
+  height:76px!important;
+  min-height:76px!important;
+  max-height:76px!important;
+  margin:16px auto 0!important;
+  padding:12px 16px!important;
+  border-radius:10px!important;
+  background:#f5f5f5!important;
+  box-shadow:none!important;
+  border:0!important;
+}
+
+/* 2 — Store identity: 48px circular logo, 700-weight name, 24px chevron */
+body.menu-tab .mob-logo{
+  width:48px!important;
+  height:48px!important;
+  flex:0 0 48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+}
+body.menu-tab .mob-logo img,
+body.menu-tab #mobIdentity img{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+}
+body.menu-tab .mob-logo-fallback{
+  width:48px!important;
+  height:48px!important;
+  font-size:15px!important;
+}
+body.menu-tab .mob-rest-name{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:20px!important;
+  color:#2F343A!important;
+}
+body.menu-tab .mob-identity .mob-info-btn{
+  flex:0 0 24px!important;
+  width:24px!important;
+  height:24px!important;
+  min-width:24px!important;
+  min-height:24px!important;
+  padding:0!important;
+}
+
+/* 3 — Search: darker icon, correct border + placeholder colour */
+body.menu-tab .search-bar{
+  border:1px solid #E2E4E7!important;
+}
+body.menu-tab .search-bar svg{
+  color:#4A4F55!important;
+  width:16px!important;
+  height:16px!important;
+}
+body.menu-tab .search-bar input::placeholder{
+  color:#8D949D!important;
+  font-size:13px!important;
+}
+
+/* 4 — Category tabs: 48px tall row, 12/600, #777D86 inactive */
+body.menu-tab .cats{
+  height:48px!important;
+  align-items:center!important;
+}
+body.menu-tab .cat{
+  height:48px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  color:#777D86!important;
+  padding:0!important;
+  border-bottom:3px solid transparent!important;
+  border-radius:0!important;
+}
+body.menu-tab .cat.active{
+  color:#F36F21!important;
+  border-bottom:3px solid #F36F21!important;
+  font-weight:700!important;
+}
+
+/* ─── CARDÁPIO v2 — comprehensive override (wins by source order) ────────── */
+
+/* Section title: 14px/700, 16px above, 10px below */
+body.menu-tab .menu-section-title{
+  display:block!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  line-height:18px!important;
+  color:#2F343A!important;
+  margin:16px 0 10px!important;
+  padding:0 20px!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+}
+
+/* Products grid: single column, no gap, no padding */
+body.menu-tab .products-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:0!important;
+  padding:0!important;
+  margin:0!important;
+}
+
+/* Product card: flex row, 16px padding, no forced min-height */
+body.menu-tab .prod-card{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:0!important;
+  padding:16px 20px!important;
+  gap:14px!important;
+  border:0!important;
+  border-bottom:1px solid #EFEFEF!important;
+  border-radius:0!important;
+  background:#ffffff!important;
+  box-shadow:none!important;
+  cursor:pointer!important;
+}
+body.menu-tab .prod-card:last-child{
+  border-bottom:none!important;
+}
+
+/* prod-info: column, tight stack — no space-between spreading */
+body.menu-tab .prod-info{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  align-items:flex-start!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  gap:0!important;
+}
+
+/* Product name: 13px/600 */
+body.menu-tab .prod-name{
+  display:block!important;
+  font-size:13px!important;
+  font-weight:600!important;
+  line-height:18px!important;
+  color:#111827!important;
+  margin:0 0 6px!important;
+  padding:0!important;
+  white-space:normal!important;
+}
+
+/* Product description: 13px/400, 3-line clamp — explicit webkit-box */
+body.menu-tab .prod-desc{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:3!important;
+  overflow:hidden!important;
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:20px!important;
+  color:#69717A!important;
+  margin:0!important;
+  padding:0!important;
+  max-height:60px!important;
+}
+
+/* Product price: 13px/700, 10px gap above */
+body.menu-tab .prod-price{
+  display:block!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  line-height:18px!important;
+  color:#111827!important;
+  margin:10px 0 0!important;
+  padding:0!important;
+}
+body.menu-tab .price-from{
+  font-size:13px!important;
+  font-weight:600!important;
+  color:#111827!important;
+  margin-right:3px!important;
+}
+body.menu-tab .price-old{
+  font-size:12px!important;
+  font-weight:400!important;
+  color:#C0C4CA!important;
+  text-decoration:line-through!important;
+  margin-left:6px!important;
+}
+
+/* Product image: 100×100, right side, flex-shrink:0 */
+body.menu-tab .prod-img-box{
+  flex:0 0 100px!important;
+  width:100px!important;
+  height:100px!important;
+  min-width:100px!important;
+  min-height:100px!important;
+  max-width:100px!important;
+  max-height:100px!important;
+  flex-shrink:0!important;
+  border-radius:8px!important;
+  overflow:hidden!important;
+  align-self:center!important;
+  margin-left:0!important;
+  background:#f5f5f5!important;
+}
+body.menu-tab .prod-img-box img,
+body.menu-tab .prod-photo{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  border-radius:8px!important;
+}
+
+/* hide add button */
+body.menu-tab .prod-add-btn{ display:none!important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDÁPIO v3 — weight reconciliation (final, wins by source order).
+   The screen still read as too BOLD/heavy. Reference uses semibold
+   (600) for emphasis and regular (400–500) for the rest — almost no
+   true bold. This block lightens every weight that was 700+ and
+   nudges the product name to the spec'd 14px. Scoped to body.menu-tab.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Store name: 16px but SEMIBOLD (was 700) — cleaner, less dominant */
+body.menu-tab .mob-rest-name{
+  font-size:16px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:#2F343A!important;
+  letter-spacing:-0.1px!important;
+}
+
+/* Status / min-order line: lighter, 12px */
+body.menu-tab .mob-identity .mob-badge-open,
+body.menu-tab .mob-identity .mob-pedido-min{
+  font-size:12px!important;
+  font-weight:500!important;
+}
+body.menu-tab .mob-identity .mob-status-sep{
+  color:#C9CDD2!important;
+  font-weight:400!important;
+}
+
+/* Location widget chips: lighter labels, subtler orange accent */
+body.menu-tab .delivery-widget-tab{
+  font-weight:600!important;
+  letter-spacing:0.2px!important;
+}
+body.menu-tab .delivery-widget-tab.active{
+  color:#F07A2E!important;
+}
+body.menu-tab .address-strip .address-card-copy strong{
+  font-weight:500!important;
+  font-size:12px!important;
+  color:#6B7280!important;
+}
+
+/* Section title: 14px SEMIBOLD (was 700) */
+body.menu-tab .menu-section-title{
+  font-weight:600!important;
+}
+
+/* Category tabs: 13px, inactive REGULAR-ish 500, active SEMIBOLD 600
+   (were 12px / 600 / 700) — lighter rhythm, thin 3px underline kept */
+body.menu-tab .cat{
+  font-size:13px!important;
+  font-weight:500!important;
+  color:#777D86!important;
+}
+body.menu-tab .cat.active{
+  font-weight:600!important;
+  color:#F36F21!important;
+}
+
+/* Product name: 14px SEMIBOLD (bumped from 13px per spec) — emphasis
+   without heaviness; sits clearly above the lighter description */
+body.menu-tab .prod-name{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:18px!important;
+  color:#1F2937!important;
+  margin:0 0 6px!important;
+}
+
+/* Price stays the strongest text on the row but at semibold-bold 700,
+   13px — clean, not an oversized block. "A partir de" is 600. */
+body.menu-tab .prod-price{
+  font-weight:700!important;
+  font-size:13px!important;
+}

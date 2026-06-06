@@ -1040,32 +1040,109 @@
   let _addrMap = null;
   let _addrMapMarker = null;
   let _addrSearchDebounce = null;
-  let _autocompleteService = null;
+  let _googleMapsPromise = null;
+  let _placesLibraryPromise = null;
+  let _mapsLibraryPromise = null;
+  let _geocodingLibraryPromise = null;
+  let _addrSuggestionCache = [];
+  let _addrAutocompleteSessionToken = null;
   let _geocoder = null;
 
-  function _loadGoogleMaps(cb) {
-    if (window.google && window.google.maps) { cb(); return; }
-    if (_googleMapsLoading) {
-      const t = setInterval(() => { if (window.google && window.google.maps) { clearInterval(t); cb(); } }, 120);
-      return;
-    }
+  const FORTALEZA_LOCATION_BIAS = {
+    north: -2.35,
+    south: -5.1,
+    east: -37.0,
+    west: -40.2
+  };
+
+  function _showAddrSearchMessage(message) {
+    const sug = $('addrSuggestions');
+    if (sug) sug.innerHTML = `<p class="addr-no-results">${_esc(message)}</p>`;
+  }
+
+  function _ensureGoogleMapsLoader() {
+    if (window.google?.maps?.importLibrary) return Promise.resolve(window.google.maps);
+    if (_googleMapsPromise) return _googleMapsPromise;
+
     const key = window.GOOGLE_MAPS_API_KEY || '';
     if (!key) {
+      const err = new Error('Chave do Google Maps nao configurada.');
       console.warn('[PedeAqui] Google Maps API key not configured. Edit scripts/config/maps-config.js.');
-      cb(); return;
+      _googleMapsPromise = Promise.reject(err);
+      return _googleMapsPromise;
     }
+
+    const existing = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    if (existing) {
+      _googleMapsPromise = new Promise((resolve, reject) => {
+        if (window.google?.maps?.importLibrary) { resolve(window.google.maps); return; }
+        existing.addEventListener('load', () => {
+          if (window.google?.maps?.importLibrary) resolve(window.google.maps);
+          else reject(new Error('Google Maps carregou sem importLibrary.'));
+        }, { once: true });
+        existing.addEventListener('error', () => reject(new Error('Falha ao carregar o script do Google Maps.')), { once: true });
+      });
+      return _googleMapsPromise;
+    }
+
     _googleMapsLoading = true;
-    window._onGMapsReady = () => {
-      _googleMapsLoading = false;
-      _autocompleteService = new google.maps.places.AutocompleteService();
-      _geocoder = new google.maps.Geocoder();
-      cb();
-    };
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=_onGMapsReady`;
-    s.async = true;
-    s.onerror = () => { _googleMapsLoading = false; cb(); };
-    document.head.appendChild(s);
+    _googleMapsPromise = new Promise((resolve, reject) => {
+      const bootstrapCallback = '__pedeAquiGoogleMapsReady';
+      window.google = window.google || {};
+      window.google.maps = window.google.maps || {};
+      window.google.maps[bootstrapCallback] = () => {
+        _googleMapsLoading = false;
+        resolve(window.google.maps);
+        try { delete window.google.maps[bootstrapCallback]; } catch (_) { window.google.maps[bootstrapCallback] = undefined; }
+      };
+
+      const s = document.createElement('script');
+      const params = new URLSearchParams({
+        key,
+        v: 'weekly',
+        loading: 'async',
+        callback: `google.maps.${bootstrapCallback}`
+      });
+      s.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+      s.async = true;
+      s.onerror = () => {
+        _googleMapsLoading = false;
+        reject(new Error('Falha ao carregar o script do Google Maps.'));
+      };
+      document.head.appendChild(s);
+    });
+    return _googleMapsPromise;
+  }
+
+  async function _importGoogleMapsLibrary(name) {
+    await _ensureGoogleMapsLoader();
+    try {
+      return await google.maps.importLibrary(name);
+    } catch (err) {
+      throw new Error(`Falha ao carregar a biblioteca ${name} do Google Maps.`);
+    }
+  }
+
+  function _loadPlacesLibrary() {
+    if (!_placesLibraryPromise) _placesLibraryPromise = _importGoogleMapsLibrary('places');
+    return _placesLibraryPromise;
+  }
+
+  function _loadMapsLibrary() {
+    if (!_mapsLibraryPromise) {
+      _mapsLibraryPromise = Promise.all([
+        _importGoogleMapsLibrary('maps'),
+        _importGoogleMapsLibrary('marker')
+      ]);
+    }
+    return _mapsLibraryPromise;
+  }
+
+  async function _loadGeocoder() {
+    if (!_geocodingLibraryPromise) _geocodingLibraryPromise = _importGoogleMapsLibrary('geocoding');
+    await _geocodingLibraryPromise;
+    if (!_geocoder) _geocoder = new google.maps.Geocoder();
+    return _geocoder;
   }
 
   function openAddrSearch() {
@@ -1073,8 +1150,15 @@
     const sug = $('addrSuggestions');
     if (inp) inp.value = '';
     if (sug) sug.innerHTML = '';
+    _addrSuggestionCache = [];
+    _addrAutocompleteSessionToken = null;
     openModal('addrSearchModal');
-    _loadGoogleMaps(() => setTimeout(() => { if (inp) inp.focus(); }, 200));
+    _loadPlacesLibrary()
+      .catch(err => {
+        console.warn('[PedeAqui] Places library unavailable:', err);
+        _showAddrSearchMessage(err.message || 'Busca indisponivel. Use "Nao achei meu endereco".');
+      })
+      .finally(() => setTimeout(() => { if (inp) inp.focus(); }, 200));
   }
 
   function onAddrSearchInput() {
@@ -1103,30 +1187,109 @@
     sug.innerHTML = h;
   }
 
-  function _fetchAddrSuggestions(query) {
-    const sug = $('addrSuggestions');
-    if (!window.google || !_autocompleteService) {
-      if (sug) sug.innerHTML = '<p class="addr-no-results">Busca indisponível. Use "Não achei meu endereço".</p>';
-      return;
+  async function _fetchAddrSuggestions(query) {
+    const currentValue = ($('addrSearchInput') || {}).value?.trim() || '';
+    if (query !== currentValue) return;
+    try {
+      const { AutocompleteSuggestion, AutocompleteSessionToken } = await _loadPlacesLibrary();
+      if (!_addrAutocompleteSessionToken && AutocompleteSessionToken) {
+        _addrAutocompleteSessionToken = new AutocompleteSessionToken();
+      }
+      const req = {
+        input: query,
+        includedRegionCodes: ['br'],
+        language: 'pt-BR',
+        region: 'br',
+        locationBias: FORTALEZA_LOCATION_BIAS,
+        sessionToken: _addrAutocompleteSessionToken
+      };
+      const { suggestions = [] } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
+      if (query !== (($('addrSearchInput') || {}).value?.trim() || '')) return;
+      _renderAddrSuggestions(suggestions.filter(s => s.placePrediction));
+    } catch (err) {
+      console.warn('[PedeAqui] Places autocomplete failed:', err);
+      _showAddrSearchMessage(err.message || 'Busca indisponivel. Use "Nao achei meu endereco".');
     }
-    const req = { input: query, componentRestrictions: { country: 'br' }, types: ['address'] };
-    try { req.location = new google.maps.LatLng(-3.7318, -38.5236); req.radius = 150000; } catch(_) {}
-    _autocompleteService.getPlacePredictions(req, (preds) => _renderAddrSuggestions(preds || []));
   }
 
   function _esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  function _renderAddrSuggestions(preds) {
+  function _predictionText(textValue) {
+    if (!textValue) return '';
+    return typeof textValue === 'string' ? textValue : (textValue.text || '');
+  }
+
+  function _normalizePlaceAddressComponents(comps) {
+    return (comps || []).map(c => ({
+      long_name: c.long_name || c.longText || '',
+      short_name: c.short_name || c.shortText || '',
+      types: c.types || []
+    }));
+  }
+
+  function _placeLocationToLatLng(location) {
+    if (!location) return null;
+    const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+    const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return { lat, lng };
+  }
+
+  function _geocodePlaceId(placeId) {
+    return _loadGeocoder().then(geocoder => new Promise((resolve, reject) => {
+      geocoder.geocode({ placeId }, (results, status) => {
+        if (status !== 'OK' || !results?.[0]) {
+          reject(new Error('Nao foi possivel carregar este endereco.'));
+          return;
+        }
+        resolve(results[0]);
+      });
+    }));
+  }
+
+  async function _placePredictionToLocation(placePrediction) {
+    const placeId = placePrediction?.placeId || '';
+    if (!placePrediction) throw new Error('Sugestao invalida.');
+    try {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ['id', 'formattedAddress', 'location', 'addressComponents'] });
+      const loc = _placeLocationToLatLng(place.location);
+      if (!loc) throw new Error('Endereco sem coordenadas.');
+      return {
+        lat: loc.lat,
+        lng: loc.lng,
+        formatted_address: place.formattedAddress || '',
+        place_id: place.id || placeId,
+        ..._parseAddrComponents(_normalizePlaceAddressComponents(place.addressComponents || []))
+      };
+    } catch (err) {
+      if (!placeId) throw err;
+      const r = await _geocodePlaceId(placeId);
+      return {
+        lat: r.geometry.location.lat(),
+        lng: r.geometry.location.lng(),
+        formatted_address: r.formatted_address || '',
+        place_id: placeId,
+        ..._parseAddrComponents(r.address_components || [])
+      };
+    }
+  }
+
+  function _renderAddrSuggestions(suggestions) {
     const sug = $('addrSuggestions');
     if (!sug) return;
-    if (!preds.length) { sug.innerHTML = '<p class="addr-no-results">Nenhum resultado encontrado.</p>'; return; }
-    sug.innerHTML = preds.map(p => {
-      const main = _esc(p.structured_formatting?.main_text || p.description || '');
-      const sub  = _esc(p.structured_formatting?.secondary_text || '');
-      const pid  = _esc(p.place_id || '');
-      return `<button class="addr-sug-item" onclick="selectAddrSuggestion('${pid}')">
+    _addrSuggestionCache = suggestions || [];
+    if (!_addrSuggestionCache.length) {
+      sug.innerHTML = '<p class="addr-no-results">Nenhum resultado encontrado.</p>';
+      return;
+    }
+    sug.innerHTML = _addrSuggestionCache.map((s, index) => {
+      const p = s.placePrediction || s;
+      const main = _esc(_predictionText(p.mainText) || _predictionText(p.text) || '');
+      const sub  = _esc(_predictionText(p.secondaryText) || '');
+      return `<button class="addr-sug-item" onclick="selectAddrSuggestion(${index})">
         <svg class="addr-sug-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <div class="addr-sug-copy">
           <span class="addr-sug-main">${main}</span>
@@ -1136,19 +1299,23 @@
     }).join('');
   }
 
-  function selectAddrSuggestion(placeId) {
-    if (!_geocoder) return;
-    _geocoder.geocode({ placeId }, (results, status) => {
-      if (status !== 'OK' || !results?.[0]) return;
-      const r = results[0];
-      const lat = r.geometry.location.lat();
-      const lng = r.geometry.location.lng();
-      _addrTempLoc = { lat, lng, formatted_address: r.formatted_address || '', place_id: placeId, ..._parseAddrComponents(r.address_components || []) };
+  async function selectAddrSuggestion(index) {
+    const suggestion = _addrSuggestionCache[Number(index)];
+    const placePrediction = suggestion?.placePrediction || suggestion;
+    if (!placePrediction) {
+      _showAddrSearchMessage('Sugestao indisponivel. Tente buscar novamente.');
+      return;
+    }
+    try {
+      _addrTempLoc = await _placePredictionToLocation(placePrediction);
+      _addrAutocompleteSessionToken = null;
       closeModalId('addrSearchModal');
-      _openAddrMapScreen(lat, lng);
-    });
+      _openAddrMapScreen(_addrTempLoc.lat, _addrTempLoc.lng);
+    } catch (err) {
+      console.warn('[PedeAqui] Failed to select address suggestion:', err);
+      _showAddrSearchMessage(err.message || 'Nao foi possivel carregar este endereco.');
+    }
   }
-
   function _parseAddrComponents(comps) {
     const get = (...types) => { for (const t of types) { const c = comps.find(x => x.types.includes(t)); if (c) return c.long_name; } return ''; };
     const route = get('route');
@@ -1165,35 +1332,43 @@
   }
 
   function adcUseGeoSearch() {
-    if (!navigator.geolocation) { alert('Geolocalização não disponível neste navegador.'); return; }
+    if (!navigator.geolocation) { alert('Geolocalizacao nao disponivel neste navegador.'); return; }
     navigator.geolocation.getCurrentPosition(
       pos => {
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         _addrTempLoc = { lat, lng, formatted_address:'', place_id:'', street_name:'', number:'', street:'', neighborhood:'', city:'', state:'', postal_code:'' };
-        _loadGoogleMaps(() => {
-          if (_geocoder) {
-            _geocoder.geocode({ location:{ lat, lng } }, (results, status) => {
+        _loadGeocoder()
+          .then(geocoder => {
+            geocoder.geocode({ location:{ lat, lng } }, (results, status) => {
               if (status === 'OK' && results?.[0]) {
                 _addrTempLoc = { lat, lng, formatted_address: results[0].formatted_address || '', place_id: results[0].place_id||'', ..._parseAddrComponents(results[0].address_components||[]) };
               }
               closeModalId('addrSearchModal');
               _openAddrMapScreen(lat, lng);
             });
-          } else {
+          })
+          .catch(err => {
+            console.warn('[PedeAqui] Geocoder unavailable for current location:', err);
             closeModalId('addrSearchModal');
             _openAddrMapScreen(lat, lng);
-          }
-        });
+          });
       },
-      () => alert('Não foi possível acessar sua localização. Digite seu endereço manualmente.')
+      err => {
+        console.warn('[PedeAqui] User location permission denied or unavailable:', err);
+        alert('Nao foi possivel acessar sua localizacao. Digite seu endereco manualmente.');
+      }
     );
   }
 
   function _openAddrMapScreen(lat, lng) {
     openModal('addrMapModal');
-    _loadGoogleMaps(() => setTimeout(() => _initAddrMap(lat, lng), 160));
+    _loadMapsLibrary()
+      .then(() => setTimeout(() => _initAddrMap(lat, lng), 160))
+      .catch(err => {
+        console.warn('[PedeAqui] Maps library unavailable:', err);
+        alert('Nao foi possivel carregar o mapa. Tente novamente.');
+      });
   }
-
   function _initAddrMap(lat, lng) {
     if (!window.google) return;
     const el = $('addrMapContainer');
@@ -1212,15 +1387,23 @@
       const p = _addrMapMarker.getPosition();
       _addrTempLoc.lat = p.lat(); _addrTempLoc.lng = p.lng();
     }
-    if (!_addrTempLoc.formatted_address && _geocoder) {
-      _geocoder.geocode({ location:{ lat:_addrTempLoc.lat, lng:_addrTempLoc.lng } }, (results, status) => {
-        if (status === 'OK' && results?.[0]) {
-          const parsed = _parseAddrComponents(results[0].address_components||[]);
-          _addrTempLoc = { ..._addrTempLoc, formatted_address: results[0].formatted_address||'', ...parsed };
-        }
-        closeModalId('addrMapModal');
-        _openAddrDetailsForm();
-      });
+    if (!_addrTempLoc.formatted_address) {
+      _loadGeocoder()
+        .then(geocoder => {
+          geocoder.geocode({ location:{ lat:_addrTempLoc.lat, lng:_addrTempLoc.lng } }, (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              const parsed = _parseAddrComponents(results[0].address_components||[]);
+              _addrTempLoc = { ..._addrTempLoc, formatted_address: results[0].formatted_address||'', ...parsed };
+            }
+            closeModalId('addrMapModal');
+            _openAddrDetailsForm();
+          });
+        })
+        .catch(err => {
+          console.warn('[PedeAqui] Reverse geocoding unavailable:', err);
+          closeModalId('addrMapModal');
+          _openAddrDetailsForm();
+        });
       return;
     }
     closeModalId('addrMapModal');
@@ -1244,7 +1427,9 @@
     if (lt) lt.textContent = locTxt || '—';
     validateAddrDetails();
     openModal('addrDetailsModal');
-    _loadGoogleMaps(() => setTimeout(_initAddrDetailsMiniMap, 160));
+    _loadMapsLibrary()
+      .then(() => setTimeout(_initAddrDetailsMiniMap, 160))
+      .catch(err => console.warn('[PedeAqui] Mini map unavailable:', err));
   }
 
   function _initAddrDetailsMiniMap() {

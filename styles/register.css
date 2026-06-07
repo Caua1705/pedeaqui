@@ -57,7 +57,7 @@
 .reg-title {
   margin: 0;
   font-size: 16px;
-  line-height: 20px;
+  line-height: 22px;
   font-weight: 700;
   color: #2F343A;
   text-align: center;
@@ -103,11 +103,22 @@
   font-size: 15px;
   font-weight: 400;
 }
-/* No orange focus ring: keep the default grey border while typing.
-   The red error border (below) still wins for invalid fields. */
+/* Orange focus border (no glow). The red error border (below) still wins
+   for invalid fields. */
 .reg-input:focus {
-  border-color: #DCDCDC;
+  border-color: #FF5F01;
   box-shadow: none;
+}
+/* Keep filled / autofilled inputs white — never show the browser's blue
+   autofill background or tinted fill. */
+.reg-input:-webkit-autofill,
+.reg-input:-webkit-autofill:hover,
+.reg-input:-webkit-autofill:focus,
+.reg-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  -webkit-text-fill-color: #2F343A !important;
+  caret-color: #2F343A;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 /* Floating label sitting on the top border */
@@ -162,10 +173,12 @@
 .reg-check {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   margin-bottom: 14px;
   cursor: pointer;
+  /* Keep the privacy sentence on a single line like the reference. */
+  white-space: nowrap;
   /* Remove the browser's blue text-selection / tap highlight on click. */
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
@@ -201,29 +214,32 @@
   transition: transform .12s ease;
 }
 .reg-check-input:checked + .reg-check-box {
-  background: #F36F21;
-  border-color: #F36F21;
+  background: #FF5F01;
+  border-color: #FF5F01;
 }
 .reg-check-input:checked + .reg-check-box::after {
   transform: rotate(45deg) scale(1);
 }
 .reg-check-input:focus-visible + .reg-check-box {
-  outline: 2px solid #F36F21;
+  outline: 2px solid #FF5F01;
   outline-offset: 2px;
 }
 .reg-check-label {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 18px;
   font-weight: 400;
   color: #8A8A8A;
+  white-space: nowrap;
+  overflow: visible;
 }
 .reg-privacy-link {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 18px;
   font-weight: 700;
   color: #555555;
   text-decoration: none;
+  white-space: nowrap;
   background: none;
   border: 0;
   padding: 0;
@@ -248,7 +264,7 @@
   margin: 0 auto;
   border: none;
   border-radius: 8px;
-  background: #F36F21;
+  background: #FF5F01;
   font-family: inherit;
   font-size: 13px;
   line-height: 16px;

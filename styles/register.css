@@ -26,7 +26,7 @@
 .reg-header {
   position: relative;
   flex-shrink: 0;
-  height: 85px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,7 +68,7 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 24px 20px 24px;
+  padding: 18px 16px 20px;
   background: #FFFFFF;
 }
 .reg-form {
@@ -80,18 +80,18 @@
 /* ---------- Fields ---------- */
 .reg-field {
   position: relative;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 .reg-input {
   width: 100%;
-  height: 60px;
+  height: 52px;
   border: 1.5px solid #D4D4D4;
-  border-radius: 16px;
+  border-radius: 13px;
   background: #FFFFFF;
-  padding: 0 18px 0 26px;
+  padding: 0 14px 0 20px;
   font-family: inherit;
-  font-size: 15px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 400;
   color: #2F343A;
   outline: none;
@@ -100,7 +100,7 @@
 }
 .reg-input::placeholder {
   color: #B9B9B9;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
 }
 /* Orange focus border (no glow). The red error border (below) still wins
@@ -137,10 +137,10 @@
 }
 
 /* Masked fields: lighter, smaller, and slightly left-shifted placeholders */
-#regPhone, #regBirth, #regCpf { padding-left: 20px; }
+#regPhone, #regBirth, #regCpf { padding-left: 16px; }
 #regPhone::placeholder,
 #regBirth::placeholder,
-#regCpf::placeholder { color: #D2D2D2; font-size: 14px; }
+#regCpf::placeholder { color: #D2D2D2; font-size: 12px; }
 
 /* ---------- Stacked row (phone + birth date each full width) ---------- */
 .reg-row {
@@ -151,18 +151,18 @@
 }
 .reg-field--half {
   width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 /* ---------- Password inputs ---------- */
-.reg-input--pw { padding-right: 52px; }
+.reg-input--pw { padding-right: 44px; }
 .reg-eye {
   position: absolute;
-  right: 18px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,7 +172,7 @@
   color: #6F747A;
   cursor: pointer;
 }
-.reg-eye svg { width: 20px; height: 20px; }
+.reg-eye svg { width: 18px; height: 18px; }
 
 /* ---------- Checkboxes ---------- */
 .reg-check {
@@ -180,7 +180,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  margin-bottom: 14px;
+  margin-bottom: 11px;
   cursor: pointer;
   /* Keep the privacy sentence on a single line like the reference. */
   white-space: nowrap;
@@ -198,10 +198,10 @@
 }
 .reg-check-box {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   border: 1px solid #D0D0D0;
-  border-radius: 5px;
+  border-radius: 4px;
   background: #FFFFFF;
   display: inline-flex;
   align-items: center;
@@ -230,8 +230,8 @@
   outline-offset: 2px;
 }
 .reg-check-label {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 11px;
+  line-height: 16px;
   font-weight: 400;
   color: #8A8A8A;
   white-space: nowrap;
@@ -239,8 +239,8 @@
 }
 .reg-privacy-link {
   font-family: inherit;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 11px;
+  line-height: 16px;
   font-weight: 700;
   color: #555555;
   text-decoration: none;
@@ -256,7 +256,7 @@
 /* ---------- Bottom action ---------- */
 .reg-bottom {
   flex-shrink: 0;
-  padding: 12px 20px 24px;
+  padding: 10px 16px 20px;
   background: #FFFFFF;
 }
 .reg-submit {

@@ -1856,18 +1856,37 @@
   // after a field has been touched/edited (or after submit).
   const regTouched = new Set();
 
+  let _regSummaryTimer = null;
+  function showRegSummary() {
+    const el = $('regSummary');
+    if (!el) return;
+    if (_regSummaryTimer) { clearTimeout(_regSummaryTimer); _regSummaryTimer = null; }
+    el.classList.remove('hiding');
+    el.classList.add('show');
+    _regSummaryTimer = setTimeout(() => hideRegSummary(), 5000);
+  }
+  function hideRegSummary(immediate) {
+    const el = $('regSummary');
+    if (!el) return;
+    if (_regSummaryTimer) { clearTimeout(_regSummaryTimer); _regSummaryTimer = null; }
+    if (immediate || !el.classList.contains('show')) {
+      el.classList.remove('show', 'hiding'); return;
+    }
+    el.classList.add('hiding');
+    setTimeout(() => el.classList.remove('show', 'hiding'), 320);
+  }
+
   function clearAllRegErrors() {
     document.querySelectorAll('#registerScreen .reg-field--error').forEach(el => el.classList.remove('reg-field--error'));
     document.querySelectorAll('#registerScreen .reg-error').forEach(el => { el.textContent = ''; el.classList.remove('show'); });
-    $('regPrivacy')?.closest('.reg-check')?.classList.remove('reg-check--error');
-    $('regSummary')?.classList.remove('show');
+    hideRegSummary(true);
     regTouched.clear();
   }
 
   // Hide the generic summary once no field/checkbox is flagged anymore.
   function maybeHideRegSummary() {
-    const anyError = document.querySelector('#registerScreen .reg-field--error, #registerScreen .reg-check--error');
-    if (!anyError) $('regSummary')?.classList.remove('show');
+    const anyError = document.querySelector('#registerScreen .reg-field--error');
+    if (!anyError) hideRegSummary();
   }
 
   // Validate a single touched field and show/clear only its own error.
@@ -1900,13 +1919,7 @@
   function handleRegPrivacyInput() {
     regTouched.add('regPrivacy');
     const privacy = $('regPrivacy');
-    if (privacy?.checked) {
-      hideRegError('regPrivacyErr');
-      privacy.closest('.reg-check')?.classList.remove('reg-check--error');
-    } else {
-      showRegError('regPrivacyErr', 'Você precisa aceitar a política de privacidade');
-      privacy?.closest('.reg-check')?.classList.add('reg-check--error');
-    }
+    hideRegError('regPrivacyErr');
     maybeHideRegSummary();
   }
 
@@ -1927,15 +1940,11 @@
     });
     const privacy = $('regPrivacy');
     regTouched.add('regPrivacy');
+    hideRegError('regPrivacyErr');
     if (privacy && !privacy.checked) {
-      showRegError('regPrivacyErr', 'Você precisa aceitar a política de privacidade');
-      privacy.closest('.reg-check')?.classList.add('reg-check--error');
       if (!firstInvalid) firstInvalid = privacy;
-    } else if (privacy) {
-      hideRegError('regPrivacyErr');
-      privacy.closest('.reg-check')?.classList.remove('reg-check--error');
     }
-    $('regSummary')?.classList.toggle('show', !!firstInvalid);
+    if (firstInvalid) showRegSummary(); else hideRegSummary();
     return firstInvalid;
   }
 

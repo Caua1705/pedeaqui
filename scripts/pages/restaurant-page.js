@@ -2255,16 +2255,18 @@
     $('resetPasswordScreen')?.classList.remove('active');
     openModal('loginModal');
   }
-  function showResetPwErr(msg, fieldId) {
-    const el = $('resetPwErr');
-    if (el) { el.textContent = msg; el.classList.add('show'); }
-    if (fieldId) $(fieldId)?.closest('.vfy-field')?.classList.add('vfy-field--error');
+  // Per-field error below each password input (same style as the register form).
+  function showResetFieldErr(fieldId, errId, msg) {
+    const e = $(errId);
+    if (e) { e.textContent = msg; e.classList.add('show'); }
+    $(fieldId)?.closest('.vfy-field')?.classList.add('vfy-field--error');
   }
   function hideResetPwErr() {
-    const el = $('resetPwErr');
-    if (el) { el.textContent = ''; el.classList.remove('show'); }
-    $('resetNewPw')?.closest('.vfy-field')?.classList.remove('vfy-field--error');
-    $('resetConfirmPw')?.closest('.vfy-field')?.classList.remove('vfy-field--error');
+    [['resetNewPw', 'resetNewPwErr'], ['resetConfirmPw', 'resetConfirmPwErr']].forEach(([fieldId, errId]) => {
+      const e = $(errId);
+      if (e) { e.textContent = ''; e.classList.remove('show'); }
+      $(fieldId)?.closest('.vfy-field')?.classList.remove('vfy-field--error');
+    });
   }
   function handleResetPwInput() { hideResetPwErr(); }
 
@@ -2273,8 +2275,8 @@
     const np = $('resetNewPw')?.value || '';
     const cp = $('resetConfirmPw')?.value || '';
     hideResetPwErr();
-    if (np.length < 8) { showResetPwErr('A senha deve ter ao menos 8 caracteres', 'resetNewPw'); return; }
-    if (np !== cp) { showResetPwErr('As senhas não coincidem', 'resetConfirmPw'); return; }
+    if (np.length < 8) { showResetFieldErr('resetNewPw', 'resetNewPwErr', 'Informe ao menos 8 caracteres'); return; }
+    if (np !== cp) { showResetFieldErr('resetConfirmPw', 'resetConfirmPwErr', 'As senhas não coincidem'); return; }
     if (_resetSubmitting) return;
     _resetSubmitting = true;
     const btn = $('resetPwSubmitBtn');
@@ -2282,16 +2284,18 @@
     try {
       await window.PedeAquiCustomerAuth.resetPassword({ reset_token: resetPwCtx.reset_token, new_password: np, confirm_password: cp });
       const email = resetPwCtx.email;
-      $('resetPasswordScreen')?.classList.remove('active');
-      openSigninScreen();
-      if ($('loginEmail')) $('loginEmail').value = email;
       showVfyMsg('');
-      alert('Senha redefinida com sucesso. Faça login com a nova senha.');
+      openVfyAlert('Senha alterada com sucesso!', () => {
+        $('resetPasswordScreen')?.classList.remove('active');
+        openSigninScreen();
+        if ($('loginEmail')) $('loginEmail').value = email;
+        $('loginEmail')?.focus();
+      }, 'Ok');
     } catch (error) {
-      showResetPwErr(error?.message || 'Não foi possível redefinir a senha.');
+      showResetFieldErr('resetConfirmPw', 'resetConfirmPwErr', error?.message || 'Não foi possível redefinir a senha.');
     } finally {
       _resetSubmitting = false;
-      if (btn) { btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Continuar'; }
     }
   }
 
@@ -2363,21 +2367,232 @@
 
   const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 
-  // Forgot password — step 1: request a reset code, then open the code screen.
+  /* ---------- Forgot password — step 1: dedicated "Redefina sua senha" screen ---------- */
+
+  let _forgotSubmitting = false;
+
+  // Open the recovery screen. Never auto-fill from the login form — the screen
+  // always asks for the e-mail on its own page (an empty login field is fine).
   function loginForgotPassword() {
-    const current = ($('loginEmail')?.value || '').trim();
-    let email = isEmailValue(current) ? current : '';
-    if (!email) {
-      email = (prompt('Informe o e-mail cadastrado para recuperar a senha:', '') || '').trim();
+    openForgotPasswordScreen();
+  }
+
+  function openForgotPasswordScreen() {
+    if ($('forgotEmail')) $('forgotEmail').value = '';
+    hideForgotEmailErr();
+    $('loginScreen')?.classList.remove('active');
+    closeModalId('loginModal');
+    $('forgotPasswordScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    setTimeout(() => $('forgotEmail')?.focus(), 60);
+  }
+
+  function closeForgotPasswordScreen() {
+    $('forgotPasswordScreen')?.classList.remove('active');
+    openModal('loginModal');
+  }
+
+  function showForgotEmailErr(msg) {
+    const el = $('forgotEmailErr');
+    if (el) { el.textContent = msg; el.classList.add('show'); }
+    $('forgotEmail')?.closest('.vfy-field')?.classList.add('vfy-field--error');
+  }
+  function hideForgotEmailErr() {
+    const el = $('forgotEmailErr');
+    if (el) { el.textContent = ''; el.classList.remove('show'); }
+    $('forgotEmail')?.closest('.vfy-field')?.classList.remove('vfy-field--error');
+  }
+  function handleForgotEmailInput() { hideForgotEmailErr(); }
+
+  let _vfyAlertAfterClose = null;
+
+  // Card alert reused by password-recovery screens.
+  function openVfyAlert(message, afterClose, buttonLabel = 'Tentar novamente') {
+    const modal = $('forgotNotFoundModal');
+    if (!modal) return;
+    const title = $('forgotNotFoundTitle');
+    if (title) title.textContent = message || 'Não foi possível continuar';
+    const button = modal.querySelector('.vfy-alert-btn');
+    if (button) button.textContent = buttonLabel;
+    _vfyAlertAfterClose = typeof afterClose === 'function' ? afterClose : null;
+    modal.classList.remove('closing');
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+  }
+
+  // Card shown when the backend says the e-mail isn't registered.
+  function openForgotNotFound() {
+    openVfyAlert('E-mail não encontrado', () => $('forgotEmail')?.focus());
+  }
+  let _forgotNotFoundClosing = false;
+  function closeForgotNotFound(event) {
+    // When triggered from the overlay backdrop, ignore clicks on the card.
+    if (event && event.target !== event.currentTarget) return;
+    const modal = $('forgotNotFoundModal');
+    if (!modal || !modal.classList.contains('active') || _forgotNotFoundClosing) return;
+    // Play the slide-up/fade-out animation, then hide and return focus.
+    _forgotNotFoundClosing = true;
+    modal.classList.add('closing');
+    setTimeout(() => {
+      modal.classList.remove('active', 'closing');
+      _forgotNotFoundClosing = false;
+      const afterClose = _vfyAlertAfterClose;
+      _vfyAlertAfterClose = null;
+      if (afterClose) afterClose();
+    }, 220);
+  }
+
+  async function submitForgotPassword(event) {
+    if (event) event.preventDefault();
+    const email = ($('forgotEmail')?.value || '').trim();
+    // Client-side format check → inline error (does not call the backend).
+    if (!email) { showForgotEmailErr('E-mail inválido'); return; }
+    if (!isEmailValue(email)) { showForgotEmailErr('E-mail inválido'); return; }
+    if (_forgotSubmitting) return;
+    _forgotSubmitting = true;
+    const btn = $('forgotSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    try {
+      // Backend verifies the e-mail exists. Success → advance to the code screen.
+      await window.PedeAquiCustomerAuth.forgotPassword({ email });
+      $('forgotPasswordScreen')?.classList.remove('active');
+      openRecoverCodeScreen(email);
+    } catch (error) {
+      const detail = String(error?.data?.detail || error?.message || '').toLowerCase();
+      const notFound = error?.status === 404 || /não encontrad|nao encontrad|not found/.test(detail);
+      if (notFound) {
+        // E-mail not registered → show the "not found" card.
+        openForgotNotFound();
+      } else {
+        // Other failures (network/server) → inline message, keep the user here.
+        showForgotEmailErr('Não foi possível enviar o código. Tente novamente.');
+      }
+    } finally {
+      _forgotSubmitting = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Continuar'; }
     }
-    if (!email || !isEmailValue(email)) {
-      if (email) alert('Informe um e-mail válido.');
-      return;
+  }
+
+  /* ---------- Recover password — code step (own screen) ---------- */
+
+  let recoverCtx = { email: '' };
+  let _recSubmitting = false;
+  let _recResendCooldown = false;
+
+  const recDigits = () => Array.from(document.querySelectorAll('#recCode .vfy-digit'));
+  const getRecCode = () => recDigits().map(i => i.value).join('');
+
+  function updateRecSubmitState() {
+    const btn = $('recSubmitBtn');
+    if (btn) btn.disabled = getRecCode().length !== 6;
+  }
+  function clearRecInputs() {
+    recDigits().forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    showRecMsg('');
+    updateRecSubmitState();
+  }
+  function showRecMsg(msg, type) {
+    const el = $('recMsg');
+    if (!el) return;
+    const textEl = el.querySelector('.vfy-msg-text') || el;
+    textEl.textContent = msg || '';
+    el.classList.remove('is-error', 'is-success', 'show');
+    if (msg) el.classList.add('show', type === 'success' ? 'is-success' : 'is-error');
+  }
+
+  function openRecoverCodeScreen(email) {
+    recoverCtx = { email: email || '' };
+    if ($('recEmailText')) {
+      $('recEmailText').innerHTML = `Um código foi enviado para o email <strong>${esc(recoverCtx.email)}</strong>.`;
     }
-    // Always advance to the code screen (do not reveal whether the e-mail exists).
-    Promise.resolve(window.PedeAquiCustomerAuth.forgotPassword({ email }))
-      .catch(() => {})
-      .finally(() => openVerifyScreen({ email, source: 'reset' }));
+    clearRecInputs();
+    $('forgotPasswordScreen')?.classList.remove('active');
+    closeModalId('loginModal');
+    $('recoverCodeScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    setTimeout(() => recDigits()[0]?.focus(), 60);
+  }
+
+  function closeRecoverCodeScreen() {
+    $('recoverCodeScreen')?.classList.remove('active');
+    openForgotPasswordScreen();
+  }
+
+  function handleRecInput(el, index) {
+    el.value = el.value.replace(/\D/g, '').slice(0, 1);
+    el.classList.toggle('filled', Boolean(el.value));
+    showRecMsg('');
+    if (el.value && index < 5) recDigits()[index + 1]?.focus();
+    updateRecSubmitState();
+  }
+
+  function handleRecKeydown(event, index) {
+    const inputs = recDigits();
+    if (event.key === 'Backspace') {
+      if (!inputs[index].value && index > 0) {
+        const prev = inputs[index - 1];
+        prev.focus();
+        prev.value = '';
+        prev.classList.remove('filled');
+        event.preventDefault();
+        updateRecSubmitState();
+      }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+      inputs[index - 1].focus(); event.preventDefault();
+    } else if (event.key === 'ArrowRight' && index < 5) {
+      inputs[index + 1].focus(); event.preventDefault();
+    }
+  }
+
+  function handleRecPaste(event) {
+    event.preventDefault();
+    const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+    const digits = text.replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    const inputs = recDigits();
+    inputs.forEach((inp, i) => {
+      inp.value = digits[i] || '';
+      inp.classList.toggle('filled', Boolean(digits[i]));
+    });
+    inputs[Math.min(digits.length, 5)]?.focus();
+    updateRecSubmitState();
+  }
+
+  async function resendRecoverCode() {
+    if (_recResendCooldown) return;
+    _recResendCooldown = true;
+    setTimeout(() => { _recResendCooldown = false; }, 30000);
+    try {
+      await window.PedeAquiCustomerAuth.forgotPassword({ email: recoverCtx.email });
+      showRecMsg('');
+    } catch (error) {
+      showRecMsg('Não foi possível reenviar o código.', 'error');
+      _recResendCooldown = false;
+    }
+  }
+
+  async function submitRecoverCode(event) {
+    if (event) event.preventDefault();
+    const code = getRecCode();
+    if (code.length !== 6) { updateRecSubmitState(); return; }
+    if (_recSubmitting) return;
+    _recSubmitting = true;
+    const btn = $('recSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Validando...'; }
+    try {
+      const res = await window.PedeAquiCustomerAuth.verifyResetCode({ email: recoverCtx.email, code });
+      $('recoverCodeScreen')?.classList.remove('active');
+      openResetPasswordScreen(res?.reset_token, recoverCtx.email);
+    } catch (error) {
+      openVfyAlert('O código de verificação expirou!', () => {
+        clearRecInputs();
+        recDigits()[0]?.focus();
+      });
+    } finally {
+      _recSubmitting = false;
+      if (btn) btn.textContent = 'Continuar';
+      updateRecSubmitState();
+    }
   }
 
   // Persist a successful login into both the shared auth store and the
@@ -2793,6 +3008,10 @@
     handleLoginFieldInput, handleLoginFieldBlur,
     closeVerifyScreen, handleVfyInput, handleVfyKeydown, handleVfyPaste, submitVerify, resendVfyCode,
     openResetPasswordScreen, closeResetPasswordScreen, submitResetPassword, handleResetPwInput,
+    openForgotPasswordScreen, closeForgotPasswordScreen, submitForgotPassword, handleForgotEmailInput,
+    openForgotNotFound, closeForgotNotFound,
+    openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
+    resendRecoverCode, submitRecoverCode,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

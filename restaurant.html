@@ -1442,38 +1442,115 @@
     <button class="vfy-back" type="button" onclick="closeResetPasswordScreen()" aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
-    <h1 class="vfy-htitle">Recuperar senha</h1>
+    <h1 class="vfy-htitle">Redefina sua senha</h1>
   </header>
 
   <div class="vfy-scroll">
     <div class="vfy-body">
-      <h2 class="vfy-title">Criar nova senha</h2>
-      <p class="vfy-text">Defina uma nova senha de acesso para a sua conta.</p>
+      <p class="vfy-text">Cadastre uma nova senha para acessar sua conta.</p>
 
       <form id="resetPwForm" novalidate onsubmit="submitResetPassword(event)">
         <div class="vfy-field">
-          <label class="vfy-label" for="resetNewPw">Nova senha</label>
+          <label class="vfy-label" for="resetNewPw">Crie uma senha</label>
           <input class="vfy-input" id="resetNewPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
           <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetNewPw', this)" aria-label="Mostrar senha">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           </button>
+          <div class="vfy-field-err" id="resetNewPwErr"></div>
         </div>
         <div class="vfy-field">
-          <label class="vfy-label" for="resetConfirmPw">Confirme a nova senha</label>
+          <label class="vfy-label" for="resetConfirmPw">Confirme sua senha</label>
           <input class="vfy-input" id="resetConfirmPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
           <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetConfirmPw', this)" aria-label="Mostrar senha">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           </button>
+          <div class="vfy-field-err" id="resetConfirmPwErr"></div>
         </div>
-        <div class="vfy-field-err" id="resetPwErr"></div>
       </form>
     </div>
   </div>
 
-  <div class="vfy-bottom">
-    <button class="vfy-submit" id="resetPwSubmitBtn" type="submit" form="resetPwForm">Salvar nova senha</button>
+  <div class="vfy-bottom vfy-bottom--solo">
+    <button class="vfy-submit" id="resetPwSubmitBtn" type="submit" form="resetPwForm">Continuar</button>
   </div>
 </section>
+
+<!-- SCREEN: FORGOT PASSWORD (request reset code) -->
+<section id="forgotPasswordScreen" class="vfy-screen" aria-label="Redefina sua senha">
+  <header class="vfy-header">
+    <button class="vfy-back" type="button" onclick="closeForgotPasswordScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="vfy-htitle">Redefina sua senha</h1>
+  </header>
+
+  <div class="vfy-scroll">
+    <div class="vfy-body">
+      <p class="vfy-text">Insira o email associado à sua conta e enviaremos código de verificação para redefinir a sua senha.</p>
+
+      <form id="forgotPwForm" novalidate onsubmit="submitForgotPassword(event)">
+        <div class="vfy-field">
+          <label class="vfy-label" for="forgotEmail">Email</label>
+          <input class="vfy-input vfy-input--plain" id="forgotEmail" type="email" autocomplete="email" inputmode="email" oninput="handleForgotEmailInput()">
+        </div>
+        <div class="vfy-field-err" id="forgotEmailErr"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="vfy-bottom vfy-bottom--solo">
+    <button class="vfy-submit" id="forgotSubmitBtn" type="submit" form="forgotPwForm">Continuar</button>
+  </div>
+</section>
+
+<!-- SCREEN: RECOVER PASSWORD — code step (own screen, not the e-mail verify one) -->
+<section id="recoverCodeScreen" class="vfy-screen" aria-label="Redefina sua senha">
+  <header class="vfy-header">
+    <button class="vfy-back" type="button" onclick="closeRecoverCodeScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="vfy-htitle">Redefina sua senha</h1>
+  </header>
+
+  <div class="vfy-scroll">
+    <div class="vfy-body">
+      <p class="vfy-text" id="recEmailText"></p>
+      <div class="rec-code-label">Insira o código recebido</div>
+
+      <form id="recForm" novalidate onsubmit="submitRecoverCode(event)">
+        <div class="vfy-code" id="recCode" onpaste="handleRecPaste(event)">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" oninput="handleRecInput(this,0)" onkeydown="handleRecKeydown(event,0)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" oninput="handleRecInput(this,1)" onkeydown="handleRecKeydown(event,1)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" oninput="handleRecInput(this,2)" onkeydown="handleRecKeydown(event,2)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" oninput="handleRecInput(this,3)" onkeydown="handleRecKeydown(event,3)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" oninput="handleRecInput(this,4)" onkeydown="handleRecKeydown(event,4)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" oninput="handleRecInput(this,5)" onkeydown="handleRecKeydown(event,5)" onfocus="this.select()">
+        </div>
+        <div class="vfy-msg" id="recMsg" role="alert">
+          <span class="vfy-msg-icon" aria-hidden="true">!</span>
+          <span class="vfy-msg-text"></span>
+        </div>
+      </form>
+
+      <div class="vfy-resend-row">
+        <span>Não recebeu o código?</span>
+        <button class="vfy-resend" type="button" onclick="resendRecoverCode()">Reenviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vfy-bottom vfy-bottom--solo">
+    <button class="vfy-submit" id="recSubmitBtn" type="submit" form="recForm" disabled>Continuar</button>
+  </div>
+</section>
+
+<!-- MODAL: e-mail not found (password recovery) -->
+<div class="vfy-alert-overlay" id="forgotNotFoundModal" onclick="closeForgotNotFound(event)">
+  <div class="vfy-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="forgotNotFoundTitle">
+    <h2 class="vfy-alert-title" id="forgotNotFoundTitle">E-mail não encontrado</h2>
+    <button class="vfy-alert-btn" type="button" onclick="closeForgotNotFound()">Tentar novamente</button>
+  </div>
+</div>
 
 <!-- SCREEN: COUPON DETAILS -->
 <div class="coupon-detail-overlay" id="couponDetailOverlay" onclick="closeCouponDetail(event)">

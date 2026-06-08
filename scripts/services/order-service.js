@@ -1,6 +1,17 @@
 (function () {
+  // Attach the customer's Bearer token when one is available, so the backend
+  // can link the order to the logged-in customer via the JWT (no customer_id
+  // is ever sent from the frontend).
+  function authOptions() {
+    const headers = window.PedeAquiCustomerAuth?.authHeaders?.() || {};
+    return Object.keys(headers).length ? { headers } : {};
+  }
+
   async function createOrder(restaurantSlug, payload) {
-    return window.PedeAquiApiClient.post(window.PedeAquiApiRoutes.createOrder(restaurantSlug), payload);
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.createOrder(restaurantSlug),
+      { method: 'POST', body: JSON.stringify(payload), ...authOptions() }
+    );
   }
 
   async function getOrder(restaurantSlug, orderNumber, phone) {

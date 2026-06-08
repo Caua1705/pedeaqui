@@ -20,7 +20,25 @@
       `/restaurants/${routeSlug(restaurantSlug)}/orders`,
 
     getOrder: (restaurantSlug, orderNumber, phone) =>
-      `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(orderNumber)}?phone=${encodeURIComponent(phone)}`
+      `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(orderNumber)}?phone=${encodeURIComponent(phone)}`,
+
+    // ---- Customer authentication ----
+    authRegister: () => '/auth/register',
+    authVerifyEmailCode: () => '/auth/verify-email-code',
+    authResendEmailCode: () => '/auth/resend-email-code',
+    authLogin: () => '/auth/login',
+    authForgotPassword: () => '/auth/forgot-password',
+    authVerifyResetCode: () => '/auth/verify-reset-code',
+    authResetPassword: () => '/auth/reset-password',
+
+    // ---- Authenticated customer ----
+    customerMe: () => '/customers/me',
+    customerOrders: () => '/customers/me/orders',
+    customerAddresses: () => '/customers/me/addresses',
+    customerAddress: addressId =>
+      `/customers/me/addresses/${routeSlug(addressId)}`,
+    customerAddressDefault: addressId =>
+      `/customers/me/addresses/${routeSlug(addressId)}/default`
   };
 
   window.API_ROUTES = API_ROUTES;

@@ -1,0 +1,303 @@
+/* ==========================================================================
+   EMAIL VERIFICATION + RESET PASSWORD SCREENS
+   Mobile full-screen, centered on desktop (matches .reg-screen / .lgn-screen).
+   Canvas: 414px wide. Header 85px, centered content, sticky bottom action.
+   ========================================================================== */
+
+.vfy-screen {
+  position: fixed;
+  inset: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 280;
+  width: 100%;
+  max-width: 414px;
+  height: 100dvh;
+  margin: 0 auto;
+  background: #FFFFFF;
+  color: #2F343A;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: none;
+  flex-direction: column;
+}
+.vfy-screen.active { display: flex; }
+
+/* ---------- Header (414 x 85) ---------- */
+.vfy-header {
+  position: relative;
+  flex-shrink: 0;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border-bottom: 1px solid #DEDEDE;
+}
+.vfy-back {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 11px;
+  background: #eaeaea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+.vfy-back svg { width: 17px; height: 17px; color: #7A7A7A; }
+.vfy-htitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #2F343A;
+  text-align: center;
+}
+
+/* ---------- Body ---------- */
+.vfy-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 32px 24px 24px 16px;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+.vfy-body {
+  width: 100%;
+  max-width: 374px;
+  margin: 0 auto;
+  text-align: center;
+}
+.vfy-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #2F343A;
+}
+.vfy-text {
+  margin: 0 0 22px;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #6F747A;
+  text-align: left;
+}
+.vfy-text strong { color: #2F343A; font-weight: 600; }
+
+/* ---------- Six digit boxes ---------- */
+.vfy-code {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.vfy-digit {
+  width: 52px;
+  height: 48px;
+  border: 1px solid #E8E8E8;
+  border-radius: 10px;
+  background: #FFFFFF;
+  text-align: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #141414;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s ease;
+  -moz-appearance: textfield;
+}
+.vfy-digit::-webkit-outer-spin-button,
+.vfy-digit::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+/* Light gray border at rest; a slightly darker border on the active box. */
+/* Keep the contour light and consistent — typing/focus should not thicken it. */
+.vfy-digit:focus { border-color: #D5D5D5; }
+
+/* Narrow phones: shrink so the six boxes never overflow the viewport. */
+@media (max-width: 360px) {
+  .vfy-code { gap: 8px; }
+  .vfy-digit { width: 48px; height: 44px; }
+}
+
+/* ---------- Feedback message (same pill style as the register form) ---------- */
+.vfy-msg {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  text-align: left;
+}
+.vfy-msg.show { display: flex; }
+.vfy-msg-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 400;
+}
+.vfy-msg.is-error { background: #FEF2F2; color: #E49090; }
+.vfy-msg.is-error .vfy-msg-icon { background: #FEE8E8; color: #E0392F; font-weight: 700; }
+.vfy-msg.is-success { background: #FFF3EC; color: #C76A2C; }
+.vfy-msg.is-success .vfy-msg-icon { display: none; }
+
+/* ---------- Resend ---------- */
+.vfy-resend-row {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  color: #777777;
+}
+.vfy-resend {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #777777;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* While the timer is counting down (button disabled) the label reads
+   "Reenviar código em MM:SS" — show it underlined in gray. */
+.vfy-resend:disabled {
+  color: #777777;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: not-allowed;
+}
+
+/* ---------- New-password fields (reset screen) ---------- */
+.vfy-field {
+  position: relative;
+  margin: 0 auto 22px;
+  max-width: 374px;
+  text-align: left;
+}
+.vfy-label {
+  position: absolute;
+  top: -8px;
+  left: 11px;
+  background: #FFFFFF;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #6F747A;
+  z-index: 2;
+  pointer-events: none;
+}
+.vfy-input {
+  width: 100%;
+  height: 60px;
+  border: 1px solid #D4D4D4;
+  border-radius: 16px;
+  background: #FFFFFF;
+  padding: 0 52px 0 24px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  color: #2F343A;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s ease;
+}
+.vfy-input:focus { border-color: #FF5F01; }
+.vfy-field--error .vfy-input { border-color: #EF5A5A; }
+.vfy-eye {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #6F747A;
+  cursor: pointer;
+}
+.vfy-eye svg { width: 20px; height: 20px; }
+.vfy-field-err {
+  display: none;
+  font-size: 12px;
+  line-height: 16px;
+  color: #EF5A5A;
+  margin-top: 6px;
+}
+.vfy-field-err.show { display: block; }
+
+/* ---------- Bottom action + footer link ---------- */
+/* Pinned to the bottom of the screen with a thin divider separating it from
+   the scrolling content above. The divider spans the full container width. */
+.vfy-bottom {
+  flex-shrink: 0;
+  height: 109px;
+  padding: 10px 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #FFFFFF;
+  box-sizing: border-box;
+  border-top: 1px solid #EEEEEE;
+}
+.vfy-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 384px;
+  max-width: 100%;
+  height: 41px;
+  margin: 0;
+  border: none;
+  border-radius: 10px;
+  background: #F36F21;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+/* Disabled = same brand orange, just faded, so it stays visually orange. */
+.vfy-submit:disabled {
+  background: #F36F21;
+  opacity: 0.5;
+  color: #FFFFFF;
+  cursor: not-allowed;
+}
+.vfy-foot {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #777777;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}

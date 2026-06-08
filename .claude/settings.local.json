@@ -22,7 +22,12 @@
       "Bash(Get-ChildItem *)",
       "Bash(Get-Content *)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Arenapc\\\\Desktop\\\\PROJETOS\\\\pedeaqui_front\" -Force -File | Select-Object Name | Where-Object {$_.Name -match '^\\\\.'})",
-      "Bash(node --check scripts/pages/restaurant-page.js)"
+      "Bash(node --check scripts/pages/restaurant-page.js)",
+      "Bash(xargs grep -l -i \"validação de telefone\\\\|validacao de telefone\\\\|login\\\\|register\\\\|cadastr\")",
+      "Bash(node --check scripts/services/customer-auth-service.js)",
+      "Bash(node --check scripts/services/order-service.js)",
+      "Bash(node --check scripts/services/api-routes.js)",
+      "Bash(grep -rniE \"#[0-9a-f]{0,2}\\(a|9|8|7|b|c|d|e|f\\)[0-9a-f]?[0-9a-f][0-9a-f]?\\(a|9|8|7|6|5\\)[0-9a-f]{0,2}|green|#1e9e5a|#2e7d|#10b9|#22c5|#34a8|seagreen|forestgreen\" styles/)"
     ]
   }
 }

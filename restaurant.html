@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="styles/operation.css">
 <link rel="stylesheet" href="styles/register.css">
 <link rel="stylesheet" href="styles/login.css">
+<link rel="stylesheet" href="styles/verify.css">
 </head>
 <body>
 
@@ -1395,6 +1396,85 @@
   </div>
 </section>
 
+<!-- SCREEN: CODE VERIFICATION (email verification / password reset) -->
+<section id="verifyScreen" class="vfy-screen" aria-label="Validação de e-mail">
+  <header class="vfy-header">
+    <button class="vfy-back" type="button" onclick="closeVerifyScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="vfy-htitle" id="vfyHeaderTitle">Validação de e-mail</h1>
+  </header>
+
+  <div class="vfy-scroll">
+    <div class="vfy-body">
+      <p class="vfy-text" id="vfyText"></p>
+
+      <form id="vfyForm" novalidate onsubmit="submitVerify(event)">
+        <div class="vfy-code" id="vfyCode" onpaste="handleVfyPaste(event)">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" oninput="handleVfyInput(this,0)" onkeydown="handleVfyKeydown(event,0)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" oninput="handleVfyInput(this,1)" onkeydown="handleVfyKeydown(event,1)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" oninput="handleVfyInput(this,2)" onkeydown="handleVfyKeydown(event,2)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" oninput="handleVfyInput(this,3)" onkeydown="handleVfyKeydown(event,3)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" oninput="handleVfyInput(this,4)" onkeydown="handleVfyKeydown(event,4)" onfocus="this.select()">
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" oninput="handleVfyInput(this,5)" onkeydown="handleVfyKeydown(event,5)" onfocus="this.select()">
+        </div>
+        <div class="vfy-msg" id="vfyMsg" role="alert">
+          <span class="vfy-msg-icon" aria-hidden="true">!</span>
+          <span class="vfy-msg-text"></span>
+        </div>
+      </form>
+
+      <div class="vfy-resend-row">
+        <button class="vfy-resend" id="vfyResend" type="button" onclick="resendVfyCode()">Reenviar código</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vfy-bottom">
+    <button class="vfy-submit" id="vfySubmitBtn" type="submit" form="vfyForm" disabled>Validar código</button>
+    <button class="vfy-foot" type="button" onclick="closeVerifyScreen()">Voltar</button>
+  </div>
+</section>
+
+<!-- SCREEN: NEW PASSWORD (password reset step 3) -->
+<section id="resetPasswordScreen" class="vfy-screen" aria-label="Recuperar senha">
+  <header class="vfy-header">
+    <button class="vfy-back" type="button" onclick="closeResetPasswordScreen()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </button>
+    <h1 class="vfy-htitle">Recuperar senha</h1>
+  </header>
+
+  <div class="vfy-scroll">
+    <div class="vfy-body">
+      <h2 class="vfy-title">Criar nova senha</h2>
+      <p class="vfy-text">Defina uma nova senha de acesso para a sua conta.</p>
+
+      <form id="resetPwForm" novalidate onsubmit="submitResetPassword(event)">
+        <div class="vfy-field">
+          <label class="vfy-label" for="resetNewPw">Nova senha</label>
+          <input class="vfy-input" id="resetNewPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
+          <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetNewPw', this)" aria-label="Mostrar senha">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          </button>
+        </div>
+        <div class="vfy-field">
+          <label class="vfy-label" for="resetConfirmPw">Confirme a nova senha</label>
+          <input class="vfy-input" id="resetConfirmPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
+          <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetConfirmPw', this)" aria-label="Mostrar senha">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          </button>
+        </div>
+        <div class="vfy-field-err" id="resetPwErr"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="vfy-bottom">
+    <button class="vfy-submit" id="resetPwSubmitBtn" type="submit" form="resetPwForm">Salvar nova senha</button>
+  </div>
+</section>
+
 <!-- SCREEN: COUPON DETAILS -->
 <div class="coupon-detail-overlay" id="couponDetailOverlay" onclick="closeCouponDetail(event)">
   <section class="coupon-detail-screen" id="couponDetailScreen" aria-label="Detalhes do cupom">
@@ -1450,6 +1530,7 @@
 <script src="scripts/utils/validators.js"></script>
 <script src="scripts/services/api-client.js"></script>
 <script src="scripts/services/api.js"></script>
+<script src="scripts/services/customer-auth-service.js"></script>
 <script src="scripts/services/restaurant-service.js"></script>
 <script src="scripts/services/menu-service.js"></script>
 <script src="scripts/services/order-service.js"></script>

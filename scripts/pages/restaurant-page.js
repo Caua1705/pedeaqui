@@ -727,6 +727,11 @@
       alert('Informe seu endereço de entrega.'); openAddressScreen(); return;
     }
     const address = operationContext.address;
+    // When the customer is logged in and picked a saved address, reference it by
+    // id. The backend resolves customer_id from the JWT — never send it here.
+    const savedAddressId = window.PedeAquiCustomerAuth?.isLoggedIn()
+      ? (address?.id || address?.address_id || customerAddress?.id || null)
+      : null;
     const orderPayload = {
       branch_id: operationContext.branch_id,
       customer: {
@@ -735,6 +740,7 @@
       },
       order_type: orderType,
       payment_method: paymentMethod,
+      ...(orderType === 'delivery' && savedAddressId ? { customer_address_id: savedAddressId } : {}),
       address: orderType === 'delivery' ? {
         street: address?.street || '',
         number: address?.number || '',
@@ -1857,9 +1863,12 @@
   const regTouched = new Set();
 
   let _regSummaryTimer = null;
-  function showRegSummary() {
+  function showRegSummary(message) {
     const el = $('regSummary');
     if (!el) return;
+    // The summary holds an icon span + a message span; update the message text.
+    const msgSpan = el.querySelector('span:last-child');
+    if (msgSpan) msgSpan.textContent = message || 'Preencha todos os campos';
     if (_regSummaryTimer) { clearTimeout(_regSummaryTimer); _regSummaryTimer = null; }
     el.classList.remove('hiding');
     el.classList.add('show');
@@ -1948,7 +1957,70 @@
     return firstInvalid;
   }
 
-  function submitRegister(event) {
+  // Build the API payload: digits-only phone/CPF and DD/MM/YYYY -> YYYY-MM-DD.
+  function buildRegisterPayload() {
+    const birth = onlyDigits($('regBirth').value); // DDMMYYYY
+    const birth_date = `${birth.slice(4, 8)}-${birth.slice(2, 4)}-${birth.slice(0, 2)}`;
+    return {
+      name: ($('regFullName').value || '').trim(),
+      email: ($('regEmail').value || '').trim(),
+      phone: onlyDigits($('regPhone').value),
+      birth_date,
+      cpf: onlyDigits($('regCpf').value),
+      password: $('regPassword').value || '',
+      marketing_opt_in: Boolean($('regPromo')?.checked),
+      privacy_accepted: Boolean($('regPrivacy')?.checked)
+    };
+  }
+
+  function regFieldDef(id) {
+    return REG_FIELDS.find(f => f.id === id);
+  }
+  function showRegFieldApiError(fieldId, msg) {
+    const def = regFieldDef(fieldId);
+    if (def) { setRegFieldError(def, msg); return true; }
+    return false;
+  }
+
+  // Map backend register errors onto the right fields (or the form summary).
+  function applyRegisterApiError(error) {
+    const data = error?.data;
+    let handled = false;
+
+    // FastAPI-style validation array: [{ loc: ['body','email'], msg }]
+    if (Array.isArray(data?.detail)) {
+      const map = { name: 'regFullName', email: 'regEmail', phone: 'regPhone', birth_date: 'regBirth', cpf: 'regCpf', password: 'regPassword' };
+      data.detail.forEach(item => {
+        const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : '';
+        if (map[field] && showRegFieldApiError(map[field], item.msg || 'Valor inválido')) handled = true;
+      });
+      if (handled) { showRegSummary('Revise os campos destacados'); return; }
+    }
+
+    const raw = String(error?.message || data?.detail || data?.message || '');
+    const msg = raw.toLowerCase();
+    const dup = /(already|já|ja |cadastrad|registr|exist|in use|em uso|duplicad)/.test(msg);
+
+    if ((msg.includes('email') || msg.includes('e-mail')) && dup) {
+      showRegFieldApiError('regEmail', 'Este e-mail já está cadastrado'); handled = true;
+    } else if ((msg.includes('phone') || msg.includes('telefone') || msg.includes('celular')) && dup) {
+      showRegFieldApiError('regPhone', 'Este telefone já está cadastrado'); handled = true;
+    } else if (msg.includes('cpf') && dup) {
+      showRegFieldApiError('regCpf', 'Este CPF já está cadastrado'); handled = true;
+    } else if (msg.includes('cpf')) {
+      showRegFieldApiError('regCpf', 'CPF inválido'); handled = true;
+    } else if (msg.includes('password') || msg.includes('senha')) {
+      showRegFieldApiError('regPassword', raw || 'Senha inválida'); handled = true;
+    } else if (msg.includes('privacy') || msg.includes('privacidade')) {
+      showRegError('regPrivacyErr', 'É necessário aceitar a política de privacidade');
+      handled = true;
+    }
+
+    showRegSummary(handled ? 'Revise os campos destacados' : (raw || 'Não foi possível concluir o cadastro.'));
+  }
+
+  let _registerSubmitting = false;
+  async function submitRegister(event) {
     if (event) event.preventDefault();
     const firstInvalid = runRegisterValidation();
     if (firstInvalid) {
@@ -1957,15 +2029,269 @@
       if (typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
       return;
     }
-    // Valid — proceed with the (mock) registration. No API call happens above this line.
-    customer = { name: ($('regFullName').value || '').trim(), phone: onlyDigits($('regPhone').value) };
-    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    if (_registerSubmitting) return;
+    _registerSubmitting = true;
+    const btn = $('regSubmitBtn');
+    const restore = () => { _registerSubmitting = false; if (btn) { btn.disabled = false; btn.textContent = 'Cadastre-se'; } };
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    try {
+      const reg = buildRegisterPayload();
+      const res = await window.PedeAquiCustomerAuth.registerCustomer(reg);
+      // Do not auto-login. Move the user to e-mail verification.
+      const email = res?.email || reg.email;
+      restore();
+      openVerifyScreen({ email, source: 'register' });
+    } catch (error) {
+      applyRegisterApiError(error);
+      restore();
+    }
+  }
+
+  /* ---------- Code verification screen (e-mail verify + password reset) ---------- */
+
+  let verifyCtx = { email: '', source: 'register' };
+  let _vfyTimer = null;
+  let _vfyRemaining = 0;
+  let _vfySubmitting = false;
+  const VFY_RESEND_SECONDS = 60;
+
+  // 'cliente@email.com' -> 'c***@email.com'
+  function maskEmail(email) {
+    const s = String(email || '');
+    const at = s.indexOf('@');
+    if (at <= 0) return s;
+    return `${s.slice(0, 1)}***${s.slice(at)}`;
+  }
+
+  const vfyDigits = () => Array.from(document.querySelectorAll('#vfyCode .vfy-digit'));
+  const getVfyCode = () => vfyDigits().map(i => i.value).join('');
+
+  function updateVfySubmitState() {
+    const btn = $('vfySubmitBtn');
+    if (btn) btn.disabled = getVfyCode().length !== 6;
+  }
+  function clearVfyInputs() {
+    vfyDigits().forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    $('verifyScreen')?.classList.remove('vfy-error');
+    updateVfySubmitState();
+  }
+  function showVfyMsg(msg, type) {
+    const el = $('vfyMsg');
+    if (!el) return;
+    const textEl = el.querySelector('.vfy-msg-text') || el;
+    textEl.textContent = msg || '';
+    el.classList.remove('is-error', 'is-success', 'show');
+    if (msg) el.classList.add('show', type === 'success' ? 'is-success' : 'is-error');
+  }
+
+  function openVerifyScreen(ctx) {
+    verifyCtx = { email: ctx?.email || '', source: ctx?.source || 'register' };
+    const isReset = verifyCtx.source === 'reset';
+    const titleText = isReset ? 'Recuperar senha' : 'Validação de e-mail';
+    if ($('vfyHeaderTitle')) $('vfyHeaderTitle').textContent = titleText;
+    if ($('vfyText')) {
+      $('vfyText').innerHTML = `Nós enviamos um código de 6 dígitos para <strong>${esc(maskEmail(verifyCtx.email))}</strong>. O código expira em alguns minutos, insira o código abaixo:`;
+    }
+    showVfyMsg('');
+    clearVfyInputs();
     $('registerScreen')?.classList.remove('active');
+    $('loginScreen')?.classList.remove('active');
     closeModalId('loginModal');
-    if (_loginOrigin === 'orders') {
-      mobNavOrders();
+    $('verifyScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    startVfyTimer();
+    setTimeout(() => vfyDigits()[0]?.focus(), 60);
+  }
+
+  function closeVerifyScreen() {
+    stopVfyTimer();
+    $('verifyScreen')?.classList.remove('active');
+    // Return to a sensible previous screen.
+    if (verifyCtx.source === 'register') $('registerScreen')?.classList.add('active');
+    else openModal('loginModal');
+  }
+
+  function handleVfyInput(el, index) {
+    el.value = el.value.replace(/\D/g, '').slice(0, 1);
+    el.classList.toggle('filled', Boolean(el.value));
+    $('verifyScreen')?.classList.remove('vfy-error');
+    showVfyMsg('');
+    if (el.value && index < 5) vfyDigits()[index + 1]?.focus();
+    updateVfySubmitState();
+  }
+
+  function handleVfyKeydown(event, index) {
+    const inputs = vfyDigits();
+    if (event.key === 'Backspace') {
+      if (!inputs[index].value && index > 0) {
+        const prev = inputs[index - 1];
+        prev.focus();
+        prev.value = '';
+        prev.classList.remove('filled');
+        event.preventDefault();
+        updateVfySubmitState();
+      }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+      inputs[index - 1].focus(); event.preventDefault();
+    } else if (event.key === 'ArrowRight' && index < 5) {
+      inputs[index + 1].focus(); event.preventDefault();
+    }
+  }
+
+  function handleVfyPaste(event) {
+    event.preventDefault();
+    const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+    const digits = text.replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    const inputs = vfyDigits();
+    inputs.forEach((inp, i) => {
+      inp.value = digits[i] || '';
+      inp.classList.toggle('filled', Boolean(digits[i]));
+    });
+    inputs[Math.min(digits.length, 5)]?.focus();
+    updateVfySubmitState();
+  }
+
+  function renderVfyTimer() {
+    const btn = $('vfyResend');
+    const hint = $('vfyResendHint');
+    if (!btn) return;
+    if (_vfyRemaining > 0) {
+      const mm = String(Math.floor(_vfyRemaining / 60)).padStart(2, '0');
+      const ss = String(_vfyRemaining % 60).padStart(2, '0');
+      btn.textContent = `Reenviar código em ${mm}:${ss}`;
+      if (hint) hint.style.display = 'none';
     } else {
-      renderProfileView();
+      btn.textContent = 'Reenviar código';
+      if (hint) hint.style.display = '';
+    }
+  }
+  function stopVfyTimer() {
+    if (_vfyTimer) { clearInterval(_vfyTimer); _vfyTimer = null; }
+  }
+  function startVfyTimer() {
+    stopVfyTimer();
+    _vfyRemaining = VFY_RESEND_SECONDS;
+    const btn = $('vfyResend');
+    if (btn) btn.disabled = true;
+    renderVfyTimer();
+    _vfyTimer = setInterval(() => {
+      _vfyRemaining -= 1;
+      if (_vfyRemaining <= 0) {
+        stopVfyTimer();
+        if (btn) btn.disabled = false;
+      }
+      renderVfyTimer();
+    }, 1000);
+  }
+
+  async function resendVfyCode() {
+    const btn = $('vfyResend');
+    if (btn?.disabled) return; // respect the running timer (no endpoint spam)
+    try {
+      if (verifyCtx.source === 'reset') {
+        await window.PedeAquiCustomerAuth.forgotPassword({ email: verifyCtx.email });
+      } else {
+        await window.PedeAquiCustomerAuth.resendEmailCode({ email: verifyCtx.email });
+      }
+      // Sem mensagem de confirmação — apenas reinicia o timer.
+      showVfyMsg('');
+    } catch (error) {
+      showVfyMsg(error?.message || 'Não foi possível reenviar o código.', 'error');
+    }
+    startVfyTimer();
+  }
+
+  async function submitVerify(event) {
+    if (event) event.preventDefault();
+    const code = getVfyCode();
+    if (code.length !== 6) { updateVfySubmitState(); return; }
+    if (_vfySubmitting) return;
+    _vfySubmitting = true;
+    const btn = $('vfySubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Validando...'; }
+    try {
+      if (verifyCtx.source === 'reset') {
+        const res = await window.PedeAquiCustomerAuth.verifyResetCode({ email: verifyCtx.email, code });
+        stopVfyTimer();
+        $('verifyScreen')?.classList.remove('active');
+        openResetPasswordScreen(res?.reset_token, verifyCtx.email);
+      } else {
+        await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
+        showVfyMsg('E-mail verificado com sucesso! Faça login para continuar.', 'success');
+        stopVfyTimer();
+        const email = verifyCtx.email;
+        setTimeout(() => {
+          $('verifyScreen')?.classList.remove('active');
+          openSigninScreen();
+          if ($('loginEmail')) $('loginEmail').value = email;
+        }, 900);
+      }
+    } catch (error) {
+      $('verifyScreen')?.classList.add('vfy-error');
+      showVfyMsg('O código de verificação é inválido ou expirou!', 'error');
+    } finally {
+      _vfySubmitting = false;
+      if (btn) btn.textContent = 'Validar código';
+      updateVfySubmitState();
+    }
+  }
+
+  /* ---------- New password screen (password reset step 3) ---------- */
+
+  let resetPwCtx = { reset_token: '', email: '' };
+  let _resetSubmitting = false;
+
+  function openResetPasswordScreen(resetToken, email) {
+    resetPwCtx = { reset_token: resetToken || '', email: email || '' };
+    if ($('resetNewPw')) $('resetNewPw').value = '';
+    if ($('resetConfirmPw')) $('resetConfirmPw').value = '';
+    hideResetPwErr();
+    $('resetPasswordScreen')?.classList.add('active');
+    document.body.classList.add('modal-open');
+    setTimeout(() => $('resetNewPw')?.focus(), 60);
+  }
+  function closeResetPasswordScreen() {
+    $('resetPasswordScreen')?.classList.remove('active');
+    openModal('loginModal');
+  }
+  function showResetPwErr(msg, fieldId) {
+    const el = $('resetPwErr');
+    if (el) { el.textContent = msg; el.classList.add('show'); }
+    if (fieldId) $(fieldId)?.closest('.vfy-field')?.classList.add('vfy-field--error');
+  }
+  function hideResetPwErr() {
+    const el = $('resetPwErr');
+    if (el) { el.textContent = ''; el.classList.remove('show'); }
+    $('resetNewPw')?.closest('.vfy-field')?.classList.remove('vfy-field--error');
+    $('resetConfirmPw')?.closest('.vfy-field')?.classList.remove('vfy-field--error');
+  }
+  function handleResetPwInput() { hideResetPwErr(); }
+
+  async function submitResetPassword(event) {
+    if (event) event.preventDefault();
+    const np = $('resetNewPw')?.value || '';
+    const cp = $('resetConfirmPw')?.value || '';
+    hideResetPwErr();
+    if (np.length < 8) { showResetPwErr('A senha deve ter ao menos 8 caracteres', 'resetNewPw'); return; }
+    if (np !== cp) { showResetPwErr('As senhas não coincidem', 'resetConfirmPw'); return; }
+    if (_resetSubmitting) return;
+    _resetSubmitting = true;
+    const btn = $('resetPwSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+    try {
+      await window.PedeAquiCustomerAuth.resetPassword({ reset_token: resetPwCtx.reset_token, new_password: np, confirm_password: cp });
+      const email = resetPwCtx.email;
+      $('resetPasswordScreen')?.classList.remove('active');
+      openSigninScreen();
+      if ($('loginEmail')) $('loginEmail').value = email;
+      showVfyMsg('');
+      alert('Senha redefinida com sucesso. Faça login com a nova senha.');
+    } catch (error) {
+      showResetPwErr(error?.message || 'Não foi possível redefinir a senha.');
+    } finally {
+      _resetSubmitting = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
     }
   }
 
@@ -2035,11 +2361,48 @@
     openModal('loginModal');
   }
 
+  const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+
+  // Forgot password — step 1: request a reset code, then open the code screen.
   function loginForgotPassword() {
-    alert('A recuperação de senha estará disponível em breve.');
+    const current = ($('loginEmail')?.value || '').trim();
+    let email = isEmailValue(current) ? current : '';
+    if (!email) {
+      email = (prompt('Informe o e-mail cadastrado para recuperar a senha:', '') || '').trim();
+    }
+    if (!email || !isEmailValue(email)) {
+      if (email) alert('Informe um e-mail válido.');
+      return;
+    }
+    // Always advance to the code screen (do not reveal whether the e-mail exists).
+    Promise.resolve(window.PedeAquiCustomerAuth.forgotPassword({ email }))
+      .catch(() => {})
+      .finally(() => openVerifyScreen({ email, source: 'reset' }));
   }
 
-  function submitLogin(event) {
+  // Persist a successful login into both the shared auth store and the
+  // existing in-page `customer` shape so the current UI keeps working.
+  function applyLoggedSession(accessToken, apiCustomer) {
+    window.PedeAquiCustomerAuth.saveSession({ access_token: accessToken, customer: apiCustomer });
+    customer = {
+      id: apiCustomer?.id || null,
+      name: apiCustomer?.name || '',
+      phone: apiCustomer?.phone || '',
+      email: apiCustomer?.email || ''
+    };
+    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+  }
+
+  function finishLoginNavigation() {
+    closeModalId('loginModal');
+    const loginPrompt = $('homeLoginPrompt');
+    if (loginPrompt && customer?.name) loginPrompt.textContent = customer.name;
+    if (_loginOrigin === 'orders') mobNavOrders();
+    else renderProfileView();
+  }
+
+  let _loginSubmitting = false;
+  async function submitLogin(event) {
     if (event) event.preventDefault();
     let firstInvalid = null;
     LOGIN_FIELDS.forEach(def => {
@@ -2059,9 +2422,59 @@
       if (typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
       return;
     }
-    // Valid — proceed with the existing authentication behaviour (mock sign-in).
-    $('loginScreen')?.classList.remove('active');
-    mockLogin('signin');
+    if (_loginSubmitting) return;
+    _loginSubmitting = true;
+    const btn = $('loginSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+    const rawLogin = ($('loginEmail').value || '').trim();
+    const login = isEmailValue(rawLogin) ? rawLogin : onlyDigits(rawLogin);
+    try {
+      const res = await window.PedeAquiCustomerAuth.loginCustomer({ login, password: $('loginPassword').value || '' });
+      // Unverified customer → route them to e-mail verification (not re-register).
+      if (res?.requires_email_verification) {
+        openVerifyScreen({ email: res.email || (isEmailValue(rawLogin) ? rawLogin : ''), source: 'login' });
+        return;
+      }
+      if (res?.access_token) {
+        applyLoggedSession(res.access_token, res.customer);
+        $('loginScreen')?.classList.remove('active');
+        finishLoginNavigation();
+      } else {
+        setLgnFieldError(LOGIN_FIELDS[1], 'Não foi possível entrar. Tente novamente.');
+      }
+    } catch (error) {
+      $('loginEmail')?.closest('.lgn-field')?.classList.add('lgn-field--error');
+      setLgnFieldError(LOGIN_FIELDS[1], error?.message || 'E-mail/telefone ou senha inválidos.');
+    } finally {
+      _loginSubmitting = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
+    }
+  }
+
+  // Sync the logged customer against /customers/me; clear session on 401.
+  async function syncCustomerSession() {
+    const auth = window.PedeAquiCustomerAuth;
+    if (!auth?.isLoggedIn()) return;
+    const stored = auth.getStoredCustomer();
+    if (stored && !customer) {
+      customer = { id: stored.id || null, name: stored.name || '', phone: stored.phone || '', email: stored.email || '' };
+    }
+    try {
+      const me = await auth.getCurrentCustomer();
+      if (me) {
+        customer = { id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' };
+        localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+        auth.setStoredCustomer(me);
+        renderProfileView();
+      }
+    } catch (error) {
+      if (error?.status === 401) {
+        auth.logout();
+        customer = null;
+        localStorage.removeItem(STORAGE_CUSTOMER);
+        renderProfileView();
+      }
+    }
   }
 
   let _policyReturn = 'login';
@@ -2213,21 +2626,51 @@
     document.body.classList.add('modal-open');
   }
 
-  function renderOrdersView() {
-    const body = $('mobOrdersBody');
-    if (!body) return;
-    const orders = window.PedeAquiOrderState?.listOrders() || [];
+  // Tolerant order-card renderer that copes with both the local order shape and
+  // the backend /customers/me/orders shape (field names differ).
+  function orderCardHtml(order) {
+    const number = order.order_number ?? order.number ?? order.id ?? '';
+    const items = order.items || [];
+    const status = order.status_label || order.status || 'Enviado';
+    const type = order.type || order.order_type || '';
+    const payment = order.payment || order.payment_method || '';
+    const total = order.total ?? order.total_amount ?? order.total_price ?? 0;
+    const itemHtml = items.map(i => {
+      const qty = i.qty ?? i.quantity ?? 1;
+      const name = i.name || i.product_name || i.product?.name || 'Item';
+      const price = i.price ?? i.unit_price ?? i.total ?? 0;
+      return `<div class="order-line"><span>${esc(qty)}x ${esc(name)}</span><strong>${fmt(price * qty)}</strong></div>`;
+    }).join('');
+    return `
+      <article class="order-card">
+        <div class="order-card-head"><strong>Pedido #${esc(number)}</strong><span>${esc(status)}</span></div>
+        ${itemHtml}
+        <div class="order-total"><span>${esc(type)}${type && payment ? ' • ' : ''}${esc(payment)}</span><strong>${fmt(total)}</strong></div>
+      </article>`;
+  }
+
+  function paintOrders(body, orders) {
     if (!orders.length) {
       body.innerHTML = `<div class="mob-view-empty"><div class="mob-view-empty-title">Nenhum pedido encontrado</div><div class="mob-view-empty-sub">Pedidos finalizados aparecerão aqui.</div></div>`;
       return;
     }
-    body.innerHTML = orders.map(order => `
-      <article class="order-card">
-        <div class="order-card-head"><strong>Pedido #${order.order_number}</strong><span>Enviado</span></div>
-        ${(order.items || []).map(i => `<div class="order-line"><span>${i.qty}x ${i.name}</span><strong>${fmt(i.price * i.qty)}</strong></div>`).join('')}
-        <div class="order-total"><span>${order.type} • ${order.payment}</span><strong>${fmt(order.total)}</strong></div>
-      </article>
-    `).join('');
+    body.innerHTML = orders.map(orderCardHtml).join('');
+  }
+
+  function renderOrdersView() {
+    const body = $('mobOrdersBody');
+    if (!body) return;
+    // Render local orders immediately for a responsive view.
+    paintOrders(body, window.PedeAquiOrderState?.listOrders() || []);
+    // When logged in, replace with the customer's server-side order history.
+    const auth = window.PedeAquiCustomerAuth;
+    if (!auth?.isLoggedIn()) return;
+    auth.getCustomerOrders()
+      .then(res => {
+        const orders = Array.isArray(res) ? res : (res?.orders || res?.items || res?.data || []);
+        if (Array.isArray(orders)) paintOrders(body, orders);
+      })
+      .catch(error => { if (error?.status === 401) syncCustomerSession(); });
   }
 
   function renderProfileView() {
@@ -2245,6 +2688,7 @@
     if (!confirm('Deseja sair da sua conta?')) return;
     customer = null;
     localStorage.removeItem(STORAGE_CUSTOMER);
+    window.PedeAquiCustomerAuth?.logout();
     closeProfSub();
     renderProfileView();
     const loginPrompt = $('homeLoginPrompt');
@@ -2332,6 +2776,9 @@
     showHomeTab();
     initPageRubberBand();
     initMenuHeaderHide();
+    // Best-effort: refresh the logged customer against the backend (clears
+    // the session on 401). Runs after first paint so it never blocks the page.
+    syncCustomerSession();
   }
 
   Object.assign(window, {
@@ -2344,6 +2791,8 @@
     toggleRegPassword, handleRegFieldInput, handleRegFieldBlur, handleRegPrivacyInput, submitRegister, logout,
     openSigninScreen, closeSigninScreen, submitLogin, loginForgotPassword,
     handleLoginFieldInput, handleLoginFieldBlur,
+    closeVerifyScreen, handleVfyInput, handleVfyKeydown, handleVfyPaste, submitVerify, resendVfyCode,
+    openResetPasswordScreen, closeResetPasswordScreen, submitResetPassword, handleResetPwInput,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

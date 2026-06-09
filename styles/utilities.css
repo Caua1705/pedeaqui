@@ -4453,7 +4453,7 @@ body.menu-tab .product-card{
   margin:0!important;
   padding:14px 20px 12px!important;
   border:0!important;
-  border-bottom:1px solid #eeeeee!important;
+  border-bottom:1px solid #CCCCCC!important;
   border-radius:0!important;
   box-shadow:none!important;
   background:#ffffff!important;
@@ -4820,7 +4820,7 @@ body.menu-tab .delivery-widget .address-strip .address-card-chevron{
 body.menu-tab #mobIdentity{
   margin-top:14px!important;
   transform:translateY(-2px)!important;
-  border-bottom:1px solid #ECECEC!important;
+  border-bottom:1px solid #DEDEDE!important;
   height:75px!important;
   min-height:75px!important;
   padding-bottom:12px!important;

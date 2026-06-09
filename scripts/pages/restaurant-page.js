@@ -396,11 +396,13 @@
     if (!nav || !container) return;
     nav.innerHTML = '';
     container.innerHTML = '';
+    let renderedCategoryCount = 0;
 
-    categories.forEach((cat, idx) => {
+    categories.forEach(cat => {
       const catProducts = products.filter(p => p.is_available && (p.category_slug === cat.slug || p.category_slug === cat.id || slug(p.category) === cat.slug));
       if (!catProducts.length) return;
-      nav.insertAdjacentHTML('beforeend', `<button class="cat ${idx === 0 ? 'active' : ''}" onclick="scrollToCategory('${cat.slug}', this)">${cat.name}</button>`);
+      const isFirstRenderedCategory = renderedCategoryCount === 0;
+      nav.insertAdjacentHTML('beforeend', `<button class="cat ${isFirstRenderedCategory ? 'active' : ''}" onclick="scrollToCategory('${cat.slug}', this)">${cat.name}</button>`);
       container.insertAdjacentHTML('beforeend', `
         <section class="menu-section" id="${cat.slug}">
           <h2 class="menu-section-title">${cat.name}</h2>
@@ -421,6 +423,7 @@
           </div>
         </section>
       `);
+      renderedCategoryCount += 1;
     });
   }
 
@@ -482,7 +485,10 @@
       document.querySelectorAll('.menu-section').forEach(sec => {
         if (sec.getBoundingClientRect().top <= 150) currentId = sec.id;
       });
-      if (!currentId) return;
+      if (!currentId) {
+        document.querySelector('.cat')?.classList.add('active');
+        return;
+      }
       document.querySelectorAll('.cat').forEach(btn => {
         const active = btn.getAttribute('onclick')?.includes(`'${currentId}'`);
         btn.classList.toggle('active', Boolean(active));

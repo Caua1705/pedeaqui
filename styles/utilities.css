@@ -4178,12 +4178,13 @@ body.menu-tab .mob-rest-details{
   justify-content:center!important;
   overflow:hidden!important;
   padding:0!important;
+  margin-left:8px!important;
 }
 
 body.menu-tab .mob-rest-name{
   display:block!important;
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:15px!important;
+  line-height:19px!important;
   font-weight:700!important;
   color:var(--text-heading)!important;
   letter-spacing:0!important;
@@ -4217,18 +4218,18 @@ body.menu-tab .mob-identity .mob-badge-open{
   gap:4px!important;
   font-size:11px!important;
   line-height:15px!important;
-  font-weight:400!important;
+  font-weight:500!important;
   color:var(--primary-orange)!important;
 }
 
 body.menu-tab .mob-identity .mob-badge-open::before{
   content:''!important;
   display:inline-block!important;
-  width:5px!important;
-  height:5px!important;
-  min-width:5px!important;
-  min-height:5px!important;
-  flex:0 0 5px!important;
+  width:4.5px!important;
+  height:4.5px!important;
+  min-width:4.5px!important;
+  min-height:4.5px!important;
+  flex:0 0 4.5px!important;
   border-radius:50%!important;
   background:var(--primary-orange)!important;
   margin:0!important;
@@ -4238,13 +4239,15 @@ body.menu-tab .mob-identity .mob-status-sep{
   color:#C7CBD0!important;
   font-size:11px!important;
   line-height:15px!important;
-  font-weight:400!important;
+  font-weight:500!important;
+  display:inline-block!important;
+  transform:scaleY(0.82)!important;
 }
 
 body.menu-tab .mob-identity .mob-pedido-min{
   font-size:11px!important;
   line-height:15px!important;
-  font-weight:400!important;
+  font-weight:500!important;
   color:var(--text-muted)!important;
 }
 
@@ -4297,7 +4300,7 @@ body.menu-tab .search-cat-inner{
 body.menu-tab .search-bar-wrap{
   width:100%!important;
   max-height:none!important;
-  padding:14px 20px 18px!important;
+  padding:20px 20px 18px!important;
   overflow:visible!important;
 }
 
@@ -4310,7 +4313,7 @@ body.menu-tab .search-bar{
   height:36px!important;
   min-height:36px!important;
   border:1px solid var(--input-border)!important;
-  border-radius:8px!important;
+  border-radius:11px!important;
   background:#ffffff!important;
   padding:0 14px!important;
   display:flex!important;
@@ -4324,7 +4327,9 @@ body.menu-tab .search-bar svg{
   height:16px!important;
   flex:0 0 16px!important;
   margin-right:10px!important;
-  color:var(--text-heading)!important;
+  color:#111111!important;
+  stroke:#111111!important;
+  stroke-width:2.4!important;
 }
 
 body.menu-tab .search-bar input{
@@ -4746,4 +4751,21 @@ body.menu-tab .delivery-widget .address-strip .address-card-copy small{
 }
 body.menu-tab .delivery-widget .address-strip .address-card-chevron{
   display:none!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARDÁPIO — descer tudo abaixo do widget (identidade/logo/nome +
+   busca + categorias + produtos), mantendo o widget no lugar.
+   Precisa de seletor de ID porque a regra base #mobIdentity
+   (linha ~2084) trava margin:0!important com especificidade 1,0,0,
+   que vence body.menu-tab .mob-identity. O gap no topo da identidade
+   cresce o sticky-header e empurra a busca/categorias/produtos junto.
+   ════════════════════════════════════════════════════════════════ */
+body.menu-tab #mobIdentity{
+  margin-top:14px!important;
+  transform:translateY(-2px)!important;
+  border-bottom:1px solid #ECECEC!important;
+  height:81px!important;
+  min-height:81px!important;
+  padding-bottom:18px!important;
 }

@@ -964,10 +964,9 @@
 
   function confirmOperation() {
     if (!opDraft?.branch_id) return;
-    if (opDraft.order_type === 'delivery' && !opDraft.address) {
-      openAddressScreen();
-      return;
-    }
+    // Delivery sem endereço: confirma assim mesmo e mostra o widget com os 3
+    // mini-widgets. O endereço fica como "Use seu endereço para melhores
+    // resultados" (renderWidget) e só é exigido no checkout.
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
     persistOperationContext();

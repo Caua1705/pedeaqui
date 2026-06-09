@@ -41,20 +41,20 @@
 .store-address-card h3{font-size:.9rem;color:#333;margin-bottom:10px}
 .store-address-card p{font-size:.8rem;color:#8a8a8a;line-height:1.55;margin-bottom:12px}
 
-#loginModal{background:#fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
-#loginModal .modal--login{position:relative!important;width:calc(100% - 16px)!important;max-width:430px!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;margin:10px auto!important;border:0!important;border-radius:12px!important;background:#fff!important;transform:translateY(0)!important;padding:80px 28px 28px!important;display:flex!important;flex-direction:column!important;align-items:center!important}
-.modal--login .login-close{position:absolute!important;top:16px!important;right:16px!important;width:34px!important;height:34px!important;border-radius:8px!important;background:#f3f3f3!important;color:#999!important;border:0!important;font-size:1.1rem!important;font-weight:700!important}
-.modal--login .login-logo{width:130px!important;height:130px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:0 auto 14px!important;background:var(--brand-accent)!important}
-.modal--login .login-logo img{width:100%!important;height:100%!important;object-fit:cover!important}
+#loginModal{background:#EEF3FA!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
+#loginModal .modal--login{position:relative!important;width:calc(100% - 20px)!important;max-width:400px!important;min-height:calc(100vh - 20px)!important;height:auto!important;max-height:none!important;margin:10px auto!important;border:0!important;border-radius:14px!important;background:#fff!important;transform:translateY(0)!important;padding:0 18px 20px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important}
+.modal--login .login-close{position:absolute!important;top:20px!important;right:20px!important;width:42px!important;height:42px!important;border-radius:10px!important;background:#F5F5F5!important;color:#a0a0a0!important;border:0!important;font-size:11.5px!important;font-weight:900!important;-webkit-text-stroke:0.45px currentColor!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.modal--login .login-logo{width:150px!important;height:150px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:85px auto 0!important;background:var(--brand-accent)!important}
+.modal--login .login-logo img{width:100%!important;height:100%!important;object-fit:contain!important}
 .modal--login .login-logo .mob-logo-fallback{width:100%;height:100%;border-radius:50%;background:var(--brand-accent);color:#fff;font-size:1.9rem}
-.modal--login .login-rest-name{font-size:18px!important;line-height:24px!important;font-weight:700!important;color:#111!important;text-align:center!important;margin:0 0 32px!important}
+.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:560!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important;text-align:center!important;margin:30px 0 66px!important}
 .modal--login p{display:none!important}
-.modal--login .cart-cta-btn{height:50px!important;border-radius:50px!important;background:var(--brand-accent)!important;color:#fff!important;font-size:14px!important;font-weight:700!important;box-shadow:none!important;margin:0 0 8px!important;padding:0!important}
-.modal--login .login-secondary{width:100%!important;height:50px!important;border:1.5px solid var(--brand-accent)!important;border-radius:50px!important;background:#fff!important;color:var(--brand-accent)!important;font-size:14px!important;font-weight:700!important;padding:0!important}
+.modal--login .cart-cta-btn{width:354px!important;max-width:100%!important;height:41px!important;border-radius:10px!important;background:#F36F21!important;color:#fff!important;font-size:12px!important;font-weight:700!important;box-shadow:none!important;margin:0!important;padding:0!important}
+.modal--login .login-secondary{width:354px!important;max-width:100%!important;height:41px!important;border:0!important;border-radius:10px!important;background:#FBE6D9!important;color:#F36F21!important;font-size:12px!important;font-weight:700!important;margin:10px 0 0!important;padding:0!important}
 .modal--login.policy-hidden{display:none!important}
 .modal--login .login-privacy{display:none!important}
-.login-policy-links{margin-top:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important}
-.policy-link{border:0!important;background:transparent!important;color:#9a9a9a!important;font:inherit!important;font-size:12px!important;line-height:18px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer!important;padding:0!important}
+.login-policy-links{position:absolute!important;bottom:24px!important;left:0!important;right:0!important;margin:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;text-align:center!important}
+.policy-link{border:0!important;background:transparent!important;color:#7a7a7a!important;font:inherit!important;font-size:12px!important;line-height:17px!important;font-weight:500!important;text-decoration:none!important;cursor:pointer!important;padding:0!important}
 .policy-link:hover{color:var(--brand-accent)!important}
 
 .policy-screen{
@@ -366,8 +366,8 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .store-info-neighborhood{font-size:14px!important;line-height:18px!important;font-weight:500!important}
 .store-contact-row,.store-info-tabs button,.store-hours-row,.store-hours-row strong,.store-address-card p{font-size:12px!important;line-height:18px!important}
 .store-address-card h3{font-size:14px!important;line-height:18px!important;font-weight:700!important}
-.modal--login .login-rest-name{font-size:18px!important;line-height:24px!important;font-weight:700!important}
-.modal--login .cart-cta-btn,.modal--login .login-secondary{font-size:14px!important;line-height:18px!important;font-weight:700!important}
+.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:560!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important}
+.modal--login .cart-cta-btn,.modal--login .login-secondary{font-size:12px!important;line-height:18px!important;font-weight:700!important}
 .modal--login .login-privacy{font-size:12px!important;line-height:18px!important}
 .prof-hero-label,.prof-option-title,.cart-rest-name,.cir-name,.pm-name{font-size:14px!important;line-height:18px!important;font-weight:600!important}
 .prof-hero-sub,.prof-option-desc,.cir-obs,.pm-desc,.cps-row,.cart-empty-text{font-size:12px!important;line-height:18px!important}
@@ -684,7 +684,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   min-height:210px!important;
   padding:6px 6px 12px!important;
   border:1.5px dashed #f0b898!important;
-  border-radius:12px!important;
+  border-radius:10px!important;
   background:#fff8f5!important;
   box-shadow:none!important;
   text-align:center!important;
@@ -1220,14 +1220,14 @@ body{
   background:#f4f4f4!important;
 }
 #loginModal .modal--login{
-  max-width:430px!important;
-  padding:80px 28px 28px!important;
+  max-width:400px!important;
+  padding:0 18px 20px!important;
 }
 .modal--login .cart-cta-btn,
 .modal--login .login-secondary{
-  height:45px!important;
-  border-radius:999px!important;
-  font-size:13px!important;
+  height:41px!important;
+  border-radius:10px!important;
+  font-size:12px!important;
   font-weight:700!important;
 }
 .policy-header{
@@ -2591,7 +2591,7 @@ body:not(.menu-tab) .home-order-cta,
     max-height:75px!important;
     margin:20px auto 14px!important;
     padding:10px 14px!important;
-    border-radius:12px!important;
+    border-radius:10px!important;
     background:#f3f3f3!important;
     box-shadow:none!important;
   }
@@ -2726,33 +2726,33 @@ body:not(.menu-tab) .home-order-cta,
 /* Login screen buttons: fixed reference size with softer corners. */
 #loginModal .cart-cta-btn,
 #loginModal .login-secondary{
-  width:322px!important;
-  max-width:322px!important;
-  height:45px!important;
-  min-height:45px!important;
-  max-height:45px!important;
+  width:354px!important;
+  max-width:100%!important;
+  height:41px!important;
+  min-height:41px!important;
+  max-height:41px!important;
   border-radius:10px!important;
   padding:0!important;
 }
 
 #loginModal .modal--login{
-  padding-top:94px!important;
+  padding-top:0!important;
 }
 
 #loginModal .login-logo{
-  transform:translateY(-10px)!important;
+  transform:none!important;
 }
 
 #loginModal .cart-cta-btn{
-  margin-top:12px!important;
+  margin-top:0!important;
 }
 
 #loginModal .login-secondary{
-  margin-top:3px!important;
+  margin-top:10px!important;
 }
 
 #loginModal .login-rest-name{
-  transform:translateY(-6px)!important;
+  transform:none!important;
 }
 
 /* Home CTA gray area in the normal page flow. */
@@ -2972,7 +2972,7 @@ body.menu-tab .mob-identity{
   width:96px!important;
   height:96px!important;
   flex:0 0 96px!important;
-  border-radius:12px!important;
+  border-radius:10px!important;
   overflow:hidden!important;
 }
 /* allow up to 4 description lines like the reference combos */
@@ -3032,7 +3032,7 @@ body.menu-tab .delivery-widget{
   height:auto!important;
   margin:6px auto 12px!important;
   padding:10px 14px!important;
-  border-radius:12px!important;
+  border-radius:10px!important;
   background:#f7f7f7!important;
   box-shadow:0 1px 2px rgba(0,0,0,.04)!important;
 }

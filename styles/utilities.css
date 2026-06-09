@@ -377,8 +377,10 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 body.home-tab .search-cat,
 body.home-tab .menu-area,
 body.home-tab .footer,
+body.home-tab .cats,
 body:not(.menu-tab) .search-cat,
-body:not(.menu-tab) .menu-area{display:none!important}
+body:not(.menu-tab) .menu-area,
+body:not(.menu-tab) .cats{display:none!important}
 /* menu-tab: shell in normal flow, header scrolls with page */
 body.menu-tab .restaurant-app-shell{display:block!important;height:auto!important;min-height:0!important;overflow:visible!important}
 /* hide home-only content */
@@ -388,7 +390,8 @@ body.menu-tab .home-coupons-section,
 body.menu-tab .home-highlights-section,
 body.menu-tab .home-order-cta{display:none!important}
 body.menu-tab .search-cat,
-body.menu-tab .menu-area{display:block!important}
+body.menu-tab .menu-area,
+body.menu-tab .cats{display:block!important}
 /* header scrolls with page — no slide-up animation needed */
 /* search-cat: in normal flow, no fixed positioning */
 body.menu-tab .search-cat{

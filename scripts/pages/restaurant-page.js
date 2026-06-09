@@ -181,7 +181,7 @@
     if (!img || !cover) return;
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
-    heroBannerIndex = 0;
+    heroBannerIndex = 1;
     const visualBanners = banners.filter(banner => banner.image_url || banner.image_path);
 
     if (!visualBanners.length) {
@@ -201,12 +201,18 @@
     if (fallback) fallback.setAttribute('aria-hidden', 'true');
 
     if (track) {
-      track.innerHTML = visualBanners.map((banner, index) => {
+      const mkSlide = banner => {
         const image = banner.image_url || banner.image_path || '';
-        const alt = banner.title || banner.subtitle || restaurant.name || `Banner ${index + 1}`;
+        const alt = banner.title || banner.subtitle || restaurant.name || 'Banner';
         return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}"></div>`;
-      }).join('');
-      updateHeroCarousel();
+      };
+      const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
+      const cloneFirst = mkSlide(visualBanners[0]);
+      track.innerHTML  = cloneLast + visualBanners.map(mkSlide).join('') + cloneFirst;
+      track.style.transition = 'none';
+      track.style.transform  = 'translateX(-100%)';
+      track.offsetHeight;
+      track.style.transition = '';
       initHeroSwipe();
     }
 
@@ -221,10 +227,11 @@
     }
   }
 
-  function setHeroBanner(index) {
-    const total = $('restaurantHeroTrack')?.children.length || 0;
-    if (!total) return;
-    heroBannerIndex = Math.max(0, Math.min(index, total - 1));
+  function setHeroBanner(realIndex) {
+    const track = $('restaurantHeroTrack');
+    if (!track) return;
+    const total = track.children.length;
+    heroBannerIndex = Math.min(Math.max(realIndex + 1, 1), total - 2);
     updateHeroCarousel();
     startHeroAutoplay();
   }
@@ -233,8 +240,9 @@
     const track = $('restaurantHeroTrack');
     if (!track) return;
     track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
-    document.querySelectorAll('#restaurantHeroDots span').forEach((dot, index) => {
-      dot.classList.toggle('active', index === heroBannerIndex);
+    const realIndex = heroBannerIndex - 1;
+    document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
+      dot.classList.toggle('active', i === realIndex);
     });
   }
 
@@ -242,9 +250,9 @@
     const total = $('restaurantHeroTrack')?.children.length || 0;
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
-    if (total <= 1) return;
+    if (total <= 3) return;
     heroBannerTimer = setInterval(() => {
-      heroBannerIndex = (heroBannerIndex + 1) % total;
+      heroBannerIndex += 1;
       updateHeroCarousel();
     }, HERO_BANNER_INTERVAL_MS);
   }
@@ -254,13 +262,28 @@
     if (!track || heroSwipeReady) return;
     heroSwipeReady = true;
 
+    track.addEventListener('transitionend', () => {
+      const total = track.children.length;
+      if (heroBannerIndex <= 0 || heroBannerIndex >= total - 1) {
+        track.style.transition = 'none';
+        heroBannerIndex = heroBannerIndex <= 0 ? total - 2 : 1;
+        track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
+        track.offsetHeight;
+        track.style.transition = '';
+        const realIndex = heroBannerIndex - 1;
+        document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
+          dot.classList.toggle('active', i === realIndex);
+        });
+      }
+    });
+
     const endDrag = () => {
       if (!track.classList.contains('is-dragging')) return;
       const total = track.children.length;
       track.classList.remove('is-dragging');
-      if (total > 1 && Math.abs(heroDragDeltaX) > 46) {
+      if (Math.abs(heroDragDeltaX) > 46) {
         const next = heroBannerIndex + (heroDragDeltaX < 0 ? 1 : -1);
-        if (next >= 0 && next < total) heroBannerIndex = next;
+        heroBannerIndex = Math.max(0, Math.min(next, total - 1));
       }
       heroDragDeltaX = 0;
       updateHeroCarousel();
@@ -268,7 +291,21 @@
     };
 
     track.addEventListener('pointerdown', event => {
-      if (track.children.length <= 1) return;
+      const total = track.children.length;
+      if (total <= 3) return;
+      // Se ainda estiver num clone (transitionend ainda não disparou),
+      // faz o salto silencioso imediatamente antes de começar o novo drag
+      if (heroBannerIndex <= 0 || heroBannerIndex >= total - 1) {
+        track.style.transition = 'none';
+        heroBannerIndex = heroBannerIndex <= 0 ? total - 2 : 1;
+        track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
+        track.offsetHeight;
+        track.style.transition = '';
+        const realIndex = heroBannerIndex - 1;
+        document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
+          dot.classList.toggle('active', i === realIndex);
+        });
+      }
       clearInterval(heroBannerTimer);
       heroBannerTimer = null;
       heroDragStartX = event.clientX;
@@ -280,11 +317,7 @@
     track.addEventListener('pointermove', event => {
       if (!track.classList.contains('is-dragging')) return;
       heroDragDeltaX = event.clientX - heroDragStartX;
-      const total = track.children.length;
-      const atEdge = (heroBannerIndex === 0 && heroDragDeltaX > 0) ||
-                     (heroBannerIndex === total - 1 && heroDragDeltaX < 0);
-      const visualDelta = atEdge ? heroDragDeltaX * 0.2 : heroDragDeltaX;
-      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${visualDelta}px))`;
+      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${heroDragDeltaX}px))`;
     });
 
     track.addEventListener('pointerup', endDrag);

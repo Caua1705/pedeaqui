@@ -4168,6 +4168,10 @@ body.menu-tab .mob-logo-fallback{
   object-fit:cover!important;
 }
 
+body.menu-tab .mob-logo{
+  transform:translateY(-4px)!important;
+}
+
 body.menu-tab .mob-rest-details{
   flex:1 1 auto!important;
   min-width:0!important;
@@ -4179,14 +4183,15 @@ body.menu-tab .mob-rest-details{
   overflow:hidden!important;
   padding:0!important;
   margin-left:11px!important;
+  transform:translateY(-4px)!important;
 }
 
 body.menu-tab .mob-rest-name{
   display:block!important;
   font-size:15px!important;
   line-height:19px!important;
-  font-weight:700!important;
-  color:var(--text-heading)!important;
+  font-weight:600!important;
+  color:#2f343a!important;
   letter-spacing:0!important;
   margin:0 0 3px!important;
   white-space:nowrap!important;
@@ -4256,25 +4261,26 @@ body.menu-tab .mob-identity .mob-pedido-min::before{
 }
 
 body.menu-tab .mob-identity .mob-info-btn{
-  flex:0 0 20px!important;
-  width:20px!important;
-  height:20px!important;
-  min-width:20px!important;
-  min-height:20px!important;
+  flex:0 0 23px!important;
+  width:23px!important;
+  height:23px!important;
+  min-width:23px!important;
+  min-height:23px!important;
   border:0!important;
-  border-radius:50%!important;
+  border-radius:7px!important;
   padding:0!important;
   background:#F1F3F5!important;
-  color:#A5AAB1!important;
+  color:#8F969F!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
   box-shadow:none!important;
+  transform:translate(-6px,-9px)!important;
 }
 
 body.menu-tab .mob-identity .mob-info-btn svg{
-  width:14px!important;
-  height:14px!important;
+  width:15px!important;
+  height:15px!important;
   stroke-width:2.2!important;
 }
 
@@ -4349,34 +4355,36 @@ body.menu-tab .search-bar input::placeholder{
 
 body.menu-tab .cats{
   width:100%!important;
-  height:48px!important;
-  min-height:48px!important;
+  height:54px!important;
+  min-height:54px!important;
   margin:0!important;
   padding:0 0 0 20px!important;
   border-top:0!important;
-  border-bottom:1px solid #F0F0F0!important;
-  background:#ffffff!important;
+  border-bottom:0!important;
+  background:linear-gradient(to bottom,#ffffff 0,#ffffff calc(100% - 3px),#F0F0F0 calc(100% - 3px),#F0F0F0 100%)!important;
   display:flex!important;
-  align-items:stretch!important;
+  align-items:flex-start!important;
   gap:0!important;
   overflow-x:auto!important;
   white-space:nowrap!important;
 }
 
 body.menu-tab .cat{
-  height:48px!important;
-  margin:0 21px 0 0!important;
-  padding:0!important;
+  box-sizing:border-box!important;
+  height:54px!important;
+  margin:0 18px 0 0!important;
+  padding:0 0 3px!important;
   border:0!important;
   border-bottom:3px solid transparent!important;
+  position:relative!important;
   border-radius:0!important;
   background:transparent!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
   flex:0 0 auto!important;
-  font-size:13px!important;
-  line-height:16px!important;
+  font-size:12px!important;
+  line-height:15px!important;
   font-weight:500!important;
   color:var(--text-tabs-muted)!important;
   letter-spacing:0!important;
@@ -4385,8 +4393,20 @@ body.menu-tab .cat{
 
 body.menu-tab .cat.active{
   color:var(--primary-orange)!important;
-  border-bottom-color:var(--primary-orange)!important;
-  font-weight:600!important;
+  border-bottom-color:transparent!important;
+  font-weight:550!important;
+}
+
+body.menu-tab .cat.active::after{
+  content:''!important;
+  position:absolute!important;
+  left:2px!important;
+  right:2px!important;
+  bottom:1px!important;
+  height:4px!important;
+  border-radius:9999px!important;
+  background:var(--primary-orange)!important;
+  z-index:2!important;
 }
 
 body.menu-tab .menu-area{
@@ -4402,7 +4422,7 @@ body.menu-tab .menu-section{
 }
 
 body.menu-tab .menu-section-title{
-  margin:16px 0 14px!important;
+  margin:20px 0 14px!important;
   padding:0 20px!important;
   font-size:14px!important;
   line-height:18px!important;
@@ -4765,7 +4785,7 @@ body.menu-tab #mobIdentity{
   margin-top:14px!important;
   transform:translateY(-2px)!important;
   border-bottom:1px solid #ECECEC!important;
-  height:81px!important;
-  min-height:81px!important;
-  padding-bottom:18px!important;
+  height:75px!important;
+  min-height:75px!important;
+  padding-bottom:12px!important;
 }

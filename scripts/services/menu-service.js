@@ -76,6 +76,7 @@
         slug: product.slug || slugify(product.name || product.id || index),
         description: product.description || product.desc || '',
         price: typeof product.price === 'number' ? product.price : Number(product.price),
+        old_price: product.old_price ?? product.original_price ?? product.price_old ?? product.compare_at_price ?? product.list_price ?? null,
         image_path: product.image_path || '',
         image_url: product.image_url || product.image_path || '',
         category_slug: product.category_slug || category?.slug || slugify(product.category || categoryId),

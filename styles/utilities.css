@@ -4440,95 +4440,108 @@ body.menu-tab .products-grid{
   border:0!important;
 }
 
-body.menu-tab .prod-card{
+body.menu-tab .product-card{
+  box-sizing:border-box!important;
   width:100%!important;
   min-height:175px!important;
   margin:0!important;
-  padding:18px 20px!important;
+  padding:28px 20px 16px!important;
   border:0!important;
-  border-bottom:1px solid var(--divider)!important;
+  border-bottom:1px solid #eeeeee!important;
   border-radius:0!important;
   box-shadow:none!important;
   background:#ffffff!important;
   display:flex!important;
   flex-direction:row!important;
-  align-items:center!important;
+  align-items:flex-start!important;
   justify-content:space-between!important;
-  gap:0!important;
-  overflow:hidden!important;
+  gap:18px!important;
+  overflow:visible!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  cursor:pointer!important;
+  transition:none!important;
 }
 
-body.menu-tab .prod-card:last-child{
-  border-bottom:1px solid var(--divider)!important;
+body.menu-tab .product-card:last-child{
+  border-bottom:1px solid #eeeeee!important;
 }
 
-body.menu-tab .prod-info{
-  flex:0 1 236px!important;
-  width:236px!important;
-  max-width:calc(100% - 126px)!important;
+body.menu-tab .product-content{
+  flex:1 1 auto!important;
+  width:auto!important;
+  max-width:235px!important;
   min-width:0!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:flex-start!important;
   justify-content:flex-start!important;
   gap:0!important;
+  transform:none!important;
 }
 
-body.menu-tab .prod-name{
+body.menu-tab .product-name{
   width:100%!important;
-  margin:0 0 12px!important;
+  margin:0 0 6px!important;
   padding:0!important;
-  font-size:14px!important;
+  font-size:12px!important;
   line-height:18px!important;
   font-weight:600!important;
-  color:var(--text-main)!important;
+  color:#111827!important;
   letter-spacing:0!important;
+  transform:none!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 }
 
-body.menu-tab .prod-desc{
-  width:100%!important;
-  margin:0!important;
+body.menu-tab .product-description{
+  width:auto!important;
+  max-width:230px!important;
+  margin:0 0 10px!important;
   padding:0!important;
-  display:-webkit-box!important;
-  -webkit-box-orient:vertical!important;
-  -webkit-line-clamp:3!important;
-  overflow:hidden!important;
-  max-height:60px!important;
-  font-size:13px!important;
-  line-height:20px!important;
-  font-weight:400!important;
-  color:var(--text-muted)!important;
-  letter-spacing:0!important;
-}
-
-body.menu-tab .prod-price{
-  margin:24px 0 0!important;
-  padding:0!important;
-  font-size:13px!important;
+  display:block!important;
+  overflow:visible!important;
+  text-overflow:unset!important;
+  -webkit-line-clamp:unset!important;
+  line-clamp:unset!important;
+  -webkit-box-orient:unset!important;
+  max-height:none!important;
+  font-size:12px!important;
   line-height:18px!important;
-  font-weight:700!important;
-  color:var(--text-main)!important;
+  font-weight:400!important;
+  color:#667085!important;
   letter-spacing:0!important;
+  transform:none!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 }
 
-body.menu-tab .price-from{
-  font-size:13px!important;
+body.menu-tab .product-price-row{
+  margin:18px 0 0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  transform:none!important;
+}
+
+body.menu-tab .product-price{
+  font-size:12px!important;
   line-height:18px!important;
   font-weight:600!important;
-  color:var(--text-main)!important;
-  margin-right:3px!important;
+  color:#111827!important;
+  letter-spacing:0!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 }
 
-body.menu-tab .price-old{
-  font-size:13px!important;
-  line-height:18px!important;
+body.menu-tab .product-old-price{
+  font-size:11px!important;
+  line-height:16px!important;
   font-weight:400!important;
-  color:var(--text-disabled)!important;
+  color:#98A2B3!important;
   text-decoration:line-through!important;
   margin-left:6px!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 }
 
-body.menu-tab .prod-img-box{
+body.menu-tab .product-image-frame{
   flex:0 0 110px!important;
   width:110px!important;
   height:110px!important;
@@ -4536,16 +4549,17 @@ body.menu-tab .prod-img-box{
   min-height:110px!important;
   max-width:110px!important;
   max-height:110px!important;
-  margin-left:16px!important;
-  align-self:center!important;
+  margin-left:0!important;
+  margin-top:16px!important;
+  align-self:flex-start!important;
   border-radius:8px!important;
-  background:#F5F5F5!important;
+  background:#F6F6F6!important;
   overflow:hidden!important;
   box-shadow:none!important;
+  position:relative!important;
 }
 
-body.menu-tab .prod-img-box img,
-body.menu-tab .prod-photo{
+body.menu-tab .product-image{
   width:110px!important;
   height:110px!important;
   min-width:110px!important;
@@ -4556,15 +4570,18 @@ body.menu-tab .prod-photo{
   display:block!important;
 }
 
-body.menu-tab .prod-photo--placeholder{
+body.menu-tab .product-image--placeholder{
   width:110px!important;
   height:110px!important;
   border-radius:8px!important;
-  background:#F4F5F6!important;
+  background:#F6F6F6!important;
   color:var(--primary-orange)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
 }
 
-body.menu-tab .prod-photo--placeholder span{
+body.menu-tab .product-image--placeholder span{
   width:42px!important;
   height:42px!important;
   border-radius:50%!important;
@@ -4573,6 +4590,9 @@ body.menu-tab .prod-photo--placeholder span{
   font-size:13px!important;
   line-height:18px!important;
   font-weight:700!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
 }
 
 body.menu-tab .prod-add-btn{

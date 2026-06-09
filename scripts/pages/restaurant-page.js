@@ -50,10 +50,35 @@
       : raw;
   }
 
-  function productImage(product, className = 'prod-photo') {
+  function productImage(product, className = 'product-image') {
     const image = product.image_url || product.image_path;
-    if (image) return `<img class="${className}" src="${image}" alt="${product.name}">`;
-    return `<div class="${className} prod-photo--placeholder"><span>${initials(product.name)}</span></div>`;
+    if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}">`;
+    return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
+  }
+
+  function productOldPrice(product) {
+    return product.old_price ?? product.original_price ?? product.price_old ?? product.compare_at_price ?? product.list_price ?? null;
+  }
+
+  function ProductCard(product) {
+    const currentPrice = Number.isFinite(product.price) ? fmt(product.price) : 'Consultar';
+    const oldPrice = Number(productOldPrice(product));
+    const hasOldPrice = Number.isFinite(oldPrice) && Number.isFinite(product.price) && oldPrice > product.price;
+    return `
+      <article class="product-card" data-product-id="${esc(product.id)}" onclick="openProduct('${esc(product.id)}')">
+        <div class="product-content">
+          <h3 class="product-name">${esc(product.name)}</h3>
+          ${product.description ? `<p class="product-description">${esc(product.description)}</p>` : ''}
+          <div class="product-price-row">
+            <span class="product-price">${Number.isFinite(product.price) ? `A partir de ${currentPrice}` : currentPrice}</span>
+            ${hasOldPrice ? `<span class="product-old-price">${fmt(oldPrice)}</span>` : ''}
+          </div>
+        </div>
+        <div class="product-image-frame">
+          ${productImage(product, 'product-image')}
+        </div>
+      </article>
+    `;
   }
 
   function openModal(id) {
@@ -407,27 +432,22 @@
         <section class="menu-section" id="${cat.slug}">
           <h2 class="menu-section-title">${cat.name}</h2>
           <div class="products-grid">
-            ${catProducts.map(product => `
-              <article class="prod-card" onclick="openProduct('${product.id}')">
-                <div class="prod-info">
-                  <h3 class="prod-name">${product.name}</h3>
-                  ${product.description ? `<p class="prod-desc">${product.description}</p>` : ''}
-                  <div class="prod-price">${Number.isFinite(product.price) ? `<span class="price-from">A partir de</span> ${fmt(product.price)}` : 'Consultar'}</div>
-                </div>
-                <div class="prod-img-box">
-                  ${productImage(product)}
-                  <button class="prod-add-btn" onclick="event.stopPropagation();openProduct('${product.id}')" aria-label="Adicionar ${product.name}">+</button>
-                </div>
-              </article>
-            `).join('')}
+            ${catProducts.map(product => ProductCard(product)).join('')}
           </div>
         </section>
       `);
       renderedCategoryCount += 1;
     });
+    setFirstCategoryActive();
   }
 
   let isClickScrolling = false;
+  function setFirstCategoryActive() {
+    const firstCat = document.querySelector('.cat');
+    if (!firstCat) return;
+    document.querySelectorAll('.cat').forEach(btn => btn.classList.toggle('active', btn === firstCat));
+  }
+
   function showHomeTab() {
     document.body.classList.remove('menu-tab', 'menu-scrolled');
     document.body.classList.add('home-tab');
@@ -438,6 +458,7 @@
     document.body.classList.remove('home-tab');
     document.body.classList.add('menu-tab');
     setMobNavActive('mobNavMenu');
+    if (!document.querySelector('.cat.active')) setFirstCategoryActive();
   }
 
   function scrollToFast(targetTop, duration = 260) {
@@ -486,7 +507,7 @@
         if (sec.getBoundingClientRect().top <= 150) currentId = sec.id;
       });
       if (!currentId) {
-        document.querySelector('.cat')?.classList.add('active');
+        setFirstCategoryActive();
         return;
       }
       document.querySelectorAll('.cat').forEach(btn => {
@@ -503,7 +524,7 @@
       let foundAny = false;
       document.querySelectorAll('.menu-section').forEach(sec => {
         let secFound = false;
-        sec.querySelectorAll('.prod-card').forEach(card => {
+        sec.querySelectorAll('.product-card').forEach(card => {
           const match = card.innerText.toLowerCase().includes(q);
           card.style.display = match ? 'flex' : 'none';
           secFound = secFound || match;

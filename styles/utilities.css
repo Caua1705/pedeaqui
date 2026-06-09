@@ -4481,10 +4481,10 @@ body.menu-tab .product-content{
 
 body.menu-tab .product-name{
   width:100%!important;
-  margin:0 0 6px!important;
+  margin:-1px 0 4px!important;
   padding:0!important;
   font-size:12px!important;
-  line-height:18px!important;
+  line-height:19px!important;
   font-weight:600!important;
   color:#111827!important;
   letter-spacing:0!important;
@@ -4495,7 +4495,7 @@ body.menu-tab .product-name{
 body.menu-tab .product-description{
   width:auto!important;
   max-width:230px!important;
-  margin:0 0 10px!important;
+  margin:0 0 8px!important;
   padding:0!important;
   display:block!important;
   overflow:visible!important;
@@ -4505,7 +4505,7 @@ body.menu-tab .product-description{
   -webkit-box-orient:unset!important;
   max-height:none!important;
   font-size:12px!important;
-  line-height:18px!important;
+  line-height:19px!important;
   font-weight:400!important;
   color:#667085!important;
   letter-spacing:0!important;
@@ -4514,7 +4514,7 @@ body.menu-tab .product-description{
 }
 
 body.menu-tab .product-price-row{
-  margin:18px 0 0!important;
+  margin:16px 0 0!important;
   padding:0!important;
   display:flex!important;
   align-items:center!important;
@@ -4524,7 +4524,7 @@ body.menu-tab .product-price-row{
 
 body.menu-tab .product-price{
   font-size:12px!important;
-  line-height:18px!important;
+  line-height:19px!important;
   font-weight:600!important;
   color:#111827!important;
   letter-spacing:0!important;
@@ -4533,7 +4533,7 @@ body.menu-tab .product-price{
 
 body.menu-tab .product-old-price{
   font-size:11px!important;
-  line-height:16px!important;
+  line-height:17px!important;
   font-weight:400!important;
   color:#98A2B3!important;
   text-decoration:line-through!important;

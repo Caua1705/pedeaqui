@@ -3508,7 +3508,7 @@ body.home-tab .delivery-widget.pending-selection{
   }
 
   body.home-tab .home-coupons-section{
-    transform:translateY(4px)!important;
+    transform:none!important;
   }
 
   body.home-tab .home-coupons-section h2{

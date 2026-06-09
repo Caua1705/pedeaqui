@@ -220,7 +220,7 @@
   transition: border-color .15s ease;
 }
 .vfy-input--plain { padding-right: 24px; }
-.vfy-input:focus { border-color: #F36F21; }
+.vfy-input:focus { border-color: #cccccc; }
 .vfy-field--error .vfy-input { border-color: #EF5A5A; }
 .vfy-eye {
   position: absolute;

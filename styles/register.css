@@ -104,10 +104,8 @@
   font-size: 15px;
   font-weight: 400;
 }
-/* Orange focus border (no glow). The red error border (below) still wins
-   for invalid fields. */
 .reg-input:focus {
-  border-color: #FF5F01;
+  border-color: #cccccc;
   box-shadow: none;
 }
 /* Keep filled / autofilled inputs white — never show the browser's blue
@@ -225,7 +223,7 @@
   transform: rotate(45deg) scale(1);
 }
 .reg-check-input:focus-visible + .reg-check-box {
-  outline: 2px solid #FF5F01;
+  outline: 2px solid #cccccc;
   outline-offset: 2px;
 }
 .reg-check-label {
@@ -277,6 +275,24 @@
 .reg-submit:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+.reg-submit.is-loading {
+  color: transparent;
+  pointer-events: none;
+  position: relative;
+}
+.reg-submit.is-loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: reg-btn-spin 0.7s linear infinite;
+}
+@keyframes reg-btn-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ---------- Validation error states ---------- */

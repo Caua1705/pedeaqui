@@ -2091,8 +2091,8 @@
     if (_registerSubmitting) return;
     _registerSubmitting = true;
     const btn = $('regSubmitBtn');
-    const restore = () => { _registerSubmitting = false; if (btn) { btn.disabled = false; btn.textContent = 'Cadastre-se'; } };
-    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    const restore = () => { _registerSubmitting = false; if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); } };
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     try {
       const reg = buildRegisterPayload();
       const res = await window.PedeAquiCustomerAuth.registerCustomer(reg);
@@ -2368,7 +2368,7 @@
       // Accept either a valid e-mail or a phone number (the field allows both).
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
       const isPhone = /^\d{10,11}$/.test(onlyDigits(s));
-      if (!isEmail && !isPhone) return 'Email inválido';
+      if (!isEmail && !isPhone) return 'Informe um e-mail ou telefone válido';
       return '';
     } },
     { id: 'loginPassword', err: 'loginPasswordErr', validate(v) {
@@ -2392,7 +2392,30 @@
   }
   function clearAllLoginErrors() {
     LOGIN_FIELDS.forEach(clearLgnFieldError);
+    hideLgnSummary(true);
     loginTouched.clear();
+  }
+
+  let _lgnSummaryTimer = null;
+  function showLgnSummary(message) {
+    const el = $('lgnSummary');
+    if (!el) return;
+    const msgSpan = el.querySelector('span:last-child');
+    if (msgSpan) msgSpan.textContent = message || 'Dados de login incorretos. Verifique suas informações.';
+    if (_lgnSummaryTimer) { clearTimeout(_lgnSummaryTimer); _lgnSummaryTimer = null; }
+    el.classList.remove('hiding');
+    el.classList.add('show');
+    _lgnSummaryTimer = setTimeout(() => hideLgnSummary(), 5000);
+  }
+  function hideLgnSummary(immediate) {
+    const el = $('lgnSummary');
+    if (!el) return;
+    if (_lgnSummaryTimer) { clearTimeout(_lgnSummaryTimer); _lgnSummaryTimer = null; }
+    if (immediate || !el.classList.contains('show')) {
+      el.classList.remove('show', 'hiding'); return;
+    }
+    el.classList.add('hiding');
+    setTimeout(() => el.classList.remove('show', 'hiding'), 320);
   }
   function validateLoginField(id) {
     const def = LOGIN_FIELDS.find(f => f.id === id);
@@ -2714,11 +2737,10 @@
         $('loginScreen')?.classList.remove('active');
         finishLoginNavigation();
       } else {
-        setLgnFieldError(LOGIN_FIELDS[1], 'Não foi possível entrar. Tente novamente.');
+        showLgnSummary('Dados de login incorretos. Verifique suas informações.');
       }
     } catch (error) {
-      $('loginEmail')?.closest('.lgn-field')?.classList.add('lgn-field--error');
-      setLgnFieldError(LOGIN_FIELDS[1], error?.message || 'E-mail/telefone ou senha inválidos.');
+      showLgnSummary('Dados de login incorretos. Verifique suas informações.');
     } finally {
       _loginSubmitting = false;
       if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }

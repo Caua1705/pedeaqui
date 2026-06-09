@@ -745,7 +745,7 @@
   margin-bottom:10px!important;
   transition:border-color .15s!important;
 }
-.addr-search-field:focus-within{border-color:#F36F21!important}
+.addr-search-field:focus-within{border-color:#cccccc!important}
 .addr-search-field-icon{color:#9AA0A8!important;flex-shrink:0!important}
 .addr-search-input{
   flex:1!important;
@@ -981,7 +981,7 @@
   transition:border-color .15s!important;
   box-sizing:border-box!important;
 }
-.addr-det-input:focus{border-color:#F36F21!important}
+.addr-det-input:focus{border-color:#cccccc!important}
 .addr-det-input:disabled{background:#f9f9f9!important;color:#9aa0a8!important}
 .addr-det-checkbox-label{
   display:flex!important;

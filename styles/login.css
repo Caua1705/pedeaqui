@@ -104,10 +104,8 @@
   font-size: 15px;
   font-weight: 400;
 }
-/* Orange focus border (no glow). The red error border (below) wins for
-   invalid fields. */
 .lgn-input:focus {
-  border-color: #FF5F01;
+  border-color: #cccccc;
   box-shadow: none;
 }
 /* Keep filled / autofilled inputs white — kills the browser's blue autofill
@@ -127,8 +125,8 @@
 }
 .lgn-error {
   display: none;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 11px;
+  line-height: 15px;
   font-weight: 400;
   color: #EF5A5A;
   margin-top: 6px;
@@ -157,7 +155,7 @@ label[for="loginPassword"].lgn-label { top: -11px; }
 .lgn-eye {
   position: absolute;
   right: 18px;
-  top: 50%;
+  top: 30px;
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
@@ -220,4 +218,9 @@ label[for="loginPassword"].lgn-label { top: -11px; }
 .lgn-submit:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+#lgnSummary {
+  margin-top: -6px;
+  border-radius: 9px;
 }

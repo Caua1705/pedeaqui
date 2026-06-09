@@ -3940,6 +3940,8 @@ body.menu-tab .home-sticky-header{
   padding:0!important;
   box-shadow:none!important;
   border:0!important;
+  overflow:visible!important;
+  overflow-x:visible!important;
 }
 
 body.menu-tab .home-sticky-header .delivery-widget,
@@ -4059,20 +4061,97 @@ body.menu-tab .address-strip .address-card-chevron{
   display:none!important;
 }
 
+/* Cardápio: widget de localização LARANJA enquanto o usuário não confirmou endereço/loja
+   (espelha o estado "pending-selection" do Início). Ao confirmar, volta ao card cinza acima. */
+body.menu-tab .delivery-widget.pending-selection{
+  width:calc(100% - 40px)!important;
+  max-width:374px!important;
+  height:42px!important;
+  min-height:42px!important;
+  max-height:42px!important;
+  margin:8px auto 0!important;
+  padding:0 14px!important;
+  background:#fde8dd!important;
+  border-radius:9px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  gap:0!important;
+  overflow:hidden!important;
+}
+body.menu-tab .delivery-widget.pending-selection .delivery-widget-tabs,
+body.menu-tab .delivery-widget.pending-selection .delivery-widget-divider,
+body.menu-tab .delivery-widget.pending-selection .delivery-widget-chevron{
+  display:none!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-strip.address-card{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:16px minmax(0,1fr) 16px!important;
+  align-items:center!important;
+  column-gap:9px!important;
+  gap:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-icon{
+  transform:translateX(-3px)!important;
+  width:12px!important;
+  height:16px!important;
+  flex:0 0 12px!important;
+  background:transparent!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-icon svg,
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-icon svg path,
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-icon svg circle{
+  fill:none!important;
+  stroke:#F36F21!important;
+  stroke-width:1.8!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-copy{
+  grid-row:1!important;
+  align-self:center!important;
+  overflow:hidden!important;
+  height:auto!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-strip .address-card-copy strong,
+body.menu-tab .delivery-widget.pending-selection .address-strip #homeAddressTitle{
+  color:#F36F21!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  font-weight:500!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.menu-tab .delivery-widget.pending-selection .address-card-chevron{
+  display:block!important;
+  grid-column:3!important;
+  width:15px!important;
+  height:15px!important;
+  color:#F36F21!important;
+  stroke:#F36F21!important;
+}
+
 body.menu-tab .mob-identity{
   width:100%!important;
   max-width:414px!important;
   height:76px!important;
   min-height:76px!important;
-  margin:0 auto!important;
-  padding:0 20px!important;
+  margin:14px auto 0!important;
+  padding:0 12px 0 20px!important;
   border:0!important;
   border-bottom:1px solid #EFEFEF!important;
   border-radius:0!important;
   box-shadow:none!important;
   display:flex!important;
   align-items:center!important;
-  gap:13px!important;
+  gap:28px!important;
   background:#ffffff!important;
 }
 
@@ -4093,14 +4172,18 @@ body.menu-tab .mob-rest-details{
   flex:1 1 auto!important;
   min-width:0!important;
   max-width:none!important;
+  height:42px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
   overflow:hidden!important;
   padding:0!important;
 }
 
 body.menu-tab .mob-rest-name{
   display:block!important;
-  font-size:16px!important;
-  line-height:20px!important;
+  font-size:14px!important;
+  line-height:18px!important;
   font-weight:700!important;
   color:var(--text-heading)!important;
   letter-spacing:0!important;
@@ -4132,30 +4215,35 @@ body.menu-tab .mob-identity .mob-badge-open{
   display:inline-flex!important;
   align-items:center!important;
   gap:4px!important;
-  font-size:13px!important;
-  line-height:18px!important;
+  font-size:11px!important;
+  line-height:15px!important;
   font-weight:400!important;
   color:var(--primary-orange)!important;
 }
 
 body.menu-tab .mob-identity .mob-badge-open::before{
-  width:4px!important;
-  height:4px!important;
-  min-width:4px!important;
+  content:''!important;
+  display:inline-block!important;
+  width:5px!important;
+  height:5px!important;
+  min-width:5px!important;
+  min-height:5px!important;
+  flex:0 0 5px!important;
+  border-radius:50%!important;
   background:var(--primary-orange)!important;
   margin:0!important;
 }
 
 body.menu-tab .mob-identity .mob-status-sep{
   color:#C7CBD0!important;
-  font-size:13px!important;
-  line-height:18px!important;
+  font-size:11px!important;
+  line-height:15px!important;
   font-weight:400!important;
 }
 
 body.menu-tab .mob-identity .mob-pedido-min{
-  font-size:13px!important;
-  line-height:18px!important;
+  font-size:11px!important;
+  line-height:15px!important;
   font-weight:400!important;
   color:var(--text-muted)!important;
 }
@@ -4165,11 +4253,11 @@ body.menu-tab .mob-identity .mob-pedido-min::before{
 }
 
 body.menu-tab .mob-identity .mob-info-btn{
-  flex:0 0 24px!important;
-  width:24px!important;
-  height:24px!important;
-  min-width:24px!important;
-  min-height:24px!important;
+  flex:0 0 20px!important;
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
   border:0!important;
   border-radius:50%!important;
   padding:0!important;
@@ -4182,8 +4270,8 @@ body.menu-tab .mob-identity .mob-info-btn{
 }
 
 body.menu-tab .mob-identity .mob-info-btn svg{
-  width:18px!important;
-  height:18px!important;
+  width:14px!important;
+  height:14px!important;
   stroke-width:2.2!important;
 }
 
@@ -4478,4 +4566,184 @@ body.menu-tab .mob-bottom-nav,
   border-radius:0!important;
   background:#ffffff!important;
   box-shadow:none!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CARDÁPIO — widget de localização IDÊNTICO ao Início.
+   Reaplica, escopado em body.menu-tab, o layout-base em grid
+   (linhas ~1666) + os ajustes finos de body.home-tab (~3285),
+   anexado por último para suplantar todos os overrides
+   "Take-a-Juice" anteriores do cardápio. Só vale no estado
+   confirmado; o estado laranja (.pending-selection) já é tratado
+   pelas regras não-escopadas + bloco menu-tab pending acima.
+   ════════════════════════════════════════════════════════════════ */
+body.menu-tab .home-sticky-header .delivery-widget,
+body.menu-tab .delivery-widget{
+  box-sizing:border-box!important;
+  position:relative!important;
+  width:calc(100% - 40px)!important;
+  max-width:374px!important;
+  min-height:75px!important;
+  height:75px!important;
+  max-height:none!important;
+  margin:10px auto 0!important;
+  padding:12px 14px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:#f2f2f3!important;
+  box-shadow:none!important;
+  display:grid!important;
+  grid-template-columns:18px minmax(0,1fr) 18px!important;
+  grid-template-rows:22px 15px!important;
+  align-items:center!important;
+  column-gap:8px!important;
+  row-gap:6px!important;
+  gap:6px 8px!important;
+  overflow:visible!important;
+}
+body.menu-tab .delivery-widget-tabs{
+  box-sizing:border-box!important;
+  grid-column:2!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:0!important;
+  height:22px!important;
+  min-height:22px!important;
+  padding:0!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  overflow:visible!important;
+  z-index:30!important;
+  transform:translate(1px,2px)!important;
+}
+body.menu-tab .delivery-widget-tab{
+  box-sizing:border-box!important;
+  flex:0 1 auto!important;
+  min-width:0!important;
+  max-width:92px!important;
+  height:22px!important;
+  padding:0 7px!important;
+  border:0!important;
+  border-radius:4px!important;
+  background:#e9e9e9!important;
+  color:#4f5965!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:9.7px!important;
+  line-height:22px!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.menu-tab .delivery-widget-tab.active{
+  background:#ffe3d3!important;
+  color:#F36F21!important;
+  font-weight:700!important;
+}
+body.menu-tab .delivery-widget-divider{
+  display:none!important;
+}
+body.menu-tab .delivery-widget-chevron{
+  position:absolute!important;
+  right:-24px!important;
+  left:auto!important;
+  top:50%!important;
+  transform:translateY(calc(-50% + 14px))!important;
+  width:14.5px!important;
+  height:14.5px!important;
+  margin:0!important;
+  color:#F36F21!important;
+  stroke:#F36F21!important;
+  display:block!important;
+  z-index:50!important;
+  pointer-events:none!important;
+}
+body.menu-tab .delivery-widget .address-strip.address-card{
+  box-sizing:border-box!important;
+  grid-column:1 / 4!important;
+  grid-row:1 / 3!important;
+  position:static!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  display:grid!important;
+  grid-template-columns:18px minmax(0,1fr) 18px!important;
+  grid-template-rows:22px 15px!important;
+  align-items:center!important;
+  column-gap:8px!important;
+  row-gap:6px!important;
+  gap:6px 8px!important;
+  transform:translate(1px,0)!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-icon{
+  grid-column:1!important;
+  grid-row:1 / span 2!important;
+  align-self:center!important;
+  justify-self:center!important;
+  width:12.5px!important;
+  height:16.5px!important;
+  flex:0 0 12.5px!important;
+  color:#F36F21!important;
+  background:transparent!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  transform:translate(-3px,5px)!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-icon svg{
+  width:12.5px!important;
+  height:16.5px!important;
+  display:block!important;
+  stroke-width:.75!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-icon svg path{
+  fill:#F36F21!important;
+  stroke:#F36F21!important;
+  stroke-width:.75!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-icon svg circle{
+  fill:#ffffff!important;
+  stroke:#ffffff!important;
+  stroke-width:.6!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-copy{
+  grid-column:2!important;
+  grid-row:2!important;
+  min-width:0!important;
+  width:100%!important;
+  display:block!important;
+  overflow:visible!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-copy strong,
+body.menu-tab .delivery-widget .address-strip #homeAddressTitle{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  transform:translate(1px,3px)!important;
+  color:#f3884c!important;
+  font-size:12px!important;
+  line-height:14px!important;
+  font-weight:100!important;
+  font-synthesis-weight:none!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-copy small{
+  display:none!important;
+}
+body.menu-tab .delivery-widget .address-strip .address-card-chevron{
+  display:none!important;
 }

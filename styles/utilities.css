@@ -4834,17 +4834,6 @@ body.menu-tab .search-cat{
   z-index:40!important;
   background:#ffffff!important;
 }
-body.menu-tab .search-bar-wrap{
-  display:none!important;
-  max-height:0!important;
-  overflow:hidden!important;
-  padding:0!important;
-}
-body.menu-tab .search-cat.search-open .search-bar-wrap{
-  display:block!important;
-  max-height:60px!important;
-  padding:14px 20px 18px!important;
-}
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;
 }

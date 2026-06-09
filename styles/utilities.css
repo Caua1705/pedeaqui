@@ -4450,7 +4450,7 @@ body.menu-tab .product-card{
   min-height:162px!important;
   max-height:162px!important;
   margin:0!important;
-  padding:14px 20px 10px!important;
+  padding:14px 20px 12px!important;
   border:0!important;
   border-bottom:1px solid #eeeeee!important;
   border-radius:0!important;
@@ -4541,7 +4541,7 @@ body.menu-tab .product-price{
   font-size:12px!important;
   line-height:19px!important;
   font-weight:600!important;
-  color:#111827!important;
+  color:#374151!important;
   letter-spacing:0!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 }

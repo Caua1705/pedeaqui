@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=32">
+<link rel="stylesheet" href="styles/utilities.css?v=33">
 <link rel="stylesheet" href="styles/operation.css?v=32">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -124,7 +124,7 @@
   <button class="home-order-cta" onclick="goToMenuTab()">Faça seu pedido</button>
 </main>
 
-<!-- SEARCH + CATEGORIES -->
+<!-- SEARCH -->
 <div class="search-cat a4" id="searchCat">
   <div class="search-cat-inner">
     <div class="search-bar-wrap">
@@ -134,10 +134,11 @@
         <button class="search-clear-btn" id="searchClearBtn" onclick="closeSearch()" aria-label="Limpar busca">×</button>
       </div>
     </div>
-    <div class="cats" id="catNav">
-      <!-- Populated by JS -->
-    </div>
   </div>
+</div>
+<!-- CATEGORIES (sticky independente) -->
+<div class="cats" id="catNav">
+  <!-- Populated by JS -->
 </div>
 
 <!-- MENU AREA -->

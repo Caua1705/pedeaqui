@@ -4402,7 +4402,7 @@ body.menu-tab .cat.active::after{
   position:absolute!important;
   left:2px!important;
   right:2px!important;
-  bottom:1px!important;
+  bottom:0!important;
   height:4px!important;
   border-radius:9999px!important;
   background:var(--primary-orange)!important;
@@ -4824,15 +4824,23 @@ body.menu-tab #mobIdentity{
 
 /* ════════════════════════════════════════════════════════════════
    CARDÁPIO — somente as categorias ficam fixas no topo.
-   O bloco .search-cat permanece sticky (funciona com segurança),
-   mas o campo de busca é escondido — assim visualmente só as
-   categorias grudam no topo ao rolar.
+   .cats agora é irmão do .search-cat no HTML (fora dele),
+   então position:sticky funciona de forma totalmente independente.
    ════════════════════════════════════════════════════════════════ */
 body.menu-tab .search-cat{
+  position:relative!important;
+  top:auto!important;
+  z-index:auto!important;
+  border:0!important;
+  border-bottom:0!important;
+  box-shadow:none!important;
+}
+body.menu-tab .cats{
   position:sticky!important;
   top:0!important;
   z-index:40!important;
-  background:#ffffff!important;
+  background:linear-gradient(to bottom,#ffffff 0,#ffffff calc(100% - 3px),#F0F0F0 calc(100% - 3px),#F0F0F0 100%)!important;
+  border-bottom:0!important;
 }
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;

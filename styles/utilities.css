@@ -3909,7 +3909,7 @@ body.menu-tab{
   --text-main:#111827;
   --text-heading:#2F343A;
   --text-muted:#69717A;
-  --text-tabs-muted:#777D86;
+  --text-tabs-muted:#9BA3AE;
   --text-disabled:#C0C4CA;
   --divider:#EFEFEF;
   --input-border:#E2E4E7;
@@ -4147,7 +4147,7 @@ body.menu-tab .mob-identity{
   height:76px!important;
   min-height:76px!important;
   margin:14px auto 0!important;
-  padding:0 12px 0 20px!important;
+  padding:0 12px 0 30px!important;
   border:0!important;
   border-bottom:1px solid #EFEFEF!important;
   border-radius:0!important;
@@ -4162,17 +4162,17 @@ body.menu-tab .mob-logo,
 body.menu-tab .mob-logo img,
 body.menu-tab #mobIdentity img,
 body.menu-tab .mob-logo-fallback{
-  width:48px!important;
-  height:48px!important;
-  min-width:48px!important;
-  min-height:48px!important;
-  flex:0 0 48px!important;
+  width:45px!important;
+  height:45px!important;
+  min-width:45px!important;
+  min-height:45px!important;
+  flex:0 0 45px!important;
   border-radius:50%!important;
   object-fit:cover!important;
 }
 
 body.menu-tab .mob-logo{
-  transform:translateY(-4px)!important;
+  transform:translate(4px,-7px)!important;
 }
 
 body.menu-tab .mob-rest-details{
@@ -4191,12 +4191,12 @@ body.menu-tab .mob-rest-details{
 
 body.menu-tab .mob-rest-name{
   display:block!important;
-  font-size:15px!important;
-  line-height:19px!important;
+  font-size:16px!important;
+  line-height:20px!important;
   font-weight:600!important;
   color:#2f343a!important;
   letter-spacing:0!important;
-  margin:0 0 3px!important;
+  margin:0px 0 3px!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -4215,7 +4215,7 @@ body.menu-tab .mob-identity .mob-rest-status{
   align-items:center!important;
   gap:8px!important;
   height:18px!important;
-  margin:0!important;
+  margin:7px 0 0 2px!important;
   overflow:hidden!important;
   white-space:nowrap!important;
 }
@@ -4224,8 +4224,9 @@ body.menu-tab .mob-identity .mob-badge-open{
   display:inline-flex!important;
   align-items:center!important;
   gap:4px!important;
-  font-size:11px!important;
-  line-height:15px!important;
+  margin-left:0px!important;
+  font-size:12px!important;
+  line-height:16px!important;
   font-weight:500!important;
   color:var(--primary-orange)!important;
 }
@@ -4244,17 +4245,17 @@ body.menu-tab .mob-identity .mob-badge-open::before{
 }
 
 body.menu-tab .mob-identity .mob-status-sep{
-  color:#C7CBD0!important;
-  font-size:11px!important;
-  line-height:15px!important;
-  font-weight:500!important;
+  color:#999999!important;
+  font-size:13px!important;
+  line-height:17px!important;
+  font-weight:200!important;
   display:inline-block!important;
-  transform:scaleY(0.82)!important;
+  transform:scaleY(0.72)!important;
 }
 
 body.menu-tab .mob-identity .mob-pedido-min{
-  font-size:11px!important;
-  line-height:15px!important;
+  font-size:12px!important;
+  line-height:16px!important;
   font-weight:500!important;
   color:var(--text-muted)!important;
 }
@@ -4388,7 +4389,7 @@ body.menu-tab .cat{
   flex:0 0 auto!important;
   font-size:12px!important;
   line-height:15px!important;
-  font-weight:500!important;
+  font-weight:150!important;
   color:var(--text-tabs-muted)!important;
   letter-spacing:0!important;
   box-shadow:none!important;

@@ -492,6 +492,19 @@
     document.body.classList.add('menu-tab');
     setMobNavActive('mobNavMenu');
     if (!document.querySelector('.cat.active')) setFirstCategoryActive();
+    initCatStuckObserver();
+  }
+
+  let _catStuckObserver = null;
+  function initCatStuckObserver() {
+    if (_catStuckObserver) return;
+    const sentinel = $('searchCat');
+    const catNav   = $('catNav');
+    if (!sentinel || !catNav) return;
+    _catStuckObserver = new IntersectionObserver(([entry]) => {
+      catNav.classList.toggle('is-stuck', !entry.isIntersecting);
+    }, { threshold: 0 });
+    _catStuckObserver.observe(sentinel);
   }
 
   function scrollToFast(targetTop, duration = 260) {

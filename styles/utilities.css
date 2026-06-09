@@ -4446,11 +4446,11 @@ body.menu-tab .products-grid{
 body.menu-tab .product-card{
   box-sizing:border-box!important;
   width:100%!important;
-  height:175px!important;
-  min-height:175px!important;
-  max-height:175px!important;
+  height:162px!important;
+  min-height:162px!important;
+  max-height:162px!important;
   margin:0!important;
-  padding:22px 20px 12px!important;
+  padding:14px 20px 10px!important;
   border:0!important;
   border-bottom:1px solid #eeeeee!important;
   border-radius:0!important;
@@ -4565,7 +4565,7 @@ body.menu-tab .product-image-frame{
   max-width:110px!important;
   max-height:110px!important;
   margin-left:0!important;
-  margin-top:16px!important;
+  margin-top:13px!important;
   align-self:flex-start!important;
   border-radius:8px!important;
   background:#F6F6F6!important;
@@ -4844,6 +4844,9 @@ body.menu-tab .cats{
   z-index:40!important;
   background:linear-gradient(to bottom,#ffffff 0,#ffffff calc(100% - 3px),#F0F0F0 calc(100% - 3px),#F0F0F0 100%)!important;
   border-bottom:0!important;
+}
+body.menu-tab .cats.is-stuck{
+  background:#ffffff!important;
 }
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;

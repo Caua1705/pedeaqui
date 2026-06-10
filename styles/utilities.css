@@ -5143,6 +5143,50 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     transform:translateX(0)!important;
     transition:transform .53s ease!important;
   }
+  #addAddressModal.slide-mode{
+    opacity:1!important;
+    background:rgba(0,0,0,0)!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:visibility 0s linear .6s!important;
+  }
+  #addAddressModal.slide-mode.active{
+    background:rgba(0,0,0,0)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    transition:visibility 0s linear 0s!important;
+  }
+  #addAddressModal.slide-mode .modal--fs{
+    visibility:visible!important;
+    transform:translateX(100%)!important;
+    transition:transform .6s ease!important;
+  }
+  #addAddressModal.slide-mode.active .modal--fs{
+    transform:translateX(0)!important;
+    transition:transform .53s ease!important;
+  }
+  #addrPickerModal{
+    opacity:1!important;
+    background:rgba(0,0,0,0)!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:background .28s ease,visibility 0s linear .6s!important;
+  }
+  #addrPickerModal.active{
+    background:rgba(0,0,0,.42)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    transition:background .28s ease,visibility 0s linear 0s!important;
+  }
+  #addrPickerModal .modal--fs{
+    visibility:visible!important;
+    transform:translateX(100%)!important;
+    transition:transform .6s ease!important;
+  }
+  #addrPickerModal.active .modal--fs{
+    transform:translateX(0)!important;
+    transition:transform .53s ease!important;
+  }
   #productModal{
     opacity:1!important;
     background:rgba(0,0,0,0)!important;

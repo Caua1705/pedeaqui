@@ -92,6 +92,9 @@
     const el = $(id);
     if (!el) return;
     el.classList.remove('active');
+    if (id === 'addAddressModal' && el.classList.contains('slide-mode')) {
+      setTimeout(() => el.classList.remove('slide-mode'), 650);
+    }
     if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
   }
 
@@ -979,6 +982,7 @@
     $('opSegPickup')?.classList.toggle('active', isPickup);
     const title = $('opAddrTitle');
     const sub = $('opAddrSub');
+    $('opAddrCard')?.classList.toggle('has-address', !!opDraft.address);
     if (opDraft.address) {
       if (title) title.textContent = addressSummary(opDraft.address);
       if (sub) {
@@ -1099,6 +1103,11 @@
   let _adcSelection = null;
 
   function openAddressChoice() {
+    if (opDraft?.address) { openAddrPicker(); return; }
+    openAddressChoiceDirect();
+  }
+
+  function openAddressChoiceDirect() {
     _adcSelection = null;
     const geo = $('adcBtnGeo');
     const manual = $('adcBtnManual');
@@ -1106,7 +1115,95 @@
     if (geo) geo.classList.remove('selected');
     if (manual) manual.classList.remove('selected');
     if (btn) btn.disabled = true;
+    const adcModal = $('addAddressModal');
+    if (adcModal) {
+      const fromPicker = $('addrPickerModal')?.classList.contains('active');
+      adcModal.classList.toggle('slide-mode', !!fromPicker);
+    }
     openModal('addAddressModal');
+  }
+
+  let _addrPickerSelected = null;
+  let _addrPickerItems = [];
+
+  function openAddrPicker() {
+    _addrPickerSelected = null;
+    _addrPickerItems = [];
+    const confirmBtn = $('addrPickerConfirmBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
+    if (opDraft?.address) {
+      _addrPickerItems = [{ id: '__current__', label: 'Endereço', ...opDraft.address }];
+    }
+    _renderAddrPickerList();
+    openModal('addrPickerModal');
+    const auth = window.PedeAquiCustomerAuth;
+    if (auth?.isLoggedIn()) {
+      auth.getCustomerAddresses().then(res => {
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        if (list.length) { _addrPickerItems = list; _renderAddrPickerList(); }
+      }).catch(() => {});
+    }
+  }
+
+  function _renderAddrPickerList() {
+    const list = $('addrPickerList');
+    if (!list) return;
+    const current = opDraft?.address;
+    list.innerHTML = _addrPickerItems.map(addr => {
+      const id = String(addr.id || addr.address_id || '__current__');
+      const label = addr.label || addr.tag || addr.name || 'Endereço';
+      const summary = addr.formatted_address || addressSummary(addr);
+      const isSel = _addrPickerSelected
+        ? _addrPickerSelected === id
+        : current && (addr.id === current.id || (addr.street === current.street && addr.number === current.number) || id === '__current__');
+      if (isSel && !_addrPickerSelected) {
+        _addrPickerSelected = id;
+        const btn = $('addrPickerConfirmBtn');
+        if (btn) btn.disabled = false;
+      }
+      return `<button class="addr-picker-item${isSel ? ' selected' : ''}" onclick="selectAddrPickerItem('${esc(id)}')" data-addr-id="${esc(id)}">
+        <span class="addr-picker-pin${isSel ? ' active' : ''}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small>${esc(summary)}</small></span>
+        ${isSel
+          ? `<span class="addr-picker-check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+          : `<span class="addr-picker-dots"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2"><circle cx="12" cy="5" r="1.2" fill="#bbb"/><circle cx="12" cy="12" r="1.2" fill="#bbb"/><circle cx="12" cy="19" r="1.2" fill="#bbb"/></svg></span>`}
+      </button>`;
+    }).join('');
+  }
+
+  function selectAddrPickerItem(id) {
+    _addrPickerSelected = id;
+    document.querySelectorAll('#addrPickerList .addr-picker-item').forEach(el => {
+      const sel = el.dataset.addrId === id;
+      el.classList.toggle('selected', sel);
+      const pin = el.querySelector('.addr-picker-pin');
+      if (pin) pin.classList.toggle('active', sel);
+      const indicator = el.querySelector('.addr-picker-check, .addr-picker-dots');
+      if (!indicator) return;
+      if (sel) {
+        indicator.className = 'addr-picker-check';
+        indicator.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      } else {
+        indicator.className = 'addr-picker-dots';
+        indicator.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2"><circle cx="12" cy="5" r="1.2" fill="#bbb"/><circle cx="12" cy="12" r="1.2" fill="#bbb"/><circle cx="12" cy="19" r="1.2" fill="#bbb"/></svg>`;
+      }
+    });
+    const confirmBtn = $('addrPickerConfirmBtn');
+    if (confirmBtn) confirmBtn.disabled = false;
+  }
+
+  function confirmAddrPicker() {
+    if (!_addrPickerSelected || !opDraft) return;
+    const addr = _addrPickerItems.find(a => String(a.id || a.address_id || '__current__') === _addrPickerSelected);
+    if (!addr) return;
+    opDraft.address = addr;
+    customerAddress = { ...addr, summary: addressSummary(addr) };
+    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    persistOperationContext();
+    renderOperationScreen();
+    closeModalId('addrPickerModal');
   }
 
   function selectAdcOption(type) {
@@ -1755,6 +1852,7 @@
     closeModalId('addrMapModal');
     closeModalId('addrSearchModal');
     closeModalId('addAddressModal');
+    closeModalId('addrPickerModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
 
@@ -1786,6 +1884,7 @@
     updateCartUI();
     closeModalId('addressModal');
     closeModalId('addAddressModal');
+    closeModalId('addrPickerModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
 
@@ -3131,6 +3230,7 @@
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
+    openAddrPicker, openAddressChoiceDirect, selectAddrPickerItem, confirmAddrPicker,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,

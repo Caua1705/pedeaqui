@@ -88,6 +88,15 @@
     document.body.classList.add('modal-open');
   }
 
+  function openModalImmediately(id) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.add('no-motion');
+    el.classList.add('active');
+    document.body.classList.add('modal-open');
+    setTimeout(() => el.classList.remove('no-motion'), 50);
+  }
+
   function closeModalId(id) {
     const el = $(id);
     if (!el) return;
@@ -98,6 +107,7 @@
   function closeModalImmediately(id) {
     const el = $(id);
     if (!el) return;
+    el.classList.add('no-motion');
     const panel = el.querySelector('.modal--fs,.modal--login,.modal--product');
     el.style.transition = 'none';
     if (panel) panel.style.transition = 'none';
@@ -105,6 +115,7 @@
     setTimeout(() => {
       el.style.transition = '';
       if (panel) panel.style.transition = '';
+      el.classList.remove('no-motion');
     }, 50);
     if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
   }
@@ -1116,17 +1127,34 @@
     openAddressChoiceDirect(true);
   }
 
+  let _addAddressOrigin = 'operation';
+  let _returnToAddAddressChoice = false;
+
   function openAddressChoiceDirect(withMotion = true) {
     const btn = $('adcConfirmBtn');
     if (btn) btn.disabled = true;
     _adcSelection = null;
+    const fromPicker = $('addrPickerModal')?.classList.contains('active');
+    _addAddressOrigin = fromPicker ? 'picker' : 'operation';
     const geo = $('adcBtnGeo');
     const manual = $('adcBtnManual');
     if (geo) geo.classList.remove('selected');
     if (manual) manual.classList.remove('selected');
-    closeModalImmediately('addrPickerModal');
+    if (!fromPicker) closeModalImmediately('addrPickerModal');
+    $('addAddressModal')?.classList.toggle('from-picker', fromPicker);
     $('addAddressModal')?.classList.toggle('no-motion', !withMotion);
     openModal('addAddressModal');
+  }
+
+  function backFromAddAddress() {
+    const fromPicker = _addAddressOrigin === 'picker';
+    closeModalId('addAddressModal');
+    _returnToAddAddressChoice = false;
+    if (fromPicker) {
+      setTimeout(() => {
+        $('addAddressModal')?.classList.remove('from-picker', 'no-motion');
+      }, 560);
+    }
   }
 
   let _adcSelection = null;
@@ -1143,10 +1171,47 @@
 
   function adcConfirm() {
     if (!_adcSelection) return;
-    const next = _adcSelection === 'geo' ? adcUseGeoSearch : openAddrSearch;
-    closeModalImmediately('addrPickerModal');
-    closeModalId('addAddressModal');
-    setTimeout(next, $('addAddressModal')?.classList.contains('no-motion') ? 0 : 540);
+    _returnToAddAddressChoice = true;
+    if (_adcSelection === 'geo') {
+      adcUseGeoSearch(true);
+      return;
+    }
+    openAddrSearch(true);
+    closeAddressEntryStackImmediately();
+  }
+
+  function closeAddressEntryStackImmediately() {
+    closeModalImmediately('addAddressModal');
+    if (_addAddressOrigin === 'picker') closeModalImmediately('addrPickerModal');
+    $('addAddressModal')?.classList.remove('from-picker');
+  }
+
+  function reopenAddressChoiceImmediately() {
+    if (_addAddressOrigin === 'picker') {
+      $('addrPickerModal')?.classList.add('no-motion');
+      openModalImmediately('addrPickerModal');
+    }
+    $('addAddressModal')?.classList.toggle('from-picker', _addAddressOrigin === 'picker');
+    $('addAddressModal')?.classList.add('no-motion');
+    openModalImmediately('addAddressModal');
+  }
+
+  function backFromAddrSearch() {
+    if (!_returnToAddAddressChoice) {
+      closeModalId('addrSearchModal');
+      return;
+    }
+    reopenAddressChoiceImmediately();
+    closeModalImmediately('addrSearchModal');
+  }
+
+  function backFromAddrMap() {
+    if (!_returnToAddAddressChoice) {
+      closeModalId('addrMapModal');
+      return;
+    }
+    reopenAddressChoiceImmediately();
+    closeModalImmediately('addrMapModal');
   }
 
   let _addrPickerSelected = null;
@@ -1424,14 +1489,15 @@
     return _geocoder;
   }
 
-  function openAddrSearch() {
+  function openAddrSearch(instant = false) {
     const inp = $('addrSearchInput');
     const sug = $('addrSuggestions');
     if (inp) inp.value = '';
     if (sug) sug.innerHTML = '';
     _addrSuggestionCache = [];
     _addrAutocompleteSessionToken = null;
-    openModal('addrSearchModal');
+    if (instant) openModalImmediately('addrSearchModal');
+    else openModal('addrSearchModal');
     _loadPlacesLibrary()
       .then(() => {
         if (MAPS_DEBUG) _logMapsDebug('places-library-loaded', {
@@ -1697,7 +1763,7 @@
     };
   }
 
-  function adcUseGeoSearch() {
+  function adcUseGeoSearch(instant = false) {
     if (!navigator.geolocation) { alert('Geolocalizacao nao disponivel neste navegador.'); return; }
     navigator.geolocation.getCurrentPosition(
       pos => {
@@ -1709,14 +1775,16 @@
               if (status === 'OK' && results?.[0]) {
                 _addrTempLoc = { lat, lng, formatted_address: results[0].formatted_address || '', place_id: results[0].place_id||'', ..._parseAddrComponents(results[0].address_components||[]) };
               }
-              closeModalId('addrSearchModal');
-              _openAddrMapScreen(lat, lng);
+              closeModalImmediately('addrSearchModal');
+              if (instant) closeAddressEntryStackImmediately();
+              _openAddrMapScreen(lat, lng, instant);
             });
           })
           .catch(err => {
             console.warn('[PedeAqui] Geocoder unavailable for current location:', err);
-            closeModalId('addrSearchModal');
-            _openAddrMapScreen(lat, lng);
+            closeModalImmediately('addrSearchModal');
+            if (instant) closeAddressEntryStackImmediately();
+            _openAddrMapScreen(lat, lng, instant);
           });
       },
       err => {
@@ -1726,8 +1794,9 @@
     );
   }
 
-  function _openAddrMapScreen(lat, lng) {
-    openModal('addrMapModal');
+  function _openAddrMapScreen(lat, lng, instant = false) {
+    if (instant) openModalImmediately('addrMapModal');
+    else openModal('addrMapModal');
     _loadMapsLibrary()
       .then(() => setTimeout(() => _initAddrMap(lat, lng), 160))
       .catch(err => {
@@ -1857,6 +1926,7 @@
     if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
     renderWidget();
     updateCartUI();
+    _returnToAddAddressChoice = false;
     closeModalId('addrDetailsModal');
     closeModalId('addrMapModal');
     closeModalId('addrSearchModal');
@@ -1890,6 +1960,7 @@
     if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
     renderWidget();
     updateCartUI();
+    _returnToAddAddressChoice = false;
     closeModalId('addressModal');
     closeModalId('addrPickerModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
@@ -3223,7 +3294,7 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, selectAdcOption, adcConfirm,
+    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
     openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,

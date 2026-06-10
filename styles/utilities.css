@@ -5166,17 +5166,25 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     transition:transform .53s ease!important;
   }
   #addrPickerModal.no-motion,
-  #addAddressModal.no-motion{
+  #addAddressModal.no-motion,
+  #addrSearchModal.no-motion,
+  #addrMapModal.no-motion{
     transition:none!important;
   }
   #addrPickerModal.no-motion.active,
-  #addAddressModal.no-motion.active{
+  #addAddressModal.no-motion.active,
+  #addrSearchModal.no-motion.active,
+  #addrMapModal.no-motion.active{
     transition:none!important;
   }
   #addrPickerModal.no-motion .modal--fs,
   #addAddressModal.no-motion .modal--fs,
+  #addrSearchModal.no-motion .modal--fs,
+  #addrMapModal.no-motion .modal--fs,
   #addrPickerModal.no-motion.active .modal--fs,
-  #addAddressModal.no-motion.active .modal--fs{
+  #addAddressModal.no-motion.active .modal--fs,
+  #addrSearchModal.no-motion.active .modal--fs,
+  #addrMapModal.no-motion.active .modal--fs{
     transition:none!important;
   }
   #addAddressModal{
@@ -5191,6 +5199,9 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     visibility:visible!important;
     pointer-events:auto!important;
     transition:background .28s ease,visibility 0s linear 0s!important;
+  }
+  #addAddressModal.from-picker{
+    z-index:230!important;
   }
   #addAddressModal .modal--fs{
     visibility:visible!important;

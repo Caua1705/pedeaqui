@@ -5126,6 +5126,9 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     pointer-events:auto!important;
     transition:background .28s ease,visibility 0s linear 0s!important;
   }
+  #loginModal.from-add-address{
+    z-index:240!important;
+  }
   #loginModal .modal--login{
     position:fixed!important;
     inset:0!important;
@@ -5168,23 +5171,27 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
   #addrPickerModal.no-motion,
   #addAddressModal.no-motion,
   #addrSearchModal.no-motion,
-  #addrMapModal.no-motion{
+  #addrMapModal.no-motion,
+  #addrDetailsModal.no-motion{
     transition:none!important;
   }
   #addrPickerModal.no-motion.active,
   #addAddressModal.no-motion.active,
   #addrSearchModal.no-motion.active,
-  #addrMapModal.no-motion.active{
+  #addrMapModal.no-motion.active,
+  #addrDetailsModal.no-motion.active{
     transition:none!important;
   }
   #addrPickerModal.no-motion .modal--fs,
   #addAddressModal.no-motion .modal--fs,
   #addrSearchModal.no-motion .modal--fs,
   #addrMapModal.no-motion .modal--fs,
+  #addrDetailsModal.no-motion .modal--fs,
   #addrPickerModal.no-motion.active .modal--fs,
   #addAddressModal.no-motion.active .modal--fs,
   #addrSearchModal.no-motion.active .modal--fs,
-  #addrMapModal.no-motion.active .modal--fs{
+  #addrMapModal.no-motion.active .modal--fs,
+  #addrDetailsModal.no-motion.active .modal--fs{
     transition:none!important;
   }
   #addAddressModal{

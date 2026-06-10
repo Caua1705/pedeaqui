@@ -78,8 +78,8 @@
   color:#252a31!important;
 }
 #operationModal .cart-hdr-back svg{
-  width:16px!important;
-  height:16px!important;
+  width:17px!important;
+  height:17px!important;
   stroke-width:1.8!important;
 }
 #operationModal .cart-hdr-title{
@@ -298,7 +298,7 @@
   outline:none;
   background:transparent;
   font-family:inherit;
-  font-size:13px!important;
+  font-size:12px!important;
   color:var(--op-ink);
   line-height:16px!important;
   transform:none!important;
@@ -355,6 +355,7 @@
   height:8px!important;
   border-radius:50%;
   background:#F36F21;
+  box-shadow:0 0 0 1px #F36F21;
 }
 
 .op-branch-body{
@@ -400,8 +401,8 @@
 .op-branch-badge.closed{background:#E8E8E8!important;color:#747474!important}
 
 .op-branch-chevron{
-  width:14px!important;
-  height:14px!important;
+  width:16px!important;
+  height:16px!important;
   color:#A3A8AE!important;
   flex-shrink:0;
   align-self:center;
@@ -723,7 +724,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:#fff!important;
-  border-bottom:1px solid #f1f1f1!important;
+  border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
 #addrSearchModal .cart-hdr-back,
@@ -766,7 +767,7 @@
   flex:1!important;
   overflow-y:auto!important;
   overflow-x:hidden!important;
-  padding:24px 20px 24px!important;
+  padding:13px 20px 24px!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
@@ -776,51 +777,72 @@
 .addr-search-body::-webkit-scrollbar{display:none!important}
 
 .addr-search-icon-wrap{
-  width:60px!important;
-  height:60px!important;
+  width:100px!important;
+  height:100px!important;
   border-radius:50%!important;
   background:#FFF1EA!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
   flex-shrink:0!important;
-  margin-bottom:14px!important;
+  margin-top:8px!important;
+  margin-bottom:16px!important;
+}
+.addr-search-icon-wrap svg{
+  width:50px!important;
+  height:50px!important;
 }
 .addr-search-title{
-  font-size:20px!important;
+  font-size:24px!important;
   font-weight:700!important;
-  line-height:26px!important;
-  color:#1f2937!important;
+  line-height:30px!important;
+  color:#f36f21!important;
   text-align:center!important;
-  margin:0 0 8px!important;
+  margin:2px 0 10px!important;
 }
 .addr-search-sub{
-  font-size:13px!important;
+  font-size:14px!important;
   font-weight:400!important;
-  line-height:18px!important;
+  line-height:20px!important;
   color:#6b7280!important;
+  text-align:left!important;
+  margin:0 0 22px!important;
+  width:390px!important;
+  max-width:100%!important;
+}
+.addr-search-sub span{
+  display:block!important;
   text-align:center!important;
-  margin:0 0 20px!important;
-  max-width:320px!important;
 }
 
 /* Search input field */
 .addr-search-field{
-  width:100%!important;
-  height:44px!important;
-  border:1px solid #E1E3E6!important;
-  border-radius:8px!important;
+  width:374px!important;
+  max-width:100%!important;
+  height:36px!important;
+  border:1px solid #d5d8dd!important;
+  border-radius:10px!important;
   background:#fff!important;
   display:flex!important;
   align-items:center!important;
-  gap:8px!important;
-  padding:0 12px!important;
+  gap:12px!important;
+  padding:0 12px 0 15px!important;
   box-sizing:border-box!important;
+  margin-top:0!important;
   margin-bottom:10px!important;
   transition:border-color .15s!important;
 }
-.addr-search-field:focus-within{border-color:#cccccc!important}
-.addr-search-field-icon{color:#9AA0A8!important;flex-shrink:0!important}
+.addr-search-field:focus-within{
+  border-color:#cccccc!important;
+  background:#fafafa!important;
+}
+.addr-search-field-icon{
+  color:#252a31!important;
+  width:14px!important;
+  height:14px!important;
+  flex-shrink:0!important;
+  stroke-width:2.8!important;
+}
 .addr-search-input{
   flex:1!important;
   border:none!important;
@@ -832,6 +854,33 @@
   min-width:0!important;
 }
 .addr-search-input::placeholder{color:#9AA0A8!important}
+.addr-google-powered{
+  width:374px!important;
+  max-width:100%!important;
+  display:flex!important;
+  justify-content:flex-end!important;
+  align-items:baseline!important;
+  gap:2px!important;
+  margin:-2px 2px 12px 0!important;
+  color:#9aa0a8!important;
+  font-family:Arial,sans-serif!important;
+  line-height:1!important;
+}
+.addr-google-powered span{
+  font-size:7.5px!important;
+  font-weight:400!important;
+  color:#9aa0a8!important;
+}
+.addr-google-powered strong{
+  font-size:10px!important;
+  font-weight:600!important;
+  letter-spacing:-.2px!important;
+}
+.addr-google-powered strong span{font-size:10px!important;font-weight:600!important}
+.addr-google-powered .g-blue{color:#4285f4!important}
+.addr-google-powered .g-red{color:#ea4335!important}
+.addr-google-powered .g-yellow{color:#fbbc05!important}
+.addr-google-powered .g-green{color:#34a853!important}
 
 /* Geolocation button */
 .addr-geo-btn{
@@ -860,15 +909,16 @@
   width:100%!important;
   display:flex!important;
   flex-direction:column!important;
+  margin-top:20px!important;
 }
 
 /* Suggestion item */
 .addr-sug-item{
   width:100%!important;
   border:none!important;
-  border-bottom:1px solid #f4f5f6!important;
+  border-bottom:1px solid #e8eaee!important;
   background:#fff!important;
-  padding:12px 0!important;
+  padding:13px 0!important;
   display:flex!important;
   align-items:flex-start!important;
   gap:10px!important;
@@ -878,27 +928,27 @@
   transition:background .1s!important;
 }
 .addr-sug-item:active{background:#FFF3EE!important}
-.addr-sug-pin{color:#9AA0A8!important;flex-shrink:0!important;margin-top:2px!important}
+.addr-sug-item:last-child{border-bottom:none!important}
+.addr-sug-pin{
+  width:12.5px!important;
+  height:12.5px!important;
+  color:#a8adb5!important;
+  flex-shrink:0!important;
+  margin-top:3px!important;
+}
 .addr-sug-copy{flex:1!important;min-width:0!important}
 .addr-sug-main{
   display:block!important;
-  font-size:13px!important;
-  font-weight:600!important;
-  color:#1f2937!important;
-  line-height:18px!important;
-  white-space:nowrap!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-}
-.addr-sug-sub{
-  display:block!important;
-  font-size:11px!important;
+  font-size:12px!important;
   font-weight:400!important;
-  color:#6b7280!important;
-  line-height:16px!important;
-  white-space:nowrap!important;
+  color:#4b5563!important;
+  line-height:17px!important;
+  white-space:normal!important;
   overflow:hidden!important;
-  text-overflow:ellipsis!important;
+  text-overflow:clip!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
 }
 
 /* No results */
@@ -949,16 +999,18 @@
 
 /* "Não achei meu endereço" link */
 .addr-notfound-btn{
-  margin-top:18px!important;
+  margin-top:2px!important;
   border:none!important;
   background:transparent!important;
   font-size:12px!important;
-  font-weight:600!important;
-  color:#F36F21!important;
+  line-height:18px!important;
+  font-weight:650!important;
+  padding:4px 0!important;
+  color:#6f7680!important;
   cursor:pointer!important;
   font-family:inherit!important;
-  text-decoration:underline!important;
-  text-underline-offset:2px!important;
+  text-decoration:none!important;
+  text-underline-offset:0!important;
 }
 
 /* ── STEP 2: MAP CONFIRMATION ── */
@@ -977,7 +1029,7 @@
 
 /* ── STEP 3: ADDRESS DETAILS FORM ── */
 .addr-det-minimap{
-  height:150px!important;
+  height:210px!important;
   width:100%!important;
   flex-shrink:0!important;
   background:#e8ecef!important;
@@ -985,19 +1037,35 @@
 .addr-det-location-strip{
   display:flex!important;
   align-items:center!important;
-  gap:8px!important;
-  padding:10px 16px!important;
-  background:#FFF1EA!important;
-  border-bottom:1px solid #FFD7BC!important;
+  gap:12px!important;
+  padding:20px 20px 18px!important;
+  background:#fff!important;
+  border-bottom:1px solid #eeeeee!important;
   flex-shrink:0!important;
 }
-.addr-det-location-pin{color:#F36F21!important;flex-shrink:0!important}
-.addr-det-location-text{
+.addr-det-location-copy{
   flex:1!important;
-  font-size:12px!important;
-  font-weight:500!important;
-  color:#1f2937!important;
-  line-height:16px!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+.addr-det-location-copy strong{
+  display:block!important;
+  font-size:22px!important;
+  line-height:27px!important;
+  font-weight:800!important;
+  color:#f36f21!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.addr-det-location-copy small{
+  display:block!important;
+  font-size:13px!important;
+  line-height:18px!important;
+  font-weight:400!important;
+  color:#4b5563!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
@@ -1027,23 +1095,29 @@
 .addr-det-scroll::-webkit-scrollbar{display:none!important}
 
 .addr-det-form{
-  padding:16px 20px 12px!important;
-  display:flex!important;
-  flex-direction:column!important;
+  padding:16px 20px 18px!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  column-gap:10px!important;
+  row-gap:8px!important;
 }
 .addr-det-label{
-  font-size:11px!important;
-  font-weight:600!important;
-  color:#6b7280!important;
-  text-transform:uppercase!important;
-  letter-spacing:.04em!important;
-  margin-top:14px!important;
-  margin-bottom:4px!important;
+  font-size:12px!important;
+  font-weight:500!important;
+  color:#4b5563!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+  margin:10px 0 2px!important;
+  grid-column:1 / -1!important;
 }
 .addr-det-form > .addr-det-label:first-child{margin-top:0!important}
+.addr-det-label[for="addrDetStreet"],
+#addrDetStreet{
+  display:none!important;
+}
 .addr-det-input{
   width:100%!important;
-  height:42px!important;
+  height:43px!important;
   border:1px solid #E1E3E6!important;
   border-radius:8px!important;
   padding:0 12px!important;
@@ -1054,9 +1128,14 @@
   outline:none!important;
   transition:border-color .15s!important;
   box-sizing:border-box!important;
+  grid-column:1 / -1!important;
 }
 .addr-det-input:focus{border-color:#cccccc!important}
 .addr-det-input:disabled{background:#f9f9f9!important;color:#9aa0a8!important}
+.addr-det-label[for="addrDetNumber"]{grid-column:1!important}
+#addrDetNumber{grid-column:1!important}
+.addr-det-label[for="addrDetComplement"]{grid-column:2!important}
+#addrDetComplement{grid-column:2!important}
 .addr-det-checkbox-label{
   display:flex!important;
   align-items:center!important;
@@ -1066,6 +1145,7 @@
   color:#4b5563!important;
   cursor:pointer!important;
   padding:6px 0 0!important;
+  grid-column:1 / -1!important;
 }
 
 /* Details footer */

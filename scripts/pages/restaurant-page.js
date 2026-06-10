@@ -142,6 +142,7 @@
     const branch = branches[0] || {};
     const restName = restaurant.name || 'Restaurante';
     document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label,.hero-rest-name').forEach(el => el.textContent = restName);
+    if ($('addrSearchHeaderTitle')) $('addrSearchHeaderTitle').textContent = restName;
     document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || 'Pedido online');
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
@@ -1712,13 +1713,11 @@
       return;
     }
     sug.innerHTML = _addrSuggestionCache.map((s, index) => {
-      const main = _esc(s.main || '');
-      const sub  = _esc(s.sub || '');
+      const main = _esc([s.main, s.sub].filter(Boolean).join(s.sub ? ' - ' : ''));
       return `<button class="addr-sug-item" onclick="selectAddrSuggestion(${index})">
-        <svg class="addr-sug-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <svg class="addr-sug-pin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <div class="addr-sug-copy">
           <span class="addr-sug-main">${main}</span>
-          <span class="addr-sug-sub">${sub}</span>
         </div>
       </button>`;
     }).join('');
@@ -1741,8 +1740,8 @@
         throw new Error('Sugestao invalida.');
       }
       _addrAutocompleteSessionToken = null;
-      closeModalId('addrSearchModal');
-      _openAddrMapScreen(_addrTempLoc.lat, _addrTempLoc.lng);
+      closeModalImmediately('addrSearchModal');
+      _openAddrDetailsForm(true);
     } catch (err) {
       console.warn('[PedeAqui] Failed to select address suggestion:', err);
       _showAddrSearchMessage(_mapPlacesError(err));
@@ -1845,7 +1844,7 @@
     _openAddrDetailsForm();
   }
 
-  function _openAddrDetailsForm() {
+  function _openAddrDetailsForm(instant = false) {
     const loc = _addrTempLoc || {};
     const set = (id, v) => { const el = $(id); if (el) el.value = v; };
     const setDis = (id, v) => { const el = $(id); if (el) { el.value = v; el.disabled = false; } };
@@ -1857,11 +1856,15 @@
     set('addrDetReference', '');
     const noNum = $('addrDetNoNumber');
     if (noNum) noNum.checked = false;
-    const locTxt = loc.formatted_address || [loc.street, loc.neighborhood, loc.city].filter(Boolean).join(', ');
-    const lt = $('addrDetLocationText');
-    if (lt) lt.textContent = locTxt || '—';
+    const title = loc.street_name || String(loc.street || '').replace(/,\s*[^,]+$/, '') || loc.formatted_address || 'Endereco';
+    const sub = [loc.neighborhood, loc.city, loc.state].filter(Boolean).join(', ');
+    const titleEl = $('addrDetLocationTitle');
+    const subEl = $('addrDetLocationSub');
+    if (titleEl) titleEl.textContent = title;
+    if (subEl) subEl.textContent = sub || loc.formatted_address || '';
     validateAddrDetails();
-    openModal('addrDetailsModal');
+    if (instant) openModalImmediately('addrDetailsModal');
+    else openModal('addrDetailsModal');
     _loadMapsLibrary()
       .then(() => setTimeout(_initAddrDetailsMiniMap, 160))
       .catch(err => console.warn('[PedeAqui] Mini map unavailable:', err));
@@ -1970,6 +1973,7 @@
 
   function openLoginScreen(origin = 'profile') {
     _loginOrigin = origin;
+    $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     openModal('loginModal');
   }
 

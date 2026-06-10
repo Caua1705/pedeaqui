@@ -1135,18 +1135,21 @@
       <button class="cart-hdr-back" onclick="backFromAddrSearch()" aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
-      <h2 class="cart-hdr-title">Endereço</h2>
+      <h2 class="cart-hdr-title" id="addrSearchHeaderTitle">Restaurante</h2>
       <div class="cart-hdr-spacer"></div>
     </div>
     <div class="addr-search-body">
       <div class="addr-search-icon-wrap">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" fill="#FFD0B8" stroke="#F36F21" stroke-width="1.8" stroke-linejoin="round"/>
-          <circle cx="12" cy="10" r="3" fill="#F36F21"/>
+        <svg width="50" height="50" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M10 31.5 30.5 12 51 31.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 29.5V53h29V29.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M26 53V39h10v14" stroke="#111111" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M55 34.5c0 8.5-10 17.5-10 17.5s-10-9-10-17.5a10 10 0 1 1 20 0Z" fill="#F36F21" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="45" cy="34.5" r="3" fill="#FFD7BC" stroke="#111111" stroke-width="2"/>
         </svg>
       </div>
       <h3 class="addr-search-title">Endereço</h3>
-      <p class="addr-search-sub">Informe seu endereço e nos ajude a definir as melhores ofertas e oportunidades para você</p>
+      <p class="addr-search-sub">Informe seu endereço e nos ajude a definir as melhores<br><span>ofertas e oportunidades para você</span></p>
       <div class="addr-search-field">
         <svg class="addr-search-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="addrSearchInput" class="addr-search-input"
@@ -1154,12 +1157,14 @@
                autocomplete="off"
                oninput="onAddrSearchInput()">
       </div>
-      <button class="addr-geo-btn" onclick="adcUseGeoSearch()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        <span>Localização atual</span>
-      </button>
-      <div id="addrSuggestions" class="addr-suggestions"></div>
+      <div class="addr-google-powered" aria-label="Powered by Google">
+        <span>powered by</span>
+        <strong>
+          <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
+        </strong>
+      </div>
       <button class="addr-notfound-btn" onclick="closeModalId('addrSearchModal');openManualAddressForm()">Não achei meu endereço</button>
+      <div id="addrSuggestions" class="addr-suggestions"></div>
     </div>
   </div>
 </div>
@@ -1193,15 +1198,17 @@
     </div>
     <div id="addrDetailsMiniMap" class="addr-det-minimap"></div>
     <div class="addr-det-location-strip">
-      <svg class="addr-det-location-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="addrDetLocationText" class="addr-det-location-text">—</span>
+      <span class="addr-det-location-copy">
+        <strong id="addrDetLocationTitle">—</strong>
+        <small id="addrDetLocationSub"></small>
+      </span>
       <button class="addr-det-edit-btn" onclick="closeModalId('addrDetailsModal')" aria-label="Editar localização">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
     </div>
     <div class="addr-det-scroll">
       <div class="addr-det-form">
-        <label class="addr-det-label" for="addrDetCep">CEP</label>
+        <label class="addr-det-label" for="addrDetCep">CEP *</label>
         <input type="text" id="addrDetCep" class="addr-det-input" placeholder="00000-000" maxlength="9" inputmode="numeric" oninput="maskCep(this);validateAddrDetails()">
 
         <label class="addr-det-label" for="addrDetStreet">Logradouro *</label>
@@ -1222,6 +1229,9 @@
 
         <label class="addr-det-label" for="addrDetReference">Ponto de referência</label>
         <input type="text" id="addrDetReference" class="addr-det-input" placeholder="Próximo a...">
+
+        <label class="addr-det-label" for="addrDetAlias">Apelidar como</label>
+        <input type="text" id="addrDetAlias" class="addr-det-input" placeholder="">
       </div>
     </div>
     <div class="addr-det-footer">

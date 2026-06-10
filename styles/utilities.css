@@ -2700,7 +2700,7 @@ body:not(.menu-tab) .home-order-cta,
     flex:0 0 155.44px!important;
     font-size:12px!important;
     right:20px!important;
-    bottom:calc(82px + var(--safe-bottom) + 16px)!important;
+    bottom:calc(85px + var(--safe-bottom) + 19px)!important;
   }
 }
 
@@ -4348,11 +4348,11 @@ body.menu-tab .search-bar input{
   line-height:18px!important;
   font-weight:400!important;
   color:var(--text-main)!important;
-  padding:0!important;
+  padding:0 0 0 4px!important;
 }
 
 body.menu-tab .search-bar input::placeholder{
-  font-size:13px!important;
+  font-size:12px!important;
   font-weight:400!important;
   color:#8D949D!important;
 }
@@ -4851,4 +4851,245 @@ body.menu-tab .cats.is-stuck{
 }
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOTTOM NAV — Take a Juice 1:1 (FINAL, autoritativo).
+   Medidas extraídas da inspeção da referência:
+   container 414×85 · item ~58.8×43 · ícone 20×20 (svg 12×14)
+   · texto 12px/400 · QR central 40×40.
+   Anexado por último para suplantar TODAS as camadas anteriores
+   (inclui as variantes .active de maior especificidade — o pill
+   #FFF0E8 atrás do ícone ativo e larguras/min-widths antigas).
+   ════════════════════════════════════════════════════════════════ */
+body.menu-tab .mob-bottom-nav,
+body.home-tab .mob-bottom-nav,
+.mob-bottom-nav{
+  box-sizing:border-box!important;
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:0!important;
+  transform:translateX(-50%)!important;
+  width:min(100vw,414px)!important;
+  max-width:414px!important;
+  margin:0!important;
+  height:calc(85px + var(--safe-bottom))!important;
+  padding:0 0 var(--safe-bottom)!important;
+  border:0!important;
+  border-top:0!important;
+  border-radius:0!important;
+  background:#ffffff!important;
+  box-shadow:0 -6px 16px rgba(0,0,0,.08)!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0 36px!important;
+  overflow:visible!important;
+  z-index:90!important;
+}
+/* Início levemente mais à esquerda, Perfil levemente mais à direita */
+.mob-bottom-nav #mobNavHome{margin-right:3px!important;}
+.mob-bottom-nav #mobNavProfile{margin-left:3px!important;}
+@media(max-width:414px){
+  .mob-bottom-nav{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+  }
+}
+@media(max-width:767px){
+  body:not(.menu-tab),
+  body.menu-tab,
+  body.home-tab{
+    padding-bottom:calc(85px + var(--safe-bottom))!important;
+  }
+}
+
+/* Item: ocupa só o espaço necessário — sem flex-grow, sem width fixa,
+   sem min-width, sem padding horizontal. [ícone] sobre [texto]. */
+.mob-bottom-nav .mob-nav-item,
+.mob-bottom-nav .mob-nav-item.active,
+.mob-bottom-nav .mob-nav-item:not(.active){
+  box-sizing:border-box!important;
+  position:static!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:43px!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  line-height:normal!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.mob-bottom-nav .mob-nav-item::before,
+.mob-bottom-nav .mob-nav-item::after{
+  content:none!important;
+  display:none!important;
+}
+.mob-bottom-nav .mob-nav-item:focus,
+.mob-bottom-nav .mob-nav-item:focus-visible,
+.mob-bottom-nav .mob-nav-item:active{
+  outline:none!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* Container do ícone: 20×20. */
+.mob-bottom-nav .mob-nav-item .nav-icon,
+.mob-bottom-nav .mob-nav-item.active .nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon{
+  box-sizing:border-box!important;
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  max-width:20px!important;
+  max-height:20px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
+}
+
+/* SVG: 18×18. */
+.mob-bottom-nav .mob-nav-item .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
+  width:18px!important;
+  height:18px!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  stroke-width:1.8!important;
+  display:block!important;
+}
+
+/* Texto: 12px/400, sem width, sem fundo, sem highlight. */
+.mob-bottom-nav .mob-nav-item > span:not(.nav-icon),
+.mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon),
+.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:auto!important;
+  margin:9px 0 0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:normal!important;
+  letter-spacing:normal!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+
+/* Cores: inativo cinza, ativo laranja — sem mudar peso nem tamanho. */
+.mob-bottom-nav .mob-nav-item:not(.active),
+.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
+  color:#606060!important;
+  font-weight:400!important;
+}
+.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item:not(.active) svg{
+  color:#aaaaaa!important;
+  stroke:#aaaaaa!important;
+}
+.mob-bottom-nav .mob-nav-item.active,
+.mob-bottom-nav .mob-nav-item.active .nav-icon,
+.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.active svg,
+.mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
+  color:#F36F21!important;
+  stroke:#F36F21!important;
+  font-weight:400!important;
+}
+
+/* Botão central QRCode: círculo 40×40, exatamente centralizado. */
+.mob-bottom-nav .mob-nav-item.mob-nav-qr,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr.active,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active){
+  flex:0 0 40px!important;
+  width:40px!important;
+  min-width:40px!important;
+  max-width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  max-height:40px!important;
+  border-radius:50%!important;
+  justify-content:center!important;
+  color:#2d2d2d!important;
+  stroke:#2d2d2d!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr .nav-icon,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .nav-icon,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active) .nav-icon{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  min-height:40px!important;
+  max-width:40px!important;
+  max-height:40px!important;
+  border-radius:50%!important;
+  background:transparent!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .mob-nav-icon,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active) .mob-nav-icon{
+  width:26px!important;
+  height:26px!important;
+  stroke-width:1.8!important;
+  color:#2d2d2d!important;
+  stroke:#2d2d2d!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DELIVERY WIDGET — estado confirmado (endereço escolhido).
+   Fundo já é cinza (#f2f2f3). Texto e chevron passam para neutro/preto.
+   ════════════════════════════════════════════════════════════════ */
+/* Endereço confirmado (has-address): texto cinza escuro — home + cardápio */
+body.home-tab .address-strip.has-address .address-card-copy strong,
+body.home-tab .address-strip.has-address #homeAddressTitle,
+body.menu-tab .address-strip.has-address .address-card-copy strong,
+body.menu-tab .address-strip.has-address #homeAddressTitle{
+  color:#6a6a6a!important;
+  font-size:12px!important;
+  font-weight:300!important;
+  font-synthesis-weight:none!important;
+}
+/* Chevron: preto só quando endereço confirmado — home + cardápio */
+body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path{
+  color:#1a1a1a!important;
+  stroke:#1a1a1a!important;
 }

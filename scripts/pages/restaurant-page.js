@@ -252,8 +252,20 @@
     heroBannerTimer = null;
     if (total <= 3) return;
     heroBannerTimer = setInterval(() => {
+      const track = $('restaurantHeroTrack');
+      if (!track) return;
+      const total = track.children.length;
       heroBannerIndex += 1;
       updateHeroCarousel();
+      if (heroBannerIndex >= total - 1) {
+        setTimeout(() => {
+          heroBannerIndex = 1;
+          track.style.transition = 'none';
+          track.style.transform = 'translateX(-100%)';
+          track.offsetHeight;
+          track.style.transition = '';
+        }, 490);
+      }
     }, HERO_BANNER_INTERVAL_MS);
   }
 
@@ -491,7 +503,7 @@
     document.body.classList.remove('home-tab');
     document.body.classList.add('menu-tab');
     setMobNavActive('mobNavMenu');
-    if (!document.querySelector('.cat.active')) setFirstCategoryActive();
+    setFirstCategoryActive();
     initCatStuckObserver();
   }
 
@@ -1048,6 +1060,12 @@
     setCartTab(operationContext.order_type);
     updateCartUI();
     closeModalId('operationModal');
+    if (_pendingMenuNav) {
+      _pendingMenuNav = false;
+      closeMobViews();
+      showMenuTab();
+      window.scrollTo(0, 0);
+    }
   }
 
   // Keep operation context in sync when the cart/checkout tabs change order type
@@ -2901,7 +2919,14 @@
     $(id)?.classList.add('active');
   }
 
+  let _pendingMenuNav = false;
+
   function mobNavMenu() {
+    if (!operationConfirmed) {
+      _pendingMenuNav = true;
+      openOperationScreen();
+      return;
+    }
     closeMobViews();
     showMenuTab();
     window.scrollTo(0, 0);

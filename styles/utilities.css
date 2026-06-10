@@ -5075,7 +5075,7 @@ body.home-tab .mob-bottom-nav,
    DELIVERY WIDGET — estado confirmado (endereço escolhido).
    Fundo já é cinza (#f2f2f3). Texto e chevron passam para neutro/preto.
    ════════════════════════════════════════════════════════════════ */
-/* Endereço confirmado (has-address): texto cinza escuro — home + cardápio */
+/* Operação confirmada: texto cinza — delivery com endereço (has-address) */
 body.home-tab .address-strip.has-address .address-card-copy strong,
 body.home-tab .address-strip.has-address #homeAddressTitle,
 body.menu-tab .address-strip.has-address .address-card-copy strong,
@@ -5085,11 +5085,21 @@ body.menu-tab .address-strip.has-address #homeAddressTitle{
   font-weight:300!important;
   font-synthesis-weight:none!important;
 }
-/* Chevron: preto só quando endereço confirmado — home + cardápio */
-body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
-body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path{
+/* Operação confirmada: texto cinza — retirada (sem has-address mas confirmado) */
+body.home-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong,
+body.home-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) #homeAddressTitle,
+body.menu-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong,
+body.menu-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) #homeAddressTitle{
+  color:#6a6a6a!important;
+  font-size:12px!important;
+  font-weight:300!important;
+  font-synthesis-weight:none!important;
+}
+/* Chevron: preto sempre que operação confirmada (delivery ou retirada) */
+body.home-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron,
+body.home-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron path,
+body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron,
+body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron path{
   color:#1a1a1a!important;
   stroke:#1a1a1a!important;
 }

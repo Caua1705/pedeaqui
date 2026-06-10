@@ -4677,7 +4677,7 @@ body.menu-tab .delivery-widget-tabs{
   gap:6px!important;
   overflow:visible!important;
   z-index:30!important;
-  transform:translate(1px,2px)!important;
+  transform:translate(1px,5px)!important;
 }
 body.menu-tab .delivery-widget-tab{
   box-sizing:border-box!important;

@@ -478,7 +478,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:#fff!important;
-  border-bottom:1px solid #f1f1f1!important;
+  border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
 #addAddressModal .cart-hdr-back{
@@ -510,58 +510,80 @@
 
 /* Icon wrapper above title */
 .adc-icon-wrap{
-  width:60px!important;
-  height:60px!important;
+  width:70px!important;
+  height:70px!important;
   border-radius:50%!important;
   background:#FFF1EA!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
   flex-shrink:0!important;
+  margin-top:-6px!important;
   margin-bottom:14px!important;
+}
+.adc-icon-wrap svg{
+  width:38px!important;
+  height:38px!important;
 }
 /* "Informe seu endereço" orange title */
 .adc-title{
-  font-size:21px!important;
-  font-weight:800!important;
-  line-height:27px!important;
+  font-size:24px!important;
+  font-weight:700!important;
+  line-height:30px!important;
   color:#F36F21!important;
   text-align:center!important;
-  margin:0 0 28px!important;
+  margin:8px 0 28px!important;
 }
 /* Vertical option cards */
 .adc-opt-cards{
-  width:100%!important;
+  width:374px!important;
+  max-width:100%!important;
   display:flex!important;
   flex-direction:column!important;
   gap:12px!important;
+  transform:translateY(-3px)!important;
 }
 .adc-opt-card{
-  width:100%!important;
-  min-height:110px!important;
-  border:1.5px solid #eeeeee!important;
-  border-radius:16px!important;
+  width:374px!important;
+  max-width:100%!important;
+  height:94px!important;
+  min-height:94px!important;
+  border:1px solid #f2f3f5!important;
+  border-radius:10px!important;
   background:#fff!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
   justify-content:center!important;
-  gap:10px!important;
+  gap:8px!important;
   cursor:pointer!important;
   font-family:inherit!important;
   transition:border-color .15s,background .15s!important;
 }
+#adcBtnGeo{
+  margin-top:-1px!important;
+}
+#adcBtnManual{
+  margin-top:2px!important;
+}
 .adc-opt-card:active{background:#FFF3EE!important}
 .adc-opt-card.selected{
-  border-color:#F36F21!important;
-  background:rgba(243,111,33,.04)!important;
+  border-color:transparent!important;
+  box-shadow:inset 0 0 0 .5px rgba(243,111,33,.75)!important;
+  background:rgba(243,111,33,.13)!important;
 }
-.adc-opt-card svg{color:#9aa0a8!important;transition:color .15s!important}
+.adc-opt-card svg{
+  width:22px!important;
+  height:22px!important;
+  color:#9aa0a8!important;
+  transition:color .15s!important;
+}
 .adc-opt-card.selected svg{color:#F36F21!important}
 .adc-opt-card span{
-  font-size:14px!important;
+  font-size:12px!important;
   font-weight:700!important;
   color:#111827!important;
+  transform:translateY(2px)!important;
 }
 
 /* Body */
@@ -641,8 +663,9 @@
   margin-top:auto!important;
   display:flex!important;
   flex-direction:column!important;
+  align-items:center!important;
   gap:14px!important;
-  padding:16px 20px max(32px,env(safe-area-inset-bottom))!important;
+  padding:18px 20px max(30px,env(safe-area-inset-bottom))!important;
   background:#fff!important;
   border-top:0!important;
   box-shadow:none!important;
@@ -650,17 +673,19 @@
 
 /* Confirm button */
 .adc-confirm-btn{
-  width:100%!important;
+  width:374px!important;
+  max-width:100%!important;
   height:45px!important;
   border:none!important;
   border-radius:10px!important;
-  font-size:13px!important;
+  font-size:12px!important;
   font-weight:700!important;
   font-family:inherit!important;
   background:#F36F21!important;
   color:#fff!important;
   cursor:pointer!important;
   transition:background .15s!important;
+  margin-top:4px!important;
 }
 .adc-confirm-btn:disabled{
   background:#FFE4D8!important;
@@ -672,17 +697,19 @@
 
 /* "Já possuo uma conta" outlined button */
 .adc-account-btn{
-  width:100%!important;
+  width:374px!important;
+  max-width:100%!important;
   height:45px!important;
   border:1.5px solid #F36F21!important;
   border-radius:10px!important;
   background:#fff!important;
   color:#F36F21!important;
-  font-size:11px!important;
+  font-size:12px!important;
   font-weight:700!important;
   font-family:inherit!important;
   cursor:pointer!important;
   transition:background .15s!important;
+  margin-top:2px!important;
 }
 .adc-account-btn:active{background:#FFF3EE!important}
 

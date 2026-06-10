@@ -168,14 +168,16 @@
   display:flex!important;
   justify-content:center!important;
   align-items:stretch!important;
-  background:rgba(0,0,0,.42)!important;
-  opacity:0!important;
+  background:rgba(0,0,0,0)!important;
+  visibility:hidden!important;
   pointer-events:none!important;
-  transition:opacity .22s ease!important;
+  transition:background .28s ease,visibility 0s linear .6s!important;
 }
 .coupon-detail-overlay.active{
-  opacity:1!important;
+  background:rgba(0,0,0,.42)!important;
+  visibility:visible!important;
   pointer-events:auto!important;
+  transition:background .28s ease,visibility 0s linear 0s!important;
 }
 .coupon-detail-screen{
   width:min(100vw,430px)!important;
@@ -184,9 +186,10 @@
   flex-direction:column!important;
   background:#fff!important;
   transform:translateX(100%)!important;
-  transition:transform .85s cubic-bezier(.22,.8,.24,1)!important;
+  transition:transform .6s ease!important;
+  visibility:visible!important;
 }
-.coupon-detail-overlay.active .coupon-detail-screen{transform:translateX(0)!important}
+.coupon-detail-overlay.active .coupon-detail-screen{transform:translateX(0)!important;transition:transform .53s ease!important;}
 .coupon-detail-header{
   height:82px!important;
   display:grid!important;
@@ -5106,4 +5109,62 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron,
 body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron path{
   color:#1a1a1a!important;
   stroke:#1a1a1a!important;
+}
+
+/* Panel-slide para #loginModal e #productModal no mobile */
+@media(max-width:767px){
+  #loginModal{
+    opacity:1!important;
+    background:rgba(0,0,0,0)!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:background .28s ease,visibility 0s linear .6s!important;
+  }
+  #loginModal.active{
+    background:rgba(0,0,0,.42)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    transition:background .28s ease,visibility 0s linear 0s!important;
+  }
+  #loginModal .modal--login{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    border-radius:0!important;
+    visibility:visible!important;
+    transform:translateX(100%)!important;
+    transition:transform .6s ease!important;
+  }
+  #loginModal.active .modal--login{
+    transform:translateX(0)!important;
+    transition:transform .53s ease!important;
+  }
+  #productModal{
+    opacity:1!important;
+    background:rgba(0,0,0,0)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:background .28s ease,visibility 0s linear .6s!important;
+  }
+  #productModal.active{
+    background:rgba(0,0,0,.42)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    transition:background .28s ease,visibility 0s linear 0s!important;
+  }
+  #productModal .modal--product{
+    visibility:visible!important;
+    transform:translateX(100%)!important;
+    transition:transform .6s ease!important;
+  }
+  #productModal.active .modal--product{
+    transform:translateX(0)!important;
+    transition:transform .53s ease!important;
+  }
 }

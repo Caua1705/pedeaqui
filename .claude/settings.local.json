@@ -30,7 +30,10 @@
       "Bash(grep -rniE \"#[0-9a-f]{0,2}\\(a|9|8|7|b|c|d|e|f\\)[0-9a-f]?[0-9a-f][0-9a-f]?\\(a|9|8|7|6|5\\)[0-9a-f]{0,2}|green|#1e9e5a|#2e7d|#10b9|#22c5|#34a8|seagreen|forestgreen\" styles/)",
       "Bash(awk END{print NR} *)",
       "PowerShell(\\(Get-Content styles\\\\utilities.css | Measure-Object -Line\\).Lines)",
-      "Bash(Select-Object -Last 80)"
+      "Bash(Select-Object -Last 80)",
+      "Bash(awk NR>=780 && NR<=790 {print NR\": \"$0} *)",
+      "Bash(awk NR>=700 && NR<=710 {print NR\": \"$0} *)",
+      "Bash(awk NR>=660 && NR<=670 {print NR\": \"$0} *)"
     ]
   }
 }

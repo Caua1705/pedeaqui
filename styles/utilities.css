@@ -4245,10 +4245,10 @@ body.menu-tab .mob-identity .mob-badge-open::before{
 }
 
 body.menu-tab .mob-identity .mob-status-sep{
-  color:#999999!important;
+  color:#666666!important;
   font-size:13px!important;
   line-height:17px!important;
-  font-weight:200!important;
+  font-weight:400!important;
   display:inline-block!important;
   transform:scaleY(0.72)!important;
 }
@@ -4389,8 +4389,8 @@ body.menu-tab .cat{
   flex:0 0 auto!important;
   font-size:12px!important;
   line-height:15px!important;
-  font-weight:150!important;
-  color:var(--text-tabs-muted)!important;
+  font-weight:400!important;
+  color:#6b7280!important;
   letter-spacing:0!important;
   box-shadow:none!important;
 }
@@ -4843,7 +4843,7 @@ body.menu-tab .cats{
   position:sticky!important;
   top:0!important;
   z-index:40!important;
-  background:linear-gradient(to bottom,#ffffff 0,#ffffff calc(100% - 3px),#F0F0F0 calc(100% - 3px),#F0F0F0 100%)!important;
+  background:linear-gradient(to bottom,#ffffff 0,#ffffff calc(100% - 5px),#F6F6F6 calc(100% - 5px),#F6F6F6 100%)!important;
   border-bottom:0!important;
 }
 body.menu-tab .cats.is-stuck{

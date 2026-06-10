@@ -3265,16 +3265,18 @@ body,button,input,textarea,select{
 
 /* 3 — Restaurant identity header (Início only). */
 body.home-tab .mob-rest-name{
-  font-size:17px!important;
+  font-size:18px!important;
   font-weight:650!important;
   line-height:1.2!important;
   color:#3D434A!important;
 }
-body.home-tab .mob-rest-sub{
-  font-size:12px!important;           /* was 13px */
+body.home-tab .mob-rest-sub,
+body.home-tab #homeLoginPrompt{
+  font-size:12px!important;
   font-weight:500!important;
   line-height:1.25!important;
-  color:#6B7280!important;
+  color:#555555!important;
+  transform:translate(5px,0px)!important;
 }
 /* Cart value pill: lighter fill, less heavy text. */
 body.home-tab .home-cart-pill,
@@ -3502,9 +3504,11 @@ body.home-tab .delivery-widget.pending-selection{
     transform:translateX(4px)!important;
   }
 
-  body.home-tab .mob-rest-name,
+  body.home-tab .mob-rest-name{
+    transform:translate(5px, 2px)!important;
+  }
   body.home-tab #homeLoginPrompt{
-    transform:translate(4px, 2px)!important;
+    transform:translate(5px,0px)!important;
   }
 
   body.home-tab .home-coupons-section{

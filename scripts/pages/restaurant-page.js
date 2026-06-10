@@ -956,7 +956,6 @@
     const addrMain = $('homeAddressTitle');
     let text;
     if (!operationConfirmed) text = 'Informe seu endereço e loja';
-    else if (isPickup) text = operationContext.branch_address || 'Selecione uma unidade';
     else if (operationContext.address) text = addressSummary(operationContext.address);
     else text = 'Use seu endereço para melhores resultados';
     if (addrMain) addrMain.textContent = text;

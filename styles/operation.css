@@ -507,6 +507,62 @@
   width:32px!important;
 }
 
+/* Icon wrapper above title */
+.adc-icon-wrap{
+  width:60px!important;
+  height:60px!important;
+  border-radius:50%!important;
+  background:#FFF1EA!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+  margin-bottom:14px!important;
+}
+/* "Informe seu endereço" orange title */
+.adc-title{
+  font-size:21px!important;
+  font-weight:800!important;
+  line-height:27px!important;
+  color:#F36F21!important;
+  text-align:center!important;
+  margin:0 0 28px!important;
+}
+/* Vertical option cards */
+.adc-opt-cards{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+}
+.adc-opt-card{
+  width:100%!important;
+  min-height:110px!important;
+  border:1.5px solid #eeeeee!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  cursor:pointer!important;
+  font-family:inherit!important;
+  transition:border-color .15s,background .15s!important;
+}
+.adc-opt-card:active{background:#FFF3EE!important}
+.adc-opt-card.selected{
+  border-color:#F36F21!important;
+  background:rgba(243,111,33,.04)!important;
+}
+.adc-opt-card svg{color:#9aa0a8!important;transition:color .15s!important}
+.adc-opt-card.selected svg{color:#F36F21!important}
+.adc-opt-card span{
+  font-size:14px!important;
+  font-weight:700!important;
+  color:#111827!important;
+}
+
 /* Body */
 .adc-body{
   flex:1!important;

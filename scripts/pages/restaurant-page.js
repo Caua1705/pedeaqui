@@ -92,9 +92,20 @@
     const el = $(id);
     if (!el) return;
     el.classList.remove('active');
-    if (id === 'addAddressModal' && el.classList.contains('slide-mode')) {
-      setTimeout(() => el.classList.remove('slide-mode'), 650);
-    }
+    if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
+  }
+
+  function closeModalImmediately(id) {
+    const el = $(id);
+    if (!el) return;
+    const panel = el.querySelector('.modal--fs,.modal--login,.modal--product');
+    el.style.transition = 'none';
+    if (panel) panel.style.transition = 'none';
+    el.classList.remove('active');
+    setTimeout(() => {
+      el.style.transition = '';
+      if (panel) panel.style.transition = '';
+    }, 50);
     if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
   }
 
@@ -1100,33 +1111,49 @@
     openModal('addressModal');
   }
 
-  let _adcSelection = null;
-
   function openAddressChoice() {
     if (opDraft?.address) { openAddrPicker(); return; }
-    openAddressChoiceDirect();
+    openAddressChoiceDirect(true);
   }
 
-  function openAddressChoiceDirect() {
+  function openAddressChoiceDirect(withMotion = true) {
+    const btn = $('adcConfirmBtn');
+    if (btn) btn.disabled = true;
     _adcSelection = null;
     const geo = $('adcBtnGeo');
     const manual = $('adcBtnManual');
-    const btn = $('adcConfirmBtn');
     if (geo) geo.classList.remove('selected');
     if (manual) manual.classList.remove('selected');
-    if (btn) btn.disabled = true;
-    const adcModal = $('addAddressModal');
-    if (adcModal) {
-      const fromPicker = $('addrPickerModal')?.classList.contains('active');
-      adcModal.classList.toggle('slide-mode', !!fromPicker);
-    }
+    closeModalImmediately('addrPickerModal');
+    $('addAddressModal')?.classList.toggle('no-motion', !withMotion);
     openModal('addAddressModal');
+  }
+
+  let _adcSelection = null;
+
+  function selectAdcOption(type) {
+    _adcSelection = type;
+    const geo = $('adcBtnGeo');
+    const manual = $('adcBtnManual');
+    if (geo) geo.classList.toggle('selected', type === 'geo');
+    if (manual) manual.classList.toggle('selected', type === 'manual');
+    const btn = $('adcConfirmBtn');
+    if (btn) btn.disabled = false;
+  }
+
+  function adcConfirm() {
+    if (!_adcSelection) return;
+    const next = _adcSelection === 'geo' ? adcUseGeoSearch : openAddrSearch;
+    closeModalImmediately('addrPickerModal');
+    closeModalId('addAddressModal');
+    setTimeout(next, $('addAddressModal')?.classList.contains('no-motion') ? 0 : 540);
   }
 
   let _addrPickerSelected = null;
   let _addrPickerItems = [];
 
   function openAddrPicker() {
+    $('addrPickerModal')?.classList.add('no-motion');
     _addrPickerSelected = null;
     _addrPickerItems = [];
     const confirmBtn = $('addrPickerConfirmBtn');
@@ -1203,25 +1230,7 @@
     localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
     persistOperationContext();
     renderOperationScreen();
-    closeModalId('addrPickerModal');
-  }
-
-  function selectAdcOption(type) {
-    _adcSelection = type;
-    const geo = $('adcBtnGeo');
-    const manual = $('adcBtnManual');
-    if (geo) geo.classList.toggle('selected', type === 'geo');
-    if (manual) manual.classList.toggle('selected', type === 'manual');
-    const btn = $('adcConfirmBtn');
-    if (btn) btn.disabled = false;
-  }
-
-  function adcConfirm() {
-    if (_adcSelection === 'manual') {
-      openAddrSearch();
-    } else if (_adcSelection === 'geo') {
-      adcUseGeoSearch();
-    }
+    closeModalImmediately('addrPickerModal');
   }
 
   // ============================================================
@@ -1851,7 +1860,6 @@
     closeModalId('addrDetailsModal');
     closeModalId('addrMapModal');
     closeModalId('addrSearchModal');
-    closeModalId('addAddressModal');
     closeModalId('addrPickerModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
@@ -1883,7 +1891,6 @@
     renderWidget();
     updateCartUI();
     closeModalId('addressModal');
-    closeModalId('addAddressModal');
     closeModalId('addrPickerModal');
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
   }
@@ -3216,7 +3223,7 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, selectAdcOption, adcConfirm,
+    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
     openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,
@@ -3230,7 +3237,7 @@
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
-    openAddrPicker, openAddressChoiceDirect, selectAddrPickerItem, confirmAddrPicker,
+    openAddrPicker, selectAddrPickerItem, confirmAddrPicker,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,

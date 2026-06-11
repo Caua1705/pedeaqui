@@ -886,6 +886,7 @@
   let operationContext = null;
   let opDraft = null; // working copy edited while the operation modal is open
   let operationConfirmed = false;
+  let _opOpenedImmediately = false; // true quando aberta sem animação (acesso forçado sem endereço)
 
   const opStorageKey = () => OP_STORAGE_PREFIX + getRestaurantSlug();
 
@@ -990,12 +991,20 @@
   }
 
   // ---- Operation / location modal ----
-  function openOperationScreen() {
+  function openOperationScreen(immediate) {
     if (!operationContext) return;
+    _opOpenedImmediately = !!immediate;
     opDraft = JSON.parse(JSON.stringify(operationContext));
     if ($('opBranchSearch')) $('opBranchSearch').value = '';
     renderOperationScreen();
-    openModal('operationModal');
+    if (immediate) openModalImmediately('operationModal');
+    else openModal('operationModal');
+  }
+
+  function closeOperationScreen() {
+    if (_opOpenedImmediately) closeModalImmediately('operationModal');
+    else closeModalId('operationModal');
+    _opOpenedImmediately = false;
   }
 
   function renderOperationScreen() {
@@ -1085,7 +1094,7 @@
     renderWidget();
     setCartTab(operationContext.order_type);
     updateCartUI();
-    closeModalId('operationModal');
+    closeOperationScreen();
     if (_pendingMenuNav) {
       _pendingMenuNav = false;
       closeMobViews();
@@ -3164,7 +3173,7 @@
   function mobNavMenu() {
     if (!operationConfirmed) {
       _pendingMenuNav = true;
-      openOperationScreen();
+      openOperationScreen(true); // immediate = sem animação de entrada
       return;
     }
     closeMobViews();
@@ -3371,7 +3380,7 @@
     openForgotNotFound, closeForgotNotFound,
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
-    openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
+    openOperationScreen, closeOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,

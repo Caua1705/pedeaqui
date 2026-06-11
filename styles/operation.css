@@ -62,6 +62,15 @@
   transform:translateX(0)!important;
   transition:transform .53s ease!important;
 }
+/* ---- no-motion: suppress slide animation when opening instantly ---- */
+#operationModal.no-motion,
+#operationModal.no-motion.active{
+  transition:none!important;
+}
+#operationModal.no-motion .modal--fs,
+#operationModal.no-motion.active .modal--fs{
+  transition:none!important;
+}
 #operationModal .cart-hdr{
   position:relative!important;
   width:100%!important;

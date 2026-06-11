@@ -1288,3 +1288,9 @@
 .addr-picker-check svg{width:13px!important;height:13px!important;min-width:13px!important;min-height:13px!important;transform:scale(.846154)!important;transform-origin:center!important}
 .addr-picker-dots{transform:translateX(-10px)!important}
 .addr-picker-dots svg{width:16px!important;height:23px!important}
+.addr-picker-delete{display:none!important;width:28px!important;height:28px!important;border:1px solid #e5e5e5!important;border-radius:50%!important;background:#fff!important;color:#b8b8b8!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;transform:translateX(-2px)!important}
+.addr-picker-item.actions-open .addr-picker-copy{max-width:190px!important}
+.addr-picker-item.actions-open{background:linear-gradient(90deg,#fff 0 calc(100% - 52px),#f7f7f7 calc(100% - 52px) 100%)!important}
+.addr-picker-item.actions-open .addr-picker-dots{transform:translateX(-8px)!important}
+.addr-picker-item.actions-open .addr-picker-dots svg{width:21px!important;height:8px!important}
+.addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:translateX(5px)!important;background:#f7f7f7!important}

@@ -1217,6 +1217,13 @@
 
   let _addrPickerSelected = null;
   let _addrPickerItems = [];
+  const ADDR_PICKER_DOTS_VERTICAL = '<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>';
+  const ADDR_PICKER_DOTS_HORIZONTAL = '<svg width="21" height="8" viewBox="0 0 30 10" fill="none" stroke="#aaa" stroke-width="2"><circle cx="5" cy="5" r="1.45" fill="#aaa"/><circle cx="15" cy="5" r="1.45" fill="#aaa"/><circle cx="25" cy="5" r="1.45" fill="#aaa"/></svg>';
+  const ADDR_PICKER_DELETE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
+  function truncateAddrPickerText(text, max = 25) {
+    const value = String(text || '').trim();
+    return value.length > max ? `${value.slice(0, max).trimEnd()}...` : value;
+  }
 
   function openAddrPicker() {
     $('addrPickerModal')?.classList.add('no-motion');
@@ -1258,15 +1265,64 @@
         <span class="addr-picker-pin${isSel ? ' active' : ''}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small>${esc(summary)}</small></span>
+        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}">${esc(summary)}</small></span>
         ${isSel
           ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
-          : `<span class="addr-picker-dots"><svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg></span>`}
+          : `<span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
+             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`}
       </button>`;
     }).join('');
   }
 
+  function closeAddrPickerActions(exceptCard) {
+    document.querySelectorAll('#addrPickerModal .addr-picker-item.actions-open').forEach(card => {
+      if (exceptCard && card === exceptCard) return;
+      card.classList.remove('actions-open');
+      const copy = card.querySelector('.addr-picker-copy small');
+      if (copy?.dataset.fullText) copy.textContent = copy.dataset.fullText;
+      const dots = card.querySelector('.addr-picker-dots');
+      if (dots) dots.innerHTML = ADDR_PICKER_DOTS_VERTICAL;
+    });
+  }
+
+  function toggleAddrPickerActions(event, target) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const card = target?.closest?.('.addr-picker-item');
+    if (!card) return;
+    const willOpen = !card.classList.contains('actions-open');
+    closeAddrPickerActions(card);
+    card.classList.toggle('actions-open', willOpen);
+    const copy = card.querySelector('.addr-picker-copy small');
+    if (copy) {
+      const full = copy.dataset.fullText || copy.textContent || '';
+      copy.dataset.fullText = full;
+      copy.textContent = willOpen ? truncateAddrPickerText(full, 25) : full;
+    }
+    const dots = card.querySelector('.addr-picker-dots');
+    if (dots) dots.innerHTML = willOpen ? ADDR_PICKER_DOTS_HORIZONTAL : ADDR_PICKER_DOTS_VERTICAL;
+  }
+
+  function removeAddrPickerItem(event, target) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const card = target?.closest?.('.addr-picker-item');
+    const id = card?.dataset.addrId;
+    if (card && id === 'example1') {
+      card.remove();
+      return;
+    }
+    _addrPickerItems = _addrPickerItems.filter(a => String(a.id || a.address_id || '__current__') !== String(id));
+    if (_addrPickerSelected === String(id)) {
+      _addrPickerSelected = null;
+      const btn = $('addrPickerConfirmBtn');
+      if (btn) btn.disabled = true;
+    }
+    _renderAddrPickerList();
+  }
+
   function selectAddrPickerItem(id) {
+    closeAddrPickerActions();
     _addrPickerSelected = id;
     document.querySelectorAll('#addrPickerList .addr-picker-item').forEach(el => {
       const sel = el.dataset.addrId === id;
@@ -1280,7 +1336,11 @@
         indicator.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       } else {
         indicator.className = 'addr-picker-dots';
-        indicator.innerHTML = `<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>`;
+        indicator.setAttribute('onclick', 'toggleAddrPickerActions(event,this)');
+        indicator.innerHTML = ADDR_PICKER_DOTS_VERTICAL;
+        if (!el.querySelector('.addr-picker-delete')) {
+          el.insertAdjacentHTML('beforeend', `<span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`);
+        }
       }
     });
     const confirmBtn = $('addrPickerConfirmBtn');
@@ -3312,7 +3372,7 @@
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
     openOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
-    openAddrPicker, selectAddrPickerItem, confirmAddrPicker,
+    openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,

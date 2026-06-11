@@ -1261,7 +1261,7 @@
         <span class="addr-picker-copy"><strong>${esc(label)}</strong><small>${esc(summary)}</small></span>
         ${isSel
           ? `<span class="addr-picker-check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
-          : `<span class="addr-picker-dots"><svg width="17" height="24" viewBox="0 0 24 30" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.55" fill="#aaa"/><circle cx="12" cy="15" r="1.55" fill="#aaa"/><circle cx="12" cy="25" r="1.55" fill="#aaa"/></svg></span>`}
+          : `<span class="addr-picker-dots"><svg width="15" height="22" viewBox="0 0 24 30" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.35" fill="#aaa"/><circle cx="12" cy="15" r="1.35" fill="#aaa"/><circle cx="12" cy="25" r="1.35" fill="#aaa"/></svg></span>`}
       </button>`;
     }).join('');
   }
@@ -1280,7 +1280,7 @@
         indicator.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       } else {
         indicator.className = 'addr-picker-dots';
-        indicator.innerHTML = `<svg width="17" height="24" viewBox="0 0 24 30" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.55" fill="#aaa"/><circle cx="12" cy="15" r="1.55" fill="#aaa"/><circle cx="12" cy="25" r="1.55" fill="#aaa"/></svg>`;
+        indicator.innerHTML = `<svg width="15" height="22" viewBox="0 0 24 30" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.35" fill="#aaa"/><circle cx="12" cy="15" r="1.35" fill="#aaa"/><circle cx="12" cy="25" r="1.35" fill="#aaa"/></svg>`;
       }
     });
     const confirmBtn = $('addrPickerConfirmBtn');

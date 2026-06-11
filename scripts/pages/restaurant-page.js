@@ -81,11 +81,44 @@
     `;
   }
 
+  /* ---- Scroll-lock robusta para mobile (iOS / Android) ----
+     overflow:hidden no body não basta no iOS — o conteúdo de fundo
+     ainda recebe eventos de toque e desliza. A solução é fixar o body
+     em position:fixed com top = -scrollY, e restaurar ao fechar. */
+  let _scrollLockCount = 0;
+  let _savedScrollY = 0;
+
+  function lockBodyScroll() {
+    _scrollLockCount++;
+    if (_scrollLockCount > 1) return; // já travado
+    _savedScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_savedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll'; // mantém largura c/ scrollbar
+    document.body.classList.add('modal-open');
+  }
+
+  function unlockBodyScroll() {
+    _scrollLockCount = Math.max(0, _scrollLockCount - 1);
+    if (_scrollLockCount > 0) return; // ainda há modais abertos
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+    document.body.classList.remove('modal-open');
+    window.scrollTo(0, _savedScrollY);
+  }
+
   function openModal(id) {
     const el = $(id);
     if (!el) return;
     el.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
   }
 
   function openModalImmediately(id) {
@@ -93,7 +126,7 @@
     if (!el) return;
     el.classList.add('no-motion');
     el.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
 
@@ -101,7 +134,7 @@
     const el = $(id);
     if (!el) return;
     el.classList.remove('active');
-    if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
+    if (!document.querySelector('.overlay.active,.mob-view.active')) unlockBodyScroll();
   }
 
   function closeModalImmediately(id) {
@@ -117,7 +150,7 @@
       if (panel) panel.style.transition = '';
       el.classList.remove('no-motion');
     }, 50);
-    if (!document.querySelector('.overlay.active,.mob-view.active')) document.body.classList.remove('modal-open');
+    if (!document.querySelector('.overlay.active,.mob-view.active')) unlockBodyScroll();
   }
 
   function closeModal(e, id) {

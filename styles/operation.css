@@ -1289,8 +1289,8 @@
 .addr-picker-dots{transform:translateX(-10px)!important}
 .addr-picker-dots svg{width:16px!important;height:23px!important}
 .addr-picker-delete{display:none!important;width:28px!important;height:28px!important;border:1px solid #e5e5e5!important;border-radius:50%!important;background:#fff!important;color:#b8b8b8!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;transform:translateX(-2px)!important}
-.addr-picker-item.actions-open .addr-picker-copy{max-width:190px!important}
-.addr-picker-item.actions-open{background:linear-gradient(90deg,#fff 0 calc(100% - 52px),#f7f7f7 calc(100% - 52px) 100%)!important}
-.addr-picker-item.actions-open .addr-picker-dots{transform:translateX(-8px)!important}
-.addr-picker-item.actions-open .addr-picker-dots svg{width:21px!important;height:8px!important}
-.addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:translateX(5px)!important;background:#f7f7f7!important}
+.addr-picker-item.actions-open .addr-picker-copy{max-width:162px!important}
+.addr-picker-item.actions-open{background:linear-gradient(90deg,#fff 0 calc(100% - 58px),#f7f7f7 calc(100% - 58px) 100%)!important}
+.addr-picker-item.actions-open .addr-picker-dots{margin-left:auto!important;margin-right:18px!important;transform:none!important}
+.addr-picker-item.actions-open .addr-picker-dots svg{width:20px!important;height:8px!important}
+.addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:none!important;margin-left:10px!important;background:#f7f7f7!important}

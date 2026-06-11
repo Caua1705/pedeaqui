@@ -4896,9 +4896,11 @@ body.home-tab .mob-bottom-nav,
   overflow:visible!important;
   z-index:90!important;
 }
-/* Início levemente mais à esquerda, Perfil levemente mais à direita */
-.mob-bottom-nav #mobNavHome{margin-right:3px!important;}
-.mob-bottom-nav #mobNavProfile{margin-left:3px!important;}
+/* Aproxima os quatro itens laterais do QR sem alterar o botao central. */
+.mob-bottom-nav #mobNavHome,
+.mob-bottom-nav #mobNavMenu{transform:translateX(10px)!important;}
+.mob-bottom-nav #mobNavOrders,
+.mob-bottom-nav #mobNavProfile{transform:translateX(-10px)!important;}
 @media(max-width:414px){
   .mob-bottom-nav{
     left:0!important;

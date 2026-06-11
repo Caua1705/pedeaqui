@@ -1183,11 +1183,86 @@
   box-shadow:0 -1px 0 0 #f1f1f1!important;
 }
 
+/* ---- Address Picker Modal — header/footer idênticos ao operationModal ---- */
+#addrPickerModal .modal--fs{
+  display:flex!important;
+  flex-direction:column!important;
+  position:relative!important;
+  overflow:hidden!important;
+}
+#addrPickerModal .cart-hdr{
+  position:relative!important;
+  width:100%!important;
+  height:70px!important;
+  padding:0 20px!important;
+  background:#fff!important;
+  border-bottom:1px solid #e2e2e2!important;
+}
+#addrPickerModal .cart-hdr-back{
+  width:32px!important;
+  height:32px!important;
+  border-radius:9px!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+#addrPickerModal .cart-hdr-back svg{
+  width:17px!important;
+  height:17px!important;
+  stroke-width:1.8!important;
+}
+#addrPickerModal .cart-hdr-title{
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  color:#2F343A!important;
+  letter-spacing:-0.01em!important;
+  font-synthesis:none!important;
+  text-shadow:none!important;
+  transform:none!important;
+  text-align:center!important;
+}
+#addrPickerModal .cart-hdr-spacer{
+  width:32px!important;
+}
+#addrPickerModal .cart-scroll{
+  flex:1!important;
+  width:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:#fff!important;
+  padding:20px 0 88px!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+#addrPickerModal .cart-scroll::-webkit-scrollbar{display:none!important}
+#addrPickerModal .cart-footer{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  width:100%!important;
+  height:73px!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  padding:0 20px!important;
+  padding-top:0!important;
+  padding-bottom:0!important;
+  background:#fff!important;
+  border-top:0!important;
+}
+#addrPickerModal .cart-footer .op-confirm{
+  width:374px!important;
+  min-width:374px!important;
+  max-width:374px!important;
+  height:45px!important;
+  flex-shrink:0!important;
+}
+
 /* ---- Address Picker Modal ---- */
-.addr-picker-body{padding:16px!important;display:flex!important;flex-direction:column!important;gap:10px!important;background:#fff!important}
-.addr-picker-add-btn{width:100%!important;height:48px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;background:#fff1ea!important;border:1.5px solid #ffd7c3!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:13px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important}
+.addr-picker-body{padding:24px 20px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:20px!important;background:#fff!important}
+.addr-picker-add-btn{width:374px!important;max-width:100%!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;padding:0 16px!important;background:#FFEADF!important;border:1px solid #FFE2D8!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important}
 .addr-picker-add-btn:active{background:#fde8dd!important}
-.addr-picker-item{width:100%!important;height:73px!important;display:flex!important;align-items:center!important;gap:12px!important;padding:0 14px!important;background:#fff!important;border:1.5px solid #eee!important;border-radius:12px!important;cursor:pointer!important;font-family:inherit!important;text-align:left!important;transition:border-color .15s!important;box-sizing:border-box!important}
+.addr-picker-item{width:372px!important;max-width:100%!important;height:73px!important;min-height:73px!important;display:flex!important;align-items:center!important;gap:12px!important;padding:0 14px!important;background:#fff!important;border:1.5px solid #eee!important;border-radius:12px!important;cursor:pointer!important;font-family:inherit!important;text-align:left!important;transition:border-color .15s!important;box-sizing:border-box!important}
 .addr-picker-item.selected{border-color:var(--op-orange)!important;background:#fffaf8!important}
 .addr-picker-pin{width:32px!important;height:32px!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;background:#f5f5f5!important;flex-shrink:0!important;color:#ccc!important}
 .addr-picker-pin.active{background:#fff1ea!important;color:var(--op-orange)!important}

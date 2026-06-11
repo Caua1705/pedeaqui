@@ -3284,9 +3284,16 @@ body.home-tab #homeLoginPrompt{
 /* Cart value pill: lighter fill, less heavy text. */
 body.home-tab .home-cart-pill,
 body.home-tab .home-cart-pill #homeCartTotal{
-  background:#f7f7f8!important;       /* was #f2f2f2 */
+  background:#e7e7e8!important;
   color:#3D434A!important;
   font-weight:600!important;          /* was 700/800 */
+}
+body.home-tab .home-cart-pill{
+  border-radius:10px!important;
+  transform:translate(-4px,2px)!important;
+}
+body.home-tab .home-cart-pill #homeCartTotal{
+  font-size:16px!important;
 }
 
 /* 4 — Location card. */

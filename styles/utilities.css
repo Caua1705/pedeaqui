@@ -4901,6 +4901,8 @@ body.home-tab .mob-bottom-nav,
 .mob-bottom-nav #mobNavMenu{transform:translateX(10px)!important;}
 .mob-bottom-nav #mobNavOrders,
 .mob-bottom-nav #mobNavProfile{transform:translateX(-10px)!important;}
+.mob-bottom-nav #mobNavHome{transform:translateX(14px)!important;}
+.mob-bottom-nav #mobNavProfile{transform:translateX(-14px)!important;}
 @media(max-width:414px){
   .mob-bottom-nav{
     left:0!important;

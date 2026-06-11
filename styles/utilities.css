@@ -5255,3 +5255,28 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     transition:transform .53s ease!important;
   }
 }
+
+/* ----------------------------------------------------------------
+   BOTTOM NAV — ocultar em modais / telas full-screen
+   Impede que a barra de 4 ícones apareça por baixo ao fazer
+   overscroll (rubber-band) em qualquer tela onde ela nao existe.
+   ---------------------------------------------------------------- */
+
+/* 1. Quando o JS marca body.modal-open
+      (overlays ativos: login, cart, operation, product, etc.) */
+body.modal-open .mob-bottom-nav{
+  display:none!important;
+}
+
+/* 2. Telas full-screen via :has() — cobre casos onde modal-open
+      pode nao estar setado (ex: reg-screen, lgn-screen, policy-screen, vfy-screen) */
+body:has(.lgn-screen.active) .mob-bottom-nav,
+body:has(.reg-screen.active) .mob-bottom-nav,
+body:has(.policy-screen.active) .mob-bottom-nav,
+body:has(.vfy-screen.active) .mob-bottom-nav,
+body:has(.overlay.active) .mob-bottom-nav{
+  display:none!important;
+}
+body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
+  display:none!important;
+}

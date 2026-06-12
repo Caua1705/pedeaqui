@@ -1,6 +1,7 @@
 (function () {
   const fmt = (val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const STORAGE_ADDRESS = 'pedeaqui.customerAddress';
+  const STORAGE_ADDRESS_LIST = 'pedeaqui.customerAddresses.local';
   const STORAGE_CUSTOMER = 'pedeaqui.customer';
 
   let payload = {};
@@ -955,6 +956,19 @@
     return a ? `${a.street}, ${a.number} - ${a.neighborhood}` : '';
   }
 
+  function readLocalAddressList() {
+    try {
+      const list = JSON.parse(localStorage.getItem(STORAGE_ADDRESS_LIST) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function writeLocalAddressList(list) {
+    localStorage.setItem(STORAGE_ADDRESS_LIST, JSON.stringify(Array.isArray(list) ? list : []));
+  }
+
   function compatibleBranches(orderType) {
     return branches.filter(b => orderType === 'pickup' ? b.accepts_pickup : b.accepts_delivery);
   }
@@ -1276,6 +1290,7 @@
 
   let _addrPickerSelected = null;
   let _addrPickerItems = [];
+  let _addrJustSavedAddress = null;
   const ADDR_PICKER_DOTS_VERTICAL = '<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>';
   const ADDR_PICKER_DOTS_HORIZONTAL = '<svg width="21" height="8" viewBox="0 0 30 10" fill="none" stroke="#aaa" stroke-width="2"><circle cx="5" cy="5" r="1.45" fill="#aaa"/><circle cx="15" cy="5" r="1.45" fill="#aaa"/><circle cx="25" cy="5" r="1.45" fill="#aaa"/></svg>';
   const ADDR_PICKER_DELETE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
@@ -1284,14 +1299,58 @@
     return value.length > max ? `${value.slice(0, max).trimEnd()}...` : value;
   }
 
+  function getCurrentPickerAddress() {
+    return _addrJustSavedAddress || opDraft?.address || operationContext?.address || customerAddress || null;
+  }
+
+  function addrPickerId(addr, fallback = '__current__') {
+    return String(addr?.id || addr?.address_id || fallback);
+  }
+
+  function sameAddress(a, b) {
+    if (!a || !b) return false;
+    const aId = a.id || a.address_id;
+    const bId = b.id || b.address_id;
+    if (aId && bId && String(aId) === String(bId)) return true;
+    return String(a.street || '') === String(b.street || '')
+      && String(a.number || '') === String(b.number || '')
+      && String(a.neighborhood || '') === String(b.neighborhood || '');
+  }
+
+  function currentPickerItem(current) {
+    if (!current) return null;
+    return {
+      ...current,
+      id: current.id || current.address_id || '__current__',
+      label: current.label || current.alias || current.tag || current.name || current.street || 'Endereco'
+    };
+  }
+
+  function mergeAddressPickerItems(...groups) {
+    const merged = [];
+    groups.flat().filter(Boolean).forEach(addr => {
+      const id = addrPickerId(addr, '');
+      if (!id || !merged.some(item => addrPickerId(item, '') === id)) {
+        merged.push(addr);
+      }
+    });
+    return merged;
+  }
+
   function openAddrPicker() {
     $('addrPickerModal')?.classList.add('no-motion');
     _addrPickerSelected = null;
     _addrPickerItems = [];
     const confirmBtn = $('addrPickerConfirmBtn');
     if (confirmBtn) confirmBtn.disabled = true;
-    if (opDraft?.address) {
-      _addrPickerItems = [{ id: '__current__', label: 'Endereço', ...opDraft.address }];
+    const current = getCurrentPickerAddress();
+    const currentItem = currentPickerItem(current);
+    const localItems = readLocalAddressList().map(currentPickerItem).filter(Boolean);
+    if (currentItem) {
+      _addrPickerItems = mergeAddressPickerItems([currentItem], localItems);
+      _addrPickerSelected = addrPickerId(currentItem);
+    } else {
+      _addrPickerItems = localItems;
     }
     _renderAddrPickerList();
     openModal('addrPickerModal');
@@ -1299,7 +1358,14 @@
     if (auth?.isLoggedIn()) {
       auth.getCustomerAddresses().then(res => {
         const list = Array.isArray(res) ? res : (res?.data || []);
-        if (list.length) { _addrPickerItems = list; _renderAddrPickerList(); }
+        if (list.length) {
+          const current = getCurrentPickerAddress();
+          const currentItem = currentPickerItem(current);
+          const localItems = readLocalAddressList().map(currentPickerItem).filter(Boolean);
+          _addrPickerItems = mergeAddressPickerItems(currentItem ? [currentItem] : [], localItems, list);
+          if (currentItem) _addrPickerSelected = addrPickerId(currentItem);
+          _renderAddrPickerList();
+        }
       }).catch(() => {});
     }
   }
@@ -1307,15 +1373,15 @@
   function _renderAddrPickerList() {
     const list = $('addrPickerList');
     if (!list) return;
-    const current = opDraft?.address;
+    const current = getCurrentPickerAddress();
     list.innerHTML = _addrPickerItems.map(addr => {
-      const id = String(addr.id || addr.address_id || '__current__');
+      const id = addrPickerId(addr);
       const label = addr.label || addr.tag || addr.name || 'Endereço';
       const summary = addr.formatted_address || addressSummary(addr);
       const isSel = _addrPickerSelected
         ? _addrPickerSelected === id
-        : current && (addr.id === current.id || (addr.street === current.street && addr.number === current.number) || id === '__current__');
-      if (isSel && !_addrPickerSelected) {
+        : current && (sameAddress(addr, current) || id === '__current__');
+      if (isSel) {
         _addrPickerSelected = id;
         const btn = $('addrPickerConfirmBtn');
         if (btn) btn.disabled = false;
@@ -1324,9 +1390,11 @@
         <span class="addr-picker-pin${isSel ? ' active' : ''}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}">${esc(summary)}</small></span>
+        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
         ${isSel
-          ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+          ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#15803d"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+             <span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
+             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereÃ§o">${ADDR_PICKER_DELETE_ICON}</span>`
           : `<span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
              <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`}
       </button>`;
@@ -1338,7 +1406,7 @@
       if (exceptCard && card === exceptCard) return;
       card.classList.remove('actions-open');
       const copy = card.querySelector('.addr-picker-copy small');
-      if (copy?.dataset.fullText) copy.textContent = copy.dataset.fullText;
+      if (copy?.dataset.shortText) copy.textContent = copy.dataset.shortText;
       const dots = card.querySelector('.addr-picker-dots');
       if (dots) dots.innerHTML = ADDR_PICKER_DOTS_VERTICAL;
     });
@@ -1356,7 +1424,9 @@
     if (copy) {
       const full = copy.dataset.fullText || copy.textContent || '';
       copy.dataset.fullText = full;
-      copy.textContent = willOpen ? truncateAddrPickerText(full, 25) : full;
+      const short = copy.dataset.shortText || truncateAddrPickerText(full, 35);
+      copy.dataset.shortText = short;
+      copy.textContent = willOpen ? truncateAddrPickerText(full, 25) : short;
     }
     const dots = card.querySelector('.addr-picker-dots');
     if (dots) dots.innerHTML = willOpen ? ADDR_PICKER_DOTS_HORIZONTAL : ADDR_PICKER_DOTS_VERTICAL;
@@ -1372,6 +1442,7 @@
       return;
     }
     _addrPickerItems = _addrPickerItems.filter(a => String(a.id || a.address_id || '__current__') !== String(id));
+    writeLocalAddressList(readLocalAddressList().filter(a => String(a.id || a.address_id || '__current__') !== String(id)));
     if (_addrPickerSelected === String(id)) {
       _addrPickerSelected = null;
       const btn = $('addrPickerConfirmBtn');
@@ -1383,6 +1454,10 @@
   function selectAddrPickerItem(id) {
     closeAddrPickerActions();
     _addrPickerSelected = id;
+    const selectedConfirmBtn = $('addrPickerConfirmBtn');
+    if (selectedConfirmBtn) selectedConfirmBtn.disabled = false;
+    _renderAddrPickerList();
+    return;
     document.querySelectorAll('#addrPickerList .addr-picker-item').forEach(el => {
       const sel = el.dataset.addrId === id;
       el.classList.toggle('selected', sel);
@@ -1410,6 +1485,7 @@
     if (!_addrPickerSelected || !opDraft) return;
     const addr = _addrPickerItems.find(a => String(a.id || a.address_id || '__current__') === _addrPickerSelected);
     if (!addr) return;
+    _addrJustSavedAddress = null;
     opDraft.address = addr;
     customerAddress = { ...addr, summary: addressSummary(addr) };
     localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
@@ -1963,6 +2039,65 @@
     _openAddrDetailsForm();
   }
 
+  function finishAddressDetails(address) {
+    const savedAddress = {
+      ...address,
+      id: address.id || address.address_id || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      label: address.label || address.alias || address.street || 'Endereco'
+    };
+    const localList = readLocalAddressList();
+    writeLocalAddressList([savedAddress, ...localList.filter(item => addrPickerId(item, '') !== addrPickerId(savedAddress, ''))]);
+
+    customerAddress = { ...savedAddress, summary: addressSummary(savedAddress) };
+    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    if (opDraft) opDraft.address = savedAddress;
+    if (!opDraft && operationContext) { operationContext.address = savedAddress; persistOperationContext(); }
+    _addrJustSavedAddress = savedAddress;
+    renderWidget();
+    updateCartUI();
+    _returnToAddAddressChoice = false;
+    closeModalImmediately('addrDetailsModal');
+    closeModalImmediately('addrMapModal');
+    closeModalImmediately('addrSearchModal');
+    $('addrPickerModal')?.classList.add('no-motion');
+    openAddrPicker();
+    _addrPickerItems = mergeAddressPickerItems([currentPickerItem(savedAddress)], _addrPickerItems);
+    _addrPickerSelected = addrPickerId(savedAddress);
+    _renderAddrPickerList();
+    if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
+
+    const auth = window.PedeAquiCustomerAuth;
+    if (auth?.isLoggedIn() && typeof auth.createCustomerAddress === 'function') {
+      const { id, address_id, summary, ...addressPayload } = savedAddress;
+      auth.createCustomerAddress(addressPayload)
+        .then(res => {
+          const created = res?.data || res;
+          if (!created || typeof created !== 'object') return;
+          const updated = {
+            ...savedAddress,
+            ...created,
+            id: created.id || created.address_id || savedAddress.id,
+            label: created.label || created.alias || savedAddress.label
+          };
+          writeLocalAddressList(readLocalAddressList().map(item => (
+            addrPickerId(item, '') === addrPickerId(savedAddress, '') ? updated : item
+          )));
+          if (_addrPickerSelected === addrPickerId(savedAddress)) _addrPickerSelected = addrPickerId(updated);
+          _addrPickerItems = _addrPickerItems.map(item => (
+            addrPickerId(item, '') === addrPickerId(savedAddress, '') ? updated : item
+          ));
+          if (sameAddress(customerAddress, savedAddress)) {
+            customerAddress = { ...updated, summary: addressSummary(updated) };
+            localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+            if (opDraft) opDraft.address = updated;
+          }
+          _addrJustSavedAddress = updated;
+          _renderAddrPickerList();
+        })
+        .catch(() => {});
+    }
+  }
+
   function _openAddrDetailsForm(instant = false) {
     const loc = _addrTempLoc || {};
     const set = (id, v) => { const el = $(id); if (el) el.value = v; };
@@ -2036,24 +2171,14 @@
     const neighborhood = v('addrDetNeighborhood');
     const complement   = v('addrDetComplement');
     const reference    = v('addrDetReference');
+    const alias        = v('addrDetAlias');
     const postal_code  = v('addrDetCep').replace(/\D/g,'');
     if (!street || (!number && !noNum) || !neighborhood) { alert('Preencha os campos obrigatórios.'); return; }
     const loc = _addrTempLoc || {};
-    const address = { street, number, neighborhood, complement, reference, postal_code,
+    const address = { street, number, neighborhood, complement, reference, alias, label: alias || street, postal_code,
       formatted_address: loc.formatted_address || `${street}, ${number} - ${neighborhood}`,
       latitude: loc.lat || null, longitude: loc.lng || null, place_id: loc.place_id || '' };
-    customerAddress = { ...address, summary: addressSummary(address) };
-    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
-    if (opDraft) opDraft.address = address;
-    if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
-    renderWidget();
-    updateCartUI();
-    _returnToAddAddressChoice = false;
-    closeModalId('addrDetailsModal');
-    closeModalId('addrMapModal');
-    closeModalId('addrSearchModal');
-    closeModalId('addrPickerModal');
-    if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
+    finishAddressDetails(address);
   }
 
   // ── end Google Maps address flow ──

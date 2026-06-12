@@ -1319,12 +1319,12 @@
 }
 
 #addrDetailsModal .addr-det-form{
-  width:374px!important;
-  max-width:calc(100% - 40px)!important;
+  width:338px!important;
+  max-width:calc(100% - 56px)!important;
   margin:0 auto!important;
   padding:16px 0 12px!important;
   display:grid!important;
-  grid-template-columns:147.91px 216.09px!important;
+  grid-template-columns:132px 196px!important;
   column-gap:10px!important;
   row-gap:6px!important;
   align-items:start!important;
@@ -1371,7 +1371,7 @@
 #addrDetailsModal .addr-det-label[for="addrDetAlias"],
 #addrDetailsModal #addrDetAlias{
   grid-column:1 / -1!important;
-  width:374px!important;
+  width:338px!important;
   max-width:100%!important;
 }
 
@@ -1383,7 +1383,7 @@
 #addrDetailsModal #addrDetNumber{
   grid-column:1!important;
   grid-row:6!important;
-  width:147.91px!important;
+  width:132px!important;
 }
 
 #addrDetailsModal .addr-det-label[for="addrDetComplement"]{
@@ -1394,7 +1394,7 @@
 #addrDetailsModal #addrDetComplement{
   grid-column:2!important;
   grid-row:6!important;
-  width:216.09px!important;
+  width:196px!important;
 }
 
 #addrDetailsModal .addr-det-checkbox-label{
@@ -1420,8 +1420,8 @@
 }
 
 #addrDetailsModal #addrDetSaveBtn{
-  width:374px!important;
-  max-width:100%!important;
+  width:338px!important;
+  max-width:calc(100% - 56px)!important;
   height:45px!important;
   min-height:45px!important;
   margin:0 auto!important;

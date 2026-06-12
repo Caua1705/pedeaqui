@@ -1316,6 +1316,11 @@
 /* Address details form final sizing/alignment. */
 #addrDetailsModal .addr-det-location-copy strong{
   font-weight:700!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  line-height:26px!important;
+  max-height:52px!important;
 }
 
 #addrDetailsModal .addr-det-form{
@@ -1450,12 +1455,12 @@
 }
 
 #addrDetailsModal .addr-det-input{
-  border-width:1.8px!important;
-  border-color:#c4cad2!important;
+  border-width:1.2px!important;
+  border-color:#d3d7dd!important;
 }
 
 #addrDetailsModal .addr-det-input:focus{
-  border-color:#aeb6c0!important;
+  border-color:#c3c9d1!important;
 }
 
 #addrDetailsModal .addr-det-input::placeholder{

@@ -751,6 +751,14 @@
     $('cartAddrText') && ($('cartAddrText').textContent = customerAddress ? customerAddress.summary : 'Defina seu endereço para entrega');
   }
 
+  function handleHomeCartValueClick() {
+    if (!isLogged()) {
+      openLoginScreen();
+      return;
+    }
+    openModal('cartModal');
+  }
+
   function removeCartItem(uid) {
     cart = cart.filter(i => i.uid !== uid);
     updateCartUI();
@@ -3509,7 +3517,7 @@
   }
 
   Object.assign(window, {
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
+    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

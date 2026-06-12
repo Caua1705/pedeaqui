@@ -3289,11 +3289,14 @@ body.home-tab .home-cart-pill #homeCartTotal{
   font-weight:600!important;          /* was 700/800 */
 }
 body.home-tab .home-cart-pill{
-  border-radius:10px!important;
+  min-width:74px!important;
+  height:30px!important;
+  padding:0 10px!important;
+  border-radius:9px!important;
   transform:translate(-4px,2px)!important;
 }
 body.home-tab .home-cart-pill #homeCartTotal{
-  font-size:16px!important;
+  font-size:14px!important;
 }
 
 /* 4 — Location card. */

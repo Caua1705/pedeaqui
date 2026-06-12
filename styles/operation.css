@@ -841,14 +841,10 @@
   font-weight:400!important;
   line-height:20px!important;
   color:#6b7280!important;
-  text-align:left!important;
+  text-align:center!important;
   margin:0 0 22px!important;
   width:390px!important;
   max-width:100%!important;
-}
-.addr-search-sub span{
-  display:block!important;
-  text-align:center!important;
 }
 
 /* Search input field */
@@ -963,7 +959,7 @@
   text-align:left!important;
   transition:background .1s!important;
 }
-.addr-sug-item:active{background:#FFF3EE!important}
+.addr-sug-item:active{background:#fff!important}
 .addr-sug-item:last-child{border-bottom:none!important}
 .addr-sug-pin{
   width:12.5px!important;

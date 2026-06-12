@@ -1420,8 +1420,8 @@
 }
 
 #addrDetailsModal #addrDetSaveBtn{
-  width:338px!important;
-  max-width:calc(100% - 56px)!important;
+  width:374px!important;
+  max-width:100%!important;
   height:45px!important;
   min-height:45px!important;
   margin:0 auto!important;
@@ -1516,4 +1516,27 @@
 #addrDetailsModal #addrDetSaveBtn{
   position:relative!important;
   z-index:1!important;
+}
+
+/* Address details fields: narrower than the footer button on mobile. */
+#addrDetailsModal .addr-det-form{
+  width:326px!important;
+  max-width:calc(100% - 72px)!important;
+  grid-template-columns:126px 190px!important;
+}
+
+#addrDetailsModal #addrDetCep,
+#addrDetailsModal #addrDetNeighborhood,
+#addrDetailsModal #addrDetReference,
+#addrDetailsModal #addrDetAlias{
+  width:326px!important;
+  max-width:100%!important;
+}
+
+#addrDetailsModal #addrDetNumber{
+  width:126px!important;
+}
+
+#addrDetailsModal #addrDetComplement{
+  width:190px!important;
 }

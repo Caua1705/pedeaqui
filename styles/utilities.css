@@ -5552,3 +5552,15 @@ body.modal-open{
     transition:none!important;
   }
 }
+
+/* Home cart value pill: compact size only. */
+body.home-tab .home-cart-pill{
+  min-width:66px!important;
+  height:27px!important;
+  min-height:27px!important;
+  padding:0 8px!important;
+  border-radius:8px!important;
+}
+body.home-tab .home-cart-pill #homeCartTotal{
+  font-size:12.5px!important;
+}

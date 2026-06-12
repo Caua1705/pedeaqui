@@ -17,3 +17,52 @@ button:focus-visible,
 [role="button"]:focus-visible {
   outline: none;
 }
+
+/* Remove mobile/browser blue tap highlight from clickable surfaces. */
+*,
+*::before,
+*::after{
+  -webkit-tap-highlight-color:transparent!important;
+}
+
+button,
+[role="button"],
+a,
+[onclick],
+.product-card,
+.coupon-card,
+.home-banner,
+.highlight-card,
+.cart-coupon,
+.mob-nav-item,
+.cat{
+  -webkit-tap-highlight-color:transparent!important;
+  -webkit-touch-callout:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  outline:none!important;
+}
+
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+a:focus,
+a:focus-visible,
+[onclick]:focus,
+[onclick]:focus-visible,
+.product-card:focus,
+.product-card:focus-visible,
+.coupon-card:focus,
+.coupon-card:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"]{
+  -webkit-user-select:text!important;
+  user-select:text!important;
+}

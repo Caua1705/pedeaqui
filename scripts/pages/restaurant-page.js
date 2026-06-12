@@ -2110,7 +2110,12 @@
     set('addrDetReference', '');
     const noNum = $('addrDetNoNumber');
     if (noNum) noNum.checked = false;
-    const title = loc.street_name || String(loc.street || '').replace(/,\s*[^,]+$/, '') || loc.formatted_address || 'Endereco';
+    const titleStreet = loc.street_name || String(loc.street || '').replace(/,\s*[^,]+$/, '');
+    const titleNumber = String(loc.number || '').trim();
+    const titleHasNumber = titleNumber && new RegExp(`(^|\\D)${titleNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\D|$)`).test(titleStreet);
+    const title = titleStreet
+      ? `${titleStreet}${titleNumber && !titleHasNumber ? `, ${titleNumber}` : ''}`
+      : loc.formatted_address || 'Endereco';
     const sub = [loc.neighborhood, loc.city, loc.state].filter(Boolean).join(', ');
     const titleEl = $('addrDetLocationTitle');
     const subEl = $('addrDetLocationSub');

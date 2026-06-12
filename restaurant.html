@@ -1172,7 +1172,7 @@
           <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
         </strong>
       </div>
-      <button class="addr-notfound-btn" onclick="closeModalId('addrSearchModal');openManualAddressForm()">Não achei meu endereço</button>
+      <button class="addr-notfound-btn" onclick="adcUseGeoSearch(true)">Não achei meu endereço</button>
       <div id="addrSuggestions" class="addr-suggestions"></div>
     </div>
   </div>
@@ -1211,7 +1211,7 @@
         <strong id="addrDetLocationTitle">—</strong>
         <small id="addrDetLocationSub"></small>
       </span>
-      <button class="addr-det-edit-btn" onclick="closeModalId('addrDetailsModal')" aria-label="Editar localização">
+      <button class="addr-det-edit-btn" onclick="editAddrDetailsLocation()" aria-label="Editar localização">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
     </div>
@@ -1245,43 +1245,6 @@
     </div>
     <div class="addr-det-footer">
       <button class="adc-confirm-btn" id="addrDetSaveBtn" onclick="saveAddressDetails()" disabled>Salvar endereço e concluir</button>
-    </div>
-  </div>
-</div>
-
-<!-- SCREEN: ADDRESS -->
-<div class="overlay" id="addressModal">
-  <div class="modal modal--fs">
-    <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeModalId('addressModal')" aria-label="Voltar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-      </button>
-      <h2 class="cart-hdr-title">Informe seu endereço</h2>
-      <div class="cart-hdr-spacer"></div>
-    </div>
-    <div class="cart-scroll">
-      <div class="address-choice">
-        <button class="address-choice-btn">
-          <span>Localização atual</span>
-          <small>Disponível quando a integração de geolocalização estiver ativa.</small>
-        </button>
-        <button class="address-choice-btn active">
-          <span>Outra localização</span>
-          <small>Digite manualmente para simular a entrega agora.</small>
-        </button>
-      </div>
-      <div class="fs-section">
-        <div class="fs-section-title">ENDEREÇO MANUAL</div>
-        <input type="text" id="addrStreet" class="fs-input" placeholder="Rua / Avenida" oninput="validateAddressForm()">
-        <div class="fs-field-group">
-          <input type="text" id="addrNumber" class="fs-input" placeholder="Número" style="width:100px;flex-shrink:0" oninput="validateAddressForm()">
-          <input type="text" id="addrNeighborhood" class="fs-input" placeholder="Bairro" style="flex:1" oninput="validateAddressForm()">
-        </div>
-        <input type="text" id="addrComplement" class="fs-input" placeholder="Complemento e referência (opcional)">
-      </div>
-    </div>
-    <div class="cart-footer">
-      <button class="cart-cta-btn" id="addrSaveBtn" onclick="saveAddressMock()" disabled>Salvar endereço</button>
     </div>
   </div>
 </div>
@@ -1660,6 +1623,6 @@
 <script src="scripts/state/customer-state.js"></script>
 <script src="scripts/state/order-state.js"></script>
 <script src="scripts/state/ui-state.js"></script>
-<script src="scripts/pages/restaurant-page.js?v=42"></script>
+<script src="scripts/pages/restaurant-page.js?v=43"></script>
 </body>
 </html>

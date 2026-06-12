@@ -456,7 +456,6 @@
 .op-confirm:disabled{background:#ffe4d8!important;color:#fff;cursor:not-allowed}
 
 /* ---- Address manual screen: enabled/disabled save button parity ---- */
-#addressModal .cart-cta-btn:disabled{background:#ffd9c4;cursor:not-allowed}
 
 /* ============================================================
    ADD ADDRESS CHOICE SCREEN  (#addAddressModal)

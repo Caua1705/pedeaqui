@@ -1179,21 +1179,8 @@
     renderWidget();
   }
 
-  function validateAddressForm() {
-    const ok = $('addrStreet').value.trim() && $('addrNumber').value.trim() && $('addrNeighborhood').value.trim();
-    const btn = $('addrSaveBtn');
-    if (btn) btn.disabled = !ok;
-  }
-
   function openAddressScreen() {
-    if (customerAddress) {
-      $('addrStreet').value = customerAddress.street || '';
-      $('addrNumber').value = customerAddress.number || '';
-      $('addrNeighborhood').value = customerAddress.neighborhood || '';
-      $('addrComplement').value = customerAddress.complement || '';
-    }
-    validateAddressForm();
-    openModal('addressModal');
+    openAddressChoice();
   }
 
   function openAddressChoice() {
@@ -1286,6 +1273,11 @@
     }
     reopenAddressChoiceImmediately();
     closeModalImmediately('addrMapModal');
+  }
+
+  function editAddrDetailsLocation() {
+    closeModalImmediately('addrDetailsModal');
+    openAddrSearch(true);
   }
 
   let _addrPickerSelected = null;
@@ -2187,36 +2179,6 @@
   }
 
   // ── end Google Maps address flow ──
-
-  function openManualAddressForm() {
-    if (customerAddress) {
-      $('addrStreet').value = customerAddress.street || '';
-      $('addrNumber').value = customerAddress.number || '';
-      $('addrNeighborhood').value = customerAddress.neighborhood || '';
-      $('addrComplement').value = customerAddress.complement || '';
-    }
-    validateAddressForm();
-    openModal('addressModal');
-  }
-
-  function saveAddressMock() {
-    const street = $('addrStreet').value.trim();
-    const number = $('addrNumber').value.trim();
-    const neighborhood = $('addrNeighborhood').value.trim();
-    const complement = $('addrComplement').value.trim();
-    if (!street || !number || !neighborhood) { alert('Informe rua, número e bairro.'); return; }
-    const address = { street, number, neighborhood, complement, reference: '' };
-    customerAddress = { ...address, summary: addressSummary(address) };
-    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
-    if (opDraft) opDraft.address = address;
-    if (!opDraft && operationContext) { operationContext.address = address; persistOperationContext(); }
-    renderWidget();
-    updateCartUI();
-    _returnToAddAddressChoice = false;
-    closeModalId('addressModal');
-    closeModalId('addrPickerModal');
-    if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
-  }
 
   let _loginOrigin = 'profile';
 
@@ -3547,8 +3509,8 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
-    openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
-    openManualAddressForm, saveAddressMock, validateAddressForm, openLoginScreen, mockLogin,
+    openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
+    openLoginScreen, mockLogin,
     openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,
     toggleRegPassword, handleRegFieldInput, handleRegFieldBlur, handleRegPrivacyInput, submitRegister, logout,
     openSigninScreen, closeSigninScreen, submitLogin, loginForgotPassword,

@@ -85,25 +85,37 @@
      overflow:hidden no body não basta no iOS — o conteúdo de fundo
      ainda recebe eventos de toque e desliza. A solução é fixar o body
      em position:fixed com top = -scrollY, e restaurar ao fechar. */
-  let _scrollLockCount = 0;
   let _savedScrollY = 0;
+  let _bodyScrollLocked = false;
+
+  function hasBlockingUiOpen() {
+    return Boolean(document.querySelector(
+      '.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.policy-screen.active,.vfy-screen.active,.coupon-detail-overlay.active,.vfy-alert-overlay.active'
+    ));
+  }
 
   function lockBodyScroll() {
-    _scrollLockCount++;
-    if (_scrollLockCount > 1) return; // já travado
+    if (_bodyScrollLocked) {
+      document.body.classList.add('modal-open');
+      return;
+    }
+    _bodyScrollLocked = true;
     _savedScrollY = window.scrollY;
     document.body.style.position = 'fixed';
     document.body.style.top = `-${_savedScrollY}px`;
     document.body.style.left = '0';
     document.body.style.right = '0';
     document.body.style.width = '100%';
-    document.body.style.overflowY = 'scroll'; // mantém largura c/ scrollbar
+    document.body.style.overflowY = 'scroll';
     document.body.classList.add('modal-open');
   }
 
   function unlockBodyScroll() {
-    _scrollLockCount = Math.max(0, _scrollLockCount - 1);
-    if (_scrollLockCount > 0) return; // ainda há modais abertos
+    if (!_bodyScrollLocked) {
+      document.body.classList.remove('modal-open');
+      return;
+    }
+    _bodyScrollLocked = false;
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
@@ -112,6 +124,11 @@
     document.body.style.overflowY = '';
     document.body.classList.remove('modal-open');
     window.scrollTo(0, _savedScrollY);
+  }
+
+  function unlockBodyScrollIfClear() {
+    if (!hasBlockingUiOpen()) unlockBodyScroll();
+    else document.body.classList.add('modal-open');
   }
 
   function openModal(id) {
@@ -134,7 +151,7 @@
     const el = $(id);
     if (!el) return;
     el.classList.remove('active');
-    if (!document.querySelector('.overlay.active,.mob-view.active')) unlockBodyScroll();
+    unlockBodyScrollIfClear();
   }
 
   function closeModalImmediately(id) {
@@ -150,7 +167,7 @@
       if (panel) panel.style.transition = '';
       el.classList.remove('no-motion');
     }, 50);
-    if (!document.querySelector('.overlay.active,.mob-view.active')) unlockBodyScroll();
+    unlockBodyScrollIfClear();
   }
 
   function closeModal(e, id) {
@@ -2095,7 +2112,7 @@
   function openRegisterScreen() {
     closeModalId('loginModal');
     $('registerScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     $('registerForm')?.scrollTo?.(0, 0);
     clearAllRegErrors();
   }
@@ -2470,7 +2487,7 @@
     $('loginScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('verifyScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     startVfyTimer();
     setTimeout(() => vfyDigits()[0]?.focus(), 60);
   }
@@ -2620,7 +2637,7 @@
     if ($('resetConfirmPw')) $('resetConfirmPw').value = '';
     hideResetPwErr();
     $('resetPasswordScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     setTimeout(() => $('resetNewPw')?.focus(), 60);
   }
   function closeResetPasswordScreen() {
@@ -2749,7 +2766,7 @@
   function openSigninScreen() {
     closeModalId('loginModal');
     $('loginScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     $('loginForm')?.scrollTo?.(0, 0);
     clearAllLoginErrors();
   }
@@ -2778,7 +2795,7 @@
     $('loginScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('forgotPasswordScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     setTimeout(() => $('forgotEmail')?.focus(), 60);
   }
 
@@ -2812,7 +2829,7 @@
     _vfyAlertAfterClose = typeof afterClose === 'function' ? afterClose : null;
     modal.classList.remove('closing');
     modal.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
   }
 
   // Card shown when the backend says the e-mail isn't registered.
@@ -2834,6 +2851,7 @@
       const afterClose = _vfyAlertAfterClose;
       _vfyAlertAfterClose = null;
       if (afterClose) afterClose();
+      unlockBodyScrollIfClear();
     }, 220);
   }
 
@@ -2904,7 +2922,7 @@
     $('forgotPasswordScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('recoverCodeScreen')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
     setTimeout(() => recDigits()[0]?.focus(), 60);
   }
 
@@ -3103,9 +3121,9 @@
       $('loginModal')?.classList.add('active');
       document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
     }
-    document.body.classList.add('modal-open');
     document.querySelectorAll('.policy-screen').forEach(el => el.classList.remove('active'));
     screen.classList.add('active');
+    lockBodyScroll();
     body.scrollTop = 0;
     window.scrollTo(0, 0);
   }
@@ -3115,7 +3133,7 @@
     document.querySelector('#loginModal .modal--login')?.classList.remove('policy-hidden');
     // The register screen stays active underneath, so only restore the login modal.
     if (_policyReturn !== 'register') $('loginModal')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    unlockBodyScrollIfClear();
   }
 
   function couponLabel(coupon) {
@@ -3155,15 +3173,13 @@
     const rules = $('couponDetailRules');
     if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
     $('couponDetailOverlay')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
   }
 
   function closeCouponDetail(event) {
     if (event && event.currentTarget && event.target !== event.currentTarget) return;
     $('couponDetailOverlay')?.classList.remove('active');
-    if (!document.querySelector('.overlay.active,.mob-view.active,.coupon-detail-overlay.active')) {
-      document.body.classList.remove('modal-open');
-    }
+    unlockBodyScrollIfClear();
   }
 
   function confirmCouponDetail() {
@@ -3193,7 +3209,7 @@
   const MOB_VIEWS = ['mobViewOrders', 'mobViewProfile'];
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
-    document.body.classList.remove('modal-open');
+    unlockBodyScrollIfClear();
   }
 
   function setMobNavActive(id) {
@@ -3227,7 +3243,7 @@
     setMobNavActive('mobNavOrders');
     renderOrdersView();
     $('mobViewOrders')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
   }
 
   function mobNavProfile() {
@@ -3239,7 +3255,7 @@
     }
     renderProfileView();
     $('mobViewProfile')?.classList.add('active');
-    document.body.classList.add('modal-open');
+    lockBodyScroll();
   }
 
   // Tolerant order-card renderer that copes with both the local order shape and

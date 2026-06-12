@@ -5280,3 +5280,32 @@ body:has(.overlay.active) .mob-bottom-nav{
 body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
   display:none!important;
 }
+
+/* Fullscreen lock: prevent background bleed behind auth/sub screens. */
+html:has(.lgn-screen.active),
+html:has(.reg-screen.active),
+html:has(.policy-screen.active),
+html:has(.vfy-screen.active),
+html:has(.overlay.active),
+html:has(.coupon-detail-overlay.active),
+html:has(.vfy-alert-overlay.active),
+body.modal-open{
+  overscroll-behavior:none!important;
+  background:#ffffff!important;
+}
+
+.lgn-screen,
+.reg-screen,
+.policy-screen,
+.vfy-screen,
+.coupon-detail-screen,
+.modal--fs{
+  overscroll-behavior:contain!important;
+}
+
+.lgn-screen.active,
+.reg-screen.active,
+.policy-screen.active,
+.vfy-screen.active{
+  isolation:isolate!important;
+}

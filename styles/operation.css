@@ -1058,9 +1058,19 @@
 }
 .addr-map-footer{
   flex-shrink:0!important;
-  padding:16px 20px max(24px,env(safe-area-inset-bottom))!important;
-  background:#fff!important;
+  width:414px!important;
+  max-width:100%!important;
+  height:95px!important;
+  padding:0 20px!important;
+  background:#f7f8fa!important;
   box-shadow:0 -1px 0 0 #f1f1f1!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+}
+.addr-map-footer .adc-confirm-btn{
+  margin-top:0!important;
 }
 
 /* ── STEP 3: ADDRESS DETAILS FORM ── */
@@ -1337,7 +1347,7 @@
   height:44px!important;
   min-height:44px!important;
   border:1.5px solid #d3d7dd!important;
-  border-radius:8px!important;
+  border-radius:10px!important;
   color:#1f2937!important;
   font-size:13px!important;
   font-weight:400!important;

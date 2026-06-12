@@ -2024,19 +2024,19 @@
               const parsed = _parseAddrComponents(results[0].address_components||[]);
               _addrTempLoc = { ..._addrTempLoc, formatted_address: results[0].formatted_address||'', ...parsed };
             }
-            closeModalId('addrMapModal');
-            _openAddrDetailsForm();
+            closeModalImmediately('addrMapModal');
+            _openAddrDetailsForm(true);
           });
         })
         .catch(err => {
           console.warn('[PedeAqui] Reverse geocoding unavailable:', err);
-          closeModalId('addrMapModal');
-          _openAddrDetailsForm();
+          closeModalImmediately('addrMapModal');
+          _openAddrDetailsForm(true);
         });
       return;
     }
-    closeModalId('addrMapModal');
-    _openAddrDetailsForm();
+    closeModalImmediately('addrMapModal');
+    _openAddrDetailsForm(true);
   }
 
   function finishAddressDetails(address) {

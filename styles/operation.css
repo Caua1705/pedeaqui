@@ -1286,7 +1286,7 @@
 
 /* ---- Address Picker Modal ---- */
 .addr-picker-body{padding:24px 20px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;background:#fff!important}
-.addr-picker-add-btn{position:relative!important;width:354px!important;max-width:calc(100% - 16px)!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:#FFEADF!important;border:1px solid #FFE2D8!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;box-sizing:border-box!important}
+.addr-picker-add-btn{position:relative!important;width:338px!important;max-width:calc(100% - 28px)!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:#FFEADF!important;border:1px solid #FFE2D8!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;box-sizing:border-box!important}
 .addr-picker-add-btn svg{position:static!important;transform:translateX(-3px)!important;flex-shrink:0!important}
 .addr-picker-add-btn span{width:auto!important;text-align:left!important;transform:none!important}
 .addr-picker-add-btn:active{background:#fde8dd!important}

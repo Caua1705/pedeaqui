@@ -718,7 +718,10 @@
     $('cartCountTop') && ($('cartCountTop').textContent = qty);
     $('cartCountTop')?.classList.toggle('show', qty > 0);
     $('cartSticky')?.classList.toggle('show', qty > 0);
-    if ($('cartCountSticky')) $('cartCountSticky').textContent = qty;
+    if ($('cartCountSticky')) {
+      $('cartCountSticky').textContent = qty;
+      $('cartCountSticky').dataset.count = qty;
+    }
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
     if ($('homeCartTotal')) $('homeCartTotal').textContent = fmt(totals.total);
 

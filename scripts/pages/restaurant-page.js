@@ -2120,7 +2120,7 @@
   function closeRegisterScreen() {
     $('registerScreen')?.classList.remove('active');
     // Return to the login sheet the user came from.
-    openModal('loginModal');
+    openModalImmediately('loginModal');
   }
 
   function maskRegPhone(el) {

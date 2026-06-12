@@ -5309,3 +5309,242 @@ body.modal-open{
 .vfy-screen.active{
   isolation:isolate!important;
 }
+
+/* Product detail screen: reference-aligned 408x250 hero and footer controls. */
+@media(max-width:767px){
+  #productModal{
+    background:rgba(0,0,0,.42)!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+  }
+
+  #productModal .modal--product{
+    position:fixed!important;
+    inset:0!important;
+    left:50%!important;
+    transform:translateX(100%)!important;
+    width:100%!important;
+    max-width:408px!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0 auto!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#ffffff!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+    box-shadow:none!important;
+  }
+
+  #productModal.active .modal--product{
+    transform:translateX(-50%)!important;
+  }
+
+  #productModal .product-hero{
+    flex:0 0 250px!important;
+    width:100%!important;
+    height:250px!important;
+    min-height:250px!important;
+    max-height:250px!important;
+    margin:0!important;
+    background:#ff5f1f!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+  }
+
+  #productModal .pm-hero-photo,
+  #productModal .pm-hero-photo.product-image,
+  #productModal .pm-hero-photo.prod-photo--placeholder{
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    object-fit:cover!important;
+    border-radius:0!important;
+  }
+
+  #productModal .modal-header{
+    position:absolute!important;
+    top:22px!important;
+    left:0!important;
+    right:23px!important;
+    height:41px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    display:flex!important;
+    justify-content:flex-end!important;
+    z-index:4!important;
+  }
+
+  #productModal .modal-close{
+    width:41px!important;
+    height:41px!important;
+    border-radius:8px!important;
+    background:#f4f1ef!important;
+    color:#969696!important;
+    box-shadow:none!important;
+    font-size:20px!important;
+    line-height:1!important;
+    font-weight:600!important;
+  }
+
+  #productModal .modal-body{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:22px 30px 24px!important;
+    border-radius:0!important;
+    background:#ffffff!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    scrollbar-width:thin!important;
+    scrollbar-color:#ff5f01 #eeeeee!important;
+  }
+
+  #productModal .modal-body::-webkit-scrollbar{
+    width:5px!important;
+  }
+
+  #productModal .modal-body::-webkit-scrollbar-track{
+    background:#eeeeee!important;
+  }
+
+  #productModal .modal-body::-webkit-scrollbar-thumb{
+    background:#ff5f01!important;
+    border-radius:999px!important;
+  }
+
+  #productModal .pm-name{
+    margin:0 0 19px!important;
+    color:#454545!important;
+    font-size:18px!important;
+    line-height:24px!important;
+    font-weight:700!important;
+  }
+
+  #productModal .pm-desc{
+    margin:0 0 17px!important;
+    color:#a4a4a4!important;
+    font-size:12px!important;
+    line-height:20px!important;
+    font-weight:400!important;
+  }
+
+  #productModal .pm-price{
+    margin:0!important;
+    color:#454545!important;
+    font-size:18px!important;
+    line-height:24px!important;
+    font-weight:800!important;
+  }
+
+  #productModal .pm-price::before{
+    content:'A partir de ';
+    color:#454545!important;
+  }
+
+  #productModal #pmForm{
+    margin-top:24px!important;
+  }
+
+  #productModal .pm-label{
+    margin:0 0 10px!important;
+    color:#666666!important;
+    font-size:16px!important;
+    line-height:20px!important;
+    font-weight:700!important;
+    text-transform:none!important;
+    letter-spacing:0!important;
+  }
+
+  #productModal .pm-obs{
+    min-height:92px!important;
+    border-radius:10px!important;
+    border:1px solid #eeeeee!important;
+    background:#fafafa!important;
+    font-size:13px!important;
+    color:#444444!important;
+  }
+
+  #productModal .modal-footer{
+    flex:0 0 auto!important;
+    height:94px!important;
+    padding:16px 20px max(14px,env(safe-area-inset-bottom))!important;
+    gap:18px!important;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    background:#ffffff!important;
+    border-top:1px solid #eeeeee!important;
+    box-shadow:0 -1px 0 rgba(0,0,0,.02)!important;
+  }
+
+  #productModal .qty-bar{
+    flex:0 0 116px!important;
+    width:116px!important;
+    height:45px!important;
+    border:1px solid #dadada!important;
+    border-radius:9px!important;
+    background:#ffffff!important;
+    padding:0!important;
+    display:grid!important;
+    grid-template-columns:35px 1fr 35px!important;
+    gap:0!important;
+    align-items:center!important;
+  }
+
+  #productModal .qty-btn{
+    width:35px!important;
+    height:43px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    color:#ff5f01!important;
+    font-size:22px!important;
+    font-weight:400!important;
+  }
+
+  #productModal .qty-btn:first-child{
+    color:#d6d6d6!important;
+  }
+
+  #productModal .qty-val{
+    min-width:0!important;
+    color:#26324a!important;
+    font-size:14px!important;
+    line-height:18px!important;
+    font-weight:500!important;
+  }
+
+  #productModal #pmAddBtn{
+    flex:0 0 234px!important;
+    width:234px!important;
+    max-width:234px!important;
+    height:45px!important;
+    min-height:45px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:9px!important;
+    background:#ff5f01!important;
+    box-shadow:none!important;
+    color:#ffffff!important;
+    font-size:12px!important;
+    line-height:16px!important;
+    font-weight:700!important;
+  }
+
+  #productModal #pmAddBtn:disabled{
+    background:#f7f3f0!important;
+    color:#c8c0ba!important;
+  }
+}
+
+/* Login return: no animation when backing out of the Sign In screen. */
+@media(max-width:767px){
+  #loginModal.no-motion,
+  #loginModal.no-motion.active,
+  #loginModal.no-motion .modal--login,
+  #loginModal.no-motion.active .modal--login{
+    transition:none!important;
+  }
+}

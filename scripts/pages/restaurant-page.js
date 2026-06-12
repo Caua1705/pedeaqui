@@ -2774,7 +2774,7 @@
   function closeSigninScreen() {
     $('loginScreen')?.classList.remove('active');
     // Return to the login sheet the user came from.
-    openModal('loginModal');
+    openModalImmediately('loginModal');
   }
 
   const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());

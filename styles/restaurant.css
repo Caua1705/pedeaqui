@@ -2260,6 +2260,10 @@ a{text-decoration:none;color:inherit}
   }
   body:has(.cart-sticky.show) .mob-bottom-nav::before{
     height:calc(147px + var(--safe-bottom))!important;
+    box-shadow:0 -1px 0 rgba(0,0,0,.08)!important;
+  }
+  body.home-tab:has(.cart-sticky.show) .home-order-cta{
+    display:none!important;
   }
   .cart-sticky.show{
     display:flex!important;

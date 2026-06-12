@@ -2012,7 +2012,7 @@
     const noNum = $('addrDetNoNumber');
     const numEl = $('addrDetNumber');
     if (!noNum || !numEl) return;
-    if (noNum.checked) { numEl.value = 'S/N'; numEl.disabled = true; }
+    if (noNum.checked) { numEl.value = 's/n'; numEl.disabled = true; }
     else { numEl.value = ''; numEl.disabled = false; }
     validateAddrDetails();
   }
@@ -2032,7 +2032,7 @@
     const street       = v('addrDetStreet');
     const rawNum       = v('addrDetNumber');
     const noNum        = $('addrDetNoNumber')?.checked;
-    const number       = noNum ? 'S/N' : rawNum;
+    const number       = noNum ? 's/n' : rawNum;
     const neighborhood = v('addrDetNeighborhood');
     const complement   = v('addrDetComplement');
     const reference    = v('addrDetReference');

@@ -1303,3 +1303,208 @@
 .addr-picker-item.actions-open .addr-picker-dots{margin-left:auto!important;margin-right:18px!important;transform:none!important}
 .addr-picker-item.actions-open .addr-picker-dots svg{width:20px!important;height:8px!important}
 .addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:none!important;margin-left:10px!important;background:#f7f7f7!important}
+
+/* Address details form final sizing/alignment. */
+#addrDetailsModal .addr-det-location-copy strong{
+  font-weight:700!important;
+}
+
+#addrDetailsModal .addr-det-form{
+  width:374px!important;
+  max-width:calc(100% - 40px)!important;
+  margin:0 auto!important;
+  padding:16px 0 12px!important;
+  display:grid!important;
+  grid-template-columns:147.91px 216.09px!important;
+  column-gap:10px!important;
+  row-gap:6px!important;
+  align-items:start!important;
+}
+
+#addrDetailsModal .addr-det-label{
+  margin:8px 0 2px!important;
+  color:#7b828a!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:450!important;
+  grid-column:1 / -1!important;
+}
+
+#addrDetailsModal .addr-det-input{
+  height:44px!important;
+  min-height:44px!important;
+  border:1.5px solid #d3d7dd!important;
+  border-radius:8px!important;
+  color:#1f2937!important;
+  font-size:13px!important;
+  font-weight:400!important;
+  padding:0 12px!important;
+  box-shadow:none!important;
+  grid-column:1 / -1!important;
+}
+
+#addrDetailsModal .addr-det-input:focus{
+  border-color:#bfc5cd!important;
+}
+
+#addrDetailsModal .addr-det-input:disabled{
+  background:#f9f9f9!important;
+  color:#6f7680!important;
+  opacity:1!important;
+}
+
+#addrDetailsModal .addr-det-label[for="addrDetCep"],
+#addrDetailsModal #addrDetCep,
+#addrDetailsModal .addr-det-label[for="addrDetNeighborhood"],
+#addrDetailsModal #addrDetNeighborhood,
+#addrDetailsModal .addr-det-label[for="addrDetReference"],
+#addrDetailsModal #addrDetReference,
+#addrDetailsModal .addr-det-label[for="addrDetAlias"],
+#addrDetailsModal #addrDetAlias{
+  grid-column:1 / -1!important;
+  width:374px!important;
+  max-width:100%!important;
+}
+
+#addrDetailsModal .addr-det-label[for="addrDetNumber"]{
+  grid-column:1!important;
+  grid-row:5!important;
+}
+
+#addrDetailsModal #addrDetNumber{
+  grid-column:1!important;
+  grid-row:6!important;
+  width:147.91px!important;
+}
+
+#addrDetailsModal .addr-det-label[for="addrDetComplement"]{
+  grid-column:2!important;
+  grid-row:5!important;
+}
+
+#addrDetailsModal #addrDetComplement{
+  grid-column:2!important;
+  grid-row:6!important;
+  width:216.09px!important;
+}
+
+#addrDetailsModal .addr-det-checkbox-label{
+  grid-column:1!important;
+  grid-row:7!important;
+  padding:2px 0 0!important;
+  margin:0!important;
+  color:#7b828a!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:450!important;
+}
+
+#addrDetailsModal .addr-det-checkbox-label input{
+  accent-color:#f36f21!important;
+}
+
+#addrDetailsModal .addr-det-footer{
+  padding:8px 20px max(20px,env(safe-area-inset-bottom))!important;
+  background:#ffffff!important;
+  border-top:0!important;
+  box-shadow:none!important;
+}
+
+#addrDetailsModal #addrDetSaveBtn{
+  width:374px!important;
+  max-width:100%!important;
+  height:45px!important;
+  min-height:45px!important;
+  margin:0 auto!important;
+  border-radius:10px!important;
+}
+
+/* Address details explicit grid row order. */
+#addrDetailsModal .addr-det-label[for="addrDetCep"]{grid-row:1!important;}
+#addrDetailsModal #addrDetCep{grid-row:2!important;}
+#addrDetailsModal .addr-det-label[for="addrDetNumber"]{grid-row:3!important;}
+#addrDetailsModal #addrDetNumber{grid-row:4!important;}
+#addrDetailsModal .addr-det-label[for="addrDetComplement"]{grid-row:3!important;}
+#addrDetailsModal #addrDetComplement{grid-row:4!important;}
+#addrDetailsModal .addr-det-checkbox-label{grid-row:5!important;}
+#addrDetailsModal .addr-det-label[for="addrDetNeighborhood"]{grid-row:6!important;}
+#addrDetailsModal #addrDetNeighborhood{grid-row:7!important;}
+#addrDetailsModal .addr-det-label[for="addrDetReference"]{grid-row:8!important;}
+#addrDetailsModal #addrDetReference{grid-row:9!important;}
+#addrDetailsModal .addr-det-label[for="addrDetAlias"]{grid-row:10!important;}
+#addrDetailsModal #addrDetAlias{grid-row:11!important;}
+
+/* Address details final polish: footer cover, stronger field borders, lighter labels. */
+#addrDetailsModal .addr-det-label{
+  color:#8b929b!important;
+  font-weight:400!important;
+}
+
+#addrDetailsModal .addr-det-input{
+  border-width:1.8px!important;
+  border-color:#c4cad2!important;
+}
+
+#addrDetailsModal .addr-det-input:focus{
+  border-color:#aeb6c0!important;
+}
+
+#addrDetailsModal .addr-det-input::placeholder{
+  color:#b8bec6!important;
+  font-weight:400!important;
+}
+
+#addrDetailsModal #addrDetComplement::placeholder{
+  color:#b8bec6!important;
+  content:'Apto, Bloco, Casa...';
+}
+
+#addrDetailsModal #addrDetNumber:disabled{
+  color:#b8bec6!important;
+  -webkit-text-fill-color:#b8bec6!important;
+}
+
+#addrDetailsModal .addr-det-footer{
+  position:relative!important;
+  z-index:6!important;
+  margin-top:-8px!important;
+  padding:6px 20px max(22px,env(safe-area-inset-bottom))!important;
+  background:#ffffff!important;
+  border-top:0!important;
+  box-shadow:0 -18px 18px #ffffff!important;
+}
+
+/* Address details footer: solid white cover with enough scroll room above it. */
+#addrDetailsModal .addr-det-scroll{
+  padding-bottom:0!important;
+}
+
+#addrDetailsModal .addr-det-form{
+  padding-bottom:30px!important;
+}
+
+#addrDetailsModal .addr-det-footer{
+  position:relative!important;
+  z-index:8!important;
+  margin-top:0!important;
+  padding:10px 20px max(30px,env(safe-area-inset-bottom))!important;
+  background:#ffffff!important;
+  border-top:0!important;
+  box-shadow:none!important;
+}
+
+#addrDetailsModal .addr-det-footer::before{
+  content:''!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:-28px!important;
+  height:28px!important;
+  background:#ffffff!important;
+  pointer-events:none!important;
+}
+
+#addrDetailsModal #addrDetSaveBtn{
+  position:relative!important;
+  z-index:1!important;
+}

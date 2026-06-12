@@ -1520,23 +1520,25 @@
 
 /* Address details fields: narrower than the footer button on mobile. */
 #addrDetailsModal .addr-det-form{
-  width:326px!important;
-  max-width:calc(100% - 72px)!important;
-  grid-template-columns:126px 190px!important;
+  width:310px!important;
+  max-width:calc(100% - 56px)!important;
+  margin-left:24px!important;
+  margin-right:auto!important;
+  grid-template-columns:118px minmax(0,1fr)!important;
 }
 
 #addrDetailsModal #addrDetCep,
 #addrDetailsModal #addrDetNeighborhood,
 #addrDetailsModal #addrDetReference,
 #addrDetailsModal #addrDetAlias{
-  width:326px!important;
+  width:100%!important;
   max-width:100%!important;
 }
 
 #addrDetailsModal #addrDetNumber{
-  width:126px!important;
+  width:100%!important;
 }
 
 #addrDetailsModal #addrDetComplement{
-  width:190px!important;
+  width:100%!important;
 }

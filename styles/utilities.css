@@ -4905,9 +4905,10 @@ body.home-tab .mob-bottom-nav,
 }
 /* Aproxima os quatro itens laterais do QR sem alterar o botao central. */
 .mob-bottom-nav #mobNavHome,
-.mob-bottom-nav #mobNavMenu{transform:translateX(12px)!important;}
+.mob-bottom-nav #mobNavMenu{transform:translateX(16px)!important;}
 .mob-bottom-nav #mobNavOrders,
 .mob-bottom-nav #mobNavProfile{transform:translateX(-12px)!important;}
+.mob-bottom-nav #mobNavOrders{transform:translateX(-16px)!important;}
 .mob-bottom-nav #mobNavHome{transform:translateX(20px)!important;}
 .mob-bottom-nav #mobNavProfile{transform:translateX(-20px)!important;}
 @media(max-width:414px){

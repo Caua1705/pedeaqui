@@ -1455,12 +1455,12 @@
 }
 
 #addrDetailsModal .addr-det-input{
-  border-width:1.2px!important;
-  border-color:#d3d7dd!important;
+  border-width:1.35px!important;
+  border-color:#cfd4dc!important;
 }
 
 #addrDetailsModal .addr-det-input:focus{
-  border-color:#c3c9d1!important;
+  border-color:#bdc4ce!important;
 }
 
 #addrDetailsModal .addr-det-input::placeholder{

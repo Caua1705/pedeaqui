@@ -1518,13 +1518,35 @@
   z-index:1!important;
 }
 
+/* Address details: let the map/location block scroll away with the form. */
+#addrDetailsModal .modal--fs{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+
+#addrDetailsModal .cart-hdr{
+  position:sticky!important;
+  top:0!important;
+  z-index:12!important;
+}
+
+#addrDetailsModal .addr-det-scroll{
+  flex:0 0 auto!important;
+  overflow:visible!important;
+}
+
+#addrDetailsModal .addr-det-footer{
+  position:sticky!important;
+  bottom:0!important;
+}
+
 /* Address details fields: narrower than the footer button on mobile. */
 #addrDetailsModal .addr-det-form{
-  width:310px!important;
+  width:322px!important;
   max-width:calc(100% - 56px)!important;
   margin-left:24px!important;
   margin-right:auto!important;
-  grid-template-columns:118px minmax(0,1fr)!important;
+  grid-template-columns:122px minmax(0,1fr)!important;
 }
 
 #addrDetailsModal #addrDetCep,

@@ -1286,13 +1286,13 @@
 
 /* ---- Address Picker Modal ---- */
 .addr-picker-body{padding:24px 20px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;background:#fff!important}
-.addr-picker-add-btn{position:relative!important;width:374px!important;max-width:100%!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:#FFEADF!important;border:1px solid #FFE2D8!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important}
+.addr-picker-add-btn{position:relative!important;width:354px!important;max-width:calc(100% - 16px)!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:#FFEADF!important;border:1px solid #FFE2D8!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;box-sizing:border-box!important}
 .addr-picker-add-btn svg{position:static!important;transform:translateX(-3px)!important;flex-shrink:0!important}
 .addr-picker-add-btn span{width:auto!important;text-align:left!important;transform:none!important}
 .addr-picker-add-btn:active{background:#fde8dd!important}
 #addrPickerList:empty{display:none!important}
-#addrPickerList{width:374px!important;max-width:100%!important;display:flex!important;flex-direction:column!important;gap:12px!important}
-.addr-picker-item{width:374px!important;max-width:100%!important;height:75px!important;min-height:75px!important;display:flex!important;align-items:center!important;gap:12px!important;padding:0 14px!important;background:#fff!important;border:1.5px solid #dddddd!important;border-radius:10px!important;cursor:pointer!important;font-family:inherit!important;text-align:left!important;transition:border-color .15s,border-width .15s!important;box-sizing:border-box!important}
+#addrPickerList{width:354px!important;max-width:calc(100% - 16px)!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important}
+.addr-picker-item{width:354px!important;max-width:calc(100% - 16px)!important;height:75px!important;min-height:75px!important;display:flex!important;align-items:center!important;gap:12px!important;padding:0 14px!important;background:#fff!important;border:1.5px solid #dddddd!important;border-radius:10px!important;cursor:pointer!important;font-family:inherit!important;text-align:left!important;transition:border-color .15s,border-width .15s!important;box-sizing:border-box!important}
 #addrPickerList .addr-picker-item:first-child{margin-top:3px!important}
 .addr-picker-body > .addr-picker-item{margin-top:-3px!important}
 .addr-picker-item.selected{border-color:#FAD2BC!important;background:#fff!important;box-shadow:0 0 0 1.5px #dedede!important}

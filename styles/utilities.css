@@ -191,19 +191,23 @@
 }
 .coupon-detail-overlay.active .coupon-detail-screen{transform:translateX(0)!important;transition:transform .53s ease!important;}
 .coupon-detail-header{
-  height:82px!important;
+  height:70px!important;
   display:grid!important;
-  grid-template-columns:48px 1fr 48px!important;
+  grid-template-columns:32px 1fr 32px!important;
   align-items:center!important;
-  padding:18px 20px 12px!important;
-  border-bottom:1px solid #eeeeee!important;
+  padding:0 20px!important;
+  border-bottom:1px solid #f1f1f1!important;
   background:#fff!important;
 }
 .coupon-detail-header strong{
   text-align:center!important;
-  color:#232323!important;
+  color:#2F343A!important;
   font-size:16px!important;
-  font-weight:800!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  letter-spacing:-0.01em!important;
+  font-synthesis:none!important;
+  text-shadow:none!important;
 }
 .coupon-detail-back{
   width:32px!important;
@@ -213,18 +217,24 @@
   justify-content:center!important;
   border:0!important;
   border-radius:9px!important;
-  background:#eeeeee!important;
-  color:#555!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+.coupon-detail-back svg{
+  width:17px!important;
+  height:17px!important;
+  stroke-width:1.8!important;
 }
 .coupon-detail-body{
   flex:1!important;
   overflow-y:auto!important;
-  background:#fff!important;
+  background:#f7f5f3!important;
 }
 .coupon-detail-art{
-  height:230px!important;
-  margin:0!important;
-  padding:8px!important;
+  width:min(100%,414px)!important;
+  height:248.39px!important;
+  margin:0 auto!important;
+  padding:0!important;
   background:linear-gradient(135deg,#fb7a36,#ff8a36)!important;
 }
 .coupon-detail-art img{
@@ -254,14 +264,16 @@
   font-weight:900!important;
 }
 .coupon-detail-summary{
-  min-height:74px!important;
+  box-sizing:border-box!important;
+  width:min(100%,414px)!important;
+  height:114px!important;
   display:flex!important;
   align-items:center!important;
   gap:12px!important;
-  margin:18px 34px 20px!important;
-  padding:12px 12px!important;
-  border-radius:8px!important;
-  background:#fde1d4!important;
+  margin:0 auto!important;
+  padding:20px 16px!important;
+  border-radius:0!important;
+  background:#fff!important;
 }
 .coupon-detail-ticket-icon{
   width:24px!important;
@@ -300,34 +312,47 @@
   text-align:right!important;
 }
 .coupon-detail-rules{
-  border-top:8px solid #f7f5f3!important;
-  padding:24px 34px 120px!important;
+  box-sizing:border-box!important;
+  width:min(100%,414px)!important;
+  height:193px!important;
+  margin:10px auto 0!important;
+  padding:20px 15px 10px!important;
+  border-top:0!important;
+  background:#fff!important;
   color:#555!important;
+  overflow:hidden!important;
 }
 .coupon-detail-rules strong{
   display:block!important;
-  margin-bottom:16px!important;
-  font-size:13px!important;
-  font-weight:850!important;
+  margin-bottom:18px!important;
+  font-size:12px!important;
+  line-height:14px!important;
+  font-weight:700!important;
 }
 .coupon-detail-rules ul{
   margin:0!important;
-  padding-left:16px!important;
+  padding-left:14px!important;
 }
 .coupon-detail-rules li{
-  margin:0 0 10px!important;
-  font-size:13px!important;
-  line-height:18px!important;
+  margin:0 0 9px!important;
+  font-size:12px!important;
+  line-height:14px!important;
 }
 .coupon-detail-footer{
-  padding:20px 20px max(32px,env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+  width:min(100%,414px)!important;
+  height:95px!important;
+  margin:10px auto 0!important;
+  padding:22px 20px max(6px,env(safe-area-inset-bottom))!important;
   background:#fff!important;
+  flex:0 0 95px!important;
 }
 .coupon-detail-use{
-  width:100%!important;
-  height:44px!important;
+  width:374px!important;
+  max-width:100%!important;
+  height:45px!important;
   border:0!important;
-  border-radius:8px!important;
+  border-radius:9px!important;
   background:#F36F21!important;
   color:#fff!important;
   font-size:12px!important;
@@ -3776,7 +3801,7 @@ body.menu-tab .prod-name{
   font-weight:600!important;
   line-height:18px!important;
   color:#111827!important;
-  margin:0 0 6px!important;
+  margin:0 0 9px!important;
   padding:0!important;
   white-space:normal!important;
 }
@@ -3913,7 +3938,7 @@ body.menu-tab .prod-name{
   font-weight:600!important;
   line-height:18px!important;
   color:#1F2937!important;
-  margin:0 0 6px!important;
+  margin:0 0 9px!important;
 }
 
 /* Price stays the strongest text on the row but at semibold-bold 700,

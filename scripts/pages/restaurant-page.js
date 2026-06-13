@@ -2710,14 +2710,11 @@
         openResetPasswordScreen(res?.reset_token, verifyCtx.email);
       } else {
         await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
-        showVfyMsg('E-mail verificado com sucesso! Faça login para continuar.', 'success');
         stopVfyTimer();
         const email = verifyCtx.email;
-        setTimeout(() => {
-          $('verifyScreen')?.classList.remove('active');
-          openSigninScreen();
-          if ($('loginEmail')) $('loginEmail').value = email;
-        }, 900);
+        $('verifyScreen')?.classList.remove('active');
+        openSigninScreen();
+        if ($('loginEmail')) $('loginEmail').value = email;
       }
     } catch (error) {
       $('verifyScreen')?.classList.add('vfy-error');

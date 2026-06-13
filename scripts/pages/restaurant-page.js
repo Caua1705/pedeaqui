@@ -132,10 +132,23 @@
     else document.body.classList.add('modal-open');
   }
 
+  const KEEP_NAV_OVERLAYS = new Set([
+    'productModal',
+    'operationModal',
+    'loginModal',
+    'couponDetailOverlay'
+  ]);
+
+  function syncBottomNavVisibility() {
+    const keep = Array.from(KEEP_NAV_OVERLAYS).some(id => $(id)?.classList.contains('active'));
+    document.body.classList.toggle('keep-bottom-nav', keep);
+  }
+
   function openModal(id) {
     const el = $(id);
     if (!el) return;
     el.classList.add('active');
+    syncBottomNavVisibility();
     lockBodyScroll();
   }
 
@@ -144,6 +157,7 @@
     if (!el) return;
     el.classList.add('no-motion');
     el.classList.add('active');
+    syncBottomNavVisibility();
     lockBodyScroll();
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
@@ -152,6 +166,7 @@
     const el = $(id);
     if (!el) return;
     el.classList.remove('active');
+    syncBottomNavVisibility();
     unlockBodyScrollIfClear();
   }
 
@@ -165,9 +180,10 @@
     el.classList.remove('active');
     setTimeout(() => {
       el.style.transition = '';
-      if (panel) panel.style.transition = '';
-      el.classList.remove('no-motion');
+    if (panel) panel.style.transition = '';
+    el.classList.remove('no-motion');
     }, 50);
+    syncBottomNavVisibility();
     unlockBodyScrollIfClear();
   }
 
@@ -2865,7 +2881,7 @@
   }
 
   function openSigninScreen() {
-    closeModalId('loginModal');
+    $('loginModal')?.classList.add('signin-open');
     $('loginScreen')?.classList.add('active');
     lockBodyScroll();
     $('loginForm')?.scrollTo?.(0, 0);
@@ -2874,12 +2890,7 @@
 
   function closeSigninScreen() {
     $('loginScreen')?.classList.remove('active');
-    if (_loginOrigin === 'coupon') {
-      closeModalId('loginModal');
-      return;
-    }
-    // Return to the login sheet the user came from.
-    openModalImmediately('loginModal');
+    $('loginModal')?.classList.remove('signin-open');
   }
 
   const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());

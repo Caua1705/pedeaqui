@@ -5205,6 +5205,15 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
   #loginModal.from-coupon{
     z-index:280!important;
   }
+  #loginModal.signin-open{
+    background:rgba(0,0,0,0)!important;
+    pointer-events:none!important;
+  }
+  #loginModal.signin-open .modal--login{
+    opacity:0!important;
+    transform:translateX(100%)!important;
+    transition:none!important;
+  }
   #loginModal .modal--login{
     position:fixed!important;
     inset:0!important;
@@ -5332,6 +5341,10 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
 body.modal-open .mob-bottom-nav{
   display:none!important;
 }
+body.modal-open.keep-bottom-nav .mob-bottom-nav,
+body.keep-bottom-nav .mob-bottom-nav{
+  display:flex!important;
+}
 
 /* 2. Telas full-screen via :has() — cobre casos onde modal-open
       pode nao estar setado (ex: reg-screen, lgn-screen, policy-screen, vfy-screen) */
@@ -5348,6 +5361,8 @@ body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
 
 body.modal-open.coupon-nav-keep .mob-bottom-nav,
 body.coupon-nav-keep .mob-bottom-nav,
+body.modal-open.keep-bottom-nav .mob-bottom-nav,
+body.keep-bottom-nav .mob-bottom-nav,
 body.modal-open:has(.coupon-detail-overlay.active) .mob-bottom-nav,
 body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
   display:flex!important;

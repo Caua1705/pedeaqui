@@ -70,6 +70,102 @@
     return product.old_price ?? product.original_price ?? product.price_old ?? product.compare_at_price ?? product.list_price ?? null;
   }
 
+  function paymentMethodLabel(method) {
+    const key = String(method || '').toLowerCase();
+    const labels = {
+      pix: 'Pix',
+      credit_card: 'Cartão de crédito',
+      debit_card: 'Cartão de débito',
+      vr_va: 'Vale-refeição / alimentação',
+      cash: 'Dinheiro'
+    };
+    return labels[key] || String(method || '').replace(/_/g, ' ');
+  }
+
+  function renderStoreInfoPayment() {
+    const box = $('storeInfoPayment');
+    if (!box) return;
+    box.innerHTML = `
+      <p class="store-payment-title">Pagamento na entrega</p>
+      <p class="store-payment-group">Crédito</p>
+      <div class="store-payment-grid">
+        <span><i class="pay-brand pay-brand--amex"></i>American Express</span>
+        <span><i class="pay-brand pay-brand--elo"></i>Elo</span>
+        <span><i class="pay-brand pay-brand--hiper"></i>Hiper</span>
+        <span><i class="pay-brand pay-brand--master"></i>Mastercard</span>
+        <span><i class="pay-brand pay-brand--visa"></i>Visa</span>
+      </div>
+      <p class="store-payment-group store-payment-group--debit">Débito</p>
+      <div class="store-payment-grid">
+        <span><i class="pay-brand pay-brand--elo"></i>Elo</span>
+        <span><i class="pay-brand pay-brand--hiper"></i>Hiper</span>
+        <span><i class="pay-brand pay-brand--master"></i>Mastercard</span>
+        <span><i class="pay-brand pay-brand--visa"></i>Visa</span>
+      </div>
+    `;
+  }
+
+  function setStoreInfoTab(tab = 'hours') {
+    const order = { hours: 0, address: 1, payment: 2 };
+    const modal = $('infoModal');
+    const tabs = document.querySelector('#infoModal .store-info-tabs');
+    if (modal) modal.dataset.storeInfoTab = tab;
+    if (tabs) tabs.style.setProperty('--store-tab-index', order[tab] ?? 0);
+    document.querySelectorAll('[data-store-tab]').forEach(button => {
+      button.classList.toggle('active', button.dataset.storeTab === tab);
+    });
+    const map = {
+      hours: document.querySelector('.store-hours-card'),
+      address: document.querySelector('.store-address-card'),
+      payment: $('storeInfoPayment')
+    };
+    Object.entries(map).forEach(([key, element]) => {
+      if (element) element.style.display = key === tab ? '' : 'none';
+    });
+  }
+
+  function initStoreInfoModal() {
+    const header = document.querySelector('#infoModal .store-info-header');
+    const close = document.querySelector('#infoModal .store-info-close');
+    const title = document.querySelector('#infoModal .store-info-header h2');
+    const tabs = document.querySelector('#infoModal .store-info-tabs');
+    const addressCard = document.querySelector('#infoModal .store-address-card');
+    const hoursCard = document.querySelector('#infoModal .store-hours-card');
+    if (close) {
+      close.setAttribute('aria-label', 'Voltar');
+      close.innerHTML = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>';
+    }
+    if (title) title.textContent = 'Informações';
+    if (header && close && title) {
+      const spacer = header.querySelector('.store-info-spacer');
+      header.insertBefore(close, header.firstElementChild);
+      if (spacer) header.appendChild(spacer);
+    }
+    if (header) header.classList.add('store-info-header--reference');
+    if (tabs) {
+      tabs.innerHTML = [
+        '<button class="active" type="button" data-store-tab="hours" onclick="setStoreInfoTab(\'hours\')">Horários</button>',
+        '<button type="button" data-store-tab="address" onclick="setStoreInfoTab(\'address\')">Endereço</button>',
+        '<button type="button" data-store-tab="payment" onclick="setStoreInfoTab(\'payment\')">Pagamento</button>'
+      ].join('');
+    }
+    if (hoursCard) {
+      hoursCard.innerHTML = [
+        '<div class="store-hours-row"><span>Segunda-feira</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row"><span>Terça-feira</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row"><span>Quarta-feira</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row"><span>Quinta-feira</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row"><span>Sexta-feira</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row active"><span>Sábado</span><strong>16:45 às 22:15</strong></div>',
+        '<div class="store-hours-row"><span>Domingo</span><strong>16:45 às 22:15 - 22:30 - 22:45</strong></div>'
+      ].join('');
+    }
+    if (addressCard && !$('storeInfoPayment')) {
+      addressCard.insertAdjacentHTML('afterend', '<section class="store-payment-card" id="storeInfoPayment"><h3>Pagamento</h3><p>Formas de pagamento não informadas</p></section>');
+    }
+    setStoreInfoTab('hours');
+  }
+
   function ProductCard(product) {
     const currentPrice = Number.isFinite(product.price) ? fmt(product.price) : 'Consultar';
     const oldPrice = Number(productOldPrice(product));
@@ -288,11 +384,20 @@
     document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
     document.querySelectorAll('.store-info-email').forEach(el => el.textContent = restaurant.email || settings.email || 'E-mail não informado');
     document.querySelectorAll('.store-info-whatsapp').forEach(el => el.textContent = branch.whatsapp || 'WhatsApp não informado');
+    document.querySelectorAll('.store-contact-row--wa').forEach(el => {
+      const phone = onlyDigits(branch.whatsapp || branch.phone || '');
+      if (phone) el.href = `https://wa.me/55${phone}`;
+      else el.removeAttribute('href');
+    });
     document.querySelectorAll('.pickup-restaurant-name').forEach(el => el.textContent = `${restName}${branch.name ? ' — ' + branch.name : ''}`);
     const infoAddress = $('storeInfoAddress');
-    if (infoAddress) infoAddress.innerHTML = branches.length
-      ? branches.map(unit => [unit.address, unit.neighborhood, unit.city, unit.state].filter(Boolean).join(' - ')).join('<br><br>')
-      : 'Endereço não informado';
+    if (infoAddress) {
+      const selectedBranch = branches.find(unit => String(unit.id) === String(operationContext?.branch_id)) || branch;
+      infoAddress.textContent = [selectedBranch.address, selectedBranch.neighborhood, selectedBranch.city, selectedBranch.state]
+        .filter(Boolean)
+        .join(' - ') || 'Endereço não informado';
+    }
+    renderStoreInfoPayment();
     const primaryAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
     if ($('footerBranchPrimary')) $('footerBranchPrimary').textContent = primaryAddress || 'Endereço não informado';
     if ($('footerContactPrimary')) $('footerContactPrimary').textContent = branch.whatsapp || branch.phone || 'Contato não informado';
@@ -3603,6 +3708,7 @@
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     initOperationContext();
     applyTheme();
+    initStoreInfoModal();
     renderRestaurantShell();
     renderBanners();
     renderCoupons();
@@ -3641,6 +3747,7 @@
     openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
+    setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner
   });

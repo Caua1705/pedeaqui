@@ -5659,3 +5659,639 @@ body.home-tab .home-cart-pill{
 body.home-tab .home-cart-pill #homeCartTotal{
   font-size:12.5px!important;
 }
+
+/* Store information screen - reference layout. */
+#infoModal{background:#eef3fa!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
+#infoModal .modal--store-info{width:100%!important;max-width:430px!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#ffffff!important;transform:none!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#infoModal .store-info-header{height:88px!important;min-height:88px!important;padding:20px 27px 17px!important;display:grid!important;grid-template-columns:42px 1fr 42px!important;align-items:center!important;background:#ffffff!important;border-bottom:1px solid #eeeeee!important}
+#infoModal .store-info-header h2{color:#202124!important;font-size:16px!important;line-height:22px!important;font-weight:700!important;text-align:center!important}
+#infoModal .store-info-close{width:31px!important;height:31px!important;border:0!important;border-radius:10px!important;background:#eeeeee!important;color:#202124!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
+#infoModal .store-info-close svg{width:18px!important;height:18px!important;stroke-width:2.2!important}
+#infoModal .store-info-body{flex:1!important;overflow-y:auto!important;padding:0!important;background:#ffffff!important}
+#infoModal .store-info-card{margin:0!important;padding:24px 26px 23px!important;background:#ffffff!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:center!important}
+#infoModal .store-info-logo{width:92px!important;height:92px!important;margin:0 auto 17px!important;border-radius:50%!important;background:#ff6b1a!important}
+#infoModal .store-info-logo img{width:100%!important;height:100%!important;object-fit:cover!important}
+#infoModal .store-info-logo .mob-logo-fallback{width:100%!important;height:100%!important;border-radius:50%!important;background:#ff6b1a!important;color:#ffffff!important;font-size:22px!important;font-weight:800!important}
+#infoModal .store-info-name{margin:0!important;color:#4b4b4b!important;font-size:14px!important;line-height:18px!important;font-weight:700!important}
+#infoModal .store-info-neighborhood{margin:1px 0 15px!important;color:#777777!important;font-size:12px!important;line-height:17px!important;font-weight:400!important}
+#infoModal .store-contact-list{display:grid!important;gap:14px!important;justify-items:center!important}
+#infoModal .store-contact-row{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;max-width:100%!important;color:#757575!important;font-size:12px!important;line-height:18px!important;font-weight:500!important;text-decoration:none!important}
+#infoModal .store-contact-row svg{width:16px!important;height:16px!important;color:#9a9a9a!important;stroke-width:2!important}
+#infoModal .store-contact-row span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#infoModal .store-contact-row--wa,#infoModal .store-contact-row--wa svg{color:#ff5f01!important;stroke:#ff5f01!important;font-weight:700!important}
+#infoModal .store-info-tabs{height:61px!important;margin:0!important;padding:0 27px!important;display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:0!important;overflow:visible!important;background:#ffffff!important;border-top:10px solid #f7f5f3!important;border-bottom:1px solid #e6e6e6!important}
+#infoModal .store-info-tabs button{height:51px!important;min-width:0!important;border:0!important;border-bottom:3px solid transparent!important;background:transparent!important;color:#a4a4a4!important;font-size:12px!important;line-height:18px!important;font-weight:700!important;text-align:center!important;white-space:nowrap!important}
+#infoModal .store-info-tabs button.active{color:#333333!important;border-bottom-color:#333333!important}
+#infoModal .store-hours-card,#infoModal .store-address-card,#infoModal .store-payment-card{margin:17px 27px 0!important;padding:0!important;background:#ffffff!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#infoModal .store-hours-row{min-height:29px!important;padding:0!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:12px!important;color:#707070!important;font-size:12px!important;line-height:18px!important;font-weight:500!important}
+#infoModal .store-hours-row span{min-width:0!important}
+#infoModal .store-hours-row strong{color:#565656!important;font-size:12px!important;line-height:18px!important;font-weight:500!important;white-space:nowrap!important}
+#infoModal .store-hours-row.active span{position:relative!important;padding-left:13px!important;color:#555555!important;font-weight:700!important}
+#infoModal .store-hours-row.active span::before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:8px!important;height:8px!important;border-radius:50%!important;background:#9e9e9e!important;transform:translateY(-50%)!important}
+#infoModal .store-address-card h3,#infoModal .store-payment-card h3{margin:0 0 10px!important;color:#333333!important;font-size:14px!important;line-height:18px!important;font-weight:700!important}
+#infoModal .store-address-card p,#infoModal .store-payment-card p{margin:0 0 9px!important;color:#626262!important;font-size:12px!important;line-height:19px!important;font-weight:500!important}
+
+/* Store info refinements: match operation header and reference spacing. */
+#infoModal .modal--store-info{max-width:414px!important}
+#infoModal .store-info-header{
+  height:70px!important;
+  min-height:70px!important;
+  padding:0 20px!important;
+  grid-template-columns:32px 1fr 32px!important;
+  border-bottom:1px solid #f1f1f1!important;
+}
+#infoModal .store-info-header h2{
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  color:#2F343A!important;
+  letter-spacing:-0.01em!important;
+}
+#infoModal .store-info-close{
+  width:32px!important;
+  height:32px!important;
+  border-radius:9px!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+#infoModal .store-info-close svg{
+  width:17px!important;
+  height:17px!important;
+  stroke-width:1.8!important;
+}
+#infoModal .store-info-card{
+  padding-top:42px!important;
+  padding-bottom:23px!important;
+}
+#infoModal .store-info-logo{
+  width:95px!important;
+  height:95px!important;
+  margin-bottom:17px!important;
+  background:#ff6b1a!important;
+}
+#infoModal .store-info-logo img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  padding:0!important;
+  background:#ff6b1a!important;
+}
+#infoModal .store-info-tabs{
+  height:72px!important;
+  padding:10px 27px 0!important;
+  align-items:end!important;
+  border-top:10px solid #f7f5f3!important;
+}
+#infoModal .store-info-tabs button{
+  height:52px!important;
+  padding-top:10px!important;
+  align-self:end!important;
+}
+#infoModal .store-hours-card{
+  margin:18px 20px 0!important;
+}
+#infoModal .store-hours-row{
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  gap:18px!important;
+}
+#infoModal .store-hours-row strong{
+  justify-self:end!important;
+  text-align:right!important;
+}
+
+/* Store info header fixed column placement. */
+#infoModal .store-info-close{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+#infoModal .store-info-header h2{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:100%!important;text-align:center!important}
+#infoModal .store-info-spacer{grid-column:3!important;grid-row:1!important;width:32px!important;height:32px!important}
+
+/* Store info sizing tweaks. */
+#infoModal .store-info-header{border-bottom-width:2px!important}
+#infoModal .store-info-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:305px!important;
+  min-height:305px!important;
+  padding-top:34px!important;
+  padding-bottom:18px!important;
+  box-sizing:border-box!important;
+}
+
+/* Store info card content vertical nudge. */
+#infoModal .store-info-card{padding-top:24px!important}
+#infoModal .store-info-logo{margin-bottom:12px!important}
+#infoModal .store-info-neighborhood{margin-bottom:11px!important}
+#infoModal .store-contact-list{gap:12px!important}
+
+/* Store info text/contact spacing below logo. */
+#infoModal .store-info-logo{margin-bottom:17px!important}
+#infoModal .store-info-neighborhood{margin-bottom:15px!important}
+#infoModal .store-contact-list{gap:14px!important}
+
+/* Store info contacts lower. */
+#infoModal .store-contact-list{margin-top:8px!important}
+
+/* Store info contact row fine tuning. */
+#infoModal .store-contact-list .store-contact-row:nth-child(2){margin-top:3px!important}
+#infoModal .store-contact-list .store-contact-row--wa{margin-top:7px!important}
+
+/* Store info phone and email lower. */
+#infoModal .store-contact-list .store-contact-row:nth-child(1){margin-top:4px!important}
+#infoModal .store-contact-list .store-contact-row:nth-child(2){margin-top:5px!important}
+
+/* Store info lower schedule block sizing. */
+#infoModal .store-info-tabs{
+  width:414px!important;
+  max-width:100%!important;
+  height:62px!important;
+  margin:0 auto!important;
+  padding:0 20px!important;
+  border-top:10px solid #f7f5f3!important;
+  border-bottom:3px solid #e6e6e6!important;
+  background:#ffffff!important;
+}
+#infoModal .store-info-tabs button{
+  height:49px!important;
+  padding-top:3px!important;
+}
+#infoModal .store-hours-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:293px!important;
+  min-height:293px!important;
+  margin:12px auto 0!important;
+  padding:0 20px!important;
+  box-sizing:border-box!important;
+}
+#infoModal .store-address-card,
+#infoModal .store-payment-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:293px!important;
+  min-height:293px!important;
+  margin:12px auto 0!important;
+  padding:0 20px!important;
+  box-sizing:border-box!important;
+}
+
+/* Store info tabs gray line exact size. */
+#infoModal .store-info-tabs{position:relative!important;border-bottom:0!important}
+#infoModal .store-info-tabs::after{
+  content:''!important;
+  position:absolute!important;
+  left:20px!important;
+  right:20px!important;
+  bottom:0!important;
+  height:3px!important;
+  background:#e6e6e6!important;
+  border-radius:2px!important;
+  z-index:0!important;
+}
+#infoModal .store-info-tabs button{position:relative!important;z-index:1!important}
+
+/* Store info bottom area after 414x293 block. */
+#infoModal .store-info-body{background:#f7f5f3!important}
+#infoModal .store-info-card,
+#infoModal .store-info-tabs,
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{background:#ffffff!important}
+
+/* Store info gray only after lower block, not between sections. */
+#infoModal .store-info-body{background:#ffffff!important}
+#infoModal .store-info-body::after{
+  content:''!important;
+  display:block!important;
+  width:100%!important;
+  height:220px!important;
+  background:#f7f5f3!important;
+  margin-top:0!important;
+}
+#infoModal .store-info-tabs{border-top-color:#f7f5f3!important}
+
+/* Store info lower white area includes tabs + content: 414x293. */
+#infoModal .store-info-tabs{
+  width:414px!important;
+  max-width:100%!important;
+  height:62px!important;
+  margin:0 auto!important;
+  padding:0 20px!important;
+  box-sizing:border-box!important;
+  background:#ffffff!important;
+  border-top:10px solid #f7f5f3!important;
+}
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:231px!important;
+  min-height:231px!important;
+  margin:0 auto!important;
+  padding:12px 20px 0!important;
+  box-sizing:border-box!important;
+  background:#ffffff!important;
+}
+#infoModal .store-info-body::after{
+  content:''!important;
+  display:block!important;
+  width:100%!important;
+  height:240px!important;
+  background:#f7f5f3!important;
+  margin-top:0!important;
+}
+
+/* Store info lower block lighter typography. */
+#infoModal .store-info-tabs button{
+  color:#b0b0b0!important;
+  font-weight:600!important;
+}
+#infoModal .store-info-tabs button.active{
+  color:#555555!important;
+  font-weight:600!important;
+  border-bottom-color:#555555!important;
+}
+#infoModal .store-hours-row{
+  color:#8a8a8a!important;
+  font-weight:400!important;
+}
+#infoModal .store-hours-row strong{
+  color:#777777!important;
+  font-weight:400!important;
+}
+#infoModal .store-hours-row.active span{
+  color:#747474!important;
+  font-weight:600!important;
+}
+#infoModal .store-address-card h3,
+#infoModal .store-payment-card h3{
+  color:#666666!important;
+  font-weight:600!important;
+}
+#infoModal .store-address-card p,
+#infoModal .store-payment-card p{
+  color:#7f7f7f!important;
+  font-weight:400!important;
+}
+
+/* Store info lower block final spacing/color tweaks. */
+#infoModal .store-info-tabs::after{
+  background:#eeeeee!important;
+}
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{
+  padding-top:18px!important;
+}
+#infoModal .store-hours-row strong{
+  color:#5f5f5f!important;
+  font-weight:500!important;
+}
+
+/* Store info tabs divider lighter. */
+#infoModal .store-info-tabs::after{background:#f3f3f3!important}
+
+/* Store info animated active tab underline. */
+#infoModal .store-info-tabs{--store-tab-index:0;position:relative!important}
+#infoModal .store-info-tabs button{border-bottom-color:transparent!important}
+#infoModal .store-info-tabs::before{
+  content:''!important;
+  position:absolute!important;
+  left:20px!important;
+  bottom:0!important;
+  width:calc((100% - 40px) / 3)!important;
+  height:3px!important;
+  background:#555555!important;
+  border-radius:2px!important;
+  transform:translateX(calc(var(--store-tab-index) * 100%))!important;
+  transition:transform .28s cubic-bezier(.4,0,.2,1)!important;
+  z-index:2!important;
+}
+#infoModal .store-info-tabs button.active{border-bottom-color:transparent!important}
+
+/* Store info address/payment tab layouts. */
+#infoModal[data-store-info-tab="address"] .store-info-tabs,
+#infoModal[data-store-info-tab="payment"] .store-info-tabs{
+  height:62px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:71px!important;
+  min-height:71px!important;
+  margin:0 auto!important;
+  padding:14px 20px 0!important;
+  display:grid!important;
+  grid-template-columns:18px 1fr!important;
+  column-gap:12px!important;
+  align-items:start!important;
+  background:#ffffff!important;
+  box-sizing:border-box!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card::before{
+  content:''!important;
+  width:15px!important;
+  height:15px!important;
+  margin-top:2px!important;
+  background:no-repeat center/15px 15px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%239b9b9b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E")!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card h3{display:none!important}
+#infoModal[data-store-info-tab="address"] .store-address-card p{
+  margin:0!important;
+  color:#777777!important;
+  font-size:12px!important;
+  line-height:19px!important;
+  font-weight:400!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:301px!important;
+  min-height:301px!important;
+  margin:0 auto!important;
+  padding:17px 20px 0!important;
+  background:#ffffff!important;
+  box-sizing:border-box!important;
+}
+#infoModal .store-payment-title,
+#infoModal .store-payment-group{
+  margin:0 0 16px!important;
+  color:#737373!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:500!important;
+}
+#infoModal .store-payment-group{margin:0 0 11px!important;color:#8a8a8a!important;font-weight:400!important}
+#infoModal .store-payment-group--debit{margin-top:17px!important}
+#infoModal .store-payment-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  column-gap:28px!important;
+  row-gap:13px!important;
+}
+#infoModal .store-payment-grid span{
+  display:flex!important;
+  align-items:center!important;
+  min-width:0!important;
+  gap:10px!important;
+  color:#8d8d8d!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:400!important;
+}
+#infoModal .pay-brand{
+  width:30px!important;
+  height:20px!important;
+  border-radius:8px!important;
+  flex:0 0 30px!important;
+  display:inline-block!important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)!important;
+}
+#infoModal .pay-brand--amex{background:linear-gradient(135deg,#35c3e6 0 49%,#1b9ec4 50% 100%)!important}
+#infoModal .pay-brand--hiper{background:linear-gradient(135deg,#d71920 0 49%,#b91419 50% 100%)!important}
+#infoModal .pay-brand--visa{background:linear-gradient(to bottom,#f5f7fb 0 34%,#293a80 35% 64%,#ff9d1c 65% 100%)!important}
+#infoModal .pay-brand--master{background:radial-gradient(circle at 12px 10px,#ff7a59 0 7px,transparent 7.5px),radial-gradient(circle at 18px 10px,#5b8cff 0 7px,transparent 7.5px),#f2f2f2!important}
+#infoModal .pay-brand--elo{background:radial-gradient(circle at 15px 10px,#ff8a00 0 3px,transparent 3.5px),radial-gradient(circle at 11px 10px,#009bd8 0 3px,transparent 3.5px),radial-gradient(circle at 19px 10px,#f6c400 0 3px,transparent 3.5px),#151515!important}
+#infoModal[data-store-info-tab="address"] .store-info-body::after,
+#infoModal[data-store-info-tab="payment"] .store-info-body::after{background:#f7f5f3!important}
+
+/* Store info payment content lower. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card{padding-top:25px!important}
+
+/* Store info payment vertical fine tuning. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card{padding-top:20px!important}
+#infoModal .store-payment-group--debit{margin-top:24px!important}
+
+/* Store info address: gray starts right after 414x133 white block. */
+#infoModal[data-store-info-tab="address"] .store-info-body{background:#f7f5f3!important}
+#infoModal[data-store-info-tab="address"] .store-info-card,
+#infoModal[data-store-info-tab="address"] .store-info-tabs,
+#infoModal[data-store-info-tab="address"] .store-address-card{background:#ffffff!important}
+#infoModal[data-store-info-tab="address"] .store-info-body::after{display:none!important}
+
+/* Store info payment full white 414x363 and debit lower. */
+#infoModal[data-store-info-tab="payment"] .store-info-body{background:#f7f5f3!important}
+#infoModal[data-store-info-tab="payment"] .store-info-card,
+#infoModal[data-store-info-tab="payment"] .store-info-tabs,
+#infoModal[data-store-info-tab="payment"] .store-payment-card{background:#ffffff!important}
+#infoModal[data-store-info-tab="payment"] .store-info-tabs{height:62px!important}
+#infoModal[data-store-info-tab="payment"] .store-payment-card{
+  height:301px!important;
+  min-height:301px!important;
+  padding-top:20px!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-info-body::after{display:none!important}
+#infoModal .store-payment-group--debit{margin-top:32px!important}
+
+/* Store info payment debit section forced lower. */
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
+  margin-top:0!important;
+  transform:translateY(18px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
+  transform:translateY(18px)!important;
+}
+
+/* Store info payment debit section lower again. */
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit,
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
+  transform:translateY(30px)!important;
+}
+
+/* Store info payment credit and debit card spacing. */
+#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit){
+  transform:translateY(8px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit) + .store-payment-grid{
+  transform:translateY(8px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
+  transform:translateY(38px)!important;
+}
+
+/* Store info final payment/address typography and positioning. */
+#infoModal .store-payment-title{
+  color:#5f5f5f!important;
+  font-weight:600!important;
+}
+#infoModal .store-payment-group{
+  color:#b0b0b0!important;
+  font-weight:400!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit) + .store-payment-grid{
+  transform:translateY(16px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
+  transform:translateY(38px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
+  transform:translateY(46px)!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  padding-top:24px!important;
+}
+
+/* Store info address and payment title refinements. */
+#infoModal .store-payment-title{font-weight:700!important;color:#555555!important}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  height:88px!important;
+  min-height:88px!important;
+  padding:17px 12px 0!important;
+  grid-template-columns:14px 1fr!important;
+  column-gap:6px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card::before{
+  width:13px!important;
+  height:13px!important;
+  margin-top:2px!important;
+  background-size:13px 13px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card p{
+  transform:translateY(-2px)!important;
+}
+
+/* Store info address/payment requested refinements. */
+#infoModal .store-payment-title{font-weight:800!important;color:#4a4a4a!important}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  height:78px!important;
+  min-height:78px!important;
+  padding:16px 20px 0!important;
+  grid-template-columns:18px minmax(0,1fr)!important;
+  column-gap:10px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card::before{
+  width:17px!important;
+  height:17px!important;
+  margin-top:3px!important;
+  margin-left:0!important;
+  background-size:17px 17px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card p{
+  max-width:330px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  line-height:20px!important;
+  transform:none!important;
+}
+
+/* Force payment title prominence. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
+  color:#4a4a4a!important;
+  font-size:13px!important;
+  line-height:18px!important;
+  font-weight:800!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  -webkit-text-stroke:.18px currentColor!important;
+}
+
+/* Payment title softer. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
+  color:#5f5f5f!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:650!important;
+  -webkit-text-stroke:0!important;
+}
+
+/* Payment title slightly lighter. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
+  color:#707070!important;
+  font-weight:600!important;
+}
+
+/* Payment title one step lighter. */
+#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
+  color:#7a7a7a!important;
+  font-weight:600!important;
+}
+
+/* Store info logo image fix. */
+#infoModal .store-info-logo{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+#infoModal .store-info-logo img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+}
+
+/* Store info lateral slide like operation/address screens. */
+#infoModal{
+  opacity:1!important;
+  background:rgba(0,0,0,0)!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:background .28s ease,visibility 0s linear .6s!important;
+}
+#infoModal.active{
+  background:rgba(0,0,0,.42)!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transition:background .28s ease,visibility 0s linear 0s!important;
+}
+#infoModal .modal--store-info{
+  visibility:visible!important;
+  transform:translateX(100%)!important;
+  transition:transform .6s ease!important;
+}
+#infoModal.active .modal--store-info{
+  transform:translateX(0)!important;
+  transition:transform .53s ease!important;
+}
+#infoModal.no-motion,
+#infoModal.no-motion.active,
+#infoModal.no-motion .modal--store-info,
+#infoModal.no-motion.active .modal--store-info{
+  transition:none!important;
+}
+
+/* Store info logo: show full restaurant logo without crop. */
+#infoModal .store-info-logo{
+  background:#ffffff!important;
+  border:0!important;
+}
+#infoModal .store-info-logo img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#ffffff!important;
+}
+
+/* Keep bottom nav rendered while info screen slides over it. */
+body.modal-open:has(#infoModal.active) .mob-bottom-nav,
+body:has(#infoModal.active) .mob-bottom-nav{
+  display:flex!important;
+}
+
+/* Store info logo final framing: full rectangular logo inside circle. */
+#infoModal .store-info-logo{
+  background:#ffffff!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+}
+#infoModal .store-info-logo img{
+  position:static!important;
+  display:block!important;
+  width:86%!important;
+  height:86%!important;
+  max-width:86%!important;
+  max-height:86%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:auto!important;
+  padding:0!important;
+  transform:none!important;
+  background:transparent!important;
+}

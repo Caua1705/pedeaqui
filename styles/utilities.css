@@ -3478,12 +3478,13 @@ body.home-tab .delivery-widget.pending-selection{
   letter-spacing:0!important;
 }
 .coupon-use-btn{
-  border:1px solid #f7d6c2!important; /* lighter border */
-  background:#fbd9c8!important;
+  border:0!important;
+  background:#ffe3d6!important;
   color:#40342f!important;
   font-size:12px!important;
   font-weight:700!important;
-  margin-top:6px!important;
+  margin-top:10px!important;
+  margin-bottom:7px!important;
   padding-left:9px!important;
   padding-right:9px!important;
   height:23px!important;
@@ -3491,6 +3492,8 @@ body.home-tab .delivery-widget.pending-selection{
 }
 .coupon-dash{
   margin-top:24px!important;
+  border-top-width:1.75px!important;
+  border-top-color:rgba(243,106,29,.32)!important;
 }
 /* Fallback discount number (only shows when a coupon has NO image). */
 .coupon-art strong{

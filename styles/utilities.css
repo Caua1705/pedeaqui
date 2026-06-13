@@ -5285,6 +5285,13 @@ body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
   display:none!important;
 }
 
+/* Login aberto por Pedidos/Perfil desliza sobre o app; mantenha a barra
+   renderizada para ela ser coberta pela tela, sem sumir antes. */
+body.modal-open:has(#loginModal.active:not(.from-add-address)) .mob-bottom-nav,
+body:has(#loginModal.active:not(.from-add-address)) .mob-bottom-nav{
+  display:flex!important;
+}
+
 /* Fullscreen lock: prevent background bleed behind auth/sub screens. */
 html:has(.lgn-screen.active),
 html:has(.reg-screen.active),

@@ -383,7 +383,7 @@
   height:45px!important;
   border:0!important;
   border-radius:10px!important;
-  background:#F36F21!important;
+  background:#ffe3d6!important;
   color:#fff!important;
   font-size:12px!important;
   font-weight:700!important;
@@ -903,8 +903,8 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   margin:0!important;
   border:0!important;
   border-radius:8px!important;
-  background:#F36F21!important;
-  color:#ffffff!important;
+  background:#ffe3d6!important;
+  color:#F36F21!important;
   font-family:var(--ref-font)!important;
   font-size:12px!important;
   font-weight:700!important;
@@ -1452,8 +1452,8 @@ body:not(.menu-tab) .home-order-cta,
   height:48px!important;
   margin:0 16px 10px auto!important;
   border-radius:10px!important;
-  background:#F36F21!important;
-  color:#ffffff!important;
+  background:#ffe3d6!important;
+  color:#F36F21!important;
   font-size:13px!important;
   line-height:18px!important;
   font-weight:700!important;
@@ -1858,7 +1858,7 @@ body:not(.menu-tab) .home-order-cta,
 }
 .address-strip .address-card-icon svg circle{
   fill:#ffffff!important;
-  stroke:#ffffff!important;
+  stroke:#F36F21!important;
   r:2px!important;
   stroke-width:.6!important;
 }
@@ -3403,7 +3403,7 @@ body.home-tab .address-strip .address-card-icon svg path{
 }
 body.home-tab .address-strip .address-card-icon svg circle{
   fill:#ffffff!important;
-  stroke:#ffffff!important;
+  stroke:#F36F21!important;
   r:2px!important;
   stroke-width:.6!important;
 }
@@ -3612,7 +3612,7 @@ body.home-tab .home-order-cta,
   font-size:12px!important;
   font-weight:700!important;
   border-radius:10px!important;
-  background:#F36F21!important;        /* Rapidex brand orange */
+  background:#ffe3d6!important;        /* Rapidex brand orange */
   box-shadow:none!important;
 }
 
@@ -4851,7 +4851,7 @@ body.menu-tab .delivery-widget .address-strip .address-card-icon svg path{
 }
 body.menu-tab .delivery-widget .address-strip .address-card-icon svg circle{
   fill:#ffffff!important;
-  stroke:#ffffff!important;
+  stroke:#F36F21!important;
   stroke-width:.6!important;
 }
 body.menu-tab .delivery-widget .address-strip .address-card-copy{
@@ -5139,16 +5139,20 @@ body.home-tab .mob-bottom-nav,
   max-width:40px!important;
   max-height:40px!important;
   border-radius:50%!important;
-  background:transparent!important;
+  background:#ffe3d6!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:none!important;
 }
 .mob-bottom-nav .mob-nav-item.mob-nav-qr .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item.mob-nav-qr.active .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active) .mob-nav-icon{
-  width:26px!important;
-  height:26px!important;
+  width:18px!important;
+  height:18px!important;
   stroke-width:1.8!important;
-  color:#2d2d2d!important;
-  stroke:#2d2d2d!important;
+  color:#F36F21!important;
+  stroke:#F36F21!important;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -5622,7 +5626,7 @@ body.modal-open{
     border-radius:9px!important;
     background:#ff5f01!important;
     box-shadow:none!important;
-    color:#ffffff!important;
+    color:#F36F21!important;
     font-size:12px!important;
     line-height:16px!important;
     font-weight:700!important;

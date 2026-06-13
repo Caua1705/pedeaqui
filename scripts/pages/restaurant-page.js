@@ -37,6 +37,15 @@
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = (text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const onlyDigits = (value) => String(value ?? '').replace(/\D/g, '');
+  const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || '';
+
+  function renderHomeLoginPrompt() {
+    const loginPrompt = $('homeLoginPrompt');
+    if (!loginPrompt) return;
+    const name = firstName(customer?.name);
+    loginPrompt.textContent = name ? `Olá, ${name}` : 'Entre ou cadastre-se';
+    loginPrompt.onclick = name ? mobNavProfile : () => openLoginScreen();
+  }
 
   function getRestaurantSlug() {
     return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
@@ -88,6 +97,14 @@
      em position:fixed com top = -scrollY, e restaurar ao fechar. */
   let _savedScrollY = 0;
   let _bodyScrollLocked = false;
+  let _softScrollLocked = false;
+
+  function currentScrollY() {
+    return window.pageYOffset
+      || document.documentElement.scrollTop
+      || document.body.scrollTop
+      || 0;
+  }
 
   function hasBlockingUiOpen() {
     return Boolean(document.querySelector(
@@ -95,13 +112,22 @@
     ));
   }
 
-  function lockBodyScroll() {
+  function lockBodyScroll(scrollY = currentScrollY(), mode = 'fixed') {
+    if (mode === 'soft') {
+      if (_bodyScrollLocked) {
+        document.body.classList.add('modal-open');
+        return;
+      }
+      _savedScrollY = scrollY;
+      _softScrollLocked = true;
+      return;
+    }
     if (_bodyScrollLocked) {
       document.body.classList.add('modal-open');
       return;
     }
     _bodyScrollLocked = true;
-    _savedScrollY = window.scrollY;
+    _savedScrollY = scrollY;
     document.body.style.position = 'fixed';
     document.body.style.top = `-${_savedScrollY}px`;
     document.body.style.left = '0';
@@ -111,12 +137,22 @@
     document.body.classList.add('modal-open');
   }
 
-  function unlockBodyScroll() {
+  function unlockBodyScroll(restoreY = _savedScrollY) {
+    if (_softScrollLocked && !_bodyScrollLocked) {
+      _softScrollLocked = false;
+      _savedScrollY = restoreY;
+      window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
+      requestAnimationFrame(() => {
+        if (!hasBlockingUiOpen()) window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
+      });
+      return;
+    }
     if (!_bodyScrollLocked) {
       document.body.classList.remove('modal-open');
       return;
     }
     _bodyScrollLocked = false;
+    _savedScrollY = restoreY;
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
@@ -124,7 +160,10 @@
     document.body.style.width = '';
     document.body.style.overflowY = '';
     document.body.classList.remove('modal-open');
-    window.scrollTo(0, _savedScrollY);
+    window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
+    requestAnimationFrame(() => {
+      if (!hasBlockingUiOpen()) window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
+    });
   }
 
   function unlockBodyScrollIfClear() {
@@ -147,24 +186,35 @@
   function openModal(id) {
     const el = $(id);
     if (!el) return;
+    const scrollY = currentScrollY();
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll();
+    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
   }
 
   function openModalImmediately(id) {
     const el = $(id);
     if (!el) return;
+    const scrollY = currentScrollY();
     el.classList.add('no-motion');
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll();
+    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
 
   function closeModalId(id) {
     const el = $(id);
     if (!el) return;
+    if (id === 'loginModal' && (_bodyScrollLocked || _softScrollLocked)) {
+      const restoreY = _savedScrollY;
+      el.classList.remove('active');
+      syncBottomNavVisibility();
+      setTimeout(() => {
+        if (!hasBlockingUiOpen()) unlockBodyScroll(restoreY);
+      }, 560);
+      return;
+    }
     el.classList.remove('active');
     syncBottomNavVisibility();
     unlockBodyScrollIfClear();
@@ -232,8 +282,7 @@
     document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Mín ${fmt(settings.min_order_value || 0)}`);
     const loc = document.querySelector('.mob-loc');
     if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
-    const loginPrompt = $('homeLoginPrompt');
-    if (loginPrompt) loginPrompt.textContent = isLogged() ? customer.name : 'Entre ou cadastre-se';
+    renderHomeLoginPrompt();
     document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
     document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
@@ -2549,7 +2598,7 @@
       // Do not auto-login. Move the user to e-mail verification.
       const email = res?.email || reg.email;
       restore();
-      openVerifyScreen({ email, source: 'register' });
+      openVerifyScreen({ email, source: 'register', customer: { name: reg.name, email: reg.email, phone: reg.phone } });
     } catch (error) {
       applyRegisterApiError(error);
       restore();
@@ -2558,7 +2607,7 @@
 
   /* ---------- Code verification screen (e-mail verify + password reset) ---------- */
 
-  let verifyCtx = { email: '', source: 'register' };
+  let verifyCtx = { email: '', source: 'register', customer: null };
   let _vfyTimer = null;
   let _vfyRemaining = 0;
   let _vfySubmitting = false;
@@ -2594,7 +2643,11 @@
   }
 
   function openVerifyScreen(ctx) {
-    verifyCtx = { email: ctx?.email || '', source: ctx?.source || 'register' };
+    verifyCtx = {
+      email: ctx?.email || '',
+      source: ctx?.source || 'register',
+      customer: ctx?.customer || null
+    };
     const isReset = verifyCtx.source === 'reset';
     const titleText = isReset ? 'Recuperar senha' : 'Validação de e-mail';
     if ($('vfyHeaderTitle')) $('vfyHeaderTitle').textContent = titleText;
@@ -2726,12 +2779,15 @@
         $('verifyScreen')?.classList.remove('active');
         openResetPasswordScreen(res?.reset_token, verifyCtx.email);
       } else {
-        await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
+        const res = await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
         stopVfyTimer();
-        const email = verifyCtx.email;
+        const fallbackCustomer = verifyCtx.customer || { email: verifyCtx.email };
+        const verifiedCustomer = customerFromAuthResponse(res, fallbackCustomer);
+        const accessToken = tokenFromAuthResponse(res);
+        if (accessToken) applyLoggedSession(accessToken, verifiedCustomer);
+        else if (verifiedCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(verifiedCustomer);
         $('verifyScreen')?.classList.remove('active');
-        openSigninScreen();
-        if ($('loginEmail')) $('loginEmail').value = email;
+        goToInitialScreenAfterAuth();
       }
     } catch (error) {
       $('verifyScreen')?.classList.add('vfy-error');
@@ -3137,9 +3193,39 @@
     localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
   }
 
+  function applyLocalCustomer(apiCustomer) {
+    customer = {
+      id: apiCustomer?.id || null,
+      name: apiCustomer?.name || '',
+      phone: apiCustomer?.phone || '',
+      email: apiCustomer?.email || ''
+    };
+    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    window.PedeAquiCustomerAuth?.setStoredCustomer?.(apiCustomer);
+  }
+
+  function tokenFromAuthResponse(res) {
+    return res?.access_token || res?.token || res?.accessToken || res?.auth?.access_token || '';
+  }
+
+  function customerFromAuthResponse(res, fallback = {}) {
+    return res?.customer || res?.user || res?.data?.customer || res?.data?.user || fallback;
+  }
+
+  function goToInitialScreenAfterAuth() {
+    document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
+      el.classList.remove('active');
+    });
+    closeProfSub();
+    renderHomeLoginPrompt();
+    renderProfileView();
+    showHomeTab();
+    window.scrollTo(0, 0);
+    unlockBodyScrollIfClear();
+  }
+
   function finishLoginNavigation() {
-    const loginPrompt = $('homeLoginPrompt');
-    if (loginPrompt && customer?.name) loginPrompt.textContent = customer.name;
+    renderHomeLoginPrompt();
     if (_loginOrigin === 'coupon') {
       closeModalId('loginModal');
       return;
@@ -3212,6 +3298,7 @@
         customer = { id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' };
         localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
         auth.setStoredCustomer(me);
+        renderHomeLoginPrompt();
         renderProfileView();
       }
     } catch (error) {
@@ -3219,6 +3306,7 @@
         auth.logout();
         customer = null;
         localStorage.removeItem(STORAGE_CUSTOMER);
+        renderHomeLoginPrompt();
         renderProfileView();
       }
     }
@@ -3444,8 +3532,7 @@
     window.PedeAquiCustomerAuth?.logout();
     closeProfSub();
     renderProfileView();
-    const loginPrompt = $('homeLoginPrompt');
-    if (loginPrompt) loginPrompt.textContent = 'Entre ou cadastre-se';
+    renderHomeLoginPrompt();
   }
 
   function renderProfPedidos() {

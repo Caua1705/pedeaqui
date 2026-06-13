@@ -1093,8 +1093,8 @@
     if (opDraft.address) {
       if (title) title.textContent = addressSummary(opDraft.address);
       if (sub) {
-        sub.textContent = opDraft.address.complement || '';
-        sub.style.display = opDraft.address.complement ? '' : 'none';
+        sub.textContent = '';
+        sub.style.display = 'none';
       }
     } else {
       if (title) title.textContent = 'Informe seu endereço';

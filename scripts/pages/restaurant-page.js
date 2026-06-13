@@ -2196,6 +2196,7 @@
   function openLoginScreen(origin = 'profile') {
     _loginOrigin = origin;
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
+    $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
     openModal('loginModal');
   }
 
@@ -2873,6 +2874,10 @@
 
   function closeSigninScreen() {
     $('loginScreen')?.classList.remove('active');
+    if (_loginOrigin === 'coupon') {
+      closeModalId('loginModal');
+      return;
+    }
     // Return to the login sheet the user came from.
     openModalImmediately('loginModal');
   }
@@ -3122,9 +3127,13 @@
   }
 
   function finishLoginNavigation() {
-    closeModalId('loginModal');
     const loginPrompt = $('homeLoginPrompt');
     if (loginPrompt && customer?.name) loginPrompt.textContent = customer.name;
+    if (_loginOrigin === 'coupon') {
+      closeModalId('loginModal');
+      return;
+    }
+    closeModalId('loginModal');
     if (_loginOrigin === 'orders') mobNavOrders();
     else renderProfileView();
   }
@@ -3258,6 +3267,7 @@
     const coupon = coupons.find(c => String(c.code) === String(code));
     if (!coupon) return;
     selectedCoupon = coupon;
+    document.body.classList.add('coupon-nav-keep');
     const image = coupon.image_url || coupon.image_path || '';
     const label = couponLabel(coupon);
     const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
@@ -3279,14 +3289,14 @@
   function closeCouponDetail(event) {
     if (event && event.currentTarget && event.target !== event.currentTarget) return;
     $('couponDetailOverlay')?.classList.remove('active');
+    document.body.classList.remove('coupon-nav-keep');
     unlockBodyScrollIfClear();
   }
 
   function confirmCouponDetail() {
     if (!selectedCoupon) return;
     if (!isLogged()) {
-      closeCouponDetail();
-      openLoginScreen();
+      openLoginScreen('coupon');
       return;
     }
     closeCouponDetail();

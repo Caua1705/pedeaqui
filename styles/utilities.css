@@ -179,6 +179,10 @@
   pointer-events:auto!important;
   transition:background .28s ease,visibility 0s linear 0s!important;
 }
+.coupon-detail-overlay.no-motion,
+.coupon-detail-overlay.no-motion .coupon-detail-screen{
+  transition:none!important;
+}
 .coupon-detail-screen{
   width:min(100vw,430px)!important;
   height:100dvh!important;
@@ -5198,6 +5202,9 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
   #loginModal.from-add-address{
     z-index:240!important;
   }
+  #loginModal.from-coupon{
+    z-index:280!important;
+  }
   #loginModal .modal--login{
     position:fixed!important;
     inset:0!important;
@@ -5338,6 +5345,14 @@ body:has(.overlay.active) .mob-bottom-nav{
 body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
   display:none!important;
 }
+
+body.modal-open.coupon-nav-keep .mob-bottom-nav,
+body.coupon-nav-keep .mob-bottom-nav,
+body.modal-open:has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
+  display:flex!important;
+}
+
 
 /* Login aberto por Pedidos/Perfil desliza sobre o app; mantenha a barra
    renderizada para ela ser coberta pela tela, sem sumir antes. */

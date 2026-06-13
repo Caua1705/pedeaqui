@@ -285,7 +285,7 @@
     const scrollY = currentScrollY();
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
   }
 
   function openModalImmediately(id) {
@@ -295,14 +295,14 @@
     el.classList.add('no-motion');
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
 
   function closeModalId(id) {
     const el = $(id);
     if (!el) return;
-    if (id === 'loginModal' && (_bodyScrollLocked || _softScrollLocked)) {
+    if (['loginModal', 'productModal'].includes(id) && (_bodyScrollLocked || _softScrollLocked)) {
       const restoreY = _savedScrollY;
       el.classList.remove('active');
       syncBottomNavVisibility();
@@ -3472,6 +3472,7 @@
     if (!coupon) return;
     selectedCoupon = coupon;
     document.body.classList.add('coupon-nav-keep');
+    lockBodyScroll(currentScrollY(), 'soft');
     const image = coupon.image_url || coupon.image_path || '';
     const label = couponLabel(coupon);
     const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
@@ -3487,14 +3488,17 @@
     const rules = $('couponDetailRules');
     if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
     $('couponDetailOverlay')?.classList.add('active');
-    lockBodyScroll();
   }
 
   function closeCouponDetail(event) {
     if (event && event.currentTarget && event.target !== event.currentTarget) return;
-    $('couponDetailOverlay')?.classList.remove('active');
+    const restoreY = _savedScrollY;
+    const overlay = $('couponDetailOverlay');
+    overlay?.classList.remove('active');
     document.body.classList.remove('coupon-nav-keep');
-    unlockBodyScrollIfClear();
+    setTimeout(() => {
+      if (!hasBlockingUiOpen()) unlockBodyScroll(restoreY);
+    }, 560);
   }
 
   function confirmCouponDetail() {

@@ -6295,3 +6295,30 @@ body:has(#infoModal.active) .mob-bottom-nav{
   transform:none!important;
   background:transparent!important;
 }
+
+/* Coupon buttons and scroll/animation polish. */
+.coupon-detail-use{
+  background:#F36F21!important;
+  color:#ffffff!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.coupon-use-btn{
+  background:#fef0e6!important;
+  color:#F36F21!important;
+  border:0!important;
+  font-weight:700!important;
+}
+body:has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body.coupon-nav-keep .mob-bottom-nav{
+  display:flex!important;
+}
+
+/* Keep bottom nav rendered while product screen slides over it. */
+body:has(#productModal.active) .mob-bottom-nav,
+body.keep-bottom-nav .mob-bottom-nav{
+  display:flex!important;
+}
+
+/* Coupon small button text back to original gray. */
+.coupon-use-btn{color:#555555!important}

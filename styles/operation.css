@@ -1312,6 +1312,86 @@
 .addr-picker-item.actions-open .addr-picker-dots svg{width:20px!important;height:8px!important}
 .addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:none!important;margin-left:10px!important;background:#f7f7f7!important}
 
+.addr-delete-confirm{
+  position:absolute!important;
+  inset:0!important;
+  z-index:20!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  background:rgba(0,0,0,.14)!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease,visibility 0s linear .18s!important;
+}
+.addr-delete-confirm.active{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transition:opacity .18s ease,visibility 0s linear 0s!important;
+}
+.addr-delete-panel{
+  width:414px!important;
+  max-width:100%!important;
+  height:218px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  padding:20px 20px 28px!important;
+  border-radius:10px 10px 0 0!important;
+  background:#f4f4f4!important;
+  border-top:1px solid #ececec!important;
+  box-shadow:0 -8px 26px rgba(0,0,0,.08)!important;
+  box-sizing:border-box!important;
+  transform:translateY(100%)!important;
+  transition:transform .22s cubic-bezier(.4,0,.2,1)!important;
+}
+.addr-delete-confirm.active .addr-delete-panel{
+  transform:translateY(0)!important;
+}
+.addr-delete-title{
+  margin:0 0 8px!important;
+  font-size:16px!important;
+  line-height:22px!important;
+  font-weight:600!important;
+  color:#3d3d3d!important;
+  text-align:center!important;
+}
+.addr-delete-text{
+  margin:0 0 20px!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  font-weight:400!important;
+  color:#878787!important;
+  text-align:center!important;
+}
+.addr-delete-yes,
+.addr-delete-cancel{
+  width:374px!important;
+  max-width:100%!important;
+  height:45px!important;
+  min-height:45px!important;
+  border-radius:10px!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+  cursor:pointer!important;
+  box-sizing:border-box!important;
+}
+.addr-delete-yes{
+  border:0!important;
+  background:#ff6b1a!important;
+  color:#fff!important;
+  margin-bottom:9px!important;
+}
+.addr-delete-cancel{
+  border:1.5px solid #ff6b1a!important;
+  background:#f4f4f4!important;
+  color:#ff6b1a!important;
+}
+
 /* Address details form final sizing/alignment. */
 #addrDetailsModal .addr-det-location-copy strong{
   font-weight:700!important;

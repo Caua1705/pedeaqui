@@ -882,9 +882,56 @@
     return { subtotal, svc, delivery, total: subtotal + svc + delivery };
   }
 
+  function currentCartAddress() {
+    return customerAddress || operationContext?.address || null;
+  }
+
+  function currentCartBranchLabel() {
+    const label = operationContext?.branch_label || operationContext?.branch_name || branches[0]?.name || 'Sul';
+    return String(label).toUpperCase().startsWith('LJ.') ? String(label).toUpperCase() : `LJ. ${String(label).toUpperCase()}`;
+  }
+
+  function cartEtaText() {
+    const min = settings.estimated_delivery_time_min || 39;
+    const max = settings.estimated_delivery_time_max || 45;
+    return `${min} - ${max} min`;
+  }
+
+  function syncCartLocationState() {
+    const address = currentCartAddress();
+    const hasAddress = Boolean(address?.summary || addressSummary(address));
+    const widget = $('cartLocationWidget');
+    widget?.classList.toggle('has-address', hasAddress);
+    const alert = $('cartLocationAlert');
+    if (alert) alert.style.display = hasAddress ? 'none' : 'flex';
+    const eta = $('cartLocationEta');
+    if (eta) {
+      eta.style.display = hasAddress ? 'block' : 'none';
+      eta.textContent = cartEtaText();
+    }
+    if ($('cartLocationLabel')) $('cartLocationLabel').textContent = hasAddress ? 'Endereço de entrega' : 'Não há endereço definido';
+    if ($('cartLocationText')) $('cartLocationText').textContent = hasAddress ? (address.summary || addressSummary(address)) : '';
+    if ($('cartAddrText')) $('cartAddrText').textContent = hasAddress ? (address.summary || addressSummary(address)) : 'Defina seu endereço para entrega';
+    if ($('cartLocationStoreTag')) $('cartLocationStoreTag').textContent = currentCartBranchLabel();
+    const cta = $('cartCtaBtn');
+    if (cta) {
+      if (!hasAddress) {
+        cta.textContent = 'Informe seu endereço';
+        cta.onclick = openCheckout;
+      } else if (!isLogged()) {
+        cta.textContent = 'Entre ou cadastre-se';
+        cta.onclick = () => openLoginScreen('cart');
+      } else {
+        cta.textContent = 'Fazer pedido';
+        cta.onclick = openCheckout;
+      }
+    }
+  }
+
   function updateCartUI() {
     const qty = cart.reduce((sum, item) => sum + item.qty, 0);
     const totals = cartTotals();
+    if ($('cartItemCountLabel')) $('cartItemCountLabel').textContent = qty === 1 ? '1 item' : `${qty} itens`;
     $('cartCountTop') && ($('cartCountTop').textContent = qty);
     $('cartCountTop')?.classList.toggle('show', qty > 0);
     $('cartSticky')?.classList.toggle('show', qty > 0);
@@ -898,27 +945,31 @@
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
     $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');
     $('cartFooter') && ($('cartFooter').style.display = qty ? 'block' : 'none');
+    syncCartLocationState();
     if (!qty) return;
 
     $('cartList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
-        <div class="cir-qty-badge">${item.qty}x</div>
+        <div class="cir-photo">${productImage(item, 'cir-photo-img')}</div>
         <div class="cir-info">
-          <div class="cir-name">${item.name}</div>
+          <div class="cir-name"><span>${item.qty}x</span> ${item.name}</div>
           ${item.obs ? `<div class="cir-obs">Obs: ${item.obs}</div>` : ''}
           <div class="cir-actions">
-            <button class="cir-edit-btn" onclick="editCartItem(${item.uid})">Editar</button>
-            <button class="cir-remove-btn" onclick="removeCartItem(${item.uid})">Remover</button>
+            <button class="cir-edit-btn" onclick="editCartItem(${item.uid})" aria-label="Editar item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            <button class="cir-remove-btn" onclick="removeCartItem(${item.uid})" aria-label="Remover item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+            </button>
           </div>
+          <div class="cir-price">${fmt(item.price * item.qty)}</div>
         </div>
-        <div class="cir-price">${fmt(item.price * item.qty)}</div>
       </div>
     `).join('');
     $('csSub').textContent = fmt(totals.subtotal);
     $('csSvcFeeBtn').textContent = fmt(totals.svc);
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
     $('csTotal').textContent = fmt(totals.total);
-    $('cartAddrText') && ($('cartAddrText').textContent = customerAddress ? customerAddress.summary : 'Defina seu endereço para entrega');
   }
 
   function handleHomeCartValueClick() {
@@ -957,6 +1008,7 @@
     if ($('cartDeliveryOpt')) $('cartDeliveryOpt').style.display = type === 'delivery' ? 'block' : 'none';
     if ($('cartPickupBlock')) $('cartPickupBlock').style.display = type === 'pickup' ? 'block' : 'none';
     if ($('csDeliveryRow')) $('csDeliveryRow').style.display = type === 'delivery' ? 'flex' : 'none';
+    syncCartLocationState();
     updateCartUI();
   }
 

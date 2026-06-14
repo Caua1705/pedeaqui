@@ -1584,6 +1584,13 @@
     confirm.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
+  function closeAddrDeleteConfirm() {
+    const confirm = $('addrDeleteConfirm');
+    if (!confirm) return;
+    confirm.classList.remove('active');
+    confirm.setAttribute('aria-hidden', 'true');
+  }
+
   function closeAddrPickerActions(exceptCard) {
     document.querySelectorAll('#addrPickerModal .addr-picker-item.actions-open').forEach(card => {
       if (exceptCard && card === exceptCard) return;
@@ -1628,14 +1635,14 @@
 
   function cancelAddrPickerDelete() {
     _addrPickerDeleteId = null;
-    setAddrDeleteConfirm(false);
+    closeAddrDeleteConfirm();
   }
 
   function confirmAddrPickerDelete() {
     const id = _addrPickerDeleteId;
     if (!id) return;
     _addrPickerDeleteId = null;
-    setAddrDeleteConfirm(false);
+    closeAddrDeleteConfirm();
     const card = Array.from(document.querySelectorAll('#addrPickerList .addr-picker-item'))
       .find(item => String(item.dataset.addrId) === String(id));
     if (card && id === 'example1') {
@@ -3776,7 +3783,7 @@
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
     openOperationScreen, closeOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
-    openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete,
+    openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete, closeAddrDeleteConfirm,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,

@@ -1320,16 +1320,15 @@
   align-items:flex-end!important;
   justify-content:center!important;
   background:rgba(0,0,0,.14)!important;
-  opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
-  transition:opacity .18s ease,visibility 0s linear .18s!important;
+  overflow:hidden!important;
+  transition:visibility 0s linear .9s!important;
 }
 .addr-delete-confirm.active{
-  opacity:1!important;
   visibility:visible!important;
   pointer-events:auto!important;
-  transition:opacity .18s ease,visibility 0s linear 0s!important;
+  transition:visibility 0s linear 0s!important;
 }
 .addr-delete-panel{
   width:414px!important;
@@ -1344,11 +1343,13 @@
   border-top:1px solid #ececec!important;
   box-shadow:0 -8px 26px rgba(0,0,0,.08)!important;
   box-sizing:border-box!important;
-  transform:translateY(100%)!important;
-  transition:transform .22s cubic-bezier(.4,0,.2,1)!important;
+  will-change:transform!important;
+  backface-visibility:hidden!important;
+  transform:translate3d(0,118%,0)!important;
+  transition:transform .9s cubic-bezier(.22,1,.36,1)!important;
 }
 .addr-delete-confirm.active .addr-delete-panel{
-  transform:translateY(0)!important;
+  transform:translate3d(0,0,0)!important;
 }
 .addr-delete-title{
   margin:0 0 8px!important;

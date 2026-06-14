@@ -1649,3 +1649,9 @@
 #addrDetailsModal #addrDetComplement{
   width:100%!important;
 }
+
+/* Keep the bottom nav rendered while the bag screen slides over it. */
+body.modal-open:has(#cartModal.active) .mob-bottom-nav,
+body:has(#cartModal.active) .mob-bottom-nav{
+  display:flex!important;
+}

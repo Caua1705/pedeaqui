@@ -320,7 +320,7 @@
     const el = $(id);
     if (!el) return;
     el.classList.add('no-motion');
-    const panel = el.querySelector('.modal--fs,.modal--login,.modal--product');
+    const panel = el.querySelector('.modal--fs,.modal--login,.modal--product,.modal--cart');
     el.style.transition = 'none';
     if (panel) panel.style.transition = 'none';
     el.classList.remove('active');
@@ -897,6 +897,20 @@
     return `${min} - ${max} min`;
   }
 
+  function cartAddressHtml(address) {
+    if (!address) return '';
+    const branch = branchById(operationContext?.branch_id) || branches[0] || {};
+    const cityState = [address.city || branch.city, address.state || branch.state].filter(Boolean).join(' - ');
+    const line1 = [
+      [address.street, address.number].filter(Boolean).join(', '),
+      address.neighborhood
+    ].filter(Boolean).join(', ');
+    const fallback = address.summary || addressSummary(address);
+    return cityState
+      ? `${esc(line1 || fallback)}<span>${esc(cityState)}</span>`
+      : esc(fallback);
+  }
+
   function syncCartLocationState() {
     const address = currentCartAddress();
     const hasAddress = Boolean(address?.summary || addressSummary(address));
@@ -910,19 +924,25 @@
       eta.textContent = cartEtaText();
     }
     if ($('cartLocationLabel')) $('cartLocationLabel').textContent = hasAddress ? 'Endereço de entrega' : 'Não há endereço definido';
-    if ($('cartLocationText')) $('cartLocationText').textContent = hasAddress ? (address.summary || addressSummary(address)) : '';
+    if ($('cartLocationText')) {
+      if (hasAddress) $('cartLocationText').innerHTML = cartAddressHtml(address);
+      else $('cartLocationText').textContent = '';
+    }
     if ($('cartAddrText')) $('cartAddrText').textContent = hasAddress ? (address.summary || addressSummary(address)) : 'Defina seu endereço para entrega';
     if ($('cartLocationStoreTag')) $('cartLocationStoreTag').textContent = currentCartBranchLabel();
     const cta = $('cartCtaBtn');
     if (cta) {
       if (!hasAddress) {
         cta.textContent = 'Informe seu endereço';
-        cta.onclick = openCheckout;
+        cta.onclick = () => {
+          closeModalImmediately('cartModal');
+          openAddressChoiceDirect(false);
+        };
       } else if (!isLogged()) {
         cta.textContent = 'Entre ou cadastre-se';
         cta.onclick = () => openLoginScreen('cart');
       } else {
-        cta.textContent = 'Fazer pedido';
+        cta.textContent = 'Escolher forma de pagamento';
         cta.onclick = openCheckout;
       }
     }

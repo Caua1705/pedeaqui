@@ -2732,3 +2732,110 @@ a{text-decoration:none;color:inherit}
     background:#ff6b1a!important;
   }
 }
+
+/* Final bag-screen fixes: address cards match the references. */
+@media(max-width:767px){
+  #cartModal{
+    background:transparent!important;
+  }
+  #cartModal.active{
+    background:rgba(0,0,0,.42)!important;
+  }
+  #cartModal .modal--cart{
+    bottom:0!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+  }
+  #cartModal .cart-hdr{
+    height:64px!important;
+    min-height:64px!important;
+  }
+  #cartModal .cart-hdr-copy{
+    transform:translateY(-3px)!important;
+  }
+  #cartModal .cart-hdr-title{
+    line-height:18px!important;
+  }
+  #cartModal .cart-hdr-sub{
+    margin-top:1px!important;
+    line-height:14px!important;
+  }
+  #cartModal .cart-hdr-back{
+    background:#f0f0f0!important;
+    color:#3f3f3f!important;
+  }
+  #cartModal .cart-hdr-back svg{
+    width:18px!important;
+    height:18px!important;
+    stroke-width:2!important;
+  }
+  #cartModal .cart-scroll{
+    padding:16px 0 100px!important;
+  }
+  #cartModal .cart-location-widget{
+    height:215px!important;
+    min-height:215px!important;
+    padding:14px!important;
+    gap:12px!important;
+  }
+  #cartModal .cart-location-widget.has-address{
+    height:197px!important;
+    min-height:197px!important;
+    padding:14px!important;
+    gap:10px!important;
+    border-color:transparent!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-alert{
+    display:none!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-eta{
+    display:block!important;
+    margin:1px 0 0!important;
+    font-size:15px!important;
+    line-height:18px!important;
+    font-weight:800!important;
+  }
+  #cartModal .cart-location-main{
+    flex:1 1 auto!important;
+    min-height:0!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-main{
+    flex:0 0 93px!important;
+    min-height:93px!important;
+    padding:12px 0 13px!important;
+    gap:14px!important;
+  }
+  #cartModal .cart-location-widget:not(.has-address) .cart-location-main{
+    padding:14px 0!important;
+  }
+  #cartModal .cart-location-map{
+    width:62px!important;
+    height:62px!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-copy{
+    gap:5px!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-copy span{
+    font-size:12px!important;
+    line-height:15px!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-copy strong{
+    display:block!important;
+    font-size:12px!important;
+    line-height:19px!important;
+    font-weight:700!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-copy strong span{
+    display:block!important;
+    margin-top:0!important;
+    color:#4c4c4c!important;
+    font:inherit!important;
+  }
+  #cartModal .cart-location-widget.has-address .cart-location-tags{
+    margin-top:auto!important;
+    transform:translateY(1px)!important;
+  }
+  #cartModal .cart-footer{
+    bottom:0!important;
+  }
+}

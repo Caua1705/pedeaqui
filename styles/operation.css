@@ -1721,10 +1721,13 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
 }
 .mob-bottom-nav #mobNavHome,
 .mob-bottom-nav #mobNavMenu{
-  transform:translateX(2px)!important;
+  transform:translateX(4px)!important;
+}
+.mob-bottom-nav #mobNavQr{
+  transform:translateX(-3px)!important;
 }
 .mob-bottom-nav #mobNavProfile{
-  transform:translateX(-2px)!important;
+  transform:translateX(-4px)!important;
 }
 
 .coupon-card::before,

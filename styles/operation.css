@@ -1719,6 +1719,16 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   min-height:14px!important;
   max-height:14px!important;
 }
+.mob-bottom-nav #mobNavHome,
+.mob-bottom-nav #mobNavMenu{
+  transform:translateX(-3px)!important;
+}
+.mob-bottom-nav #mobNavProfile{
+  transform:translateX(3px)!important;
+}
+.mob-bottom-nav #mobNavQr{
+  transform:translateX(-3px)!important;
+}
 
 .coupon-card::before,
 .coupon-card::after{

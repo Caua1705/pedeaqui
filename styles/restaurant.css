@@ -3119,3 +3119,18 @@ a{text-decoration:none;color:inherit}
     line-height:1!important;
   }
 }
+
+.mob-nav-icon--home{
+  width:16px!important;
+  height:14px!important;
+}
+
+.mob-nav-icon--club{
+  width:14px!important;
+  height:14px!important;
+}
+
+.mob-nav-icon--profile{
+  width:12px!important;
+  height:14px!important;
+}

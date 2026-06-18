@@ -1694,3 +1694,28 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   color:#333333!important;
   stroke:#333333!important;
 }
+
+.mob-bottom-nav .mob-nav-icon--home{
+  width:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+}
+.mob-bottom-nav .mob-nav-icon--club{
+  width:14px!important;
+  min-width:14px!important;
+  max-width:14px!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+}
+.mob-bottom-nav .mob-nav-icon--profile{
+  width:12px!important;
+  min-width:12px!important;
+  max-width:12px!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+}

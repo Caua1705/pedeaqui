@@ -2575,6 +2575,7 @@ a{text-decoration:none;color:inherit}
 .mob-logo{width:50px!important;height:50px!important;border-radius:50%!important;border:0!important;background:#fff3ea!important;box-shadow:none!important;overflow:hidden!important}
 .mob-rest-details{position:relative!important;padding-top:0!important}
 .mob-rest-name{font-size:1.18rem!important;font-weight:800!important;letter-spacing:0!important;line-height:1.16!important;margin-bottom:4px!important;color:#262626!important}
+.mob-rest-name.mob-rest-name--compact{font-size:1.06rem!important}
 .mob-rest-sub{display:block!important;font-size:.79rem!important;color:#8a8a8a!important;margin-bottom:7px!important}
 .mob-rest-row2{display:none!important}
 .mob-badge-open{font-size:.76rem!important;font-weight:700!important;color:#2f7d49!important}

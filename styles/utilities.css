@@ -5650,14 +5650,16 @@ body.modal-open{
 
 /* Home cart value pill: compact size only. */
 body.home-tab .home-cart-pill{
-  min-width:66px!important;
-  height:27px!important;
-  min-height:27px!important;
-  padding:0 8px!important;
-  border-radius:8px!important;
+  width:80.75px!important;
+  min-width:80.75px!important;
+  max-width:80.75px!important;
+  height:30px!important;
+  min-height:30px!important;
+  padding:0!important;
+  border-radius:10px!important;
 }
 body.home-tab .home-cart-pill #homeCartTotal{
-  font-size:12.5px!important;
+  font-size:14.5px!important;
 }
 
 /* Store information screen - reference layout. */
@@ -6322,3 +6324,9 @@ body.keep-bottom-nav .mob-bottom-nav{
 
 /* Coupon small button text back to original gray. */
 .coupon-use-btn{color:#555555!important}
+
+/* Compact restaurant name when API name is longer than 12 characters. */
+body.home-tab .mob-rest-name.mob-rest-name--compact{
+  font-size:16px!important;
+  line-height:1.18!important;
+}

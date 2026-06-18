@@ -355,6 +355,9 @@
     const branch = branches[0] || {};
     const restName = restaurant.name || 'Restaurante';
     document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label,.hero-rest-name').forEach(el => el.textContent = restName);
+    document.querySelectorAll('.mob-rest-name').forEach(el => {
+      el.classList.toggle('mob-rest-name--compact', Array.from(restName).length > 12);
+    });
     if ($('addrSearchHeaderTitle')) $('addrSearchHeaderTitle').textContent = restName;
     document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || 'Pedido online');
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));

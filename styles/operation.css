@@ -1719,3 +1719,29 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   min-height:14px!important;
   max-height:14px!important;
 }
+
+.coupon-card::before,
+.coupon-card::after{
+  content:''!important;
+  position:absolute!important;
+  display:block!important;
+  z-index:2!important;
+  top:152px!important;
+  width:10px!important;
+  height:10px!important;
+  border:1px solid rgba(243,106,29,.18)!important;
+  border-radius:50%!important;
+  background:#ffffff!important;
+  pointer-events:none!important;
+}
+.coupon-card::before{
+  left:-6px!important;
+  border-left-color:rgba(210,210,210,.9)!important;
+}
+.coupon-card::after{
+  right:-6px!important;
+  border-right-color:rgba(210,210,210,.9)!important;
+}
+.coupon-use-btn{
+  background:#fde3d2!important;
+}

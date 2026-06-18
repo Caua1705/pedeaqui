@@ -968,7 +968,7 @@
       $('cartCountSticky').dataset.count = qty;
     }
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
-    if ($('homeCartTotal')) $('homeCartTotal').textContent = fmt(totals.total);
+    if ($('homeCartTotal')) $('homeCartTotal').textContent = isLogged() ? fmt(totals.total) : fmt(0);
 
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
     $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');

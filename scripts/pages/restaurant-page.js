@@ -936,15 +936,18 @@
     if (cta) {
       if (!hasAddress) {
         cta.textContent = 'Informe seu endereço';
+        cta.classList.add('cart-cta-btn--address-required');
         cta.onclick = () => {
           closeModalImmediately('cartModal');
           openAddressChoiceDirect(false);
         };
       } else if (!isLogged()) {
         cta.textContent = 'Entre ou cadastre-se';
+        cta.classList.remove('cart-cta-btn--address-required');
         cta.onclick = () => openLoginScreen('cart');
       } else {
         cta.textContent = 'Escolher forma de pagamento';
+        cta.classList.remove('cart-cta-btn--address-required');
         cta.onclick = openCheckout;
       }
     }
@@ -1305,8 +1308,11 @@
     else if (operationContext.address) text = addressSummary(operationContext.address);
     else text = 'Use seu endereço para melhores resultados';
     if (addrMain) addrMain.textContent = text;
-    document.querySelector('.delivery-widget .address-strip')
-      ?.classList.toggle('has-address', operationConfirmed && !isPickup && !!operationContext.address);
+    const needsAddressHint = !operationContext.address && operationConfirmed && !isPickup;
+    widget?.classList.toggle('needs-address-hint', needsAddressHint);
+    const addressStrip = document.querySelector('.delivery-widget .address-strip');
+    addressStrip?.classList.toggle('needs-address-hint', needsAddressHint);
+    addressStrip?.classList.toggle('has-address', operationConfirmed && !isPickup && !!operationContext.address);
   }
 
   // ---- Operation / location modal ----

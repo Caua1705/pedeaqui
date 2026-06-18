@@ -16,6 +16,14 @@
 /* ---- Home widget is fully clickable now ---- */
 .delivery-widget{cursor:pointer}
 .delivery-widget .address-strip{pointer-events:none}
+.delivery-widget.needs-address-hint .address-strip .address-card-copy strong,
+.delivery-widget.needs-address-hint .address-strip .address-card-chevron,
+.delivery-widget.needs-address-hint .delivery-widget-chevron,
+.address-strip.needs-address-hint .address-card-copy strong,
+.address-strip.needs-address-hint .address-card-chevron{
+  color:var(--op-orange)!important;
+  stroke:var(--op-orange)!important;
+}
 /* Brand pill holds the restaurant name from the API: clip with a real ellipsis
    (the base flex centering clips both ends, so force inline-block truncation). */
 #dwTabBrand{
@@ -1654,4 +1662,19 @@
 body.modal-open:has(#cartModal.active) .mob-bottom-nav,
 body:has(#cartModal.active) .mob-bottom-nav{
   display:flex!important;
+}
+
+/* Home/menu location hint: no address selected yet. */
+body.home-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong,
+body.home-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) #homeAddressTitle,
+body.menu-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong,
+body.menu-tab .delivery-widget:not(.pending-selection) .address-strip:not(.has-address) #homeAddressTitle{
+  color:#F36F21!important;
+}
+body.home-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron,
+body.home-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron path,
+body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron,
+body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron path{
+  color:#F36F21!important;
+  stroke:#F36F21!important;
 }

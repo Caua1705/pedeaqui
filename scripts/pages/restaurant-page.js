@@ -930,6 +930,8 @@
     }
     if ($('cartAddrText')) $('cartAddrText').textContent = hasAddress ? (address.summary || addressSummary(address)) : 'Defina seu endereço para entrega';
     if ($('cartLocationStoreTag')) $('cartLocationStoreTag').textContent = currentCartBranchLabel();
+    const paymentCard = document.querySelector('#cartModal .cart-payment-card');
+    if (paymentCard) paymentCard.style.display = hasAddress && isLogged() ? '' : 'none';
     const cta = $('cartCtaBtn');
     if (cta) {
       if (!hasAddress) {
@@ -3438,6 +3440,7 @@
 
   function finishLoginNavigation() {
     renderHomeLoginPrompt();
+    updateCartUI();
     if (_loginOrigin === 'coupon') {
       closeModalId('loginModal');
       return;
@@ -3749,6 +3752,7 @@
     closeProfSub();
     renderProfileView();
     renderHomeLoginPrompt();
+    updateCartUI();
   }
 
   function renderProfPedidos() {

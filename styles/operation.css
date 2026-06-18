@@ -1719,7 +1719,9 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   min-height:14px!important;
   max-height:14px!important;
 }
-.mob-bottom-nav #mobNavHome,
+.mob-bottom-nav #mobNavHome{
+  transform:translateX(8px)!important;
+}
 .mob-bottom-nav #mobNavMenu{
   transform:translateX(7px)!important;
 }
@@ -1727,7 +1729,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   transform:translateX(-5px)!important;
 }
 .mob-bottom-nav #mobNavProfile{
-  transform:translateX(-7px)!important;
+  transform:translateX(-8px)!important;
 }
 
 .coupon-card::before,

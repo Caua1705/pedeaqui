@@ -1720,7 +1720,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   max-height:14px!important;
 }
 .mob-bottom-nav #mobNavHome{
-  transform:translateX(4px)!important;
+  transform:translateX(10px)!important;
 }
 .mob-bottom-nav #mobNavMenu{
   transform:translateX(7px)!important;

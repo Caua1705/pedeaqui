@@ -332,6 +332,38 @@ body.app-error .app-loader-message {
   }
 }
 
+.tab-loader,
+.rapi-preparing-loader {
+  width: 100% !important;
+  min-height: 120px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px 16px !important;
+  box-sizing: border-box !important;
+  color: #8a8a8a !important;
+  font: 600 12px/1.4 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  text-align: center !important;
+}
+
+.tab-loader--dots::after,
+.rapi-preparing-loader::after {
+  content: "" !important;
+  width: 34px !important;
+  height: 8px !important;
+  margin-left: 8px !important;
+  background:
+    radial-gradient(circle, #F36F21 58%, transparent 60%) 0 50% / 8px 8px no-repeat,
+    radial-gradient(circle, #F36F21 58%, transparent 60%) 13px 50% / 8px 8px no-repeat,
+    radial-gradient(circle, #F36F21 58%, transparent 60%) 26px 50% / 8px 8px no-repeat !important;
+  animation: tabLoaderDots 0.9s ease-in-out infinite !important;
+}
+
+@keyframes tabLoaderDots {
+  0%, 100% { opacity: 0.45; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-1px); }
+}
+
 .rapi-title-block h2 {
   font-size: 1.4rem;
   font-weight: 800;

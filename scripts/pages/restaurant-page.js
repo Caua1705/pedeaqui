@@ -113,6 +113,60 @@
     if (active) document.body.classList.remove('app-error');
   }
 
+  function resetRuntimeStateForPageLoad() {
+    payload = {};
+    restaurant = {};
+    settings = {};
+    branches = [];
+    categories = [];
+    products = [];
+    banners = [];
+    highlightBanners = [];
+    coupons = [];
+    currentProd = null;
+    selectedCoupon = null;
+    heroBannerIndex = 0;
+    clearInterval(heroBannerTimer);
+    heroBannerTimer = null;
+    menuLoadPromise = null;
+    profileLoadPromise = null;
+    menuRenderSignature = '';
+    bannersRenderSignature = '';
+    couponsRenderSignature = '';
+    highlightsRenderSignature = '';
+    menuSectionsCache = [];
+    categoryButtonsCache = [];
+    appState.restaurant = null;
+    appState.homeLoaded = false;
+    appState.menuLoaded = false;
+    appState.clubLoaded = false;
+    appState.profileLoaded = false;
+    appState.productsByCategory = null;
+    appState.customerOrders = null;
+    appState.customerAddresses = null;
+    appState.clubData = null;
+    appState.loading = {
+      app: false,
+      home: false,
+      menu: false,
+      club: false,
+      profile: false
+    };
+    restaurantStore()?.set?.({
+      restaurant: null,
+      settings: {},
+      branches: [],
+      categories: [],
+      products: [],
+      banners: [],
+      highlightBanners: [],
+      coupons: [],
+      homeLoaded: false,
+      menuLoaded: false,
+      clubData: null
+    });
+  }
+
   function showAppError(error) {
     setLoading('app', false);
     document.body.classList.remove('app-booting');
@@ -140,6 +194,10 @@
       </div>`;
   }
 
+  function renderTabLoader(targetId, message) {
+    renderSectionLoader(targetId, message, 'tab-loader tab-loader--dots');
+  }
+
   const clubController = window.PedeAquiRestaurantClub.createRestaurantClubController({
     appState,
     fallback,
@@ -147,6 +205,7 @@
     getCoupons: () => coupons,
     restaurantStore,
     setLoading,
+    renderTabLoader,
     renderSectionLoader,
     renderSectionError,
     logAppError,
@@ -827,6 +886,12 @@
     if (appState.menuLoaded && $('menuContainer')?.querySelector('.menu-section')) return;
     if (appState.menuLoaded) {
       renderMenu();
+      return;
+    }
+    if (products.length && categories.length) {
+      renderMenu();
+      initScrollSpy();
+      setFirstCategoryActive();
       return;
     }
     if (menuLoadPromise) return menuLoadPromise;
@@ -3931,6 +3996,11 @@
     $('mobViewRapi')?.classList.add('active');
     document.body.classList.add('rapi-nav-keep');
     lockBodyScroll();
+    if (!products.length || !categories.length) {
+      const view = $('mobViewRapi');
+      if (view) view.innerHTML = '<div class="rapi-preparing-loader">Rapi estÃ¡ preparando sugestÃµes...</div>';
+      await ensureMenuLoaded();
+    }
     if (window.renderRapiView) window.renderRapiView();
   }
 
@@ -3948,6 +4018,7 @@
     }
     $('mobViewClub')?.classList.add('active');
     lockBodyScroll();
+    if (!appState.clubLoaded) renderTabLoader('mobClubBody', 'Carregando clube...');
     await clubController.renderClubView();
   }
 
@@ -4027,7 +4098,7 @@
     }
     $('mobViewProfile')?.classList.add('active');
     lockBodyScroll();
-    renderProfileLoading();
+    if (!appState.profileLoaded) renderProfileLoading();
     await loadProfileData();
     renderProfileView();
   }
@@ -4115,6 +4186,7 @@
 
   async function initRestaurantApp() {
     if (bootPromise) return bootPromise;
+    resetRuntimeStateForPageLoad();
     setAppBooting(true);
     renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
     bootPromise = (async () => {

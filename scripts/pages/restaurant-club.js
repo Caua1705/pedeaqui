@@ -7,6 +7,7 @@
       getCoupons,
       restaurantStore,
       setLoading,
+      renderTabLoader,
       renderSectionLoader,
       renderSectionError,
       logAppError,
@@ -18,7 +19,8 @@
       if (appState.clubLoaded) return appState.clubData;
       if (clubLoadPromise) return clubLoadPromise;
       setLoading('club', true);
-      renderSectionLoader('mobClubBody', 'Carregando clube...', 'club-skeleton');
+      if (renderTabLoader) renderTabLoader('mobClubBody', 'Carregando clube...');
+      else renderSectionLoader('mobClubBody', 'Carregando clube...', 'club-skeleton');
       clubLoadPromise = (async () => {
         try {
           const coupons = getCoupons();

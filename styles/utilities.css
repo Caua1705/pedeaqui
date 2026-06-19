@@ -5164,7 +5164,7 @@ body.home-tab .address-strip.has-address .address-card-copy strong,
 body.home-tab .address-strip.has-address #homeAddressTitle,
 body.menu-tab .address-strip.has-address .address-card-copy strong,
 body.menu-tab .address-strip.has-address #homeAddressTitle{
-  color:#6a6a6a!important;
+  color:#111111!important;
   font-size:12px!important;
   font-weight:300!important;
   font-synthesis-weight:none!important;
@@ -5375,9 +5375,16 @@ body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
 
 /* Login aberto por Pedidos/Perfil desliza sobre o app; mantenha a barra
    renderizada para ela ser coberta pela tela, sem sumir antes. */
-body.modal-open:has(#loginModal.active:not(.from-add-address)) .mob-bottom-nav,
-body:has(#loginModal.active:not(.from-add-address)) .mob-bottom-nav{
+body.modal-open:has(#loginModal.active:not(.from-add-address):not(.signin-open)) .mob-bottom-nav,
+body:has(#loginModal.active:not(.from-add-address):not(.signin-open)) .mob-bottom-nav{
   display:flex!important;
+}
+
+body.modal-open:has(#loginModal.signin-open) .mob-bottom-nav,
+body:has(#loginModal.signin-open) .mob-bottom-nav,
+body.modal-open:has(#loginScreen.active) .mob-bottom-nav,
+body:has(#loginScreen.active) .mob-bottom-nav{
+  display:none!important;
 }
 
 /* Fullscreen lock: prevent background bleed behind auth/sub screens. */

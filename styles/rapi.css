@@ -21,6 +21,12 @@
   transform: translateX(0);
 }
 
+body.modal-open.rapi-nav-keep .mob-bottom-nav,
+body.rapi-nav-keep .mob-bottom-nav,
+body:has(#mobViewRapi.active) .mob-bottom-nav {
+  display: flex !important;
+}
+
 /* ── Scrollable body ── */
 .rapi-page {
   flex: 1;
@@ -652,32 +658,35 @@
 
 .menu-mobile-center {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: linear-gradient(145deg, #ff6b35, #ff8c42);
-  box-shadow: 0 4px 18px rgba(255, 107, 53, 0.45);
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.18s;
-  margin-top: -14px;
-  border: 3px solid #fff;
+  transition: transform 0.18s;
+  margin-top: 0;
+  border: 0;
 }
 
 .mob-nav-item.mob-nav-qr:active .menu-mobile-center,
 .mob-nav-item.mob-nav-qr.active .menu-mobile-center {
-  box-shadow: 0 6px 24px rgba(255, 107, 53, 0.60);
-  transform: scale(1.06);
+  box-shadow: none;
+  transform: none;
 }
 
 .menu-mobile-rapi-avatar {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  object-position: center;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  object-position: 50% 40%;
   display: block;
+  border-radius: 50%;
+  transform: scale(2.15) translateY(12%);
+  transform-origin: center;
 }
 
 /* ── Animations ── */

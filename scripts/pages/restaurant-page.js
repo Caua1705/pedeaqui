@@ -3784,9 +3784,10 @@
     scrollToMenu();
   }
 
-  const MOB_VIEWS = ['mobViewClub', 'mobViewProfile'];
+  const MOB_VIEWS = ['mobViewClub', 'mobViewRapi', 'mobViewProfile'];
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
+    document.body.classList.remove('rapi-nav-keep');
     unlockBodyScrollIfClear();
   }
 
@@ -3796,6 +3797,15 @@
   }
 
   let _pendingMenuNav = false;
+  let _rapiReturnNav = 'home';
+
+  function getCurrentBottomNav() {
+    if ($('mobNavQr')?.classList.contains('active')) return 'rapi';
+    if ($('mobNavMenu')?.classList.contains('active')) return 'menu';
+    if ($('mobNavOrders')?.classList.contains('active')) return 'club';
+    if ($('mobNavProfile')?.classList.contains('active')) return 'profile';
+    return 'home';
+  }
 
   async function mobNavMenu() {
     if (!operationConfirmed) {
@@ -3814,12 +3824,31 @@
   }
 
   async function mobNavRapi() {
+    const currentNav = getCurrentBottomNav();
+    if (currentNav !== 'rapi') _rapiReturnNav = currentNav;
     closeMobViews();
     uiStore()?.set?.({ activeView: 'rapi', bottomNav: 'rapi' });
     setMobNavActive('mobNavQr');
     $('mobViewRapi')?.classList.add('active');
+    document.body.classList.add('rapi-nav-keep');
     lockBodyScroll();
     if (window.renderRapiView) window.renderRapiView();
+  }
+
+  function rapiGoBack() {
+    if (_rapiReturnNav === 'menu') {
+      mobNavMenu();
+      return;
+    }
+    if (_rapiReturnNav === 'club') {
+      mobNavClub();
+      return;
+    }
+    if (_rapiReturnNav === 'profile') {
+      mobNavProfile();
+      return;
+    }
+    mobNavHome();
   }
 
   async function mobNavClub() {
@@ -4081,7 +4110,7 @@
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
-    mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, goToMenuTab: scrollToMenu,
+    mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });

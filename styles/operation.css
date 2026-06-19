@@ -1685,14 +1685,14 @@ body.home-tab .delivery-widget:not(.pending-selection) .address-strip.has-addres
 body.home-tab .delivery-widget:not(.pending-selection) .address-strip.has-address #homeAddressTitle,
 body.menu-tab .delivery-widget:not(.pending-selection) .address-strip.has-address .address-card-copy strong,
 body.menu-tab .delivery-widget:not(.pending-selection) .address-strip.has-address #homeAddressTitle{
-  color:#333333!important;
+  color:#111111!important;
 }
 body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
 body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path,
 body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
 body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path{
-  color:#333333!important;
-  stroke:#333333!important;
+  color:#111111!important;
+  stroke:#111111!important;
 }
 
 .mob-bottom-nav .mob-nav-icon--home{

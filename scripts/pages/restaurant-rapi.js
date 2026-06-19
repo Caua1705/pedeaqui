@@ -226,7 +226,7 @@
 
       <!-- Header igual ao de Unidades -->
       <div class="cart-hdr" style="position: sticky; top: 0; z-index: 10;">
-        <button class="cart-hdr-back" onclick="if(window.mobNavHome) window.mobNavHome()" aria-label="Voltar">
+        <button class="cart-hdr-back" onclick="if(window.rapiGoBack) window.rapiGoBack(); else if(window.mobNavHome) window.mobNavHome()" aria-label="Voltar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
         <h2 class="cart-hdr-title">Rapi</h2>

@@ -273,7 +273,61 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
 
 body.home-tab .home-coupons-section .coupon-use-btn,
 body.home-tab .coupon-rail .coupon-use-btn {
-  color: #111111 !important;
+  color: #555555 !important;
+}
+
+/* Coupon detail slides over the current page. Keep the app visible behind the
+   dark overlay so tapping "Usar cupom" never flashes a white background. */
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) {
+  background: transparent !important;
+}
+
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body.coupon-nav-keep .mob-bottom-nav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.coupon-detail-overlay.active {
+  background: rgba(0, 0, 0, 0.42) !important;
+}
+
+.lgn-submit.is-loading,
+.reg-submit.is-loading {
+  color: transparent !important;
+  position: relative !important;
+  pointer-events: none !important;
+}
+
+.lgn-submit.is-loading::after,
+.reg-submit.is-loading::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: -8px 0 0 -8px !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255, 255, 255, 0.45) !important;
+  border-top-color: #ffffff !important;
+  animation: loginSubmitSpin 0.75s linear infinite !important;
+}
+
+@keyframes loginSubmitSpin {
+  to { transform: rotate(360deg); }
 }
 
 .app-loader-box {

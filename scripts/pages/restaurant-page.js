@@ -247,6 +247,42 @@
     return `loading="${loading}" decoding="async"${fetchPriority}`;
   }
 
+  function waitForImageReady(img) {
+    if (!img || !img.src) return Promise.resolve();
+    img.loading = 'eager';
+    if (img.complete) {
+      return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+    }
+    return new Promise(resolve => {
+      const done = () => {
+        img.removeEventListener('load', done);
+        img.removeEventListener('error', done);
+        if (img.decode) img.decode().catch(() => {}).finally(resolve);
+        else resolve();
+      };
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+  }
+
+  async function waitForHomeCriticalMedia(timeoutMs = 1400) {
+    const selectors = [
+      '.mob-logo img',
+      '#restaurantHeroImg',
+      '#restaurantHeroTrack img',
+      '#couponRail img',
+      '#highlightRail img'
+    ];
+    const images = Array.from(document.querySelectorAll(selectors.join(',')))
+      .filter(img => img && img.src)
+      .slice(0, 10);
+    if (!images.length) return;
+    await Promise.race([
+      Promise.allSettled(images.map(waitForImageReady)),
+      wait(timeoutMs)
+    ]);
+  }
+
   function productImage(product, className = 'product-image', options = {}) {
     const image = product.image_url || product.image_path;
     if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}" ${imageAttrs(options)}>`;
@@ -3705,7 +3741,7 @@
     if (_loginSubmitting) return;
     _loginSubmitting = true;
     const btn = $('loginSubmitBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     const rawLogin = ($('loginEmail').value || '').trim();
     const login = isEmailValue(rawLogin) ? rawLogin : onlyDigits(rawLogin);
     try {
@@ -3726,7 +3762,7 @@
       showLgnSummary('Dados de login incorretos. Verifique suas informações.');
     } finally {
       _loginSubmitting = false;
-      if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
+      if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
     }
   }
 
@@ -4246,6 +4282,7 @@
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
     initPageRubberBand();
     initMenuHeaderHide();
+    await waitForHomeCriticalMedia();
     setAppBooting(false);
     // Best-effort: refresh the logged customer against the backend (clears
     // the session on 401). Runs after first paint so it never blocks the page.

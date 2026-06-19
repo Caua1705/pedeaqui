@@ -118,6 +118,48 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Global guard: never let the bottom nav peek through fullscreen flows. */
+body.modal-open:not(.rapi-nav-keep) .mob-bottom-nav,
+body.keep-bottom-nav:not(.rapi-nav-keep) .mob-bottom-nav,
+body.coupon-nav-keep:not(.rapi-nav-keep) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.overlay.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.mob-view.active) .mob-bottom-nav {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.rapi-nav-keep:has(#mobViewRapi.active) .mob-bottom-nav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Selected delivery address: keep location widget text and arrow black. */
+body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) #homeAddressTitle,
+body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .address-card-copy strong,
+body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) #homeAddressTitle,
+body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .address-card-copy strong {
+  color: #111111 !important;
+}
+
+body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
+body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path,
+body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
+body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path {
+  color: #111111 !important;
+  stroke: #111111 !important;
+}
+
 .rapi-title-block h2 {
   font-size: 1.4rem;
   font-weight: 800;

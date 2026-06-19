@@ -3813,6 +3813,15 @@
     scrollToHome();
   }
 
+  async function mobNavRapi() {
+    closeMobViews();
+    uiStore()?.set?.({ activeView: 'rapi', bottomNav: 'rapi' });
+    setMobNavActive('mobNavQr');
+    $('mobViewRapi')?.classList.add('active');
+    lockBodyScroll();
+    if (window.renderRapiView) window.renderRapiView();
+  }
+
   async function mobNavClub() {
     closeMobViews();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
@@ -4072,7 +4081,7 @@
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
-    mobNavHome, mobNavMenu, mobNavClub, mobNavProfile, goToMenuTab: scrollToMenu,
+    mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });

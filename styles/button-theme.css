@@ -87,3 +87,7 @@
 .app-loader-spinner{
   border-top-color:#F36F21!important;
 }
+
+.addr-picker-add-btn{
+  border:0!important;
+}

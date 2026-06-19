@@ -144,9 +144,6 @@ body.rapi-nav-keep:has(#mobViewRapi.active) .mob-bottom-nav {
   pointer-events: auto !important;
 }
 
-body.modal-open:not(.rapi-nav-keep),
-body:not(.rapi-nav-keep):has(.overlay.active),
-body:not(.rapi-nav-keep):has(.modal-overlay.active),
 body:not(.rapi-nav-keep):has(.lgn-screen.active),
 body:not(.rapi-nav-keep):has(.reg-screen.active),
 body:not(.rapi-nav-keep):has(.policy-screen.active),
@@ -157,21 +154,6 @@ body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) {
   overscroll-behavior: none !important;
 }
 
-body.modal-open:not(.rapi-nav-keep) .top-nav,
-body.modal-open:not(.rapi-nav-keep) .restaurant-app-shell,
-body.modal-open:not(.rapi-nav-keep) .search-cat,
-body.modal-open:not(.rapi-nav-keep) .promos-section,
-body.modal-open:not(.rapi-nav-keep) .cart-sticky,
-body:not(.rapi-nav-keep):has(.overlay.active) .top-nav,
-body:not(.rapi-nav-keep):has(.overlay.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.overlay.active) .search-cat,
-body:not(.rapi-nav-keep):has(.overlay.active) .promos-section,
-body:not(.rapi-nav-keep):has(.overlay.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .top-nav,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .search-cat,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .promos-section,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .cart-sticky,
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .top-nav,
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .restaurant-app-shell,
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .search-cat,
@@ -232,6 +214,27 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
 body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path {
   color: #111111 !important;
   stroke: #111111 !important;
+}
+
+.policy-screen.active {
+  position: fixed !important;
+  inset: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  transform: translateX(-50%) translateZ(0) !important;
+}
+
+.policy-screen.active .policy-body {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+#loginModal.active:not(.signin-open) {
+  background: rgba(0, 0, 0, 0.42) !important;
 }
 
 .rapi-title-block h2 {

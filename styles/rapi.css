@@ -119,6 +119,18 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 }
 
 /* Global guard: never let the bottom nav peek through fullscreen flows. */
+body.modal-open:not(.rapi-nav-keep) .mob-bottom-nav,
+body.keep-bottom-nav:not(.rapi-nav-keep) .mob-bottom-nav,
+body.coupon-nav-keep:not(.rapi-nav-keep) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.overlay.active) .mob-bottom-nav,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .mob-bottom-nav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .mob-bottom-nav,
 body:not(.rapi-nav-keep):has(.reg-screen.active) .mob-bottom-nav,
 body:not(.rapi-nav-keep):has(.policy-screen.active) .mob-bottom-nav,

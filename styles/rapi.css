@@ -998,3 +998,33 @@ body.app-error .app-loader-message {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Final Rapi-only overrides kept at the end to win over legacy Rapi styles. */
+.mob-view--rapi{display:none!important;transform:none!important;transition:none!important;background:#f6f7f8!important}
+.mob-view--rapi.active{display:flex!important;transform:none!important}
+.rapi-page{background:#f6f7f8!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
+.rapi-topbar{position:sticky!important;top:0!important;z-index:10!important;height:58px!important;display:grid!important;grid-template-columns:42px 1fr 42px!important;align-items:center!important;padding:0 14px!important;background:rgba(255,255,255,.96)!important;border-bottom:1px solid #ececec!important;backdrop-filter:blur(14px)!important}
+.rapi-back-btn{width:34px!important;height:34px!important;border:0!important;border-radius:10px!important;background:#eeeeee!important;color:#42464d!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
+.rapi-topbar-title{margin:0!important;color:#202124!important;font-size:15px!important;line-height:20px!important;font-weight:700!important;text-align:center!important}
+.rapi-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
+.rapi-hero::before,.rapi-hero::after{display:none!important}
+.rapi-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
+.rapi-avatar-img{width:76px!important;height:76px!important;object-fit:cover!important;border-radius:50%!important;filter:none!important}
+.rapi-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
+.rapi-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:12px!important;line-height:16px!important}
+.rapi-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
+.rapi-prompt-card{margin:10px 14px 0!important;padding:15px!important;border:1px solid #eeeeee!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
+.rapi-prompt-headline{font-size:16px!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
+.rapi-prompt-sub{color:#6f747a!important;font-size:12px!important;line-height:17px!important;margin-bottom:12px!important}
+.rapi-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
+.rapi-input{font-size:13px!important;min-width:0!important}
+.rapi-send-btn{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important}
+.rapi-content{padding:0 14px!important}
+.rapi-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:10px!important;letter-spacing:.08em!important}
+.rapi-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:12px!important;font-weight:700!important}
+.rapi-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:#fff4ee!important;color:#f36f21!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.rapi-chip-svg{width:15px!important;height:15px!important;display:block!important}
+.rapi-chip--active{background:#fff5ef!important;color:#f36f21!important;border-color:rgba(243,111,33,.34)!important;box-shadow:none!important}
+.rapi-starter.hidden{display:none!important}
+.rapi-result-image-wrap{height:104px!important}
+.rapi-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}

@@ -17,19 +17,19 @@
   ];
 
   const QUICK_ACTIONS_PRIMARY = [
-    { id: 'budget',   icon: '💰', label: 'Gasto pouco',        intent: 'budget'  },
-    { id: 'for2',     icon: '👫', label: 'Para 2 pessoas',     intent: 'for2'    },
-    { id: 'hungry',   icon: '🍽️', label: 'Muita fome',         intent: 'hungry'  },
-    { id: 'coupon',   icon: '🎟️', label: 'Usar cupom',          intent: 'coupon'  },
+    { id: 'budget',   icon: 'wallet', label: 'Gasto pouco',        intent: 'budget'  },
+    { id: 'for2',     icon: 'users',  label: 'Para 2 pessoas',     intent: 'for2'    },
+    { id: 'hungry',   icon: 'plate',  label: 'Muita fome',         intent: 'hungry'  },
+    { id: 'coupon',   icon: 'ticket', label: 'Usar cupom',          intent: 'coupon'  },
   ];
 
   const QUICK_ACTIONS_MORE = [
-    { id: 'quick',    icon: '⚡', label: 'Pedido rápido',       intent: 'quick'   },
-    { id: 'value',    icon: '⭐', label: 'Melhor custo-benefício', intent: 'value' },
-    { id: 'surprise', icon: '🎲', label: 'Me surpreenda',       intent: 'surprise'},
-    { id: 'popular',  icon: '🔥', label: 'Mais pedidos',        intent: 'popular' },
-    { id: 'dessert',  icon: '🍰', label: 'Sobremesa',           intent: 'dessert' },
-    { id: 'drink',    icon: '🥤', label: 'Bebida',              intent: 'drink'   },
+    { id: 'quick',    icon: 'bolt',  label: 'Pedido rápido',       intent: 'quick'   },
+    { id: 'value',    icon: 'star',  label: 'Melhor custo-benefício', intent: 'value' },
+    { id: 'surprise', icon: 'spark', label: 'Me surpreenda',       intent: 'surprise'},
+    { id: 'popular',  icon: 'flame', label: 'Mais pedidos',        intent: 'popular' },
+    { id: 'dessert',  icon: 'cake',  label: 'Sobremesa',           intent: 'dessert' },
+    { id: 'drink',    icon: 'cup',   label: 'Bebida',              intent: 'drink'   },
   ];
 
   const MAX_INITIAL_RESULTS = 3;
@@ -173,12 +173,28 @@
   }
 
   /* ── Render helpers ── */
+  function rapiIcon(name) {
+    const icons = {
+      wallet: '<path d="M4 7.5h15a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10A2.5 2.5 0 0 1 4.5 4H18"/><path d="M16 13h.01"/>',
+      users: '<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      plate: '<circle cx="12" cy="12" r="8"/><path d="M8 3v8"/><path d="M6 3v4a2 2 0 0 0 4 0V3"/><path d="M17 3v18"/>',
+      ticket: '<path d="M3 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+      bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+      star: '<path d="m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z"/>',
+      spark: '<path d="M12 3l1.5 5 5 1.5-5 1.5-1.5 5-1.5-5-5-1.5 5-1.5L12 3Z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/>',
+      flame: '<path d="M12 22c4 0 7-2.7 7-6.6 0-2.4-1.2-4.4-3.2-6.1-.5 2-1.7 3.2-3.1 3.7.4-3.4-1.4-6.3-4.1-8C8.2 8.2 5 10.5 5 15.4 5 19.3 8 22 12 22Z"/>',
+      cake: '<path d="M3 20h18"/><path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/><path d="M8 11V7"/><path d="M12 11V7"/><path d="M16 11V7"/>',
+      cup: '<path d="M4 3h14l-1 14a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4L4 3Z"/><path d="M18 8h1a3 3 0 0 1 0 6h-1"/>'
+    };
+    return `<svg class="rapi-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.spark}</svg>`;
+  }
+
   function renderChipButton(a, isActive) {
     return `<button class="rapi-chip${isActive ? ' rapi-chip--active' : ''}"
       id="rapiChip_${a.id}"
       onclick="rapiHandleChip('${a.id}','${esc(a.label)}','${a.intent}')"
       type="button">
-      <span class="rapi-chip-icon">${a.icon}</span>
+      <span class="rapi-chip-icon">${rapiIcon(a.icon)}</span>
       ${esc(a.label)}
     </button>`;
   }
@@ -224,19 +240,17 @@
     return `
     <div class="rapi-page" id="rapiPage">
 
-      <!-- Header igual ao de Unidades -->
-      <div class="cart-hdr" style="position: sticky; top: 0; z-index: 10;">
-        <button class="cart-hdr-back" onclick="if(window.rapiGoBack) window.rapiGoBack(); else if(window.mobNavHome) window.mobNavHome()" aria-label="Voltar">
+      <div class="rapi-topbar">
+        <button class="rapi-back-btn" onclick="if(window.rapiGoBack) window.rapiGoBack(); else if(window.mobNavHome) window.mobNavHome()" aria-label="Voltar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
-        <h2 class="cart-hdr-title">Rapi</h2>
-        <div class="cart-hdr-spacer"></div>
+        <h2 class="rapi-topbar-title">Assistente de Pedido</h2>
+        <div class="rapi-topbar-spacer"></div>
       </div>
 
       <!-- Hero premium -->
       <div class="rapi-hero">
         <div class="rapi-avatar-wrap">
-          <div class="rapi-avatar-glow"></div>
           <img class="rapi-avatar-img" src="${RAPI_AVATAR_SRC}" alt="Rapi mascote" onerror="this.style.display='none'">
         </div>
         <div class="rapi-title-block">
@@ -251,7 +265,7 @@
 
       <!-- Prompt card -->
       <div class="rapi-prompt-card">
-        <div class="rapi-prompt-headline">O que você quer pedir hoje?</div>
+        <div class="rapi-prompt-headline">Me diga o que você quer comer</div>
         <div class="rapi-prompt-sub">Eu encontro boas opções no cardápio para você.</div>
         <div class="rapi-input-card" id="rapiInputCard">
           <input class="rapi-input" id="rapiInput" type="text"
@@ -284,6 +298,13 @@
             <path d="m6 9 6 6 6-6"/>
           </svg>
         </button>
+
+        <div class="rapi-starter" id="rapiStarter">
+          <div class="rapi-starter-title">Experimente perguntar:</div>
+          <button type="button" onclick="rapiUseSuggestion('Quero algo até R$ 50')">"Quero algo até R$ 50"</button>
+          <button type="button" onclick="rapiUseSuggestion('Pedido para 2 pessoas')">"Pedido para 2 pessoas"</button>
+          <button type="button" onclick="rapiUseSuggestion('Quero aproveitar cupom')">"Quero aproveitar cupom"</button>
+        </div>
 
         <!-- Thinking -->
         <div class="rapi-thinking" id="rapiThinking">
@@ -329,6 +350,7 @@
     const thinkingEl = document.getElementById('rapiThinking');
     const labelEl = document.getElementById('rapiResultsLabel');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
+    const starterEl = document.getElementById('rapiStarter');
     if (!resultsEl) return;
 
     _activeChipId = chipId || null;
@@ -341,6 +363,7 @@
     thinkingEl?.classList.add('visible');
     if (labelEl) labelEl.classList.remove('visible');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
+    if (starterEl) starterEl.classList.add('hidden');
     resultsEl.innerHTML = '';
 
     const delay = 500 + Math.random() * 200;
@@ -395,6 +418,12 @@
     if (!msg) return;
     const intent = detectIntent(msg);
     rapiSearch(msg, intent, null);
+  };
+
+  window.rapiUseSuggestion = function (message) {
+    const inputEl = document.getElementById('rapiInput');
+    if (inputEl) inputEl.value = message;
+    rapiSearch(message, detectIntent(message), null);
   };
 
   window.rapiInputKeydown = function (event) {
@@ -469,6 +498,8 @@
     if (thinkingEl) thinkingEl.classList.remove('visible');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
+    const starterEl = document.getElementById('rapiStarter');
+    if (starterEl) starterEl.classList.remove('hidden');
     const moreEl = document.getElementById('rapiChipsMore');
     if (moreEl) moreEl.classList.remove('open');
     const expandBtn = document.getElementById('rapiExpandBtn');

@@ -2642,6 +2642,7 @@
   function openRegisterScreen() {
     closeModalId('loginModal');
     $('registerScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     $('registerForm')?.scrollTo?.(0, 0);
     clearAllRegErrors();
@@ -2649,6 +2650,7 @@
 
   function closeRegisterScreen() {
     $('registerScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
     // Return to the login sheet the user came from.
     openModalImmediately('loginModal');
   }
@@ -3021,6 +3023,7 @@
     $('loginScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('verifyScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     startVfyTimer();
     setTimeout(() => vfyDigits()[0]?.focus(), 60);
@@ -3029,6 +3032,7 @@
   function closeVerifyScreen() {
     stopVfyTimer();
     $('verifyScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
     // Return to a sensible previous screen.
     if (verifyCtx.source === 'register') $('registerScreen')?.classList.add('active');
     else openModal('loginModal');
@@ -3171,11 +3175,13 @@
     if ($('resetConfirmPw')) $('resetConfirmPw').value = '';
     hideResetPwErr();
     $('resetPasswordScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     setTimeout(() => $('resetNewPw')?.focus(), 60);
   }
   function closeResetPasswordScreen() {
     $('resetPasswordScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
     openModal('loginModal');
   }
   // Per-field error below each password input (same style as the register form).
@@ -3300,6 +3306,7 @@
   function openSigninScreen() {
     $('loginModal')?.classList.add('signin-open');
     $('loginScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     $('loginForm')?.scrollTo?.(0, 0);
     clearAllLoginErrors();
@@ -3308,6 +3315,7 @@
   function closeSigninScreen() {
     $('loginScreen')?.classList.remove('active');
     $('loginModal')?.classList.remove('signin-open');
+    syncAuthScreenOpenClass();
   }
 
   const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
@@ -3328,12 +3336,14 @@
     $('loginScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('forgotPasswordScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     setTimeout(() => $('forgotEmail')?.focus(), 60);
   }
 
   function closeForgotPasswordScreen() {
     $('forgotPasswordScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
     openModal('loginModal');
   }
 
@@ -3455,12 +3465,14 @@
     $('forgotPasswordScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('recoverCodeScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
     lockBodyScroll();
     setTimeout(() => recDigits()[0]?.focus(), 60);
   }
 
   function closeRecoverCodeScreen() {
     $('recoverCodeScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
     openForgotPasswordScreen();
   }
 
@@ -3680,8 +3692,28 @@
   let _policyTouchStartY = 0;
 
   const AUTH_SCREEN_SELECTOR = '.lgn-screen.active,.reg-screen.active,.vfy-screen.active,#forgotPasswordScreen.active,#recoverCodeScreen.active,#resetPasswordScreen.active';
+  function setBottomNavSuppressedForAuth(active) {
+    const nav = $('mobBottomNav');
+    document.body.classList.toggle('auth-screen-open', active);
+    if (!nav) return;
+    if (active) {
+      nav.style.setProperty('display', 'none', 'important');
+      nav.style.setProperty('visibility', 'hidden', 'important');
+      nav.style.setProperty('opacity', '0', 'important');
+      nav.style.setProperty('pointer-events', 'none', 'important');
+      nav.style.setProperty('transform', 'translateY(140%)', 'important');
+      nav.style.setProperty('z-index', '-1', 'important');
+      return;
+    }
+    nav.style.removeProperty('display');
+    nav.style.removeProperty('visibility');
+    nav.style.removeProperty('opacity');
+    nav.style.removeProperty('pointer-events');
+    nav.style.removeProperty('transform');
+    nav.style.removeProperty('z-index');
+  }
   function syncAuthScreenOpenClass() {
-    document.body.classList.toggle('auth-screen-open', Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));
+    setBottomNavSuppressedForAuth(Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));
   }
   const authScreenObserver = new MutationObserver(syncAuthScreenOpenClass);
   authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });

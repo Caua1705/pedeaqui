@@ -1000,12 +1000,9 @@ body.app-error .app-loader-message {
 }
 
 /* Final Rapi-only overrides kept at the end to win over legacy Rapi styles. */
-.mob-view--rapi{display:none!important;transform:none!important;transition:none!important;background:#f6f7f8!important}
+.mob-view--rapi{display:none!important;transform:none!important;transition:none!important;background:#ffffff!important}
 .mob-view--rapi.active{display:flex!important;transform:none!important}
-.rapi-page{background:#f6f7f8!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
-.rapi-topbar{position:sticky!important;top:0!important;z-index:10!important;height:58px!important;display:grid!important;grid-template-columns:42px 1fr 42px!important;align-items:center!important;padding:0 14px!important;background:rgba(255,255,255,.96)!important;border-bottom:1px solid #ececec!important;backdrop-filter:blur(14px)!important}
-.rapi-back-btn{width:34px!important;height:34px!important;border:0!important;border-radius:10px!important;background:#eeeeee!important;color:#42464d!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
-.rapi-topbar-title{margin:0!important;color:#202124!important;font-size:15px!important;line-height:20px!important;font-weight:700!important;text-align:center!important}
+.rapi-page{background:#ffffff!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
 .rapi-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
 .rapi-hero::before,.rapi-hero::after{display:none!important}
 .rapi-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
@@ -1028,3 +1025,57 @@ body.app-error .app-loader-message {
 .rapi-starter.hidden{display:none!important}
 .rapi-result-image-wrap{height:104px!important}
 .rapi-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
+
+.rapi-location-wrap{padding:0!important;background:#ffffff!important}
+.rapi-location-widget{margin:0 auto!important}
+.rapi-location-widget .address-card-copy strong{font-size:12px!important;line-height:17px!important;font-weight:300!important}
+.rapi-hero{margin-top:10px!important}
+
+/* Rapi tab final composition: same system rhythm as Home/Menu. */
+.mob-view--rapi{background:#ffffff!important}
+.rapi-page{background:#ffffff!important;max-width:430px!important;margin:0 auto!important;width:100%!important}
+.rapi-location-wrap{padding:0!important;background:#ffffff!important}
+.rapi-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
+.rapi-location-widget .delivery-widget-tabs{gap:5px!important}
+.rapi-location-widget .rapi-location-tab{flex:0 0 auto!important;min-width:0!important;padding:0 7px!important}
+.rapi-location-widget .rapi-location-tab--mode{max-width:82px!important}
+.rapi-location-widget .rapi-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important}
+.rapi-location-widget .rapi-location-tab--branch{max-width:74px!important}
+.rapi-top-separator{height:10px!important;margin-top:10px!important;background:#f4f4f4!important;border-top:1px solid #eeeeee!important;border-bottom:1px solid #eeeeee!important}
+.rapi-hero{margin:0!important;padding:18px 20px!important;min-height:108px!important;border:0!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #eeeeee!important}
+.rapi-avatar-wrap{width:72px!important;height:72px!important;flex-basis:72px!important}
+.rapi-avatar-img{width:72px!important;height:72px!important}
+.rapi-prompt-card{margin:14px 20px 0!important;border-radius:10px!important;border:1px solid #eeeeee!important;box-shadow:0 8px 22px rgba(0,0,0,.035)!important}
+.rapi-content{padding:0 20px!important}
+.rapi-section-label{padding:18px 0 9px!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:10px!important}
+.rapi-starter{display:block!important;margin:14px 0 0!important;padding:0!important;background:#ffffff!important;border:1px solid #eeeeee!important;border-radius:10px!important;box-shadow:0 8px 22px rgba(0,0,0,.025)!important;overflow:hidden!important}
+.rapi-starter.hidden{display:none!important}
+.rapi-starter-title{margin:0!important;padding:12px 14px!important;border-bottom:1px solid #f0f0f0!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important}
+.rapi-starter button{display:block!important;width:100%!important;margin:0!important;padding:12px 14px!important;border:0!important;border-bottom:1px solid #f0f0f0!important;background:#ffffff!important;color:#5f666f!important;font:500 12px/18px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;text-align:left!important}
+.rapi-starter button:last-child{border-bottom:0!important}
+
+/* Keep the Rapi location widget stable after returning from Home/Menu tabs. */
+body.home-tab .rapi-location-widget.delivery-widget,
+body.menu-tab .rapi-location-widget.delivery-widget,
+.rapi-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
+body.home-tab .rapi-location-widget .delivery-widget-tabs,
+body.menu-tab .rapi-location-widget .delivery-widget-tabs,
+.rapi-location-widget .delivery-widget-tabs{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;width:auto!important}
+body.home-tab .rapi-location-widget .rapi-location-tab,
+body.menu-tab .rapi-location-widget .rapi-location-tab,
+.rapi-location-widget .rapi-location-tab{flex:0 0 auto!important;min-width:0!important;width:auto!important;padding:0 7px!important;white-space:nowrap!important}
+body.home-tab .rapi-location-widget .rapi-location-tab--mode,
+body.menu-tab .rapi-location-widget .rapi-location-tab--mode,
+.rapi-location-widget .rapi-location-tab--mode{max-width:82px!important}
+body.home-tab .rapi-location-widget .rapi-location-tab--brand,
+body.menu-tab .rapi-location-widget .rapi-location-tab--brand,
+.rapi-location-widget .rapi-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important;overflow:hidden!important;text-overflow:ellipsis!important}
+body.home-tab .rapi-location-widget .rapi-location-tab--branch,
+body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
+.rapi-location-widget .rapi-location-tab--branch{max-width:74px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+/* Lower the whole Rapi composition slightly while keeping internal spacing intact. */
+.rapi-page{padding-top:12px!important}
+
+/* Fine tune only the location widget position. */
+.rapi-location-wrap{transform:translateY(-2px)!important}

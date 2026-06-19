@@ -233,20 +233,58 @@
   }
 
   /* ── Build the full view HTML ── */
+  function buildRapiLocationWidget() {
+    const sourceWidget = document.querySelector('.home-sticky-header .delivery-widget') || document.querySelector('.delivery-widget');
+    const sourceStrip = sourceWidget?.querySelector('.address-strip');
+    const classes = [
+      sourceWidget?.classList.contains('pending-selection') ? 'pending-selection' : '',
+      sourceWidget?.classList.contains('needs-address-hint') ? 'needs-address-hint' : ''
+    ].filter(Boolean).join(' ');
+    const stripClasses = [
+      sourceStrip?.classList.contains('has-address') ? 'has-address' : '',
+      sourceStrip?.classList.contains('needs-address-hint') ? 'needs-address-hint' : ''
+    ].filter(Boolean).join(' ');
+    const delivery = document.getElementById('dwTabDelivery')?.textContent || 'DELIVERY';
+    const brand = document.getElementById('dwTabBrand')?.textContent || 'RESTAURANTE';
+    const branch = document.getElementById('dwTabBranch')?.textContent || 'UNIDADE';
+    const address = document.getElementById('homeAddressTitle')?.textContent || 'Use seu endereço para melhores resultados';
+    const sub = document.getElementById('homeAddressSub')?.textContent || '';
+
+    return `
+      <div class="rapi-location-wrap">
+        <div class="delivery-widget rapi-location-widget ${classes}" role="button" tabindex="0" onclick="openOperationScreen()" aria-label="Selecionar unidade e operação">
+          <div class="delivery-widget-tabs">
+            <span class="delivery-widget-tab rapi-location-tab rapi-location-tab--mode active">${esc(delivery)}</span>
+            <span class="delivery-widget-tab rapi-location-tab rapi-location-tab--brand">${esc(brand)}</span>
+            <span class="delivery-widget-tab rapi-location-tab rapi-location-tab--branch">${esc(branch)}</span>
+            <svg class="delivery-widget-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+          <div class="delivery-widget-divider"></div>
+          <span class="address-card address-strip ${stripClasses}">
+            <span class="address-card-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <span class="address-card-copy">
+              <strong>${esc(address)}</strong>
+              <small>${esc(sub)}</small>
+            </span>
+            <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
+        </div>
+      </div>`;
+  }
+
   function buildRapiView() {
     const primaryChips = QUICK_ACTIONS_PRIMARY.map(a => renderChipButton(a, _activeChipId === a.id)).join('');
     const moreChips = QUICK_ACTIONS_MORE.map(a => renderChipButton(a, _activeChipId === a.id)).join('');
+    const locationWidget = buildRapiLocationWidget();
 
     return `
     <div class="rapi-page" id="rapiPage">
 
-      <div class="rapi-topbar">
-        <button class="rapi-back-btn" onclick="if(window.rapiGoBack) window.rapiGoBack(); else if(window.mobNavHome) window.mobNavHome()" aria-label="Voltar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-        </button>
-        <h2 class="rapi-topbar-title">Assistente de Pedido</h2>
-        <div class="rapi-topbar-spacer"></div>
-      </div>
+      ${locationWidget}
+
+      <div class="rapi-top-separator" aria-hidden="true"></div>
 
       <!-- Hero premium -->
       <div class="rapi-hero">
@@ -254,8 +292,8 @@
           <img class="rapi-avatar-img" src="${RAPI_AVATAR_SRC}" alt="Rapi mascote" onerror="this.style.display='none'">
         </div>
         <div class="rapi-title-block">
-          <h2>Rapi</h2>
-          <p>Seu assistente de pedido</p>
+          <h2>Assistente de Pedido</h2>
+          <p>O Rapi te ajuda a escolher no cardápio.</p>
           <div class="rapi-status-pill">
             <span class="rapi-status-dot"></span>
             online agora
@@ -475,9 +513,12 @@
   window.renderRapiView = function () {
     const view = document.getElementById('mobViewRapi');
     if (!view) return;
-    if (!_rapiLoaded) {
+    if (!_rapiLoaded || !view.querySelector('.rapi-page')) {
       view.innerHTML = buildRapiView();
       _rapiLoaded = true;
+    } else {
+      const locationWidget = view.querySelector('.rapi-location-wrap');
+      if (locationWidget) locationWidget.outerHTML = buildRapiLocationWidget();
     }
     // Refresh chip active states
     document.querySelectorAll('.rapi-chip').forEach(btn => btn.classList.remove('rapi-chip--active'));

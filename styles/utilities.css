@@ -6337,3 +6337,26 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   font-size:16px!important;
   line-height:1.18!important;
 }
+
+/* Product modal: same overlay behavior as coupon detail. */
+@media(max-width:767px){
+  #productModal{
+    opacity:1!important;
+    background:rgba(0,0,0,0)!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:background .28s ease,visibility 0s linear .6s!important;
+  }
+  #productModal.active{
+    background:rgba(0,0,0,.42)!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    transition:background .28s ease,visibility 0s linear 0s!important;
+  }
+  #productModal .modal--product{
+    transition:transform .6s ease!important;
+  }
+  #productModal.active .modal--product{
+    transition:transform .53s ease!important;
+  }
+}

@@ -4058,13 +4058,13 @@
   }
 
   async function mobNavClub() {
-    closeMobViews();
-    uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
-    setMobNavActive('mobNavOrders');
     if (!isLogged()) {
       openLoginScreen();
       return;
     }
+    closeMobViews();
+    uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
+    setMobNavActive('mobNavOrders');
     $('mobViewClub')?.classList.add('active');
     lockBodyScroll();
     if (!appState.clubLoaded) renderTabLoader('mobClubBody', 'Carregando clube...');
@@ -4142,13 +4142,13 @@
   }
 
   async function mobNavProfile() {
-    closeMobViews();
-    uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
-    setMobNavActive('mobNavProfile');
     if (!isLogged()) {
       openLoginScreen();
       return;
     }
+    closeMobViews();
+    uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
+    setMobNavActive('mobNavProfile');
     $('mobViewProfile')?.classList.add('active');
     lockBodyScroll();
     if (!appState.profileLoaded) renderProfileLoading();

@@ -3677,6 +3677,43 @@
   }
 
   let _policyReturn = 'login';
+  let _policyTouchStartY = 0;
+
+  function policyScrollBody() {
+    return $('privacyPolicyBody');
+  }
+
+  function handlePolicyTouchStart(event) {
+    _policyTouchStartY = event.touches?.[0]?.clientY || 0;
+  }
+
+  function handlePolicyTouchMove(event) {
+    const body = policyScrollBody();
+    if (!body || !event.touches?.length) return;
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - _policyTouchStartY;
+    const atTop = body.scrollTop <= 0;
+    const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
+    if (body.scrollHeight <= body.clientHeight || (atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+      event.preventDefault();
+    }
+  }
+
+  function attachPolicyScrollGuard() {
+    const screen = $('privacyPolicyScreen');
+    if (!screen || screen.dataset.scrollGuardAttached === '1') return;
+    screen.addEventListener('touchstart', handlePolicyTouchStart, { passive: true });
+    screen.addEventListener('touchmove', handlePolicyTouchMove, { passive: false });
+    screen.dataset.scrollGuardAttached = '1';
+  }
+
+  function detachPolicyScrollGuard() {
+    const screen = $('privacyPolicyScreen');
+    if (!screen || screen.dataset.scrollGuardAttached !== '1') return;
+    screen.removeEventListener('touchstart', handlePolicyTouchStart);
+    screen.removeEventListener('touchmove', handlePolicyTouchMove);
+    delete screen.dataset.scrollGuardAttached;
+  }
 
   function openPolicyScreen(type) {
     const screen = $('privacyPolicyScreen');
@@ -3694,7 +3731,9 @@
       document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
     }
     document.querySelectorAll('.policy-screen').forEach(el => el.classList.remove('active'));
+    document.body.classList.add('policy-open');
     screen.classList.add('active');
+    attachPolicyScrollGuard();
     lockBodyScroll();
     body.scrollTop = 0;
     window.scrollTo(0, 0);
@@ -3702,6 +3741,8 @@
 
   function closePolicyScreen(type) {
     $('privacyPolicyScreen')?.classList.remove('active');
+    detachPolicyScrollGuard();
+    document.body.classList.remove('policy-open');
     document.querySelector('#loginModal .modal--login')?.classList.remove('policy-hidden');
     // The register screen stays active underneath, so only restore the login modal.
     if (_policyReturn !== 'register') $('loginModal')?.classList.add('active');

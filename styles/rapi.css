@@ -119,11 +119,6 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 }
 
 /* Global guard: never let the bottom nav peek through fullscreen flows. */
-body.modal-open:not(.rapi-nav-keep) .mob-bottom-nav,
-body.keep-bottom-nav:not(.rapi-nav-keep) .mob-bottom-nav,
-body.coupon-nav-keep:not(.rapi-nav-keep) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.overlay.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .mob-bottom-nav,
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .mob-bottom-nav,
 body:not(.rapi-nav-keep):has(.reg-screen.active) .mob-bottom-nav,
 body:not(.rapi-nav-keep):has(.policy-screen.active) .mob-bottom-nav,
@@ -152,6 +147,22 @@ body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active),
 body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) {
   background: #ffffff !important;
   overscroll-behavior: none !important;
+}
+
+body.policy-open {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  overscroll-behavior: none !important;
+}
+
+body.policy-open #loginModal {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 body:not(.rapi-nav-keep):has(.lgn-screen.active) .top-nav,
@@ -219,11 +230,15 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
 .policy-screen.active {
   position: fixed !important;
   inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
   height: 100dvh !important;
+  min-height: 100dvh !important;
   max-height: 100dvh !important;
   overflow: hidden !important;
   overscroll-behavior: none !important;
   transform: translateX(-50%) translateZ(0) !important;
+  touch-action: pan-y !important;
 }
 
 .policy-screen.active .policy-body {
@@ -801,11 +816,10 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
   width: 40px;
   height: 40px;
   object-fit: cover;
-  object-position: 50% 40%;
+  object-position: center;
   display: block;
   border-radius: 50%;
-  transform: scale(2.15) translateY(12%);
-  transform-origin: center;
+  transform: none;
 }
 
 /* ── Animations ── */

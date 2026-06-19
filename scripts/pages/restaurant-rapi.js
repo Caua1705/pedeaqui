@@ -343,7 +343,7 @@
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
     resultsEl.innerHTML = '';
 
-    const delay = 350 + Math.random() * 350;
+    const delay = 500 + Math.random() * 200;
     await new Promise(r => setTimeout(r, delay));
 
     const products = safeProducts();

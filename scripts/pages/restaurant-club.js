@@ -7,6 +7,8 @@
       getCoupons,
       restaurantStore,
       setLoading,
+      wait,
+      tabLoaderMinMs = 500,
       renderTabLoader,
       renderSectionLoader,
       renderSectionError,
@@ -24,8 +26,13 @@
       clubLoadPromise = (async () => {
         try {
           const coupons = getCoupons();
-          appState.clubData = await (window.PedeAquiClubService?.getClubData?.(getRestaurantSlug(), { coupons })
-            || Promise.resolve({ coupons: coupons || [], ...(fallback().club || {}) }));
+          const loadClubData = window.PedeAquiClubService?.getClubData?.(getRestaurantSlug(), { coupons })
+            || Promise.resolve({ coupons: coupons || [], ...(fallback().club || {}) });
+          const [clubData] = await Promise.all([
+            loadClubData,
+            wait ? wait(tabLoaderMinMs) : Promise.resolve()
+          ]);
+          appState.clubData = clubData;
           appState.clubLoaded = true;
           restaurantStore()?.setClubData?.(appState.clubData);
           return appState.clubData;

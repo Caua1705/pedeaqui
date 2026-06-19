@@ -61,6 +61,7 @@
   let couponsRenderSignature = '';
   let highlightsRenderSignature = '';
   const HERO_BANNER_INTERVAL_MS = 5000;
+  const TAB_LOADER_MIN_MS = 500;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
   const fallback = () => window.PedeAquiFallbackConfig || {};
@@ -111,6 +112,10 @@
     setLoading('app', active);
     document.body.classList.toggle('app-booting', active);
     if (active) document.body.classList.remove('app-error');
+  }
+
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   function resetRuntimeStateForPageLoad() {
@@ -205,6 +210,8 @@
     getCoupons: () => coupons,
     restaurantStore,
     setLoading,
+    wait,
+    tabLoaderMinMs: TAB_LOADER_MIN_MS,
     renderTabLoader,
     renderSectionLoader,
     renderSectionError,
@@ -912,6 +919,7 @@
           highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : highlightBanners;
           coupons = Array.isArray(payload.coupons) ? payload.coupons : coupons;
         }
+        await wait(TAB_LOADER_MIN_MS);
         renderMenu();
         initScrollSpy();
         setFirstCategoryActive();
@@ -4042,11 +4050,15 @@
       const auth = window.PedeAquiCustomerAuth;
       if (!window.PedeAquiCustomerService?.isLoggedIn?.()) return null;
       try {
-        const [meResult, addressesResult, ordersResult] = await Promise.allSettled([
-          window.PedeAquiCustomerService.getCurrentCustomer(),
-          window.PedeAquiAddressService.getCustomerAddresses(),
-          window.PedeAquiOrderService.getCustomerOrders()
+        const [profileResults] = await Promise.all([
+          Promise.allSettled([
+            window.PedeAquiCustomerService.getCurrentCustomer(),
+            window.PedeAquiAddressService.getCustomerAddresses(),
+            window.PedeAquiOrderService.getCustomerOrders()
+          ]),
+          wait(TAB_LOADER_MIN_MS)
         ]);
+        const [meResult, addressesResult, ordersResult] = profileResults;
         const rejected = [meResult, addressesResult, ordersResult].find(result => result.status === 'rejected');
         if (rejected?.reason?.status === 401) {
           await syncCustomerSession();
@@ -4189,7 +4201,7 @@
     resetRuntimeStateForPageLoad();
     setAppBooting(true);
     renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
-    bootPromise = (async () => {
+    const loadInitialData = async () => {
     payload = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
     restaurant = payload.restaurant || {};
     appState.restaurant = restaurant;
@@ -4210,6 +4222,12 @@
       highlightBanners,
       coupons
     });
+    };
+    bootPromise = (async () => {
+    await Promise.all([
+      loadInitialData(),
+      wait(1000)
+    ]);
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     initOperationContext();
     applyTheme();

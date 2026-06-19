@@ -271,6 +271,11 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
   background: rgba(0, 0, 0, 0.42) !important;
 }
 
+body.home-tab .home-coupons-section .coupon-use-btn,
+body.home-tab .coupon-rail .coupon-use-btn {
+  color: #111111 !important;
+}
+
 .app-loader-box {
   width: 60px !important;
   min-width: 60px !important;

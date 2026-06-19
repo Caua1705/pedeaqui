@@ -144,18 +144,92 @@ body.rapi-nav-keep:has(#mobViewRapi.active) .mob-bottom-nav {
   pointer-events: auto !important;
 }
 
-/* Selected delivery address: keep location widget text and arrow black. */
-body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) #homeAddressTitle,
-body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .address-card-copy strong,
-body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) #homeAddressTitle,
-body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .address-card-copy strong {
-  color: #111111 !important;
+body.modal-open:not(.rapi-nav-keep),
+body:not(.rapi-nav-keep):has(.overlay.active),
+body:not(.rapi-nav-keep):has(.modal-overlay.active),
+body:not(.rapi-nav-keep):has(.lgn-screen.active),
+body:not(.rapi-nav-keep):has(.reg-screen.active),
+body:not(.rapi-nav-keep):has(.policy-screen.active),
+body:not(.rapi-nav-keep):has(.vfy-screen.active),
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active),
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) {
+  background: #ffffff !important;
+  overscroll-behavior: none !important;
 }
 
-body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
-body.home-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path,
-body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron,
-body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-address) .delivery-widget-chevron path {
+body.modal-open:not(.rapi-nav-keep) .top-nav,
+body.modal-open:not(.rapi-nav-keep) .restaurant-app-shell,
+body.modal-open:not(.rapi-nav-keep) .search-cat,
+body.modal-open:not(.rapi-nav-keep) .promos-section,
+body.modal-open:not(.rapi-nav-keep) .cart-sticky,
+body:not(.rapi-nav-keep):has(.overlay.active) .top-nav,
+body:not(.rapi-nav-keep):has(.overlay.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.overlay.active) .search-cat,
+body:not(.rapi-nav-keep):has(.overlay.active) .promos-section,
+body:not(.rapi-nav-keep):has(.overlay.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .top-nav,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .search-cat,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .promos-section,
+body:not(.rapi-nav-keep):has(.modal-overlay.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .top-nav,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .search-cat,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .promos-section,
+body:not(.rapi-nav-keep):has(.lgn-screen.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .top-nav,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .search-cat,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .promos-section,
+body:not(.rapi-nav-keep):has(.reg-screen.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .top-nav,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .search-cat,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .promos-section,
+body:not(.rapi-nav-keep):has(.policy-screen.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .top-nav,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .search-cat,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .promos-section,
+body:not(.rapi-nav-keep):has(.vfy-screen.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
+body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .top-nav,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .restaurant-app-shell,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .search-cat,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .promos-section,
+body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .cart-sticky {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Selected delivery address: keep location widget text and arrow black. */
+body.home-tab .delivery-widget:has(.address-strip.has-address) #homeAddressTitle,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy strong,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy small,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg path,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg circle,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) #homeAddressTitle,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy strong,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy small,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg path,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg circle {
+  color: #111111 !important;
+  stroke: #111111 !important;
+}
+
+body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
+body.home-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron,
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-chevron path {
   color: #111111 !important;
   stroke: #111111 !important;
 }

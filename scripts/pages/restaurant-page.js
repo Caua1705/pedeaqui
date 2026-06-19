@@ -353,7 +353,7 @@
 
   function applyTheme() {
     const root = document.documentElement;
-    const primary = '#f07020';
+    const primary = '#F36F21';
     const secondary = restaurant.secondary_color || '#111111';
     root.style.setProperty('--brand-primary', primary);
     root.style.setProperty('--brand-secondary', secondary);

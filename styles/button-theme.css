@@ -1,0 +1,89 @@
+:root{
+  --brand:#F36F21;
+  --brand-primary:#F36F21;
+  --brand-accent:#F36F21;
+  --m-accent:#F36F21;
+  --primary-orange:#F36F21;
+  --op-orange:#F36F21;
+}
+
+.home-order-cta,
+.btn-cart,
+.cart-cta-btn,
+.btn-primary,
+.cart-empty-btn,
+.op-confirm:not(:disabled),
+.adc-confirm-btn:not(:disabled),
+.addr-delete-yes,
+.reg-submit:not(:disabled),
+.lgn-submit:not(:disabled),
+.vfy-submit:not(:disabled),
+.vfy-alert-btn,
+.coupon-detail-use,
+.app-loader-retry,
+.section-loader-retry,
+.profile-login-btn,
+#cartModal .cart-cta-btn,
+#loginModal .cart-cta-btn,
+.modal--login .cart-cta-btn{
+  background:#F36F21!important;
+  border-color:#F36F21!important;
+  color:#fff!important;
+}
+
+.home-order-cta:hover,
+.home-order-cta:active,
+.btn-cart:hover,
+.btn-cart:active,
+.cart-cta-btn:hover,
+.cart-cta-btn:active,
+.btn-primary:hover,
+.btn-primary:active,
+.cart-empty-btn:hover,
+.cart-empty-btn:active,
+.op-confirm:not(:disabled):hover,
+.op-confirm:not(:disabled):active,
+.adc-confirm-btn:not(:disabled):hover,
+.adc-confirm-btn:not(:disabled):active,
+.addr-delete-yes:hover,
+.addr-delete-yes:active,
+.reg-submit:not(:disabled):hover,
+.reg-submit:not(:disabled):active,
+.lgn-submit:not(:disabled):hover,
+.lgn-submit:not(:disabled):active,
+.vfy-submit:not(:disabled):hover,
+.vfy-submit:not(:disabled):active,
+.vfy-alert-btn:hover,
+.vfy-alert-btn:active,
+.coupon-detail-use:hover,
+.coupon-detail-use:active,
+.app-loader-retry:hover,
+.app-loader-retry:active,
+.section-loader-retry:hover,
+.section-loader-retry:active,
+.profile-login-btn:hover,
+.profile-login-btn:active{
+  background:#F36F21!important;
+  border-color:#F36F21!important;
+  color:#fff!important;
+}
+
+.login-secondary,
+.adc-account-btn,
+.addr-picker-add-btn,
+.addr-geo-btn,
+.addr-notfound-btn,
+.addr-delete-cancel,
+.cart-add-more-btn,
+.cart-benefit-action,
+.cart-payment-action,
+.coupon-use-btn,
+.rev-edit-btn,
+.fs-cta-secondary{
+  color:#F36F21!important;
+  border-color:#F36F21!important;
+}
+
+.app-loader-spinner{
+  border-top-color:#F36F21!important;
+}

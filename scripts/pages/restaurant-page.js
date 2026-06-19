@@ -3935,18 +3935,6 @@
   }
 
   function rapiGoBack() {
-    if (_rapiReturnNav === 'menu') {
-      mobNavMenu();
-      return;
-    }
-    if (_rapiReturnNav === 'club') {
-      mobNavClub();
-      return;
-    }
-    if (_rapiReturnNav === 'profile') {
-      mobNavProfile();
-      return;
-    }
     mobNavHome();
   }
 

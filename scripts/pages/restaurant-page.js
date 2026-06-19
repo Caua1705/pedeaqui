@@ -3679,6 +3679,14 @@
   let _policyReturn = 'login';
   let _policyTouchStartY = 0;
 
+  const AUTH_SCREEN_SELECTOR = '.lgn-screen.active,.reg-screen.active,.vfy-screen.active,#forgotPasswordScreen.active,#recoverCodeScreen.active,#resetPasswordScreen.active';
+  function syncAuthScreenOpenClass() {
+    document.body.classList.toggle('auth-screen-open', Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));
+  }
+  const authScreenObserver = new MutationObserver(syncAuthScreenOpenClass);
+  authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  syncAuthScreenOpenClass();
+
   function policyScrollBody() {
     return $('privacyPolicyBody');
   }

@@ -144,6 +144,13 @@ body:not(.rapi-nav-keep):has(.mob-view.active) .mob-bottom-nav {
   pointer-events: none !important;
 }
 
+body.auth-screen-open:not(.rapi-nav-keep) .mob-bottom-nav {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 body.rapi-nav-keep:has(#mobViewRapi.active) .mob-bottom-nav {
   display: flex !important;
   visibility: visible !important;

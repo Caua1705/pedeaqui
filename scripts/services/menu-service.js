@@ -1,5 +1,6 @@
 (function () {
   const slugify = text => window.PedeAquiSlugify?.slugify(text) || String(text || '').toLowerCase().replace(/\s+/g, '-');
+  const fallback = () => window.PedeAquiFallbackConfig || {};
 
   async function getRestaurantMenu(slug) {
     return normalizeMenuPayload(await window.PedeAquiApi.getRestaurantMenu(slug));
@@ -8,7 +9,7 @@
   function normalizeBranches(raw = {}) {
     const source = Array.isArray(raw.branches) ? raw.branches : [];
     return source.map((branch, index) => {
-      const name = branch.name || branch.branch_name || `Unidade ${index + 1}`;
+      const name = branch.name || branch.branch_name || fallback().branchName?.(index) || '';
       const fullAddress = branch.full_address
         || [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(', ');
       return {
@@ -16,7 +17,7 @@
         id: String(branch.id || branch.uuid || branch.branch_id || slugify(name) || index),
         restaurant_id: branch.restaurant_id || raw.restaurant?.id || '',
         name,
-        label: branch.label || `LJ. ${String(name).toUpperCase()}`,
+        label: branch.label || fallback().branchLabel?.(name) || '',
         address: branch.address || '',
         full_address: fullAddress,
         neighborhood: branch.neighborhood || '',
@@ -42,7 +43,7 @@
       const menuList = Array.isArray(raw.menu) ? raw.menu : Object.values(raw.menu).filter(section => section && Array.isArray(section.items));
       sourceCategories = menuList.map((section, index) => ({
         id: slugify(section.category || index),
-        name: section.category || 'Categoria',
+        name: section.category || fallback().categoryName || '',
         slug: slugify(section.category || index),
         sort_order: index
       }));
@@ -56,7 +57,7 @@
 
     const categories = sourceCategories.map((category, index) => ({
       id: String(category.id || category.slug || slugify(category.name || category.category || index)),
-      name: category.name || category.category || 'Categoria',
+      name: category.name || category.category || fallback().categoryName || '',
       slug: category.slug || slugify(category.name || category.category || index),
       sort_order: Number(category.sort_order || index)
     })).sort((a, b) => a.sort_order - b.sort_order);
@@ -72,7 +73,7 @@
         restaurant_id: product.restaurant_id || raw.restaurant?.id || '',
         category_id: product.category_id || category?.id || categoryId,
         code: product.code || '',
-        name: product.name || 'Produto',
+        name: product.name || fallback().productName || '',
         slug: product.slug || slugify(product.name || product.id || index),
         description: product.description || product.desc || '',
         price: typeof product.price === 'number' ? product.price : Number(product.price),

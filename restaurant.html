@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="styles/base.css?v=32">
 <link rel="stylesheet" href="styles/layout.css?v=32">
 <link rel="stylesheet" href="styles/components.css?v=32">
-<link rel="stylesheet" href="styles/restaurant.css?v=76">
+<link rel="stylesheet" href="styles/restaurant.css?v=77">
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
@@ -19,7 +19,15 @@
 <link rel="stylesheet" href="styles/login.css?v=32">
 <link rel="stylesheet" href="styles/verify.css?v=32">
 </head>
-<body>
+<body class="app-booting">
+<div class="app-loader" id="appLoader" role="status" aria-live="polite">
+  <div class="app-loader-box">
+    <div class="app-loader-spinner" aria-hidden="true"></div>
+    <div class="app-loader-title" id="appLoaderTitle">Carregando restaurante</div>
+    <div class="app-loader-message" id="appLoaderMessage">Preparando sua experiência.</div>
+    <button class="app-loader-retry" id="appLoaderRetry" type="button" onclick="retryRestaurantBoot()">Tentar novamente</button>
+  </div>
+</div>
 
 <!-- TOP NAV -->
 <nav class="top-nav a1">
@@ -200,7 +208,7 @@
   <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="QR Code" type="button">
     <span class="nav-icon"><svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg></span>
   </button>
-  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavOrders()">
+  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavClub()">
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--club" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 4.6 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 4.6 12 7 12 7z"/></svg></span>
     <span>Clube</span>
   </button>
@@ -210,11 +218,11 @@
   </button>
 </nav>
 
-<!-- MOBILE VIEW: PEDIDOS -->
-<div class="mob-view" id="mobViewOrders">
-  <div class="mob-view-header">Meus Pedidos</div>
-  <div class="mob-view-body" id="mobOrdersBody">
-    <!-- populated by JS -->
+<!-- MOBILE VIEW: CLUBE -->
+<div class="mob-view" id="mobViewClub">
+  <div class="mob-view-header">Clube</div>
+  <div class="mob-view-body" id="mobClubBody">
+    <!-- populated by renderClubView() -->
   </div>
 </div>
 
@@ -837,9 +845,9 @@
             </div>
             <div class="cdc-info">
               <div class="cdc-name">Padrão</div>
-              <div class="cdc-time">Hoje, 90–100 min</div>
+              <div class="cdc-time" id="cartDeliveryTimeText">Hoje, -- min</div>
             </div>
-            <div class="cdc-price">R$ 13,00</div>
+            <div class="cdc-price" id="cartDeliveryFeeText">R$ 0,00</div>
           </div>
         </div>
 
@@ -905,7 +913,7 @@
           </div>
           <div class="cps-row">
             <span>Taxa de serviço <button class="fee-info-btn" onclick="openServiceFeeInfo()" aria-label="Sobre a taxa de serviço">?</button></span>
-            <span id="csSvcFeeBtn">R$ 0,99</span>
+            <span id="csSvcFeeBtn">R$ 0,00</span>
           </div>
           <div class="cps-row" id="csDeliveryRow">
             <span>Taxa de entrega</span>
@@ -953,12 +961,12 @@
           <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
             <div class="fs-type-card-icon">ðŸ›µ</div>
             <div class="fs-type-card-name">Entrega</div>
-            <div class="fs-type-card-sub">90–100 min · R$ 13,00</div>
+            <div class="fs-type-card-sub" id="checkoutDeliverySub">-- min · R$ 0,00</div>
           </button>
           <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
             <div class="fs-type-card-icon">ðŸª</div>
             <div class="fs-type-card-name">Retirada</div>
-            <div class="fs-type-card-sub">~30 min · Grátis</div>
+            <div class="fs-type-card-sub" id="checkoutPickupSub">Retirada · Grátis</div>
           </button>
         </div>
       </div>
@@ -1009,7 +1017,7 @@
         <div class="rev-block-content">
           <div class="rev-block-label">Tipo</div>
           <div class="rev-block-val" id="revTypeName">Entrega</div>
-          <div class="rev-block-sub" id="revTypeSub">Hoje, 90–100 min · R$ 13,00</div>
+          <div class="rev-block-sub" id="revTypeSub">Hoje, -- min · R$ 0,00</div>
         </div>
         <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
       </div>
@@ -1663,23 +1671,36 @@
 
 <script src="scripts/config/maps-config.js"></script>
 <script src="scripts/config/app-config.js"></script>
+<script src="scripts/config/fallback-config.js"></script>
 <script src="scripts/config/routes.js"></script>
 <script src="scripts/services/api-routes.js"></script>
 <script src="scripts/utils/restaurant-slug.js"></script>
 <script src="scripts/utils/slugify.js"></script>
+<script src="scripts/utils/currency.js"></script>
+<script src="scripts/utils/dom.js"></script>
 <script src="scripts/utils/validators.js"></script>
 <script src="scripts/services/api-client.js"></script>
 <script src="scripts/services/api.js"></script>
 <script src="scripts/services/customer-auth-service.js"></script>
 <script src="scripts/services/restaurant-service.js"></script>
 <script src="scripts/services/menu-service.js"></script>
+<script src="scripts/services/customer-service.js"></script>
+<script src="scripts/services/address-service.js"></script>
+<script src="scripts/services/cart-service.js"></script>
 <script src="scripts/services/order-service.js"></script>
+<script src="scripts/services/club-service.js"></script>
 <script src="scripts/content/privacy-policy.js"></script>
 <script src="scripts/content/loyalty-policy.js"></script>
 <script src="scripts/state/cart-state.js"></script>
 <script src="scripts/state/customer-state.js"></script>
 <script src="scripts/state/order-state.js"></script>
 <script src="scripts/state/ui-state.js"></script>
-<script src="scripts/pages/restaurant-page.js?v=49"></script>
+<script src="scripts/stores/restaurant-store.js"></script>
+<script src="scripts/stores/customer-store.js"></script>
+<script src="scripts/stores/cart-store.js"></script>
+<script src="scripts/stores/ui-store.js"></script>
+<script src="scripts/pages/restaurant-ui.js"></script>
+<script src="scripts/pages/restaurant-club.js"></script>
+<script src="scripts/pages/restaurant-page.js?v=53"></script>
 </body>
 </html>

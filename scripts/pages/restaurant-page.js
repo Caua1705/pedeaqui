@@ -1,5 +1,5 @@
 (function () {
-  const fmt = (val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const STORAGE_ADDRESS = 'pedeaqui.customerAddress';
   const STORAGE_ADDRESS_LIST = 'pedeaqui.customerAddresses.local';
   const STORAGE_CUSTOMER = 'pedeaqui.customer';
@@ -19,25 +19,139 @@
   let deliveryType = 'delivery';
   let paymentMethod = 'Pix';
   let selectedCoupon = null;
-  let customer = JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
-  let customerAddress = JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null');
+  let couponDetailScrollY = 0;
+  let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
+  let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null');
   let submittedOrder = null;
   let heroBannerIndex = 0;
   let heroBannerTimer = null;
   let heroSwipeReady = false;
   let heroDragStartX = 0;
   let heroDragDeltaX = 0;
+  const appState = {
+    restaurant: null,
+    homeLoaded: false,
+    menuLoaded: false,
+    clubLoaded: false,
+    profileLoaded: false,
+    productsByCategory: null,
+    customer: customer,
+    customerOrders: null,
+    customerAddresses: null,
+    clubData: null,
+    loading: {
+      app: false,
+      home: false,
+      menu: false,
+      club: false,
+      profile: false
+    }
+  };
+  let bootPromise = null;
+  let menuLoadPromise = null;
+  let profileLoadPromise = null;
+  let menuRenderSignature = '';
+  let menuScrollSpyReady = false;
+  let searchReady = false;
+  let menuHeaderHideReady = false;
+  let pageRubberBandReady = false;
+  let menuSectionsCache = [];
+  let categoryButtonsCache = [];
+  let bannersRenderSignature = '';
+  let couponsRenderSignature = '';
+  let highlightsRenderSignature = '';
   const HERO_BANNER_INTERVAL_MS = 5000;
 
-  const $ = (id) => document.getElementById(id);
-  const isLogged = () => Boolean(customer);
-  const serviceFee = () => Number(settings.service_fee_amount ?? 0.99);
-  const deliveryFee = () => deliveryType === 'delivery' ? Number(settings.default_delivery_fee ?? 13) : 0;
+  const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
+  const fallback = () => window.PedeAquiFallbackConfig || {};
+  const isLogged = () => Boolean(customer || window.PedeAquiCustomerService?.isLoggedIn?.());
+  const serviceFee = () => Number(settings.service_fee_amount ?? fallback().defaultServiceFee ?? 0);
+  const deliveryFee = () => deliveryType === 'delivery' ? Number(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0) : 0;
   const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  const esc = (text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-  const onlyDigits = (value) => String(value ?? '').replace(/\D/g, '');
+  const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
+  const onlyDigits = window.PedeAquiValidators?.onlyDigits || ((value) => String(value ?? '').replace(/\D/g, ''));
   const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || '';
+  const restaurantStore = () => window.PedeAquiRestaurantStore;
+  const customerStore = () => window.PedeAquiCustomerStore;
+  const cartStore = () => window.PedeAquiCartStore;
+  const uiStore = () => window.PedeAquiUiStore;
+
+  function persistCustomer(nextCustomer) {
+    customer = nextCustomer || null;
+    appState.customer = customer;
+    customerStore()?.setCustomer?.(customer);
+    if (customer) localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    else localStorage.removeItem(STORAGE_CUSTOMER);
+    return customer;
+  }
+
+  function persistCustomerAddress(address) {
+    if (!address) return null;
+    customerAddress = window.PedeAquiAddressService?.saveSelectedAddress?.(address) || address;
+    customerStore()?.setSelectedAddress?.(customerAddress);
+    return customerAddress;
+  }
+
+  function currentCustomerSnapshot() {
+    return customer || window.PedeAquiCustomerService?.getStoredCustomer?.() || null;
+  }
+
+  function setLoading(scope, active) {
+    if (appState.loading[scope] === active) return;
+    appState.loading[scope] = active;
+    restaurantStore()?.setLoading?.(scope, active);
+  }
+
+  function logAppError(message, error) {
+    console.error(`[PedeAqui] ${message}`, error);
+  }
+
+  function setAppBooting(active) {
+    setLoading('app', active);
+    document.body.classList.toggle('app-booting', active);
+    if (active) document.body.classList.remove('app-error');
+  }
+
+  function showAppError(error) {
+    setLoading('app', false);
+    document.body.classList.remove('app-booting');
+    document.body.classList.add('app-error');
+    if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Não foi possível carregar';
+    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Verifique sua conexão e tente novamente.';
+    logAppError('Falha ao carregar restaurante', error);
+  }
+
+  function renderSectionLoader(targetId, message, className = 'section-loader') {
+    const target = $(targetId);
+    if (!target) return;
+    target.innerHTML = `<div class="${className}">${esc(message)}</div>`;
+  }
+
+  function renderSectionError(targetId, message, retryCall) {
+    const target = $(targetId);
+    if (!target) return;
+    target.innerHTML = `
+      <div class="section-loader section-loader-error">
+        <div>
+          <div>${esc(message)}</div>
+          ${retryCall ? `<button class="section-loader-retry" type="button" onclick="${retryCall}">Tentar novamente</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  const clubController = window.PedeAquiRestaurantClub.createRestaurantClubController({
+    appState,
+    fallback,
+    getRestaurantSlug,
+    getCoupons: () => coupons,
+    restaurantStore,
+    setLoading,
+    renderSectionLoader,
+    renderSectionError,
+    logAppError,
+    esc
+  });
 
   function renderHomeLoginPrompt() {
     const loginPrompt = $('homeLoginPrompt');
@@ -51,7 +165,8 @@
     return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
       || window.PEDEAQUI_RESTAURANT_SLUG
       || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
-      || 'junior-da-picanha';
+      || fallback().defaultRestaurantSlug
+      || '';
   }
 
   function normalizePayload(raw) {
@@ -60,9 +175,15 @@
       : raw;
   }
 
-  function productImage(product, className = 'product-image') {
+  function imageAttrs({ lazy = true, priority = 'auto' } = {}) {
+    const loading = lazy ? 'lazy' : 'eager';
+    const fetchPriority = priority && priority !== 'auto' ? ` fetchpriority="${priority}"` : '';
+    return `loading="${loading}" decoding="async"${fetchPriority}`;
+  }
+
+  function productImage(product, className = 'product-image', options = {}) {
     const image = product.image_url || product.image_path;
-    if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}">`;
+    if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}" ${imageAttrs(options)}>`;
     return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
   }
 
@@ -85,24 +206,50 @@
   function renderStoreInfoPayment() {
     const box = $('storeInfoPayment');
     if (!box) return;
+    const configured = settings.payment_methods || settings.paymentMethods || settings.payments || {};
+    const paymentGroups = {
+      credit: configured.credit || configured.credit_card || configured.creditCards || fallback().paymentMethods?.credit || [],
+      debit: configured.debit || configured.debit_card || configured.debitCards || fallback().paymentMethods?.debit || []
+    };
+    const brandClass = brand => {
+      const key = String(brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if (key.includes('amex') || key.includes('american')) return 'pay-brand--amex';
+      if (key.includes('elo')) return 'pay-brand--elo';
+      if (key.includes('hiper')) return 'pay-brand--hiper';
+      if (key.includes('master')) return 'pay-brand--master';
+      if (key.includes('visa')) return 'pay-brand--visa';
+      return '';
+    };
+    const renderBrands = brands => (Array.isArray(brands) ? brands : [])
+      .map(brand => `<span><i class="pay-brand ${brandClass(brand)}"></i>${esc(brand)}</span>`)
+      .join('');
     box.innerHTML = `
       <p class="store-payment-title">Pagamento na entrega</p>
       <p class="store-payment-group">Crédito</p>
       <div class="store-payment-grid">
-        <span><i class="pay-brand pay-brand--amex"></i>American Express</span>
-        <span><i class="pay-brand pay-brand--elo"></i>Elo</span>
-        <span><i class="pay-brand pay-brand--hiper"></i>Hiper</span>
-        <span><i class="pay-brand pay-brand--master"></i>Mastercard</span>
-        <span><i class="pay-brand pay-brand--visa"></i>Visa</span>
+        ${renderBrands(paymentGroups.credit)}
       </div>
       <p class="store-payment-group store-payment-group--debit">Débito</p>
       <div class="store-payment-grid">
-        <span><i class="pay-brand pay-brand--elo"></i>Elo</span>
-        <span><i class="pay-brand pay-brand--hiper"></i>Hiper</span>
-        <span><i class="pay-brand pay-brand--master"></i>Mastercard</span>
-        <span><i class="pay-brand pay-brand--visa"></i>Visa</span>
+        ${renderBrands(paymentGroups.debit)}
       </div>
     `;
+  }
+
+  function deliveryWindowText() {
+    const min = settings.estimated_delivery_time_min ?? fallback().defaultDeliveryTimeMin ?? 0;
+    const max = settings.estimated_delivery_time_max ?? fallback().defaultDeliveryTimeMax ?? 0;
+    return `${min}-${max} min`;
+  }
+
+  function renderDeliveryMeta() {
+    const deliveryText = deliveryWindowText();
+    const feeText = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0);
+    if ($('cartDeliveryTimeText')) $('cartDeliveryTimeText').textContent = `Hoje, ${deliveryText}`;
+    if ($('cartDeliveryFeeText')) $('cartDeliveryFeeText').textContent = feeText;
+    if ($('checkoutDeliverySub')) $('checkoutDeliverySub').textContent = `${deliveryText} · ${feeText}`;
+    const pickupText = settings.pickup_time_text || settings.estimated_pickup_time_text || fallback().pickupTimeText || 'Retirada';
+    if ($('checkoutPickupSub')) $('checkoutPickupSub').textContent = `${pickupText} · Grátis`;
   }
 
   function setStoreInfoTab(tab = 'hours') {
@@ -167,7 +314,7 @@
   }
 
   function ProductCard(product) {
-    const currentPrice = Number.isFinite(product.price) ? fmt(product.price) : 'Consultar';
+    const currentPrice = Number.isFinite(product.price) ? fmt(product.price) : fallback().productUnavailablePrice || '';
     const oldPrice = Number(productOldPrice(product));
     const hasOldPrice = Number.isFinite(oldPrice) && Number.isFinite(product.price) && oldPrice > product.price;
     return `
@@ -191,151 +338,18 @@
      overflow:hidden no body não basta no iOS — o conteúdo de fundo
      ainda recebe eventos de toque e desliza. A solução é fixar o body
      em position:fixed com top = -scrollY, e restaurar ao fechar. */
-  let _savedScrollY = 0;
-  let _bodyScrollLocked = false;
-  let _softScrollLocked = false;
-
-  function currentScrollY() {
-    return window.pageYOffset
-      || document.documentElement.scrollTop
-      || document.body.scrollTop
-      || 0;
-  }
-
-  function hasBlockingUiOpen() {
-    return Boolean(document.querySelector(
-      '.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.policy-screen.active,.vfy-screen.active,.coupon-detail-overlay.active,.vfy-alert-overlay.active'
-    ));
-  }
-
-  function lockBodyScroll(scrollY = currentScrollY(), mode = 'fixed') {
-    if (mode === 'soft') {
-      if (_bodyScrollLocked) {
-        document.body.classList.add('modal-open');
-        return;
-      }
-      _savedScrollY = scrollY;
-      _softScrollLocked = true;
-      return;
-    }
-    if (_bodyScrollLocked) {
-      document.body.classList.add('modal-open');
-      return;
-    }
-    _bodyScrollLocked = true;
-    _savedScrollY = scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${_savedScrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    document.body.style.overflowY = 'scroll';
-    document.body.classList.add('modal-open');
-  }
-
-  function unlockBodyScroll(restoreY = _savedScrollY) {
-    if (_softScrollLocked && !_bodyScrollLocked) {
-      _softScrollLocked = false;
-      _savedScrollY = restoreY;
-      window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-      requestAnimationFrame(() => {
-        if (!hasBlockingUiOpen()) window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-      });
-      return;
-    }
-    if (!_bodyScrollLocked) {
-      document.body.classList.remove('modal-open');
-      return;
-    }
-    _bodyScrollLocked = false;
-    _savedScrollY = restoreY;
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    document.body.style.overflowY = '';
-    document.body.classList.remove('modal-open');
-    window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-    requestAnimationFrame(() => {
-      if (!hasBlockingUiOpen()) window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-    });
-  }
-
-  function unlockBodyScrollIfClear() {
-    if (!hasBlockingUiOpen()) unlockBodyScroll();
-    else document.body.classList.add('modal-open');
-  }
-
-  const KEEP_NAV_OVERLAYS = new Set([
-    'productModal',
-    'operationModal',
-    'loginModal',
-    'couponDetailOverlay'
-  ]);
-
-  function syncBottomNavVisibility() {
-    const keep = Array.from(KEEP_NAV_OVERLAYS).some(id => $(id)?.classList.contains('active'));
-    document.body.classList.toggle('keep-bottom-nav', keep);
-  }
-
-  function openModal(id) {
-    const el = $(id);
-    if (!el) return;
-    const scrollY = currentScrollY();
-    el.classList.add('active');
-    syncBottomNavVisibility();
-    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
-  }
-
-  function openModalImmediately(id) {
-    const el = $(id);
-    if (!el) return;
-    const scrollY = currentScrollY();
-    el.classList.add('no-motion');
-    el.classList.add('active');
-    syncBottomNavVisibility();
-    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
-    setTimeout(() => el.classList.remove('no-motion'), 50);
-  }
-
-  function closeModalId(id) {
-    const el = $(id);
-    if (!el) return;
-    if (['loginModal', 'productModal'].includes(id) && (_bodyScrollLocked || _softScrollLocked)) {
-      const restoreY = _savedScrollY;
-      el.classList.remove('active');
-      syncBottomNavVisibility();
-      setTimeout(() => {
-        if (!hasBlockingUiOpen()) unlockBodyScroll(restoreY);
-      }, 560);
-      return;
-    }
-    el.classList.remove('active');
-    syncBottomNavVisibility();
-    unlockBodyScrollIfClear();
-  }
-
-  function closeModalImmediately(id) {
-    const el = $(id);
-    if (!el) return;
-    el.classList.add('no-motion');
-    const panel = el.querySelector('.modal--fs,.modal--login,.modal--product,.modal--cart');
-    el.style.transition = 'none';
-    if (panel) panel.style.transition = 'none';
-    el.classList.remove('active');
-    setTimeout(() => {
-      el.style.transition = '';
-    if (panel) panel.style.transition = '';
-    el.classList.remove('no-motion');
-    }, 50);
-    syncBottomNavVisibility();
-    unlockBodyScrollIfClear();
-  }
-
-  function closeModal(e, id) {
-    if (e.target && e.target.id === id) closeModalId(id);
-  }
+  const {
+    currentScrollY,
+    hasBlockingUiOpen,
+    lockBodyScroll,
+    unlockBodyScroll,
+    unlockBodyScrollIfClear,
+    openModal,
+    openModalImmediately,
+    closeModalId,
+    closeModalImmediately,
+    closeModal
+  } = window.PedeAquiRestaurantUi;
 
   function applyTheme() {
     const root = document.documentElement;
@@ -348,24 +362,24 @@
     root.style.setProperty('--brand-d', secondary);
     root.style.setProperty('--m-accent', primary);
     root.style.setProperty('--m-accent-light', primary + '22');
-    document.title = `${restaurant.name || 'Restaurante'} — Pedido Online | PedeAqui`;
+    document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | PedeAqui`;
   }
 
   function renderRestaurantShell() {
     const branch = branches[0] || {};
-    const restName = restaurant.name || 'Restaurante';
+    const restName = restaurant.name || fallback().restaurantName || '';
     document.querySelectorAll('.nav-title,.mob-rest-name,.cart-rest-name,.login-rest-name,.prof-hero-label,.hero-rest-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.mob-rest-name').forEach(el => {
       el.classList.toggle('mob-rest-name--compact', Array.from(restName).length > 12);
     });
     if ($('addrSearchHeaderTitle')) $('addrSearchHeaderTitle').textContent = restName;
-    document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || 'Pedido online');
+    document.querySelectorAll('.hero-rest-desc').forEach(el => el.textContent = restaurant.description || fallback().restaurantDescription || '');
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
     const logoUrl = restaurant.logo_url || restaurant.logo_path;
     const fallbackLogo = `<div class="mob-logo-fallback">${initials(restName)}</div>`;
     const logoHtml = logoUrl
-      ? `<img src="${esc(logoUrl)}" alt="${esc(restName)}" onerror="this.replaceWith(this.ownerDocument.createRange().createContextualFragment('${fallbackLogo}'))">`
+      ? `<img src="${esc(logoUrl)}" alt="${esc(restName)}" ${imageAttrs({ lazy: false, priority: 'high' })} onerror="this.replaceWith(this.ownerDocument.createRange().createContextualFragment('${fallbackLogo}'))">`
       : `<div class="mob-logo-fallback">${initials(restName)}</div>`;
     const logo = document.querySelector('.mob-logo');
     if (logo) logo.innerHTML = logoHtml;
@@ -375,12 +389,14 @@
     if (infoLogo) infoLogo.innerHTML = logoHtml;
 
     const isOpen = settings.is_open ?? restaurant.is_open;
-    const status = isOpen === false ? 'Fechado no momento' : 'Aberto agora';
+    const status = isOpen === false
+      ? (fallback().closedStatusText || 'Fechado no momento')
+      : (fallback().openStatusText || 'Aberto agora');
     const statusEl = document.querySelector('.mob-badge-open');
     if (statusEl) statusEl.textContent = status;
     document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Mín ${fmt(settings.min_order_value || 0)}`);
     const loc = document.querySelector('.mob-loc');
-    if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || 'Unidade principal';
+    if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || fallback().mainBranchText || 'Unidade principal';
     renderHomeLoginPrompt();
     document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
@@ -417,9 +433,10 @@
     if (highlightsTitle) highlightsTitle.textContent = `Destaques ${restName}`;
 
     document.querySelectorAll('.delivery-time-text').forEach(el => {
-      el.textContent = `${settings.estimated_delivery_time_min || 90}-${settings.estimated_delivery_time_max || 100} min`;
+      el.textContent = deliveryWindowText();
     });
-    document.querySelectorAll('.delivery-fee-text').forEach(el => el.textContent = fmt(settings.default_delivery_fee ?? 13));
+    document.querySelectorAll('.delivery-fee-text').forEach(el => el.textContent = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0));
+    renderDeliveryMeta();
   }
 
   function renderBanners() {
@@ -427,8 +444,15 @@
     const cover = $('restaurantHeroCover');
     const track = $('restaurantHeroTrack');
     const dots = $('restaurantHeroDots');
-    const fallback = $('restaurantHeroFallback');
+    const heroFallback = $('restaurantHeroFallback');
     if (!img || !cover) return;
+    const nextSignature = JSON.stringify(banners.map(banner => [
+      banner.image_url || banner.image_path || '',
+      banner.title || '',
+      banner.subtitle || ''
+    ]));
+    if (bannersRenderSignature === nextSignature) return;
+    bannersRenderSignature = nextSignature;
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
     heroBannerIndex = 1;
@@ -438,8 +462,8 @@
       cover.classList.remove('has-carousel');
       if (track) track.innerHTML = '';
       img.removeAttribute('src');
-      img.alt = restaurant.name || 'Restaurante';
-      if (fallback) fallback.setAttribute('aria-hidden', 'false');
+      img.alt = restaurant.name || fallback().restaurantName || '';
+      if (heroFallback) heroFallback.setAttribute('aria-hidden', 'false');
       if (dots) dots.innerHTML = '';
       return;
     }
@@ -447,14 +471,17 @@
     const first = visualBanners[0];
     img.src = first.image_url || first.image_path || '';
     img.alt = first.title || first.subtitle || restaurant.name || 'Banner promocional';
+    img.loading = 'eager';
+    img.decoding = 'async';
+    img.fetchPriority = 'high';
     cover.classList.add('has-carousel');
-    if (fallback) fallback.setAttribute('aria-hidden', 'true');
+    if (heroFallback) heroFallback.setAttribute('aria-hidden', 'true');
 
     if (track) {
       const mkSlide = banner => {
         const image = banner.image_url || banner.image_path || '';
         const alt = banner.title || banner.subtitle || restaurant.name || 'Banner';
-        return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}"></div>`;
+        return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
       };
       const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
       const cloneFirst = mkSlide(visualBanners[0]);
@@ -588,6 +615,8 @@
   }
 
   function initMenuHeaderHide() {
+    if (menuHeaderHideReady) return;
+    menuHeaderHideReady = true;
     window.addEventListener('scroll', () => {
       if (!document.body.classList.contains('menu-tab')) return;
       document.body.classList.toggle('menu-scrolled', (window.scrollY || document.documentElement.scrollTop) > 40);
@@ -595,12 +624,16 @@
   }
 
   function initPageRubberBand() {
+    if (pageRubberBandReady) return;
+    pageRubberBandReady = true;
     let startX = 0, startY = 0, delta = 0, tracking = false, isHoriz = false;
     const SKIP = '.coupon-rail,.highlight-rail,.restaurant-hero-cover,.restaurant-hero-track,.restaurant-hero-slide';
     const SNAP = 'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)';
-    const movables = () => document.querySelectorAll(
-      '.restaurant-hero, .home-section, .home-separator'
-    );
+    let movableEls = null;
+    const movables = () => {
+      if (!movableEls) movableEls = document.querySelectorAll('.restaurant-hero, .home-section, .home-separator');
+      return movableEls;
+    };
 
     const applyMove = tx => movables().forEach(el => {
       el.style.transition = 'none';
@@ -646,6 +679,18 @@
     if (!wrap) return;
     const section = $('homeCouponsSection');
     if (section) section.style.display = coupons.length ? '' : 'none';
+    const nextSignature = JSON.stringify(coupons.map(coupon => [
+      coupon.code,
+      coupon.title || coupon.name || '',
+      coupon.image_url || coupon.image_path || '',
+      coupon.discount_type || '',
+      coupon.discount_value || ''
+    ]));
+    if (couponsRenderSignature === nextSignature && wrap.children.length) {
+      updateHomePromoVisibility();
+      return;
+    }
+    couponsRenderSignature = nextSignature;
     wrap.innerHTML = coupons.map(coupon => {
       const image = coupon.image_url || coupon.image_path || '';
       const discountType = String(coupon.discount_type || '').toLowerCase();
@@ -660,7 +705,7 @@
       return `
         <article class="coupon-card" onclick="openCouponDetail('${esc(coupon.code)}')">
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
+            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
@@ -679,13 +724,23 @@
     const highlightItems = getHomeHighlightItems();
     const section = $('homeHighlightsSection');
     if (section) section.style.display = highlightItems.length ? '' : 'none';
+    const nextSignature = JSON.stringify(highlightItems.map(highlight => [
+      highlight.image_url || highlight.image_path || '',
+      highlight.title || '',
+      highlight.subtitle || ''
+    ]));
+    if (highlightsRenderSignature === nextSignature && wrap.children.length) {
+      updateHomePromoVisibility();
+      return;
+    }
+    highlightsRenderSignature = nextSignature;
     wrap.innerHTML = highlightItems.map(highlight => {
       const image = highlight.image_url || highlight.image_path || '';
       const alt = highlight.title || highlight.subtitle || restaurant.name || 'Destaque';
       return `
         <article class="highlight-banner">
           ${image
-            ? `<img src="${esc(image)}" alt="${esc(alt)}">`
+            ? `<img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
             : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || restaurant.name || '')}</span></div>`}
         </article>
       `;
@@ -714,12 +769,38 @@
     const nav = $('catNav');
     const container = $('menuContainer');
     if (!nav || !container) return;
+    const nextSignature = JSON.stringify({
+      categories: categories.map(cat => [cat.id, cat.slug, cat.name]),
+      products: products.map(product => [
+        product.id,
+        product.category_id,
+        product.category_slug,
+        product.category,
+        product.name,
+        product.price,
+        product.image_url || product.image_path,
+        product.is_available
+      ])
+    });
+    if (menuRenderSignature === nextSignature && container.querySelector('.menu-section')) {
+      appState.menuLoaded = true;
+      return;
+    }
+    const productsByCategory = categories.reduce((acc, cat) => {
+      acc[cat.slug] = products.filter(p => p.is_available !== false && (
+        p.category_slug === cat.slug ||
+        p.category_slug === cat.id ||
+        p.category_id === cat.id ||
+        slug(p.category) === cat.slug
+      ));
+      return acc;
+    }, {});
     nav.innerHTML = '';
     container.innerHTML = '';
     let renderedCategoryCount = 0;
 
     categories.forEach(cat => {
-      const catProducts = products.filter(p => p.is_available && (p.category_slug === cat.slug || p.category_slug === cat.id || slug(p.category) === cat.slug));
+      const catProducts = productsByCategory[cat.slug] || [];
       if (!catProducts.length) return;
       const isFirstRenderedCategory = renderedCategoryCount === 0;
       nav.insertAdjacentHTML('beforeend', `<button class="cat ${isFirstRenderedCategory ? 'active' : ''}" onclick="scrollToCategory('${cat.slug}', this)">${cat.name}</button>`);
@@ -733,25 +814,73 @@
       `);
       renderedCategoryCount += 1;
     });
+    menuSectionsCache = Array.from(container.querySelectorAll('.menu-section'));
+    categoryButtonsCache = Array.from(nav.querySelectorAll('.cat'));
     setFirstCategoryActive();
+    appState.menuLoaded = true;
+    appState.productsByCategory = productsByCategory;
+    menuRenderSignature = nextSignature;
+    restaurantStore()?.setMenu?.({ categories, products });
+  }
+
+  async function ensureMenuLoaded() {
+    if (appState.menuLoaded && $('menuContainer')?.querySelector('.menu-section')) return;
+    if (appState.menuLoaded) {
+      renderMenu();
+      return;
+    }
+    if (menuLoadPromise) return menuLoadPromise;
+    setLoading('menu', true);
+    if ($('catNav')) $('catNav').innerHTML = '';
+    renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
+    menuLoadPromise = (async () => {
+      try {
+        if (!products.length || !categories.length) {
+          const fresh = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
+          payload = fresh || {};
+          restaurant = payload.restaurant || restaurant || {};
+          settings = payload.settings || settings || {};
+          branches = Array.isArray(payload.branches) ? payload.branches : branches;
+          categories = Array.isArray(payload.categories) ? payload.categories : categories;
+          products = Array.isArray(payload.products) ? payload.products : products;
+          banners = Array.isArray(payload.banners) ? payload.banners : banners;
+          highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : highlightBanners;
+          coupons = Array.isArray(payload.coupons) ? payload.coupons : coupons;
+        }
+        renderMenu();
+        initScrollSpy();
+        setFirstCategoryActive();
+      } catch (error) {
+        appState.menuLoaded = false;
+        logAppError('Falha ao carregar cardápio', error);
+        renderSectionError('menuContainer', 'Não foi possível carregar o cardápio.', 'retryMenuLoad()');
+      } finally {
+        setLoading('menu', false);
+        menuLoadPromise = null;
+      }
+    })();
+    return menuLoadPromise;
   }
 
   let isClickScrolling = false;
   function setFirstCategoryActive() {
-    const firstCat = document.querySelector('.cat');
+    const firstCat = categoryButtonsCache[0] || document.querySelector('.cat');
     if (!firstCat) return;
-    document.querySelectorAll('.cat').forEach(btn => btn.classList.toggle('active', btn === firstCat));
+    (categoryButtonsCache.length ? categoryButtonsCache : Array.from(document.querySelectorAll('.cat')))
+      .forEach(btn => btn.classList.toggle('active', btn === firstCat));
   }
 
   function showHomeTab() {
     document.body.classList.remove('menu-tab', 'menu-scrolled');
     document.body.classList.add('home-tab');
+    uiStore()?.set?.({ activeView: 'home', bottomNav: 'home' });
     setMobNavActive('mobNavHome');
   }
 
   function showMenuTab() {
     document.body.classList.remove('home-tab');
     document.body.classList.add('menu-tab');
+    uiStore()?.set?.({ activeView: 'menu', bottomNav: 'menu' });
     setMobNavActive('mobNavMenu');
     setFirstCategoryActive();
     initCatStuckObserver();
@@ -787,6 +916,7 @@
   function scrollToMenu() {
     closeMobViews();
     showMenuTab();
+    ensureMenuLoaded();
     const el = $('menu-area');
     if (!el) return;
     scrollToFast(el.getBoundingClientRect().top + window.pageYOffset - 96);
@@ -800,7 +930,8 @@
 
   function scrollToCategory(id, btn) {
     isClickScrolling = true;
-    document.querySelectorAll('.cat').forEach(b => b.classList.remove('active'));
+    (categoryButtonsCache.length ? categoryButtonsCache : Array.from(document.querySelectorAll('.cat')))
+      .forEach(b => b.classList.remove('active'));
     btn?.classList.add('active');
     const el = $(id);
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 92, behavior: 'smooth' });
@@ -808,17 +939,21 @@
   }
 
   function initScrollSpy() {
+    if (menuScrollSpyReady) return;
+    menuScrollSpyReady = true;
     window.addEventListener('scroll', () => {
       if (isClickScrolling) return;
       let currentId = '';
-      document.querySelectorAll('.menu-section').forEach(sec => {
+      const sections = menuSectionsCache.length ? menuSectionsCache : Array.from(document.querySelectorAll('.menu-section'));
+      const buttons = categoryButtonsCache.length ? categoryButtonsCache : Array.from(document.querySelectorAll('.cat'));
+      sections.forEach(sec => {
         if (sec.getBoundingClientRect().top <= 150) currentId = sec.id;
       });
       if (!currentId) {
         setFirstCategoryActive();
         return;
       }
-      document.querySelectorAll('.cat').forEach(btn => {
+      buttons.forEach(btn => {
         const active = btn.getAttribute('onclick')?.includes(`'${currentId}'`);
         btn.classList.toggle('active', Boolean(active));
       });
@@ -826,21 +961,30 @@
   }
 
   function initSearch() {
+    if (searchReady) return;
+    searchReady = true;
+    let searchFrame = null;
     $('searchInput')?.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase();
-      e.target.closest('.search-bar')?.classList.toggle('has-value', Boolean(q));
-      let foundAny = false;
-      document.querySelectorAll('.menu-section').forEach(sec => {
-        let secFound = false;
-        sec.querySelectorAll('.product-card').forEach(card => {
-          const match = card.innerText.toLowerCase().includes(q);
-          card.style.display = match ? 'flex' : 'none';
-          secFound = secFound || match;
-          foundAny = foundAny || match;
+      const input = e.target;
+      const q = input.value.toLowerCase();
+      input.closest('.search-bar')?.classList.toggle('has-value', Boolean(q));
+      if (searchFrame) cancelAnimationFrame(searchFrame);
+      searchFrame = requestAnimationFrame(() => {
+        let foundAny = false;
+        const sections = menuSectionsCache.length ? menuSectionsCache : Array.from(document.querySelectorAll('.menu-section'));
+        sections.forEach(sec => {
+          let secFound = false;
+          sec.querySelectorAll('.product-card').forEach(card => {
+            const match = card.textContent.toLowerCase().includes(q);
+            card.style.display = match ? 'flex' : 'none';
+            secFound = secFound || match;
+            foundAny = foundAny || match;
+          });
+          sec.style.display = secFound ? 'block' : 'none';
         });
-        sec.style.display = secFound ? 'block' : 'none';
+        if ($('emptySearch')) $('emptySearch').style.display = foundAny ? 'none' : 'block';
+        searchFrame = null;
       });
-      if ($('emptySearch')) $('emptySearch').style.display = foundAny ? 'none' : 'block';
     });
   }
 
@@ -850,10 +994,10 @@
     pmQty = 1;
     $('pmName').textContent = currentProd.name;
     $('pmDesc').textContent = currentProd.description || '';
-    $('pmPrice').textContent = Number.isFinite(currentProd.price) ? fmt(currentProd.price) : 'Consultar';
+    $('pmPrice').textContent = Number.isFinite(currentProd.price) ? fmt(currentProd.price) : fallback().productUnavailablePrice || '';
     $('pmObs').value = '';
     const hero = $('pmHero');
-    if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo');
+    if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo', { lazy: false, priority: 'high' });
     $('pmWarning').style.display = Number.isFinite(currentProd.price) ? 'none' : 'block';
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
@@ -873,7 +1017,8 @@
 
   function addToCart() {
     if (!currentProd || !Number.isFinite(currentProd.price)) return;
-    cart.push({ ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: Date.now() });
+    cart.push(window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
+      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: Date.now() });
     closeModalId('productModal');
     updateCartUI();
   }
@@ -890,13 +1035,15 @@
   }
 
   function currentCartBranchLabel() {
-    const label = operationContext?.branch_label || operationContext?.branch_name || branches[0]?.name || 'Sul';
-    return String(label).toUpperCase().startsWith('LJ.') ? String(label).toUpperCase() : `LJ. ${String(label).toUpperCase()}`;
+    const label = operationContext?.branch_label || operationContext?.branch_name || branches[0]?.name || fallback().branchLabelText || '';
+    return String(label).toUpperCase().startsWith('LJ.')
+      ? String(label).toUpperCase()
+      : (fallback().branchLabel?.(label) || `LJ. ${String(label).toUpperCase()}`);
   }
 
   function cartEtaText() {
-    const min = settings.estimated_delivery_time_min || 39;
-    const max = settings.estimated_delivery_time_max || 45;
+    const min = settings.estimated_delivery_time_min ?? fallback().defaultDeliveryTimeMin ?? 0;
+    const max = settings.estimated_delivery_time_max ?? fallback().defaultDeliveryTimeMax ?? 0;
     return `${min} - ${max} min`;
   }
 
@@ -959,6 +1106,7 @@
   function updateCartUI() {
     const qty = cart.reduce((sum, item) => sum + item.qty, 0);
     const totals = cartTotals();
+    cartStore()?.set?.({ items: cart, deliveryType, paymentMethod, totals });
     if ($('cartItemCountLabel')) $('cartItemCountLabel').textContent = qty === 1 ? '1 item' : `${qty} itens`;
     $('cartCountTop') && ($('cartCountTop').textContent = qty);
     $('cartCountTop')?.classList.toggle('show', qty > 0);
@@ -1047,9 +1195,10 @@
       return;
     }
     closeModalId('cartModal');
-    if (customer) {
-      $('chkName').value = customer.name || '';
-      $('chkPhone').value = customer.phone || '';
+    const checkoutCustomer = currentCustomerSnapshot();
+    if (checkoutCustomer) {
+      $('chkName').value = checkoutCustomer.name || '';
+      $('chkPhone').value = checkoutCustomer.phone || '';
     }
     if (customerAddress) fillCheckoutAddress(customerAddress);
     setDeliveryType(deliveryType);
@@ -1095,8 +1244,7 @@
     if (deliveryType === 'delivery') {
       const address = readCheckoutAddress();
       if (!address.street || !address.number || !address.neighborhood) { alert('Informe seu endereço.'); return; }
-      customerAddress = address;
-      localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+      persistCustomerAddress(address);
       if (operationContext) {
         operationContext.address = {
           street: address.street, number: address.number, neighborhood: address.neighborhood,
@@ -1106,8 +1254,7 @@
         renderWidget();
       }
     }
-    customer = { name, phone };
-    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    persistCustomer({ name, phone });
     renderReview();
     closeModalId('checkoutModal');
     openModal('orderReviewModal');
@@ -1125,7 +1272,9 @@
     const totals = cartTotals();
     $('revTypeIcon').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
     $('revTypeName').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
-    $('revTypeSub').textContent = deliveryType === 'delivery' ? `Hoje, ${settings.estimated_delivery_time_min || 90}-${settings.estimated_delivery_time_max || 100} min` : 'Retirada no local';
+    $('revTypeSub').textContent = deliveryType === 'delivery'
+      ? `Hoje, ${settings.estimated_delivery_time_min ?? fallback().defaultDeliveryTimeMin ?? 0}-${settings.estimated_delivery_time_max ?? fallback().defaultDeliveryTimeMax ?? 0} min`
+      : 'Retirada no local';
     $('revAddrBlock').style.display = deliveryType === 'delivery' ? 'flex' : 'none';
     if (customerAddress) $('revAddrVal').textContent = customerAddress.summary;
     $('revPayVal').textContent = paymentMethod;
@@ -1152,14 +1301,15 @@
     const address = operationContext.address;
     // When the customer is logged in and picked a saved address, reference it by
     // id. The backend resolves customer_id from the JWT — never send it here.
-    const savedAddressId = window.PedeAquiCustomerAuth?.isLoggedIn()
+    const savedAddressId = window.PedeAquiCustomerService?.isLoggedIn?.()
       ? (address?.id || address?.address_id || customerAddress?.id || null)
       : null;
+    const orderCustomer = currentCustomerSnapshot();
     const orderPayload = {
       branch_id: operationContext.branch_id,
       customer: {
-        name: customer?.name || '',
-        phone: customer?.phone || ''
+        name: orderCustomer?.name || '',
+        phone: orderCustomer?.phone || ''
       },
       order_type: orderType,
       payment_method: paymentMethod,
@@ -1181,7 +1331,7 @@
     };
     submittedOrder = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
     window.PedeAquiOrderState?.saveOrder(submittedOrder);
-    $('confName').textContent = customer.name;
+    $('confName').textContent = orderCustomer?.name || '';
     $('confTotal').textContent = fmt(submittedOrder.total ?? submittedOrder.total_amount ?? cartTotals().total);
     $('confType').textContent = submittedOrder.order_type || submittedOrder.type || (deliveryType === 'delivery' ? 'Entrega' : 'Retirada');
     $('confPay').textContent = submittedOrder.payment_method || paymentMethod;
@@ -1218,16 +1368,11 @@
   }
 
   function readLocalAddressList() {
-    try {
-      const list = JSON.parse(localStorage.getItem(STORAGE_ADDRESS_LIST) || '[]');
-      return Array.isArray(list) ? list : [];
-    } catch {
-      return [];
-    }
+    return window.PedeAquiAddressService?.readLocalAddressList?.() || [];
   }
 
   function writeLocalAddressList(list) {
-    localStorage.setItem(STORAGE_ADDRESS_LIST, JSON.stringify(Array.isArray(list) ? list : []));
+    return window.PedeAquiAddressService?.writeLocalAddressList?.(list) || [];
   }
 
   function compatibleBranches(orderType) {
@@ -1284,7 +1429,7 @@
     customerAddress = operationContext.address
       ? { ...operationContext.address, summary: addressSummary(operationContext.address) }
       : null;
-    if (customerAddress) localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    if (customerAddress) persistCustomerAddress(customerAddress);
   }
 
   function operationValid(ctx) {
@@ -1302,7 +1447,7 @@
     const opTab = $('dwTabDelivery');
     if (opTab) { opTab.textContent = isPickup ? 'RETIRADA' : 'DELIVERY'; opTab.classList.add('active'); }
     const brandTab = $('dwTabBrand');
-    if (brandTab) brandTab.textContent = (restaurant.name || 'Restaurante').toUpperCase();
+    if (brandTab) brandTab.textContent = (restaurant.name || fallback().restaurantName || '').toUpperCase();
     const branchTab = $('dwTabBranch');
     if (branchTab) branchTab.textContent = operationContext.branch_label || 'UNIDADE';
     const addrMain = $('homeAddressTitle');
@@ -1428,6 +1573,7 @@
       closeMobViews();
       showMenuTab();
       window.scrollTo(0, 0);
+      ensureMenuLoaded();
     }
   }
 
@@ -1613,9 +1759,8 @@
     }
     _renderAddrPickerList();
     openModal('addrPickerModal');
-    const auth = window.PedeAquiCustomerAuth;
-    if (auth?.isLoggedIn()) {
-      auth.getCustomerAddresses().then(res => {
+    if (window.PedeAquiCustomerService?.isLoggedIn?.()) {
+      window.PedeAquiAddressService.getCustomerAddresses().then(res => {
         const list = Array.isArray(res) ? res : (res?.data || []);
         if (list.length) {
           const current = getCurrentPickerAddress();
@@ -1778,8 +1923,7 @@
     if (!addr) return;
     _addrJustSavedAddress = null;
     opDraft.address = addr;
-    customerAddress = { ...addr, summary: addressSummary(addr) };
-    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    persistCustomerAddress({ ...addr, summary: addressSummary(addr) });
     persistOperationContext();
     renderOperationScreen();
     closeModalImmediately('addrPickerModal');
@@ -2339,8 +2483,7 @@
     const localList = readLocalAddressList();
     writeLocalAddressList([savedAddress, ...localList.filter(item => addrPickerId(item, '') !== addrPickerId(savedAddress, ''))]);
 
-    customerAddress = { ...savedAddress, summary: addressSummary(savedAddress) };
-    localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+    persistCustomerAddress({ ...savedAddress, summary: addressSummary(savedAddress) });
     if (opDraft) opDraft.address = savedAddress;
     if (!opDraft && operationContext) { operationContext.address = savedAddress; persistOperationContext(); }
     _addrJustSavedAddress = savedAddress;
@@ -2357,10 +2500,9 @@
     _renderAddrPickerList();
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
 
-    const auth = window.PedeAquiCustomerAuth;
-    if (auth?.isLoggedIn() && typeof auth.createCustomerAddress === 'function') {
+    if (window.PedeAquiCustomerService?.isLoggedIn?.() && typeof window.PedeAquiAddressService?.createCustomerAddress === 'function') {
       const { id, address_id, summary, ...addressPayload } = savedAddress;
-      auth.createCustomerAddress(addressPayload)
+      window.PedeAquiAddressService.createCustomerAddress(addressPayload)
         .then(res => {
           const created = res?.data || res;
           if (!created || typeof created !== 'object') return;
@@ -2378,8 +2520,7 @@
             addrPickerId(item, '') === addrPickerId(savedAddress, '') ? updated : item
           ));
           if (sameAddress(customerAddress, savedAddress)) {
-            customerAddress = { ...updated, summary: addressSummary(updated) };
-            localStorage.setItem(STORAGE_ADDRESS, JSON.stringify(customerAddress));
+            persistCustomerAddress({ ...updated, summary: addressSummary(updated) });
             if (opDraft) opDraft.address = updated;
           }
           _addrJustSavedAddress = updated;
@@ -2489,14 +2630,11 @@
   }
 
   function mockLogin(mode) {
-    customer = { name: mode === 'signup' ? 'Cliente PedeAqui' : 'Cliente identificado', phone: '' };
-    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    persistCustomer({ name: mode === 'signup' ? 'Cliente PedeAqui' : 'Cliente identificado', phone: '' });
+    appState.profileLoaded = false;
+    customerStore()?.set?.({ profileLoaded: false });
     closeModalId('loginModal');
-    if (_loginOrigin === 'orders') {
-      mobNavOrders();
-    } else {
-      renderProfileView();
-    }
+    renderProfileView();
   }
 
   /* ---------- Register screen ("Cadastre-se") ---------- */
@@ -2817,7 +2955,7 @@
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
     try {
       const reg = buildRegisterPayload();
-      const res = await window.PedeAquiCustomerAuth.registerCustomer(reg);
+      const res = await window.PedeAquiCustomerService.registerCustomer(reg);
       // Do not auto-login. Move the user to e-mail verification.
       const email = res?.email || reg.email;
       restore();
@@ -3407,24 +3545,24 @@
   // existing in-page `customer` shape so the current UI keeps working.
   function applyLoggedSession(accessToken, apiCustomer) {
     window.PedeAquiCustomerAuth.saveSession({ access_token: accessToken, customer: apiCustomer });
-    customer = {
+    persistCustomer({
       id: apiCustomer?.id || null,
       name: apiCustomer?.name || '',
       phone: apiCustomer?.phone || '',
       email: apiCustomer?.email || ''
-    };
-    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    });
   }
 
   function applyLocalCustomer(apiCustomer) {
-    customer = {
+    persistCustomer({
       id: apiCustomer?.id || null,
       name: apiCustomer?.name || '',
       phone: apiCustomer?.phone || '',
       email: apiCustomer?.email || ''
-    };
-    localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+    });
     window.PedeAquiCustomerAuth?.setStoredCustomer?.(apiCustomer);
+    appState.profileLoaded = false;
+    customerStore()?.set?.({ profileLoaded: false });
   }
 
   function tokenFromAuthResponse(res) {
@@ -3455,8 +3593,7 @@
       return;
     }
     closeModalId('loginModal');
-    if (_loginOrigin === 'orders') mobNavOrders();
-    else renderProfileView();
+    renderProfileView();
   }
 
   let _loginSubmitting = false;
@@ -3487,7 +3624,7 @@
     const rawLogin = ($('loginEmail').value || '').trim();
     const login = isEmailValue(rawLogin) ? rawLogin : onlyDigits(rawLogin);
     try {
-      const res = await window.PedeAquiCustomerAuth.loginCustomer({ login, password: $('loginPassword').value || '' });
+      const res = await window.PedeAquiCustomerService.loginCustomer({ login, password: $('loginPassword').value || '' });
       // Unverified customer → route them to e-mail verification (not re-register).
       if (res?.requires_email_verification) {
         openVerifyScreen({ email: res.email || (isEmailValue(rawLogin) ? rawLogin : ''), source: 'login' });
@@ -3514,13 +3651,12 @@
     if (!auth?.isLoggedIn()) return;
     const stored = auth.getStoredCustomer();
     if (stored && !customer) {
-      customer = { id: stored.id || null, name: stored.name || '', phone: stored.phone || '', email: stored.email || '' };
+      persistCustomer({ id: stored.id || null, name: stored.name || '', phone: stored.phone || '', email: stored.email || '' });
     }
     try {
-      const me = await auth.getCurrentCustomer();
+      const me = await window.PedeAquiCustomerService.getCurrentCustomer();
       if (me) {
-        customer = { id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' };
-        localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
+        persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' });
         auth.setStoredCustomer(me);
         renderHomeLoginPrompt();
         renderProfileView();
@@ -3528,7 +3664,11 @@
     } catch (error) {
       if (error?.status === 401) {
         auth.logout();
-        customer = null;
+        persistCustomer(null);
+        appState.customerOrders = null;
+        appState.customerAddresses = null;
+        appState.profileLoaded = false;
+        customerStore()?.clear?.();
         localStorage.removeItem(STORAGE_CUSTOMER);
         renderHomeLoginPrompt();
         renderProfileView();
@@ -3591,14 +3731,15 @@
     if (!coupon) return;
     selectedCoupon = coupon;
     document.body.classList.add('coupon-nav-keep');
-    lockBodyScroll(currentScrollY(), 'soft');
+    couponDetailScrollY = currentScrollY();
+    lockBodyScroll(couponDetailScrollY, 'soft');
     const image = coupon.image_url || coupon.image_path || '';
     const label = couponLabel(coupon);
     const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
     const art = $('couponDetailArt');
     if (art) {
       art.innerHTML = image
-        ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || label)}">`
+        ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
         : `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
     }
     if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
@@ -3611,7 +3752,7 @@
 
   function closeCouponDetail(event) {
     if (event && event.currentTarget && event.target !== event.currentTarget) return;
-    const restoreY = _savedScrollY;
+    const restoreY = couponDetailScrollY;
     const overlay = $('couponDetailOverlay');
     overlay?.classList.remove('active');
     document.body.classList.remove('coupon-nav-keep');
@@ -3643,7 +3784,7 @@
     scrollToMenu();
   }
 
-  const MOB_VIEWS = ['mobViewOrders', 'mobViewProfile'];
+  const MOB_VIEWS = ['mobViewClub', 'mobViewProfile'];
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
     unlockBodyScrollIfClear();
@@ -3656,7 +3797,7 @@
 
   let _pendingMenuNav = false;
 
-  function mobNavMenu() {
+  async function mobNavMenu() {
     if (!operationConfirmed) {
       _pendingMenuNav = true;
       openOperationScreen(true); // immediate = sem animação de entrada
@@ -3665,89 +3806,110 @@
     closeMobViews();
     showMenuTab();
     window.scrollTo(0, 0);
+    await ensureMenuLoaded();
   }
 
   function mobNavHome() {
     scrollToHome();
   }
 
-  function mobNavOrders() {
-    if (!isLogged()) {
-      openLoginScreen('orders');
-      return;
-    }
+  async function mobNavClub() {
     closeMobViews();
+    uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     setMobNavActive('mobNavOrders');
-    renderOrdersView();
-    $('mobViewOrders')?.classList.add('active');
+    $('mobViewClub')?.classList.add('active');
     lockBodyScroll();
+    await clubController.renderClubView();
   }
 
-  function mobNavProfile() {
+  function renderProfileLoading() {
+    const box = $('profileIdentity');
+    if (box) {
+      box.innerHTML = '<div class="profile-skeleton">Carregando conta...</div>';
+    }
+  }
+
+  async function loadProfileData() {
+    if (!isLogged()) return null;
+    if (appState.profileLoaded) return {
+      customer: appState.customer,
+      addresses: appState.customerAddresses,
+      orders: appState.customerOrders
+    };
+    if (profileLoadPromise) return profileLoadPromise;
+    setLoading('profile', true);
+    profileLoadPromise = (async () => {
+      const auth = window.PedeAquiCustomerAuth;
+      if (!window.PedeAquiCustomerService?.isLoggedIn?.()) return null;
+      try {
+        const [meResult, addressesResult, ordersResult] = await Promise.allSettled([
+          window.PedeAquiCustomerService.getCurrentCustomer(),
+          window.PedeAquiAddressService.getCustomerAddresses(),
+          window.PedeAquiOrderService.getCustomerOrders()
+        ]);
+        const rejected = [meResult, addressesResult, ordersResult].find(result => result.status === 'rejected');
+        if (rejected?.reason?.status === 401) {
+          await syncCustomerSession();
+          return null;
+        }
+        if (rejected) logAppError('Falha parcial ao carregar perfil', rejected.reason);
+        if (meResult.status === 'fulfilled' && meResult.value) {
+          const me = meResult.value;
+          persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' });
+          auth?.setStoredCustomer?.(me);
+        }
+        if (addressesResult.status === 'fulfilled') {
+          const value = addressesResult.value;
+          appState.customerAddresses = Array.isArray(value) ? value : (value?.addresses || value?.items || value?.data || []);
+          customerStore()?.setAddresses?.(appState.customerAddresses);
+        }
+        if (ordersResult.status === 'fulfilled') {
+          const value = ordersResult.value;
+          appState.customerOrders = Array.isArray(value) ? value : (value?.orders || value?.items || value?.data || []);
+          customerStore()?.setOrders?.(appState.customerOrders);
+        }
+        appState.profileLoaded = true;
+        customerStore()?.set?.({ profileLoaded: true });
+        return {
+          customer: appState.customer,
+          addresses: appState.customerAddresses,
+          orders: appState.customerOrders
+        };
+      } catch (error) {
+        appState.profileLoaded = false;
+        if (error?.status === 401) await syncCustomerSession();
+        else logAppError('Falha ao carregar perfil', error);
+        return null;
+      } finally {
+        setLoading('profile', false);
+        profileLoadPromise = null;
+      }
+    })();
+    return profileLoadPromise;
+  }
+
+  async function mobNavProfile() {
     closeMobViews();
+    uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
     setMobNavActive('mobNavProfile');
     if (!isLogged()) {
       openLoginScreen();
       return;
     }
-    renderProfileView();
     $('mobViewProfile')?.classList.add('active');
     lockBodyScroll();
-  }
-
-  // Tolerant order-card renderer that copes with both the local order shape and
-  // the backend /customers/me/orders shape (field names differ).
-  function orderCardHtml(order) {
-    const number = order.order_number ?? order.number ?? order.id ?? '';
-    const items = order.items || [];
-    const status = order.status_label || order.status || 'Enviado';
-    const type = order.type || order.order_type || '';
-    const payment = order.payment || order.payment_method || '';
-    const total = order.total ?? order.total_amount ?? order.total_price ?? 0;
-    const itemHtml = items.map(i => {
-      const qty = i.qty ?? i.quantity ?? 1;
-      const name = i.name || i.product_name || i.product?.name || 'Item';
-      const price = i.price ?? i.unit_price ?? i.total ?? 0;
-      return `<div class="order-line"><span>${esc(qty)}x ${esc(name)}</span><strong>${fmt(price * qty)}</strong></div>`;
-    }).join('');
-    return `
-      <article class="order-card">
-        <div class="order-card-head"><strong>Pedido #${esc(number)}</strong><span>${esc(status)}</span></div>
-        ${itemHtml}
-        <div class="order-total"><span>${esc(type)}${type && payment ? ' • ' : ''}${esc(payment)}</span><strong>${fmt(total)}</strong></div>
-      </article>`;
-  }
-
-  function paintOrders(body, orders) {
-    if (!orders.length) {
-      body.innerHTML = `<div class="mob-view-empty"><div class="mob-view-empty-title">Nenhum pedido encontrado</div><div class="mob-view-empty-sub">Pedidos finalizados aparecerão aqui.</div></div>`;
-      return;
-    }
-    body.innerHTML = orders.map(orderCardHtml).join('');
-  }
-
-  function renderOrdersView() {
-    const body = $('mobOrdersBody');
-    if (!body) return;
-    // Render local orders immediately for a responsive view.
-    paintOrders(body, window.PedeAquiOrderState?.listOrders() || []);
-    // When logged in, replace with the customer's server-side order history.
-    const auth = window.PedeAquiCustomerAuth;
-    if (!auth?.isLoggedIn()) return;
-    auth.getCustomerOrders()
-      .then(res => {
-        const orders = Array.isArray(res) ? res : (res?.orders || res?.items || res?.data || []);
-        if (Array.isArray(orders)) paintOrders(body, orders);
-      })
-      .catch(error => { if (error?.status === 401) syncCustomerSession(); });
+    renderProfileLoading();
+    await loadProfileData();
+    renderProfileView();
   }
 
   function renderProfileView() {
     const box = $('profileIdentity');
+    const profileCustomer = currentCustomerSnapshot();
     if (box) {
       box.innerHTML = isLogged()
-        ? `<div class="prof-hero-label">${customer.name}</div><div class="prof-hero-sub">Cliente identificado</div>`
-        : `<div class="prof-hero-label">${restaurant.name || 'Restaurante'}</div><div class="prof-hero-sub">Entre para acessar promoções e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
+        ? `<div class="prof-hero-label">${profileCustomer?.name || ''}</div><div class="prof-hero-sub">Cliente identificado</div>`
+        : `<div class="prof-hero-label">${restaurant.name || fallback().restaurantName || ''}</div><div class="prof-hero-sub">Entre para acessar promoções e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
     if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
@@ -3755,8 +3917,11 @@
 
   function logout() {
     if (!confirm('Deseja sair da sua conta?')) return;
-    customer = null;
-    localStorage.removeItem(STORAGE_CUSTOMER);
+    persistCustomer(null);
+    appState.customerOrders = null;
+    appState.customerAddresses = null;
+    appState.profileLoaded = false;
+    customerStore()?.clear?.();
     window.PedeAquiCustomerAuth?.logout();
     closeProfSub();
     renderProfileView();
@@ -3767,7 +3932,7 @@
   function renderProfPedidos() {
     const body = $('profSubPedidosBody');
     if (!body) return;
-    const orders = window.PedeAquiOrderState?.listOrders() || [];
+    const orders = appState.customerOrders || window.PedeAquiOrderState?.listOrders() || [];
     if (!orders.length) {
       body.innerHTML = `<div class="prof-empty"><div class="prof-empty-title">Nenhum pedido encontrado</div><div class="prof-empty-text">Seus pedidos aparecerão aqui após serem finalizados.</div></div>`;
       return;
@@ -3800,6 +3965,7 @@
   function mobFocusSearch() {
     closeMobViews();
     showMenuTab();
+    ensureMenuLoaded();
     $('searchCat')?.classList.add('search-open');
     $('searchInput')?.focus();
     const el = $('menu-area');
@@ -3819,9 +3985,13 @@
   }
 
   async function initRestaurantApp() {
-    if ($('menuContainer')) $('menuContainer').innerHTML = '<div class="empty-search">Carregando cardapio...</div>';
+    if (bootPromise) return bootPromise;
+    setAppBooting(true);
+    renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
+    bootPromise = (async () => {
     payload = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
     restaurant = payload.restaurant || {};
+    appState.restaurant = restaurant;
     settings = payload.settings || {};
     branches = Array.isArray(payload.branches) ? payload.branches : [];
     categories = Array.isArray(payload.categories) ? payload.categories : [];
@@ -3829,6 +3999,16 @@
     banners = Array.isArray(payload.banners) ? payload.banners : [];
     highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
     coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
+    restaurantStore()?.set?.({
+      restaurant,
+      settings,
+      branches,
+      categories,
+      products,
+      banners,
+      highlightBanners,
+      coupons
+    });
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     initOperationContext();
     applyTheme();
@@ -3837,18 +4017,38 @@
     renderBanners();
     renderCoupons();
     renderHighlights();
-    renderMenu();
     renderProfileView();
     initSearch();
-    initScrollSpy();
     setCartTab(operationContext?.order_type || 'delivery');
     updateCartUI();
     showHomeTab();
+    appState.homeLoaded = true;
+    appState.menuLoaded = false;
+    restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
     initPageRubberBand();
     initMenuHeaderHide();
+    setAppBooting(false);
     // Best-effort: refresh the logged customer against the backend (clears
     // the session on 401). Runs after first paint so it never blocks the page.
     syncCustomerSession();
+    })();
+    return bootPromise;
+  }
+
+  function retryRestaurantBoot() {
+    bootPromise = null;
+    document.body.classList.remove('app-error');
+    return initRestaurantApp().catch(showAppError);
+  }
+
+  function retryMenuLoad() {
+    appState.menuLoaded = false;
+    menuLoadPromise = null;
+    return ensureMenuLoaded();
+  }
+
+  function retryClubLoad() {
+    return clubController.retryClubLoad();
   }
 
   Object.assign(window, {
@@ -3872,15 +4072,10 @@
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
-    mobNavHome, mobNavMenu, mobNavOrders, mobNavProfile, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner
+    mobNavHome, mobNavMenu, mobNavClub, mobNavProfile, goToMenuTab: scrollToMenu,
+    openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 
-  initRestaurantApp().catch(error => {
-    console.error('Falha ao carregar restaurante', error);
-    coupons = [];
-    highlightBanners = [];
-    updateHomePromoVisibility();
-    if ($('menuContainer')) $('menuContainer').innerHTML = '<div class="empty-search">Não foi possível carregar o cardápio.</div>';
-  });
+  initRestaurantApp().catch(showAppError);
 })();

@@ -18,5 +18,10 @@
     return window.PedeAquiApiClient.get(window.PedeAquiApiRoutes.getOrder(restaurantSlug, orderNumber, phone || ''));
   }
 
-  window.PedeAquiOrderService = { createOrder, getOrder };
+  async function getCustomerOrders() {
+    const result = await window.PedeAquiCustomerAuth?.getCustomerOrders?.();
+    return Array.isArray(result) ? result : (result?.orders || result?.items || result?.data || []);
+  }
+
+  window.PedeAquiOrderService = { createOrder, getOrder, getCustomerOrders };
 })();

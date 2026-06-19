@@ -14,7 +14,7 @@
       return lastPart;
     }
 
-    return window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG || 'junior-da-picanha';
+    return window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG || window.PedeAquiFallbackConfig?.defaultRestaurantSlug || '';
   }
 
   window.getRestaurantSlugFromUrl = getRestaurantSlugFromUrl;

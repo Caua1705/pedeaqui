@@ -3942,6 +3942,10 @@
     closeMobViews();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     setMobNavActive('mobNavOrders');
+    if (!isLogged()) {
+      openLoginScreen();
+      return;
+    }
     $('mobViewClub')?.classList.add('active');
     lockBodyScroll();
     await clubController.renderClubView();

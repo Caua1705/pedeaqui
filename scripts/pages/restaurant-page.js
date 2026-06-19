@@ -3690,13 +3690,22 @@
 
   let _policyReturn = 'login';
   let _policyTouchStartY = 0;
+  let _authSuppressedNav = null;
+  let _authSuppressedNavParent = null;
+  let _authSuppressedNavNext = null;
 
   const AUTH_SCREEN_SELECTOR = '.lgn-screen.active,.reg-screen.active,.vfy-screen.active,#forgotPasswordScreen.active,#recoverCodeScreen.active,#resetPasswordScreen.active';
   function setBottomNavSuppressedForAuth(active) {
-    const nav = $('mobBottomNav');
+    const nav = _authSuppressedNav || $('mobBottomNav');
     document.body.classList.toggle('auth-screen-open', active);
     if (!nav) return;
     if (active) {
+      if (nav.isConnected) {
+        _authSuppressedNav = nav;
+        _authSuppressedNavParent = nav.parentNode;
+        _authSuppressedNavNext = nav.nextSibling;
+        _authSuppressedNavParent?.removeChild(nav);
+      }
       nav.style.setProperty('display', 'none', 'important');
       nav.style.setProperty('visibility', 'hidden', 'important');
       nav.style.setProperty('opacity', '0', 'important');
@@ -3705,12 +3714,21 @@
       nav.style.setProperty('z-index', '-1', 'important');
       return;
     }
+    if (_authSuppressedNav && !_authSuppressedNav.isConnected && _authSuppressedNavParent) {
+      _authSuppressedNavParent.insertBefore(
+        _authSuppressedNav,
+        _authSuppressedNavNext?.parentNode === _authSuppressedNavParent ? _authSuppressedNavNext : null
+      );
+    }
     nav.style.removeProperty('display');
     nav.style.removeProperty('visibility');
     nav.style.removeProperty('opacity');
     nav.style.removeProperty('pointer-events');
     nav.style.removeProperty('transform');
     nav.style.removeProperty('z-index');
+    _authSuppressedNav = null;
+    _authSuppressedNavParent = null;
+    _authSuppressedNavNext = null;
   }
   function syncAuthScreenOpenClass() {
     setBottomNavSuppressedForAuth(Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));

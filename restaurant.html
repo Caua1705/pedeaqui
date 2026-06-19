@@ -19,12 +19,16 @@
 <link rel="stylesheet" href="styles/login.css?v=32">
 <link rel="stylesheet" href="styles/verify.css?v=32">
 <link rel="stylesheet" href="styles/button-theme.css?v=1">
-<link rel="stylesheet" href="styles/rapi.css?v=11">
+<link rel="stylesheet" href="styles/rapi.css?v=12">
 </head>
 <body class="app-booting">
 <div class="app-loader" id="appLoader" role="status" aria-live="polite">
   <div class="app-loader-box">
-    <div class="app-loader-spinner" aria-hidden="true"></div>
+    <div class="app-loader-dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
     <div class="app-loader-title" id="appLoaderTitle">Carregando restaurante</div>
     <div class="app-loader-message" id="appLoaderMessage">Preparando sua experiência.</div>
     <button class="app-loader-retry" id="appLoaderRetry" type="button" onclick="retryRestaurantBoot()">Tentar novamente</button>
@@ -209,7 +213,7 @@
   </button>
   <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Rapi" type="button" onclick="mobNavRapi()">
     <div class="menu-mobile-center">
-      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png" alt="Rapi" onerror="this.style.display='none'">
+      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png?v=2" alt="Rapi" onerror="this.style.display='none'">
     </div>
   </button>
   <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavClub()">

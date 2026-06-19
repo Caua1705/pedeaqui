@@ -271,6 +271,67 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
   background: rgba(0, 0, 0, 0.42) !important;
 }
 
+.app-loader-box {
+  width: 60px !important;
+  min-width: 60px !important;
+  height: 13px !important;
+  min-height: 13px !important;
+  gap: 0 !important;
+  justify-content: center !important;
+}
+
+.app-loader-spinner,
+.app-loader-title,
+.app-loader-message {
+  display: none !important;
+}
+
+.app-loader-dots {
+  width: 60px !important;
+  height: 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.app-loader-dots span {
+  width: 13px !important;
+  height: 13px !important;
+  border-radius: 50% !important;
+  background: #F36F21 !important;
+  display: block !important;
+  animation: appLoaderDotPulse 0.9s ease-in-out infinite both !important;
+}
+
+.app-loader-dots span:nth-child(2) {
+  animation-delay: 0.15s !important;
+}
+
+.app-loader-dots span:nth-child(3) {
+  animation-delay: 0.3s !important;
+}
+
+body.app-error .app-loader-dots {
+  display: none !important;
+}
+
+body.app-error .app-loader-title,
+body.app-error .app-loader-message {
+  display: block !important;
+}
+
+@keyframes appLoaderDotPulse {
+  0%, 80%, 100% {
+    transform: scale(0.75);
+    opacity: 0.45;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .rapi-title-block h2 {
   font-size: 1.4rem;
   font-weight: 800;

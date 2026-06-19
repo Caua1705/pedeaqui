@@ -2764,32 +2764,37 @@
     openModalImmediately('loginModal');
   }
 
-  function maskRegPhone(el) {
-    const d = onlyDigits(el.value).slice(0, 11);
-    let out = '';
-    if (d.length) out = '(' + d.slice(0, 2);
-    if (d.length >= 2) out += ') ';
-    if (d.length >= 3) out += d.slice(2, 3);
-    if (d.length >= 4) out += ' ' + d.slice(3, 7);
-    if (d.length >= 8) out += '-' + d.slice(7, 11);
+  function applyRegMask(el, template, maxDigits) {
+    const digits = onlyDigits(el.value).slice(0, maxDigits);
+    if (!digits) {
+      el.value = '';
+      return;
+    }
+
+    let index = 0;
+    const out = template.replace(/_/g, () => digits[index++] || '_');
     el.value = out;
+
+    const slots = [];
+    for (let i = 0; i < template.length; i++) {
+      if (template[i] === '_') slots.push(i);
+    }
+    const cursor = digits.length < slots.length ? slots[digits.length] : out.length;
+    requestAnimationFrame(() => {
+      try { el.setSelectionRange(cursor, cursor); } catch (_) {}
+    });
+  }
+
+  function maskRegPhone(el) {
+    applyRegMask(el, '(__) _ ____-____', 11);
   }
 
   function maskRegCpf(el) {
-    const d = onlyDigits(el.value).slice(0, 11);
-    let out = d.slice(0, 3);
-    if (d.length >= 4) out += '.' + d.slice(3, 6);
-    if (d.length >= 7) out += '.' + d.slice(6, 9);
-    if (d.length >= 10) out += '-' + d.slice(9, 11);
-    el.value = out;
+    applyRegMask(el, '___.___.___-__', 11);
   }
 
   function maskRegBirth(el) {
-    const d = onlyDigits(el.value).slice(0, 8);
-    let out = d.slice(0, 2);
-    if (d.length >= 3) out += '/' + d.slice(2, 4);
-    if (d.length >= 5) out += '/' + d.slice(4, 8);
-    el.value = out;
+    applyRegMask(el, '__/__/____', 8);
   }
 
   const EYE_OPEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';

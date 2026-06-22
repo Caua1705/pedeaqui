@@ -6563,3 +6563,31 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #productModal .modal--product{left:50%!important;right:auto!important;margin:0 auto!important;transform:translateX(100%)!important;transition:transform .6s ease!important}
   #productModal.active .modal--product{transform:translateX(-50%)!important;transition:transform .53s ease!important}
 }
+/* Home only: lower the address/login header group slightly. */
+@media(max-width:767px){
+  body.home-tab .home-sticky-header{padding-top:8px!important}
+}
+/* Home only: undo wrapper drop; lower only location + login identity a little. */
+@media(max-width:767px){
+  body.home-tab .home-sticky-header{padding-top:0!important}
+  body.home-tab .home-sticky-header .delivery-widget,
+  body.home-tab .home-sticky-header .mob-identity{transform:translateY(5px)!important}
+}
+/* Home only: lower only the login/register prompt. */
+@media(max-width:767px){
+  body.home-tab .home-sticky-header .delivery-widget,
+  body.home-tab .home-sticky-header .mob-identity{transform:none!important}
+  body.home-tab #homeLoginPrompt{transform:translateY(6px)!important}
+}
+/* Home only: fine tune login/register prompt position. */
+@media(max-width:767px){
+  body.home-tab #homeLoginPrompt{transform:translateY(3px)!important}
+}
+/* Home only: keep login/register prompt aligned horizontally; preserve current height. */
+@media(max-width:767px){
+  body.home-tab #homeLoginPrompt{left:auto!important;margin-left:0!important;translate:none!important;transform:translate(0,3px)!important;text-align:left!important}
+}
+/* Home only: align login/register prompt with the restaurant title above it. */
+@media(max-width:767px){
+  body.home-tab #homeLoginPrompt{margin-left:4px!important;transform:translate(0,3px)!important;text-align:left!important}
+}

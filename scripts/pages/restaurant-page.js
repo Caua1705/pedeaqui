@@ -3910,15 +3910,20 @@
     document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
       el.classList.remove('active');
     });
+    $('loginModal')?.classList.remove('signin-open');
     closeProfSub();
     renderHomeLoginPrompt();
     renderProfileView();
     showHomeTab();
     window.scrollTo(0, 0);
+    setBottomNavSuppressedForAuth(false);
     unlockBodyScrollIfClear();
   }
 
   function finishLoginNavigation() {
+    $('loginScreen')?.classList.remove('active');
+    $('loginModal')?.classList.remove('signin-open');
+    setBottomNavSuppressedForAuth(false);
     renderHomeLoginPrompt();
     updateCartUI();
     if (_loginOrigin === 'coupon') {
@@ -3965,7 +3970,6 @@
       }
       if (res?.access_token) {
         applyLoggedSession(res.access_token, res.customer);
-        $('loginScreen')?.classList.remove('active');
         finishLoginNavigation();
       } else {
         showLgnSummary('Dados de login incorretos. Verifique suas informações.');
@@ -4273,7 +4277,6 @@
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     setMobNavActive('mobNavOrders');
     $('mobViewClub')?.classList.add('active');
-    lockBodyScroll();
     if (!appState.clubLoaded) renderTabLoader('mobClubBody', 'Carregando clube...');
     await clubController.renderClubView();
   }
@@ -4357,36 +4360,112 @@
     uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
     setMobNavActive('mobNavProfile');
     $('mobViewProfile')?.classList.add('active');
-    lockBodyScroll();
     if (!appState.profileLoaded) renderProfileLoading();
     await loadProfileData();
     renderProfileView();
   }
 
   function renderProfileView() {
-    const box = $('profileIdentity');
+    const hub = $('profHubWrap');
     const profileCustomer = currentCustomerSnapshot();
-    if (box) {
-      box.innerHTML = isLogged()
+    if (hub && isLogged()) {
+      hub.innerHTML = renderLoggedProfileHub(profileCustomer);
+    } else if (hub) {
+      hub.innerHTML = renderGuestProfileHub();
+    }
+    const identityBox = $('profileIdentity');
+    if (identityBox) {
+      identityBox.innerHTML = isLogged()
         ? `<div class="prof-hero-label">${profileCustomer?.name || ''}</div><div class="prof-hero-sub">Cliente identificado</div>`
-        : `<div class="prof-hero-label">${restaurant.name || fallback().restaurantName || ''}</div><div class="prof-hero-sub">Entre para acessar promoções e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
+        : `<div class="prof-hero-label">${restaurant.name || fallback().restaurantName || ''}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
     if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
   }
 
+  function renderGuestProfileHub() {
+    return `
+      <div class="prof-hero">
+        <div class="prof-hero-avatar">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M5 21c.7-4.4 3.2-6.6 7-6.6s6.3 2.2 7 6.6"/></svg>
+        </div>
+        <div id="profileIdentity"></div>
+      </div>
+      <div class="prof-options-group">
+        <button class="prof-option-row" onclick="openProfSub('info')"><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div><div><div class="prof-option-title">Informa&ccedil;&otilde;es do restaurante</div><div class="prof-option-desc">Endere&ccedil;os, hor&aacute;rios e contato</div></div></button>
+        <button class="prof-option-row" onclick="openLoginScreen()"><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></div><div><div class="prof-option-title">Entrar ou cadastrar</div><div class="prof-option-desc">Acesse promo&ccedil;&otilde;es e pedidos</div></div></button>
+      </div>
+    `;
+  }
+  function profileMenuIcon(name) {
+    const icons = {
+      user: '<circle cx="12" cy="7.5" r="3.2"/><path d="M5.5 20c.8-4.2 3-6.3 6.5-6.3s5.7 2.1 6.5 6.3"/>',
+      receipt: '<path d="M7 3h10v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2Z"/><path d="M9.5 8h5"/><path d="M9.5 12h5"/><path d="M9.5 16h3"/>',
+      pin: '<path d="M18 10c0 4.5-6 10-6 10s-6-5.5-6-10a6 6 0 1 1 12 0Z"/><circle cx="12" cy="10" r="2"/>',
+      doc: '<path d="M7 3h7l4 4v14H7Z"/><path d="M14 3v5h5"/><path d="M9.5 12h5"/><path d="M9.5 16h5"/>',
+      help: '<circle cx="12" cy="12" r="8"/><path d="M9.8 9.5a2.3 2.3 0 0 1 4.4 1c0 1.8-2.2 1.9-2.2 3.5"/><path d="M12 17h.01"/>',
+      exit: '<path d="M9 5H5v14h4"/><path d="M13 16l4-4-4-4"/><path d="M17 12H8"/>'
+    };
+    return `<svg class="prof-account-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.doc}</svg>`;
+  }
+
+  function renderLoggedProfileHub(profileCustomer) {
+    const displayName = firstName(profileCustomer?.name || customer?.name || '').toUpperCase() || 'CLIENTE';
+    const row = (icon, label, action, extra = '') => `
+      <button class="prof-account-row ${extra}" type="button" onclick="${action}">
+        <span class="prof-account-row-icon">${profileMenuIcon(icon)}</span>
+        <span class="prof-account-row-label">${label}</span>
+      </button>
+    `;
+    return `
+      <section class="prof-account-page" aria-label="Perfil">
+        <div class="prof-account-header">
+          <span class="prof-account-avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="3.2"/><path d="M5.8 20c.8-4.2 3-6.2 6.2-6.2s5.4 2 6.2 6.2"/>
+            </svg>
+          </span>
+          <h1>Ol&aacute;, ${esc(displayName)}!</h1>
+        </div>
+        <nav class="prof-account-list" aria-label="Op&ccedil;&otilde;es da conta">
+          ${row('user', 'Gerenciar perfil', "openProfSub('meusdados')")}
+          ${row('receipt', 'Meus pedidos', "openProfSub('pedidos')")}
+          ${row('pin', 'Meus endere&ccedil;os', 'openAddrPicker()')}
+          ${row('doc', 'Pol&iacute;tica de privacidade', "openPolicyScreen('privacy')")}
+          ${row('doc', 'Pol&iacute;tica de fidelidade', "openPolicyScreen('privacy')")}
+          ${row('help', 'Ajuda', "openProfSub('ajuda')")}
+          ${row('exit', 'Sair', 'logout()', 'prof-account-row--logout')}
+        </nav>
+      </section>
+    `;
+  }
   function logout() {
-    if (!confirm('Deseja sair da sua conta?')) return;
+    if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Carregando restaurante';
+    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando sua experiÃªncia.';
+    setAppBooting(true);
     persistCustomer(null);
     appState.customerOrders = null;
     appState.customerAddresses = null;
     appState.profileLoaded = false;
     customerStore()?.clear?.();
     window.PedeAquiCustomerAuth?.logout();
-    closeProfSub();
-    renderProfileView();
-    renderHomeLoginPrompt();
-    updateCartUI();
+    setTimeout(() => {
+      closeProfSub();
+      closeMobViews();
+      document.querySelectorAll('.overlay.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
+        el.classList.remove('active');
+      });
+      $('loginModal')?.classList.remove('signin-open');
+      renderHomeLoginPrompt();
+      renderProfileView();
+      updateCartUI();
+      showHomeTab();
+      setMobNavActive('mobNavHome');
+      window.scrollTo(0, 0);
+      setBottomNavSuppressedForAuth(false);
+      unlockBodyScrollIfClear();
+      setAppBooting(false);
+    }, 550);
   }
 
   function renderProfPedidos() {

@@ -521,6 +521,26 @@ a{text-decoration:none;color:inherit}
 .pm-name{font-size:1.15rem;font-weight:800;margin-bottom:6px;line-height:1.25;color:#1a1a1a}
 .pm-desc{font-size:.84rem;color:var(--fg2);line-height:1.5;margin-bottom:14px}
 .pm-price{font-size:1.05rem;font-weight:800;color:var(--brand);margin-bottom:18px}
+.pm-option-groups{display:grid;gap:0;margin-top:18px}
+.pm-option-group{border:0;background:#fff}
+.pm-option-head{min-height:68px;background:#f2f0ef;padding:14px 20px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.pm-option-title{font-size:1rem;line-height:1.25;font-weight:800;color:#666}
+.pm-option-meta{display:flex;align-items:center;gap:8px;font-size:.76rem;line-height:1;color:#aaa}
+.pm-option-meta span{display:inline-flex;align-items:center;min-height:19px;padding:0 9px;border-radius:999px;background:#fff;color:#a8a8a8;font-weight:700}
+.pm-option-meta span:last-child{color:var(--brand)}
+.pm-option-list{background:#fff;padding:2px 20px 0}
+.pm-option-row{width:100%;min-height:78px;padding:14px 0;border:0;border-bottom:1px solid #ececec;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;text-align:left;cursor:pointer;font-family:inherit}
+.pm-option-row:last-child{border-bottom:0}
+.pm-option-copy{min-width:0;display:flex;flex-direction:column;gap:6px}
+.pm-option-name{font-size:.9rem;line-height:1.25;font-weight:500;color:#454545}
+.pm-option-desc{font-size:.82rem;line-height:1.25;font-weight:400;color:#b0b0b0}
+.pm-option-price{font-size:.88rem;line-height:1.2;font-weight:500;color:#454545}
+.pm-option-radio{width:16px;height:16px;border:1.5px solid #cfcfcf;border-radius:50%;flex:0 0 auto;background:#fff}
+.pm-option-row.selected .pm-option-radio{border-color:#ff5f01;box-shadow:inset 0 0 0 4px #fff;background:#ff5f01}
+.pm-option-toggle{width:32px;height:32px;border:0;background:transparent;color:#ff5f01;font-size:24px;font-weight:400;line-height:30px;text-align:center;flex:0 0 auto}
+.cir-options{margin-top:5px;display:grid;gap:3px;color:#888;font-size:.74rem;line-height:1.3}
+.cir-option{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cir-option small{color:#999;font-size:.7rem;white-space:nowrap}
 .pm-label{display:block;font-size:.76rem;font-weight:700;margin-bottom:8px;color:#888;text-transform:uppercase;letter-spacing:.04em}
 .pm-obs{width:100%;background:#f7f7f7;border:1.5px solid #efefef;border-radius:12px;padding:12px 14px;color:#1a1a1a;font-size:.85rem;resize:none;min-height:76px;outline:none;transition:.2s;font-family:inherit}
 .pm-obs:focus{border-color:#cccccc;background:#fff}

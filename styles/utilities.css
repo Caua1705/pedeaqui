@@ -6360,3 +6360,206 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     transition:transform .53s ease!important;
   }
 }
+
+/* Product option groups from API: delivery-app style sheet. */
+@media(max-width:767px){
+  #productModal .modal-close{width:42px!important;height:42px!important;border-radius:8px!important}
+  #productModal .modal-body{scrollbar-gutter:stable!important;scrollbar-width:thin!important;scrollbar-color:#ff5f01 #eeeeee!important}
+  #productModal .modal-body::-webkit-scrollbar{width:5px!important;height:5px!important}
+  #productModal .modal-body::-webkit-scrollbar-track{background:#eeeeee!important}
+  #productModal .modal-body::-webkit-scrollbar-thumb{background:#ff5f01!important;border-radius:999px!important}
+  #productModal .pm-price{margin:0 0 22px!important}
+  #productModal .pm-option-groups{display:block!important;width:calc(100% + 60px)!important;margin:0 -30px!important}
+  #productModal .pm-option-group{margin:0!important;background:#fff!important}
+  #productModal .pm-option-head{width:100%!important;min-height:80px!important;height:80px!important;padding:15px 20px!important;background:#f1eeee!important;border:0!important}
+  #productModal .pm-option-title{font-size:16px!important;line-height:20px!important;font-weight:800!important;color:#666!important}
+  #productModal .pm-option-meta{gap:7px!important;font-size:11px!important;line-height:14px!important}
+  #productModal .pm-option-meta span{min-height:19px!important;padding:0 9px!important;background:#fff!important;color:#aaa!important;border-radius:999px!important}
+  #productModal .pm-option-meta span:last-child{color:#ff5f01!important}
+  #productModal .pm-option-list{padding:3px 20px 0!important;background:#fff!important}
+  #productModal .pm-option-row{min-height:78px!important;padding:14px 0!important;border-bottom:1px solid #ededed!important;background:#fff!important}
+  #productModal .pm-option-name{font-size:14px!important;line-height:18px!important;color:#454545!important}
+  #productModal .pm-option-desc{font-size:13px!important;line-height:16px!important;color:#b0b0b0!important}
+  #productModal .pm-option-price{font-size:14px!important;line-height:18px!important;color:#454545!important}
+  #productModal .pm-option-radio{width:16px!important;height:16px!important;border:1.5px solid #d1d1d1!important}
+  #productModal .pm-option-row.selected .pm-option-radio{border-color:#ff5f01!important;background:#ff5f01!important;box-shadow:inset 0 0 0 4px #fff!important}
+  #productModal .pm-option-toggle{width:32px!important;height:32px!important;color:#ff5f01!important;font-size:25px!important;line-height:30px!important}
+  #productModal #pmForm{width:calc(100% + 60px)!important;margin:0 -30px!important}
+  #productModal .pm-label{width:100%!important;min-height:60px!important;height:60px!important;margin:0!important;padding:0 20px!important;display:flex!important;align-items:center!important;background:#f1eeee!important;color:#666!important;font-size:16px!important;line-height:20px!important;font-weight:800!important;text-transform:none!important;letter-spacing:0!important}
+  #productModal .pm-obs{display:block!important;width:calc(100% - 40px)!important;min-height:116px!important;margin:20px 20px 0!important;border-radius:10px!important;border:1px solid #eee!important;background:#fafafa!important;font-size:13px!important;color:#444!important}
+  #productModal #pmAddBtn{color:#fff!important}
+  #productModal #pmAddBtn:disabled{background:#f7f3f0!important;color:#c8c0ba!important}
+}
+
+/* Product modal: remove left gray gutter and use a right-only orange scroll marker. */
+@media(max-width:767px){
+  #productModal .modal-body{scrollbar-gutter:auto!important;scrollbar-width:none!important}
+  #productModal .modal-body::-webkit-scrollbar{width:0!important;height:0!important;background:transparent!important}
+  #productModal .modal--product::after{content:'';position:absolute;right:0;top:var(--pm-scroll-track-top,250px);width:5px;height:var(--pm-scroll-track-height,calc(100% - 250px));background:#eeeeee;z-index:8;pointer-events:none;opacity:0}
+  #productModal .modal--product::before{content:'';position:absolute;right:0;top:var(--pm-scroll-thumb-top,250px);width:5px;height:var(--pm-scroll-thumb-height,72px);background:#ff5f01;border-radius:999px;z-index:9;pointer-events:none;opacity:0}
+  #productModal .modal--product.has-product-scroll::after,
+  #productModal .modal--product.has-product-scroll::before{opacity:1}
+}
+
+/* Product modal: no gray strip on the left side. */
+@media(max-width:767px){
+  #productModal,
+  #productModal.active{background:#ffffff!important}
+}
+/* Product modal: keep reference width but glue the product sheet to the left edge. */
+@media(max-width:767px){
+  #productModal .modal--product{left:0!important;right:auto!important;margin:0!important;transform:translateX(100%)!important}
+  #productModal.active .modal--product{transform:translateX(0)!important}
+}
+/* Product modal footer: requested 414x95 bottom white control area. */
+@media(max-width:767px){
+  #productModal .modal-footer{width:414px!important;max-width:414px!important;height:95px!important;min-height:95px!important;flex:0 0 95px!important;margin:0!important;padding:16px 20px max(14px,env(safe-area-inset-bottom))!important;background:#ffffff!important;border-top:1px solid #eeeeee!important}
+}
+/* Product modal add button: fixed requested size. */
+@media(max-width:767px){
+  #productModal #pmAddBtn{flex:0 0 234px!important;width:234px!important;max-width:234px!important;height:45px!important;min-height:45px!important;max-height:45px!important}
+}
+/* Product modal header copy: align closer to the left and use add-button orange for price. */
+@media(max-width:767px){
+  #productModal .modal-body{padding-left:20px!important;padding-right:20px!important}
+  #productModal .pm-name,
+  #productModal .pm-desc,
+  #productModal .pm-price{margin-left:0!important;text-align:left!important}
+  #productModal .pm-price,
+  #productModal .pm-price::before{color:#ff5f01!important}
+  #productModal .pm-option-groups,
+  #productModal #pmForm{width:calc(100% + 40px)!important;margin-left:-20px!important;margin-right:-20px!important}
+}
+/* Product modal close button: fixed requested 42x42 square. */
+@media(max-width:767px){
+  #productModal .modal-close{flex:0 0 42px!important;width:42px!important;min-width:42px!important;max-width:42px!important;height:42px!important;min-height:42px!important;max-height:42px!important}
+}
+/* Product modal price: keep only the numeric price orange. */
+@media(max-width:767px){
+  #productModal .pm-price::before{color:#454545!important}
+  #productModal .pm-price{color:#454545!important}
+  #productModal .pm-price .pm-price-value{color:#ff5f01!important}
+}
+/* Product modal: move title, description and price slightly lower under the image. */
+@media(max-width:767px){
+  #productModal .modal-body{padding-top:30px!important}
+}
+/* Product modal top typography refinement. */
+@media(max-width:767px){
+  #productModal .modal-body{padding-top:26px!important}
+  #productModal .pm-price::before{font-weight:600!important}
+}
+/* Product modal price prefix: slightly stronger weight. */
+@media(max-width:767px){
+  #productModal .pm-price::before{font-weight:700!important}
+}
+/* Product modal price line: move slightly lower. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:4px!important}
+}
+/* Product modal price line: lower a bit more. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:8px!important}
+}
+/* Product modal: lower price line more and match order CTA orange. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:12px!important}
+  #productModal .pm-price .pm-price-value{color:#F36F21!important}
+  #productModal #pmAddBtn{background:#F36F21!important;border-color:#F36F21!important}
+  #productModal #pmAddBtn:disabled{background:#f7f3f0!important;border-color:#f7f3f0!important;color:#c8c0ba!important}
+}
+/* Product modal price line: lower further. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:18px!important}
+}
+/* Product modal price line: final lower adjustment. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:24px!important}
+}
+/* Product modal price line: raise slightly from the last adjustment. */
+@media(max-width:767px){
+  #productModal .pm-price{margin-top:20px!important}
+}
+/* Product modal close button: smaller X and softer corners. */
+@media(max-width:767px){
+  #productModal .modal-close{border-radius:11px!important;font-size:16px!important;font-weight:500!important}
+}
+/* Product modal close button: 10px X glyph. */
+@media(max-width:767px){
+  #productModal .modal-close{font-size:10px!important;line-height:10px!important}
+}
+/* Product modal observation heading: lighter weight. */
+@media(max-width:767px){
+  #productModal .pm-label{font-weight:700!important}
+}
+/* Product modal observation heading: slightly lighter color. */
+@media(max-width:767px){
+  #productModal .pm-label{color:#777777!important}
+}
+/* Product modal observation heading: one step lighter weight. */
+@media(max-width:767px){
+  #productModal .pm-label{font-weight:600!important}
+}
+/* Product modal observation textarea: requested 368x120 and placeholder spacing. */
+@media(max-width:767px){
+  #productModal .pm-obs{width:368px!important;max-width:368px!important;height:120px!important;min-height:120px!important;max-height:120px!important;padding:20px!important}
+}
+/* Product modal observation textarea: requested 374x120. */
+@media(max-width:767px){
+  #productModal .pm-obs{width:374px!important;max-width:374px!important;height:120px!important;min-height:120px!important;max-height:120px!important}
+}
+/* Product modal observation box: darker gray background and live character counter. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap{position:relative;width:374px!important;height:120px!important;margin:20px 20px 0!important}
+  #productModal .pm-obs-wrap .pm-obs{width:374px!important;max-width:374px!important;height:120px!important;min-height:120px!important;max-height:120px!important;margin:0!important;padding:20px 20px 28px!important;background:#eeeeee!important;border-color:#e0e0e0!important}
+  #productModal .pm-obs-count{position:absolute;right:10px;bottom:8px;color:#b7b7b7;font-size:12px;line-height:14px;font-weight:500;pointer-events:none}
+}
+/* Product modal observation counter: place below the textarea, not inside it. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap{height:140px!important;margin:20px 20px 0!important}
+  #productModal .pm-obs-wrap .pm-obs{height:120px!important;min-height:120px!important;max-height:120px!important;padding:20px!important}
+  #productModal .pm-obs-count{right:0!important;bottom:0!important;transform:translateY(0);font-size:12px!important;line-height:14px!important}
+}
+/* Product modal observation area: match reference counter below box. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap{position:relative!important;width:374px!important;height:146px!important;margin:20px 20px 0!important}
+  #productModal .pm-obs-wrap .pm-obs{display:block!important;width:374px!important;height:120px!important;min-height:120px!important;max-height:120px!important;margin:0!important;padding:20px!important;background:#eeeeee!important;border:1px solid #e2e2e2!important;border-radius:10px!important;color:#444!important}
+  #productModal .pm-obs-wrap .pm-obs::placeholder{color:#c9c9c9!important}
+  #productModal .pm-obs-count{position:absolute!important;right:3px!important;top:127px!important;bottom:auto!important;color:#c7c7c7!important;font-size:12px!important;line-height:14px!important;font-weight:600!important}
+}
+/* Product modal observation placeholder: slightly stronger. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap .pm-obs::placeholder{font-weight:600!important}
+}
+/* Product modal observation placeholder: lighter and slightly larger. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap .pm-obs::placeholder{font-weight:500!important;font-size:14px!important}
+}
+/* Product modal observation box: lighter background and clearer counter. */
+@media(max-width:767px){
+  #productModal .pm-obs-wrap .pm-obs{background:#f1f1f1!important;border-color:#e5e5e5!important}
+  #productModal .pm-obs-count{font-size:13px!important;line-height:15px!important;color:#d0d0d0!important;font-weight:600!important}
+}
+/* Product modal observation counter: larger and thinner. */
+@media(max-width:767px){
+  #productModal .pm-obs-count{font-size:14px!important;line-height:16px!important;font-weight:400!important;color:#d0d0d0!important}
+}
+/* Product modal observation counter: slightly smaller and moved left. */
+@media(max-width:767px){
+  #productModal .pm-obs-count{font-size:13.5px!important;line-height:16px!important;right:10px!important}
+}
+/* Product modal observation counter: move slightly back to the right. */
+@media(max-width:767px){
+  #productModal .pm-obs-count{right:6px!important}
+}
+/* Product modal footer controls: move right and remove top divider. */
+@media(max-width:767px){
+  #productModal .modal-footer{border-top:0!important;padding-left:22px!important;gap:20px!important}
+}
+/* Product modal bugfix: restore original overlay and side-slide behavior. */
+@media(max-width:767px){
+  #productModal{background:rgba(0,0,0,0)!important;opacity:1!important;visibility:hidden!important;pointer-events:none!important;transition:background .28s ease,visibility 0s linear .6s!important}
+  #productModal.active{background:rgba(0,0,0,.42)!important;visibility:visible!important;pointer-events:auto!important;transition:background .28s ease,visibility 0s linear 0s!important}
+  #productModal .modal--product{left:50%!important;right:auto!important;margin:0 auto!important;transform:translateX(100%)!important;transition:transform .6s ease!important}
+  #productModal.active .modal--product{transform:translateX(-50%)!important;transition:transform .53s ease!important}
+}

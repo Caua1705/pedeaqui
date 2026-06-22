@@ -16,6 +16,8 @@
   let cart = [];
   let currentProd = null;
   let pmQty = 1;
+  let pmSelectedOptions = {};
+  let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
   let paymentMethod = 'Pix';
   let selectedCoupon = null;
@@ -77,6 +79,10 @@
   const customerStore = () => window.PedeAquiCustomerStore;
   const cartStore = () => window.PedeAquiCartStore;
   const uiStore = () => window.PedeAquiUiStore;
+  const productOptionGroups = (product) => Array.isArray(product?.option_groups) ? product.option_groups : [];
+  const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
+  const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
+  const cartItemUnitPrice = (item) => Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
 
   function persistCustomer(nextCustomer) {
     customer = nextCustomer || null;
@@ -1101,17 +1107,184 @@
     currentProd = products.find(p => String(p.id) === String(id));
     if (!currentProd) return;
     pmQty = 1;
+    pmSelectedOptions = {};
     $('pmName').textContent = currentProd.name;
     $('pmDesc').textContent = currentProd.description || '';
-    $('pmPrice').textContent = Number.isFinite(currentProd.price) ? fmt(currentProd.price) : fallback().productUnavailablePrice || '';
+    $('pmPrice').innerHTML = Number.isFinite(currentProd.price)
+      ? `<span class="pm-price-value">${esc(fmt(currentProd.price))}</span>`
+      : esc(fallback().productUnavailablePrice || '');
     $('pmObs').value = '';
+    bindProductObservationCounter();
+    updateProductObservationCount();
     const hero = $('pmHero');
     if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo', { lazy: false, priority: 'high' });
     $('pmWarning').style.display = Number.isFinite(currentProd.price) ? 'none' : 'block';
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
+    if ($('pmAddBtn')) $('pmAddBtn').onclick = addToCart;
+    renderProductOptions();
     updatePmUI();
     openModal('productModal');
+    initProductScrollIndicator();
+    const body = $('productModal')?.querySelector('.modal-body');
+    if (body) body.scrollTop = 0;
+    requestAnimationFrame(syncProductScrollIndicator);
+  }
+
+  function optionInstruction(group) {
+    const min = Number(group.min_select || 0);
+    const max = Math.max(1, Number(group.max_select || 1));
+    if (max === 1) return min > 0 ? 'Selecione 1' : 'Selecione at\u00e9 1';
+    if (min > 0 && min !== max) return `Selecione de ${min} a ${max}`;
+    if (min > 0 && min === max) return `Selecione ${max}`;
+    return `Selecione at\u00e9 ${max}`;
+  }
+
+  function renderProductOptions() {
+    const target = $('pmOptionGroups');
+    if (!target) return;
+    const groups = productOptionGroups(currentProd);
+    target.innerHTML = groups.map(group => renderProductOptionGroup(group)).join('');
+    requestAnimationFrame(syncProductScrollIndicator);
+  }
+
+  function initProductScrollIndicator() {
+    if (productScrollIndicatorReady) return;
+    const body = $('productModal')?.querySelector('.modal-body');
+    if (!body) return;
+    productScrollIndicatorReady = true;
+    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true });
+    window.addEventListener('resize', syncProductScrollIndicator);
+  }
+
+  function syncProductScrollIndicator() {
+    const modal = $('productModal')?.querySelector('.modal--product');
+    const body = $('productModal')?.querySelector('.modal-body');
+    if (!modal || !body) return;
+    const scrollable = body.scrollHeight - body.clientHeight;
+    modal.style.setProperty('--pm-scroll-track-top', `${Math.round(body.offsetTop)}px`);
+    modal.style.setProperty('--pm-scroll-track-height', `${Math.round(body.clientHeight)}px`);
+    modal.classList.toggle('has-product-scroll', scrollable > 1);
+    if (scrollable <= 1) return;
+    const thumbHeight = Math.max(48, Math.round((body.clientHeight / body.scrollHeight) * body.clientHeight));
+    const thumbTop = Math.round(body.offsetTop + (body.scrollTop / scrollable) * (body.clientHeight - thumbHeight));
+    modal.style.setProperty('--pm-scroll-thumb-height', `${thumbHeight}px`);
+    modal.style.setProperty('--pm-scroll-thumb-top', `${thumbTop}px`);
+  }
+
+  function renderProductOptionGroup(group) {
+    const groupId = String(group.id);
+    const selections = optionGroupSelections(group);
+    const max = Math.max(1, Number(group.max_select || 1));
+    const isSingle = max === 1;
+    const options = Array.isArray(group.options) ? group.options : [];
+    return `
+      <section class="pm-option-group" data-option-group-id="${esc(groupId)}">
+        <div class="pm-option-head">
+          <div class="pm-option-title">${esc(group.name)}</div>
+          <div class="pm-option-meta">
+            <span>${esc(optionInstruction(group))}</span>
+            <span>${selections.length} selec</span>
+          </div>
+        </div>
+        <div class="pm-option-list">
+          ${options.map(option => renderProductOption(group, option, isSingle, selections)).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderProductOption(group, option, isSingle, selections) {
+    const groupId = String(group.id);
+    const optionId = String(option.id);
+    const selected = selections.includes(optionId);
+    const price = optionAdditionalPrice(option);
+    return `
+      <button class="pm-option-row ${selected ? 'selected' : ''}" type="button" onclick="toggleProductOption('${esc(groupId)}','${esc(optionId)}')">
+        <span class="pm-option-copy">
+          <span class="pm-option-name">${esc(option.name)}</span>
+          ${option.description ? `<span class="pm-option-desc">${esc(option.description)}</span>` : ''}
+          ${price > 0 ? `<span class="pm-option-price">${fmt(price)}</span>` : ''}
+        </span>
+        <span class="${isSingle ? 'pm-option-radio' : 'pm-option-toggle'}" aria-hidden="true">${isSingle ? '' : (selected ? '-' : '+')}</span>
+      </button>
+    `;
+  }
+
+  function toggleProductOption(groupId, optionId) {
+    const group = productOptionGroups(currentProd).find(item => String(item.id) === String(groupId));
+    if (!group) return;
+    const max = Math.max(1, Number(group.max_select || 1));
+    const current = [...(pmSelectedOptions[groupId] || [])];
+    if (max === 1) {
+      pmSelectedOptions[groupId] = current[0] === optionId ? [] : [optionId];
+    } else if (current.includes(optionId)) {
+      pmSelectedOptions[groupId] = current.filter(id => id !== optionId);
+    } else if (current.length < max) {
+      pmSelectedOptions[groupId] = [...current, optionId];
+    }
+    renderProductOptions();
+    updatePmUI();
+  }
+
+  function productOptionsValid() {
+    return productOptionGroups(currentProd).every(group => {
+      const selected = optionGroupSelections(group).length;
+      const min = Number(group.min_select || 0);
+      const max = Math.max(1, Number(group.max_select || 1));
+      const required = group.is_required === true || min > 0;
+      if (!required && selected === 0) return true;
+      return selected >= min && selected <= max;
+    });
+  }
+
+  function selectedOptionsSnapshot() {
+    return productOptionGroups(currentProd).flatMap(group => {
+      const options = Array.isArray(group.options) ? group.options : [];
+      return optionGroupSelections(group).map(optionId => {
+        const option = options.find(item => String(item.id) === String(optionId));
+        if (!option) return null;
+        return {
+          group_name: group.name || '',
+          option_name: option.name || '',
+          additional_price: optionAdditionalPrice(option)
+        };
+      }).filter(Boolean);
+    });
+  }
+
+  function selectedOptionsPayload() {
+    return productOptionGroups(currentProd).flatMap(group => optionGroupSelections(group).map(optionId => ({
+      option_group_id: String(group.id),
+      option_id: String(optionId)
+    })));
+  }
+
+  function productVisualUnitPrice() {
+    if (!currentProd || !Number.isFinite(currentProd.price)) return 0;
+    return Number(currentProd.price) + selectedOptionsSnapshot().reduce((sum, option) => sum + Number(option.additional_price || 0), 0);
+  }
+
+  function restoreSelectedOptions(item) {
+    pmSelectedOptions = {};
+    (item.selected_options || []).forEach(selection => {
+      const groupId = String(selection.option_group_id || '');
+      const optionId = String(selection.option_id || '');
+      if (!groupId || !optionId) return;
+      pmSelectedOptions[groupId] = [...(pmSelectedOptions[groupId] || []), optionId];
+    });
+    renderProductOptions();
+  }
+
+  function cartOptionsHtml(item) {
+    const snapshot = Array.isArray(item.selected_options_snapshot) ? item.selected_options_snapshot : [];
+    if (!snapshot.length) return '';
+    return `<div class="cir-options">${snapshot.map(option => `
+      <div class="cir-option">
+        <span>${esc(option.group_name)}: ${esc(option.option_name)}</span>
+        ${Number(option.additional_price || 0) > 0 ? `<small>+ ${fmt(option.additional_price)}</small>` : ''}
+      </div>
+    `).join('')}</div>`;
   }
 
   function changeQty(delta) {
@@ -1119,21 +1292,51 @@
     updatePmUI();
   }
 
+  function bindProductObservationCounter() {
+    const obs = $('pmObs');
+    if (!obs || obs.dataset.counterReady === 'true') return;
+    obs.dataset.counterReady = 'true';
+    obs.addEventListener('input', updateProductObservationCount);
+  }
+
+  function updateProductObservationCount() {
+    const obs = $('pmObs');
+    const count = $('pmObsCount');
+    if (!obs || !count) return;
+    if (obs.value.length > 128) obs.value = obs.value.slice(0, 128);
+    count.textContent = `${obs.value.length}/128`;
+  }
+
   function updatePmUI() {
     if ($('pmQty')) $('pmQty').textContent = pmQty;
-    if ($('pmAddBtn') && currentProd) $('pmAddBtn').textContent = `Adicionar • ${fmt(currentProd.price * pmQty)}`;
+    if ($('pmAddBtn') && currentProd) {
+      $('pmAddBtn').textContent = `Adicionar (${fmt(productVisualUnitPrice() * pmQty)})`;
+      $('pmAddBtn').disabled = !Number.isFinite(currentProd.price) || !productOptionsValid();
+    }
   }
 
   function addToCart() {
-    if (!currentProd || !Number.isFinite(currentProd.price)) return;
-    cart.push(window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
-      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: Date.now() });
+    if (!currentProd || !Number.isFinite(currentProd.price) || !productOptionsValid()) return;
+    const unitPrice = productVisualUnitPrice();
+    const selected_options = selectedOptionsPayload();
+    const selected_options_snapshot = selectedOptionsSnapshot();
+    const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
+      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: Date.now() };
+    cart.push({
+      ...cartItem,
+      price: Number(currentProd.price),
+      base_price: Number(currentProd.price),
+      unit_price: unitPrice,
+      visual_unit_price: unitPrice,
+      selected_options,
+      selected_options_snapshot
+    });
     closeModalId('productModal');
     updateCartUI();
   }
 
   function cartTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const subtotal = cart.reduce((sum, item) => sum + cartItemUnitPrice(item) * item.qty, 0);
     const svc = settings.service_fee_enabled === false ? 0 : serviceFee();
     const delivery = deliveryFee();
     return { subtotal, svc, delivery, total: subtotal + svc + delivery };
@@ -1238,6 +1441,7 @@
         <div class="cir-photo">${productImage(item, 'cir-photo-img')}</div>
         <div class="cir-info">
           <div class="cir-name"><span>${item.qty}x</span> ${item.name}</div>
+          ${cartOptionsHtml(item)}
           ${item.obs ? `<div class="cir-obs">Obs: ${item.obs}</div>` : ''}
           <div class="cir-actions">
             <button class="cir-edit-btn" onclick="editCartItem(${item.uid})" aria-label="Editar item">
@@ -1247,7 +1451,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
             </button>
           </div>
-          <div class="cir-price">${fmt(item.price * item.qty)}</div>
+          <div class="cir-price">${fmt(cartItemUnitPrice(item) * item.qty)}</div>
         </div>
       </div>
     `).join('');
@@ -1275,7 +1479,9 @@
     if (!item) return;
     openProduct(item.id);
     pmQty = item.qty;
+    restoreSelectedOptions(item);
     $('pmObs').value = item.obs || '';
+    updateProductObservationCount();
     $('pmAddBtn').onclick = function () {
       cart = cart.filter(i => i.uid !== uid);
       $('pmAddBtn').onclick = addToCart;
@@ -1390,8 +1596,8 @@
     $('revItemsList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
         <div class="cir-qty-badge">${item.qty}x</div>
-        <div class="cir-info"><div class="cir-name">${item.name}</div>${item.obs ? `<div class="cir-obs">${item.obs}</div>` : ''}</div>
-        <div class="cir-price">${fmt(item.price * item.qty)}</div>
+        <div class="cir-info"><div class="cir-name">${item.name}</div>${cartOptionsHtml(item)}${item.obs ? `<div class="cir-obs">${item.obs}</div>` : ''}</div>
+        <div class="cir-price">${fmt(cartItemUnitPrice(item) * item.qty)}</div>
       </div>
     `).join('');
     $('revSub').textContent = fmt(totals.subtotal);
@@ -1435,7 +1641,8 @@
       items: cart.map(item => ({
         product_id: item.id,
         quantity: item.qty,
-        observation: item.obs || ''
+        observation: item.obs || '',
+        selected_options: Array.isArray(item.selected_options) ? item.selected_options : []
       }))
     };
     submittedOrder = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
@@ -4313,7 +4520,7 @@
   }
 
   Object.assign(window, {
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
+    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
     removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

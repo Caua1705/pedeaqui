@@ -760,9 +760,14 @@
         Consulte a disponibilidade e o valor com o restaurante.
       </div>
 
+      <div id="pmOptionGroups" class="pm-option-groups"></div>
+
       <div id="pmForm">
         <label class="pm-label">Alguma observação?</label>
-        <textarea class="pm-obs" id="pmObs" placeholder="Ex: sem cebola, ponto da carne, sem farofa..."></textarea>
+        <div class="pm-obs-wrap">
+          <textarea class="pm-obs" id="pmObs" placeholder="Ex: Remover cebola" maxlength="128"></textarea>
+          <span class="pm-obs-count" id="pmObsCount">0/128</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer" id="pmFooter" style="display:flex;gap:12px">

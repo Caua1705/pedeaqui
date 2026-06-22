@@ -68,6 +68,30 @@
     const products = sourceProducts.map((product, index) => {
       const categoryId = String(product.category_id || product.category_slug || product.category || '');
       const category = categoryById.get(categoryId) || categoryBySlug.get(categoryId) || categoryBySlug.get(slugify(product.category));
+      const sourceOptionGroups = Array.isArray(product.option_groups)
+        ? product.option_groups
+        : (Array.isArray(product.optionGroups) ? product.optionGroups : []);
+      const optionGroups = sourceOptionGroups.length
+        ? sourceOptionGroups.map((group, groupIndex) => ({
+          ...group,
+          id: String(group.id || group.option_group_id || groupIndex),
+          name: group.name || group.title || '',
+          min_select: Number(group.min_select ?? group.minSelect ?? group.min ?? 0),
+          max_select: Number(group.max_select ?? group.maxSelect ?? group.max ?? 1),
+          is_required: group.is_required === true || group.isRequired === true || Number(group.min_select ?? group.minSelect ?? group.min ?? 0) > 0,
+          sort_order: Number(group.sort_order ?? groupIndex),
+          options: Array.isArray(group.options)
+            ? group.options.map((option, optionIndex) => ({
+              ...option,
+              id: String(option.id || option.option_id || optionIndex),
+              name: option.name || option.title || '',
+              description: option.description || option.desc || '',
+              additional_price: Number(option.additional_price ?? option.additionalPrice ?? option.price ?? 0),
+              sort_order: Number(option.sort_order ?? optionIndex)
+            })).sort((a, b) => a.sort_order - b.sort_order)
+            : []
+        })).sort((a, b) => a.sort_order - b.sort_order)
+        : [];
       return {
         id: String(product.id || product.slug || product.code || index),
         restaurant_id: product.restaurant_id || raw.restaurant?.id || '',
@@ -84,7 +108,8 @@
         category: product.category || category?.name || '',
         is_active: product.is_active !== false,
         is_available: product.is_available !== false,
-        sort_order: Number(product.sort_order || index)
+        sort_order: Number(product.sort_order || index),
+        option_groups: optionGroups
       };
     }).sort((a, b) => a.sort_order - b.sort_order);
 

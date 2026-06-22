@@ -2008,6 +2008,7 @@
 
   let _addrPickerSelected = null;
   let _addrPickerItems = [];
+  let _addrPickerOrigin = 'operation';
   let _addrJustSavedAddress = null;
   let _addrPickerDeleteId = null;
   const ADDR_PICKER_DOTS_VERTICAL = '<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>';
@@ -2056,8 +2057,9 @@
     return merged;
   }
 
-  function openAddrPicker() {
-    $('addrPickerModal')?.classList.add('no-motion');
+  function openAddrPicker(origin) {
+    _addrPickerOrigin = origin || ($('mobViewProfile')?.classList.contains('active') && !$('operationModal')?.classList.contains('active') ? 'profile' : 'operation');
+    $('addrPickerModal')?.classList.toggle('no-motion', _addrPickerOrigin !== 'profile');
     _addrPickerSelected = null;
     _addrPickerItems = [];
     _addrPickerDeleteId = null;
@@ -2234,15 +2236,39 @@
   }
 
   function confirmAddrPicker() {
-    if (!_addrPickerSelected || !opDraft) return;
+    if (!_addrPickerSelected) return;
     const addr = _addrPickerItems.find(a => String(a.id || a.address_id || '__current__') === _addrPickerSelected);
     if (!addr) return;
     _addrJustSavedAddress = null;
+    if (_addrPickerOrigin === 'profile') {
+      if (!operationContext) {
+        const branch = defaultBranchFor('delivery');
+        operationContext = { order_type: 'delivery', ...branchSnapshot(branch), address: null };
+      }
+      operationContext.order_type = 'delivery';
+      operationContext.address = addr;
+      if (!operationContext.branch_id) Object.assign(operationContext, branchSnapshot(defaultBranchFor('delivery')));
+      operationConfirmed = true;
+      persistCustomerAddress({ ...addr, summary: addressSummary(addr) });
+      persistOperationContext();
+      applyOperationToLegacy();
+      renderWidget();
+      setCartTab('delivery');
+      updateCartUI();
+      closeModalId('addrPickerModal');
+      $('mobViewProfile')?.classList.add('active');
+      setMobNavActive('mobNavProfile');
+      renderProfileView();
+      _addrPickerOrigin = 'operation';
+      return;
+    }
+    if (!opDraft) return;
     opDraft.address = addr;
     persistCustomerAddress({ ...addr, summary: addressSummary(addr) });
     persistOperationContext();
     renderOperationScreen();
     closeModalImmediately('addrPickerModal');
+    _addrPickerOrigin = 'operation';
   }
 
   // ============================================================
@@ -4108,13 +4134,17 @@
     if (!screen || !body) return;
     if (!body.innerHTML.trim()) body.innerHTML = html;
     // Remember which screen to return to when the policy screen closes.
-    _policyReturn = $('registerScreen')?.classList.contains('active') ? 'register' : 'login';
+    const fromRegister = $('registerScreen')?.classList.contains('active');
+    const fromProfile = $('mobViewProfile')?.classList.contains('active');
+    const fromLogin = $('loginModal')?.classList.contains('active') || $('loginScreen')?.classList.contains('active');
+    _policyReturn = fromRegister ? 'register' : (fromProfile ? 'profile' : (fromLogin ? 'login' : 'app'));
     if (_policyReturn === 'login') {
       $('loginModal')?.classList.add('active');
       document.querySelector('#loginModal .modal--login')?.classList.add('policy-hidden');
     }
     document.querySelectorAll('.policy-screen').forEach(el => el.classList.remove('active'));
     document.body.classList.add('policy-open');
+    document.body.classList.toggle('policy-from-profile', _policyReturn === 'profile');
     screen.classList.add('active');
     attachPolicyScrollGuard();
     lockBodyScroll();
@@ -4126,9 +4156,15 @@
     $('privacyPolicyScreen')?.classList.remove('active');
     detachPolicyScrollGuard();
     document.body.classList.remove('policy-open');
+    document.body.classList.remove('policy-from-profile');
     document.querySelector('#loginModal .modal--login')?.classList.remove('policy-hidden');
     // The register screen stays active underneath, so only restore the login modal.
-    if (_policyReturn !== 'register') $('loginModal')?.classList.add('active');
+    if (_policyReturn === 'login') $('loginModal')?.classList.add('active');
+    if (_policyReturn === 'profile') {
+      $('mobViewProfile')?.classList.add('active');
+      setMobNavActive('mobNavProfile');
+      setBottomNavSuppressedForAuth(false);
+    }
     unlockBodyScrollIfClear();
   }
 
@@ -4430,9 +4466,8 @@
         <nav class="prof-account-list" aria-label="Op&ccedil;&otilde;es da conta">
           ${row('user', 'Gerenciar perfil', "openProfSub('meusdados')")}
           ${row('receipt', 'Meus pedidos', "openProfSub('pedidos')")}
-          ${row('pin', 'Meus endere&ccedil;os', 'openAddrPicker()')}
+          ${row('pin', 'Meus endere&ccedil;os', "openAddrPicker('profile')")}
           ${row('doc', 'Pol&iacute;tica de privacidade', "openPolicyScreen('privacy')")}
-          ${row('doc', 'Pol&iacute;tica de fidelidade', "openPolicyScreen('privacy')")}
           ${row('help', 'Ajuda', "openProfSub('ajuda')")}
           ${row('exit', 'Sair', 'logout()', 'prof-account-row--logout')}
         </nav>

@@ -7068,3 +7068,247 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media (max-width:767px){
   .club-add-coupon-btn{display:none!important}
 }
+/* Profile logged-in refinement: lighter rows, more left aligned, higher content. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-page{padding-top:20px!important}
+  #mobViewProfile .prof-account-header{margin-top:-2px!important;margin-bottom:12px!important;transform:translateY(-4px)!important}
+  #mobViewProfile .prof-account-header h1{transform:translateY(-2px)!important;color:#263241!important;font-weight:780!important}
+  #mobViewProfile .prof-account-list{transform:translateY(-6px)!important}
+  #mobViewProfile .prof-account-row{gap:12px!important;color:#777f89!important}
+  #mobViewProfile .prof-account-row-icon{margin-left:0!important;color:#b7b7b7!important}
+  #mobViewProfile .prof-account-icon-svg{stroke:#b7b7b7!important}
+  #mobViewProfile .prof-account-row-label{color:#747c86!important;font-weight:600!important}
+}
+/* Privacy policy from Profile: do not wake the login sheet or break bottom nav state. */
+@media (max-width:767px){
+  body.policy-from-profile #loginModal:not(.active){display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+  body.policy-from-profile .policy-screen.active{
+    position:fixed!important;
+    inset:0!important;
+    left:50%!important;
+    right:auto!important;
+    width:100%!important;
+    max-width:430px!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0 auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    background:#fff!important;
+    transform:translateX(-50%)!important;
+    z-index:280!important;
+    overflow:hidden!important;
+  }
+  body.policy-from-profile .policy-header{position:relative!important;top:auto!important;flex:0 0 82px!important}
+  body.policy-from-profile .policy-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;padding-bottom:44px!important;background:#fff!important}
+  body.policy-from-profile:has(.policy-screen.active) .mob-bottom-nav{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+  body:has(#mobViewProfile.active):not(:has(.policy-screen.active)) .mob-bottom-nav{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    z-index:130!important;
+  }
+}
+/* Profile logged-in icon/header sizing refinement. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-avatar{width:30px!important;height:30px!important;min-width:30px!important;transform:translateY(-3px)!important}
+  #mobViewProfile .prof-account-avatar svg{width:21px!important;height:21px!important}
+  #mobViewProfile .prof-account-header h1{font-weight:700!important;transform:translateY(-4px)!important}
+  #mobViewProfile .prof-account-row-icon{width:22px!important;min-width:22px!important;height:22px!important}
+  #mobViewProfile .prof-account-icon-svg{width:19px!important;height:19px!important;stroke-width:1.55!important}
+}
+/* Profile logged-in alignment refinement. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-header h1{margin-left:3px!important}
+  #mobViewProfile .prof-account-row{gap:10px!important}
+  #mobViewProfile .prof-account-row-icon{margin-left:-3px!important}
+  #mobViewProfile .prof-account-row-label{transform:translateX(-2px)!important}
+}
+/* Profile logged-in row label/divider final tune. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-row-label{transform:translateX(1px)!important}
+  #mobViewProfile .prof-account-row{border-bottom-color:#e3e3e3!important}
+}
+/* Profile logged-in row icons: slightly larger. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-row-icon{width:24px!important;min-width:24px!important;height:24px!important}
+  #mobViewProfile .prof-account-icon-svg{width:20.5px!important;height:20.5px!important}
+}
+/* Profile logged-in row labels: tiny left nudge. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-row-label{transform:translateX(0)!important}
+}
+/* Club location widget bugfix: prevent inherited delivery-widget overlap. */
+@media (max-width:767px){
+  .club-location-widget.delivery-widget{
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:5px!important;
+    height:73px!important;
+    min-height:73px!important;
+    max-height:73px!important;
+    padding:10px 14px 8px!important;
+    position:relative!important;
+  }
+  .club-location-widget .delivery-widget-tabs{
+    position:relative!important;
+    flex:0 0 24px!important;
+    height:24px!important;
+    min-height:24px!important;
+    max-height:24px!important;
+    display:flex!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+  .club-location-widget .delivery-widget-tab{
+    position:relative!important;
+    flex:0 1 auto!important;
+    display:block!important;
+    height:24px!important;
+    line-height:24px!important;
+    margin:0!important;
+  }
+  .club-location-widget .address-strip.address-card{
+    position:relative!important;
+    flex:0 0 20px!important;
+    width:100%!important;
+    height:20px!important;
+    min-height:20px!important;
+    max-height:20px!important;
+    display:flex!important;
+    align-items:center!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    inset:auto!important;
+    overflow:hidden!important;
+  }
+  .club-location-widget .address-card-icon,
+  .club-location-widget .address-card-chevron{
+    position:static!important;
+    transform:none!important;
+  }
+  .club-location-widget .address-card-copy{
+    height:18px!important;
+    min-height:18px!important;
+    display:block!important;
+    overflow:hidden!important;
+  }
+  .club-location-widget .address-card-copy strong{
+    height:18px!important;
+    line-height:18px!important;
+  }
+  .club-location-widget .address-card-copy small{display:none!important}
+}
+/* Club final fix: stable bottom nav and clean location address line. */
+@media (max-width:767px){
+  body:has(#mobViewClub.active) .mob-bottom-nav{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    width:min(100vw,414px)!important;
+    max-width:414px!important;
+    height:calc(85px + var(--safe-bottom))!important;
+    padding:0 0 var(--safe-bottom)!important;
+    gap:0 36px!important;
+    transform:translateX(-50%)!important;
+    translate:none!important;
+  }
+  body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-item,
+  body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-item.active,
+  body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-item:not(.active){
+    position:static!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    height:43px!important;
+    margin:0!important;
+    padding:0!important;
+    gap:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{transform:translateX(20px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{transform:translateX(14px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{transform:translateX(-20px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{transform:none!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav .nav-icon,
+  body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-icon,
+  body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
+    transform:none!important;
+    translate:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    font-weight:400!important;
+  }
+  .club-location-widget.delivery-widget{
+    display:grid!important;
+    grid-template-rows:24px 18px!important;
+    row-gap:5px!important;
+    height:73px!important;
+    min-height:73px!important;
+    padding:10px 14px 8px!important;
+    overflow:hidden!important;
+  }
+  .club-location-widget .delivery-widget-tabs{
+    grid-row:1!important;
+    height:24px!important;
+    min-height:24px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    overflow:hidden!important;
+  }
+  .club-location-widget .delivery-widget-divider,
+  .club-location-widget .address-strip,
+  .club-location-widget .address-card{display:none!important}
+  .club-location-address{
+    grid-row:2!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+    width:100%!important;
+    height:18px!important;
+    min-height:18px!important;
+    overflow:hidden!important;
+    color:#7a828c!important;
+  }
+  .club-location-address-icon{
+    flex:0 0 15px!important;
+    width:15px!important;
+    height:15px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    color:#fb6b1b!important;
+  }
+  .club-location-address-icon svg{width:15px!important;height:15px!important;stroke:#fb6b1b!important}
+  .club-location-address-text{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    display:block!important;
+    color:#7a828c!important;
+    font-size:11px!important;
+    line-height:18px!important;
+    font-weight:500!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+@media (max-width:414px){
+  body:has(#mobViewClub.active) .mob-bottom-nav{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+  }
+}

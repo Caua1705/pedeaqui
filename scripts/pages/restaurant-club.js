@@ -113,8 +113,6 @@
       const brand = sourceWidget?.querySelector('#dwTabBrand')?.textContent?.trim() || 'RESTAURANTE';
       const branch = sourceWidget?.querySelector('#dwTabBranch')?.textContent?.trim() || 'LJ. SUL';
       const title = sourceWidget?.querySelector('#homeAddressTitle, .address-card-copy strong')?.textContent?.trim() || 'Use seu endereco para melhores resultados';
-      const sub = sourceWidget?.querySelector('#homeAddressSub, .address-card-copy small')?.textContent?.trim() || '';
-      const hasAddress = sourceWidget?.querySelector('.address-strip')?.classList.contains('has-address') ? 'has-address' : '';
 
       return `
         <div class="club-location-wrap">
@@ -126,16 +124,14 @@
               <svg class="delivery-widget-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
             </div>
             <div class="delivery-widget-divider"></div>
-            <span class="address-card address-strip ${hasAddress}">
-              <span class="address-card-icon">
+            <div class="club-location-address">
+              <span class="club-location-address-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </span>
-              <span class="address-card-copy">
-                <strong>${esc(title)}</strong>
-                <small>${esc(sub)}</small>
+              <span class="club-location-address-text">
+                ${esc(title)}
               </span>
-              <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
-            </span>
+            </div>
           </div>
         </div>`;
     }

@@ -1146,7 +1146,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 190px !important;
+  margin-top: 180px !important;
   margin-bottom: 24px;
   transition: width 0.35s ease, height 0.35s ease, margin-bottom 0.35s ease;
 }

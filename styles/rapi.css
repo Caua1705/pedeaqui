@@ -1386,7 +1386,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 /* Ensure the location wrap has no extra padding */
 .rapi-location-wrap {
   transform: none !important;
-  padding: 0 !important;
+  padding: 10px 0 0 0 !important;
   background: #fff !important;
 }
 

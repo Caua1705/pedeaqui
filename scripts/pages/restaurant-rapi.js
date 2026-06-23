@@ -1,5 +1,5 @@
 /**
- * Rapi — Assistente inteligente de pedido — PREMIUM UI v2
+ * Rapi — Assistente inteligente de pedido — PREMIUM UI v3
  * Módulo isolado. Não altera lógica existente.
  * Acessa produtos/cupons via variáveis globais já expostas.
  */
@@ -16,28 +16,11 @@
     'club do whisky', 'alcool', 'alcoólico', 'alcoólica'
   ];
 
-  const QUICK_ACTIONS_PRIMARY = [
-    { id: 'budget',   icon: 'wallet', label: 'Gasto pouco',        intent: 'budget'  },
-    { id: 'for2',     icon: 'users',  label: 'Para 2 pessoas',     intent: 'for2'    },
-    { id: 'hungry',   icon: 'plate',  label: 'Muita fome',         intent: 'hungry'  },
-    { id: 'coupon',   icon: 'ticket', label: 'Usar cupom',          intent: 'coupon'  },
-  ];
-
-  const QUICK_ACTIONS_MORE = [
-    { id: 'quick',    icon: 'bolt',  label: 'Pedido rápido',       intent: 'quick'   },
-    { id: 'value',    icon: 'star',  label: 'Melhor custo-benefício', intent: 'value' },
-    { id: 'surprise', icon: 'spark', label: 'Me surpreenda',       intent: 'surprise'},
-    { id: 'popular',  icon: 'flame', label: 'Mais pedidos',        intent: 'popular' },
-    { id: 'dessert',  icon: 'cake',  label: 'Sobremesa',           intent: 'dessert' },
-    { id: 'drink',    icon: 'cup',   label: 'Bebida',              intent: 'drink'   },
-  ];
-
   const MAX_INITIAL_RESULTS = 3;
 
   /* ── State ── */
   let _rapiLoaded = false;
   let _activeChipId = null;
-  let _moreActionsOpen = false;
   let _allResults = [];
 
   /* ── Helpers ── */
@@ -173,32 +156,6 @@
   }
 
   /* ── Render helpers ── */
-  function rapiIcon(name) {
-    const icons = {
-      wallet: '<path d="M4 7.5h15a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-10A2.5 2.5 0 0 1 4.5 4H18"/><path d="M16 13h.01"/>',
-      users: '<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-      plate: '<circle cx="12" cy="12" r="8"/><path d="M8 3v8"/><path d="M6 3v4a2 2 0 0 0 4 0V3"/><path d="M17 3v18"/>',
-      ticket: '<path d="M3 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
-      bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
-      star: '<path d="m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9L12 3Z"/>',
-      spark: '<path d="M12 3l1.5 5 5 1.5-5 1.5-1.5 5-1.5-5-5-1.5 5-1.5L12 3Z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/>',
-      flame: '<path d="M12 22c4 0 7-2.7 7-6.6 0-2.4-1.2-4.4-3.2-6.1-.5 2-1.7 3.2-3.1 3.7.4-3.4-1.4-6.3-4.1-8C8.2 8.2 5 10.5 5 15.4 5 19.3 8 22 12 22Z"/>',
-      cake: '<path d="M3 20h18"/><path d="M4 20v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/><path d="M8 11V7"/><path d="M12 11V7"/><path d="M16 11V7"/>',
-      cup: '<path d="M4 3h14l-1 14a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4L4 3Z"/><path d="M18 8h1a3 3 0 0 1 0 6h-1"/>'
-    };
-    return `<svg class="rapi-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.spark}</svg>`;
-  }
-
-  function renderChipButton(a, isActive) {
-    return `<button class="rapi-chip${isActive ? ' rapi-chip--active' : ''}"
-      id="rapiChip_${a.id}"
-      onclick="rapiHandleChip('${a.id}','${esc(a.label)}','${a.intent}')"
-      type="button">
-      <span class="rapi-chip-icon">${rapiIcon(a.icon)}</span>
-      ${esc(a.label)}
-    </button>`;
-  }
-
   function renderProductImg(product) {
     const src = product.image_url || product.image_path || '';
     if (!src) return `<div class="rapi-result-image-placeholder">
@@ -232,7 +189,7 @@
       </article>`;
   }
 
-  /* ── Build the full view HTML ── */
+  /* ── Build the location widget (clone from home tab) ── */
   function buildRapiLocationWidget() {
     const sourceWidget = document.querySelector('.home-sticky-header .delivery-widget') || document.querySelector('.delivery-widget');
     const sourceStrip = sourceWidget?.querySelector('.address-strip');
@@ -274,9 +231,8 @@
       </div>`;
   }
 
+  /* ── Build the full view HTML ── */
   function buildRapiView() {
-    const primaryChips = QUICK_ACTIONS_PRIMARY.map(a => renderChipButton(a, _activeChipId === a.id)).join('');
-    const moreChips = QUICK_ACTIONS_MORE.map(a => renderChipButton(a, _activeChipId === a.id)).join('');
     const locationWidget = buildRapiLocationWidget();
 
     return `
@@ -284,89 +240,61 @@
 
       ${locationWidget}
 
-      <div class="rapi-top-separator" aria-hidden="true"></div>
+      <!-- Dark AI body -->
+      <div class="rapi-ai-body" id="rapiAiBody">
 
-      <!-- Hero premium -->
-      <div class="rapi-hero">
-        <div class="rapi-avatar-wrap">
-          <img class="rapi-avatar-img" src="${RAPI_AVATAR_SRC}" alt="Rapi mascote" onerror="this.style.display='none'">
-        </div>
-        <div class="rapi-title-block">
-          <h2>Assistente de Pedido</h2>
-          <p>O Rapi te ajuda a escolher no cardápio.</p>
-          <div class="rapi-status-pill">
-            <span class="rapi-status-dot"></span>
-            online agora
+        <!-- Glowing orb -->
+        <div class="rapi-orb-wrap">
+          <div class="rapi-orb-glow"></div>
+          <div class="rapi-orb">
+            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" alt="Rapi" onerror="this.style.display='none'">
           </div>
         </div>
-      </div>
 
-      <!-- Prompt card -->
-      <div class="rapi-prompt-card">
-        <div class="rapi-prompt-headline">Me diga o que você quer comer</div>
-        <div class="rapi-prompt-sub">Eu encontro boas opções no cardápio para você.</div>
-        <div class="rapi-input-card" id="rapiInputCard">
-          <input class="rapi-input" id="rapiInput" type="text"
-            placeholder="Ex: quero algo com carne até R$ 50"
-            onkeydown="rapiInputKeydown(event)">
-          <button class="rapi-send-btn" onclick="rapiSendMessage()" type="button" aria-label="Enviar">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
+        <!-- Question -->
+        <div class="rapi-ai-question">Como posso ajudar hoje?</div>
 
-      <!-- Content -->
-      <div class="rapi-content">
-
-        <div class="rapi-section-label">Atalhos rápidos</div>
-
-        <div class="rapi-quick-grid" id="rapiChipsPrimary">
-          ${primaryChips}
-        </div>
-
-        <div class="rapi-more-actions" id="rapiChipsMore">
-          ${moreChips}
-        </div>
-
-        <button class="rapi-expand-btn" id="rapiExpandBtn" onclick="rapiToggleMore()" type="button">
-          <span>Ver mais ideias</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
-        </button>
-
-        <div class="rapi-starter" id="rapiStarter">
-          <div class="rapi-starter-title">Experimente perguntar:</div>
-          <button type="button" onclick="rapiUseSuggestion('Quero algo até R$ 50')">"Quero algo até R$ 50"</button>
-          <button type="button" onclick="rapiUseSuggestion('Pedido para 2 pessoas')">"Pedido para 2 pessoas"</button>
-          <button type="button" onclick="rapiUseSuggestion('Quero aproveitar cupom')">"Quero aproveitar cupom"</button>
-        </div>
-
-        <!-- Thinking -->
-        <div class="rapi-thinking" id="rapiThinking">
-          <img class="rapi-thinking-avatar" src="${RAPI_AVATAR_SRC}" alt="Rapi" onerror="this.style.display='none'">
-          <div class="rapi-thinking-content">
-            <div class="rapi-thinking-label">Rapi está pensando...</div>
-            <div class="rapi-thinking-dots">
+        <!-- Results area (shown after search) -->
+        <div class="rapi-ai-results-wrap" id="rapiAiResultsWrap" style="display:none">
+          <div class="rapi-thinking rapi-thinking--dark" id="rapiThinking">
+            <div class="rapi-thinking-dots rapi-thinking-dots--dark">
               <span></span><span></span><span></span>
             </div>
           </div>
+          <div class="rapi-results-label rapi-results-label--dark" id="rapiResultsLabel">Sugestões para você</div>
+          <div class="rapi-results" id="rapiResults"></div>
+          <button class="rapi-show-more-btn rapi-show-more-btn--dark" id="rapiShowMoreBtn" onclick="rapiShowMoreResults()" type="button">
+            Ver mais sugestões
+          </button>
         </div>
 
-        <!-- Results label -->
-        <div class="rapi-results-label" id="rapiResultsLabel">Sugestões para você</div>
+      </div>
 
-        <!-- Results -->
-        <div class="rapi-results" id="rapiResults"></div>
+      <!-- Bottom dock: chips + input -->
+      <div class="rapi-bottom-dock">
 
-        <!-- Show more results -->
-        <button class="rapi-show-more-btn" id="rapiShowMoreBtn" onclick="rapiShowMoreResults()" type="button">
-          Ver mais sugestões
-        </button>
+        <!-- Suggestion chips (horizontal scroll) -->
+        <div class="rapi-suggest-rail" id="rapiStarter">
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me recomenda um prato?')">Me recomenda um prato?</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Quais sobremesas você tem?')">Quais sobremesas você tem?</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Tem algum prato vegetariano?')">Tem algum prato vegetariano?</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Não estou com muita fome, o que devo pedir?')">Não estou com muita fome, o que devo pedir?</button>
+        </div>
+
+        <!-- Input bar -->
+        <div class="rapi-ai-input-bar">
+          <input class="rapi-ai-input" id="rapiInput" type="text"
+            placeholder="Pergunte qualquer coisa..."
+            onkeydown="rapiInputKeydown(event)">
+          <button class="rapi-ai-send" onclick="rapiSendMessage()" type="button" aria-label="Enviar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+            </svg>
+          </button>
+        </div>
 
       </div>
+
     </div>
 
     <div class="rapi-toast" id="rapiToast"></div>
@@ -389,13 +317,15 @@
     const labelEl = document.getElementById('rapiResultsLabel');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     const starterEl = document.getElementById('rapiStarter');
+    const aiBody = document.getElementById('rapiAiBody');
+    const resultsWrap = document.getElementById('rapiAiResultsWrap');
     if (!resultsEl) return;
 
     _activeChipId = chipId || null;
 
-    // Update chip active states
-    document.querySelectorAll('.rapi-chip').forEach(btn => btn.classList.remove('rapi-chip--active'));
-    if (chipId) document.getElementById('rapiChip_' + chipId)?.classList.add('rapi-chip--active');
+    // Show the results panel, start searching state
+    if (resultsWrap) resultsWrap.style.display = 'block';
+    if (aiBody) aiBody.classList.add('rapi-ai-body--searching');
 
     // Show thinking
     thinkingEl?.classList.add('visible');
@@ -416,10 +346,10 @@
     if (!_allResults.length) {
       if (labelEl) labelEl.classList.remove('visible');
       resultsEl.innerHTML = `
-        <div class="rapi-empty">
+        <div class="rapi-empty rapi-empty--dark">
           <span class="rapi-empty-emoji">🤔</span>
           <div class="rapi-empty-title">Não encontrei a opção ideal</div>
-          <div class="rapi-empty-sub">Mas posso tentar de outro jeito. Toca em um atalho ou escreve o que quer.</div>
+          <div class="rapi-empty-sub">Mas posso tentar de outro jeito. Escreva o que quer comer.</div>
         </div>`;
       return;
     }
@@ -444,12 +374,6 @@
 
   /* ── Public API ── */
 
-  window.rapiHandleChip = function (id, label, intent) {
-    const inputEl = document.getElementById('rapiInput');
-    if (inputEl) inputEl.value = label;
-    rapiSearch(label, intent, id);
-  };
-
   window.rapiSendMessage = function () {
     const inputEl = document.getElementById('rapiInput');
     const msg = (inputEl?.value || '').trim();
@@ -466,17 +390,6 @@
 
   window.rapiInputKeydown = function (event) {
     if (event.key === 'Enter') { event.preventDefault(); window.rapiSendMessage(); }
-  };
-
-  window.rapiToggleMore = function () {
-    _moreActionsOpen = !_moreActionsOpen;
-    const moreEl = document.getElementById('rapiChipsMore');
-    const btn = document.getElementById('rapiExpandBtn');
-    if (moreEl) moreEl.classList.toggle('open', _moreActionsOpen);
-    if (btn) {
-      btn.classList.toggle('expanded', _moreActionsOpen);
-      btn.querySelector('span').textContent = _moreActionsOpen ? 'Ver menos' : 'Ver mais ideias';
-    }
   };
 
   window.rapiShowMoreResults = function () {
@@ -517,17 +430,19 @@
       view.innerHTML = buildRapiView();
       _rapiLoaded = true;
     } else {
-      const locationWidget = view.querySelector('.rapi-location-wrap');
-      if (locationWidget) locationWidget.outerHTML = buildRapiLocationWidget();
+      // Refresh location widget only
+      const locationWrap = view.querySelector('.rapi-location-wrap');
+      if (locationWrap) {
+        const newWidget = buildRapiLocationWidget();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = newWidget;
+        locationWrap.replaceWith(tmp.firstElementChild);
+      }
     }
-    // Refresh chip active states
-    document.querySelectorAll('.rapi-chip').forEach(btn => btn.classList.remove('rapi-chip--active'));
-    if (_activeChipId) document.getElementById('rapiChip_' + _activeChipId)?.classList.add('rapi-chip--active');
   };
 
   window.rapiReset = function () {
     _activeChipId = null;
-    _moreActionsOpen = false;
     _allResults = [];
     const inputEl = document.getElementById('rapiInput');
     if (inputEl) inputEl.value = '';
@@ -541,15 +456,11 @@
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
     const starterEl = document.getElementById('rapiStarter');
     if (starterEl) starterEl.classList.remove('hidden');
-    const moreEl = document.getElementById('rapiChipsMore');
-    if (moreEl) moreEl.classList.remove('open');
-    const expandBtn = document.getElementById('rapiExpandBtn');
-    if (expandBtn) {
-      expandBtn.classList.remove('expanded');
-      const span = expandBtn.querySelector('span');
-      if (span) span.textContent = 'Ver mais ideias';
-    }
-    document.querySelectorAll('.rapi-chip').forEach(btn => btn.classList.remove('rapi-chip--active'));
+    // Reset new AI layout elements
+    const resultsWrap = document.getElementById('rapiAiResultsWrap');
+    if (resultsWrap) resultsWrap.style.display = 'none';
+    const aiBody = document.getElementById('rapiAiBody');
+    if (aiBody) aiBody.classList.remove('rapi-ai-body--searching');
   };
 
 })();

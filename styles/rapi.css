@@ -1079,3 +1079,351 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 
 /* Fine tune only the location widget position. */
 .rapi-location-wrap{transform:translateY(-2px)!important}
+
+/* ============================================================
+   RAPI — AI LAYOUT (WHITE BG)
+   Below the location widget: white background,
+   orb + question pushed lower, suggestion chips + input bar.
+   ============================================================ */
+
+/* Page layout: flex column, fill remaining space */
+.rapi-page {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100% !important;
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* AI body: logo + pergunta no topo, dock fica embaixo */
+.rapi-ai-body {
+  flex: 1 !important;
+  background: #ffffff !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 40px 20px 0 !important;
+  min-height: 240px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* When results are showing: compress the orb area */
+.rapi-ai-body--searching {
+  justify-content: flex-start !important;
+  padding-top: 20px !important;
+  padding-bottom: 16px !important;
+  min-height: unset !important;
+}
+
+.rapi-ai-body--searching .rapi-orb-wrap {
+  width: 60px !important;
+  height: 60px !important;
+  margin-bottom: 10px !important;
+}
+
+.rapi-ai-body--searching .rapi-orb {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+.rapi-ai-body--searching .rapi-orb-img {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+.rapi-ai-body--searching .rapi-ai-question {
+  font-size: 1rem !important;
+  margin-bottom: 16px !important;
+  margin-top: 10px !important;
+  color: #1a1a1a !important;
+}
+
+/* ── Orb ── */
+.rapi-orb-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 190px !important;
+  margin-bottom: 24px;
+  transition: width 0.35s ease, height 0.35s ease, margin-bottom 0.35s ease;
+}
+
+/* Glow removido */
+.rapi-orb-glow {
+  display: none !important;
+}
+
+@keyframes rapi-orb-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.1); }
+}
+
+.rapi-orb {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  background: radial-gradient(circle at 38% 38%, #f5c06a 0%, #e08530 45%, #b05a18 100%);
+  box-shadow: none;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+.rapi-orb-img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+  transition: width 0.35s ease, height 0.35s ease;
+}
+
+/* ── AI question text ── */
+.rapi-ai-question {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: font-size 0.3s ease;
+  position: absolute !important;
+  bottom: 300px !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* ── Results wrap (inside dark body) ── */
+.rapi-ai-results-wrap {
+  width: 100%;
+  margin-top: 16px;
+  overflow-y: auto;
+  max-height: 55vh;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Dark thinking state */
+.rapi-thinking--dark {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 8px;
+  gap: 0;
+}
+
+.rapi-thinking--dark.visible {
+  display: flex;
+  animation: rapi-fade-up 0.2s ease both;
+}
+
+.rapi-thinking-dots--dark {
+  display: flex;
+  gap: 5px;
+}
+
+.rapi-thinking-dots--dark span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #C8520A;
+  animation: rapi-dot-bounce 0.9s ease-in-out infinite both;
+}
+
+.rapi-thinking-dots--dark span:nth-child(2) { animation-delay: 0.15s; }
+.rapi-thinking-dots--dark span:nth-child(3) { animation-delay: 0.30s; }
+
+/* Dark results label */
+.rapi-results-label--dark {
+  font-size: 0.70rem;
+  font-weight: 700;
+  color: #aaaaaa;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 8px 0 6px;
+  text-align: center;
+}
+
+/* Show more button (light variant) */
+.rapi-show-more-btn--dark {
+  background: #f4f4f4;
+  border: 1.5px solid #e8e8e8;
+  color: #C8520A;
+  width: 100%;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 6px;
+  transition: all 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rapi-show-more-btn--dark:active {
+  background: #eaeaea;
+}
+
+/* Empty state (light) */
+.rapi-empty--dark {
+  background: #f8f8f8;
+  color: #1a1a1a;
+}
+
+.rapi-empty--dark .rapi-empty-title { color: #1a1a1a; }
+.rapi-empty--dark .rapi-empty-sub { color: #888888; }
+
+/* ── Bottom dock ── */
+.rapi-bottom-dock {
+  background: #ffffff !important;
+  border-top: none !important;
+  padding: 0 16px env(safe-area-inset-bottom, 0px) !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Suggestion chip rail (horizontal scroll) ── */
+.rapi-suggest-rail {
+  display: flex !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 12px !important;
+}
+
+.rapi-suggest-rail::-webkit-scrollbar { display: none; }
+
+.rapi-suggest-chip {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 227.52px !important;
+  width: auto !important;
+  height: 56px !important;
+  background: #f4f4f4 !important;
+  border: 1.5px solid #e8e8e8 !important;
+  border-radius: 12px !important;
+  padding: 0 20px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: #333333 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  transition: all 0.15s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.rapi-suggest-chip:active {
+  background: #eaeaea !important;
+  border-color: #d0d0d0 !important;
+  transform: scale(0.96) !important;
+}
+
+/* ── AI Input bar ── */
+.rapi-ai-input-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #f4f5f7 !important;
+  border: 1.5px solid #e5e7ea !important;
+  border-radius: 32px !important;
+  padding: 10px 10px 10px 16px !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.rapi-ai-input-bar:focus-within {
+  border-color: #d06030 !important;
+  box-shadow: 0 0 0 3px rgba(200, 82, 10, 0.09) !important;
+  background: #fff !important;
+}
+
+.rapi-ai-input {
+  flex: 1 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 0.88rem !important;
+  color: #1a1a1a !important;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  min-height: 22px !important;
+}
+
+.rapi-ai-input::placeholder {
+  color: #b0b4bb !important;
+}
+
+.rapi-ai-send {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: #C8520A !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.15s, opacity 0.15s !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.rapi-ai-send:active {
+  transform: scale(0.88) !important;
+  opacity: 0.8 !important;
+}
+
+/* Ensure the location wrap has no extra padding */
+.rapi-location-wrap {
+  transform: none !important;
+  padding: 0 !important;
+  background: #fff !important;
+}
+
+/* Critical: make the rapi page fill the full screen view as a flex child */
+.mob-view--rapi.active {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mob-view--rapi .rapi-page {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  /* Zera o padding para descer ao limite máximo */
+  padding-bottom: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* The dark body takes available flex space */
+.mob-view--rapi .rapi-ai-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  /* Espaço para o dock absoluto não cobrir o conteúdo */
+  padding-bottom: 140px !important;
+}
+
+/* Força o dock a ficar exatamente 92px do fundo absoluto da tela (colado na navbar) */
+.mob-view--rapi .rapi-bottom-dock {
+  position: absolute !important;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100 !important;
+  background: transparent !important;
+}

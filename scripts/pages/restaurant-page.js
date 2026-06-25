@@ -83,6 +83,10 @@
   const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
   const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
   const cartItemUnitPrice = (item) => Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
+  const maxFiniteNumber = (...values) => values.reduce((max, value) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(max, number) : max;
+  }, 0);
 
   function persistCustomer(nextCustomer) {
     customer = nextCustomer || null;
@@ -1342,6 +1346,21 @@
     return { subtotal, svc, delivery, total: subtotal + svc + delivery };
   }
 
+  function minimumOrderValue() {
+    return maxFiniteNumber(
+      settings.minimum_order_value,
+      settings.min_order_value,
+      restaurant.minimum_order_value,
+      restaurant.min_order_value,
+      payload.minimum_order_value,
+      payload.min_order_value,
+      payload.settings?.minimum_order_value,
+      payload.settings?.min_order_value,
+      payload.restaurant?.minimum_order_value,
+      payload.restaurant?.min_order_value
+    );
+  }
+
   function currentCartAddress() {
     return customerAddress || operationContext?.address || null;
   }
@@ -1374,6 +1393,9 @@
   }
 
   function syncCartLocationState() {
+    const totals = cartTotals();
+    const minOrderValue = minimumOrderValue();
+    const isBelowMinimumOrder = minOrderValue > 0 && totals.subtotal < minOrderValue;
     const address = currentCartAddress();
     const hasAddress = Boolean(address?.summary || addressSummary(address));
     const widget = $('cartLocationWidget');
@@ -1396,9 +1418,12 @@
     if (paymentCard) paymentCard.style.display = hasAddress && isLogged() ? '' : 'none';
     const cta = $('cartCtaBtn');
     if (cta) {
+      cta.disabled = false;
+      cta.classList.remove('cart-cta-btn--minimum-required');
       if (!hasAddress) {
         cta.textContent = 'Informe seu endereço';
         cta.classList.add('cart-cta-btn--address-required');
+        cta.classList.remove('cart-cta-btn--login-required');
         cta.onclick = () => {
           closeModalImmediately('cartModal');
           openAddressChoiceDirect(false);
@@ -1406,10 +1431,19 @@
       } else if (!isLogged()) {
         cta.textContent = 'Entre ou cadastre-se';
         cta.classList.remove('cart-cta-btn--address-required');
+        cta.classList.add('cart-cta-btn--login-required');
         cta.onclick = () => openLoginScreen('cart');
+      } else if (isBelowMinimumOrder) {
+        cta.textContent = `Valor abaixo do pedido mínimo (${fmt(minOrderValue)})`;
+        cta.disabled = true;
+        cta.classList.remove('cart-cta-btn--address-required');
+        cta.classList.remove('cart-cta-btn--login-required');
+        cta.classList.add('cart-cta-btn--minimum-required');
+        cta.onclick = null;
       } else {
         cta.textContent = 'Escolher forma de pagamento';
         cta.classList.remove('cart-cta-btn--address-required');
+        cta.classList.remove('cart-cta-btn--login-required');
         cta.onclick = openCheckout;
       }
     }

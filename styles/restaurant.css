@@ -3086,6 +3086,22 @@ a{text-decoration:none;color:inherit}
     width:50px!important;
     height:50px!important;
   }
+  #cartModal .cir-name span{
+    display:inline-block!important;
+    margin-right:2px!important;
+    color:#747474!important;
+    font-weight:700!important;
+  }
+  #cartModal .cir-name{
+    margin-left:3px!important;
+  }
+  #cartModal .cir-price{
+    margin-left:3px!important;
+    color:#6f6f6f!important;
+    font-size:12.5px!important;
+    line-height:17px!important;
+    font-weight:600!important;
+  }
   #cartModal .cart-add-more-btn{
     font-size:12px!important;
   }
@@ -3128,7 +3144,21 @@ a{text-decoration:none;color:inherit}
   }
   #cartModal .cart-cta-btn{
     border-radius:10px!important;
+    font-weight:650!important;
     transform:translateY(3px)!important;
+  }
+  #cartModal .cart-cta-btn--login-required{
+    font-size:12.25px!important;
+    font-weight:615!important;
+  }
+  #cartModal .cart-cta-btn.cart-cta-btn--minimum-required,
+  #cartModal .cart-cta-btn.cart-cta-btn--minimum-required:hover,
+  #cartModal .cart-cta-btn.cart-cta-btn--minimum-required:active,
+  #cartModal .cart-cta-btn.cart-cta-btn--minimum-required:disabled{
+    background:#fde9df!important;
+    border-color:#fde9df!important;
+    color:#fff!important;
+    cursor:not-allowed!important;
   }
   #cartModal .cart-cta-btn--address-required{
     display:flex!important;

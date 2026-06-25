@@ -3130,7 +3130,7 @@ body.menu-tab .mob-logo{
   flex:0 0 45px!important;
   border-radius:50%!important;
   overflow:hidden!important;
-  transform:translateX(2px)!important;
+  transform:none!important;
 }
 body.menu-tab .mob-logo img{ width:100%!important;height:100%!important;object-fit:cover!important; }
 body.menu-tab .mob-rest-name{
@@ -3563,7 +3563,7 @@ body.home-tab .delivery-widget.pending-selection{
   body.home-tab .home-coupons-section h2,
   body.home-tab .home-highlights-section h2,
   body.home-tab #homeHighlightsTitle{
-    transform:translateX(2px)!important;
+    transform:none!important;
   }
 
   body.home-tab .coupon-rail{
@@ -5335,8 +5335,8 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
 }
 
 /* ----------------------------------------------------------------
-   BOTTOM NAV — ocultar em modais / telas full-screen
-   Impede que a barra de 4 ícones apareça por baixo ao fazer
+   BOTTOM NAV ï¿½ ocultar em modais / telas full-screen
+   Impede que a barra de 4 ï¿½cones apareï¿½a por baixo ao fazer
    overscroll (rubber-band) em qualquer tela onde ela nao existe.
    ---------------------------------------------------------------- */
 
@@ -5350,7 +5350,7 @@ body.keep-bottom-nav .mob-bottom-nav{
   display:flex!important;
 }
 
-/* 2. Telas full-screen via :has() — cobre casos onde modal-open
+/* 2. Telas full-screen via :has() ï¿½ cobre casos onde modal-open
       pode nao estar setado (ex: reg-screen, lgn-screen, policy-screen, vfy-screen) */
 body:has(.lgn-screen.active) .mob-bottom-nav,
 body:has(.reg-screen.active) .mob-bottom-nav,
@@ -7311,4 +7311,21 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     max-width:100vw!important;
     transform:none!important;
   }
+}
+/* Sticky cart CTA: match the coupon button tap behavior, without side-shift/dark delay. */
+#cartStickyBtn,
+#cartStickyBtn:active,
+#cartStickyBtn:hover{
+  background:#F36F21!important;
+  transform:none!important;
+  transition:none!important;
+  touch-action:manipulation!important;
+}
+/* Menu product cards: no visual tap feedback; open product directly. */
+body.menu-tab .product-card,
+body.menu-tab .product-card:active,
+body.menu-tab .product-card.is-pressing{
+  background:#ffffff!important;
+  transform:none!important;
+  transition:none!important;
 }

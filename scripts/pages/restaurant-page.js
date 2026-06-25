@@ -21,6 +21,7 @@
   let deliveryType = 'delivery';
   let paymentMethod = 'Pix';
   let selectedCoupon = null;
+  let pendingCartItemDeleteUid = null;
   let couponDetailScrollY = 0;
   let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
   let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null');
@@ -944,6 +945,7 @@
     if (products.length && categories.length) {
       renderMenu();
       initScrollSpy();
+      initProductPressFeedback();
       setFirstCategoryActive();
       return;
     }
@@ -968,6 +970,7 @@
         await wait(TAB_LOADER_MIN_MS);
         renderMenu();
         initScrollSpy();
+        initProductPressFeedback();
         setFirstCategoryActive();
       } catch (error) {
         appState.menuLoaded = false;
@@ -1079,6 +1082,23 @@
     }, { passive: true });
   }
 
+  function initProductPressFeedback() {
+    if (window.__pedeAquiProductPressFeedbackReady) return;
+    window.__pedeAquiProductPressFeedbackReady = true;
+    let pressedElement = null;
+    const clearPressed = () => {
+      pressedElement?.classList.remove('is-pressing');
+      pressedElement = null;
+    };
+    document.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || document.body.classList.contains('modal-open')) return;
+      const target = event.target.closest?.('.no-press-feedback');
+      if (!target) return;
+    }, { passive: true });
+    document.addEventListener('pointerup', clearPressed, { passive: true });
+    document.addEventListener('pointercancel', clearPressed, { passive: true });
+    window.addEventListener('scroll', clearPressed, { passive: true });
+  }
   function initSearch() {
     if (searchReady) return;
     searchReady = true;
@@ -1481,7 +1501,7 @@
             <button class="cir-edit-btn" onclick="editCartItem(${item.uid})" aria-label="Editar item">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </button>
-            <button class="cir-remove-btn" onclick="removeCartItem(${item.uid})" aria-label="Remover item">
+            <button class="cir-remove-btn" onclick="openCartItemDeleteConfirm(${item.uid})" aria-label="Remover item">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
             </button>
           </div>
@@ -1501,6 +1521,35 @@
       return;
     }
     openModal('cartModal');
+  }
+
+  function setCartItemDeleteConfirm(open) {
+    const confirm = $('cartItemDeleteConfirm');
+    if (!confirm) return;
+    confirm.classList.toggle('active', Boolean(open));
+    confirm.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
+  function openCartItemDeleteConfirm(uid) {
+    pendingCartItemDeleteUid = uid;
+    setCartItemDeleteConfirm(true);
+  }
+
+  function closeCartItemDeleteConfirm() {
+    setCartItemDeleteConfirm(false);
+  }
+
+  function cancelCartItemDelete() {
+    pendingCartItemDeleteUid = null;
+    closeCartItemDeleteConfirm();
+  }
+
+  function confirmCartItemDelete() {
+    const uid = pendingCartItemDeleteUid;
+    pendingCartItemDeleteUid = null;
+    closeCartItemDeleteConfirm();
+    if (uid == null) return;
+    removeCartItem(uid);
   }
 
   function removeCartItem(uid) {
@@ -4669,7 +4718,7 @@
 
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
-    removeCartItem, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
+    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,

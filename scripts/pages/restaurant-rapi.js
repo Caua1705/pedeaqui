@@ -22,6 +22,7 @@
   let _rapiLoaded = false;
   let _activeChipId = null;
   let _allResults = [];
+  let _introTypeTimer = null;
 
   /* ── Helpers ── */
   function getRapiProducts() {
@@ -252,7 +253,7 @@
         </div>
 
         <!-- Question -->
-        <div class="rapi-ai-question">Como posso ajudar hoje?</div>
+        <div class="rapi-ai-question" id="rapiIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
 
         <!-- Results area (shown after search) -->
         <div class="rapi-ai-results-wrap" id="rapiAiResultsWrap" style="display:none">
@@ -274,11 +275,11 @@
       <div class="rapi-bottom-dock">
 
         <!-- Suggestion chips (horizontal scroll) -->
-        <div class="rapi-suggest-rail" id="rapiStarter">
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me recomenda um prato?')">Me recomenda um prato?</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Quais sobremesas você tem?')">Quais sobremesas você tem?</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Tem algum prato vegetariano?')">Tem algum prato vegetariano?</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Não estou com muita fome, o que devo pedir?')">Não estou com muita fome, o que devo pedir?</button>
+        <div class="rapi-suggest-rail rapi-suggest-rail--waiting" id="rapiStarter">
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me recomenda um prato')">Me recomenda um prato</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Quero gastar ate R$ 50')">Quero gastar at&eacute; R$ 50</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Pedido para 2 pessoas')">Pedido para 2 pessoas</button>
+          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me surpreenda')">Me surpreenda</button>
         </div>
 
         <!-- Input bar -->
@@ -322,6 +323,10 @@
     if (!resultsEl) return;
 
     _activeChipId = chipId || null;
+    if (_introTypeTimer) {
+      clearTimeout(_introTypeTimer);
+      _introTypeTimer = null;
+    }
 
     // Show the results panel, start searching state
     if (resultsWrap) resultsWrap.style.display = 'block';
@@ -373,6 +378,74 @@
   }
 
   /* ── Public API ── */
+
+  function startRapiIntroAnimation() {
+    const questionEl = document.getElementById('rapiIntroQuestion');
+    const starterEl = document.getElementById('rapiStarter');
+    const aiBody = document.getElementById('rapiAiBody');
+    if (!questionEl || !starterEl || aiBody?.classList.contains('rapi-ai-body--searching')) return;
+
+    if (_introTypeTimer) {
+      clearTimeout(_introTypeTimer);
+      _introTypeTimer = null;
+    }
+
+    const text = questionEl.getAttribute('data-text') || 'Como posso ajudar hoje?';
+    questionEl.textContent = '';
+    questionEl.classList.add('is-typing');
+    starterEl.classList.remove('hidden', 'rapi-suggest-rail--ready');
+    starterEl.classList.add('rapi-suggest-rail--waiting');
+    starterEl.style.setProperty('display', 'flex', 'important');
+    starterEl.style.setProperty('opacity', '0', 'important');
+    starterEl.style.setProperty('visibility', 'hidden', 'important');
+    starterEl.style.setProperty('pointer-events', 'none', 'important');
+    starterEl.style.setProperty('height', 'auto', 'important');
+    starterEl.style.setProperty('overflow', 'visible', 'important');
+
+    const revealSuggestions = () => {
+      const currentBody = document.getElementById('rapiAiBody');
+      if (currentBody?.classList.contains('rapi-ai-body--searching')) return;
+      starterEl.classList.remove('hidden', 'rapi-suggest-rail--waiting');
+      starterEl.classList.add('rapi-suggest-rail--ready');
+      starterEl.style.setProperty('display', 'flex', 'important');
+      starterEl.style.setProperty('opacity', '1', 'important');
+      starterEl.style.setProperty('visibility', 'visible', 'important');
+      starterEl.style.setProperty('pointer-events', 'auto', 'important');
+      starterEl.style.setProperty('height', 'auto', 'important');
+      starterEl.style.setProperty('overflow', 'visible', 'important');
+      starterEl.querySelectorAll('.rapi-suggest-chip').forEach((chip, index) => {
+        chip.style.setProperty('visibility', 'visible', 'important');
+        chip.style.setProperty('display', 'inline-flex', 'important');
+        chip.style.setProperty('animation', 'none', 'important');
+        chip.style.setProperty('opacity', '0', 'important');
+        chip.style.setProperty('transform', 'translateY(14px) scale(.98)', 'important');
+        window.requestAnimationFrame(() => {
+          chip.style.setProperty('transition', 'opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1)', 'important');
+          chip.style.setProperty('transition-delay', (index * 70) + 'ms', 'important');
+          chip.style.setProperty('opacity', '1', 'important');
+          chip.style.setProperty('transform', 'translateY(0) scale(1)', 'important');
+        });
+      });
+    };
+    const fallbackTimer = setTimeout(revealSuggestions, 2600);
+
+    let index = 0;
+    const tick = () => {
+      questionEl.textContent = text.slice(0, index);
+      if (index <= text.length) {
+        index += 1;
+        _introTypeTimer = setTimeout(tick, index === 1 ? 120 : 42);
+        return;
+      }
+      questionEl.classList.remove('is-typing');
+      _introTypeTimer = setTimeout(() => {
+        clearTimeout(fallbackTimer);
+        revealSuggestions();
+      }, 180);
+    };
+
+    tick();
+  }
 
   window.rapiSendMessage = function () {
     const inputEl = document.getElementById('rapiInput');
@@ -429,6 +502,7 @@
     if (!_rapiLoaded || !view.querySelector('.rapi-page')) {
       view.innerHTML = buildRapiView();
       _rapiLoaded = true;
+      setTimeout(startRapiIntroAnimation, 0);
     } else {
       // Refresh location widget only
       const locationWrap = view.querySelector('.rapi-location-wrap');
@@ -438,6 +512,7 @@
         tmp.innerHTML = newWidget;
         locationWrap.replaceWith(tmp.firstElementChild);
       }
+      setTimeout(startRapiIntroAnimation, 0);
     }
   };
 

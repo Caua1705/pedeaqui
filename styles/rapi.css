@@ -1685,3 +1685,13 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-bottom-dock{
   bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;
 }
+
+/* Rapi send button: circular arrow button. */
+#mobViewRapi .rapi-ai-send{
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  border-radius:50%!important;
+  padding:0!important;
+}

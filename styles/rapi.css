@@ -1618,3 +1618,15 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-ai-input-bar{
   touch-action:auto!important;
 }
+
+/* Rapi intro vertical tune: move avatar, question and suggestions upward. */
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+  margin-top:clamp(66px,13vh,104px)!important;
+  margin-bottom:14px!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+  transform:translateY(-4px)!important;
+}
+#mobViewRapi .rapi-bottom-dock{
+  bottom:calc(112px + env(safe-area-inset-bottom,0px))!important;
+}

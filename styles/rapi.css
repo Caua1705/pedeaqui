@@ -1674,3 +1674,14 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   letter-spacing:0!important;
   text-align:center!important;
 }
+
+/* Rapi intro: raise logo, question and suggestions slightly. */
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+  margin-top:clamp(96px,18vh,148px)!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+  transform:translateY(-4px)!important;
+}
+#mobViewRapi .rapi-bottom-dock{
+  bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;
+}

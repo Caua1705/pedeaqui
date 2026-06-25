@@ -1742,3 +1742,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   height:27px!important;
   stroke-width:2.7!important;
 }
+
+/* Rapi input dock: sit closer to the bottom nav without touching it. */
+#mobViewRapi .rapi-bottom-dock{
+  bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;
+}

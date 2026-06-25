@@ -1695,3 +1695,50 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   border-radius:50%!important;
   padding:0!important;
 }
+
+/* Rapi suggestions: larger prompt text. */
+#mobViewRapi .rapi-suggest-chip{
+  font-size:15px!important;
+  line-height:19px!important;
+}
+
+/* Rapi send button final size. */
+#mobViewRapi .rapi-ai-send{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  min-height:40px!important;
+}
+
+/* Rapi send arrow final size. */
+#mobViewRapi .rapi-ai-send svg{
+  width:13.13px!important;
+  height:15.63px!important;
+}
+
+/* Rapi send arrow: slightly larger for better visibility. */
+#mobViewRapi .rapi-ai-send svg{
+  width:16px!important;
+  height:18px!important;
+}
+
+/* Rapi send arrow: taller, closer to the reference. */
+#mobViewRapi .rapi-ai-send svg{
+  width:17px!important;
+  height:22px!important;
+  stroke-width:2.35!important;
+}
+
+/* Rapi send arrow: larger final adjustment. */
+#mobViewRapi .rapi-ai-send svg{
+  width:20px!important;
+  height:25px!important;
+  stroke-width:2.6!important;
+}
+
+/* Rapi send arrow: one more slight increase. */
+#mobViewRapi .rapi-ai-send svg{
+  width:22px!important;
+  height:27px!important;
+  stroke-width:2.7!important;
+}

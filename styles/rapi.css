@@ -1931,3 +1931,18 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   min-height:56px!important;
   overflow:visible!important;
 }
+
+/* Rapi title typography matched to reference. Typography only. */
+#mobViewRapi .rapi-ai-question,
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+  font-family:"Lora", Georgia, "Times New Roman", serif!important;
+  font-weight:700!important;
+  font-size:24px!important;
+  line-height:30px!important;
+  letter-spacing:0!important;
+  font-style:normal!important;
+  font-synthesis:none!important;
+  text-rendering:optimizeLegibility!important;
+  -webkit-font-smoothing:antialiased!important;
+  -moz-osx-font-smoothing:grayscale!important;
+}

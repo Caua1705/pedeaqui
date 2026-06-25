@@ -1646,3 +1646,31 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-location-wrap{
   display:none!important;
 }
+
+/* Rapi intro after hiding location: lower logo, question and prompt dock. */
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+  margin-top:clamp(118px,22vh,176px)!important;
+  margin-bottom:20px!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+  transform:none!important;
+}
+#mobViewRapi .rapi-bottom-dock{
+  bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
+}
+#mobViewRapi .rapi-suggest-chip{
+  min-width:227.52px!important;
+  width:227.52px!important;
+  height:56px!important;
+  padding:0 20px!important;
+  border-radius:16px!important;
+}
+
+/* Rapi suggestions: match text scale to larger chips. */
+#mobViewRapi .rapi-suggest-chip{
+  font-size:14px!important;
+  line-height:18px!important;
+  font-weight:600!important;
+  letter-spacing:0!important;
+  text-align:center!important;
+}

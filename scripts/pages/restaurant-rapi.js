@@ -254,6 +254,7 @@
 
         <!-- Question -->
         <div class="rapi-ai-question" id="rapiIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
+        <div class="rapi-ai-subtitle">Me diga o que procura e eu encontro as melhores op&ccedil;&otilde;es do card&aacute;pio.</div>
 
         <!-- Results area (shown after search) -->
         <div class="rapi-ai-results-wrap" id="rapiAiResultsWrap" style="display:none">

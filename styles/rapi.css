@@ -1545,7 +1545,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   padding-bottom:148px!important;
 }
 #mobViewRapi .rapi-ai-body--searching .rapi-orb-wrap,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-question{
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-question,
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-subtitle{
   display:none!important;
 }
 #mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
@@ -1776,7 +1777,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 /* Rapi suggestions: position chips above the input explicitly. */
 #mobViewRapi .rapi-bottom-dock{
   position:absolute!important;
-  overflow:visible!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
 }
 #mobViewRapi .rapi-suggest-rail{
   position:absolute!important;
@@ -1812,10 +1814,10 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 
 /* Rapi suggestions: force chips higher above the input. */
 #mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail{
-  bottom:142px!important;
+  bottom:124px!important;
 }
 #mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail.hidden{
-  bottom:142px!important;
+  bottom:124px!important;
 }
 
 /* Rapi input bar: softer rounded corners. */
@@ -1829,12 +1831,24 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   font-family:Georgia,"Times New Roman",Times,serif!important;
   font-size:24px!important;
   line-height:30px!important;
-  font-weight:700!important;
+  font-weight:600!important;
   letter-spacing:0!important;
   color:#252a34!important;
   text-align:center!important;
   -webkit-font-smoothing:antialiased!important;
   text-rendering:geometricPrecision!important;
+}
+#mobViewRapi .rapi-ai-subtitle{
+  max-width:300px!important;
+  margin:6px auto 0!important;
+  font-size:14px!important;
+  line-height:20px!important;
+  font-weight:400!important;
+  letter-spacing:.005em!important;
+  color:#7a7f89!important;
+  text-align:center!important;
+  -webkit-font-smoothing:antialiased!important;
+  text-rendering:optimizeLegibility!important;
 }
 #mobViewRapi .rapi-ai-question.is-typing::after{
   content:""!important;
@@ -1911,7 +1925,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   pointer-events:auto!important;
   visibility:visible!important;
   height:auto!important;
-  overflow:visible!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
 }
 #mobViewRapi #rapiStarter.rapi-suggest-rail--waiting.rapi-suggest-rail--ready .rapi-suggest-chip,
 #mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip{
@@ -1929,17 +1944,18 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   opacity:1!important;
   height:auto!important;
   min-height:56px!important;
-  overflow:visible!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
 }
 
 /* Rapi title typography matched to reference. Typography only. */
 #mobViewRapi .rapi-ai-question,
 #mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
   font-family:"Lora", Georgia, "Times New Roman", serif!important;
-  font-weight:700!important;
+  font-weight:600!important;
   font-size:24px!important;
-  line-height:30px!important;
-  letter-spacing:0!important;
+  line-height:31px!important;
+  letter-spacing:.005em!important;
   font-style:normal!important;
   font-synthesis:none!important;
   text-rendering:optimizeLegibility!important;

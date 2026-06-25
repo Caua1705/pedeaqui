@@ -1571,3 +1571,50 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-ai-question{
   color:#1a1a1a!important;
 }
+
+/* Mobile Rapi bugfix: keep intro locked and place question below the avatar. */
+#mobViewRapi.mob-view--rapi,
+#mobViewRapi.mob-view--rapi.active,
+#mobViewRapi .rapi-page{
+  height:100dvh!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  touch-action:none!important;
+}
+#mobViewRapi .rapi-ai-body{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  touch-action:none!important;
+  padding:0 20px 150px!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
+  justify-content:flex-start!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+  position:relative!important;
+  margin-top:clamp(118px,22vh,176px)!important;
+  margin-bottom:18px!important;
+  transform:none!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+  position:static!important;
+  inset:auto!important;
+  margin:0!important;
+  transform:none!important;
+  color:#1a1a1a!important;
+}
+#mobViewRapi .rapi-ai-body--searching{
+  overflow:hidden!important;
+  touch-action:auto!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#mobViewRapi .rapi-suggest-rail,
+#mobViewRapi .rapi-ai-input,
+#mobViewRapi .rapi-ai-input-bar{
+  touch-action:auto!important;
+}

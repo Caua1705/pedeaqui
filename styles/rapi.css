@@ -1772,3 +1772,53 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   margin-top:0!important;
   margin-bottom:0!important;
 }
+
+/* Rapi suggestions: position chips above the input explicitly. */
+#mobViewRapi .rapi-bottom-dock{
+  position:absolute!important;
+  overflow:visible!important;
+}
+#mobViewRapi .rapi-suggest-rail{
+  position:absolute!important;
+  left:18px!important;
+  right:18px!important;
+  bottom:86px!important;
+  margin:0!important;
+  padding:0 2px 2px!important;
+  transform:none!important;
+  z-index:2!important;
+}
+#mobViewRapi .rapi-ai-input-bar{
+  position:relative!important;
+  z-index:3!important;
+}
+#mobViewRapi .rapi-suggest-rail.hidden{
+  position:absolute!important;
+  bottom:86px!important;
+  height:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+/* Rapi input bar final requested size. */
+#mobViewRapi .rapi-ai-input-bar{
+  width:382px!important;
+  max-width:calc(100vw - 32px)!important;
+  height:58px!important;
+  min-height:58px!important;
+  margin:0 auto!important;
+  box-sizing:border-box!important;
+}
+
+/* Rapi suggestions: force chips higher above the input. */
+#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail{
+  bottom:142px!important;
+}
+#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail.hidden{
+  bottom:142px!important;
+}
+
+/* Rapi input bar: softer rounded corners. */
+#mobViewRapi .rapi-ai-input-bar{
+  border-radius:26px!important;
+}

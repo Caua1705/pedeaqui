@@ -1641,3 +1641,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-bottom-dock{
   bottom:calc(124px + env(safe-area-inset-bottom,0px))!important;
 }
+
+/* Rapi: hide location widget on this screen only. */
+#mobViewRapi .rapi-location-wrap{
+  display:none!important;
+}

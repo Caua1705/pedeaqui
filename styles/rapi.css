@@ -1756,3 +1756,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-suggest-rail.hidden{
   transform:translateY(0)!important;
 }
+
+/* Rapi suggestions: raise chips a bit more. */
+#mobViewRapi .rapi-suggest-rail{
+  transform:translateY(-16px)!important;
+}

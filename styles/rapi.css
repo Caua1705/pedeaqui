@@ -1761,3 +1761,14 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-suggest-rail{
   transform:translateY(-16px)!important;
 }
+
+/* Rapi suggestions: physical upward spacing from input. */
+#mobViewRapi .rapi-suggest-rail{
+  transform:none!important;
+  margin-top:-28px!important;
+  margin-bottom:24px!important;
+}
+#mobViewRapi .rapi-suggest-rail.hidden{
+  margin-top:0!important;
+  margin-bottom:0!important;
+}

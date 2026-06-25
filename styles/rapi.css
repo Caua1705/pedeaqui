@@ -1747,3 +1747,12 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-bottom-dock{
   bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;
 }
+
+/* Rapi suggestions: raise chips without moving the input. */
+#mobViewRapi .rapi-suggest-rail{
+  transform:translateY(-8px)!important;
+  margin-bottom:8px!important;
+}
+#mobViewRapi .rapi-suggest-rail.hidden{
+  transform:translateY(0)!important;
+}

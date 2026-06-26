@@ -2093,3 +2093,33 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   color:#aeb6c3!important;
   font-weight:500!important;
 }
+
+/* Rapi send/input: remove orange focus halo when sending a message. */
+#mobViewRapi .rapi-ai-input-bar:focus-within{
+  border-color:#e7e9ee!important;
+  box-shadow:0 8px 24px rgba(21,28,36,.06)!important;
+  transform:none!important;
+}
+#mobViewRapi .rapi-ai-send,
+#mobViewRapi .rapi-ai-send:focus,
+#mobViewRapi .rapi-ai-send:focus-visible,
+#mobViewRapi .rapi-ai-send:active{
+  outline:none!important;
+  box-shadow:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+
+/* Rapi send button: no movement/press animation on tap. */
+#mobViewRapi .rapi-ai-send,
+#mobViewRapi .rapi-ai-send:hover,
+#mobViewRapi .rapi-ai-send:active,
+#mobViewRapi .rapi-ai-send:focus,
+#mobViewRapi .rapi-ai-send:focus-visible{
+  transform:none!important;
+  opacity:1!important;
+  transition:none!important;
+}
+#mobViewRapi .rapi-ai-send svg{
+  transform:none!important;
+  transition:none!important;
+}

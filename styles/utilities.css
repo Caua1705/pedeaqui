@@ -7382,3 +7382,63 @@ body.menu-tab .product-card.is-pressing{
     box-sizing:border-box!important;
   }
 }
+
+/* Product modal full-sheet scroll and observation width fix. */
+@media(max-width:767px){
+  #productModal.active{
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+  #productModal .modal--product{
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  #productModal .modal--product::before,
+  #productModal .modal--product::after{
+    display:none!important;
+  }
+  #productModal .modal-body{
+    flex:0 0 auto!important;
+    overflow:visible!important;
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+  #productModal .modal-footer{
+    position:relative!important;
+    flex:0 0 auto!important;
+    margin:0!important;
+  }
+  #productModal #pmForm{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    box-sizing:border-box!important;
+  }
+  #productModal .pm-label{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 0 20px!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    box-sizing:border-box!important;
+  }
+  #productModal .pm-obs-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  #productModal .pm-obs-wrap .pm-obs,
+  #productModal .pm-obs{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+}

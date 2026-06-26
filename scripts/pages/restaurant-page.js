@@ -4554,7 +4554,43 @@
       </section>
     `;
   }
+  let _logoutConfirmCloseTimer = null;
+  function setLogoutConfirm(open) {
+    const confirm = $('logoutConfirm');
+    if (!confirm) return;
+    if (_logoutConfirmCloseTimer) {
+      clearTimeout(_logoutConfirmCloseTimer);
+      _logoutConfirmCloseTimer = null;
+    }
+    if (open) {
+      document.body.classList.add('logout-confirm-open');
+      confirm.classList.add('active');
+      confirm.setAttribute('aria-hidden', 'false');
+      return;
+    }
+    confirm.classList.remove('active');
+    confirm.setAttribute('aria-hidden', 'true');
+    _logoutConfirmCloseTimer = setTimeout(() => {
+      document.body.classList.remove('logout-confirm-open');
+      _logoutConfirmCloseTimer = null;
+    }, 920);
+  }
+
+  function closeLogoutConfirm() {
+    setLogoutConfirm(false);
+  }
+
+  function cancelLogout() {
+    closeLogoutConfirm();
+  }
+
   function logout() {
+    if (!isLogged()) return;
+    setLogoutConfirm(true);
+  }
+
+  function confirmLogout() {
+    closeLogoutConfirm();
     if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Carregando restaurante';
     if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando sua experiÃªncia.';
     setAppBooting(true);
@@ -4720,7 +4756,7 @@
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,
     openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,
-    toggleRegPassword, handleRegFieldInput, handleRegFieldBlur, handleRegPrivacyInput, submitRegister, logout,
+    toggleRegPassword, handleRegFieldInput, handleRegFieldBlur, handleRegPrivacyInput, submitRegister, logout, confirmLogout, cancelLogout, closeLogoutConfirm,
     openSigninScreen, closeSigninScreen, submitLogin, loginForgotPassword,
     handleLoginFieldInput, handleLoginFieldBlur,
     closeVerifyScreen, handleVfyInput, handleVfyKeydown, handleVfyPaste, submitVerify, resendVfyCode,

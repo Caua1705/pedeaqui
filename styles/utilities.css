@@ -7685,3 +7685,22 @@ body.menu-tab .product-card.is-pressing{
     -webkit-text-stroke:.35px currentColor!important;
   }
 }
+
+/* Logout confirmation: global curtain above the profile navbar. */
+@media(max-width:767px){
+  #logoutConfirm{
+    position:fixed!important;
+    inset:0!important;
+    z-index:260!important;
+  }
+  #logoutConfirm .addr-delete-panel{
+    height:190px!important;
+    padding-top:24px!important;
+  }
+  #logoutConfirm .addr-delete-title{
+    margin:0 0 22px!important;
+  }
+  #logoutConfirm .addr-delete-text{
+    display:none!important;
+  }
+}

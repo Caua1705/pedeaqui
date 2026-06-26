@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=229">
+<link rel="stylesheet" href="styles/utilities.css?v=233">
 <link rel="stylesheet" href="styles/operation.css?v=117">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -1705,6 +1705,14 @@
 <script src="scripts/utils/currency.js"></script>
 <script src="scripts/utils/dom.js"></script>
 <script src="scripts/utils/validators.js"></script>
+
+<div class="addr-delete-confirm" id="logoutConfirm" aria-hidden="true" onclick="closeLogoutConfirm()">
+  <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" onclick="event.stopPropagation()">
+    <h3 class="addr-delete-title" id="logoutConfirmTitle">Deseja sair?</h3>
+    <button class="addr-delete-yes" type="button" onclick="confirmLogout()">Sim</button>
+    <button class="addr-delete-cancel" type="button" onclick="cancelLogout()">Cancelar</button>
+  </div>
+</div>
 <script src="scripts/services/api-client.js"></script>
 <script src="scripts/services/api.js"></script>
 <script src="scripts/services/customer-auth-service.js"></script>
@@ -1728,6 +1736,6 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=3"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=12"></script>
-<script src="scripts/pages/restaurant-page.js?v=66"></script>
+<script src="scripts/pages/restaurant-page.js?v=70"></script>
 </body>
 </html>

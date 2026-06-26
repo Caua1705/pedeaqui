@@ -1777,8 +1777,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 /* Rapi suggestions: position chips above the input explicitly. */
 #mobViewRapi .rapi-bottom-dock{
   position:absolute!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
+  overflow:visible!important;
 }
 #mobViewRapi .rapi-suggest-rail{
   position:absolute!important;
@@ -1961,4 +1960,51 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   text-rendering:optimizeLegibility!important;
   -webkit-font-smoothing:antialiased!important;
   -moz-osx-font-smoothing:grayscale!important;
+}
+
+/* Rapi suggestions: allow horizontal swipe while keeping the intro screen locked vertically. */
+#mobViewRapi.mob-view--rapi,
+#mobViewRapi.mob-view--rapi.active,
+#mobViewRapi .rapi-page{
+  touch-action:pan-x!important;
+}
+#mobViewRapi .rapi-ai-body{
+  touch-action:none!important;
+}
+#mobViewRapi #rapiStarter.rapi-suggest-rail{
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  scroll-snap-type:x proximity!important;
+}
+#mobViewRapi #rapiStarter .rapi-suggest-chip{
+  scroll-snap-align:start!important;
+}
+
+/* Rapi suggestions: keep the swipe rail inside the dock hit area on mobile browsers. */
+#mobViewRapi .rapi-bottom-dock{
+  height:214px!important;
+  pointer-events:none!important;
+}
+#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail{
+  bottom:104px!important;
+  pointer-events:auto!important;
+  cursor:grab!important;
+}
+#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail.is-dragging{
+  cursor:grabbing!important;
+}
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:14px!important;
+  transform:translateX(-50%)!important;
+  pointer-events:auto!important;
+}
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+  transform:translateX(-50%) translateY(-1px)!important;
+}
+#mobViewRapi .rapi-bottom-dock #rapiStarter .rapi-suggest-chip{
+  user-select:none!important;
+  -webkit-user-select:none!important;
 }

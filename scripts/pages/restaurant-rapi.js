@@ -23,6 +23,9 @@
   let _activeChipId = null;
   let _allResults = [];
   let _introTypeTimer = null;
+  let _rapiSessionId = null;
+  let _rapiSending = false;
+  let _rapiOptionCache = [];
 
   /* ── Helpers ── */
   function getRapiProducts() {
@@ -56,6 +59,172 @@
   }
 
   /* ── Intent detection ── */
+  function getRapiRestaurantId() {
+    const store = window.PedeAquiRestaurantStore?.get?.() || {};
+    return store.restaurant?.id
+      || store.branches?.[0]?.restaurant_id
+      || store.products?.[0]?.restaurant_id
+      || store.restaurant?.slug
+      || window.PedeAquiRestaurantSlug?.get?.()
+      || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
+      || '';
+  }
+
+  function ensureRapiSessionId() {
+    if (!_rapiSessionId) {
+      const cryptoId = window.crypto?.randomUUID?.();
+      _rapiSessionId = cryptoId || `rapi_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+    return _rapiSessionId;
+  }
+
+  function setRapiInputDisabled(disabled) {
+    const inputEl = document.getElementById('rapiInput');
+    const sendBtn = document.querySelector('.rapi-ai-send');
+    if (inputEl) inputEl.disabled = Boolean(disabled);
+    if (sendBtn) sendBtn.disabled = Boolean(disabled);
+  }
+
+  function scrollRapiToLatest() {
+    const wrap = document.getElementById('rapiAiResultsWrap');
+    const page = document.getElementById('rapiPage');
+    requestAnimationFrame(() => {
+      if (wrap) wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+      if (page) page.scrollTo({ top: page.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  function normalizeChatResponse(data) {
+    const payload = data?.data && data.data.response_type ? data.data : data;
+    return payload || { response_type: 'error', message: 'Resposta vazia do Rapi.' };
+  }
+
+  function responseMessage(data) {
+    return data?.message || data?.text || data?.content || '';
+  }
+
+  function responseOptions(data) {
+    const source = Array.isArray(data?.options) ? data.options : [];
+    return source.map(option => {
+      if (typeof option === 'string') return { label: option, message: option };
+      return {
+        label: option.label || option.title || option.text || option.message || '',
+        message: option.message || option.value || option.text || option.label || option.title || ''
+      };
+    }).filter(option => option.label && option.message);
+  }
+
+  function responseProducts(data) {
+    return Array.isArray(data?.products) ? data.products : [];
+  }
+
+  function appendRapiUserMessage(message) {
+    const resultsEl = document.getElementById('rapiResults');
+    if (!resultsEl) return;
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="rapi-result-card rapi-chat-user-message">
+        <div class="rapi-result-content">
+          <div class="rapi-result-category">Voc&ecirc;</div>
+          <div class="rapi-result-title">${esc(message)}</div>
+        </div>
+      </div>`);
+    scrollRapiToLatest();
+  }
+
+  function appendRapiTextMessage(message) {
+    const resultsEl = document.getElementById('rapiResults');
+    if (!resultsEl) return;
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="rapi-result-card rapi-chat-assistant-message">
+        <div class="rapi-result-content">
+          <div class="rapi-result-category">Rapi</div>
+          <div class="rapi-result-title">${esc(message || 'Certo.')}</div>
+        </div>
+      </div>`);
+    scrollRapiToLatest();
+  }
+
+  function appendRapiTypingIndicator() {
+    const resultsEl = document.getElementById('rapiResults');
+    if (!resultsEl || document.getElementById('rapiTypingMessage')) return;
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="rapi-result-card rapi-chat-assistant-message" id="rapiTypingMessage" aria-live="polite">
+        <div class="rapi-result-content">
+          <div class="rapi-result-category">Rapi</div>
+          <div class="rapi-result-title">Buscando no card&aacute;pio...</div>
+          <div class="rapi-thinking rapi-thinking--dark visible">
+            <div class="rapi-thinking-dots rapi-thinking-dots--dark"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>`);
+    scrollRapiToLatest();
+  }
+
+  function removeRapiTypingIndicator() {
+    const typingEl = document.getElementById('rapiTypingMessage');
+    if (!typingEl) return;
+    typingEl.style.transition = 'opacity .18s ease';
+    typingEl.style.opacity = '0';
+    setTimeout(() => typingEl.remove(), 180);
+  }
+
+  function renderRapiOptions(data) {
+    const resultsEl = document.getElementById('rapiResults');
+    if (!resultsEl) return;
+    const message = responseMessage(data);
+    const options = responseOptions(data);
+    if (message) appendRapiTextMessage(message);
+    if (!options.length) return;
+    _rapiOptionCache = options;
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="rapi-suggest-rail rapi-suggest-rail--ready">
+        ${options.map((option, index) => `<button class="rapi-suggest-chip" type="button" onclick="rapiUseOption(${index})">${esc(option.label)}</button>`).join('')}
+      </div>`);
+    scrollRapiToLatest();
+  }
+  function renderRapiProducts(data) {
+    const resultsEl = document.getElementById('rapiResults');
+    const showMoreBtn = document.getElementById('rapiShowMoreBtn');
+    if (!resultsEl) return;
+    const message = responseMessage(data);
+    const products = responseProducts(data);
+    if (message) appendRapiTextMessage(message);
+    _allResults = products;
+    if (!products.length) {
+      appendRapiTextMessage('Nao encontrei produtos para essa busca.');
+      return;
+    }
+    const initialItems = products.slice(0, MAX_INITIAL_RESULTS);
+    resultsEl.insertAdjacentHTML('beforeend', initialItems.map((p, i) => renderResultCard(p, i)).join(''));
+    if (products.length > MAX_INITIAL_RESULTS && showMoreBtn) showMoreBtn.classList.add('visible');
+    scrollRapiToLatest();
+  }
+
+  function renderRapiChatResponse(data) {
+    const type = String(data?.response_type || 'error').toLowerCase();
+    if (type === 'text') {
+      appendRapiTextMessage(responseMessage(data));
+      return;
+    }
+    if (type === 'options') {
+      renderRapiOptions(data);
+      return;
+    }
+    if (type === 'products') {
+      renderRapiProducts(data);
+      return;
+    }
+    appendRapiTextMessage(responseMessage(data) || 'Nao consegui responder agora. Tente novamente.');
+  }
+
+  async function postRapiChatMessage(message) {
+    const payload = {
+      restaurant_id: getRapiRestaurantId(),
+      session_id: ensureRapiSessionId(),
+      message
+    };
+    return normalizeChatResponse(await window.PedeAquiApiClient.post('/chat', payload));
+  }
   function detectIntent(message) {
     const msg = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     if (/barato|economico|pouco|baratao|menos|ate \d|r\$\s*\d/.test(msg)) return 'budget';
@@ -315,71 +484,99 @@
   /* ── Show/hide results ── */
   async function rapiSearch(message, intent, chipId) {
     const resultsEl = document.getElementById('rapiResults');
-    const thinkingEl = document.getElementById('rapiThinking');
     const labelEl = document.getElementById('rapiResultsLabel');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     const starterEl = document.getElementById('rapiStarter');
     const aiBody = document.getElementById('rapiAiBody');
     const resultsWrap = document.getElementById('rapiAiResultsWrap');
-    if (!resultsEl) return;
+    const inputEl = document.getElementById('rapiInput');
+    if (!resultsEl || _rapiSending) return;
+
+    const cleanMessage = String(message || '').trim();
+    if (!cleanMessage) return;
 
     _activeChipId = chipId || null;
+    _rapiSending = true;
     if (_introTypeTimer) {
       clearTimeout(_introTypeTimer);
       _introTypeTimer = null;
     }
 
-    // Show the results panel, start searching state
     if (resultsWrap) resultsWrap.style.display = 'block';
     if (aiBody) aiBody.classList.add('rapi-ai-body--searching');
-
-    // Show thinking
-    thinkingEl?.classList.add('visible');
     if (labelEl) labelEl.classList.remove('visible');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
     if (starterEl) starterEl.classList.add('hidden');
-    resultsEl.innerHTML = '';
 
-    const delay = 500 + Math.random() * 200;
-    await new Promise(r => setTimeout(r, delay));
+    appendRapiUserMessage(cleanMessage);
+    setRapiInputDisabled(true);
+    appendRapiTypingIndicator();
 
-    const products = safeProducts();
-    const coupons = getRapiCoupons();
-    _allResults = await getRapiRecommendations({ message, intent, products, coupons });
-
-    thinkingEl?.classList.remove('visible');
-
-    if (!_allResults.length) {
-      if (labelEl) labelEl.classList.remove('visible');
-      resultsEl.innerHTML = `
-        <div class="rapi-empty rapi-empty--dark">
-          <span class="rapi-empty-emoji">🤔</span>
-          <div class="rapi-empty-title">Não encontrei a opção ideal</div>
-          <div class="rapi-empty-sub">Mas posso tentar de outro jeito. Escreva o que quer comer.</div>
-        </div>`;
-      return;
+    try {
+      const response = await postRapiChatMessage(cleanMessage);
+      removeRapiTypingIndicator();
+      setTimeout(() => renderRapiChatResponse(response), 190);
+    } catch (error) {
+      removeRapiTypingIndicator();
+      setTimeout(() => renderRapiChatResponse({
+        response_type: 'error',
+        message: error?.message || 'Nao consegui conectar ao Rapi agora. Tente novamente.'
+      }), 190);
+    } finally {
+      _rapiSending = false;
+      setTimeout(() => {
+        setRapiInputDisabled(false);
+        inputEl?.focus?.();
+      }, 190);
     }
-
-    if (labelEl) labelEl.classList.add('visible');
-    const initialItems = _allResults.slice(0, MAX_INITIAL_RESULTS);
-    resultsEl.innerHTML = initialItems.map((p, i) => renderResultCard(p, i)).join('');
-
-    if (_allResults.length > MAX_INITIAL_RESULTS && showMoreBtn) {
-      showMoreBtn.classList.add('visible');
-    }
-
-    // Scroll to results
-    setTimeout(() => {
-      const page = document.getElementById('rapiPage');
-      if (page) {
-        const label = document.getElementById('rapiResultsLabel');
-        if (label) page.scrollTo({ top: label.offsetTop - 16, behavior: 'smooth' });
-      }
-    }, 100);
   }
+  function setupRapiSuggestionDrag() {
+    const rail = document.getElementById('rapiStarter');
+    if (!rail || rail.dataset.dragReady === '1') return;
+    rail.dataset.dragReady = '1';
 
-  /* ── Public API ── */
+    let pointerId = null;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragged = false;
 
+    rail.addEventListener('pointerdown', event => {
+      if (event.button !== undefined && event.button !== 0) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startScrollLeft = rail.scrollLeft;
+      dragged = false;
+      rail.classList.add('is-dragging');
+      try { rail.setPointerCapture(pointerId); } catch (_) {}
+    });
+
+    rail.addEventListener('pointermove', event => {
+      if (pointerId !== event.pointerId) return;
+      const dx = event.clientX - startX;
+      if (Math.abs(dx) > 4) dragged = true;
+      if (dragged) {
+        rail.scrollLeft = startScrollLeft - dx;
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    const endDrag = event => {
+      if (pointerId !== null && event.pointerId === pointerId) {
+        try { rail.releasePointerCapture(pointerId); } catch (_) {}
+        pointerId = null;
+      }
+      rail.classList.remove('is-dragging');
+    };
+
+    rail.addEventListener('pointerup', endDrag);
+    rail.addEventListener('pointercancel', endDrag);
+    rail.addEventListener('click', event => {
+      if (!dragged) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dragged = false;
+    }, true);
+  }
   function startRapiIntroAnimation() {
     const questionEl = document.getElementById('rapiIntroQuestion');
     const starterEl = document.getElementById('rapiStarter');
@@ -401,7 +598,8 @@
     starterEl.style.setProperty('visibility', 'hidden', 'important');
     starterEl.style.setProperty('pointer-events', 'none', 'important');
     starterEl.style.setProperty('height', 'auto', 'important');
-    starterEl.style.setProperty('overflow', 'visible', 'important');
+    starterEl.style.setProperty('overflow-x', 'auto', 'important');
+    starterEl.style.setProperty('overflow-y', 'hidden', 'important');
 
     const revealSuggestions = () => {
       const currentBody = document.getElementById('rapiAiBody');
@@ -413,7 +611,8 @@
       starterEl.style.setProperty('visibility', 'visible', 'important');
       starterEl.style.setProperty('pointer-events', 'auto', 'important');
       starterEl.style.setProperty('height', 'auto', 'important');
-      starterEl.style.setProperty('overflow', 'visible', 'important');
+      starterEl.style.setProperty('overflow-x', 'auto', 'important');
+      starterEl.style.setProperty('overflow-y', 'hidden', 'important');
       starterEl.querySelectorAll('.rapi-suggest-chip').forEach((chip, index) => {
         chip.style.setProperty('visibility', 'visible', 'important');
         chip.style.setProperty('display', 'inline-flex', 'important');
@@ -449,19 +648,26 @@
   }
 
   window.rapiSendMessage = function () {
+    if (_rapiSending) return;
     const inputEl = document.getElementById('rapiInput');
     const msg = (inputEl?.value || '').trim();
     if (!msg) return;
-    const intent = detectIntent(msg);
-    rapiSearch(msg, intent, null);
+    if (inputEl) inputEl.value = '';
+    rapiSearch(msg, null, null);
   };
 
   window.rapiUseSuggestion = function (message) {
+    if (_rapiSending) return;
     const inputEl = document.getElementById('rapiInput');
-    if (inputEl) inputEl.value = message;
-    rapiSearch(message, detectIntent(message), null);
+    if (inputEl) inputEl.value = '';
+    rapiSearch(message, null, null);
   };
 
+  window.rapiUseOption = function (index) {
+    const option = _rapiOptionCache[Number(index)];
+    if (!option) return;
+    window.rapiUseSuggestion(option.message);
+  };
   window.rapiInputKeydown = function (event) {
     if (event.key === 'Enter') { event.preventDefault(); window.rapiSendMessage(); }
   };
@@ -503,6 +709,8 @@
     if (!_rapiLoaded || !view.querySelector('.rapi-page')) {
       view.innerHTML = buildRapiView();
       _rapiLoaded = true;
+      ensureRapiSessionId();
+      setupRapiSuggestionDrag();
       setTimeout(startRapiIntroAnimation, 0);
     } else {
       // Refresh location widget only
@@ -513,6 +721,7 @@
         tmp.innerHTML = newWidget;
         locationWrap.replaceWith(tmp.firstElementChild);
       }
+      setupRapiSuggestionDrag();
       setTimeout(startRapiIntroAnimation, 0);
     }
   };

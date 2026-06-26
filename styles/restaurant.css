@@ -3406,3 +3406,84 @@ body.app-error .app-loader-retry{display:inline-flex;align-items:center;justify-
     font-size:.82rem;
   }
 }
+
+/* Product sheet tighter mobile containment */
+#productModal.active{
+  overflow:hidden!important;
+  touch-action:none;
+}
+
+#productModal .modal--product.product-no-scroll{
+  touch-action:none;
+}
+
+#productModal .modal--product.product-no-scroll .modal-body{
+  overscroll-behavior:none;
+}
+
+#productModal #pmForm{
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+
+#productModal .pm-obs-wrap{
+  width:calc(100% - 12px);
+  max-width:calc(100% - 12px);
+}
+
+#productModal .pm-obs{
+  min-height:58px;
+  max-height:64px;
+  padding:10px 44px 10px 12px!important;
+  font-size:.8rem;
+}
+
+#productModal .pm-obs-count{
+  right:10px;
+  bottom:9px;
+  max-width:34px;
+  font-size:.62rem;
+}
+
+#productModal .modal-footer{
+  padding-left:8px!important;
+  padding-right:28px!important;
+  gap:8px!important;
+}
+
+#productModal .qty-bar{
+  gap:4px!important;
+  padding:1px 5px!important;
+  border-radius:10px;
+}
+
+#productModal .qty-btn{
+  width:28px!important;
+  height:32px!important;
+  font-size:1.22rem!important;
+}
+
+#productModal .qty-val{
+  min-width:18px!important;
+  font-size:.9rem!important;
+}
+
+#productModal #pmAddBtn{
+  margin-right:10px;
+  min-height:42px;
+  border-radius:10px;
+}
+
+@media(max-width:380px){
+  #productModal .modal-footer{
+    padding-left:6px!important;
+    padding-right:32px!important;
+    gap:6px!important;
+  }
+
+  #productModal #pmAddBtn{
+    margin-right:8px;
+    font-size:.76rem!important;
+  }
+}

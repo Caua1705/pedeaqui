@@ -95,7 +95,7 @@
     const scrollY = currentScrollY();
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
   }
 
   function openModalImmediately(id) {
@@ -105,7 +105,7 @@
     el.classList.add('no-motion');
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, ['loginModal', 'productModal'].includes(id) ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
 

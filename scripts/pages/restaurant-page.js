@@ -2140,6 +2140,7 @@
   function openAddrPicker(origin) {
     _addrPickerOrigin = origin || ($('mobViewProfile')?.classList.contains('active') && !$('operationModal')?.classList.contains('active') ? 'profile' : 'operation');
     $('addrPickerModal')?.classList.toggle('no-motion', _addrPickerOrigin !== 'profile');
+    $('addrPickerModal')?.classList.toggle('from-profile', _addrPickerOrigin === 'profile');
     _addrPickerSelected = null;
     _addrPickerItems = [];
     _addrPickerDeleteId = null;
@@ -4548,7 +4549,6 @@
           ${row('receipt', 'Meus pedidos', "openProfSub('pedidos')")}
           ${row('pin', 'Meus endere&ccedil;os', "openAddrPicker('profile')")}
           ${row('doc', 'Pol&iacute;tica de privacidade', "openPolicyScreen('privacy')")}
-          ${row('help', 'Ajuda', "openProfSub('ajuda')")}
           ${row('exit', 'Sair', 'logout()', 'prof-account-row--logout')}
         </nav>
       </section>

@@ -1186,14 +1186,11 @@
     const body = $('productModal')?.querySelector('.modal-body');
     if (!modal || !body) return;
     const scrollable = body.scrollHeight - body.clientHeight;
-    modal.style.setProperty('--pm-scroll-track-top', `${Math.round(body.offsetTop)}px`);
-    modal.style.setProperty('--pm-scroll-track-height', `${Math.round(body.clientHeight)}px`);
-    modal.classList.toggle('has-product-scroll', scrollable > 1);
-    if (scrollable <= 1) return;
-    const thumbHeight = Math.max(48, Math.round((body.clientHeight / body.scrollHeight) * body.clientHeight));
-    const thumbTop = Math.round(body.offsetTop + (body.scrollTop / scrollable) * (body.clientHeight - thumbHeight));
-    modal.style.setProperty('--pm-scroll-thumb-height', `${thumbHeight}px`);
-    modal.style.setProperty('--pm-scroll-thumb-top', `${thumbTop}px`);
+    const hasOverflow = scrollable > 1;
+    modal.classList.toggle('has-product-scroll', hasOverflow);
+    modal.classList.toggle('product-no-scroll', !hasOverflow);
+    body.style.overflowY = hasOverflow ? 'auto' : 'hidden';
+    if (!hasOverflow) body.scrollTop = 0;
   }
 
   function renderProductOptionGroup(group) {

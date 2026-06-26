@@ -8,6 +8,7 @@
 
   /* ── Constants ── */
   const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot.png';
+  const RAPI_SESSION_STORAGE_KEY = 'rapi.session_id';
 
   const ALCOHOL_KEYWORDS = [
     'cerveja', 'cervejas', 'drink', 'drinks', 'whisky', 'whiskey',
@@ -71,10 +72,20 @@
   }
 
   function ensureRapiSessionId() {
-    if (!_rapiSessionId) {
-      const cryptoId = window.crypto?.randomUUID?.();
-      _rapiSessionId = cryptoId || `rapi_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    if (_rapiSessionId) return _rapiSessionId;
+
+    const storedSessionId = window.sessionStorage?.getItem(RAPI_SESSION_STORAGE_KEY);
+    if (storedSessionId) {
+      _rapiSessionId = storedSessionId;
+      return _rapiSessionId;
     }
+
+    const cryptoObj = window.crypto;
+    _rapiSessionId = cryptoObj?.randomUUID?.() || '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => {
+      const randomValue = cryptoObj?.getRandomValues?.(new Uint8Array(1))[0] || Math.floor(Math.random() * 256);
+      return (Number(c) ^ randomValue & 15 >> Number(c) / 4).toString(16);
+    });
+    window.sessionStorage?.setItem(RAPI_SESSION_STORAGE_KEY, _rapiSessionId);
     return _rapiSessionId;
   }
 

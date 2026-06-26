@@ -2123,3 +2123,40 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transform:none!important;
   transition:none!important;
 }
+
+/* Rapi response feedback icons under each assistant answer. */
+#mobViewRapi .rapi-feedback-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  margin-top:12px!important;
+}
+#mobViewRapi .rapi-feedback-btn{
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:currentColor!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:none!important;
+  outline:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#mobViewRapi .rapi-feedback-btn svg{
+  width:20px!important;
+  height:20px!important;
+  display:block!important;
+}
+#mobViewRapi .rapi-feedback-btn:active,
+#mobViewRapi .rapi-feedback-btn:focus,
+#mobViewRapi .rapi-feedback-btn:focus-visible{
+  transform:none!important;
+  opacity:1!important;
+  box-shadow:none!important;
+  outline:none!important;
+}

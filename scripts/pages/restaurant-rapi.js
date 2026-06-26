@@ -130,6 +130,20 @@
     scrollRapiToLatest();
   }
 
+  function renderRapiFeedbackActions() {
+    return `
+      <div class="rapi-feedback-actions" aria-label="Acoes da resposta">
+        <button class="rapi-feedback-btn" type="button" aria-label="Copiar resposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="rapi-feedback-btn" type="button" aria-label="Gostei da resposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/><path d="M7 11 11 2a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 7a3 3 0 0 1-3 3H7Z"/></svg>
+        </button>
+        <button class="rapi-feedback-btn" type="button" aria-label="Nao gostei da resposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/><path d="M17 13 13 22a3 3 0 0 1-3-3v-4H5a2 2 0 0 1-2-2l1-7a3 3 0 0 1 3-3h10Z"/></svg>
+        </button>
+      </div>`;
+  }
   function appendRapiTextMessage(message) {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl) return;
@@ -137,11 +151,11 @@
       <div class="rapi-result-card rapi-chat-assistant-message">
         <div class="rapi-result-content">
           <div class="rapi-result-title">${esc(message || 'Certo.')}</div>
+          ${renderRapiFeedbackActions()}
         </div>
       </div>`);
     scrollRapiToLatest();
   }
-
   function appendRapiTypingIndicator() {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl || document.getElementById('rapiTypingMessage')) return;

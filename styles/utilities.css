@@ -7485,3 +7485,19 @@ body.menu-tab .product-card.is-pressing{
     box-shadow:0 -1px 0 rgba(0,0,0,.04)!important;
   }
 }
+
+/* Product modal observation title: full-bleed gray strip. */
+@media(max-width:767px){
+  #productModal .pm-label{
+    width:calc(100% + 40px)!important;
+    max-width:none!important;
+    min-height:60px!important;
+    height:60px!important;
+    margin:0 -20px 20px!important;
+    padding:0 20px!important;
+    display:flex!important;
+    align-items:center!important;
+    background:#f1eeee!important;
+    box-sizing:border-box!important;
+  }
+}

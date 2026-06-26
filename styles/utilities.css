@@ -7442,3 +7442,46 @@ body.menu-tab .product-card.is-pressing{
     box-sizing:border-box!important;
   }
 }
+
+/* Product modal scroll restore: whole product scrolls, footer stays pinned. */
+@media(max-width:767px){
+  #productModal.active,
+  #productModal .modal--product,
+  #productModal .modal--product.product-no-scroll{
+    touch-action:pan-y!important;
+  }
+  #productModal .modal--product{
+    display:flex!important;
+    flex-direction:column!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  #productModal .product-hero,
+  #productModal .modal-body,
+  #productModal .modal-footer{
+    flex-shrink:0!important;
+  }
+  #productModal .modal-body,
+  #productModal .modal--product.product-no-scroll .modal-body{
+    flex:0 0 auto!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+  }
+  #productModal .modal-footer{
+    position:sticky!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:20!important;
+    flex:0 0 95px!important;
+    min-height:95px!important;
+    background:#ffffff!important;
+    box-shadow:0 -1px 0 rgba(0,0,0,.04)!important;
+  }
+}

@@ -2008,3 +2008,88 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   user-select:none!important;
   -webkit-user-select:none!important;
 }
+
+/* Rapi chat message layout aligned to the reference chat surface. */
+#mobViewRapi .rapi-ai-body--searching{
+  padding:24px 16px 150px!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  padding:0!important;
+  max-height:none!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-results{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:18px!important;
+}
+#mobViewRapi .rapi-chat-user-message,
+#mobViewRapi .rapi-chat-assistant-message{
+  width:auto!important;
+  max-width:88%!important;
+  min-height:0!important;
+  border:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  padding:0!important;
+  margin:0!important;
+  animation:none!important;
+}
+#mobViewRapi .rapi-chat-user-message{
+  align-self:flex-end!important;
+}
+#mobViewRapi .rapi-chat-assistant-message{
+  align-self:flex-start!important;
+}
+#mobViewRapi .rapi-chat-user-message .rapi-result-content,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+  padding:0!important;
+}
+#mobViewRapi .rapi-chat-user-message .rapi-result-title{
+  display:block!important;
+  width:max-content!important;
+  max-width:100%!important;
+  padding:14px 18px!important;
+  border-radius:19px!important;
+
+  font-size:15px!important;
+  line-height:20px!important;
+  font-weight:650!important;
+  text-align:left!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  display:block!important;
+  background:transparent!important;
+  padding:0!important;
+  font-size:16px!important;
+  line-height:24px!important;
+  font-weight:650!important;
+  text-align:left!important;
+}
+#mobViewRapi .rapi-chat-typing{
+  max-width:100%!important;
+}
+#mobViewRapi .rapi-typing-row{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  color:#aeb6c3!important;
+  font-size:16px!important;
+  line-height:22px!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+  display:flex!important;
+  padding:0!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+  gap:4px!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+  width:6px!important;
+  height:6px!important;
+  background:#d6b27a!important;
+}
+#mobViewRapi .rapi-typing-label{
+  color:#aeb6c3!important;
+  font-weight:500!important;
+}

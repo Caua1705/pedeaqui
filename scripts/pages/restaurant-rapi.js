@@ -124,7 +124,6 @@
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="rapi-result-card rapi-chat-user-message">
         <div class="rapi-result-content">
-          <div class="rapi-result-category">Voc&ecirc;</div>
           <div class="rapi-result-title">${esc(message)}</div>
         </div>
       </div>`);
@@ -137,7 +136,6 @@
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="rapi-result-card rapi-chat-assistant-message">
         <div class="rapi-result-content">
-          <div class="rapi-result-category">Rapi</div>
           <div class="rapi-result-title">${esc(message || 'Certo.')}</div>
         </div>
       </div>`);
@@ -148,12 +146,13 @@
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl || document.getElementById('rapiTypingMessage')) return;
     resultsEl.insertAdjacentHTML('beforeend', `
-      <div class="rapi-result-card rapi-chat-assistant-message" id="rapiTypingMessage" aria-live="polite">
+      <div class="rapi-result-card rapi-chat-assistant-message rapi-chat-typing" id="rapiTypingMessage" aria-live="polite">
         <div class="rapi-result-content">
-          <div class="rapi-result-category">Rapi</div>
-          <div class="rapi-result-title">Buscando no card&aacute;pio...</div>
-          <div class="rapi-thinking rapi-thinking--dark visible">
-            <div class="rapi-thinking-dots rapi-thinking-dots--dark"><span></span><span></span><span></span></div>
+          <div class="rapi-typing-row">
+            <div class="rapi-thinking rapi-thinking--dark visible">
+              <div class="rapi-thinking-dots rapi-thinking-dots--dark"><span></span><span></span><span></span></div>
+            </div>
+            <span class="rapi-typing-label">Digitando...</span>
           </div>
         </div>
       </div>`);
@@ -167,7 +166,6 @@
     typingEl.style.opacity = '0';
     setTimeout(() => typingEl.remove(), 180);
   }
-
   function renderRapiOptions(data) {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl) return;
@@ -506,7 +504,13 @@
     if (aiBody) aiBody.classList.add('rapi-ai-body--searching');
     if (labelEl) labelEl.classList.remove('visible');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
-    if (starterEl) starterEl.classList.add('hidden');
+    if (starterEl) {
+      starterEl.classList.add('hidden');
+      starterEl.style.setProperty('display', 'none', 'important');
+      starterEl.style.setProperty('opacity', '0', 'important');
+      starterEl.style.setProperty('visibility', 'hidden', 'important');
+      starterEl.style.setProperty('pointer-events', 'none', 'important');
+    }
 
     appendRapiUserMessage(cleanMessage);
     setRapiInputDisabled(true);
@@ -740,7 +744,13 @@
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
     const starterEl = document.getElementById('rapiStarter');
-    if (starterEl) starterEl.classList.remove('hidden');
+    if (starterEl) {
+      starterEl.classList.remove('hidden');
+      starterEl.style.removeProperty('display');
+      starterEl.style.removeProperty('opacity');
+      starterEl.style.removeProperty('visibility');
+      starterEl.style.removeProperty('pointer-events');
+    }
     // Reset new AI layout elements
     const resultsWrap = document.getElementById('rapiAiResultsWrap');
     if (resultsWrap) resultsWrap.style.display = 'none';

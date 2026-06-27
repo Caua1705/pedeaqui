@@ -7762,3 +7762,140 @@ body.menu-tab .product-card.is-pressing{
     transition:transform .53s ease!important;
   }
 }
+/* Manage Profile: reference layout and Address-style navigation motion. */
+@media (max-width:767px){
+  #mobViewProfile:has(#profSubmeusdados.active) .prof-hub-wrap{
+    filter:none!important;
+  }
+  #mobViewProfile #profSubmeusdados{
+    box-sizing:border-box!important;
+    inset:0!important;
+    padding:0 0 calc(92px + env(safe-area-inset-bottom,0px))!important;
+    background:#ffffff!important;
+    transform:translateX(100%)!important;
+    transition:none!important;
+    overflow-y:auto!important;
+  }
+  #mobViewProfile #profSubmeusdados.active{
+    transform:translateX(0)!important;
+    transition:none!important;
+  }
+  body:has(#mobViewProfile.active):has(#profSubmeusdados.active) .mob-bottom-nav{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+  #profSubmeusdados .prof-manage-header{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:70px!important;
+    display:grid!important;
+    grid-template-columns:32px 1fr 32px!important;
+    align-items:center!important;
+    gap:0!important;
+    padding:0 20px!important;
+    border-bottom:1px solid #eeeeee!important;
+    background:#ffffff!important;
+  }
+  #profSubmeusdados .prof-manage-header h1{
+    margin:0!important;
+    color:#262626!important;
+    font-size:16px!important;
+    line-height:20px!important;
+    font-weight:600!important;
+    letter-spacing:0!important;
+    text-align:center!important;
+  }
+  #profSubmeusdados .prof-manage-back{
+    width:32px!important;
+    height:32px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:9px!important;
+    background:#ececec!important;
+    color:#3f454b!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  #profSubmeusdados .prof-manage-back svg{
+    width:17px!important;
+    height:17px!important;
+    stroke-width:1.5!important;
+  }
+  #profSubmeusdados .prof-manage-body{
+    box-sizing:border-box!important;
+    width:100%!important;
+    padding:20px!important;
+    background:#ffffff!important;
+  }
+  #profSubmeusdados .prof-manage-section{
+    margin:0 0 21px!important;
+  }
+  #profSubmeusdados .prof-manage-section h2{
+    margin:0 0 14px!important;
+    color:#55595f!important;
+    font-size:14px!important;
+    line-height:18px!important;
+    font-weight:500!important;
+    letter-spacing:0!important;
+  }
+  #profSubmeusdados .prof-manage-row{
+    box-sizing:border-box!important;
+    width:374px!important;
+    max-width:100%!important;
+    height:44px!important;
+    display:grid!important;
+    grid-template-columns:20px 1fr 14px!important;
+    align-items:center!important;
+    gap:10px!important;
+    margin:0 auto!important;
+    padding:0 13px!important;
+    border:0!important;
+    border-radius:11px!important;
+    background:#f7f7f7!important;
+    color:#62666c!important;
+    font-family:inherit!important;
+    font-size:12px!important;
+    line-height:16px!important;
+    font-weight:500!important;
+    text-align:left!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  #profSubmeusdados .prof-manage-row:active{
+    background:#f7f7f7!important;
+  }
+  #profSubmeusdados .prof-manage-row-icon{
+    width:18px!important;
+    height:18px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    color:#a8acb0!important;
+  }
+  #profSubmeusdados .prof-manage-row-icon svg{
+    width:17px!important;
+    height:17px!important;
+  }
+  #profSubmeusdados .prof-manage-chevron{
+    width:13px!important;
+    height:13px!important;
+    color:#a9adb1!important;
+  }
+  #profSubmeusdados .prof-manage-delete{
+    width:auto!important;
+    display:block!important;
+    margin:38px auto 0!important;
+    padding:4px 10px!important;
+    border:0!important;
+    background:transparent!important;
+    color:#ff1f1f!important;
+    font-family:inherit!important;
+    font-size:12px!important;
+    line-height:16px!important;
+    font-weight:700!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+}

@@ -7722,10 +7722,24 @@ body.menu-tab .product-card.is-pressing{
   -webkit-backdrop-filter:none!important;
 }
 
-/* Address picker opened from profile behaves like a screen, not a dimming modal. */
-#addrPickerModal.from-profile,
-#addrPickerModal.from-profile.active{
+/* Address picker opened from profile uses the same dimming effect as coupon details. */
+#addrPickerModal.from-profile{
   background:rgba(0,0,0,0)!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
+}
+#addrPickerModal.from-profile.active{
+  background:rgba(0,0,0,.42)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:background .1s ease-out,visibility 0s linear 0s!important;
+}
+
+/* Profile menu: remove the gray press/tap flash before navigation. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-row,
+  #mobViewProfile .prof-account-row:active{
+    background:#ffffff!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
 }

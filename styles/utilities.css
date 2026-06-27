@@ -7140,6 +7140,17 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media (max-width:767px){
   #mobViewProfile .prof-account-row-label{transform:translateX(0)!important}
 }
+/* Profile logged-in greeting: lighter title, subtle tracking and raised avatar. */
+@media (max-width:767px){
+  #mobViewProfile .prof-account-header h1{
+    color:#46515f!important;
+    letter-spacing:.2px!important;
+    margin-left:1px!important;
+  }
+  #mobViewProfile .prof-account-avatar{
+    transform:translateY(-4px)!important;
+  }
+}
 /* Club location widget bugfix: prevent inherited delivery-widget overlap. */
 @media (max-width:767px){
   .club-location-widget.delivery-widget{

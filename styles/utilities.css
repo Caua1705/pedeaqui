@@ -7743,3 +7743,22 @@ body.menu-tab .product-card.is-pressing{
     -webkit-tap-highlight-color:transparent!important;
   }
 }
+
+/* Orders from Profile: match the Address screen forward/back transition. */
+@media (max-width:767px){
+  #mobViewProfile .prof-hub-wrap{
+    transition:filter .28s ease!important;
+  }
+  #mobViewProfile:has(#profSubpedidos.active) .prof-hub-wrap{
+    filter:brightness(.58)!important;
+    transition:filter .1s ease-out!important;
+  }
+  #mobViewProfile #profSubpedidos{
+    transform:translateX(100%)!important;
+    transition:transform .6s ease!important;
+  }
+  #mobViewProfile #profSubpedidos.active{
+    transform:translateX(0)!important;
+    transition:transform .53s ease!important;
+  }
+}

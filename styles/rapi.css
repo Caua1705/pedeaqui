@@ -2285,3 +2285,37 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-chat-user-message{
   margin-right:16px!important;
 }
+/* Exact Rapi product card dimensions. */
+#mobViewRapi .rapi-product-card{
+  flex:0 0 258px!important;
+  width:258px!important;
+  max-width:258px!important;
+  border-radius:10px!important;
+  background:#F36F21!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-image-wrap{
+  width:258px!important;
+  height:258px!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-content{
+  width:258px!important;
+  height:69.5px!important;
+  min-height:69.5px!important;
+  padding:9px 12px!important;
+  box-sizing:border-box!important;
+  background:#F36F21!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:4px!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-title,
+#mobViewRapi .rapi-product-card .rapi-result-price{
+  color:#ffffff!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-price{
+  font-size:14px!important;
+  line-height:17px!important;
+  font-weight:700!important;
+}

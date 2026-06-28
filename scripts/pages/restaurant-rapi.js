@@ -367,6 +367,7 @@
         <div class="rapi-result-image-wrap">${renderProductImg(product)}</div>
         <div class="rapi-result-content">
           <div class="rapi-result-title">${esc(product.name)}</div>
+          <div class="rapi-result-price">${fmtPrice(product.price)}</div>
         </div>
       </article>`;
   }

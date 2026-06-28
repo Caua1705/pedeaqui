@@ -217,9 +217,11 @@
       appendRapiTextMessage('Nao encontrei produtos para essa busca.');
       return;
     }
-    const initialItems = products.slice(0, MAX_INITIAL_RESULTS);
-    resultsEl.insertAdjacentHTML('beforeend', initialItems.map((p, i) => renderResultCard(p, i)).join(''));
-    if (products.length > MAX_INITIAL_RESULTS && showMoreBtn) showMoreBtn.classList.add('visible');
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="rapi-product-rail" aria-label="Produtos sugeridos">
+        ${products.map((p, i) => renderResultCard(p, i)).join('')}
+      </div>`);
+    if (showMoreBtn) showMoreBtn.classList.remove('visible');
     scrollRapiToLatest();
   }
 
@@ -360,24 +362,11 @@
   }
 
   function renderResultCard(product, index) {
-    const catName = product.category_name || '';
-    const desc = product.description || '';
-    const reason = product._reason || 'Recomendado pelo Rapi.';
-    const pid = product.id || product.slug || index;
-    const hasImg = !!(product.image_url || product.image_path);
     return `
-      <article class="rapi-result-card" style="animation-delay:${index * 0.06}s">
-        ${hasImg ? `<div class="rapi-result-image-wrap">${renderProductImg(product)}</div>` : ''}
+      <article class="rapi-result-card rapi-product-card" style="animation-delay:${index * 0.06}s">
+        <div class="rapi-result-image-wrap">${renderProductImg(product)}</div>
         <div class="rapi-result-content">
-          ${catName ? `<div class="rapi-result-category">${esc(catName)}</div>` : ''}
           <div class="rapi-result-title">${esc(product.name)}</div>
-          ${desc ? `<div class="rapi-result-description">${esc(desc)}</div>` : ''}
-          <div class="rapi-result-reason">✨ ${esc(reason)}</div>
-          <div class="rapi-result-actions">
-            <div class="rapi-result-price">${fmtPrice(product.price)}</div>
-            <button class="rapi-menu-btn" onclick="rapiViewInMenu('${esc(product.category_slug || product.category_id || '')}')" type="button">Cardápio</button>
-            <button class="rapi-add-btn" onclick="rapiAddProduct(${JSON.stringify(JSON.stringify(product)).slice(1,-1)})" data-rapi-pid="${esc(String(pid))}" type="button">Adicionar</button>
-          </div>
         </div>
       </article>`;
   }
@@ -705,7 +694,7 @@
     const resultsEl = document.getElementById('rapiResults');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (!resultsEl || !_allResults.length) return;
-    resultsEl.innerHTML = _allResults.map((p, i) => renderResultCard(p, i)).join('');
+    resultsEl.innerHTML = `<div class="rapi-product-rail">${_allResults.map((p, i) => renderResultCard(p, i)).join('')}</div>`;
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
   };
 

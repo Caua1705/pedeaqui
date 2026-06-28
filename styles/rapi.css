@@ -2160,3 +2160,128 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   box-shadow:none!important;
   outline:none!important;
 }
+
+/* Rapi surface: keep one continuous background and avoid the dock covering content. */
+#mobViewRapi .rapi-bottom-dock{
+  background:transparent!important;
+}
+#mobViewRapi .rapi-bottom-dock::before{
+  content:none!important;
+  display:none!important;
+}
+
+/* Product suggestions: image-and-title cards in a horizontal rail. */
+#mobViewRapi .rapi-product-rail{
+  display:flex!important;
+  flex-direction:row!important;
+  gap:10px!important;
+  width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:2px 0 8px!important;
+  scroll-snap-type:x proximity!important;
+  overscroll-behavior-x:contain!important;
+  scrollbar-width:none!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x!important;
+}
+#mobViewRapi .rapi-product-rail::-webkit-scrollbar{display:none!important}
+#mobViewRapi .rapi-product-card{
+  flex:0 0 78%!important;
+  width:78%!important;
+  max-width:280px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:#172235!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  scroll-snap-align:start!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-image-wrap{width:100%!important;height:248px!important;background:#edf0f3!important}
+#mobViewRapi .rapi-product-card .rapi-result-image{width:100%!important;height:100%!important;object-fit:cover!important}
+#mobViewRapi .rapi-product-card .rapi-result-content{padding:12px!important}
+#mobViewRapi .rapi-product-card .rapi-result-title{
+  color:#ffffff!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:14px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+/* The dock is only an anchor for its absolute controls; it must not paint over chat content. */
+#mobViewRapi .rapi-bottom-dock{
+  height:0!important;
+  min-height:0!important;
+  padding:0!important;
+  border:0!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+#mobViewRapi .rapi-bottom-dock::before,
+#mobViewRapi .rapi-bottom-dock::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
+/* Chat must be one continuous scroll surface down to the fixed composer. */
+#mobViewRapi .rapi-ai-body--searching{
+  align-items:stretch!important;
+  min-height:0!important;
+  padding:24px 16px 0!important;
+  overflow:hidden!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:100%!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0 0 170px!important;
+  box-sizing:border-box!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  background:#ffffff!important;
+  touch-action:pan-y!important;
+}
+/* Keep Rapi scrollable without a visible scrollbar track on the right. */
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap,
+#mobViewRapi .rapi-ai-body,
+#mobViewRapi .rapi-page{
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap::-webkit-scrollbar,
+#mobViewRapi .rapi-ai-body::-webkit-scrollbar,
+#mobViewRapi .rapi-page::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+}
+/* Rapi must fill the viewport without vertical side gutters. */
+#mobViewRapi.mob-view--rapi,
+#mobViewRapi.mob-view--rapi.active,
+#mobViewRapi .rapi-page{
+  left:0!important;
+  right:0!important;
+  width:100vw!important;
+  max-width:none!important;
+  margin:0!important;
+}
+#mobViewRapi .rapi-ai-body--searching{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  width:100%!important;
+  max-width:none!important;
+}
+/* Align chat bubbles without bringing the full-height side gutters back. */
+#mobViewRapi .rapi-chat-assistant-message{
+  margin-left:16px!important;
+}
+#mobViewRapi .rapi-chat-user-message{
+  margin-right:16px!important;
+}

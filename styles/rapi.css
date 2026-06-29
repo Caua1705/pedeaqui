@@ -2325,5 +2325,6 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   line-height:1.65!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+  color:#F36F21!important;
   font-weight:600!important;
 }

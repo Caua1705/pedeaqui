@@ -2322,7 +2322,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 /* Assistant copy: readable body text with selective Markdown emphasis. */
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
   font-weight:400!important;
-  line-height:1.65!important;
+  line-height:1.6!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
   color:#F36F21!important;

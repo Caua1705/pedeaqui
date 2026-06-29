@@ -62,6 +62,7 @@
   function renderRapiMarkdown(text) {
     return esc(text)
       .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/(?:\r?\n){2,}/g, '\n')
       .replace(/\r?\n/g, '<br>');
   }
 

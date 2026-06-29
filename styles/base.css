@@ -1,7 +1,8 @@
-﻿*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; }
 img { max-width: 100%; display: block; }
+html, body { font-family: "Inter", sans-serif; }
 button, input, textarea, select { font: inherit; }
 button,
 [role="button"],

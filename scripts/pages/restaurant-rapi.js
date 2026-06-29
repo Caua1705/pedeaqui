@@ -60,9 +60,9 @@
   }
 
   function renderRapiMarkdown(text) {
-    return esc(text)
-      .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\r?\n/g, '<br>');
+    return esc(text).replace(/(?:\r?\n){2,}/g, '\n')
+      .replace(/\n([^\n]*\?\s*)$/, '<span class="rapi-final-question">$1</span>')
+      .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
   }
 
   /* ── Intent detection ── */

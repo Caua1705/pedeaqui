@@ -2321,8 +2321,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 /* Assistant copy: readable body text with selective Markdown emphasis. */
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  font-size:15px!important;
   font-weight:400!important;
-  line-height:1.6!important;
+  line-height:1.55!important;
+  letter-spacing:.002em!important;
+  white-space:pre-wrap!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
   color:#F36F21!important;
@@ -2332,13 +2335,31 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
   margin:0!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title br + br{
-  display:none!important;
-}
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title p,
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title ul,
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title ol,
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title li{
   margin-top:0!important;
   margin-bottom:0!important;
+}
+/* Prevent the first glyph from being clipped by the legacy card overflow. */
+#mobViewRapi .rapi-chat-assistant-message{
+  overflow:visible!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  padding-left:2px!important;
+}
+/* Slight right alignment for response actions and product suggestions. */
+#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+  margin-left:10px!important;
+}
+#mobViewRapi .rapi-product-rail{
+  padding-left:18px!important;
+  box-sizing:border-box!important;
+  scroll-padding-left:18px!important;
+}
+/* Add a short, intentional gap only before the final question. */
+#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+  display:block!important;
+  margin-top:10px!important;
 }

@@ -248,7 +248,9 @@
       session_id: ensureRapiSessionId(),
       message
     };
-    return normalizeChatResponse(await window.PedeAquiApiClient.post('/chat', payload));
+    const apiResponse = await window.PedeAquiApiClient.post('/chat', payload);
+    console.log('[Rapi] Resposta completa da API:', apiResponse);
+    return normalizeChatResponse(apiResponse);
   }
   function detectIntent(message) {
     const msg = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -533,6 +535,10 @@
 
     try {
       const response = await postRapiChatMessage(cleanMessage);
+      console.log('[Rapi] Resumo da resposta:', {
+        response_type: response?.response_type,
+        products_count: Array.isArray(response?.products) ? response.products.length : 0
+      });
       removeRapiTypingIndicator();
       setTimeout(() => renderRapiChatResponse(response), 190);
     } catch (error) {

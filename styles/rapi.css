@@ -2328,3 +2328,17 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   color:#F36F21!important;
   font-weight:600!important;
 }
+/* Keep assistant messages visually compact without changing their Markdown. */
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  margin:0!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title br + br{
+  display:none!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title p,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title ul,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title ol,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title li{
+  margin-top:0!important;
+  margin-bottom:0!important;
+}

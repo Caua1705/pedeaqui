@@ -2319,3 +2319,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   line-height:17px!important;
   font-weight:700!important;
 }
+/* Assistant copy: readable body text with selective Markdown emphasis. */
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  font-weight:400!important;
+  line-height:1.65!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+  font-weight:600!important;
+}

@@ -59,6 +59,12 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  function renderRapiMarkdown(text) {
+    return esc(text)
+      .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\r?\n/g, '<br>');
+  }
+
   /* ── Intent detection ── */
   function getRapiRestaurantId() {
     const store = window.PedeAquiRestaurantStore?.get?.() || {};
@@ -161,7 +167,7 @@
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="rapi-result-card rapi-chat-assistant-message">
         <div class="rapi-result-content">
-          <div class="rapi-result-title">${esc(message || 'Certo.')}</div>
+          <div class="rapi-result-title">${renderRapiMarkdown(message || 'Certo.')}</div>
           ${renderRapiFeedbackActions()}
         </div>
       </div>`);

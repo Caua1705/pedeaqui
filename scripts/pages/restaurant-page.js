@@ -74,6 +74,21 @@
   const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
+  const formatProductTitle = (value) => {
+    const minorWords = new Set(['a','à','ao','aos','as','às','com','da','das','de','do','dos','e','em','na','nas','no','nos','ou','para','por']);
+    let firstWord = true;
+    let segmentStart = true;
+    return String(value || '').toLocaleLowerCase('pt-BR').split(/(\s+|\|)/).map(token => {
+      if (!token || /^\s+$/.test(token)) return token;
+      if (token === '|') { segmentStart = true; return token; }
+      const word = token.replace(/^[^A-Za-zÀ-ÖØ-öø-ÿ0-9]+|[^A-Za-zÀ-ÖØ-öø-ÿ0-9]+$/g, '');
+      const keepLowercase = minorWords.has(word) && !firstWord && !segmentStart;
+      const formatted = keepLowercase ? token : token.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]/, letter => letter.toLocaleUpperCase('pt-BR'));
+      firstWord = false;
+      segmentStart = false;
+      return formatted;
+    }).join('');
+  };
   const onlyDigits = window.PedeAquiValidators?.onlyDigits || ((value) => String(value ?? '').replace(/\D/g, ''));
   const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || '';
   const restaurantStore = () => window.PedeAquiRestaurantStore;
@@ -433,7 +448,7 @@
     return `
       <article class="product-card" data-product-id="${esc(product.id)}" onclick="openProduct('${esc(product.id)}')">
         <div class="product-content">
-          <h3 class="product-name">${esc(product.name)}</h3>
+          <h3 class="product-name">${esc(formatProductTitle(product.name))}</h3>
           ${product.description ? `<p class="product-description">${esc(product.description)}</p>` : ''}
           <div class="product-price-row">
             <span class="product-price">${Number.isFinite(product.price) ? `A partir de ${currentPrice}` : currentPrice}</span>

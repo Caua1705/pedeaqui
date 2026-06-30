@@ -66,6 +66,22 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  function formatProductTitle(value) {
+    const minorWords = new Set(['a','à','ao','aos','as','às','com','da','das','de','do','dos','e','em','na','nas','no','nos','ou','para','por']);
+    let firstWord = true;
+    let segmentStart = true;
+    return String(value || '').toLocaleLowerCase('pt-BR').split(/(\s+|\|)/).map(token => {
+      if (!token || /^\s+$/.test(token)) return token;
+      if (token === '|') { segmentStart = true; return token; }
+      const word = token.replace(/^[^A-Za-zÀ-ÖØ-öø-ÿ0-9]+|[^A-Za-zÀ-ÖØ-öø-ÿ0-9]+$/g, '');
+      const keepLowercase = minorWords.has(word) && !firstWord && !segmentStart;
+      const formatted = keepLowercase ? token : token.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]/, letter => letter.toLocaleUpperCase('pt-BR'));
+      firstWord = false;
+      segmentStart = false;
+      return formatted;
+    }).join('');
+  }
+
   function renderRapiMarkdown(text) {
     return esc(text).replace(/(?:\r?\n){2,}/g, '\n')
       .replace(/\n([^\n]*\?\s*)$/, '<span class="rapi-final-question">$1</span>')
@@ -550,7 +566,7 @@
       <article class="rapi-result-card rapi-product-card" style="animation-delay:${index * 0.06}s">
         <div class="rapi-result-image-wrap">${renderProductImg(product)}</div>
         <div class="rapi-result-content">
-          <div class="rapi-result-title">${esc(product.name)}</div>
+          <div class="rapi-result-title">${esc(formatProductTitle(product.name))}</div>
           <div class="rapi-result-price">${fmtPrice(product.price)}</div>
         </div>
       </article>`;

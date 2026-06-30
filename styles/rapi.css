@@ -2267,10 +2267,10 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-product-card .rapi-result-title{
   color:#ffffff!important;
   font-family:"Inter",sans-serif!important;
-  font-size:14px!important;
+  font-size:15px!important;
   line-height:18px!important;
-  font-weight:700!important;
-  text-transform:uppercase!important;
+  font-weight:600!important;
+  text-transform:none!important;
   white-space:nowrap!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -2355,7 +2355,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   width:258px!important;
   max-width:258px!important;
   border-radius:10px!important;
-  background:#F36F21!important;
+  background:#374151!important;
 }
 #mobViewRapi .rapi-product-card .rapi-result-image-wrap{
   width:258px!important;
@@ -2367,7 +2367,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   min-height:69.5px!important;
   padding:9px 12px!important;
   box-sizing:border-box!important;
-  background:#F36F21!important;
+  background:#374151!important;
+  border-top:1px solid rgba(255,255,255,.12)!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:flex-start!important;
@@ -2382,6 +2383,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   font-size:14px!important;
   line-height:17px!important;
   font-weight:700!important;
+  color:#f3e8c8!important;
 }
 /* Assistant copy: readable body text with selective Markdown emphasis. */
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
@@ -2600,3 +2602,5 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-rating-btn[aria-pressed="true"],
 #mobViewRapi .rapi-copy-btn.is-copied,
 #mobViewRapi .rapi-copy-btn.is-restoring{color:#d97706!important}
+/* Product names use application-wide Title Case presentation. */
+body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}

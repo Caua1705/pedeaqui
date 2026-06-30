@@ -2073,30 +2073,52 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   text-align:left!important;
 }
 #mobViewRapi .rapi-chat-typing{
+  width:max-content!important;
   max-width:100%!important;
 }
 #mobViewRapi .rapi-typing-row{
   display:flex!important;
   align-items:center!important;
-  gap:10px!important;
-  color:#aeb6c3!important;
-  font-size:16px!important;
-  line-height:22px!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
+  min-height:48px!important;
+  padding:13px 16px!important;
+  border:1px solid #e4e4e4!important;
+  border-radius:14px!important;
+  background:#f5f5f5!important;
+  color:#747474!important;
+  font-size:15px!important;
+  line-height:20px!important;
+  box-shadow:none!important;
 }
 #mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
   display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:24px!important;
+  height:24px!important;
+  flex:0 0 24px!important;
   padding:0!important;
+  margin:0!important;
+  border:1px solid #d6d6d6!important;
+  border-radius:7px!important;
+  background:#ffffff!important;
+  box-shadow:none!important;
 }
 #mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
-  gap:4px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
 }
 #mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
-  width:6px!important;
-  height:6px!important;
-  background:#d6b27a!important;
+  width:3px!important;
+  height:3px!important;
+  background:#6f6f6f!important;
 }
 #mobViewRapi .rapi-typing-label{
-  color:#aeb6c3!important;
+  color:#747474!important;
+  font-size:15px!important;
+  line-height:20px!important;
   font-weight:500!important;
 }
 
@@ -2408,4 +2430,137 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 /* Lower the composer slightly to reduce the visible strip above the bottom nav. */
 #mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
   bottom:14px!important;
+}
+/* Rapi typing indicator: neutral radial dot matrix and left-to-right text beam. */
+#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+  width:42px!important;height:42px!important;flex:0 0 42px!important;padding:7px!important;
+  border-radius:10px!important;background:#ededed!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+  display:grid!important;grid-template-columns:repeat(5,3px)!important;grid-template-rows:repeat(5,3px)!important;
+  align-content:center!important;justify-content:center!important;gap:3px!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+  width:3px!important;height:3px!important;border-radius:50%!important;background:#a8a8a8!important;
+  opacity:.28;transform:scale(.72);animation:rapi-dot-radial-wave 1.8s ease-in-out infinite!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(13){animation-delay:0s!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(7),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(8),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(9),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(12),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(14),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(17),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(18),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(19){animation-delay:.12s!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(1),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(2),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(3),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(4),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(5),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(6),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(10),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(11),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(15),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(16),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(20),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(21),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(22),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(23),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(24),
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(25){animation-delay:.24s!important}
+@keyframes rapi-dot-radial-wave{
+  0%,62%,100%{opacity:.24;transform:scale(.68);background:#a8a8a8}
+  25%{opacity:1;transform:scale(1.45);background:#4f4f4f}
+  43%{opacity:.56;transform:scale(1);background:#777}
+}
+#mobViewRapi .rapi-typing-label{
+  color:transparent!important;
+  background:linear-gradient(105deg,#777 0%,#777 36%,#f7f7f7 47%,#fff 50%,#f7f7f7 53%,#777 64%,#777 100%)!important;
+  background-size:250% 100%!important;background-position:100% 0;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  animation:rapi-typing-text-beam 2.4s linear infinite!important;
+}
+@keyframes rapi-typing-text-beam{from{background-position:100% 0}to{background-position:-150% 0}}
+/* Compact unboxed AI state; animated values must remain free of !important. */
+#mobViewRapi .rapi-chat-assistant-message,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-content,
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title,
+#mobViewRapi .rapi-chat-typing,
+#mobViewRapi .rapi-chat-typing .rapi-typing-row{
+  border:0!important;background:transparent!important;box-shadow:none!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-typing-row{min-height:0!important;padding:0!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+  width:28px!important;height:28px!important;flex-basis:28px!important;padding:4px!important;
+  border:0!important;border-radius:7px!important;background:#eee!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+  grid-template-columns:repeat(5,2px)!important;grid-template-rows:repeat(5,2px)!important;gap:2px!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+  width:2px!important;height:2px!important;background:#777!important;
+  opacity:.18;transform:scale(.55);animation:rapi-dot-radial-wave-visible 1.65s ease-in-out infinite!important;
+}
+@keyframes rapi-dot-radial-wave-visible{
+  0%,65%,100%{opacity:.16;transform:scale(.55);box-shadow:0 0 0 rgba(65,65,65,0)}
+  24%{opacity:1;transform:scale(1.9);box-shadow:0 0 4px rgba(65,65,65,.8)}
+  43%{opacity:.46;transform:scale(.9);box-shadow:0 0 1px rgba(65,65,65,.25)}
+}
+#mobViewRapi .rapi-typing-label{
+  background-position:100% 0;animation:rapi-typing-text-beam-visible 2.2s ease-in-out infinite!important;
+}
+@keyframes rapi-typing-text-beam-visible{
+  0%{background-position:100% 0}
+  70%,100%{background-position:-150% 0}
+}
+/* Compact square geometry for the typing matrix. */
+#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{border-radius:2px!important}
+#mobViewRapi .rapi-typing-label{
+  display:inline-block!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
+  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,#f7a46f 41%,#f36f21 48%,#ff8a43 52%,#f36f21 56%,#f7a46f 63%,#747474 72%,#747474 100%)!important;
+  background-repeat:no-repeat!important;background-size:240% 100%!important;background-position:140% 0;
+  animation:rapi-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
+}
+@keyframes rapi-typing-light-sweep{
+  0%{background-position:140% 0}
+  100%{background-position:-140% 0}
+}
+/* 7x7 polygon mask from the visual reference: 3 / 5 / 7 / 7 / 7 / 5 / 3. */
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+  grid-template-columns:repeat(7,2px)!important;grid-template-rows:repeat(7,2px)!important;gap:1px!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-shape-cut{visibility:hidden!important;animation:none!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-0{animation-name:rapi-polygon-ring-0!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-1{animation-name:rapi-polygon-ring-1!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-2,
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-3{animation-name:rapi-polygon-ring-2!important}
+#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:not(.is-shape-cut){
+  animation-duration:1.75s!important;animation-timing-function:ease-in-out!important;
+  animation-iteration-count:infinite!important;animation-delay:0s!important;
+}
+@keyframes rapi-polygon-ring-0{
+  0%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
+  12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px rgba(55,55,55,.75)}
+}
+@keyframes rapi-polygon-ring-1{
+  0%,18%,82%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
+  30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px rgba(55,55,55,.6)}
+}
+@keyframes rapi-polygon-ring-2{
+  0%,36%,64%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
+  46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px rgba(55,55,55,.5)}
+}
+/* Single-layer traveling beam clipped inside the glyphs. */
+#mobViewRapi .rapi-typing-label{
+  position:relative!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
+  background:linear-gradient(90deg,#747474 0%,#747474 42%,#f7a46f 47%,#f36f21 50%,#f7a46f 53%,#747474 58%,#747474 100%)!important;
+  background-repeat:no-repeat!important;background-size:300% 100%!important;background-position:100% 0;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  animation:rapi-typing-beam-inside 1.8s linear infinite!important;
+}
+#mobViewRapi .rapi-typing-label::after{content:none!important;display:none!important}
+@keyframes rapi-typing-beam-inside{
+  0%{background-position:100% 0}
+  100%{background-position:0% 0}
 }

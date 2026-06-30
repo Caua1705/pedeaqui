@@ -27,6 +27,13 @@
   let _rapiSessionId = null;
   let _rapiSending = false;
   let _rapiOptionCache = [];
+  let _rapiTypingStatusTimer = null;
+
+  const RAPI_TYPING_STATUSES = [
+    'Preparando sugestões...',
+    'Buscando no cardápio...',
+    'Digitando...'
+  ];
 
   /* ── Helpers ── */
   function getRapiProducts() {
@@ -63,6 +70,12 @@
     return esc(text).replace(/(?:\r?\n){2,}/g, '\n')
       .replace(/\n([^\n]*\?\s*)$/, '<span class="rapi-final-question">$1</span>')
       .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function renderRapiStreamingMarkdown(text) {
+    const escaped = esc(text).replace(/(?:\r?\n){2,}/g, '\n');
+    const completed = escaped.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+    return completed.replace(/\*\*([^*]*)$/, '<strong>$1</strong>');
   }
 
   /* ── Intent detection ── */
@@ -242,7 +255,9 @@
         wordSegments.length,
         visibleWords + RAPI_RESPONSE_WORDS_PER_STEP
       );
-      element.textContent = wordSegments.slice(0, visibleWords).join('');
+      element.innerHTML = renderRapiStreamingMarkdown(
+        wordSegments.slice(0, visibleWords).join('')
+      );
       options.onProgress?.(visibleWords);
       if (visibleWords >= wordSegments.length) {
         finish();
@@ -274,7 +289,7 @@
     const title = messageElement?.querySelector('.rapi-result-title');
     if (messageElement && feedbackContext) messageElement._rapiFeedbackContext = feedbackContext;
 
-    revealRapiResponse(title, plainText, {
+    revealRapiResponse(title, text, {
       onProgress: scrollRapiToLatest,
       renderFinal: () => {
         title.innerHTML = renderRapiMarkdown(text);
@@ -288,21 +303,51 @@
   function appendRapiTypingIndicator() {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl || document.getElementById('rapiTypingMessage')) return;
+    let statusIndex = Math.floor(Math.random() * RAPI_TYPING_STATUSES.length);
+    const typingDots = Array.from({ length: 49 }, (_, index) => {
+      const row = Math.floor(index / 7);
+      const column = index % 7;
+      const inset = Math.max(0, Math.abs(row - 3) - 1);
+      const hidden = column < inset || column > 6 - inset;
+      const ring = Math.max(Math.abs(row - 3), Math.abs(column - 3));
+      return `<span class="${hidden ? 'is-shape-cut' : `is-ring-${ring}`}"></span>`;
+    }).join('');
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="rapi-result-card rapi-chat-assistant-message rapi-chat-typing" id="rapiTypingMessage" aria-live="polite">
         <div class="rapi-result-content">
           <div class="rapi-typing-row">
             <div class="rapi-thinking rapi-thinking--dark visible">
-              <div class="rapi-thinking-dots rapi-thinking-dots--dark"><span></span><span></span><span></span></div>
+              <div class="rapi-thinking-dots rapi-thinking-dots--dark">${typingDots}</div>
             </div>
-            <span class="rapi-typing-label">Digitando...</span>
+            <span class="rapi-typing-label" data-text="${RAPI_TYPING_STATUSES[statusIndex]}">${RAPI_TYPING_STATUSES[statusIndex]}</span>
           </div>
         </div>
       </div>`);
+    clearTimeout(_rapiTypingStatusTimer);
+    const scheduleNextStatus = () => {
+      const delay = 4200 + Math.floor(Math.random() * 2801);
+      _rapiTypingStatusTimer = setTimeout(() => {
+        const label = document.querySelector('#rapiTypingMessage .rapi-typing-label');
+        if (!label) {
+          _rapiTypingStatusTimer = null;
+          return;
+        }
+        const alternatives = RAPI_TYPING_STATUSES
+          .map((_, index) => index)
+          .filter(index => index !== statusIndex);
+        statusIndex = alternatives[Math.floor(Math.random() * alternatives.length)];
+        label.textContent = RAPI_TYPING_STATUSES[statusIndex];
+        label.dataset.text = RAPI_TYPING_STATUSES[statusIndex];
+        scheduleNextStatus();
+      }, delay);
+    };
+    scheduleNextStatus();
     scrollRapiToLatest();
   }
 
   function removeRapiTypingIndicator() {
+    clearTimeout(_rapiTypingStatusTimer);
+    _rapiTypingStatusTimer = null;
     const typingEl = document.getElementById('rapiTypingMessage');
     if (!typingEl) return;
     typingEl.style.transition = 'opacity .18s ease';

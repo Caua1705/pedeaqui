@@ -2503,7 +2503,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   grid-template-columns:repeat(5,2px)!important;grid-template-rows:repeat(5,2px)!important;gap:2px!important;
 }
 #mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
-  width:2px!important;height:2px!important;background:#777!important;
+  width:2px!important;height:2px!important;background:#d97706!important;
   opacity:.18;transform:scale(.55);animation:rapi-dot-radial-wave-visible 1.65s ease-in-out infinite!important;
 }
 @keyframes rapi-dot-radial-wave-visible{
@@ -2545,15 +2545,15 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 @keyframes rapi-polygon-ring-0{
   0%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px rgba(55,55,55,.75)}
+  12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px rgba(217,119,6,.75)}
 }
 @keyframes rapi-polygon-ring-1{
   0%,18%,82%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px rgba(55,55,55,.6)}
+  30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px rgba(217,119,6,.6)}
 }
 @keyframes rapi-polygon-ring-2{
   0%,36%,64%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px rgba(55,55,55,.5)}
+  46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px rgba(217,119,6,.5)}
 }
 /* Single-layer traveling beam clipped inside the glyphs. */
 #mobViewRapi .rapi-typing-label{
@@ -2604,3 +2604,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-copy-btn.is-restoring{color:#d97706!important}
 /* Product names use application-wide Title Case presentation. */
 body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}
+
+/* Rapidex loading identity: orange loader, medium-gray status text. */
+#mobViewRapi .rapi-typing-label{
+  color:#6b7280!important;-webkit-text-fill-color:#6b7280!important;background:none!important;animation:none!important;
+}

@@ -752,19 +752,31 @@
     if (!button) return;
     const actions = button.closest('.rapi-feedback-actions');
     const messageElement = button.closest('.rapi-chat-assistant-message');
-    if (!actions || actions.dataset.feedbackSent === '1') return;
+    if (!actions) return;
+
+    const wasSelected = button.classList.contains('is-selected');
+    actions.querySelectorAll('.rapi-rating-btn').forEach(ratingButton => {
+      ratingButton.classList.remove('is-selected');
+      ratingButton.setAttribute('aria-pressed', 'false');
+    });
+
+    if (wasSelected) {
+      actions.classList.remove('is-restoring-ratings');
+      void actions.offsetWidth;
+      actions.classList.add('is-restoring-ratings');
+      setTimeout(() => actions.classList.remove('is-restoring-ratings'), 280);
+    } else {
+      button.classList.add('is-selected');
+      button.setAttribute('aria-pressed', 'true');
+    }
+
+    if (actions.dataset.feedbackSent === '1') return;
 
     const feedback = button.dataset.feedback;
     const context = messageElement?._rapiFeedbackContext;
     if (!context || (feedback !== 'like' && feedback !== 'dislike')) return;
 
     actions.dataset.feedbackSent = '1';
-    actions.querySelectorAll('.rapi-rating-btn').forEach(ratingButton => {
-      const selected = ratingButton === button;
-      ratingButton.classList.toggle('is-selected', selected);
-      ratingButton.setAttribute('aria-pressed', String(selected));
-      ratingButton.disabled = true;
-    });
 
     try {
       await window.PedeAquiApiClient.post('/chat/feedback', {
@@ -780,7 +792,6 @@
       console.error('[Rapi] Erro ao enviar feedback:', error);
     }
   };
-
   window.rapiUseSuggestion = function (message) {
     if (_rapiSending) return;
     const inputEl = document.getElementById('rapiInput');

@@ -763,15 +763,17 @@
     let baselineHeight = 0;
     const updateKeyboardOffset = () => {
       if (document.activeElement !== input) return;
-      const visibleHeight = viewport?.height || window.innerHeight;
+      const visibleHeight = Math.min(viewport?.height || window.innerHeight, window.innerHeight);
       const viewportTop = viewport?.offsetTop || 0;
       const keyboardHeight = Math.max(0, baselineHeight - visibleHeight - viewportTop);
+      const introShift = Math.min(190, Math.max(110, keyboardHeight * .48));
       view.style.setProperty('--rapi-keyboard-height', `${keyboardHeight}px`);
-      view.classList.toggle('rapi-keyboard-open', keyboardHeight > 80);
+      view.style.setProperty('--rapi-intro-shift', introShift + 'px');
+      view.classList.toggle('rapi-keyboard-open', keyboardHeight > 60);
     };
 
     input.addEventListener('focus', () => {
-      baselineHeight = Math.max(window.innerHeight, document.documentElement.clientHeight);
+      baselineHeight = Math.max(window.innerHeight, document.documentElement.clientHeight, viewport?.height || 0);
       requestAnimationFrame(updateKeyboardOffset);
       setTimeout(updateKeyboardOffset, 120);
       setTimeout(updateKeyboardOffset, 320);
@@ -781,10 +783,12 @@
         if (document.activeElement === input) return;
         view.classList.remove('rapi-keyboard-open');
         view.style.removeProperty('--rapi-keyboard-height');
+        view.style.removeProperty('--rapi-intro-shift');
       }, 80);
     });
     viewport?.addEventListener('resize', updateKeyboardOffset);
     viewport?.addEventListener('scroll', updateKeyboardOffset);
+    window.addEventListener('resize', updateKeyboardOffset);
   }
   function setupRapiSuggestionDrag() {
     const rail = document.getElementById('rapiStarter');
@@ -883,13 +887,11 @@
         });
       });
     };
-    const fallbackTimer = setTimeout(revealSuggestions, 2600);
 
     typeRapiText(questionEl, text, {
       onFrame: frame => { _introTypeTimer = frame; },
       onComplete: () => {
         _introTypeTimer = null;
-        clearTimeout(fallbackTimer);
         revealSuggestions();
       }
     });

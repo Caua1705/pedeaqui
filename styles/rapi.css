@@ -2632,7 +2632,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 #mobViewRapi .rapi-product-card *{touch-action:auto!important}
 /* Move the composer and full intro content above the mobile keyboard. */
 #mobViewRapi.rapi-keyboard-open .rapi-bottom-dock{
-  bottom:calc(var(--rapi-keyboard-height,0px) + 10px)!important;
+  bottom:calc(var(--rapi-keyboard-height,0px) + 4px)!important;
   transition:bottom .18s ease!important;
 }
 #mobViewRapi.rapi-keyboard-open .rapi-ai-body:not(.rapi-ai-body--searching){

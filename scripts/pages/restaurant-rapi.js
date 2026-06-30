@@ -753,6 +753,39 @@
       }, 190);
     }
   }
+  function setupRapiKeyboardViewport() {
+    const view = document.getElementById('mobViewRapi');
+    const input = document.getElementById('rapiInput');
+    const viewport = window.visualViewport;
+    if (!view || !input || input.dataset.keyboardViewportReady === '1') return;
+    input.dataset.keyboardViewportReady = '1';
+
+    let baselineHeight = 0;
+    const updateKeyboardOffset = () => {
+      if (document.activeElement !== input) return;
+      const visibleHeight = viewport?.height || window.innerHeight;
+      const viewportTop = viewport?.offsetTop || 0;
+      const keyboardHeight = Math.max(0, baselineHeight - visibleHeight - viewportTop);
+      view.style.setProperty('--rapi-keyboard-height', `${keyboardHeight}px`);
+      view.classList.toggle('rapi-keyboard-open', keyboardHeight > 80);
+    };
+
+    input.addEventListener('focus', () => {
+      baselineHeight = Math.max(window.innerHeight, document.documentElement.clientHeight);
+      requestAnimationFrame(updateKeyboardOffset);
+      setTimeout(updateKeyboardOffset, 120);
+      setTimeout(updateKeyboardOffset, 320);
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (document.activeElement === input) return;
+        view.classList.remove('rapi-keyboard-open');
+        view.style.removeProperty('--rapi-keyboard-height');
+      }, 80);
+    });
+    viewport?.addEventListener('resize', updateKeyboardOffset);
+    viewport?.addEventListener('scroll', updateKeyboardOffset);
+  }
   function setupRapiSuggestionDrag() {
     const rail = document.getElementById('rapiStarter');
     if (!rail || rail.dataset.dragReady === '1') return;
@@ -1031,6 +1064,7 @@
       setupRapiSuggestionDrag();
       setTimeout(startRapiIntroAnimation, 0);
     }
+    setupRapiKeyboardViewport();
   };
 
   window.rapiReset = function () {

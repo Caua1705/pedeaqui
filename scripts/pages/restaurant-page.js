@@ -4381,6 +4381,7 @@
 
   async function mobNavRapi() {
     const currentNav = getCurrentBottomNav();
+    const shouldFocusRapiInput = currentNav !== 'rapi';
     if (currentNav !== 'rapi') _rapiReturnNav = currentNav;
     closeMobViews();
     uiStore()?.set?.({ activeView: 'rapi', bottomNav: 'rapi' });
@@ -4394,6 +4395,14 @@
       await ensureMenuLoaded();
     }
     if (window.renderRapiView) window.renderRapiView();
+    if (shouldFocusRapiInput) {
+      requestAnimationFrame(() => {
+        const input = $('rapiInput');
+        if ($('mobViewRapi')?.classList.contains('active')) {
+          input?.focus?.({ preventScroll: true });
+        }
+      });
+    }
   }
 
   function rapiGoBack() {

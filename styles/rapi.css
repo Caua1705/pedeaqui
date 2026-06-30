@@ -2624,3 +2624,9 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 #mobViewRapi .rapi-suggest-chip:focus-visible{
   background:#fff7ed!important;border-color:#d97706!important;color:#d97706!important;
 }
+/* Native two-axis gestures inside chat results and product cards. */
+#mobViewRapi .rapi-ai-body--searching,
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{touch-action:pan-y!important}
+#mobViewRapi .rapi-product-rail,
+#mobViewRapi .rapi-product-card,
+#mobViewRapi .rapi-product-card *{touch-action:auto!important}

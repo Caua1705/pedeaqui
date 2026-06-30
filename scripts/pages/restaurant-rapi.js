@@ -707,6 +707,7 @@
 
     const cleanMessage = String(message || '').trim();
     if (!cleanMessage) return;
+    inputEl?.blur?.();
 
     _activeChipId = chipId || null;
     _rapiSending = true;
@@ -749,7 +750,6 @@
       _rapiSending = false;
       setTimeout(() => {
         setRapiInputDisabled(false);
-        inputEl?.focus?.();
       }, 190);
     }
   }

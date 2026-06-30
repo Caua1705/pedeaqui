@@ -2630,8 +2630,20 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 #mobViewRapi .rapi-product-rail,
 #mobViewRapi .rapi-product-card,
 #mobViewRapi .rapi-product-card *{touch-action:auto!important}
-/* Keep the composer immediately above the mobile virtual keyboard. */
+/* Resize the whole Rapi surface above the mobile virtual keyboard. */
+#mobViewRapi.rapi-keyboard-open{
+  height:calc(100% - var(--rapi-keyboard-height,0px))!important;
+  bottom:auto!important;
+  transition:height .18s ease!important;
+}
 #mobViewRapi.rapi-keyboard-open .rapi-bottom-dock{
-  bottom:calc(var(--rapi-keyboard-height,0px) + 10px)!important;
+  bottom:10px!important;
   transition:bottom .18s ease!important;
+}
+#mobViewRapi.rapi-intro-deferred .rapi-orb-wrap,
+#mobViewRapi.rapi-intro-deferred .rapi-ai-question,
+#mobViewRapi.rapi-intro-deferred #rapiStarter{
+  opacity:0!important;
+  visibility:hidden!important;
+  animation:none!important;
 }

@@ -4394,7 +4394,7 @@
       if (view) view.innerHTML = '<div class="rapi-preparing-loader">Rapi estÃ¡ preparando sugestÃµes...</div>';
       await ensureMenuLoaded();
     }
-    if (window.renderRapiView) window.renderRapiView();
+    if (window.renderRapiView) window.renderRapiView({ deferIntro: shouldFocusRapiInput });
     if (shouldFocusRapiInput) {
       requestAnimationFrame(() => {
         const input = $('rapiInput');

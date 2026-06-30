@@ -1043,15 +1043,16 @@
     }
   };
 
-  window.renderRapiView = function () {
+  window.renderRapiView = function (options = {}) {
     const view = document.getElementById('mobViewRapi');
     if (!view) return;
+    const deferIntro = Boolean(options.deferIntro);
+    view.classList.toggle('rapi-intro-deferred', deferIntro);
+
     if (!_rapiLoaded || !view.querySelector('.rapi-page')) {
       view.innerHTML = buildRapiView();
       _rapiLoaded = true;
       ensureRapiSessionId();
-      setupRapiSuggestionDrag();
-      setTimeout(startRapiIntroAnimation, 0);
     } else {
       // Refresh location widget only
       const locationWrap = view.querySelector('.rapi-location-wrap');
@@ -1061,12 +1062,30 @@
         tmp.innerHTML = newWidget;
         locationWrap.replaceWith(tmp.firstElementChild);
       }
-      setupRapiSuggestionDrag();
-      setTimeout(startRapiIntroAnimation, 0);
     }
-    setupRapiKeyboardViewport();
-  };
 
+    setupRapiSuggestionDrag();
+    setupRapiKeyboardViewport();
+
+    const beginIntro = () => {
+      view.classList.remove('rapi-intro-deferred');
+      startRapiIntroAnimation();
+    };
+    if (!deferIntro) {
+      setTimeout(beginIntro, 0);
+      return;
+    }
+
+    const startedAt = performance.now();
+    const waitForKeyboardLayout = () => {
+      if (view.classList.contains('rapi-keyboard-open') || performance.now() - startedAt > 900) {
+        setTimeout(beginIntro, 140);
+        return;
+      }
+      requestAnimationFrame(waitForKeyboardLayout);
+    };
+    requestAnimationFrame(waitForKeyboardLayout);
+  };
   window.rapiReset = function () {
     _activeChipId = null;
     _allResults = [];

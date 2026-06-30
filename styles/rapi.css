@@ -2419,8 +2419,10 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 #mobViewRapi .rapi-product-rail{
   padding-left:18px!important;
+  padding-right:18px!important;
   box-sizing:border-box!important;
   scroll-padding-left:18px!important;
+  scroll-padding-right:18px!important;
 }
 /* Add a short, intentional gap only before the final question. */
 #mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
@@ -2564,3 +2566,37 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   0%{background-position:100% 0}
   100%{background-position:0% 0}
 }
+
+/* Chat color refinement. Product cards intentionally remain unchanged. */
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{color:#2f2f2f!important}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{color:#d97706!important}
+#mobViewRapi .rapi-chat-user-message .rapi-result-title{background:#f4f4f5!important}
+#mobViewRapi .rapi-rating-btn{
+  color:#737373!important;transition:color .18s ease,background-color .18s ease!important;
+}
+#mobViewRapi .rapi-rating-btn svg,
+#mobViewRapi .rapi-rating-btn svg path{
+  transition:color .18s ease,fill .18s ease,stroke .18s ease!important;
+}
+@media (hover:hover){
+  #mobViewRapi .rapi-rating-btn:hover{color:#d97706!important}
+}
+#mobViewRapi .rapi-rating-btn.is-selected,
+#mobViewRapi .rapi-rating-btn[aria-pressed="true"]{color:#d97706!important}
+#mobViewRapi .rapi-rating-btn.is-selected svg path:last-child,
+#mobViewRapi .rapi-rating-btn[aria-pressed="true"] svg path:last-child{fill:#d97706!important}
+/* Unified copy / like / dislike icon states. */
+#mobViewRapi .rapi-feedback-btn{color:#6b7280!important;transition:color .18s ease!important}
+#mobViewRapi .rapi-feedback-btn svg,
+#mobViewRapi .rapi-feedback-btn svg path,
+#mobViewRapi .rapi-feedback-btn svg circle,
+#mobViewRapi .rapi-feedback-btn svg rect{
+  stroke:currentColor!important;transition:color .18s ease,stroke .18s ease,fill .18s ease!important;
+}
+@media (hover:hover){
+  #mobViewRapi .rapi-feedback-btn:hover{color:#d97706!important}
+}
+#mobViewRapi .rapi-rating-btn.is-selected,
+#mobViewRapi .rapi-rating-btn[aria-pressed="true"],
+#mobViewRapi .rapi-copy-btn.is-copied,
+#mobViewRapi .rapi-copy-btn.is-restoring{color:#d97706!important}

@@ -161,18 +161,128 @@
         </button>
       </div>`;
   }
-  function appendRapiTextMessage(message, feedbackContext = null) {
+  const RAPI_REVEAL_MS_PER_CHARACTER = 34;
+
+  function typeRapiText(element, text, options = {}) {
+    if (!element) return;
+    const characters = Array.from(String(text || ''));
+    let visibleCharacters = 0;
+    let startedAt = null;
+
+    if (element._rapiTypingFrame) cancelAnimationFrame(element._rapiTypingFrame);
+    element.textContent = '';
+    element.classList.add('is-typing');
+
+    const finish = () => {
+      element._rapiTypingFrame = null;
+      element.classList.remove('is-typing');
+      options.renderFinal?.();
+      options.onComplete?.();
+    };
+
+    if (!characters.length) {
+      finish();
+      return;
+    }
+
+    const tick = timestamp => {
+      if (!element.isConnected) {
+        element._rapiTypingFrame = null;
+        return;
+      }
+      if (startedAt === null) startedAt = timestamp;
+      const nextVisibleCharacters = Math.min(
+        characters.length,
+        Math.floor((timestamp - startedAt) / RAPI_REVEAL_MS_PER_CHARACTER) + 1
+      );
+      if (nextVisibleCharacters > visibleCharacters) {
+        visibleCharacters = nextVisibleCharacters;
+        element.textContent = characters.slice(0, visibleCharacters).join('');
+        options.onProgress?.(visibleCharacters);
+      }
+      if (visibleCharacters >= characters.length) {
+        finish();
+        return;
+      }
+      element._rapiTypingFrame = requestAnimationFrame(tick);
+      options.onFrame?.(element._rapiTypingFrame);
+    };
+
+    element._rapiTypingFrame = requestAnimationFrame(tick);
+    options.onFrame?.(element._rapiTypingFrame);
+  }
+  const RAPI_RESPONSE_WORDS_PER_STEP = 3;
+  const RAPI_RESPONSE_REVEAL_INTERVAL = 80;
+
+  function revealRapiResponse(element, text, options = {}) {
+    if (!element) return;
+    const wordSegments = String(text || '').match(/\S+\s*/g) || [];
+    let visibleWords = 0;
+
+    if (element._rapiRevealTimer) clearTimeout(element._rapiRevealTimer);
+    element.textContent = '';
+
+    const finish = () => {
+      element._rapiRevealTimer = null;
+      options.renderFinal?.();
+      options.onComplete?.();
+    };
+
+    if (!wordSegments.length) {
+      finish();
+      return;
+    }
+
+    const revealNextBlock = () => {
+      if (!element.isConnected) {
+        element._rapiRevealTimer = null;
+        return;
+      }
+      visibleWords = Math.min(
+        wordSegments.length,
+        visibleWords + RAPI_RESPONSE_WORDS_PER_STEP
+      );
+      element.textContent = wordSegments.slice(0, visibleWords).join('');
+      options.onProgress?.(visibleWords);
+      if (visibleWords >= wordSegments.length) {
+        finish();
+        return;
+      }
+      element._rapiRevealTimer = setTimeout(
+        revealNextBlock,
+        RAPI_RESPONSE_REVEAL_INTERVAL
+      );
+    };
+
+    revealNextBlock();
+  }
+  function appendRapiTextMessage(message, feedbackContext = null, onComplete = null) {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl) return;
+    const text = message || 'Certo.';
+    const preview = document.createElement('div');
+    preview.innerHTML = renderRapiMarkdown(text);
+    const plainText = preview.textContent || text;
     resultsEl.insertAdjacentHTML('beforeend', `
-      <div class="rapi-result-card rapi-chat-assistant-message">
+      <div class="rapi-result-card rapi-chat-assistant-message is-typing-response">
         <div class="rapi-result-content">
-          <div class="rapi-result-title">${renderRapiMarkdown(message || 'Certo.')}</div>
+          <div class="rapi-result-title" aria-label="${esc(plainText)}"></div>
           ${renderRapiFeedbackActions()}
         </div>
       </div>`);
     const messageElement = resultsEl.lastElementChild;
+    const title = messageElement?.querySelector('.rapi-result-title');
     if (messageElement && feedbackContext) messageElement._rapiFeedbackContext = feedbackContext;
+
+    revealRapiResponse(title, plainText, {
+      onProgress: scrollRapiToLatest,
+      renderFinal: () => {
+        title.innerHTML = renderRapiMarkdown(text);
+        messageElement.classList.remove('is-typing-response');
+        scrollRapiToLatest();
+      },
+      onComplete
+    });
     scrollRapiToLatest();
   }
   function appendRapiTypingIndicator() {
@@ -204,35 +314,43 @@
     if (!resultsEl) return;
     const message = responseMessage(data);
     const options = responseOptions(data);
-    if (message) appendRapiTextMessage(message, feedbackContext);
-    if (!options.length) return;
-    _rapiOptionCache = options;
-    resultsEl.insertAdjacentHTML('beforeend', `
-      <div class="rapi-suggest-rail rapi-suggest-rail--ready">
-        ${options.map((option, index) => `<button class="rapi-suggest-chip" type="button" onclick="rapiUseOption(${index})">${esc(option.label)}</button>`).join('')}
-      </div>`);
-    scrollRapiToLatest();
+    const revealOptions = () => {
+      if (!options.length) return;
+      _rapiOptionCache = options;
+      resultsEl.insertAdjacentHTML('beforeend', `
+        <div class="rapi-suggest-rail rapi-suggest-rail--ready">
+          ${options.map((option, index) => `<button class="rapi-suggest-chip" type="button" onclick="rapiUseOption(${index})">${esc(option.label)}</button>`).join('')}
+        </div>`);
+      scrollRapiToLatest();
+    };
+    if (message) appendRapiTextMessage(message, feedbackContext, revealOptions);
+    else revealOptions();
   }
+
   function renderRapiProducts(data, feedbackContext) {
     const resultsEl = document.getElementById('rapiResults');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (!resultsEl) return;
     const message = responseMessage(data);
     const products = responseProducts(data);
-    if (message) appendRapiTextMessage(message, feedbackContext);
     _allResults = products;
-    if (!products.length) {
-      appendRapiTextMessage('Nao encontrei produtos para essa busca.', feedbackContext);
-      return;
-    }
-    resultsEl.insertAdjacentHTML('beforeend', `
-      <div class="rapi-product-rail" aria-label="Produtos sugeridos">
-        ${products.map((p, i) => renderResultCard(p, i)).join('')}
-      </div>`);
-    if (showMoreBtn) showMoreBtn.classList.remove('visible');
-    scrollRapiToLatest();
-  }
 
+    const revealProducts = () => {
+      if (!products.length) {
+        appendRapiTextMessage('Nao encontrei produtos para essa busca.', feedbackContext);
+        return;
+      }
+      resultsEl.insertAdjacentHTML('beforeend', `
+        <div class="rapi-product-rail" aria-label="Produtos sugeridos">
+          ${products.map((p, i) => renderResultCard(p, i)).join('')}
+        </div>`);
+      if (showMoreBtn) showMoreBtn.classList.remove('visible');
+      scrollRapiToLatest();
+    };
+
+    if (message) appendRapiTextMessage(message, feedbackContext, revealProducts);
+    else revealProducts();
+  }
   function renderRapiChatResponse(data, userMessage = '') {
     const type = String(data?.response_type || 'error').toLowerCase();
     const message = responseMessage(data) || 'Nao consegui responder agora. Tente novamente.';
@@ -532,7 +650,7 @@
     _activeChipId = chipId || null;
     _rapiSending = true;
     if (_introTypeTimer) {
-      clearTimeout(_introTypeTimer);
+      cancelAnimationFrame(_introTypeTimer);
       _introTypeTimer = null;
     }
 
@@ -628,7 +746,7 @@
     if (!questionEl || !starterEl || aiBody?.classList.contains('rapi-ai-body--searching')) return;
 
     if (_introTypeTimer) {
-      clearTimeout(_introTypeTimer);
+      cancelAnimationFrame(_introTypeTimer);
       _introTypeTimer = null;
     }
 
@@ -673,22 +791,14 @@
     };
     const fallbackTimer = setTimeout(revealSuggestions, 2600);
 
-    let index = 0;
-    const tick = () => {
-      questionEl.textContent = text.slice(0, index);
-      if (index <= text.length) {
-        index += 1;
-        _introTypeTimer = setTimeout(tick, index === 1 ? 120 : 42);
-        return;
-      }
-      questionEl.classList.remove('is-typing');
-      _introTypeTimer = setTimeout(() => {
+    typeRapiText(questionEl, text, {
+      onFrame: frame => { _introTypeTimer = frame; },
+      onComplete: () => {
+        _introTypeTimer = null;
         clearTimeout(fallbackTimer);
         revealSuggestions();
-      }, 180);
-    };
-
-    tick();
+      }
+    });
   }
 
   window.rapiSendMessage = function () {

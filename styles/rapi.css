@@ -2355,7 +2355,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   width:258px!important;
   max-width:258px!important;
   border-radius:10px!important;
-  background:#374151!important;
+  background:#484F5C!important;
 }
 #mobViewRapi .rapi-product-card .rapi-result-image-wrap{
   width:258px!important;
@@ -2367,7 +2367,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   min-height:69.5px!important;
   padding:9px 12px!important;
   box-sizing:border-box!important;
-  background:#374151!important;
+  background:#484F5C!important;
   border-top:1px solid rgba(255,255,255,.12)!important;
   display:flex!important;
   flex-direction:column!important;
@@ -2608,4 +2608,19 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 /* Rapidex loading identity: orange loader, medium-gray status text. */
 #mobViewRapi .rapi-typing-label{
   color:#6b7280!important;-webkit-text-fill-color:#6b7280!important;background:none!important;animation:none!important;
+}
+/* Rapidex quick suggestions: light, quiet interaction styling. */
+#mobViewRapi .rapi-suggest-chip{
+  flex:0 0 auto!important;width:max-content!important;min-width:0!important;max-width:none!important;
+  background:#ffffff!important;border-color:#e5e7eb!important;color:#374151!important;border-radius:20px!important;
+  transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
+}
+@media (hover:hover){
+  #mobViewRapi .rapi-suggest-chip:hover{
+    background:#fff7ed!important;border-color:#d97706!important;color:#d97706!important;
+  }
+}
+#mobViewRapi .rapi-suggest-chip:active,
+#mobViewRapi .rapi-suggest-chip:focus-visible{
+  background:#fff7ed!important;border-color:#d97706!important;color:#d97706!important;
 }

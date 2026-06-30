@@ -766,7 +766,7 @@
       const visibleHeight = Math.min(viewport?.height || window.innerHeight, window.innerHeight);
       const viewportTop = viewport?.offsetTop || 0;
       const keyboardHeight = Math.max(0, baselineHeight - visibleHeight - viewportTop);
-      const introShift = Math.min(240, Math.max(150, keyboardHeight * .62));
+      const introShift = Math.min(290, Math.max(180, keyboardHeight * .75));
       view.style.setProperty('--rapi-keyboard-height', `${keyboardHeight}px`);
       view.style.setProperty('--rapi-intro-shift', introShift + 'px');
       view.classList.toggle('rapi-keyboard-open', keyboardHeight > 60);

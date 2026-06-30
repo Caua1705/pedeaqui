@@ -2152,6 +2152,42 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   height:20px!important;
   display:block!important;
 }
+#mobViewRapi .rapi-copy-btn.is-copied svg,
+#mobViewRapi .rapi-copy-btn.is-restoring svg{
+  animation:rapi-copy-confirm .28s ease both!important;
+}
+#mobViewRapi .rapi-rating-btn{
+  border-radius:4px!important;
+  transition:background-color .18s ease!important;
+}
+#mobViewRapi .rapi-rating-btn.is-selected{
+  background:rgba(255,255,255,.08)!important;
+}
+#mobViewRapi .rapi-rating-btn.is-selected svg{
+  animation:rapi-rating-pop .28s ease both!important;
+}
+#mobViewRapi .rapi-rating-btn.is-selected svg path:first-child{
+  fill:none!important;
+}
+#mobViewRapi .rapi-rating-btn.is-selected svg path:last-child{
+  fill:#000!important;
+}
+#mobViewRapi .rapi-feedback-actions:has(.rapi-rating-btn.is-selected) .rapi-rating-btn:not(.is-selected){
+  display:none!important;
+}
+#mobViewRapi .rapi-feedback-actions.is-restoring-ratings .rapi-rating-btn svg{
+  animation:rapi-rating-pop .28s ease both!important;
+}
+@keyframes rapi-rating-pop{
+  0%{opacity:0;transform:scale(.65)}
+  65%{transform:scale(1.12)}
+  100%{opacity:1;transform:scale(1)}
+}
+@keyframes rapi-copy-confirm{
+  0%{opacity:0;transform:scale(.65)}
+  65%{transform:scale(1.12)}
+  100%{opacity:1;transform:scale(1)}
+}
 #mobViewRapi .rapi-feedback-btn:active,
 #mobViewRapi .rapi-feedback-btn:focus,
 #mobViewRapi .rapi-feedback-btn:focus-visible{

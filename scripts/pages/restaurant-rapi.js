@@ -150,18 +150,18 @@
   function renderRapiFeedbackActions() {
     return `
       <div class="rapi-feedback-actions" aria-label="Acoes da resposta">
-        <button class="rapi-feedback-btn" type="button" aria-label="Copiar resposta">
+        <button class="rapi-feedback-btn rapi-copy-btn" type="button" aria-label="Copiar resposta" onclick="rapiCopyResponse(this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
-        <button class="rapi-feedback-btn" type="button" aria-label="Gostei da resposta">
+        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Gostei da resposta" aria-pressed="false" data-feedback="like" onclick="rapiRateResponse(this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/><path d="M7 11 11 2a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 7a3 3 0 0 1-3 3H7Z"/></svg>
         </button>
-        <button class="rapi-feedback-btn" type="button" aria-label="Nao gostei da resposta">
+        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Nao gostei da resposta" aria-pressed="false" data-feedback="dislike" onclick="rapiRateResponse(this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/><path d="M17 13 13 22a3 3 0 0 1-3-3v-4H5a2 2 0 0 1-2-2l1-7a3 3 0 0 1 3-3h10Z"/></svg>
         </button>
       </div>`;
   }
-  function appendRapiTextMessage(message) {
+  function appendRapiTextMessage(message, feedbackContext = null) {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl) return;
     resultsEl.insertAdjacentHTML('beforeend', `
@@ -171,6 +171,8 @@
           ${renderRapiFeedbackActions()}
         </div>
       </div>`);
+    const messageElement = resultsEl.lastElementChild;
+    if (messageElement && feedbackContext) messageElement._rapiFeedbackContext = feedbackContext;
     scrollRapiToLatest();
   }
   function appendRapiTypingIndicator() {
@@ -197,12 +199,12 @@
     typingEl.style.opacity = '0';
     setTimeout(() => typingEl.remove(), 180);
   }
-  function renderRapiOptions(data) {
+  function renderRapiOptions(data, feedbackContext) {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl) return;
     const message = responseMessage(data);
     const options = responseOptions(data);
-    if (message) appendRapiTextMessage(message);
+    if (message) appendRapiTextMessage(message, feedbackContext);
     if (!options.length) return;
     _rapiOptionCache = options;
     resultsEl.insertAdjacentHTML('beforeend', `
@@ -211,16 +213,16 @@
       </div>`);
     scrollRapiToLatest();
   }
-  function renderRapiProducts(data) {
+  function renderRapiProducts(data, feedbackContext) {
     const resultsEl = document.getElementById('rapiResults');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (!resultsEl) return;
     const message = responseMessage(data);
     const products = responseProducts(data);
-    if (message) appendRapiTextMessage(message);
+    if (message) appendRapiTextMessage(message, feedbackContext);
     _allResults = products;
     if (!products.length) {
-      appendRapiTextMessage('Nao encontrei produtos para essa busca.');
+      appendRapiTextMessage('Nao encontrei produtos para essa busca.', feedbackContext);
       return;
     }
     resultsEl.insertAdjacentHTML('beforeend', `
@@ -231,21 +233,32 @@
     scrollRapiToLatest();
   }
 
-  function renderRapiChatResponse(data) {
+  function renderRapiChatResponse(data, userMessage = '') {
     const type = String(data?.response_type || 'error').toLowerCase();
+    const message = responseMessage(data) || 'Nao consegui responder agora. Tente novamente.';
+    const explicitProductIds = Array.isArray(data?.selected_product_ids) ? data.selected_product_ids : null;
+    const selectedProductIds = (explicitProductIds || responseProducts(data).map(product => product?.id || product?.product_id))
+      .filter(productId => productId !== undefined && productId !== null && productId !== '');
+    const feedbackContext = {
+      user_message: userMessage,
+      assistant_message: message,
+      response_type: type,
+      selected_product_ids: selectedProductIds
+    };
+
     if (type === 'text') {
-      appendRapiTextMessage(responseMessage(data));
+      appendRapiTextMessage(message, feedbackContext);
       return;
     }
     if (type === 'options') {
-      renderRapiOptions(data);
+      renderRapiOptions(data, feedbackContext);
       return;
     }
     if (type === 'products') {
-      renderRapiProducts(data);
+      renderRapiProducts(data, feedbackContext);
       return;
     }
-    appendRapiTextMessage(responseMessage(data) || 'Nao consegui responder agora. Tente novamente.');
+    appendRapiTextMessage(message, feedbackContext);
   }
 
   async function postRapiChatMessage(message) {
@@ -546,13 +559,13 @@
         products_count: Array.isArray(response?.products) ? response.products.length : 0
       });
       removeRapiTypingIndicator();
-      setTimeout(() => renderRapiChatResponse(response), 190);
+      setTimeout(() => renderRapiChatResponse(response, cleanMessage), 190);
     } catch (error) {
       removeRapiTypingIndicator();
       setTimeout(() => renderRapiChatResponse({
         response_type: 'error',
         message: error?.message || 'Nao consegui conectar ao Rapi agora. Tente novamente.'
-      }), 190);
+      }, cleanMessage), 190);
     } finally {
       _rapiSending = false;
       setTimeout(() => {
@@ -685,6 +698,87 @@
     if (!msg) return;
     if (inputEl) inputEl.value = '';
     rapiSearch(msg, null, null);
+  };
+
+  const RAPI_COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const RAPI_COPIED_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.6L16.5 9"/></svg>';
+
+  async function copyRapiText(text) {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    if (!copied) throw new Error('Falha ao copiar a resposta');
+  }
+
+  window.rapiCopyResponse = async function (button) {
+    const response = button?.closest('.rapi-chat-assistant-message')?.querySelector('.rapi-result-title');
+    const text = response?.innerText?.trim();
+    if (!button || !text) return;
+
+    try {
+      await copyRapiText(text);
+      if (button._rapiCopyTimer) clearTimeout(button._rapiCopyTimer);
+      button.classList.remove('is-copied');
+      void button.offsetWidth;
+      button.innerHTML = RAPI_COPIED_ICON;
+      button.classList.add('is-copied');
+      button.setAttribute('aria-label', 'Resposta copiada');
+
+      button._rapiCopyTimer = setTimeout(() => {
+        button.classList.remove('is-copied');
+        button.innerHTML = RAPI_COPY_ICON;
+        void button.offsetWidth;
+        button.classList.add('is-restoring');
+        button.setAttribute('aria-label', 'Copiar resposta');
+        setTimeout(() => button.classList.remove('is-restoring'), 280);
+        button._rapiCopyTimer = null;
+      }, 3000);
+    } catch (_) {
+      showRapiToast('Não foi possível copiar a resposta');
+    }
+  };
+  window.rapiRateResponse = async function (button) {
+    if (!button) return;
+    const actions = button.closest('.rapi-feedback-actions');
+    const messageElement = button.closest('.rapi-chat-assistant-message');
+    if (!actions || actions.dataset.feedbackSent === '1') return;
+
+    const feedback = button.dataset.feedback;
+    const context = messageElement?._rapiFeedbackContext;
+    if (!context || (feedback !== 'like' && feedback !== 'dislike')) return;
+
+    actions.dataset.feedbackSent = '1';
+    actions.querySelectorAll('.rapi-rating-btn').forEach(ratingButton => {
+      const selected = ratingButton === button;
+      ratingButton.classList.toggle('is-selected', selected);
+      ratingButton.setAttribute('aria-pressed', String(selected));
+      ratingButton.disabled = true;
+    });
+
+    try {
+      await window.PedeAquiApiClient.post('/chat/feedback', {
+        restaurant_id: getRapiRestaurantId(),
+        session_id: ensureRapiSessionId(),
+        user_message: context.user_message,
+        assistant_message: context.assistant_message,
+        response_type: context.response_type,
+        selected_product_ids: context.selected_product_ids,
+        feedback
+      });
+    } catch (error) {
+      console.error('[Rapi] Erro ao enviar feedback:', error);
+    }
   };
 
   window.rapiUseSuggestion = function (message) {

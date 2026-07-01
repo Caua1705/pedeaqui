@@ -7744,25 +7744,48 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 
-/* Orders from Profile: match the Address screen forward/back transition. */
+/* Orders from Profile: use the same independent overlay motion as Address picker. */
 @media (max-width:767px){
-  #mobViewProfile .prof-hub-wrap{
-    transition:filter .28s ease!important;
+  .prof-orders-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:279;
+    background:rgba(0,0,0,0);
+    visibility:hidden;
+    pointer-events:none;
+    transition:background .28s ease,visibility 0s linear .6s;
   }
-  #mobViewProfile:has(#profSubpedidos.active) .prof-hub-wrap{
-    filter:brightness(.58)!important;
-    transition:filter .1s ease-out!important;
+  .prof-orders-backdrop.active{
+    background:rgba(0,0,0,.42);
+    visibility:visible;
+    transition:background .1s ease-out,visibility 0s linear 0s;
   }
-  #mobViewProfile #profSubpedidos{
+  #profSubpedidos{
+    box-sizing:border-box!important;
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    max-width:430px!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    margin:0 auto!important;
+    padding:0!important;
+    z-index:280!important;
+    background:#ffffff!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
     transform:translateX(100%)!important;
-    transition:transform .6s ease!important;
+    transition:transform .6s ease,visibility 0s linear .6s!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
   }
-  #mobViewProfile #profSubpedidos.active{
+  #profSubpedidos.active{
+    visibility:visible!important;
+    pointer-events:auto!important;
     transform:translateX(0)!important;
-    transition:transform .53s ease!important;
+    transition:transform .53s ease,visibility 0s linear 0s!important;
   }
-}
-/* Manage Profile: reference layout and Address-style navigation motion. */
+}/* Manage Profile: reference layout and Address-style navigation motion. */
 @media (max-width:767px){
   #mobViewProfile:has(#profSubmeusdados.active) .prof-hub-wrap{
     filter:none!important;
@@ -7780,8 +7803,7 @@ body.menu-tab .product-card.is-pressing{
     transform:translateX(0)!important;
     transition:none!important;
   }
-  body:has(#mobViewProfile.active):has(#profSubmeusdados.active) .mob-bottom-nav,
-  body:has(#mobViewProfile.active):has(#profSubpedidos.active) .mob-bottom-nav{
+  body:has(#mobViewProfile.active):has(#profSubmeusdados.active) .mob-bottom-nav{
     display:none!important;
     visibility:hidden!important;
     opacity:0!important;

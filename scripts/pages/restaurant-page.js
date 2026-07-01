@@ -4840,12 +4840,14 @@
     document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
     const sub = $('profSub' + subId);
     if (!sub) return;
+    if (subId === 'pedidos') profOrdersBackdrop?.classList.add('active');
     sub.classList.add('active');
     if (subId === 'pedidos') await loadProfPedidos();
   }
   function closeProfSub() {
     closeProfOrderDetails();
-    document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
+    profOrdersBackdrop?.classList.remove('active');
+    document.querySelectorAll('#mobViewProfile .prof-sub, #profSubpedidos').forEach(el => el.classList.remove('active'));
   }
 
   function mobFocusSearch() {
@@ -4945,6 +4947,20 @@
     return clubController.retryClubLoad();
   }
 
+
+  function mountProfOrdersOverlay() {
+    const panel = $('profSubpedidos');
+    if (!panel) return;
+    let backdrop = $('profOrdersBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'profOrdersBackdrop';
+      backdrop.className = 'prof-orders-backdrop';
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(backdrop);
+    }
+    if (panel.parentElement !== document.body) document.body.appendChild(panel);
+  }
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
@@ -4971,5 +4987,6 @@
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 
+  mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

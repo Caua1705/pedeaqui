@@ -8127,7 +8127,209 @@ body.menu-tab .product-card.is-pressing{
     border-bottom:1px solid #eee;
     color:#666;
     font-size:13px;
-  }  #profSubmeusdados .prof-manage-body{
+  }
+  #profSubmeusdados .prof-password-screen{
+    box-sizing:border-box;
+    position:absolute;
+    inset:0;
+    z-index:20;
+    width:100%;
+    min-height:100%;
+    overflow:hidden;
+    background:#fff;
+    transform:translateX(100%);
+    visibility:hidden;
+    pointer-events:none;
+    transition:none;
+  }
+  #profSubmeusdados .prof-password-screen.active{
+    transform:translateX(0);
+    visibility:visible;
+    pointer-events:auto;
+    transition:none;
+  }
+  #profSubmeusdados .prof-password-header{
+    box-sizing:border-box;
+    width:100%;
+    height:70px;
+    display:grid;
+    grid-template-columns:32px 1fr 32px;
+    align-items:center;
+    padding:0 20px;
+    border-bottom:1px solid #eee;
+    background:#fff;
+  }
+  #profSubmeusdados .prof-password-header h1{
+    margin:0;
+    color:#262626;
+    font-size:16px;
+    line-height:20px;
+    font-weight:600;
+    text-align:center;
+  }
+  #profSubmeusdados .prof-password-back{
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:0;
+    border-radius:9px;
+    background:#ececec;
+    color:#3f454b;
+  }
+  #profSubmeusdados .prof-password-back svg{
+    width:17px;
+    height:17px;
+  }
+  #profSubmeusdados .prof-password-form{
+    box-sizing:border-box;
+    height:calc(100% - 70px);
+    padding:24px 20px 112px;
+    overflow-y:auto;
+    background:#fff;
+  }
+  #profSubmeusdados .prof-password-field{
+    margin:0 0 20px;
+  }
+  #profSubmeusdados .prof-password-field label{
+    display:block;
+    margin:0 0 10px;
+    color:#686868;
+    font-size:12px;
+    line-height:16px;
+    font-weight:400;
+  }
+  #profSubmeusdados .prof-password-input-wrap{
+    box-sizing:border-box;
+    width:374px;
+    max-width:100%;
+    height:44px;
+    display:flex;
+    align-items:center;
+    overflow:hidden;
+    border:1px solid #c9c9c9;
+    border-radius:10px;
+    background:#fff;
+    margin:0 auto;
+    transition:border-color .15s;
+  }
+  #profSubmeusdados .prof-password-input-wrap:focus-within{
+    border-color:#a9a9a9;
+  }
+  #profSubmeusdados .prof-password-input-wrap input{
+    flex:1;
+    min-width:0;
+    height:100%;
+    padding:0 14px;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#555;
+    font-family:inherit;
+    font-size:14px;
+    letter-spacing:0;
+  }
+  #profSubmeusdados .prof-password-input-wrap button{
+    width:46px;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 46px;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#a8a8a8;
+  }
+  #profSubmeusdados .prof-password-input-wrap button svg{
+    width:17px;
+    height:17px;
+    transform:translateX(-4px);
+  }
+  #profSubmeusdados .prof-password-field.has-error .prof-password-input-wrap{
+    border-color:#EF5A5A;
+  }
+  #profSubmeusdados .prof-password-error{
+    min-height:0;
+    margin:6px 0 0;
+    color:#EF5A5A;
+    font-size:11px;
+    line-height:15px;
+  }
+  #profSubmeusdados .prof-password-error:empty{
+    display:none;
+  }
+  #profSubmeusdados .prof-password-summary{
+    display:none;
+    min-height:54px;
+    align-items:center;
+    gap:10px;
+    margin:4px 0 0;
+    padding:10px 14px;
+    border-radius:11px;
+    background:#fff1f1;
+    color:#EF5A5A;
+    font-size:12px;
+    line-height:16px;
+  }
+  #profSubmeusdados .prof-password-summary.show{
+    display:flex;
+    animation:reg-summary-in .3s ease both;
+  }
+  #profSubmeusdados .prof-password-summary-icon{
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 32px;
+    border-radius:50%;
+    background:#ffe5e5;
+    color:#EF5A5A;
+    font-size:16px;
+    font-weight:400;
+  }
+  #profSubmeusdados .prof-password-summary.success{
+    background:#eef8ee;
+    color:#4d9650;
+  }
+  #profSubmeusdados .prof-password-summary.success .prof-password-summary-icon{
+    background:#dff1df;
+    color:#4d9650;
+  }
+  #profSubmeusdados .prof-password-footer{
+    box-sizing:border-box;
+    position:absolute;
+    right:0;
+    bottom:0;
+    left:0;
+    height:76px;
+    display:flex;
+    align-items:flex-start;
+    padding:0 20px;
+    background:#fff;
+  }
+  #profSubmeusdados .prof-password-footer button{
+    width:374px;
+    max-width:100%;
+    height:45px;
+    margin:0 auto;
+    padding:0;
+    border:0;
+    border-radius:10px;
+    background:#F36F21;
+    color:#fff;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+  }
+  #profSubmeusdados .prof-password-footer button:disabled{
+    opacity:.68;
+    cursor:not-allowed;
+  }
+  #profSubmeusdados .prof-manage-body{
     box-sizing:border-box!important;
     width:100%!important;
     padding:20px!important;

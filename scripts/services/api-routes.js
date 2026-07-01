@@ -34,6 +34,7 @@
     // ---- Authenticated customer ----
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',
+    customerPassword: () => '/customers/me/password',
     customerAddresses: () => '/customers/me/addresses',
     customerAddress: addressId =>
       `/customers/me/addresses/${routeSlug(addressId)}`,

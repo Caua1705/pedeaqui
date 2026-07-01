@@ -4663,6 +4663,153 @@
     }, 550);
   }
 
+  let customerPasswordSubmitting = false;
+  let customerPasswordSuccessTimer = null;
+
+  const CUSTOMER_PASSWORD_FIELDS = {
+    current: ['profCurrentPasswordField', 'profCurrentPasswordError'],
+    new: ['profNewPasswordField', 'profNewPasswordError'],
+    confirm: ['profConfirmPasswordField', 'profConfirmPasswordError']
+  };
+
+  function setCustomerPasswordFieldError(field, message = '') {
+    const [fieldId, errorId] = CUSTOMER_PASSWORD_FIELDS[field] || [];
+    const wrapper = $(fieldId);
+    const error = $(errorId);
+    wrapper?.classList.toggle('has-error', Boolean(message));
+    if (error) error.textContent = message;
+  }
+
+  function hideCustomerPasswordSummary() {
+    const summary = $('profPasswordSummary');
+    if (!summary) return;
+    summary.classList.remove('show', 'success');
+    const text = summary.querySelector('.prof-password-summary-text');
+    if (text) text.textContent = '';
+  }
+
+  function showCustomerPasswordSummary(message, success = false) {
+    const summary = $('profPasswordSummary');
+    if (!summary) return;
+    const text = summary.querySelector('.prof-password-summary-text');
+    if (text) text.textContent = message;
+    summary.classList.toggle('success', success);
+    summary.classList.add('show');
+  }
+
+  function resetCustomerPasswordForm() {
+    $('profPasswordForm')?.reset();
+    Object.keys(CUSTOMER_PASSWORD_FIELDS).forEach(field => setCustomerPasswordFieldError(field));
+    hideCustomerPasswordSummary();
+    document.querySelectorAll('#profPasswordScreen .prof-password-input-wrap button').forEach(button => {
+      button.innerHTML = EYE_OFF_SVG;
+      button.setAttribute('aria-label', 'Mostrar senha');
+    });
+    ['profCurrentPassword', 'profNewPassword', 'profConfirmPassword'].forEach(id => {
+      const input = $(id);
+      if (input) input.type = 'password';
+    });
+  }
+
+  function openCustomerPasswordScreen() {
+    if (!window.PedeAquiCustomerAuth?.getToken?.()) {
+      openLoginScreen();
+      return;
+    }
+    clearTimeout(customerPasswordSuccessTimer);
+    resetCustomerPasswordForm();
+    const screen = $('profPasswordScreen');
+    screen?.classList.add('active');
+    screen?.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeCustomerPasswordScreen() {
+    if (customerPasswordSubmitting) return;
+    clearTimeout(customerPasswordSuccessTimer);
+    customerPasswordSuccessTimer = null;
+    const screen = $('profPasswordScreen');
+    screen?.classList.remove('active');
+    screen?.setAttribute('aria-hidden', 'true');
+    resetCustomerPasswordForm();
+  }
+
+  function handleCustomerPasswordInput(field) {
+    setCustomerPasswordFieldError(field);
+    hideCustomerPasswordSummary();
+  }
+
+  function customerPasswordApiMessage(error) {
+    const detail = error?.data?.detail;
+    const message = Array.isArray(detail)
+      ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ')
+      : (detail || error?.data?.message || error?.message || 'Não foi possível alterar a senha');
+    const normalized = String(message).toLocaleLowerCase('pt-BR');
+    if (normalized.includes('senha atual') && (normalized.includes('incorret') || normalized.includes('invalid'))) {
+      return 'Senha atual incorreta';
+    }
+    if (normalized.includes('não confer') || normalized.includes('nao confer') || normalized.includes('não coinc') || normalized.includes('nao coinc')) {
+      return 'As senhas não conferem';
+    }
+    return String(message);
+  }
+
+  async function submitCustomerPassword(event) {
+    event?.preventDefault();
+    if (customerPasswordSubmitting) return;
+    const currentPassword = $('profCurrentPassword')?.value || '';
+    const newPassword = $('profNewPassword')?.value || '';
+    const confirmPassword = $('profConfirmPassword')?.value || '';
+    Object.keys(CUSTOMER_PASSWORD_FIELDS).forEach(field => setCustomerPasswordFieldError(field));
+    hideCustomerPasswordSummary();
+    let valid = true;
+    if (!currentPassword) {
+      setCustomerPasswordFieldError('current', 'Campo obrigatório');
+      valid = false;
+    }
+    if (!newPassword) {
+      setCustomerPasswordFieldError('new', 'Campo obrigatório');
+      valid = false;
+    } else if (newPassword.length < 8) {
+      setCustomerPasswordFieldError('new', 'Informe ao menos 8 caracteres');
+      valid = false;
+    }
+    if (!confirmPassword) {
+      setCustomerPasswordFieldError('confirm', 'Campo obrigatório');
+      valid = false;
+    } else if (newPassword !== confirmPassword) {
+      setCustomerPasswordFieldError('confirm', 'As senhas não conferem');
+      valid = false;
+    }
+    if (!valid) return;
+    const submit = $('profPasswordSubmit');
+    customerPasswordSubmitting = true;
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = 'Salvando...';
+    }
+    try {
+      await window.PedeAquiCustomerAuth.changeCustomerPassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      });
+      $('profPasswordForm')?.reset();
+      showCustomerPasswordSummary('Senha alterada com sucesso', true);
+      customerPasswordSuccessTimer = setTimeout(() => closeCustomerPasswordScreen(), 1400);
+    } catch (error) {
+      if (error?.status === 401 && !String(error?.message || '').toLocaleLowerCase('pt-BR').includes('senha')) {
+        await syncCustomerSession();
+        return;
+      }
+      showCustomerPasswordSummary(customerPasswordApiMessage(error));
+    } finally {
+      customerPasswordSubmitting = false;
+      if (submit) {
+        submit.disabled = false;
+        submit.textContent = 'Confirmar';
+      }
+    }
+  }
   const PROF_ORDER_ACTIVE_STATUSES = new Set([
     'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
   ]);
@@ -4983,7 +5130,7 @@
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openProfSub, closeProfSub, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 

@@ -4663,36 +4663,186 @@
     }, 550);
   }
 
-  function renderProfPedidos() {
-    const body = $('profSubPedidosBody');
-    if (!body) return;
-    const orders = appState.customerOrders || window.PedeAquiOrderState?.listOrders() || [];
-    if (!orders.length) {
-      body.innerHTML = `<div class="prof-empty"><div class="prof-empty-title">Nenhum pedido encontrado</div><div class="prof-empty-text">Seus pedidos aparecerão aqui após serem finalizados.</div></div>`;
-      return;
-    }
-    body.innerHTML = orders.map(order => `
-      <article class="order-card">
-        <div class="order-card-head"><strong>Pedido #${order.order_number}</strong><span>Enviado</span></div>
-        ${(order.items || []).map(i => `<div class="order-line"><span>${i.qty}x ${i.name}</span><strong>${fmt(i.price * i.qty)}</strong></div>`).join('')}
-        <div class="order-total"><span>${order.type} • ${order.payment}</span><strong>${fmt(order.total)}</strong></div>
-      </article>
-    `).join('');
+  const PROF_ORDER_ACTIVE_STATUSES = new Set([
+    'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
+  ]);
+  const PROF_ORDER_STATUS_LABELS = {
+    pending: 'Pendente',
+    created: 'Criado',
+    confirmed: 'Confirmado',
+    accepted: 'Aceito',
+    preparing: 'Preparando',
+    ready: 'Pronto',
+    out_for_delivery: 'Saiu para entrega',
+    completed: 'Finalizado',
+    delivered: 'Entregue',
+    finished: 'Finalizado',
+    cancelled: 'Recusado',
+    canceled: 'Recusado',
+    refused: 'Recusado',
+    rejected: 'Recusado'
+  };
+  const PROF_ORDER_SUCCESS_STATUSES = new Set(['completed', 'delivered', 'finished']);
+  const PROF_ORDER_DANGER_STATUSES = new Set(['cancelled', 'canceled', 'refused', 'rejected']);
+  let profOrdersView = [];
+
+  function profOrderStatus(order) {
+    return String(order?.status || '').trim().toLowerCase();
   }
 
-  function openProfSub(subId) {
-    if (!isLogged() && ['cupons', 'meusdados', 'seguranca'].includes(subId)) {
+  function profOrderStatusInfo(order) {
+    const status = profOrderStatus(order);
+    const tone = PROF_ORDER_DANGER_STATUSES.has(status)
+      ? 'danger'
+      : (PROF_ORDER_SUCCESS_STATUSES.has(status) ? 'success' : 'active');
+    return {
+      status,
+      tone,
+      label: PROF_ORDER_STATUS_LABELS[status] || (status ? status.replace(/_/g, ' ').replace(/^./, char => char.toUpperCase()) : 'Status não informado')
+    };
+  }
+
+  function profOrderDate(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return 'Data não informada';
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit', month: '2-digit', year: '2-digit'
+    }).format(date);
+  }
+
+  function renderProfOrderCard(order, index) {
+    const status = profOrderStatusInfo(order);
+    const icon = status.tone === 'danger'
+      ? '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5"/><path d="m4.2 4.2 3.6 3.6m0-3.6-3.6 3.6"/></svg>'
+      : '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5"/><path d="m3.5 6.2 1.7 1.7 3.4-3.8"/></svg>';
+    const statusClass = status.status.replace(/[^a-z0-9_-]/g, '');
+    return `
+      <article class="prof-order-card prof-order-card--${statusClass}">
+        <div class="prof-order-card-main">
+          <strong class="prof-order-number">Pedido #${esc(order.order_number ?? '')}</strong>
+          <div class="prof-order-status prof-order-status--${status.tone}">
+            <span class="prof-order-status-icon" aria-hidden="true">${icon}</span>
+            <span>${esc(status.label)} ${esc(profOrderDate(order.created_at))}</span>
+          </div>
+        </div>
+        <button class="prof-order-details-button" type="button" onclick="openProfOrderDetails(${index})">Ver detalhes</button>
+      </article>
+    `;
+  }
+
+  function renderProfPedidos(orders = appState.customerOrders || []) {
+    const body = $('profSubPedidosBody');
+    if (!body) return;
+    profOrdersView = Array.isArray(orders) ? orders : [];
+    const activeOrders = [];
+    const orderHistory = [];
+    profOrdersView.forEach((order, index) => {
+      const entry = { order, index };
+      if (PROF_ORDER_ACTIVE_STATUSES.has(profOrderStatus(order))) activeOrders.push(entry);
+      else orderHistory.push(entry);
+    });
+    const renderEntries = entries => entries.map(({ order, index }) => renderProfOrderCard(order, index)).join('');
+    body.innerHTML = `
+      <section class="prof-orders-current">
+        <h2>Pedidos em andamento (${activeOrders.length})</h2>
+        ${activeOrders.length
+          ? `<div class="prof-orders-list">${renderEntries(activeOrders)}</div>`
+          : '<p>Você não possui pedidos em andamento</p>'}
+      </section>
+      <section class="prof-orders-history">
+        <h2>Histórico de pedidos (${orderHistory.length})</h2>
+        ${orderHistory.length
+          ? `<div class="prof-orders-list">${renderEntries(orderHistory)}</div>`
+          : '<p class="prof-orders-history-empty">Nenhum pedido encontrado</p>'}
+      </section>
+    `;
+  }
+
+  function renderProfPedidosLoading() {
+    const body = $('profSubPedidosBody');
+    if (body) body.innerHTML = '<div class="prof-orders-feedback">Carregando pedidos...</div>';
+  }
+
+  function renderProfPedidosError() {
+    const body = $('profSubPedidosBody');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="prof-orders-feedback prof-orders-feedback--error">
+        <p>Não foi possível carregar seus pedidos.</p>
+        <button type="button" onclick="loadProfPedidos()">Tentar novamente</button>
+      </div>
+    `;
+  }
+
+  async function loadProfPedidos() {
+    if (!window.PedeAquiCustomerAuth?.getToken?.()) {
+      openLoginScreen();
+      return;
+    }
+    renderProfPedidosLoading();
+    try {
+      const orders = await window.PedeAquiOrderService.getCustomerOrders();
+      appState.customerOrders = Array.isArray(orders) ? orders : [];
+      customerStore()?.setOrders?.(appState.customerOrders);
+      renderProfPedidos(appState.customerOrders);
+    } catch (error) {
+      if (error?.status === 401) {
+        await syncCustomerSession();
+        return;
+      }
+      logAppError('Falha ao carregar pedidos do cliente', error);
+      renderProfPedidosError();
+    }
+  }
+
+  function openProfOrderDetails(index) {
+    const order = profOrdersView[index];
+    const detail = $('profOrderDetail');
+    const body = $('profOrderDetailBody');
+    if (!order || !detail || !body) return;
+    const status = profOrderStatusInfo(order);
+    const items = Array.isArray(order.items) ? order.items : [];
+    body.innerHTML = `
+      <dl class="prof-order-detail-summary">
+        <div><dt>Pedido</dt><dd>#${esc(order.order_number ?? '')}</dd></div>
+        <div><dt>Status</dt><dd>${esc(status.label)}</dd></div>
+        <div><dt>Data</dt><dd>${esc(profOrderDate(order.created_at))}</dd></div>
+        <div><dt>Restaurante</dt><dd>${esc(order.restaurant_name || 'Não informado')}</dd></div>
+        <div><dt>Unidade</dt><dd>${esc(order.branch_name || 'Não informada')}</dd></div>
+        <div><dt>Total</dt><dd>${fmt(Number(order.total) || 0)}</dd></div>
+      </dl>
+      <section class="prof-order-detail-items">
+        <h2>Itens do pedido</h2>
+        ${items.length ? items.map(item => {
+          const quantity = Number(item.quantity ?? item.qty ?? 1) || 1;
+          const name = item.name || item.product_name || 'Item';
+          return `<div><span>${quantity}x ${esc(name)}</span></div>`;
+        }).join('') : '<p>Nenhum item informado.</p>'}
+      </section>
+    `;
+    detail.classList.add('active');
+    detail.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeProfOrderDetails() {
+    const detail = $('profOrderDetail');
+    detail?.classList.remove('active');
+    detail?.setAttribute('aria-hidden', 'true');
+  }
+
+  async function openProfSub(subId) {
+    if (!isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos'].includes(subId)) {
       openLoginScreen();
       return;
     }
     document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
     const sub = $('profSub' + subId);
     if (!sub) return;
-    if (subId === 'pedidos') renderProfPedidos();
     sub.classList.add('active');
+    if (subId === 'pedidos') await loadProfPedidos();
   }
-
   function closeProfSub() {
+    closeProfOrderDetails();
     document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
   }
 
@@ -4815,7 +4965,7 @@
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openProfSub, closeProfSub, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 

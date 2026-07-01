@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=235">
+<link rel="stylesheet" href="styles/utilities.css?v=236">
 <link rel="stylesheet" href="styles/operation.css?v=119">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -500,15 +500,26 @@
 
   <!-- -- SUB: Pedidos -- -->
   <div class="prof-sub" id="profSubpedidos">
-    <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+    <div class="prof-manage-header">
+      <button class="cart-hdr-back prof-manage-back" type="button" onclick="closeProfSub()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
-      <span class="prof-sub-title">Meus Pedidos</span>
+      <h1>Pedidos</h1>
+      <span class="prof-manage-header-spacer" aria-hidden="true"></span>
     </div>
     <div class="prof-sub-body" id="profSubPedidosBody">
       <!-- populated by renderProfPedidos() -->
     </div>
+    <section class="prof-order-detail" id="profOrderDetail" aria-hidden="true" aria-label="Detalhes do pedido">
+      <div class="prof-manage-header">
+        <button class="cart-hdr-back prof-manage-back" type="button" onclick="closeProfOrderDetails()" aria-label="Voltar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        </button>
+        <h1>Detalhes do pedido</h1>
+        <span class="prof-manage-header-spacer" aria-hidden="true"></span>
+      </div>
+      <div class="prof-order-detail-body" id="profOrderDetailBody"></div>
+    </section>
   </div><!-- /profSubpedidos -->
 
   <!-- -- SUB: Pagamento -- -->
@@ -1733,6 +1744,6 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=3"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=34"></script>
-<script src="scripts/pages/restaurant-page.js?v=76"></script>
+<script src="scripts/pages/restaurant-page.js?v=78"></script>
 </body>
 </html>

@@ -7780,13 +7780,15 @@ body.menu-tab .product-card.is-pressing{
     transform:translateX(0)!important;
     transition:none!important;
   }
-  body:has(#mobViewProfile.active):has(#profSubmeusdados.active) .mob-bottom-nav{
+  body:has(#mobViewProfile.active):has(#profSubmeusdados.active) .mob-bottom-nav,
+  body:has(#mobViewProfile.active):has(#profSubpedidos.active) .mob-bottom-nav{
     display:none!important;
     visibility:hidden!important;
     opacity:0!important;
     pointer-events:none!important;
   }
-  #profSubmeusdados .prof-manage-header{
+  #profSubmeusdados .prof-manage-header,
+  #profSubpedidos .prof-manage-header{
     box-sizing:border-box!important;
     width:100%!important;
     height:70px!important;
@@ -7798,7 +7800,8 @@ body.menu-tab .product-card.is-pressing{
     border-bottom:1px solid #eeeeee!important;
     background:#ffffff!important;
   }
-  #profSubmeusdados .prof-manage-header h1{
+  #profSubmeusdados .prof-manage-header h1,
+  #profSubpedidos .prof-manage-header h1{
     margin:0!important;
     color:#262626!important;
     font-size:16px!important;
@@ -7807,7 +7810,8 @@ body.menu-tab .product-card.is-pressing{
     letter-spacing:0!important;
     text-align:center!important;
   }
-  #profSubmeusdados .prof-manage-back{
+  #profSubmeusdados .prof-manage-back,
+  #profSubpedidos .prof-manage-back{
     width:32px!important;
     height:32px!important;
     padding:0!important;
@@ -7820,12 +7824,261 @@ body.menu-tab .product-card.is-pressing{
     justify-content:center!important;
     -webkit-tap-highlight-color:transparent!important;
   }
-  #profSubmeusdados .prof-manage-back svg{
+  #profSubmeusdados .prof-manage-back svg,
+  #profSubpedidos .prof-manage-back svg{
     width:17px!important;
     height:17px!important;
     stroke-width:1.5!important;
   }
-  #profSubmeusdados .prof-manage-body{
+  #profSubpedidos .prof-sub-body{
+    padding:0!important;
+    background:#fff!important;
+  }
+  #profSubpedidos{
+    overflow-x:hidden!important;
+    touch-action:pan-y;
+  }
+  #profSubpedidos .prof-orders-current{
+    box-sizing:border-box;
+    min-height:101px;
+    padding:20px;
+    border-top:10px solid #f7f5f3;
+    border-bottom:10px solid #f7f5f3;
+  }
+  #profSubpedidos .prof-orders-current h2,
+  #profSubpedidos .prof-orders-history h2{
+    margin:0;
+    color:#404040;
+    font-size:18px;
+    line-height:24px;
+    font-weight:700;
+    letter-spacing:0;
+  }
+  #profSubpedidos .prof-orders-current > p{
+    margin:20px 0 0;
+    color:#adadad;
+    font-size:14px;
+    line-height:18px;
+    font-weight:400;
+  }
+  #profSubpedidos .prof-orders-history{
+    box-sizing:border-box;
+    width:100%;
+    min-height:105px;
+    padding:19px 20px 20px;
+  }
+  #profSubpedidos .prof-orders-history h2{
+    margin-bottom:20px;
+  }
+  #profSubpedidos .prof-orders-history-empty{
+    margin:23px 0 0;
+    color:#adadad;
+    font-size:14px;
+    line-height:18px;
+    font-weight:400;
+  }
+  #profSubpedidos .prof-orders-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    width:100%;
+  }
+  #profSubpedidos .prof-orders-current .prof-orders-list{
+    margin-top:20px;
+  }
+  #profSubpedidos .prof-order-card{
+    box-sizing:border-box;
+    width:374px;
+    max-width:100%;
+    height:151px;
+    margin:0 auto;
+    padding:0;
+    overflow:hidden;
+    border:1px solid #f0f0f0;
+    border-radius:10px;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.025);
+  }
+  #profSubpedidos .prof-order-card--confirmed,
+  #profSubpedidos .prof-order-card--cancelled,
+  #profSubpedidos .prof-order-card--canceled{
+    border-color:#f0f0f0;
+  }  #profSubpedidos .prof-order-card--completed,
+  #profSubpedidos .prof-order-card--delivered,
+  #profSubpedidos .prof-order-card--finished,
+  #profSubpedidos .prof-order-card--cancelled,
+  #profSubpedidos .prof-order-card--canceled{
+    width:374px;
+    max-width:100%;
+    height:151px;
+  }  #profSubpedidos .prof-order-card-main{
+    box-sizing:border-box;
+    height:90px;
+    padding:20px;
+  }
+  #profSubpedidos .prof-order-number{
+    display:block;
+    color:#404040;
+    font-size:16px;
+    line-height:20px;
+    font-weight:700;
+  }
+  #profSubpedidos .prof-order-status{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-top:11px;
+    color:#a2a2a2;
+    font-size:14px;
+    line-height:18px;
+    font-weight:400;
+  }
+  #profSubpedidos .prof-order-status-icon{
+    width:12px;
+    height:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 12px;
+    color:#ef9b35;
+  }
+  #profSubpedidos .prof-order-status-icon svg{
+    width:12px;
+    height:12px;
+    fill:none;
+  }
+  #profSubpedidos .prof-order-status-icon circle{
+    fill:currentColor;
+  }
+  #profSubpedidos .prof-order-status-icon path{
+    fill:none;
+    stroke:#fff;
+    stroke-width:1.35;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  #profSubpedidos .prof-order-status--success .prof-order-status-icon{
+    color:#4a9705;
+  }
+  #profSubpedidos .prof-order-status--danger .prof-order-status-icon{
+    color:#e98585;
+  }
+  #profSubpedidos .prof-order-details-button{
+    box-sizing:border-box;
+    width:100%;
+    height:61px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:0;
+    border-top:1px solid #dedede;
+    background:#fff;
+    color:#777;
+    font-family:inherit;
+    font-size:12px;
+    line-height:16px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  #profSubpedidos .prof-order-details-button:active{
+    background:#fafafa;
+  }
+  #profSubpedidos .prof-orders-feedback{
+    box-sizing:border-box;
+    min-height:150px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 20px;
+    color:#8f8f8f;
+    font-size:14px;
+    text-align:center;
+  }
+  #profSubpedidos .prof-orders-feedback--error{
+    flex-direction:column;
+    gap:12px;
+  }
+  #profSubpedidos .prof-orders-feedback--error p{
+    margin:0;
+  }
+  #profSubpedidos .prof-orders-feedback--error button{
+    padding:9px 14px;
+    border:1px solid #e5e5e5;
+    border-radius:9px;
+    background:#fff;
+    color:#555;
+    font-family:inherit;
+    font-size:13px;
+    line-height:16px;
+    font-weight:600;
+  }
+  #profSubpedidos .prof-order-detail{
+    display:none;
+    position:absolute;
+    inset:0;
+    z-index:8;
+    width:100%;
+    min-height:100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+    background:#fff;
+    pointer-events:none;
+  }
+  #profSubpedidos .prof-order-detail.active{
+    display:block;
+    pointer-events:auto;
+  }
+  #profSubpedidos .prof-order-detail-body{
+    padding:20px;
+  }
+  #profSubpedidos .prof-order-detail-summary{
+    margin:0;
+    overflow:hidden;
+    border:1px solid #e5e5e5;
+    border-radius:10px;
+    background:#fff;
+  }
+  #profSubpedidos .prof-order-detail-summary > div{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    padding:13px 15px;
+    border-bottom:1px solid #eee;
+  }
+  #profSubpedidos .prof-order-detail-summary > div:last-child{
+    border-bottom:0;
+  }
+  #profSubpedidos .prof-order-detail-summary dt,
+  #profSubpedidos .prof-order-detail-summary dd{
+    margin:0;
+    font-size:13px;
+    line-height:18px;
+  }
+  #profSubpedidos .prof-order-detail-summary dt{
+    color:#8c8c8c;
+  }
+  #profSubpedidos .prof-order-detail-summary dd{
+    color:#404040;
+    font-weight:600;
+    text-align:right;
+  }
+  #profSubpedidos .prof-order-detail-items{
+    margin-top:22px;
+  }
+  #profSubpedidos .prof-order-detail-items h2{
+    margin:0 0 12px;
+    color:#404040;
+    font-size:16px;
+  }
+  #profSubpedidos .prof-order-detail-items div,
+  #profSubpedidos .prof-order-detail-items p{
+    margin:0;
+    padding:12px 0;
+    border-bottom:1px solid #eee;
+    color:#666;
+    font-size:13px;
+  }  #profSubmeusdados .prof-manage-body{
     box-sizing:border-box!important;
     width:100%!important;
     padding:20px!important;

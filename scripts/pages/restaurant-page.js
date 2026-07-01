@@ -4667,7 +4667,7 @@
     'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
   ]);
   const PROF_ORDER_STATUS_LABELS = {
-    pending: 'Pendente',
+    pending: 'Aguardando pagamento',
     created: 'Criado',
     confirmed: 'Confirmado',
     accepted: 'Aceito',
@@ -4717,12 +4717,14 @@
       : '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5"/><path d="m3.5 6.2 1.7 1.7 3.4-3.8"/></svg>';
     const statusClass = status.status.replace(/[^a-z0-9_-]/g, '');
     return `
-      <article class="prof-order-card prof-order-card--${statusClass}">
+      <article class="prof-order-card prof-order-card--${statusClass} prof-order-card--${status.tone}-tone">
         <div class="prof-order-card-main">
           <strong class="prof-order-number">Pedido #${esc(order.order_number ?? '')}</strong>
           <div class="prof-order-status prof-order-status--${status.tone}">
-            <span class="prof-order-status-icon" aria-hidden="true">${icon}</span>
-            <span>${esc(status.label)} ${esc(profOrderDate(order.created_at))}</span>
+            ${status.tone === 'active' ? '' : `<span class="prof-order-status-icon" aria-hidden="true">${icon}</span>`}
+            <span>${status.tone === 'active'
+              ? 'Aguardando pagamento'
+              : `${esc(status.label)} ${esc(profOrderDate(order.created_at))}`}</span>
           </div>
         </div>
         <button class="prof-order-details-button" type="button" onclick="openProfOrderDetails(${index})">Ver detalhes</button>

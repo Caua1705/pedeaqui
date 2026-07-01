@@ -7771,7 +7771,7 @@ body.menu-tab .product-card.is-pressing{
     margin:0 auto!important;
     padding:0!important;
     z-index:280!important;
-    background:#ffffff!important;
+    background:#f7f5f3!important;
     visibility:hidden!important;
     pointer-events:none!important;
     transform:translateX(100%)!important;
@@ -7866,6 +7866,7 @@ body.menu-tab .product-card.is-pressing{
     padding:20px;
     border-top:10px solid #f7f5f3;
     border-bottom:10px solid #f7f5f3;
+    background:#fff;
   }
   #profSubpedidos .prof-orders-current h2,
   #profSubpedidos .prof-orders-history h2{
@@ -7888,6 +7889,7 @@ body.menu-tab .product-card.is-pressing{
     width:100%;
     min-height:105px;
     padding:19px 20px 20px;
+    background:#fff;
   }
   #profSubpedidos .prof-orders-history h2{
     margin-bottom:20px;

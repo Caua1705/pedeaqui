@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=248">
+<link rel="stylesheet" href="styles/utilities.css?v=252">
 <link rel="stylesheet" href="styles/operation.css?v=119">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -694,7 +694,14 @@
       <footer class="prof-password-footer">
         <button id="profPasswordSubmit" type="submit" form="profPasswordForm">Confirmar</button>
       </footer>
-    </section>  </div><!-- /profSubmeusdados -->
+      <div class="prof-password-success" id="profPasswordSuccess" aria-hidden="true">
+        <div class="prof-password-success-dialog" role="dialog" aria-modal="true" aria-labelledby="profPasswordSuccessTitle">
+          <h2 id="profPasswordSuccessTitle">Senha alterada com sucesso!</h2>
+          <button type="button" onclick="confirmCustomerPasswordSuccess()">Ok</button>
+        </div>
+      </div>
+    </section>
+  </div><!-- /profSubmeusdados -->
 
   <!-- -- SUB: Segurança -- -->
   <div class="prof-sub" id="profSubseguranca">
@@ -1791,6 +1798,6 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=3"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=34"></script>
-<script src="scripts/pages/restaurant-page.js?v=85"></script>
+<script src="scripts/pages/restaurant-page.js?v=87"></script>
 </body>
 </html>

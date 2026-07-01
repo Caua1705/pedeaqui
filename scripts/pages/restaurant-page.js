@@ -4664,7 +4664,6 @@
   }
 
   let customerPasswordSubmitting = false;
-  let customerPasswordSuccessTimer = null;
 
   const CUSTOMER_PASSWORD_FIELDS = {
     current: ['profCurrentPasswordField', 'profCurrentPasswordError'],
@@ -4716,7 +4715,6 @@
       openLoginScreen();
       return;
     }
-    clearTimeout(customerPasswordSuccessTimer);
     resetCustomerPasswordForm();
     const screen = $('profPasswordScreen');
     screen?.classList.add('active');
@@ -4725,8 +4723,6 @@
 
   function closeCustomerPasswordScreen() {
     if (customerPasswordSubmitting) return;
-    clearTimeout(customerPasswordSuccessTimer);
-    customerPasswordSuccessTimer = null;
     const screen = $('profPasswordScreen');
     screen?.classList.remove('active');
     screen?.setAttribute('aria-hidden', 'true');
@@ -4785,7 +4781,7 @@
     customerPasswordSubmitting = true;
     if (submit) {
       submit.disabled = true;
-      submit.textContent = 'Salvando...';
+      submit.classList.add('is-loading');
     }
     try {
       await window.PedeAquiCustomerAuth.changeCustomerPassword({
@@ -4793,9 +4789,9 @@
         new_password: newPassword,
         confirm_password: confirmPassword
       });
-      $('profPasswordForm')?.reset();
-      showCustomerPasswordSummary('Senha alterada com sucesso', true);
-      customerPasswordSuccessTimer = setTimeout(() => closeCustomerPasswordScreen(), 1400);
+      const success = $('profPasswordSuccess');
+      success?.classList.add('active');
+      success?.setAttribute('aria-hidden', 'false');
     } catch (error) {
       if (error?.status === 401 && !String(error?.message || '').toLocaleLowerCase('pt-BR').includes('senha')) {
         await syncCustomerSession();
@@ -4806,9 +4802,16 @@
       customerPasswordSubmitting = false;
       if (submit) {
         submit.disabled = false;
-        submit.textContent = 'Confirmar';
+        submit.classList.remove('is-loading');
       }
     }
+  }
+  function confirmCustomerPasswordSuccess() {
+    const success = $('profPasswordSuccess');
+    success?.classList.remove('active');
+    success?.setAttribute('aria-hidden', 'true');
+    resetCustomerPasswordForm();
+    closeCustomerPasswordScreen();
   }
   const PROF_ORDER_ACTIVE_STATUSES = new Set([
     'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
@@ -5130,7 +5133,7 @@
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openProfSub, closeProfSub, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 

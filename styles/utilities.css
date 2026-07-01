@@ -8192,6 +8192,8 @@ body.menu-tab .product-card.is-pressing{
   }
   #profSubmeusdados .prof-password-field{
     margin:0 0 20px;
+  }  #profSubmeusdados .prof-password-field:first-child{
+    transform:translateY(-2px);
   }
   #profSubmeusdados .prof-password-field label{
     display:block;
@@ -8199,7 +8201,7 @@ body.menu-tab .product-card.is-pressing{
     color:#686868;
     font-size:12px;
     line-height:16px;
-    font-weight:400;
+    font-weight:500;
   }
   #profSubmeusdados .prof-password-input-wrap{
     box-sizing:border-box;
@@ -8228,7 +8230,7 @@ body.menu-tab .product-card.is-pressing{
     background:transparent;
     color:#555;
     font-family:inherit;
-    font-size:14px;
+    font-size:16px;
     letter-spacing:0;
   }
   #profSubmeusdados .prof-password-input-wrap button{
@@ -8328,6 +8330,71 @@ body.menu-tab .product-card.is-pressing{
   #profSubmeusdados .prof-password-footer button:disabled{
     opacity:.68;
     cursor:not-allowed;
+  }  #profSubmeusdados .prof-password-footer button.is-loading{
+    position:relative;
+    color:transparent;
+    pointer-events:none;
+  }
+  #profSubmeusdados .prof-password-footer button.is-loading::after{
+    content:"";
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:18px;
+    height:18px;
+    margin:-9px 0 0 -9px;
+    box-sizing:border-box;
+    border:2.5px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:reg-btn-spin .7s linear infinite;
+  }
+  #profSubmeusdados .prof-password-success{
+    display:none;
+    position:absolute;
+    inset:0;
+    z-index:40;
+    align-items:center;
+    justify-content:center;
+    padding:15px;
+    background:rgba(0,0,0,.48);
+  }
+  #profSubmeusdados .prof-password-success.active{
+    display:flex;
+  }
+  #profSubmeusdados .prof-password-success-dialog{
+    box-sizing:border-box;
+    width:384px;
+    max-width:100%;
+    height:130px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 25px;
+    border-radius:10px;
+    background:#fff;
+  }
+  #profSubmeusdados .prof-password-success-dialog h2{
+    margin:0;
+    color:#4a4a4a;
+    font-size:16px;
+    line-height:20px;
+    font-weight:600;
+    text-align:center;
+  }
+  #profSubmeusdados .prof-password-success-dialog button{
+    width:334px;
+    max-width:100%;
+    height:45px;
+    padding:0;
+    border:0;
+    border-radius:10px;
+    background:#F36F21;
+    color:#fff;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
   }
   #profSubmeusdados .prof-manage-body{
     box-sizing:border-box!important;

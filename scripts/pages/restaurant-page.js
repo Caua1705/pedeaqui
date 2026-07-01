@@ -2876,17 +2876,37 @@
     const el = $('addrMapContainer');
     if (!el) return;
     _addrMap = new google.maps.Map(el, { center:{lat,lng}, zoom:17, disableDefaultUI:true, zoomControl:true, gestureHandling:'greedy' });
-    _addrMapMarker = new google.maps.Marker({ position:{lat,lng}, map:_addrMap, draggable:true, animation:google.maps.Animation.DROP });
-    _addrMapMarker.addListener('dragend', () => {
-      const p = _addrMapMarker.getPosition();
-      if (_addrTempLoc) { _addrTempLoc.lat = p.lat(); _addrTempLoc.lng = p.lng(); }
+    _addrMapMarker = null;
+    const stage = el.closest('.addr-map-stage');
+    _addrMap.addListener('dragstart', () => stage?.classList.add('is-moving'));
+    _addrMap.addListener('idle', () => {
+      stage?.classList.remove('is-moving');
+      const center = _addrMap.getCenter();
+      if (!center || !_addrTempLoc) return;
+      const nextLat = center.lat();
+      const nextLng = center.lng();
+      const moved = Math.abs(nextLat - _addrTempLoc.lat) > 0.000001
+        || Math.abs(nextLng - _addrTempLoc.lng) > 0.000001;
+      _addrTempLoc.lat = nextLat;
+      _addrTempLoc.lng = nextLng;
+      if (moved) {
+        _addrTempLoc.formatted_address = '';
+        _addrTempLoc.place_id = '';
+        _addrTempLoc.street_name = '';
+        _addrTempLoc.number = '';
+        _addrTempLoc.street = '';
+        _addrTempLoc.neighborhood = '';
+        _addrTempLoc.city = '';
+        _addrTempLoc.state = '';
+        _addrTempLoc.postal_code = '';
+      }
     });
   }
 
   function confirmAddrMap() {
     if (!_addrTempLoc?.lat) return;
-    if (_addrMapMarker) {
-      const p = _addrMapMarker.getPosition();
+    if (_addrMap) {
+      const p = _addrMap.getCenter();
       _addrTempLoc.lat = p.lat(); _addrTempLoc.lng = p.lng();
     }
     if (!_addrTempLoc.formatted_address) {

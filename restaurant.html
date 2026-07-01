@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
 <link rel="stylesheet" href="styles/utilities.css?v=235">
-<link rel="stylesheet" href="styles/operation.css?v=118">
+<link rel="stylesheet" href="styles/operation.css?v=119">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
 <link rel="stylesheet" href="styles/verify.css?v=32">
@@ -1268,7 +1268,15 @@
       <h2 class="cart-hdr-title">Confirme sua localização</h2>
       <div class="cart-hdr-spacer"></div>
     </div>
-    <div id="addrMapContainer" class="addr-map-container"></div>
+    <div class="addr-map-stage">
+      <div id="addrMapContainer" class="addr-map-container"></div>
+      <div class="addr-map-center-pin" aria-hidden="true">
+        <svg viewBox="0 0 40 48" fill="none">
+          <path d="M20 46S36 31.4 36 18A16 16 0 1 0 4 18c0 13.4 16 28 16 28Z" fill="#F36F21" stroke="#fff" stroke-width="3"/>
+          <circle cx="20" cy="18" r="6" fill="#fff"/>
+        </svg>
+      </div>
+    </div>
     <div class="addr-map-footer">
       <button class="adc-confirm-btn" onclick="confirmAddrMap()">Confirmar localização</button>
     </div>
@@ -1725,6 +1733,6 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=3"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=34"></script>
-<script src="scripts/pages/restaurant-page.js?v=75"></script>
+<script src="scripts/pages/restaurant-page.js?v=76"></script>
 </body>
 </html>

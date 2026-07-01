@@ -658,7 +658,8 @@
       <div class="rapi-bottom-dock">
 
         <!-- Suggestion chips (horizontal scroll) -->
-        <div class="rapi-suggest-rail rapi-suggest-rail--waiting" id="rapiStarter">
+        <div class="rapi-suggest-rail rapi-suggest-rail--waiting" id="rapiStarter"
+          style="opacity:0!important;visibility:hidden!important;pointer-events:none!important">
           <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me recomenda um prato')">Me recomenda um prato</button>
           <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Quero gastar ate R$ 50')">Quero gastar at&eacute; R$ 50</button>
           <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Pedido para 2 pessoas')">Pedido para 2 pessoas</button>
@@ -1069,6 +1070,27 @@
     setupRapiSuggestionDrag();
     setupRapiKeyboardViewport();
 
+    // Reset inline ready styles before the browser paints a reused Rapi view.
+    const introBody = view.querySelector('#rapiAiBody');
+    const introQuestion = view.querySelector('#rapiIntroQuestion');
+    const introStarter = view.querySelector('#rapiStarter');
+    if (!introBody?.classList.contains('rapi-ai-body--searching') && introStarter) {
+      if (introQuestion) {
+        introQuestion.textContent = '';
+        introQuestion.classList.remove('is-typing');
+      }
+      introStarter.classList.remove('hidden', 'rapi-suggest-rail--ready');
+      introStarter.classList.add('rapi-suggest-rail--waiting');
+      introStarter.style.setProperty('opacity', '0', 'important');
+      introStarter.style.setProperty('visibility', 'hidden', 'important');
+      introStarter.style.setProperty('pointer-events', 'none', 'important');
+      introStarter.querySelectorAll('.rapi-suggest-chip').forEach(chip => {
+        chip.style.setProperty('opacity', '0', 'important');
+        chip.style.setProperty('visibility', 'hidden', 'important');
+        chip.style.setProperty('transition', 'none', 'important');
+        chip.style.setProperty('transition-delay', '0ms', 'important');
+      });
+    }
     const beginIntro = () => {
       view.classList.remove('rapi-intro-deferred');
       startRapiIntroAnimation();

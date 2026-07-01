@@ -1053,12 +1053,32 @@
 }
 
 /* ── STEP 2: MAP CONFIRMATION ── */
-.addr-map-container{
+.addr-map-stage{
   flex:1!important;
   min-height:0!important;
   width:100%!important;
+  position:relative!important;
+  overflow:hidden!important;
+}
+.addr-map-container{
+  width:100%!important;
+  height:100%!important;
   background:#e8ecef!important;
 }
+.addr-map-center-pin{
+  position:absolute!important;
+  z-index:5!important;
+  left:50%!important;
+  top:50%!important;
+  width:40px!important;
+  height:48px!important;
+  transform:translate(-50%,-100%)!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))!important;
+  transition:transform .16s ease!important;
+}
+.addr-map-center-pin svg{display:block!important;width:100%!important;height:100%!important}
+.addr-map-stage.is-moving .addr-map-center-pin{transform:translate(-50%,calc(-100% - 8px))!important}
 .addr-map-footer{
   flex-shrink:0!important;
   width:414px!important;

@@ -2152,6 +2152,19 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition:none!important;
 }
 
+/* While Rapi is generating, the send action becomes a cancel control. */
+#mobViewRapi .rapi-ai-send.is-stopping{
+  background:rgba(217,119,6,.14)!important;
+  color:#d97706!important;
+  cursor:pointer!important;
+}
+#mobViewRapi .rapi-ai-send .rapi-stop-icon{
+  display:block;
+  width:11px;
+  height:11px;
+  border-radius:2px;
+  background:currentColor;
+}
 /* Rapi response feedback icons under each assistant answer. */
 #mobViewRapi .rapi-feedback-actions{
   display:flex!important;

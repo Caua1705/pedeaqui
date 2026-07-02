@@ -26,6 +26,9 @@
   let _introTypeTimer = null;
   let _rapiSessionId = null;
   let _rapiSending = false;
+  let _rapiAbortController = null;
+  let _rapiResponseTimer = null;
+  let _rapiActiveReveal = null;
   let _rapiOptionCache = [];
   let _rapiTypingStatusTimer = null;
 
@@ -126,9 +129,44 @@
 
   function setRapiInputDisabled(disabled) {
     const inputEl = document.getElementById('rapiInput');
-    const sendBtn = document.querySelector('.rapi-ai-send');
     if (inputEl) inputEl.disabled = Boolean(disabled);
-    if (sendBtn) sendBtn.disabled = Boolean(disabled);
+  }
+
+  function setRapiGenerating(generating) {
+    const sendBtn = document.querySelector('.rapi-ai-send');
+    if (!sendBtn) return;
+    sendBtn.classList.toggle('is-stopping', Boolean(generating));
+    sendBtn.setAttribute('aria-label', generating ? 'Parar resposta' : 'Enviar');
+    sendBtn.setAttribute('title', generating ? 'Parar resposta' : 'Enviar');
+    sendBtn.innerHTML = generating
+      ? '<span class="rapi-stop-icon" aria-hidden="true"></span>'
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+  }
+
+  function finishRapiGeneration() {
+    _rapiSending = false;
+    _rapiAbortController = null;
+    _rapiActiveReveal = null;
+    setRapiInputDisabled(false);
+    setRapiGenerating(false);
+  }
+
+  function stopRapiGeneration() {
+    if (!_rapiSending) return;
+    _rapiAbortController?.abort();
+    _rapiAbortController = null;
+    if (_rapiResponseTimer) {
+      clearTimeout(_rapiResponseTimer);
+      _rapiResponseTimer = null;
+    }
+    removeRapiTypingIndicator();
+    const title = _rapiActiveReveal;
+    if (title?._rapiRevealTimer) {
+      clearTimeout(title._rapiRevealTimer);
+      title._rapiRevealTimer = null;
+    }
+    title?.closest('.rapi-chat-assistant-message')?.classList.remove('is-typing-response');
+    finishRapiGeneration();
   }
 
   function scrollRapiToLatest() {
@@ -245,6 +283,7 @@
 
   function revealRapiResponse(element, text, options = {}) {
     if (!element) return;
+    _rapiActiveReveal = element;
     const wordSegments = String(text || '').match(/\S+\s*/g) || [];
     let visibleWords = 0;
 
@@ -253,8 +292,10 @@
 
     const finish = () => {
       element._rapiRevealTimer = null;
+      if (_rapiActiveReveal === element) _rapiActiveReveal = null;
       options.renderFinal?.();
       options.onComplete?.();
+      if (_rapiSending) finishRapiGeneration();
     };
 
     if (!wordSegments.length) {
@@ -440,13 +481,17 @@
     appendRapiTextMessage(message, feedbackContext);
   }
 
-  async function postRapiChatMessage(message) {
+  async function postRapiChatMessage(message, signal) {
     const payload = {
       restaurant_id: getRapiRestaurantId(),
       session_id: ensureRapiSessionId(),
       message
     };
-    const apiResponse = await window.PedeAquiApiClient.post('/chat', payload);
+    const apiResponse = await window.PedeAquiApiClient.request('/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal
+    });
     console.log('[Rapi] Resposta completa da API:', apiResponse);
     return normalizeChatResponse(apiResponse);
   }
@@ -712,6 +757,7 @@
 
     _activeChipId = chipId || null;
     _rapiSending = true;
+    _rapiAbortController = new AbortController();
     if (_introTypeTimer) {
       cancelAnimationFrame(_introTypeTimer);
       _introTypeTimer = null;
@@ -731,26 +777,36 @@
 
     appendRapiUserMessage(cleanMessage);
     setRapiInputDisabled(true);
+    setRapiGenerating(true);
     appendRapiTypingIndicator();
 
     try {
-      const response = await postRapiChatMessage(cleanMessage);
+      const response = await postRapiChatMessage(cleanMessage, _rapiAbortController.signal);
       console.log('[Rapi] Resumo da resposta:', {
         response_type: response?.response_type,
         products_count: Array.isArray(response?.products) ? response.products.length : 0
       });
       removeRapiTypingIndicator();
-      setTimeout(() => renderRapiChatResponse(response, cleanMessage), 190);
+      _rapiResponseTimer = setTimeout(() => {
+        _rapiResponseTimer = null;
+        if (!_rapiSending) return;
+        renderRapiChatResponse(response, cleanMessage);
+        if (!_rapiActiveReveal) finishRapiGeneration();
+      }, 190);
     } catch (error) {
       removeRapiTypingIndicator();
-      setTimeout(() => renderRapiChatResponse({
-        response_type: 'error',
-        message: error?.message || 'Nao consegui conectar ao Rapi agora. Tente novamente.'
-      }, cleanMessage), 190);
-    } finally {
-      _rapiSending = false;
-      setTimeout(() => {
-        setRapiInputDisabled(false);
+      if (error?.name === 'AbortError') {
+        finishRapiGeneration();
+        return;
+      }
+      _rapiResponseTimer = setTimeout(() => {
+        _rapiResponseTimer = null;
+        if (!_rapiSending) return;
+        renderRapiChatResponse({
+          response_type: 'error',
+          message: error?.message || 'Nao consegui conectar ao Rapi agora. Tente novamente.'
+        }, cleanMessage);
+        if (!_rapiActiveReveal) finishRapiGeneration();
       }, 190);
     }
   }
@@ -899,7 +955,10 @@
   }
 
   window.rapiSendMessage = function () {
-    if (_rapiSending) return;
+    if (_rapiSending) {
+      stopRapiGeneration();
+      return;
+    }
     const inputEl = document.getElementById('rapiInput');
     const msg = (inputEl?.value || '').trim();
     if (!msg) return;

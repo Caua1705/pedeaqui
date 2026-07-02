@@ -25,6 +25,7 @@
         }
       });
     } catch (error) {
+      if (error?.name === 'AbortError') throw error;
       throw new Error('Não foi possível conectar à API.');
     }
 

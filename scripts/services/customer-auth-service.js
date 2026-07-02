@@ -100,6 +100,9 @@
   function getCurrentCustomer() {
     return authedGet(routes().customerMe());
   }
+  function updateCurrentCustomer(payload) {
+    return authedPatch(routes().customerMe(), payload);
+  }
   function getCustomerOrders() {
     return authedGet(routes().customerOrders());
   }
@@ -146,6 +149,7 @@
     resetPassword,
     // authenticated
     getCurrentCustomer,
+    updateCurrentCustomer,
     getCustomerOrders,
     changeCustomerPassword,
     getCustomerAddresses,

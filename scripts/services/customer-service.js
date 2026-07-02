@@ -7,12 +7,18 @@
       id: customer.id || null,
       name: customer.name || '',
       phone: customer.phone || '',
-      email: customer.email || ''
+      email: customer.email || '',
+      birth_date: customer.birth_date || ''
     };
   }
 
   async function getCurrentCustomer() {
     const current = await auth()?.getCurrentCustomer?.();
+    return normalizeCustomer(current);
+  }
+
+  async function updateCurrentCustomer(payload) {
+    const current = await auth()?.updateCurrentCustomer?.(payload);
     return normalizeCustomer(current);
   }
 
@@ -39,6 +45,7 @@
   window.PedeAquiCustomerService = {
     normalizeCustomer,
     getCurrentCustomer,
+    updateCurrentCustomer,
     getStoredCustomer,
     isLoggedIn,
     loginCustomer,

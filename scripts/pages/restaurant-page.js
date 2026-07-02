@@ -4130,12 +4130,12 @@
     if (!auth?.isLoggedIn()) return;
     const stored = auth.getStoredCustomer();
     if (stored && !customer) {
-      persistCustomer({ id: stored.id || null, name: stored.name || '', phone: stored.phone || '', email: stored.email || '' });
+      persistCustomer({ id: stored.id || null, name: stored.name || '', phone: stored.phone || '', email: stored.email || '', birth_date: stored.birth_date || '' });
     }
     try {
       const me = await window.PedeAquiCustomerService.getCurrentCustomer();
       if (me) {
-        persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' });
+        persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '', birth_date: me.birth_date || '' });
         auth.setStoredCustomer(me);
         renderHomeLoginPrompt();
         renderProfileView();
@@ -4479,7 +4479,7 @@
         if (rejected) logAppError('Falha parcial ao carregar perfil', rejected.reason);
         if (meResult.status === 'fulfilled' && meResult.value) {
           const me = meResult.value;
-          persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '' });
+          persistCustomer({ id: me.id || null, name: me.name || '', phone: me.phone || '', email: me.email || '', birth_date: me.birth_date || '' });
           auth?.setStoredCustomer?.(me);
         }
         if (addressesResult.status === 'fulfilled') {
@@ -4663,6 +4663,140 @@
     }, 550);
   }
 
+  let customerDataSubmitting = false;
+  let customerDataLoading = false;
+  const CUSTOMER_DATA_FIELDS = {
+    name: ['profDataNameField', 'profDataNameError'],
+    email: ['profDataEmailField', 'profDataEmailError'],
+    birth: ['profDataBirthField', 'profDataBirthError'],
+    phone: ['profDataPhoneField', 'profDataPhoneError']
+  };
+
+  function setCustomerDataFieldError(field, message = '') {
+    const [fieldId, errorId] = CUSTOMER_DATA_FIELDS[field] || [];
+    $(fieldId)?.classList.toggle('has-error', Boolean(message));
+    if ($(errorId)) $(errorId).textContent = message;
+  }
+  function setCustomerDataStatus(message = '', tone = '') {
+    const status = $('profDataStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle('success', tone === 'success');
+    status.classList.toggle('error', tone === 'error');
+  }
+  function formatCustomerBirthDate(value) {
+    const match = String(value || '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+  }
+  function customerBirthDateToIso(value) {
+    const digits = onlyDigits(value);
+    return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+  }
+  function fillCustomerDataForm(data) {
+    if ($('profDataName')) $('profDataName').value = data?.name || '';
+    if ($('profDataEmail')) $('profDataEmail').value = data?.email || '';
+    if ($('profDataBirth')) { $('profDataBirth').value = formatCustomerBirthDate(data?.birth_date); if ($('profDataBirth').value) maskRegBirth($('profDataBirth')); }
+    if ($('profDataPhone')) { $('profDataPhone').value = data?.phone || ''; if ($('profDataPhone').value) maskRegPhone($('profDataPhone')); }
+  }
+  function resetCustomerDataFeedback() {
+    Object.keys(CUSTOMER_DATA_FIELDS).forEach(field => setCustomerDataFieldError(field));
+    setCustomerDataStatus();
+  }
+  function redirectCustomerDataToLogin() {
+    window.PedeAquiCustomerAuth?.logout?.();
+    persistCustomer(null);
+    customerStore()?.clear?.();
+    $('profDataScreen')?.classList.remove('active');
+    $('profDataScreen')?.setAttribute('aria-hidden', 'true');
+    closeProfSub();
+    renderHomeLoginPrompt();
+    renderProfileView();
+    openLoginScreen();
+  }
+  async function openCustomerDataScreen() {
+    if (!window.PedeAquiCustomerAuth?.getToken?.()) { openLoginScreen(); return; }
+    const screen = $('profDataScreen');
+    resetCustomerDataFeedback();
+    fillCustomerDataForm(currentCustomerSnapshot());
+    screen?.classList.add('active');
+    screen?.setAttribute('aria-hidden', 'false');
+    if (customerDataLoading) return;
+    customerDataLoading = true;
+    try {
+      const me = await window.PedeAquiCustomerService.getCurrentCustomer();
+      if (!me) throw new Error('Não foi possível carregar seus dados');
+      persistCustomer(me);
+      window.PedeAquiCustomerAuth?.setStoredCustomer?.(me);
+      fillCustomerDataForm(me);
+    } catch (error) {
+      if (error?.status === 401) { redirectCustomerDataToLogin(); return; }
+      setCustomerDataStatus('Não foi possível carregar seus dados. Tente novamente.', 'error');
+    } finally {
+      customerDataLoading = false;
+    }
+  }
+  function closeCustomerDataScreen() {
+    if (customerDataSubmitting) return;
+    $('profDataScreen')?.classList.remove('active');
+    $('profDataScreen')?.setAttribute('aria-hidden', 'true');
+    resetCustomerDataFeedback();
+  }
+  function handleCustomerDataInput(field) { setCustomerDataFieldError(field); setCustomerDataStatus(); }
+  function validateCustomerDataForm() {
+    const name = ($('profDataName')?.value || '').trim();
+    const email = ($('profDataEmail')?.value || '').trim();
+    const phone = onlyDigits($('profDataPhone')?.value || '');
+    const birth = $('profDataBirth')?.value || '';
+    resetCustomerDataFeedback();
+    let valid = true;
+    if (!name) { setCustomerDataFieldError('name', 'Campo obrigatório'); valid = false; }
+    if (!email) { setCustomerDataFieldError('email', 'Campo obrigatório'); valid = false; }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setCustomerDataFieldError('email', 'E-mail inválido'); valid = false; }
+    if (!phone) { setCustomerDataFieldError('phone', 'Campo obrigatório'); valid = false; }
+    else if (phone.length < 10 || phone.length > 11) { setCustomerDataFieldError('phone', 'Informe o telefone completo'); valid = false; }
+    if (!onlyDigits(birth)) { setCustomerDataFieldError('birth', 'Campo obrigatório'); valid = false; }
+    else if (!isValidBirthDate(birth)) { setCustomerDataFieldError('birth', 'O formato deve ser DD/MM/AAAA'); valid = false; }
+    return valid ? { name, email, phone, birth_date: customerBirthDateToIso(birth) } : null;
+  }
+  function customerDataApiMessage(error) {
+    const detail = error?.data?.detail;
+    const message = Array.isArray(detail) ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ') : (detail || error?.data?.message || error?.message || 'Não foi possível atualizar seus dados');
+    return String(message);
+  }
+  async function submitCustomerData(event) {
+    event?.preventDefault();
+    if (customerDataSubmitting || customerDataLoading) return;
+    if (!window.PedeAquiCustomerAuth?.getToken?.()) { redirectCustomerDataToLogin(); return; }
+    const payload = validateCustomerDataForm();
+    if (!payload) return;
+    const submit = $('profDataSubmit');
+    customerDataSubmitting = true;
+    if (submit) { submit.disabled = true; submit.classList.add('is-loading'); }
+    try {
+      const response = await window.PedeAquiCustomerService.updateCurrentCustomer(payload);
+      const updated = { ...currentCustomerSnapshot(), ...payload, ...(response || {}) };
+      persistCustomer(updated);
+      window.PedeAquiCustomerAuth?.setStoredCustomer?.(updated);
+      fillCustomerDataForm(updated);
+      renderHomeLoginPrompt();
+      renderProfileView();
+      setCustomerDataStatus('Dados atualizados com sucesso', 'success');
+    } catch (error) {
+      if (error?.status === 401) { redirectCustomerDataToLogin(); return; }
+      const message = customerDataApiMessage(error);
+      const normalized = message.toLocaleLowerCase('pt-BR');
+      const duplicate = error?.status === 409 || /já|ja |already|exist|em uso|in use|duplicad/.test(normalized);
+      const emailInUse = duplicate && /email|e-mail/.test(normalized);
+      const phoneInUse = duplicate && /phone|telefone|celular/.test(normalized);
+      if (emailInUse) { setCustomerDataFieldError('email', 'Este e-mail já está em uso'); setCustomerDataStatus('Este e-mail já está em uso', 'error'); }
+      else if (phoneInUse) { setCustomerDataFieldError('phone', 'Este telefone já está em uso'); setCustomerDataStatus('Este telefone já está em uso', 'error'); }
+      else if (error?.status === 409) setCustomerDataStatus('Este e-mail ou telefone já está em uso', 'error');
+      else setCustomerDataStatus(message, 'error');
+    } finally {
+      customerDataSubmitting = false;
+      if (submit) { submit.disabled = false; submit.classList.remove('is-loading'); }
+    }
+  }
   let customerPasswordSubmitting = false;
 
   const CUSTOMER_PASSWORD_FIELDS = {
@@ -5133,7 +5267,7 @@
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad
   });
 

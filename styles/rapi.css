@@ -2373,6 +2373,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-product-card .rapi-result-image-wrap{
   width:258px!important;
   height:258px!important;
+  border-radius:0 0 10px 10px!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-image,
+#mobViewRapi .rapi-product-card .rapi-result-image-placeholder{
+  border-radius:0 0 10px 10px!important;
 }
 #mobViewRapi .rapi-product-card .rapi-result-content{
   width:258px!important;

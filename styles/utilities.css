@@ -8476,9 +8476,20 @@ body.menu-tab .product-card.is-pressing{
 @media (max-width:767px){
   #profSubmeusdados .prof-data-screen{
     box-sizing:border-box;position:absolute;inset:0;z-index:20;width:100%;min-height:100%;overflow:hidden;background:#fff;
-    transform:translateX(100%);visibility:hidden;pointer-events:none;transition:none;
+    transform:translateX(100%);visibility:hidden;pointer-events:none;
+    transition:transform .53s ease,visibility 0s linear .53s;
   }
-  #profSubmeusdados .prof-data-screen.active{transform:translateX(0);visibility:visible;pointer-events:auto}
+  #profSubmeusdados .prof-data-screen.active{
+    transform:translateX(0);visibility:visible;pointer-events:auto;
+    transition:transform .53s ease,visibility 0s linear 0s;
+  }
+  #profSubmeusdados .prof-data-backdrop{
+    position:absolute;inset:0;z-index:19;background:rgba(0,0,0,.28);opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .53s ease,visibility 0s linear .53s;
+  }
+  #profSubmeusdados .prof-data-backdrop.active{
+    opacity:1;visibility:visible;transition:opacity .53s ease,visibility 0s linear 0s;
+  }
   #profSubmeusdados .prof-data-header{
     box-sizing:border-box;width:100%;height:70px;display:grid;grid-template-columns:32px 1fr 32px;align-items:center;
     padding:0 20px;border-bottom:1px solid #eee;background:#fff;

@@ -4708,6 +4708,8 @@
     customerStore()?.clear?.();
     $('profDataScreen')?.classList.remove('active');
     $('profDataScreen')?.setAttribute('aria-hidden', 'true');
+    $('profDataBackdrop')?.classList.remove('active');
+    $('profDataBackdrop')?.setAttribute('aria-hidden', 'true');
     closeProfSub();
     renderHomeLoginPrompt();
     renderProfileView();
@@ -4716,10 +4718,16 @@
   async function openCustomerDataScreen() {
     if (!window.PedeAquiCustomerAuth?.getToken?.()) { openLoginScreen(); return; }
     const screen = $('profDataScreen');
+    const backdrop = $('profDataBackdrop');
     resetCustomerDataFeedback();
     fillCustomerDataForm(currentCustomerSnapshot());
-    screen?.classList.add('active');
-    screen?.setAttribute('aria-hidden', 'false');
+    backdrop?.classList.add('active');
+    backdrop?.setAttribute('aria-hidden', 'false');
+    if (screen) {
+      void screen.offsetWidth;
+      screen.classList.add('active');
+      screen.setAttribute('aria-hidden', 'false');
+    }
     if (customerDataLoading) return;
     customerDataLoading = true;
     try {
@@ -4739,6 +4747,8 @@
     if (customerDataSubmitting) return;
     $('profDataScreen')?.classList.remove('active');
     $('profDataScreen')?.setAttribute('aria-hidden', 'true');
+    $('profDataBackdrop')?.classList.remove('active');
+    $('profDataBackdrop')?.setAttribute('aria-hidden', 'true');
     resetCustomerDataFeedback();
   }
   function handleCustomerDataInput(field) { setCustomerDataFieldError(field); setCustomerDataStatus(); }
@@ -4771,6 +4781,7 @@
     if (!payload) return;
     const submit = $('profDataSubmit');
     customerDataSubmitting = true;
+    let updatedSuccessfully = false;
     if (submit) { submit.disabled = true; submit.classList.add('is-loading'); }
     try {
       const response = await window.PedeAquiCustomerService.updateCurrentCustomer(payload);
@@ -4780,7 +4791,7 @@
       fillCustomerDataForm(updated);
       renderHomeLoginPrompt();
       renderProfileView();
-      setCustomerDataStatus('Dados atualizados com sucesso', 'success');
+      updatedSuccessfully = true;
     } catch (error) {
       if (error?.status === 401) { redirectCustomerDataToLogin(); return; }
       const message = customerDataApiMessage(error);
@@ -4795,6 +4806,7 @@
     } finally {
       customerDataSubmitting = false;
       if (submit) { submit.disabled = false; submit.classList.remove('is-loading'); }
+      if (updatedSuccessfully) closeCustomerDataScreen();
     }
   }
   let customerPasswordSubmitting = false;

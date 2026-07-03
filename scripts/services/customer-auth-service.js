@@ -122,6 +122,9 @@
   function getCustomerCashback() {
     return authedGet(routes().customerCashback());
   }
+  function getCustomerCashbackTransactions() {
+    return authedGet(routes().customerCashbackTransactions());
+  }
   function changeCustomerPassword(payload) {
     return authedPatch(routes().customerPassword(), payload);
   }
@@ -175,6 +178,7 @@
     updateCurrentCustomer,
     getCustomerOrders,
     getCustomerCashback,
+    getCustomerCashbackTransactions,
     changeCustomerPassword,
     getCustomerAddresses,
     createCustomerAddress,

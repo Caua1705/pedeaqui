@@ -37,6 +37,7 @@
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',
     customerCashback: () => '/customers/me/cashback',
+    customerCashbackTransactions: () => '/customers/me/cashback/transactions',
     customerPassword: () => '/customers/me/password',
     customerAddresses: () => '/customers/me/addresses',
     customerAddressesImport: () => '/customers/me/addresses/import',

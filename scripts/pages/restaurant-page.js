@@ -247,6 +247,132 @@
     esc
   });
 
+  let cashbackSubscriptionReady = false;
+
+  function cashbackValueText(cashbackState) {
+    const auth = window.PedeAquiCustomerAuth;
+    if (!auth?.getToken?.()) return fmt(0);
+    if (cashbackState?.status === 'loading' || cashbackState?.status === 'idle') return 'R$ --,--';
+    const balance = Number(cashbackState?.data?.balance);
+    return Number.isFinite(balance) ? fmt(balance) : fmt(0);
+  }
+
+  function renderSharedCashbackState(state = window.PedeAquiClubService?.getState?.()) {
+    const text = cashbackValueText(state?.cashback);
+    if ($('homeCartTotal')) $('homeCartTotal').textContent = text;
+    if ($('clubCashbackBalance')) $('clubCashbackBalance').textContent = text;
+    if ($('cashbackStatementBalance')) $('cashbackStatementBalance').textContent = text;
+  }
+
+  function initCashbackState() {
+    if (cashbackSubscriptionReady) return;
+    cashbackSubscriptionReady = true;
+    $('homeCartTotal')?.closest('button')?.setAttribute('aria-label', 'Abrir Clube');
+    window.PedeAquiClubService?.subscribe?.(renderSharedCashbackState);
+  }
+
+  function loadCashbackForHome(options = {}) {
+    initCashbackState();
+    const auth = window.PedeAquiCustomerAuth;
+    renderSharedCashbackState();
+    if (!auth?.getToken?.() || !auth?.isSessionReady?.()) return Promise.resolve(null);
+    return window.PedeAquiClubService?.getCashback?.(options) || Promise.resolve(null);
+  }
+
+  function cashbackTransactionLabel(type) {
+    return ({
+      earned: 'Cashback recebido',
+      redeemed: 'Cashback utilizado',
+      expired: 'Cashback expirado',
+      cancelled: 'Cashback cancelado',
+      adjustment: 'Ajuste de cashback'
+    })[String(type || '').toLowerCase()] || 'Movimentação de cashback';
+  }
+
+  function cashbackTransactionDate(value) {
+    if (!value) return '';
+    const source = String(value);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(source) ? new Date(`${source}T12:00:00`) : new Date(source);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR');
+  }
+
+  function cashbackTransactionAmount(value) {
+    const amount = Number(value || 0);
+    if (amount > 0) return `+${fmt(amount)}`;
+    if (amount < 0) return `-${fmt(Math.abs(amount))}`;
+    return fmt(0);
+  }
+
+  function cashbackTransactionDescription(transaction) {
+    return transaction.description
+      || transaction.restaurant_name
+      || transaction.merchant_name
+      || (transaction.order_number ? `Pedido #${transaction.order_number}` : '')
+      || '';
+  }
+
+  function renderCashbackStatement(state = window.PedeAquiClubService?.getState?.()) {
+    renderSharedCashbackState(state);
+    const body = $('cashbackStatementBody');
+    if (!body) return;
+    const transactions = state?.transactions;
+    if (!transactions || transactions.status === 'idle' || transactions.status === 'loading') {
+      body.innerHTML = `<div class='cashback-statement-state'>Carregando extrato...</div>`;
+      return;
+    }
+    if (transactions.status === 'error') {
+      body.innerHTML = `<div class='cashback-statement-state'>Não foi possível carregar o extrato.<button class='cashback-statement-retry' type='button' onclick='retryCashbackStatement()'>Tentar novamente</button></div>`;
+      return;
+    }
+    const items = Array.isArray(transactions.data) ? transactions.data : [];
+    if (!items.length) {
+      body.innerHTML = `<div class='cashback-statement-state'>Você ainda não possui movimentações de cashback.</div>`;
+      return;
+    }
+    body.innerHTML = items.map(transaction => {
+      const amount = Number(transaction.amount || 0);
+      const description = cashbackTransactionDescription(transaction);
+      const date = cashbackTransactionDate(transaction.created_at);
+      return `<article class='cashback-statement-row'>
+        <div class='cashback-statement-copy'>
+          <strong>${esc(cashbackTransactionLabel(transaction.type))}</strong>
+          ${description ? `<span>${esc(description)}</span>` : ''}
+          ${date ? `<time>${esc(date)}</time>` : ''}
+        </div>
+        <div class='cashback-statement-amount ${amount > 0 ? 'positive' : amount < 0 ? 'negative' : ''}'>${esc(cashbackTransactionAmount(amount))}</div>
+      </article>`;
+    }).join('');
+  }
+
+  async function openCashbackStatement() {
+    const auth = window.PedeAquiCustomerAuth;
+    if (!auth?.getToken?.()) {
+      openLoginScreen();
+      return;
+    }
+    openModal('cashbackStatementModal');
+    if (!auth.isSessionReady?.()) await syncCustomerSession();
+    if (!auth.getToken?.()) {
+      closeModalId('cashbackStatementModal');
+      openLoginScreen();
+      return;
+    }
+    const service = window.PedeAquiClubService;
+    const balancePromise = service?.getCashback?.() || Promise.resolve(null);
+    const transactionsPromise = service?.getTransactions?.() || Promise.resolve(null);
+    renderCashbackStatement(service?.getState?.());
+    await Promise.all([balancePromise, transactionsPromise]);
+    renderCashbackStatement(service?.getState?.());
+  }
+
+  async function retryCashbackStatement() {
+    const service = window.PedeAquiClubService;
+    const request = service?.getTransactions?.({ force: true }) || Promise.resolve(null);
+    renderCashbackStatement(service?.getState?.());
+    await request;
+    renderCashbackStatement(service?.getState?.());
+  }
+
   function renderHomeLoginPrompt() {
     const loginPrompt = $('homeLoginPrompt');
     if (!loginPrompt) return;
@@ -1490,7 +1616,7 @@
       $('cartCountSticky').dataset.count = qty;
     }
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
-    if ($('homeCartTotal')) $('homeCartTotal').textContent = isLogged() ? fmt(totals.total) : fmt(0);
+    renderSharedCashbackState();
 
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
     $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');
@@ -4359,6 +4485,7 @@
       phone: apiCustomer?.phone || '',
       email: apiCustomer?.email || ''
     });
+    loadCashbackForHome();
   }
 
   function applyLocalCustomer(apiCustomer) {
@@ -4473,6 +4600,7 @@
         auth.setStoredCustomer(me);
         renderHomeLoginPrompt();
         renderProfileView();
+        loadCashbackForHome();
         await synchronizeCustomerAddresses({ importLocal: true });
         requestDeliveryEstimate();
       }
@@ -4488,6 +4616,7 @@
         renderHomeLoginPrompt();
         renderProfileView();
         requestDeliveryEstimate();
+        renderSharedCashbackState();
       } else {
         console.error('[PedeAqui] Falha ao sincronizar sessão ou endereços', error);
       }
@@ -4979,6 +5108,7 @@
     appState.profileLoaded = false;
     customerStore()?.clear?.();
     window.PedeAquiCustomerAuth?.logout();
+    renderSharedCashbackState();
     setTimeout(() => {
       closeProfSub();
       closeMobViews();
@@ -5539,6 +5669,7 @@
     initOperationContext();
     applyTheme();
     initStoreInfoModal();
+    initCashbackState();
     renderRestaurantShell();
     renderBanners();
     renderCoupons();
@@ -5549,6 +5680,7 @@
     updateCartUI();
     showHomeTab();
     requestDeliveryEstimate();
+    loadCashbackForHome();
     appState.homeLoaded = true;
     appState.menuLoaded = false;
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
@@ -5616,7 +5748,7 @@
     setStoreInfoTab,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
-    retryRestaurantBoot, retryMenuLoad, retryClubLoad
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement
   });
 
   mountProfOrdersOverlay();

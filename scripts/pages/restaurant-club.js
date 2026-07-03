@@ -154,7 +154,7 @@
           <section class="club-cashback-card" aria-label="Saldo de cashback">
             <div class="club-cashback-copy">
               <span>Saldo de cashback</span>
-              <strong>${cashbackText}</strong>
+              <strong id='clubCashbackBalance'>${cashbackText}</strong>
             </div>
             <button type="button" class="club-cashback-icon" aria-label="Extrato de cashback">
               <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
@@ -166,6 +166,9 @@
             <div class="club-coupon-rail">${renderClubCoupons(coupons)}</div>
           </section>
         </section>`;
+      body.querySelector('.club-cashback-icon')?.addEventListener('click', () => {
+        window.openCashbackStatement?.();
+      });
     }
 
     function retryClubLoad() {

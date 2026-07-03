@@ -7567,6 +7567,23 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 
+.cashback-statement-modal{width:min(430px,calc(100vw - 28px));max-height:min(78vh,680px);overflow:hidden;background:#fff}
+.cashback-statement-header{border-bottom:1px solid #eee}
+.cashback-statement-summary{padding:22px 24px 18px;border-bottom:1px solid #eee}
+.cashback-statement-summary span{display:block;margin-bottom:4px;color:#68707b;font-size:13px}
+.cashback-statement-summary strong{color:#313b48;font-size:30px;line-height:36px}
+.cashback-statement-body{max-height:calc(min(78vh,680px) - 155px);overflow-y:auto;padding:8px 24px 22px}
+.cashback-statement-row{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #eee}
+.cashback-statement-copy{min-width:0}
+.cashback-statement-copy strong,.cashback-statement-copy span,.cashback-statement-copy time{display:block}
+.cashback-statement-copy strong{color:#313b48;font-size:14px}
+.cashback-statement-copy span,.cashback-statement-copy time{margin-top:3px;color:#7b8189;font-size:12px}
+.cashback-statement-amount{flex:none;font-size:14px;font-weight:800;white-space:nowrap}
+.cashback-statement-amount.positive{color:#2f8d53}
+.cashback-statement-amount.negative{color:#c94d4d}
+.cashback-statement-state{padding:34px 8px;color:#747b84;font-size:13px;line-height:19px;text-align:center}
+.cashback-statement-retry{display:block;margin:14px auto 0;padding:9px 16px;border:0;border-radius:8px;background:#f36f21;color:#fff;font:700 12px inherit}
+
 /* Product modal full-sheet scroll and observation width fix. */
 @media(max-width:767px){
   #productModal.active{

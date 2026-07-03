@@ -119,7 +119,9 @@
     return authedPost(routes().customerAddresses(), payload);
   }
   function importCustomerAddresses(addresses) {
-    return authedPost(routes().customerAddressesImport(), { addresses });
+    const list = Array.isArray(addresses) ? addresses : [];
+    if (!getToken() || !list.length) return Promise.resolve({ addresses: [] });
+    return authedPost(routes().customerAddressesImport(), { addresses: list });
   }
   function updateCustomerAddress(addressId, payload) {
     return authedPatch(routes().customerAddress(addressId), payload);

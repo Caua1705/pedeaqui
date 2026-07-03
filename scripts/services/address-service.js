@@ -18,7 +18,7 @@
       state: address.state || '',
       complement: address.complement || '',
       reference: address.reference || '',
-      postal_code: address.postal_code || address.zip_code || address.cep || '',
+      postal_code: address.postal_code || address.zipcode || address.zip_code || address.cep || '',
       latitude: address.latitude ?? address.lat ?? null,
       longitude: address.longitude ?? address.lng ?? null,
       place_id: address.place_id || '',
@@ -68,7 +68,9 @@
   }
 
   function importCustomerAddresses(addresses) {
-    return auth()?.importCustomerAddresses?.(addresses);
+    const list = Array.isArray(addresses) ? addresses : [];
+    if (!list.length || !auth()?.getToken?.()) return Promise.resolve({ addresses: [] });
+    return auth().importCustomerAddresses(list);
   }
 
   function updateCustomerAddress(addressId, payload) {

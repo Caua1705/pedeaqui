@@ -15,9 +15,11 @@
   async function apiFetch(path, options = {}) {
     if (!apiBaseUrl()) throw new Error('API_BASE_URL is not configured.');
     let response;
+    const url = buildApiUrl(path);
+    const method = String(options.method || 'GET').toUpperCase();
 
     try {
-      response = await fetch(buildApiUrl(path), {
+      response = await fetch(url, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -36,10 +38,23 @@
     else data = await response.text();
 
     if (!response.ok) {
+      if (response.status === 422) {
+        let payload = options.body ?? null;
+        if (typeof payload === 'string') {
+          try { payload = JSON.parse(payload); } catch {}
+        }
+        console.error('[API 422]', {
+          url,
+          method,
+          payload,
+          detail: data?.detail
+        });
+      }
       const message = data?.detail || data?.message || `API request failed: ${response.status}`;
       const error = new Error(message);
       error.status = response.status;
       error.data = data;
+      error.detail = data?.detail;
       throw error;
     }
 

@@ -1805,13 +1805,85 @@
     return [street, number, postalCode, neighborhood, city, normalizeAddressPart(address.state)].join('|');
   }
 
+  function nonEmptyString(value) {
+    const normalized = String(value ?? '').trim();
+    return normalized || null;
+  }
+
+  function uuidOrNull(value) {
+    const normalized = nonEmptyString(value);
+    return normalized && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized)
+      ? normalized
+      : null;
+  }
+
+  function nullableCoordinate(value) {
+    if (value === null || value === undefined || (typeof value === 'string' && !value.trim())) return null;
+    const coordinate = Number(value);
+    return Number.isFinite(coordinate) ? coordinate : null;
+  }
+
+  function remoteAddressId(address) {
+    if (!window.PedeAquiCustomerAuth?.getToken?.() || !address) return null;
+    const syncedId = uuidOrNull(address.synced_remote_id);
+    if (syncedId) return syncedId;
+    return isRemoteAddress(address) ? uuidOrNull(address.id || address.address_id) : null;
+  }
+
+  function deliveryAddressPayload(address) {
+    const payload = {
+      street: nonEmptyString(address?.street || address?.street_name) || '',
+      number: nonEmptyString(address?.number) || '',
+      neighborhood: nonEmptyString(address?.neighborhood) || '',
+      city: nonEmptyString(address?.city) || 'Fortaleza',
+      state: (nonEmptyString(address?.state) || 'CE').toUpperCase(),
+      latitude: nullableCoordinate(address?.latitude ?? address?.lat),
+      longitude: nullableCoordinate(address?.longitude ?? address?.lng)
+    };
+    const zipcode = nonEmptyString(address?.zipcode || address?.postal_code || address?.zip_code || address?.cep);
+    const zipcodeDigits = zipcode ? onlyDigits(zipcode) : '';
+    if (zipcodeDigits) payload.zipcode = zipcodeDigits;
+    return payload;
+  }
+
+  function validAddressForApi(address) {
+    const payload = deliveryAddressPayload(address);
+    return Boolean(payload.street && payload.number && payload.neighborhood);
+  }
+
+  function importAddressFingerprint(address) {
+    const payload = deliveryAddressPayload(address);
+    return [payload.street, payload.number, payload.neighborhood, payload.city, payload.state]
+      .map(normalizeAddressPart)
+      .join('|');
+  }
+
+  function importAddressPayload(address) {
+    const base = deliveryAddressPayload(address);
+    return {
+      client_reference: nonEmptyString(address?.client_reference || address?.id || address?.address_id),
+      label: nonEmptyString(address?.label || address?.alias) || 'Casa',
+      street: base.street,
+      number: base.number,
+      neighborhood: base.neighborhood,
+      city: base.city,
+      state: base.state,
+      ...(base.zipcode ? { zipcode: base.zipcode } : {}),
+      complement: nonEmptyString(address?.complement),
+      reference: nonEmptyString(address?.reference),
+      latitude: base.latitude,
+      longitude: base.longitude,
+      is_default: address?.is_default === true || address?.default === true || address?.isDefault === true
+    };
+  }
+
   function deliveryEstimateKey() {
     const restaurantSlug = getRestaurantSlug();
     const branchId = operationContext?.branch_id;
     const orderType = operationContext?.order_type;
     const fingerprint = addressFingerprint(operationContext?.address);
-    if (!restaurantSlug || !appState.restaurant || !branchId || orderType !== 'delivery' || !fingerprint) return null;
-    return [restaurantSlug, branchId, orderType, fingerprint].join('::');
+    if (!restaurantSlug || !appState.restaurant || orderType !== 'delivery' || !fingerprint || !validAddressForApi(operationContext?.address)) return null;
+    return [restaurantSlug, branchId || 'default', orderType, fingerprint].join('::');
   }
 
   function pickupWindowText() {
@@ -1869,11 +1941,12 @@
     const address = operationContext.address;
     deliveryEstimate = { status: 'loading', key, data: null, updatedAt: null };
     renderDeliveryEstimate();
-    const payload = {
-      branch_id: operationContext.branch_id,
-      order_type: 'delivery',
-      address: addressApiPayload(address)
-    };
+    const payload = {};
+    const branchId = uuidOrNull(operationContext.branch_id);
+    const addressId = remoteAddressId(address);
+    if (branchId) payload.branch_id = branchId;
+    if (addressId) payload.address_id = addressId;
+    else payload.address = deliveryAddressPayload(address);
     deliveryEstimatePromise = window.PedeAquiDeliveryService.getEstimate(getRestaurantSlug(), payload, { key })
       .then(result => {
         if (deliveryEstimate.key !== key) return null;
@@ -1952,7 +2025,33 @@
   }
 
   function addressImportSignature(localAddresses) {
-    return localAddresses.map(addressFingerprint).filter(Boolean).sort().join('::');
+    return localAddresses.map(address => address.client_reference).filter(Boolean).sort().join('::');
+  }
+
+  function newAddressClientReference() {
+    const uuid = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return `local-${uuid}`;
+  }
+
+  function ensureLocalClientReferences(addresses) {
+    let changed = false;
+    const prepared = addresses.map(address => {
+      if (remoteAddressId(address) || nonEmptyString(address.client_reference)) return address;
+      changed = true;
+      return { ...address, client_reference: newAddressClientReference() };
+    });
+    return changed ? writeLocalAddressList(prepared) : prepared;
+  }
+
+  function reconcileLocalAddresses(local, remote) {
+    const remoteByFingerprint = new Map(remote.map(address => [importAddressFingerprint(address), address]));
+    return local.map(address => {
+      const match = remoteByFingerprint.get(importAddressFingerprint(address));
+      const remoteId = nonEmptyString(match?.id || match?.address_id);
+      return remoteId
+        ? { ...address, synced_remote_id: remoteId, synced_at: new Date().toISOString(), sync_error: false }
+        : address;
+    });
   }
 
   async function synchronizeCustomerAddresses(options = {}) {
@@ -1960,35 +2059,46 @@
     if (customerAddressesSyncPromise) return customerAddressesSyncPromise;
     customerAddressesSyncPromise = (async () => {
       let remote = dedupeAddresses(await window.PedeAquiAddressService.getCustomerAddresses());
-      const local = dedupeAddresses(readLocalAddressList());
-      const remoteFingerprints = new Set(remote.map(addressFingerprint));
-      const pending = local.filter(address => !remoteFingerprints.has(addressFingerprint(address)) && !address.synced_remote_id);
+      let local = ensureLocalClientReferences(dedupeAddresses(readLocalAddressList()));
+      local = reconcileLocalAddresses(local, remote);
+      writeLocalAddressList(local);
+      const remoteFingerprints = new Set(remote.map(importAddressFingerprint));
+      const pending = local.filter(address => (
+        validAddressForApi(address)
+        && !remoteAddressId(address)
+        && !remoteFingerprints.has(importAddressFingerprint(address))
+      ));
       const customerKey = currentCustomerSnapshot()?.id || window.PedeAquiCustomerAuth?.getStoredCustomer?.()?.id || 'session';
       const signatureKey = ADDRESS_IMPORT_SIGNATURE_PREFIX + customerKey;
       const signature = addressImportSignature(pending);
       if (options.importLocal !== false && pending.length && localStorage.getItem(signatureKey) !== signature) {
         try {
-          await window.PedeAquiAddressService.importCustomerAddresses(pending.map(addressApiPayload));
+          await window.PedeAquiAddressService.importCustomerAddresses(pending.map(importAddressPayload));
           localStorage.setItem(signatureKey, signature);
           remote = dedupeAddresses(await window.PedeAquiAddressService.getCustomerAddresses());
-          const remoteByFingerprint = new Map(remote.map(address => [addressFingerprint(address), address]));
-          writeLocalAddressList(local.map(address => {
-            const match = remoteByFingerprint.get(addressFingerprint(address));
-            return match ? { ...address, synced_remote_id: match.id || match.address_id, synced_at: new Date().toISOString() } : address;
-          }));
+          local = reconcileLocalAddresses(local, remote);
+          writeLocalAddressList(local);
 
         } catch (error) {
           console.error('[PedeAqui] Falha ao importar enderecos locais', error);
-          if (options.notifyErrors) alert('Não foi possível sincronizar seus endereços agora. O endereço continua salvo neste aparelho.');
+          const pendingReferences = new Set(pending.map(address => address.client_reference));
+          local = local.map(address => pendingReferences.has(address.client_reference)
+            ? { ...address, sync_error: true }
+            : address);
+          writeLocalAddressList(local);
         }
       }
       appState.customerAddresses = remote;
       customerStore()?.setAddresses?.(remote);
       const backendDefault = defaultBackendAddress(remote);
       const current = operationContext?.address || customerAddress;
-      const currentRemote = remote.find(address => addressFingerprint(address) === addressFingerprint(current));
-      if (backendDefault) setSelectedOperationAddress(backendDefault, { confirmed: operationConfirmed, forceDelivery: false });
-      else if (currentRemote) setSelectedOperationAddress(currentRemote, { confirmed: operationConfirmed, forceDelivery: false });
+      const currentRemoteId = remoteAddressId(current);
+      const currentRemote = remote.find(address => (
+        (currentRemoteId && nonEmptyString(address.id || address.address_id) === currentRemoteId)
+        || importAddressFingerprint(address) === importAddressFingerprint(current)
+      ));
+      if (currentRemote) setSelectedOperationAddress(currentRemote, { confirmed: operationConfirmed, forceDelivery: false });
+      else if (backendDefault) setSelectedOperationAddress(backendDefault, { confirmed: operationConfirmed, forceDelivery: false });
       return remote;
     })().finally(() => { customerAddressesSyncPromise = null; });
     return customerAddressesSyncPromise;

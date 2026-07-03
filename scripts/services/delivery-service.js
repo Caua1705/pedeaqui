@@ -22,9 +22,14 @@
       return { data: cached.data, updatedAt: cached.updatedAt, fromCache: true };
     }
     if (pending.has(key)) return pending.get(key);
-    const request = window.PedeAquiApiClient.post(
+    const authHeaders = window.PedeAquiCustomerAuth?.authHeaders?.() || {};
+    const request = window.PedeAquiApiClient.request(
       window.PedeAquiApiRoutes.deliveryEstimate(restaurantSlug),
-      payload
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify(payload)
+      }
     ).then(response => {
       const data = normalizeEstimate(response);
       const result = { data, updatedAt: Date.now(), fromCache: false };

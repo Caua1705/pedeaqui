@@ -5,6 +5,7 @@
 
   const client = () => window.PedeAquiApiClient;
   const routes = () => window.PedeAquiApiRoutes || window.API_ROUTES;
+  let sessionStatus = localStorage.getItem(TOKEN_KEY) ? 'pending' : 'anonymous';
 
   /* ---------- Token + customer storage ---------- */
 
@@ -12,10 +13,14 @@
     return localStorage.getItem(TOKEN_KEY) || null;
   }
   function setToken(token) {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      sessionStatus = 'authenticated';
+    }
   }
   function clearToken() {
     localStorage.removeItem(TOKEN_KEY);
+    sessionStatus = 'anonymous';
   }
 
   function getStoredCustomer() {
@@ -34,6 +39,12 @@
 
   function isLoggedIn() {
     return Boolean(getToken());
+  }
+  function isSessionReady() {
+    return sessionStatus !== 'pending';
+  }
+  function isAuthenticatedSession() {
+    return sessionStatus === 'authenticated' && Boolean(getToken());
   }
 
   // Persist the result of a successful login.
@@ -54,11 +65,13 @@
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  function authedRequest(path, options = {}) {
-    return client().request(path, {
+  async function authedRequest(path, options = {}) {
+    const result = await client().request(path, {
       ...options,
       headers: { ...authHeaders(), ...(options.headers || {}) }
     });
+    if (getToken()) sessionStatus = 'authenticated';
+    return result;
   }
   const authedGet = path => authedRequest(path, { method: 'GET' });
   const authedPost = (path, body) =>
@@ -144,6 +157,8 @@
     setStoredCustomer,
     clearStoredCustomer,
     isLoggedIn,
+    isSessionReady,
+    isAuthenticatedSession,
     saveSession,
     logout,
     authHeaders,

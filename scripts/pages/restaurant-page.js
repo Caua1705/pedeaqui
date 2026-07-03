@@ -1824,7 +1824,7 @@
   }
 
   function remoteAddressId(address) {
-    if (!window.PedeAquiCustomerAuth?.getToken?.() || !address) return null;
+    if (!window.PedeAquiCustomerAuth?.isAuthenticatedSession?.() || !address) return null;
     const syncedId = uuidOrNull(address.synced_remote_id);
     if (syncedId) return syncedId;
     return isRemoteAddress(address) ? uuidOrNull(address.id || address.address_id) : null;
@@ -1882,8 +1882,11 @@
     const branchId = operationContext?.branch_id;
     const orderType = operationContext?.order_type;
     const fingerprint = addressFingerprint(operationContext?.address);
-    if (!restaurantSlug || !appState.restaurant || orderType !== 'delivery' || !fingerprint || !validAddressForApi(operationContext?.address)) return null;
-    return [restaurantSlug, branchId || 'default', orderType, fingerprint].join('::');
+    const auth = window.PedeAquiCustomerAuth;
+    if (auth?.getToken?.() && !auth?.isSessionReady?.()) return null;
+    if (!restaurantSlug || !appState.restaurant || !branchId || orderType !== 'delivery' || !fingerprint || !validAddressForApi(operationContext?.address)) return null;
+    const addressIdentity = remoteAddressId(operationContext.address) || fingerprint;
+    return [restaurantSlug, branchId, orderType, addressIdentity].join('::');
   }
 
   function pickupWindowText() {
@@ -4471,6 +4474,7 @@
         renderHomeLoginPrompt();
         renderProfileView();
         await synchronizeCustomerAddresses({ importLocal: true });
+        requestDeliveryEstimate();
       }
     } catch (error) {
       if (error?.status === 401) {
@@ -4483,6 +4487,7 @@
         localStorage.removeItem(STORAGE_CUSTOMER);
         renderHomeLoginPrompt();
         renderProfileView();
+        requestDeliveryEstimate();
       } else {
         console.error('[PedeAqui] Falha ao sincronizar sessão ou endereços', error);
       }

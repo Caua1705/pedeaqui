@@ -2152,13 +2152,34 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition:none!important;
 }
 
-/* While Rapi is generating, the send action becomes a cancel control. */
-#mobViewRapi .rapi-ai-send.is-stopping{
-  background:rgba(217,119,6,.14)!important;
-  color:#d97706!important;
+/* Clear chat action states: inactive, ready and generating/cancel. */
+#mobViewRapi .rapi-ai-send,
+#mobViewRapi .rapi-ai-send:hover,
+#mobViewRapi .rapi-ai-send:active,
+#mobViewRapi .rapi-ai-send:focus,
+#mobViewRapi .rapi-ai-send:focus-visible{
+  transition:background-color .18s ease,color .18s ease,border-color .18s ease!important;
+}
+#mobViewRapi .rapi-ai-send.is-inactive,
+#mobViewRapi .rapi-ai-send:disabled{
+  background:#e7e9ed!important;
+  color:#8c929b!important;
+  border-color:#e7e9ed!important;
+  cursor:not-allowed!important;
+  opacity:1!important;
+}
+#mobViewRapi .rapi-ai-send.is-ready{
+  background:#f36f21!important;
+  color:#fff!important;
+  border-color:#f36f21!important;
   cursor:pointer!important;
 }
-#mobViewRapi .rapi-ai-send .rapi-stop-icon{
+#mobViewRapi .rapi-ai-send.is-stopping{
+  background:rgba(243,111,33,.16)!important;
+  color:#f36f21!important;
+  border-color:rgba(243,111,33,.22)!important;
+  cursor:pointer!important;
+}#mobViewRapi .rapi-ai-send .rapi-stop-icon{
   display:block;
   width:11px;
   height:11px;

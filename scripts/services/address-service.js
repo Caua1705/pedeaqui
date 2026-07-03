@@ -18,6 +18,11 @@
       state: address.state || '',
       complement: address.complement || '',
       reference: address.reference || '',
+      postal_code: address.postal_code || address.zip_code || address.cep || '',
+      latitude: address.latitude ?? address.lat ?? null,
+      longitude: address.longitude ?? address.lng ?? null,
+      place_id: address.place_id || '',
+      is_default: address.is_default === true || address.default === true || address.isDefault === true,
       summary: address.summary || [street, number].filter(Boolean).join(', ') + (neighborhood ? ` - ${neighborhood}` : '')
     };
   }
@@ -53,12 +58,17 @@
 
   async function getCustomerAddresses() {
     const result = await auth()?.getCustomerAddresses?.();
-    const list = Array.isArray(result) ? result : (result?.addresses || result?.items || result?.data || []);
+    const payload = result?.data ?? result;
+    const list = Array.isArray(payload) ? payload : (payload?.addresses || payload?.items || payload?.data || []);
     return Array.isArray(list) ? list.map(normalizeAddress).filter(Boolean) : [];
   }
 
   function createCustomerAddress(payload) {
     return auth()?.createCustomerAddress?.(payload);
+  }
+
+  function importCustomerAddresses(addresses) {
+    return auth()?.importCustomerAddresses?.(addresses);
   }
 
   function updateCustomerAddress(addressId, payload) {
@@ -83,6 +93,7 @@
     writeLocalAddressList,
     getCustomerAddresses,
     createCustomerAddress,
+    importCustomerAddresses,
     updateCustomerAddress,
     deleteCustomerAddress,
     setDefaultCustomerAddress

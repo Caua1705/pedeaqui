@@ -13,6 +13,8 @@
   let banners = [];
   let highlightBanners = [];
   let coupons = [];
+  let deliveryEstimate = { status: 'idle', key: null, data: null, updatedAt: null };
+  let deliveryEstimatePromise = null;
   let cart = [];
   let currentProd = null;
   let pmQty = 1;
@@ -371,13 +373,9 @@
   }
 
   function renderDeliveryMeta() {
-    const deliveryText = deliveryWindowText();
     const feeText = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0);
-    if ($('cartDeliveryTimeText')) $('cartDeliveryTimeText').textContent = `Hoje, ${deliveryText}`;
     if ($('cartDeliveryFeeText')) $('cartDeliveryFeeText').textContent = feeText;
-    if ($('checkoutDeliverySub')) $('checkoutDeliverySub').textContent = `${deliveryText} · ${feeText}`;
-    const pickupText = settings.pickup_time_text || settings.estimated_pickup_time_text || fallback().pickupTimeText || 'Retirada';
-    if ($('checkoutPickupSub')) $('checkoutPickupSub').textContent = `${pickupText} · Grátis`;
+    renderDeliveryEstimate();
   }
 
   function setStoreInfoTab(tab = 'hours') {
@@ -1394,7 +1392,7 @@
   }
 
   function currentCartAddress() {
-    return customerAddress || operationContext?.address || null;
+    return operationContext?.address || null;
   }
 
   function currentCartBranchLabel() {
@@ -1405,9 +1403,7 @@
   }
 
   function cartEtaText() {
-    const min = settings.estimated_delivery_time_min ?? fallback().defaultDeliveryTimeMin ?? 0;
-    const max = settings.estimated_delivery_time_max ?? fallback().defaultDeliveryTimeMax ?? 0;
-    return `${min} - ${max} min`;
+    return deliveryEstimateText();
   }
 
   function cartAddressHtml(address) {
@@ -1532,7 +1528,7 @@
       openLoginScreen();
       return;
     }
-    openModal('cartModal');
+    openCartModal();
   }
 
   function setCartItemDeleteConfirm(open) {
@@ -1599,7 +1595,8 @@
   }
 
   function openCheckout() {
-    if (deliveryType === 'delivery' && !customerAddress) {
+    const selectedAddress = currentCartAddress();
+    if (deliveryType === 'delivery' && !selectedAddress) {
       closeModalId('cartModal');
       openAddressScreen();
       return;
@@ -1610,8 +1607,9 @@
       $('chkName').value = checkoutCustomer.name || '';
       $('chkPhone').value = checkoutCustomer.phone || '';
     }
-    if (customerAddress) fillCheckoutAddress(customerAddress);
+    if (selectedAddress) fillCheckoutAddress(selectedAddress);
     setDeliveryType(deliveryType);
+    requestDeliveryEstimate();
     openModal('checkoutModal');
   }
 
@@ -1624,7 +1622,7 @@
 
   function backToCart() {
     closeModalId('checkoutModal');
-    setTimeout(() => openModal('cartModal'), 180);
+    setTimeout(() => openCartModal(), 180);
   }
 
   function backToCheckout() {
@@ -1654,15 +1652,11 @@
     if (deliveryType === 'delivery') {
       const address = readCheckoutAddress();
       if (!address.street || !address.number || !address.neighborhood) { alert('Informe seu endereço.'); return; }
-      persistCustomerAddress(address);
-      if (operationContext) {
-        operationContext.address = {
-          street: address.street, number: address.number, neighborhood: address.neighborhood,
-          complement: address.complement || '', reference: address.reference || ''
-        };
-        persistOperationContext();
-        renderWidget();
-      }
+      setSelectedOperationAddress({
+        ...operationContext?.address,
+        street: address.street, number: address.number, neighborhood: address.neighborhood,
+        complement: address.complement || '', reference: address.reference || ''
+      }, { confirmed: true, forceDelivery: false });
     }
     persistCustomer({ name, phone });
     renderReview();
@@ -1683,10 +1677,11 @@
     $('revTypeIcon').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
     $('revTypeName').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
     $('revTypeSub').textContent = deliveryType === 'delivery'
-      ? `Hoje, ${settings.estimated_delivery_time_min ?? fallback().defaultDeliveryTimeMin ?? 0}-${settings.estimated_delivery_time_max ?? fallback().defaultDeliveryTimeMax ?? 0} min`
-      : 'Retirada no local';
+      ? `Hoje, ${deliveryEstimateText()}`
+      : pickupWindowText();
     $('revAddrBlock').style.display = deliveryType === 'delivery' ? 'flex' : 'none';
-    if (customerAddress) $('revAddrVal').textContent = customerAddress.summary;
+    const selectedAddress = currentCartAddress();
+    if (selectedAddress) $('revAddrVal').textContent = selectedAddress.summary || addressSummary(selectedAddress);
     $('revPayVal').textContent = paymentMethod;
     $('revItemsList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
@@ -1712,7 +1707,7 @@
     // When the customer is logged in and picked a saved address, reference it by
     // id. The backend resolves customer_id from the JWT — never send it here.
     const savedAddressId = window.PedeAquiCustomerService?.isLoggedIn?.()
-      ? (address?.id || address?.address_id || customerAddress?.id || null)
+      ? (address?.id || address?.address_id || null)
       : null;
     const orderCustomer = currentCustomerSnapshot();
     const orderPayload = {
@@ -1786,6 +1781,218 @@
     return window.PedeAquiAddressService?.writeLocalAddressList?.(list) || [];
   }
 
+  const ADDRESS_IMPORT_SIGNATURE_PREFIX = 'rapidex_address_import_signature_';
+  let customerAddressesSyncPromise = null;
+
+  function normalizeAddressValue(address) {
+    return window.PedeAquiAddressService?.normalizeAddress?.(address) || address || null;
+  }
+
+  function normalizeAddressPart(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function addressFingerprint(address) {
+    if (!address) return '';
+    const placeId = normalizeAddressPart(address.place_id);
+    if (placeId) return `place:${placeId}`;
+    const street = normalizeAddressPart(address.street || address.street_name);
+    const number = normalizeAddressPart(address.number);
+    const neighborhood = normalizeAddressPart(address.neighborhood);
+    const city = normalizeAddressPart(address.city);
+    if (!street || !number || !neighborhood) return '';
+    const postalCode = onlyDigits(address.postal_code || address.zip_code || address.cep || '');
+    return [street, number, postalCode, neighborhood, city, normalizeAddressPart(address.state)].join('|');
+  }
+
+  function deliveryEstimateKey() {
+    const restaurantSlug = getRestaurantSlug();
+    const branchId = operationContext?.branch_id;
+    const orderType = operationContext?.order_type;
+    const fingerprint = addressFingerprint(operationContext?.address);
+    if (!restaurantSlug || !appState.restaurant || !branchId || orderType !== 'delivery' || !fingerprint) return null;
+    return [restaurantSlug, branchId, orderType, fingerprint].join('::');
+  }
+
+  function pickupWindowText() {
+    return settings.pickup_time_text || settings.estimated_pickup_time_text || fallback().pickupTimeText || 'Retirada';
+  }
+
+  function deliveryEstimateText() {
+    if (operationContext?.order_type === 'pickup') return pickupWindowText();
+    if (deliveryEstimate.status === 'loading') return 'Calculando entrega...';
+    if (deliveryEstimate.status === 'success' && deliveryEstimate.data?.serviceable === false) {
+      return deliveryEstimate.data?.message || 'Fora da área de entrega';
+    }
+    if (deliveryEstimate.status === 'success') {
+      const min = Number(deliveryEstimate.data?.eta_min);
+      const max = Number(deliveryEstimate.data?.eta_max);
+      if (Number.isFinite(min) && Number.isFinite(max)) return `${min} - ${max} min`;
+      if (Number.isFinite(min)) return `${min} min`;
+    }
+    const configured = deliveryWindowText();
+    return deliveryEstimate.status === 'error' ? `${configured} · estimativa indisponível` : configured;
+  }
+
+  function renderDeliveryEstimate() {
+    const text = deliveryEstimateText();
+    const feeText = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0);
+    const isPickup = operationContext?.order_type === 'pickup';
+    document.querySelectorAll('.delivery-time-text').forEach(element => { element.textContent = text; });
+    if ($('homeAddressSub')) $('homeAddressSub').textContent = operationConfirmed ? text : '';
+    if ($('cartDeliveryTimeText')) $('cartDeliveryTimeText').textContent = isPickup ? pickupWindowText() : `Hoje, ${text}`;
+    if ($('cartLocationEta')) $('cartLocationEta').textContent = text;
+    if ($('checkoutDeliverySub')) $('checkoutDeliverySub').textContent = `${text} · ${feeText}`;
+    if ($('checkoutPickupSub')) $('checkoutPickupSub').textContent = `${pickupWindowText()} · Grátis`;
+    if ($('revTypeSub')) $('revTypeSub').textContent = isPickup ? pickupWindowText() : `Hoje, ${text}`;
+  }
+
+  function invalidateDeliveryEstimate() {
+    deliveryEstimate = { status: 'idle', key: null, data: null, updatedAt: null };
+    deliveryEstimatePromise = null;
+    renderDeliveryEstimate();
+  }
+
+  async function requestDeliveryEstimate() {
+    const key = deliveryEstimateKey();
+    if (!key) {
+      deliveryEstimate = { status: 'idle', key: null, data: null, updatedAt: null };
+      renderDeliveryEstimate();
+      return null;
+    }
+    const ttl = window.PedeAquiDeliveryService?.CACHE_TTL_MS || 7 * 60 * 1000;
+    if (deliveryEstimate.key === key && deliveryEstimate.status === 'success' && Date.now() - deliveryEstimate.updatedAt < ttl) {
+      renderDeliveryEstimate();
+      return deliveryEstimate.data;
+    }
+    if (deliveryEstimate.key === key && deliveryEstimate.status === 'loading' && deliveryEstimatePromise) return deliveryEstimatePromise;
+    const address = operationContext.address;
+    deliveryEstimate = { status: 'loading', key, data: null, updatedAt: null };
+    renderDeliveryEstimate();
+    const payload = {
+      branch_id: operationContext.branch_id,
+      order_type: 'delivery',
+      address: addressApiPayload(address)
+    };
+    deliveryEstimatePromise = window.PedeAquiDeliveryService.getEstimate(getRestaurantSlug(), payload, { key })
+      .then(result => {
+        if (deliveryEstimate.key !== key) return null;
+        deliveryEstimate = { status: 'success', key, data: result.data, updatedAt: result.updatedAt };
+        renderDeliveryEstimate();
+        return result.data;
+      })
+      .catch(error => {
+        if (deliveryEstimate.key !== key) return null;
+        console.error('[PedeAqui] Falha ao calcular estimativa de entrega', error);
+        deliveryEstimate = { status: 'error', key, data: null, updatedAt: Date.now() };
+        renderDeliveryEstimate();
+        return null;
+      })
+      .finally(() => {
+        if (deliveryEstimate.key === key) deliveryEstimatePromise = null;
+      });
+    return deliveryEstimatePromise;
+  }
+
+  function openCartModal() {
+    requestDeliveryEstimate();
+    openModal('cartModal');
+  }
+  function isRemoteAddress(address) {
+    const id = String(address?.id || address?.address_id || '');
+    return Boolean(id && !id.startsWith('local_') && id !== '__current__');
+  }
+
+  function addressApiPayload(address) {
+    return {
+      street: address?.street || '', number: address?.number || '', neighborhood: address?.neighborhood || '',
+      city: address?.city || '', state: address?.state || '', complement: address?.complement || '',
+      reference: address?.reference || '', postal_code: onlyDigits(address?.postal_code || address?.zip_code || address?.cep || ''),
+      latitude: address?.latitude ?? null, longitude: address?.longitude ?? null, place_id: address?.place_id || '',
+      alias: address?.alias || address?.label || ''
+    };
+  }
+
+  function setSelectedOperationAddress(address, options = {}) {
+    const previousEstimateKey = deliveryEstimateKey();
+    const normalized = normalizeAddressValue(address);
+    if (!operationContext) {
+      const branch = defaultBranchFor('delivery');
+      operationContext = { order_type: 'delivery', ...branchSnapshot(branch), address: null };
+    }
+    operationContext.address = normalized;
+    if (normalized && options.forceDelivery !== false) operationContext.order_type = 'delivery';
+    customerAddress = normalized ? { ...normalized, summary: addressSummary(normalized) } : null;
+    customerStore()?.setSelectedAddress?.(customerAddress);
+    if (customerAddress) window.PedeAquiAddressService?.saveSelectedAddress?.(customerAddress);
+    else localStorage.removeItem(STORAGE_ADDRESS);
+    if (options.confirmed === true) operationConfirmed = true;
+    persistOperationContext();
+    deliveryType = operationContext.order_type;
+    renderWidget();
+    updateCartUI();
+    if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
+    requestDeliveryEstimate();
+    return customerAddress;
+  }
+
+  function defaultBackendAddress(addresses) {
+    return addresses.find(address => address?.is_default === true || address?.default === true || address?.isDefault === true) || null;
+  }
+
+  function dedupeAddresses(addresses) {
+    const byFingerprint = new Map();
+    addresses.filter(Boolean).forEach(raw => {
+      const address = normalizeAddressValue(raw);
+      const fingerprint = addressFingerprint(address) || `id:${addrPickerId(address, '')}`;
+      const previous = byFingerprint.get(fingerprint);
+      if (!previous || isRemoteAddress(address) || address.is_default) byFingerprint.set(fingerprint, { ...previous, ...address });
+    });
+    return Array.from(byFingerprint.values());
+  }
+
+  function addressImportSignature(localAddresses) {
+    return localAddresses.map(addressFingerprint).filter(Boolean).sort().join('::');
+  }
+
+  async function synchronizeCustomerAddresses(options = {}) {
+    if (!window.PedeAquiCustomerAuth?.getToken?.()) return [];
+    if (customerAddressesSyncPromise) return customerAddressesSyncPromise;
+    customerAddressesSyncPromise = (async () => {
+      let remote = dedupeAddresses(await window.PedeAquiAddressService.getCustomerAddresses());
+      const local = dedupeAddresses(readLocalAddressList());
+      const remoteFingerprints = new Set(remote.map(addressFingerprint));
+      const pending = local.filter(address => !remoteFingerprints.has(addressFingerprint(address)) && !address.synced_remote_id);
+      const customerKey = currentCustomerSnapshot()?.id || window.PedeAquiCustomerAuth?.getStoredCustomer?.()?.id || 'session';
+      const signatureKey = ADDRESS_IMPORT_SIGNATURE_PREFIX + customerKey;
+      const signature = addressImportSignature(pending);
+      if (options.importLocal !== false && pending.length && localStorage.getItem(signatureKey) !== signature) {
+        try {
+          await window.PedeAquiAddressService.importCustomerAddresses(pending.map(addressApiPayload));
+          localStorage.setItem(signatureKey, signature);
+          remote = dedupeAddresses(await window.PedeAquiAddressService.getCustomerAddresses());
+          const remoteByFingerprint = new Map(remote.map(address => [addressFingerprint(address), address]));
+          writeLocalAddressList(local.map(address => {
+            const match = remoteByFingerprint.get(addressFingerprint(address));
+            return match ? { ...address, synced_remote_id: match.id || match.address_id, synced_at: new Date().toISOString() } : address;
+          }));
+
+        } catch (error) {
+          console.error('[PedeAqui] Falha ao importar enderecos locais', error);
+          if (options.notifyErrors) alert('Não foi possível sincronizar seus endereços agora. O endereço continua salvo neste aparelho.');
+        }
+      }
+      appState.customerAddresses = remote;
+      customerStore()?.setAddresses?.(remote);
+      const backendDefault = defaultBackendAddress(remote);
+      const current = operationContext?.address || customerAddress;
+      const currentRemote = remote.find(address => addressFingerprint(address) === addressFingerprint(current));
+      if (backendDefault) setSelectedOperationAddress(backendDefault, { confirmed: operationConfirmed, forceDelivery: false });
+      else if (currentRemote) setSelectedOperationAddress(currentRemote, { confirmed: operationConfirmed, forceDelivery: false });
+      return remote;
+    })().finally(() => { customerAddressesSyncPromise = null; });
+    return customerAddressesSyncPromise;
+  }
   function compatibleBranches(orderType) {
     return branches.filter(b => orderType === 'pickup' ? b.accepts_pickup : b.accepts_delivery);
   }
@@ -1824,13 +2031,7 @@
     let branch = stored?.branch_id ? branchById(stored.branch_id) : null;
     if (!branch || !branchAccepts(branch, orderType)) branch = defaultBranchFor(orderType);
     let address = stored?.address || null;
-    if (!address && customerAddress) {
-      address = {
-        street: customerAddress.street, number: customerAddress.number,
-        neighborhood: customerAddress.neighborhood,
-        complement: customerAddress.complement || '', reference: customerAddress.reference || ''
-      };
-    }
+    if (!address && customerAddress) address = { ...customerAddress };
     operationContext = { order_type: orderType, ...branchSnapshot(branch), address };
     applyOperationToLegacy();
   }
@@ -1971,6 +2172,7 @@
     // Delivery sem endereço: confirma assim mesmo e mostra o widget com os 3
     // mini-widgets. O endereço fica como "Use seu endereço para melhores
     // resultados" (renderWidget) e só é exigido no checkout.
+    const previousEstimateKey = deliveryEstimateKey();
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
     persistOperationContext();
@@ -1978,6 +2180,8 @@
     renderWidget();
     setCartTab(operationContext.order_type);
     updateCartUI();
+    if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
+    requestDeliveryEstimate();
     closeOperationScreen();
     if (_pendingMenuNav) {
       _pendingMenuNav = false;
@@ -1991,6 +2195,7 @@
   // Keep operation context in sync when the cart/checkout tabs change order type
   function syncOrderTypeFromCart(type) {
     if (!operationContext || !operationConfirmed || operationContext.order_type === type) return;
+    const previousEstimateKey = deliveryEstimateKey();
     operationContext.order_type = type;
     const current = branchById(operationContext.branch_id);
     if (!current || !branchAccepts(current, type)) {
@@ -1998,6 +2203,8 @@
     }
     persistOperationContext();
     renderWidget();
+    if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
+    requestDeliveryEstimate();
   }
 
   function openAddressScreen() {
@@ -2013,6 +2220,7 @@
   let _returnToAddAddressChoice = false;
 
   function openAddressChoiceDirect(withMotion = true) {
+    _editingAddressId = null;
     const btn = $('adcConfirmBtn');
     if (btn) btn.disabled = true;
     _adcSelection = null;
@@ -2106,6 +2314,7 @@
   let _addrPickerOrigin = 'operation';
   let _addrJustSavedAddress = null;
   let _addrPickerDeleteId = null;
+  let _editingAddressId = null;
   const ADDR_PICKER_DOTS_VERTICAL = '<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>';
   const ADDR_PICKER_DOTS_HORIZONTAL = '<svg width="21" height="8" viewBox="0 0 30 10" fill="none" stroke="#aaa" stroke-width="2"><circle cx="5" cy="5" r="1.45" fill="#aaa"/><circle cx="15" cy="5" r="1.45" fill="#aaa"/><circle cx="25" cy="5" r="1.45" fill="#aaa"/></svg>';
   const ADDR_PICKER_DELETE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
@@ -2142,14 +2351,7 @@
   }
 
   function mergeAddressPickerItems(...groups) {
-    const merged = [];
-    groups.flat().filter(Boolean).forEach(addr => {
-      const id = addrPickerId(addr, '');
-      if (!id || !merged.some(item => addrPickerId(item, '') === id)) {
-        merged.push(addr);
-      }
-    });
-    return merged;
+    return dedupeAddresses(groups.flat().filter(Boolean));
   }
 
   function openAddrPicker(origin) {
@@ -2174,17 +2376,18 @@
     _renderAddrPickerList();
     openModal('addrPickerModal');
     if (window.PedeAquiCustomerService?.isLoggedIn?.()) {
-      window.PedeAquiAddressService.getCustomerAddresses().then(res => {
-        const list = Array.isArray(res) ? res : (res?.data || []);
-        if (list.length) {
-          const current = getCurrentPickerAddress();
-          const currentItem = currentPickerItem(current);
-          const localItems = readLocalAddressList().map(currentPickerItem).filter(Boolean);
-          _addrPickerItems = mergeAddressPickerItems(currentItem ? [currentItem] : [], localItems, list);
-          if (currentItem) _addrPickerSelected = addrPickerId(currentItem);
-          _renderAddrPickerList();
-        }
-      }).catch(() => {});
+      synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true }).then(list => {
+        const current = getCurrentPickerAddress();
+        const currentItem = currentPickerItem(current);
+        const localItems = readLocalAddressList().map(currentPickerItem).filter(Boolean);
+        _addrPickerItems = mergeAddressPickerItems(currentItem ? [currentItem] : [], localItems, list);
+        const selectedMatch = _addrPickerItems.find(item => addressFingerprint(item) === addressFingerprint(current));
+        if (selectedMatch) _addrPickerSelected = addrPickerId(selectedMatch);
+        _renderAddrPickerList();
+      }).catch(error => {
+        console.error('[PedeAqui] Falha ao carregar endereços', error);
+        alert('Não foi possível carregar seus endereços. Os endereços salvos neste aparelho continuam disponíveis.');
+      });
     }
   }
 
@@ -2208,7 +2411,7 @@
         <span class="addr-picker-pin${isSel ? ' active' : ''}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
+        <span class="addr-picker-copy" onclick="editAddrPickerItem(event,'${esc(id)}')"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
         ${isSel
           ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#15803d"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
              <span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
@@ -2264,6 +2467,21 @@
     if (dots) dots.innerHTML = willOpen ? ADDR_PICKER_DOTS_HORIZONTAL : ADDR_PICKER_DOTS_VERTICAL;
   }
 
+  function editAddrPickerItem(event, id) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const address = _addrPickerItems.find(item => addrPickerId(item) === String(id));
+    if (!address) return;
+    _editingAddressId = String(id);
+    _addrTempLoc = {
+      ...address,
+      lat: Number(address.latitude ?? address.lat) || null,
+      lng: Number(address.longitude ?? address.lng) || null,
+      street_name: address.street || address.street_name || ''
+    };
+    closeModalImmediately('addrPickerModal');
+    _openAddrDetailsForm(true);
+  }
   function removeAddrPickerItem(event, target) {
     event?.preventDefault();
     event?.stopPropagation();
@@ -2280,23 +2498,39 @@
     closeAddrDeleteConfirm();
   }
 
-  function confirmAddrPickerDelete() {
+  async function confirmAddrPickerDelete() {
     const id = _addrPickerDeleteId;
     if (!id) return;
+    const address = _addrPickerItems.find(item => addrPickerId(item) === String(id));
     _addrPickerDeleteId = null;
     closeAddrDeleteConfirm();
-    const card = Array.from(document.querySelectorAll('#addrPickerList .addr-picker-item'))
-      .find(item => String(item.dataset.addrId) === String(id));
-    if (card && id === 'example1') {
-      card.remove();
+    try {
+      if (window.PedeAquiCustomerAuth?.getToken?.() && isRemoteAddress(address)) {
+        await window.PedeAquiAddressService.deleteCustomerAddress(id);
+      }
+    } catch (error) {
+      console.error('[PedeAqui] Falha ao excluir endereço', error);
+      alert('Não foi possível excluir este endereço. Tente novamente.');
       return;
     }
-    _addrPickerItems = _addrPickerItems.filter(a => String(a.id || a.address_id || '__current__') !== String(id));
-    writeLocalAddressList(readLocalAddressList().filter(a => String(a.id || a.address_id || '__current__') !== String(id)));
-    if (_addrPickerSelected === String(id)) {
-      _addrPickerSelected = null;
-      const btn = $('addrPickerConfirmBtn');
-      if (btn) btn.disabled = true;
+    _addrPickerItems = _addrPickerItems.filter(item => addrPickerId(item) !== String(id));
+    writeLocalAddressList(readLocalAddressList().filter(item => addrPickerId(item) !== String(id) && item.synced_remote_id !== String(id)));
+    const selectedWasDeleted = addressFingerprint(operationContext?.address) === addressFingerprint(address);
+    if (selectedWasDeleted) setSelectedOperationAddress(null, { forceDelivery: false });
+    if (_addrPickerSelected === String(id)) _addrPickerSelected = null;
+    const btn = $('addrPickerConfirmBtn');
+    if (btn) btn.disabled = !_addrPickerSelected;
+    if (window.PedeAquiCustomerAuth?.getToken?.()) {
+      try {
+        const remote = await synchronizeCustomerAddresses({ importLocal: false });
+        _addrPickerItems = mergeAddressPickerItems(readLocalAddressList(), remote);
+        if (selectedWasDeleted) {
+          const replacement = defaultBackendAddress(remote) || remote[0] || null;
+          if (replacement) setSelectedOperationAddress(replacement, { confirmed: operationConfirmed });
+        }
+      } catch (error) {
+        console.error('[PedeAqui] Falha ao atualizar endereços após exclusão', error);
+      }
     }
     _renderAddrPickerList();
   }
@@ -2331,39 +2565,30 @@
     if (confirmBtn) confirmBtn.disabled = false;
   }
 
-  function confirmAddrPicker() {
+  async function confirmAddrPicker() {
     if (!_addrPickerSelected) return;
-    const addr = _addrPickerItems.find(a => String(a.id || a.address_id || '__current__') === _addrPickerSelected);
-    if (!addr) return;
-    _addrJustSavedAddress = null;
-    if (_addrPickerOrigin === 'profile') {
-      if (!operationContext) {
-        const branch = defaultBranchFor('delivery');
-        operationContext = { order_type: 'delivery', ...branchSnapshot(branch), address: null };
+    let address = _addrPickerItems.find(item => addrPickerId(item) === _addrPickerSelected);
+    if (!address) return;
+    if (window.PedeAquiCustomerAuth?.getToken?.() && isRemoteAddress(address)) {
+      try {
+        await window.PedeAquiAddressService.setDefaultCustomerAddress(addrPickerId(address));
+        const remote = await synchronizeCustomerAddresses({ importLocal: false });
+        address = remote.find(item => addrPickerId(item) === addrPickerId(address)) || address;
+      } catch (error) {
+        console.error('[PedeAqui] Falha ao definir endereço padrão', error);
+        alert('O endereço foi selecionado neste aparelho, mas não foi possível defini-lo como padrão na sua conta.');
       }
-      operationContext.order_type = 'delivery';
-      operationContext.address = addr;
-      if (!operationContext.branch_id) Object.assign(operationContext, branchSnapshot(defaultBranchFor('delivery')));
-      operationConfirmed = true;
-      persistCustomerAddress({ ...addr, summary: addressSummary(addr) });
-      persistOperationContext();
-      applyOperationToLegacy();
-      renderWidget();
-      setCartTab('delivery');
-      updateCartUI();
-      closeModalId('addrPickerModal');
+    }
+    _addrJustSavedAddress = null;
+    if (opDraft) opDraft.address = address;
+    setSelectedOperationAddress(address, { confirmed: true });
+    if (opDraft) renderOperationScreen();
+    closeModalImmediately('addrPickerModal');
+    if (_addrPickerOrigin === 'profile') {
       $('mobViewProfile')?.classList.add('active');
       setMobNavActive('mobNavProfile');
       renderProfileView();
-      _addrPickerOrigin = 'operation';
-      return;
     }
-    if (!opDraft) return;
-    opDraft.address = addr;
-    persistCustomerAddress({ ...addr, summary: addressSummary(addr) });
-    persistOperationContext();
-    renderOperationScreen();
-    closeModalImmediately('addrPickerModal');
     _addrPickerOrigin = 'operation';
   }
 
@@ -2932,60 +3157,51 @@
     _openAddrDetailsForm(true);
   }
 
-  function finishAddressDetails(address) {
-    const savedAddress = {
+  async function finishAddressDetails(address) {
+    const editing = _editingAddressId
+      ? _addrPickerItems.find(item => addrPickerId(item) === _editingAddressId) || readLocalAddressList().find(item => addrPickerId(item) === _editingAddressId)
+      : null;
+    let savedAddress = normalizeAddressValue({
+      ...editing,
       ...address,
-      id: address.id || address.address_id || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      label: address.label || address.alias || address.street || 'Endereco'
-    };
+      id: editing?.id || editing?.address_id || address.id || address.address_id || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      label: address.label || address.alias || editing?.label || address.street || 'Endereco'
+    });
+    const originalId = _editingAddressId;
+    const logged = Boolean(window.PedeAquiCustomerAuth?.getToken?.());
+    if (logged) {
+      try {
+        const response = editing && isRemoteAddress(editing)
+          ? await window.PedeAquiAddressService.updateCustomerAddress(addrPickerId(editing), addressApiPayload(savedAddress))
+          : await window.PedeAquiAddressService.createCustomerAddress(addressApiPayload(savedAddress));
+        const remote = normalizeAddressValue(response?.data || response);
+        if (remote && typeof remote === 'object') savedAddress = { ...savedAddress, ...remote, id: remote.id || remote.address_id || savedAddress.id };
+      } catch (error) {
+        console.error('[PedeAqui] Falha ao salvar endereço no backend', error);
+        savedAddress.sync_error = true;
+        if (editing && isRemoteAddress(editing)) savedAddress.synced_remote_id = addrPickerId(editing);
+        alert('Não foi possível salvar o endereço na sua conta. Ele continuará disponível neste aparelho para você tentar novamente.');
+      }
+    }
     const localList = readLocalAddressList();
-    writeLocalAddressList([savedAddress, ...localList.filter(item => addrPickerId(item, '') !== addrPickerId(savedAddress, ''))]);
-
-    persistCustomerAddress({ ...savedAddress, summary: addressSummary(savedAddress) });
-    if (opDraft) opDraft.address = savedAddress;
-    if (!opDraft && operationContext) { operationContext.address = savedAddress; persistOperationContext(); }
+    writeLocalAddressList(dedupeAddresses([
+      savedAddress,
+      ...localList.filter(item => addrPickerId(item) !== String(originalId || '') && addressFingerprint(item) !== addressFingerprint(savedAddress))
+    ]));
+    _editingAddressId = null;
     _addrJustSavedAddress = savedAddress;
-    renderWidget();
-    updateCartUI();
+    if (opDraft) opDraft.address = savedAddress;
+    setSelectedOperationAddress(savedAddress, { confirmed: operationConfirmed });
     _returnToAddAddressChoice = false;
     closeModalImmediately('addrDetailsModal');
     closeModalImmediately('addrMapModal');
     closeModalImmediately('addrSearchModal');
     $('addrPickerModal')?.classList.add('no-motion');
-    openAddrPicker();
+    openAddrPicker(_addrPickerOrigin);
     _addrPickerItems = mergeAddressPickerItems([currentPickerItem(savedAddress)], _addrPickerItems);
     _addrPickerSelected = addrPickerId(savedAddress);
     _renderAddrPickerList();
     if ($('operationModal')?.classList.contains('active')) renderOperationScreen();
-
-    if (window.PedeAquiCustomerService?.isLoggedIn?.() && typeof window.PedeAquiAddressService?.createCustomerAddress === 'function') {
-      const { id, address_id, summary, ...addressPayload } = savedAddress;
-      window.PedeAquiAddressService.createCustomerAddress(addressPayload)
-        .then(res => {
-          const created = res?.data || res;
-          if (!created || typeof created !== 'object') return;
-          const updated = {
-            ...savedAddress,
-            ...created,
-            id: created.id || created.address_id || savedAddress.id,
-            label: created.label || created.alias || savedAddress.label
-          };
-          writeLocalAddressList(readLocalAddressList().map(item => (
-            addrPickerId(item, '') === addrPickerId(savedAddress, '') ? updated : item
-          )));
-          if (_addrPickerSelected === addrPickerId(savedAddress)) _addrPickerSelected = addrPickerId(updated);
-          _addrPickerItems = _addrPickerItems.map(item => (
-            addrPickerId(item, '') === addrPickerId(savedAddress, '') ? updated : item
-          ));
-          if (sameAddress(customerAddress, savedAddress)) {
-            persistCustomerAddress({ ...updated, summary: addressSummary(updated) });
-            if (opDraft) opDraft.address = updated;
-          }
-          _addrJustSavedAddress = updated;
-          _renderAddrPickerList();
-        })
-        .catch(() => {});
-    }
   }
 
   function _openAddrDetailsForm(instant = false) {
@@ -2996,8 +3212,9 @@
     setDis('addrDetNumber', loc.number || '');
     set('addrDetNeighborhood', loc.neighborhood || '');
     set('addrDetCep', loc.postal_code ? _fmtCep(loc.postal_code) : '');
-    set('addrDetComplement', '');
-    set('addrDetReference', '');
+    set('addrDetComplement', loc.complement || '');
+    set('addrDetReference', loc.reference || '');
+    set('addrDetAlias', loc.alias || loc.label || '');
     const noNum = $('addrDetNoNumber');
     if (noNum) noNum.checked = false;
     const titleStreet = loc.street_name || String(loc.street || '').replace(/,\s*[^,]+$/, '');
@@ -3057,7 +3274,7 @@
     if (btn) btn.disabled = !(street && (number || noNum) && neighborhood);
   }
 
-  function saveAddressDetails() {
+  async function saveAddressDetails() {
     const v = id => ($(id)||{}).value?.trim()||'';
     const street       = v('addrDetStreet');
     const rawNum       = v('addrDetNumber');
@@ -3073,7 +3290,7 @@
     const address = { street, number, neighborhood, complement, reference, alias, label: alias || street, postal_code,
       formatted_address: loc.formatted_address || `${street}, ${number} - ${neighborhood}`,
       latitude: loc.lat || null, longitude: loc.lng || null, place_id: loc.place_id || '' };
-    finishAddressDetails(address);
+    await finishAddressDetails(address);
   }
 
   // ── end Google Maps address flow ──
@@ -3612,7 +3829,10 @@
         const fallbackCustomer = verifyCtx.customer || { email: verifyCtx.email };
         const verifiedCustomer = customerFromAuthResponse(res, fallbackCustomer);
         const accessToken = tokenFromAuthResponse(res);
-        if (accessToken) applyLoggedSession(accessToken, verifiedCustomer);
+        if (accessToken) {
+          applyLoggedSession(accessToken, verifiedCustomer);
+          await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
+        }
         else if (verifiedCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(verifiedCustomer);
         $('verifyScreen')?.classList.remove('active');
         goToInitialScreenAfterAuth();
@@ -4112,6 +4332,7 @@
       }
       if (res?.access_token) {
         applyLoggedSession(res.access_token, res.customer);
+        await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
         finishLoginNavigation();
       } else {
         showLgnSummary('Dados de login incorretos. Verifique suas informações.');
@@ -4139,6 +4360,7 @@
         auth.setStoredCustomer(me);
         renderHomeLoginPrompt();
         renderProfileView();
+        await synchronizeCustomerAddresses({ importLocal: true });
       }
     } catch (error) {
       if (error?.status === 401) {
@@ -4151,6 +4373,8 @@
         localStorage.removeItem(STORAGE_CUSTOMER);
         renderHomeLoginPrompt();
         renderProfileView();
+      } else {
+        console.error('[PedeAqui] Falha ao sincronizar sessão ou endereços', error);
       }
     }
   }
@@ -4430,10 +4654,6 @@
   }
 
   async function mobNavClub() {
-    if (!isLogged()) {
-      openLoginScreen();
-      return;
-    }
     closeMobViews();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     setMobNavActive('mobNavOrders');
@@ -5213,6 +5433,7 @@
     setCartTab(operationContext?.order_type || 'delivery');
     updateCartUI();
     showHomeTab();
+    requestDeliveryEstimate();
     appState.homeLoaded = true;
     appState.menuLoaded = false;
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
@@ -5274,7 +5495,7 @@
     openRecoverCodeScreen, closeRecoverCodeScreen, handleRecInput, handleRecKeydown, handleRecPaste,
     resendRecoverCode, submitRecoverCode,
     openOperationScreen, closeOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
-    openAddrPicker, selectAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete, closeAddrDeleteConfirm,
+    openAddrPicker, selectAddrPickerItem, editAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete, closeAddrDeleteConfirm,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab,

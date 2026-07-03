@@ -106,6 +106,9 @@
   function getCustomerOrders() {
     return authedGet(routes().customerOrders());
   }
+  function getCustomerCashback() {
+    return authedGet(routes().customerCashback());
+  }
   function changeCustomerPassword(payload) {
     return authedPatch(routes().customerPassword(), payload);
   }
@@ -114,6 +117,9 @@
   }
   function createCustomerAddress(payload) {
     return authedPost(routes().customerAddresses(), payload);
+  }
+  function importCustomerAddresses(addresses) {
+    return authedPost(routes().customerAddressesImport(), { addresses });
   }
   function updateCustomerAddress(addressId, payload) {
     return authedPatch(routes().customerAddress(addressId), payload);
@@ -151,9 +157,11 @@
     getCurrentCustomer,
     updateCurrentCustomer,
     getCustomerOrders,
+    getCustomerCashback,
     changeCustomerPassword,
     getCustomerAddresses,
     createCustomerAddress,
+    importCustomerAddresses,
     updateCustomerAddress,
     deleteCustomerAddress,
     setDefaultCustomerAddress

@@ -9,6 +9,8 @@
 
     menu: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/menu`,
+    deliveryEstimate: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/delivery/estimate`,
 
     productsByCategory: (restaurantSlug, categorySlug) =>
       `/restaurants/${routeSlug(restaurantSlug)}/categories/${routeSlug(categorySlug)}/products`,
@@ -34,8 +36,10 @@
     // ---- Authenticated customer ----
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',
+    customerCashback: () => '/customers/me/cashback',
     customerPassword: () => '/customers/me/password',
     customerAddresses: () => '/customers/me/addresses',
+    customerAddressesImport: () => '/customers/me/addresses/import',
     customerAddress: addressId =>
       `/customers/me/addresses/${routeSlug(addressId)}`,
     customerAddressDefault: addressId =>

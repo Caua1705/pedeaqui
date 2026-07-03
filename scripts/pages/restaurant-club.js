@@ -18,16 +18,17 @@
     let clubLoadPromise = null;
 
     async function ensureClubLoaded() {
-      if (appState.clubLoaded) return appState.clubData;
       if (clubLoadPromise) return clubLoadPromise;
       setLoading('club', true);
-      if (renderTabLoader) renderTabLoader('mobClubBody', 'Carregando clube...');
-      else renderSectionLoader('mobClubBody', 'Carregando clube...', 'club-skeleton');
+      if (!appState.clubLoaded) {
+        if (renderTabLoader) renderTabLoader('mobClubBody', 'Carregando clube...');
+        else renderSectionLoader('mobClubBody', 'Carregando clube...', 'club-skeleton');
+      }
       clubLoadPromise = (async () => {
         try {
           const coupons = getCoupons();
           const loadClubData = window.PedeAquiClubService?.getClubData?.(getRestaurantSlug(), { coupons })
-            || Promise.resolve({ coupons: coupons || [], ...(fallback().club || {}) });
+            || Promise.resolve({ coupons: coupons || [], cashback_balance: null, cashback_status: 'error' });
           const [clubData] = await Promise.all([
             loadClubData,
             wait ? wait(tabLoaderMinMs) : Promise.resolve()
@@ -142,7 +143,10 @@
       const clubData = await ensureClubLoaded();
       if (!clubData) return;
       const coupons = Array.isArray(clubData.coupons) && clubData.coupons.length ? clubData.coupons : (getCoupons() || []);
-      const cashback = clubData.cashback_balance ?? clubData.cashback ?? clubData.wallet_balance ?? 0;
+      const cashback = clubData.cashback_balance;
+      const cashbackText = clubData.cashback_status === 'error' && cashback == null
+        ? 'R$ --,--'
+        : fmtClubCurrency(cashback ?? 0);
       body.innerHTML = `
         <section class="club-page" aria-label="Clube">
           ${buildClubLocationWidget()}
@@ -150,7 +154,7 @@
           <section class="club-cashback-card" aria-label="Saldo de cashback">
             <div class="club-cashback-copy">
               <span>Saldo de cashback</span>
-              <strong>${fmtClubCurrency(cashback)}</strong>
+              <strong>${cashbackText}</strong>
             </div>
             <button type="button" class="club-cashback-icon" aria-label="Extrato de cashback">
               <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>

@@ -132,15 +132,28 @@
     if (inputEl) inputEl.disabled = Boolean(disabled);
   }
 
+  function updateRapiSendButton() {
+    const inputEl = document.getElementById('rapiInput');
+    const sendBtn = document.querySelector('.rapi-ai-send');
+    if (!sendBtn || _rapiSending) return;
+    const hasText = Boolean(inputEl?.value?.trim());
+    sendBtn.disabled = !hasText;
+    sendBtn.classList.toggle('is-ready', hasText);
+    sendBtn.classList.toggle('is-inactive', !hasText);
+  }
+
   function setRapiGenerating(generating) {
     const sendBtn = document.querySelector('.rapi-ai-send');
     if (!sendBtn) return;
     sendBtn.classList.toggle('is-stopping', Boolean(generating));
+    sendBtn.classList.remove('is-ready', 'is-inactive');
+    sendBtn.disabled = false;
     sendBtn.setAttribute('aria-label', generating ? 'Parar resposta' : 'Enviar');
     sendBtn.setAttribute('title', generating ? 'Parar resposta' : 'Enviar');
     sendBtn.innerHTML = generating
       ? '<span class="rapi-stop-icon" aria-hidden="true"></span>'
       : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+    if (!generating) updateRapiSendButton();
   }
 
   function finishRapiGeneration() {
@@ -651,7 +664,7 @@
             </span>
             <span class="address-card-copy">
               <strong>${esc(address)}</strong>
-              <small>${esc(sub)}</small>
+              <small class='delivery-time-text'>${esc(sub)}</small>
             </span>
             <svg class="address-card-chevron" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
           </span>
@@ -715,8 +728,9 @@
         <div class="rapi-ai-input-bar">
           <input class="rapi-ai-input" id="rapiInput" type="text"
             placeholder="Pergunte qualquer coisa..."
+            oninput="rapiUpdateSendButton()"
             onkeydown="rapiInputKeydown(event)">
-          <button class="rapi-ai-send" onclick="rapiSendMessage()" type="button" aria-label="Enviar">
+          <button class="rapi-ai-send is-inactive" onclick="rapiSendMessage()" type="button" aria-label="Enviar" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
             </svg>
@@ -953,6 +967,8 @@
       }
     });
   }
+
+  window.rapiUpdateSendButton = updateRapiSendButton;
 
   window.rapiSendMessage = function () {
     if (_rapiSending) {

@@ -1382,6 +1382,20 @@
 .addr-delete-confirm.active .addr-delete-panel{
   transform:translate3d(0,0,0)!important;
 }
+.addr-delete-confirm.is-active-warning .addr-delete-panel{
+  width:414px!important;
+  height:173px!important;
+  padding:19px 20px 17px!important;
+}
+.addr-delete-confirm.is-active-warning .addr-delete-title{
+  margin-bottom:8px!important;
+}
+.addr-delete-confirm.is-active-warning .addr-delete-text{
+  margin-bottom:20px!important;
+}
+.addr-delete-confirm.is-active-warning .addr-delete-cancel{
+  display:none!important;
+}
 .addr-delete-title{
   margin:0 0 8px!important;
   font-size:16px!important;

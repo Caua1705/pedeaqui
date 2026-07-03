@@ -69,6 +69,48 @@
   const TAB_LOADER_MIN_MS = 500;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
+  const dialogFocusOrigins = new WeakMap();
+
+  function releaseFocusFrom(container, fallback) {
+    const active = document.activeElement;
+    if (!container || !active || !container.contains(active)) return;
+    active.blur();
+    if (fallback?.isConnected && typeof fallback.focus === 'function') fallback.focus({ preventScroll: true });
+    else document.body?.focus?.({ preventScroll: true });
+  }
+
+  function setAccessibleDialogState(dialog, open, focusSelector) {
+    if (!dialog) return;
+    if (open) {
+      const active = document.activeElement;
+      if (active && active !== document.body && !dialog.contains(active)) dialogFocusOrigins.set(dialog, active);
+      dialog.inert = false;
+      dialog.removeAttribute('inert');
+      dialog.setAttribute('aria-hidden', 'false');
+      dialog.classList.add('active');
+      requestAnimationFrame(() => dialog.querySelector(focusSelector || 'button')?.focus({ preventScroll: true }));
+      return;
+    }
+    const active = document.activeElement;
+    if (active && dialog.contains(active)) active.blur();
+    const origin = dialogFocusOrigins.get(dialog);
+    if (origin?.isConnected && typeof origin.focus === 'function') origin.focus({ preventScroll: true });
+    else document.body?.focus?.({ preventScroll: true });
+    dialog.classList.remove('active');
+    dialog.inert = true;
+    dialog.setAttribute('inert', '');
+    dialog.setAttribute('aria-hidden', 'true');
+    dialogFocusOrigins.delete(dialog);
+  }
+
+  function initializeDismissedDialogs() {
+    ['addrDeleteConfirm', 'cartItemDeleteConfirm', 'logoutConfirm'].forEach(id => {
+      const dialog = $(id);
+      if (!dialog || dialog.getAttribute('aria-hidden') !== 'true') return;
+      dialog.inert = true;
+      dialog.setAttribute('inert', '');
+    });
+  }
   const fallback = () => window.PedeAquiFallbackConfig || {};
   const isLogged = () => Boolean(customer || window.PedeAquiCustomerService?.isLoggedIn?.());
   const serviceFee = () => Number(settings.service_fee_amount ?? fallback().defaultServiceFee ?? 0);
@@ -1659,9 +1701,7 @@
 
   function setCartItemDeleteConfirm(open) {
     const confirm = $('cartItemDeleteConfirm');
-    if (!confirm) return;
-    confirm.classList.toggle('active', Boolean(open));
-    confirm.setAttribute('aria-hidden', open ? 'false' : 'true');
+    setAccessibleDialogState(confirm, Boolean(open), '.addr-delete-yes');
   }
 
   function openCartItemDeleteConfirm(uid) {
@@ -2553,6 +2593,7 @@
   let _addrPickerOrigin = 'operation';
   let _addrJustSavedAddress = null;
   let _addrPickerDeleteId = null;
+  let _addrPickerDeleteMode = 'confirm';
   let _editingAddressId = null;
   const ADDR_PICKER_DOTS_VERTICAL = '<svg width="16" height="23" viewBox="0 0 24 32" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="5" r="1.45" fill="#aaa"/><circle cx="12" cy="16" r="1.45" fill="#aaa"/><circle cx="12" cy="27" r="1.45" fill="#aaa"/></svg>';
   const ADDR_PICKER_DOTS_HORIZONTAL = '<svg width="21" height="8" viewBox="0 0 30 10" fill="none" stroke="#aaa" stroke-width="2"><circle cx="5" cy="5" r="1.45" fill="#aaa"/><circle cx="15" cy="5" r="1.45" fill="#aaa"/><circle cx="25" cy="5" r="1.45" fill="#aaa"/></svg>';
@@ -2663,16 +2704,30 @@
 
   function setAddrDeleteConfirm(open) {
     const confirm = $('addrDeleteConfirm');
-    if (!confirm) return;
-    confirm.classList.toggle('active', Boolean(open));
-    confirm.setAttribute('aria-hidden', open ? 'false' : 'true');
+    setAccessibleDialogState(confirm, Boolean(open), '.addr-delete-yes');
   }
 
   function closeAddrDeleteConfirm() {
+    setAddrDeleteConfirm(false);
+  }
+
+  function configureAddrDeleteDialog(mode) {
     const confirm = $('addrDeleteConfirm');
-    if (!confirm) return;
-    confirm.classList.remove('active');
-    confirm.setAttribute('aria-hidden', 'true');
+    const title = $('addrDeleteTitle');
+    const text = confirm?.querySelector('.addr-delete-text');
+    const action = confirm?.querySelector('.addr-delete-yes');
+    const cancel = confirm?.querySelector('.addr-delete-cancel');
+    _addrPickerDeleteMode = mode;
+    confirm?.classList.toggle('is-active-warning', mode === 'active-warning');
+    if (title) title.textContent = mode === 'active-warning' ? 'Atenção' : 'Excluir endereço';
+    if (text) text.textContent = mode === 'active-warning'
+      ? 'Não é possível excluir o endereço que está ativo neste momento.'
+      : 'Tem certeza que deseja excluir este endereço?';
+    if (action) action.textContent = mode === 'active-warning' ? 'Ok' : 'Excluir';
+    if (cancel) {
+      cancel.textContent = 'Cancelar';
+      cancel.hidden = mode === 'active-warning';
+    }
   }
 
   function closeAddrPickerActions(exceptCard) {
@@ -2727,8 +2782,18 @@
     const card = target?.closest?.('.addr-picker-item');
     const id = card?.dataset.addrId;
     if (!id) return;
+    const address = _addrPickerItems.find(item => addrPickerId(item) === String(id));
+    const activeAddress = operationContext?.address || customerAddress;
+    if (address && (sameAddress(address, activeAddress) || _addrPickerSelected === String(id))) {
+      _addrPickerDeleteId = null;
+      closeAddrPickerActions();
+      configureAddrDeleteDialog('active-warning');
+      setAddrDeleteConfirm(true);
+      return;
+    }
     _addrPickerDeleteId = String(id);
     closeAddrPickerActions();
+    configureAddrDeleteDialog('confirm');
     setAddrDeleteConfirm(true);
   }
 
@@ -2738,14 +2803,20 @@
   }
 
   async function confirmAddrPickerDelete() {
+    if (_addrPickerDeleteMode === 'active-warning') {
+      _addrPickerDeleteId = null;
+      closeAddrDeleteConfirm();
+      return;
+    }
     const id = _addrPickerDeleteId;
     if (!id) return;
     const address = _addrPickerItems.find(item => addrPickerId(item) === String(id));
     _addrPickerDeleteId = null;
     closeAddrDeleteConfirm();
     try {
-      if (window.PedeAquiCustomerAuth?.getToken?.() && isRemoteAddress(address)) {
-        await window.PedeAquiAddressService.deleteCustomerAddress(id);
+      const remoteId = remoteAddressId(address);
+      if (remoteId) {
+        await window.PedeAquiAddressService.deleteCustomerAddress(remoteId);
       }
     } catch (error) {
       console.error('[PedeAqui] Falha ao excluir endereço', error);
@@ -5072,12 +5143,10 @@
     }
     if (open) {
       document.body.classList.add('logout-confirm-open');
-      confirm.classList.add('active');
-      confirm.setAttribute('aria-hidden', 'false');
+      setAccessibleDialogState(confirm, true, '.addr-delete-yes');
       return;
     }
-    confirm.classList.remove('active');
-    confirm.setAttribute('aria-hidden', 'true');
+    setAccessibleDialogState(confirm, false);
     _logoutConfirmCloseTimer = setTimeout(() => {
       document.body.classList.remove('logout-confirm-open');
       _logoutConfirmCloseTimer = null;
@@ -5171,6 +5240,7 @@
     window.PedeAquiCustomerAuth?.logout?.();
     persistCustomer(null);
     customerStore()?.clear?.();
+    releaseFocusFrom($('profDataScreen'));
     $('profDataScreen')?.classList.remove('active');
     $('profDataScreen')?.setAttribute('aria-hidden', 'true');
     $('profDataBackdrop')?.classList.remove('active');
@@ -5210,6 +5280,7 @@
   }
   function closeCustomerDataScreen() {
     if (customerDataSubmitting) return;
+    releaseFocusFrom($('profDataScreen'));
     $('profDataScreen')?.classList.remove('active');
     $('profDataScreen')?.setAttribute('aria-hidden', 'true');
     $('profDataBackdrop')?.classList.remove('active');
@@ -5335,6 +5406,7 @@
   function closeCustomerPasswordScreen() {
     if (customerPasswordSubmitting) return;
     const screen = $('profPasswordScreen');
+    releaseFocusFrom(screen);
     screen?.classList.remove('active');
     screen?.setAttribute('aria-hidden', 'true');
     resetCustomerPasswordForm();
@@ -5419,6 +5491,7 @@
   }
   function confirmCustomerPasswordSuccess() {
     const success = $('profPasswordSuccess');
+    releaseFocusFrom(success);
     success?.classList.remove('active');
     success?.setAttribute('aria-hidden', 'true');
     resetCustomerPasswordForm();
@@ -5589,6 +5662,7 @@
 
   function closeProfOrderDetails() {
     const detail = $('profOrderDetail');
+    releaseFocusFrom(detail);
     detail?.classList.remove('active');
     detail?.setAttribute('aria-hidden', 'true');
   }
@@ -5751,6 +5825,7 @@
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement
   });
 
+  initializeDismissedDialogs();
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

@@ -1528,7 +1528,7 @@
       openLoginScreen();
       return;
     }
-    openCartModal();
+    mobNavClub();
   }
 
   function setCartItemDeleteConfirm(open) {

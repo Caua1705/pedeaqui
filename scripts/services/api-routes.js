@@ -7,6 +7,9 @@
     restaurant: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}`,
 
+    restaurantInfo: (restaurantSlug, branchId) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/info${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
+
     menu: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/menu`,
     deliveryEstimate: restaurantSlug =>

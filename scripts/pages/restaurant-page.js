@@ -15,6 +15,9 @@
   let coupons = [];
   let deliveryEstimate = { status: 'idle', key: null, data: null, updatedAt: null };
   let deliveryEstimatePromise = null;
+  let restaurantInfoState = { status: 'idle', key: null, data: null, updatedAt: null };
+  let restaurantInfoPromise = null;
+  let availableCheckoutPaymentKeys = new Set();
   let cart = [];
   let currentProd = null;
   let pmQty = 1;
@@ -198,6 +201,9 @@
     banners = [];
     highlightBanners = [];
     coupons = [];
+    restaurantInfoState = { status: 'idle', key: null, data: null, updatedAt: null };
+    restaurantInfoPromise = null;
+    availableCheckoutPaymentKeys = new Set();
     currentProd = null;
     selectedCoupon = null;
     heroBannerIndex = 0;
@@ -502,36 +508,7 @@
   }
 
   function renderStoreInfoPayment() {
-    const box = $('storeInfoPayment');
-    if (!box) return;
-    const configured = settings.payment_methods || settings.paymentMethods || settings.payments || {};
-    const paymentGroups = {
-      credit: configured.credit || configured.credit_card || configured.creditCards || fallback().paymentMethods?.credit || [],
-      debit: configured.debit || configured.debit_card || configured.debitCards || fallback().paymentMethods?.debit || []
-    };
-    const brandClass = brand => {
-      const key = String(brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-      if (key.includes('amex') || key.includes('american')) return 'pay-brand--amex';
-      if (key.includes('elo')) return 'pay-brand--elo';
-      if (key.includes('hiper')) return 'pay-brand--hiper';
-      if (key.includes('master')) return 'pay-brand--master';
-      if (key.includes('visa')) return 'pay-brand--visa';
-      return '';
-    };
-    const renderBrands = brands => (Array.isArray(brands) ? brands : [])
-      .map(brand => `<span><i class="pay-brand ${brandClass(brand)}"></i>${esc(brand)}</span>`)
-      .join('');
-    box.innerHTML = `
-      <p class="store-payment-title">Pagamento na entrega</p>
-      <p class="store-payment-group">Crédito</p>
-      <div class="store-payment-grid">
-        ${renderBrands(paymentGroups.credit)}
-      </div>
-      <p class="store-payment-group store-payment-group--debit">Débito</p>
-      <div class="store-payment-grid">
-        ${renderBrands(paymentGroups.debit)}
-      </div>
-    `;
+    renderRestaurantInfoPayment(restaurantInfoState.data);
   }
 
   function deliveryWindowText() {
@@ -591,20 +568,303 @@
       ].join('');
     }
     if (hoursCard) {
-      hoursCard.innerHTML = [
-        '<div class="store-hours-row"><span>Segunda-feira</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row"><span>Terça-feira</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row"><span>Quarta-feira</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row"><span>Quinta-feira</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row"><span>Sexta-feira</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row active"><span>Sábado</span><strong>16:45 às 22:15</strong></div>',
-        '<div class="store-hours-row"><span>Domingo</span><strong>16:45 às 22:15 - 22:30 - 22:45</strong></div>'
-      ].join('');
+      hoursCard.innerHTML = '<div class="store-info-load-state">Carregando informações...</div>';
     }
     if (addressCard && !$('storeInfoPayment')) {
       addressCard.insertAdjacentHTML('afterend', '<section class="store-payment-card" id="storeInfoPayment"><h3>Pagamento</h3><p>Formas de pagamento não informadas</p></section>');
     }
     setStoreInfoTab('hours');
+  }
+
+  function infoPaymentType(value) {
+    const key = normalizeAddressPart(value).replace(/[^a-z0-9]+/g, '_');
+    if (key.includes('credit')) return 'credit';
+    if (key.includes('credito')) return 'credit';
+    if (key.includes('debit')) return 'debit';
+    if (key.includes('debito')) return 'debit';
+    if (key.includes('pix')) return 'pix';
+    if (key.includes('cash') || key.includes('dinheiro')) return 'cash';
+    if (key.includes('voucher') || key.includes('vale') || key === 'vr_va') return 'voucher';
+    if (key.includes('card') || key.includes('cartao')) return 'card';
+    return key;
+  }
+
+  function normalizeInfoPaymentMethods(source) {
+    const entries = [];
+    const add = (raw, fallbackType, fallbackBrand) => {
+      if (raw === false || raw?.enabled === false || raw?.is_active === false) return;
+      const object = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+      const methodType = infoPaymentType(object.method_type || object.type || object.code || object.method || fallbackType || object.name || raw);
+      if (!methodType) return;
+      const brands = object.brands || object.card_brands;
+      if (Array.isArray(brands) && brands.length) {
+        brands.forEach(brand => add({ ...object, brands: null, brand }, methodType));
+        return;
+      }
+      entries.push({
+        ...object,
+        method_type: methodType,
+        brand: object.brand || object.card_brand || fallbackBrand || '',
+        name: object.display_name || object.name || object.label || fallbackBrand || ''
+      });
+    };
+    if (Array.isArray(source)) source.forEach(item => add(item));
+    else if (source && typeof source === 'object') {
+      Object.entries(source).forEach(([type, value]) => {
+        if (Array.isArray(value)) value.forEach(item => typeof item === 'string' ? add({}, type, item) : add(item, type));
+        else if (value === true) add({}, type);
+        else if (value && typeof value === 'object') add(value, type);
+      });
+    }
+    const seen = new Set();
+    return entries.filter(entry => {
+      const key = `${entry.method_type}:${normalizeAddressPart(entry.brand || entry.name)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function infoPaymentData(data = restaurantInfoState.data) {
+    const methods = data?.payment_methods || {};
+    return {
+      online: normalizeInfoPaymentMethods(methods.online),
+      delivery: normalizeInfoPaymentMethods(methods.delivery)
+    };
+  }
+
+  function infoPaymentLabel(entry) {
+    if (entry.brand || entry.name) return entry.brand || entry.name;
+    return ({
+      pix: 'PIX',
+      credit: 'Cartão de crédito',
+      debit: 'Cartão de débito',
+      cash: 'Dinheiro',
+      voucher: 'Vale-refeição / alimentação',
+      card: 'Cartão'
+    })[entry.method_type] || paymentMethodLabel(entry.method_type);
+  }
+
+  function infoBrandClass(value) {
+    const key = normalizeAddressPart(value).replace(/[^a-z0-9]+/g, '');
+    if (key.includes('amex') || key.includes('american')) return 'pay-brand--amex';
+    if (key.includes('elo')) return 'pay-brand--elo';
+    if (key.includes('hiper')) return 'pay-brand--hiper';
+    if (key.includes('master')) return 'pay-brand--master';
+    if (key.includes('visa')) return 'pay-brand--visa';
+    return '';
+  }
+
+  function renderInfoPaymentEntries(entries) {
+    return entries.map(entry => {
+      const label = infoPaymentLabel(entry);
+      return `<span><i class='pay-brand ${infoBrandClass(label)}'></i>${esc(label)}</span>`;
+    }).join('');
+  }
+
+  function renderRestaurantInfoPayment(data) {
+    const box = $('storeInfoPayment');
+    if (!box) return;
+    const groups = infoPaymentData(data);
+    const sections = [];
+    if (groups.online.length) {
+      sections.push(`<p class='store-payment-title'>Pagamento online</p><div class='store-payment-grid'>${renderInfoPaymentEntries(groups.online)}</div>`);
+    }
+    const deliveryGroups = ['credit', 'debit', 'cash', 'pix', 'voucher']
+      .map(type => [type, groups.delivery.filter(entry => entry.method_type === type)])
+      .filter(([, entries]) => entries.length);
+    if (deliveryGroups.length) {
+      sections.push(`<p class='store-payment-title'>Pagamento na entrega</p>`);
+      deliveryGroups.forEach(([type, entries]) => {
+        const label = ({ credit: 'Crédito', debit: 'Débito', cash: 'Dinheiro', pix: 'PIX na entrega', voucher: 'Vale-refeição / alimentação' })[type];
+        sections.push(`<p class='store-payment-group${type === 'debit' ? ' store-payment-group--debit' : ''}'>${label}</p><div class='store-payment-grid'>${renderInfoPaymentEntries(entries)}</div>`);
+      });
+    }
+    box.innerHTML = sections.length ? sections.join('') : '<p>Formas de pagamento não informadas.</p>';
+  }
+
+  function infoWeekdayLabel(item) {
+    if (item.display_name || item.day_name || item.label) return item.display_name || item.day_name || item.label;
+    const labels = {
+      monday: 'Segunda-feira', tuesday: 'Terça-feira', wednesday: 'Quarta-feira', thursday: 'Quinta-feira', friday: 'Sexta-feira', saturday: 'Sábado', sunday: 'Domingo',
+      segunda: 'Segunda-feira', terca: 'Terça-feira', quarta: 'Quarta-feira', quinta: 'Quinta-feira', sexta: 'Sexta-feira', sabado: 'Sábado', domingo: 'Domingo'
+    };
+    const normalized = normalizeAddressPart(item.weekday);
+    const isoLabels = { 1: 'Segunda-feira', 2: 'Terça-feira', 3: 'Quarta-feira', 4: 'Quinta-feira', 5: 'Sexta-feira', 6: 'Sábado', 7: 'Domingo' };
+    return labels[normalized] || isoLabels[Number(item.weekday)] || String(item.weekday ?? '');
+  }
+
+  function infoTime(value) {
+    return nonEmptyString(value)?.slice(0, 5) || '';
+  }
+
+  function infoHoursText(item) {
+    if (item.is_closed === true) return 'Fechado';
+    const periods = item.periods || item.intervals || item.ranges || [];
+    const normalized = Array.isArray(periods) && periods.length ? periods : [item];
+    const text = normalized.map(period => {
+      const start = infoTime(period.open_time || period.opens_at || period.start || period.from);
+      const end = infoTime(period.close_time || period.closes_at || period.end || period.to);
+      return start && end ? `${start} às ${end}` : '';
+    }).filter(Boolean);
+    return text.length ? text.join(' - ') : 'Fechado';
+  }
+
+  function renderInfoLogo(url, name) {
+    const container = $('infoStoreLogo');
+    if (!container) return;
+    container.replaceChildren();
+    if (!url) {
+      const fallbackElement = document.createElement('div');
+      fallbackElement.className = 'mob-logo-fallback';
+      fallbackElement.textContent = initials(name);
+      container.appendChild(fallbackElement);
+      return;
+    }
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = name || 'Restaurante';
+    image.addEventListener('error', () => {
+      const fallbackElement = document.createElement('div');
+      fallbackElement.className = 'mob-logo-fallback';
+      fallbackElement.textContent = initials(name);
+      container.replaceChildren(fallbackElement);
+    }, { once: true });
+    container.appendChild(image);
+  }
+
+  function infoFullAddress(branch = {}) {
+    if (nonEmptyString(branch.full_address)) return branch.full_address;
+    const address = branch.address && typeof branch.address === 'object' ? branch.address : branch;
+    if (nonEmptyString(address.full_address)) return address.full_address;
+    if (typeof branch.address === 'string' && branch.address.trim()) return branch.address;
+    return [
+      [address.street || address.street_name, address.number].filter(Boolean).join(', '),
+      address.neighborhood,
+      address.city,
+      address.state
+    ].filter(Boolean).join(' - ');
+  }
+
+  function renderProfileRestaurantInfo(data) {
+    const body = document.querySelector('#profSubinfo .prof-sub-body');
+    if (!body) return;
+    const branch = data?.branch || {};
+    const hours = Array.isArray(data?.business_hours) ? data.business_hours : (Array.isArray(branch.business_hours) ? branch.business_hours : []);
+    const methods = infoPaymentData(data);
+    const whatsapp = onlyDigits(branch.whatsapp || '');
+    const paymentEntries = [...methods.online, ...methods.delivery];
+    body.innerHTML = `
+      <div class='prof-info-card'>
+        <div class='prof-info-card-header'><span class='prof-info-card-title'>${esc(branch.display_name || branch.name || 'Unidade')}</span></div>
+        <div class='prof-info-row'><div><div class='prof-info-row-label'>Endereço</div><div class='prof-info-row-val'>${esc(infoFullAddress(branch) || 'Endereço não informado')}</div></div></div>
+        <div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone || 'Telefone não informado')}</div></div></div>
+        <div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email || 'E-mail não informado')}</div></div></div>
+        <div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div>${whatsapp ? `<a class='prof-info-row-link' href='https://wa.me/${whatsapp.startsWith('55') ? whatsapp : `55${whatsapp}`}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a>` : `<div class='prof-info-row-val'>WhatsApp não informado</div>`}</div></div>
+      </div>
+      <div class='prof-info-card'>
+        <div class='prof-info-card-header'><span class='prof-info-card-title'>Horário de funcionamento</span></div>
+        ${hours.length ? hours.map(item => `<div class='prof-info-row'><div><div class='prof-info-row-label'>${esc(infoWeekdayLabel(item))}</div><div class='prof-info-row-val'>${esc(infoHoursText(item))}</div></div></div>`).join('') : `<div class='prof-info-row-val'>Horários não informados.</div>`}
+      </div>
+      <div class='prof-info-card'>
+        <div class='prof-info-card-header'><span class='prof-info-card-title'>Formas de pagamento</span></div>
+        ${profilePaymentChips(paymentEntries)}
+      </div>`;
+  }
+
+  function renderRestaurantInfo(data) {
+    const apiRestaurant = data?.restaurant || {};
+    const branch = data?.branch || {};
+    const name = apiRestaurant.name || restaurant.name || 'Restaurante';
+    renderInfoLogo(apiRestaurant.logo_url || apiRestaurant.logo_path || restaurant.logo_url || restaurant.logo_path, name);
+    document.querySelectorAll('#infoModal .store-info-name').forEach(element => { element.textContent = name; });
+    document.querySelectorAll('#infoModal .store-info-neighborhood').forEach(element => { element.textContent = branch.display_name || branch.name || ''; });
+    document.querySelectorAll('#infoModal .store-info-phone').forEach(element => { element.textContent = branch.phone || 'Telefone não informado'; });
+    document.querySelectorAll('#infoModal .store-info-email').forEach(element => { element.textContent = branch.email || 'E-mail não informado'; });
+    document.querySelectorAll('#infoModal .store-info-whatsapp').forEach(element => { element.textContent = branch.whatsapp || 'WhatsApp não informado'; });
+    document.querySelectorAll('#infoModal .store-contact-row--wa').forEach(element => {
+      const phone = onlyDigits(branch.whatsapp || '');
+      if (phone) element.href = `https://wa.me/${phone.startsWith('55') ? phone : `55${phone}`}`;
+      else element.removeAttribute('href');
+    });
+    const currentWeekday = String(data?.current_weekday ?? '');
+    const hours = Array.isArray(data?.business_hours) ? data.business_hours : (Array.isArray(branch.business_hours) ? branch.business_hours : []);
+    const hoursCard = document.querySelector('#infoModal .store-hours-card');
+    if (hoursCard) hoursCard.innerHTML = hours.length
+      ? hours.map(item => `<div class='store-hours-row${normalizeAddressPart(item.weekday) === normalizeAddressPart(currentWeekday) ? ' active' : ''}'><span>${esc(infoWeekdayLabel(item))}</span><strong>${esc(infoHoursText(item))}</strong></div>`).join('')
+      : '<div class="store-info-load-state">Horários não informados.</div>';
+    if ($('storeInfoAddress')) $('storeInfoAddress').textContent = infoFullAddress(branch) || 'Endereço não informado';
+    renderRestaurantInfoPayment(data);
+    renderProfileRestaurantInfo(data);
+    renderProfilePaymentScreen(data);
+    renderCheckoutPaymentMethods(data);
+  }
+
+  function renderRestaurantInfoLoading() {
+    const hours = document.querySelector('#infoModal .store-hours-card');
+    if (hours) hours.innerHTML = '<div class="store-info-load-state">Carregando informações...</div>';
+    if ($('storeInfoAddress')) $('storeInfoAddress').textContent = 'Carregando endereço...';
+    if ($('storeInfoPayment')) $('storeInfoPayment').innerHTML = '<div class="store-info-load-state">Carregando formas de pagamento...</div>';
+  }
+
+  function renderRestaurantInfoError() {
+    const hours = document.querySelector('#infoModal .store-hours-card');
+    if (hours) hours.innerHTML = '<div class="store-info-load-state">Não foi possível carregar as informações.</div>';
+    if ($('storeInfoAddress')) $('storeInfoAddress').textContent = 'Endereço indisponível.';
+    if ($('storeInfoPayment')) $('storeInfoPayment').innerHTML = '<div class="store-info-load-state">Não foi possível carregar as formas de pagamento.</div>';
+    const profileInfo = document.querySelector('#profSubinfo .prof-sub-body');
+    if (profileInfo) profileInfo.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Não foi possível carregar as informações do restaurante.</div></div>';
+    renderProfilePaymentError();
+    renderCheckoutPaymentMethods(null);
+  }
+
+  function restaurantInfoKey() {
+    return `${getRestaurantSlug()}::${operationContext?.branch_id || 'default'}`;
+  }
+
+  async function ensureRestaurantInfo(options = {}) {
+    const restaurantSlug = getRestaurantSlug();
+    if (!restaurantSlug || !appState.restaurant) return null;
+    const branchId = operationContext?.branch_id || null;
+    const key = restaurantInfoKey();
+    if (!options.force && restaurantInfoState.status === 'success' && restaurantInfoState.key === key) return restaurantInfoState.data;
+    if (restaurantInfoState.status === 'loading' && restaurantInfoState.key === key && restaurantInfoPromise) return restaurantInfoPromise;
+    restaurantInfoState = { status: 'loading', key, data: null, updatedAt: null };
+    renderRestaurantInfoLoading();
+    restaurantInfoPromise = window.PedeAquiRestaurantInfoService.getInfo(restaurantSlug, branchId, options)
+      .then(result => {
+        if (restaurantInfoState.key !== key) return null;
+        restaurantInfoState = { status: 'success', key, data: result.data, updatedAt: Date.now() };
+        renderRestaurantInfo(result.data);
+        return result.data;
+      })
+      .catch(error => {
+        if (restaurantInfoState.key !== key) return null;
+        console.error('[PedeAqui] Falha ao carregar informações do restaurante', error);
+        restaurantInfoState = { status: 'error', key, data: null, updatedAt: Date.now() };
+        renderRestaurantInfoError();
+        return null;
+      })
+      .finally(() => {
+        if (restaurantInfoState.key === key) restaurantInfoPromise = null;
+      });
+    return restaurantInfoPromise;
+  }
+
+  function openRestaurantInfo() {
+    openModal('infoModal');
+    ensureRestaurantInfo();
+  }
+
+  function handleRestaurantInfoContextChange(previousKey) {
+    if (previousKey === restaurantInfoKey()) return;
+    restaurantInfoState = { status: 'idle', key: null, data: null, updatedAt: null };
+    restaurantInfoPromise = null;
+    renderCheckoutPaymentMethods(null);
+    const needsImmediateReload = $('infoModal')?.classList.contains('active')
+      || $('checkoutModal')?.classList.contains('active')
+      || $('profSubpagamento')?.classList.contains('active');
+    if (needsImmediateReload) ensureRestaurantInfo();
   }
 
   function ProductCard(product) {
@@ -725,7 +985,11 @@
         .filter(Boolean)
         .join(' - ') || 'Endereço não informado';
     }
-    renderStoreInfoPayment();
+    if (restaurantInfoState.status === 'success') renderRestaurantInfo(restaurantInfoState.data);
+    else {
+      renderRestaurantInfoLoading();
+      renderCheckoutPaymentMethods(null);
+    }
     const primaryAddress = [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ');
     if ($('footerBranchPrimary')) $('footerBranchPrimary').textContent = primaryAddress || 'Endereço não informado';
     if ($('footerContactPrimary')) $('footerContactPrimary').textContent = branch.whatsapp || branch.phone || 'Contato não informado';
@@ -1775,7 +2039,7 @@
     updateCartUI();
   }
 
-  function openCheckout() {
+  async function openCheckout() {
     const selectedAddress = currentCartAddress();
     if (deliveryType === 'delivery' && !selectedAddress) {
       closeModalId('cartModal');
@@ -1792,6 +2056,7 @@
     setDeliveryType(deliveryType);
     requestDeliveryEstimate();
     openModal('checkoutModal');
+    await ensureRestaurantInfo();
   }
 
   function fillCheckoutAddress(address) {
@@ -1820,7 +2085,73 @@
     updateCartUI();
   }
 
+  function profilePaymentChips(entries) {
+    if (!entries.length) return '<div class="prof-placeholder-text">Nenhum método disponível.</div>';
+    return `<div class='prof-pay-chips'>${entries.map(entry => `<div class='prof-pay-chip'><div class='prof-pay-chip-dot'></div>${esc(infoPaymentLabel(entry))}</div>`).join('')}</div>`;
+  }
+
+  function profileDeliveryPaymentGroups(entries) {
+    const labels = { credit: 'Crédito', debit: 'Débito', cash: 'Dinheiro', pix: 'PIX na entrega', voucher: 'Vale-refeição / alimentação' };
+    const groups = ['credit', 'debit', 'cash', 'pix', 'voucher']
+      .map(type => [type, entries.filter(entry => entry.method_type === type)])
+      .filter(([, items]) => items.length);
+    if (!groups.length) return '<div class=prof-placeholder-text>Nenhum método disponível.</div>';
+    return groups.map(([type, items]) => `<div class='prof-payment-method-group'><div class='prof-payment-method-title'>${labels[type]}</div>${profilePaymentChips(items)}</div>`).join('');
+  }
+
+  function renderProfilePaymentScreen(data) {
+    const body = document.querySelector('#profSubpagamento .prof-sub-body');
+    if (!body) return;
+    const groups = infoPaymentData(data);
+    body.innerHTML = `
+      <div class='prof-payment-tabs'>
+        <button class='active' type='button' data-profile-payment-tab='online' onclick='setProfilePaymentTab("online")'>Pagamento online</button>
+        <button type='button' data-profile-payment-tab='delivery' onclick='setProfilePaymentTab("delivery")'>Pagamento na entrega</button>
+      </div>
+      <section class='prof-payment-panel' data-profile-payment-panel='online'>
+        <div class='prof-info-card'>${profilePaymentChips(groups.online)}</div>
+        <button class='prof-card-coming-soon' type='button' onclick='showCardComingSoon()'>Cadastrar novo cartão <span>Em breve</span></button>
+      </section>
+      <section class='prof-payment-panel' data-profile-payment-panel='delivery' hidden>
+        <div class='prof-info-card'>${profileDeliveryPaymentGroups(groups.delivery)}</div>
+      </section>`;
+  }
+
+  function renderProfilePaymentError() {
+    const body = document.querySelector('#profSubpagamento .prof-sub-body');
+    if (body) body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Não foi possível carregar as formas de pagamento.</div></div>';
+  }
+
+  function setProfilePaymentTab(tab) {
+    document.querySelectorAll('[data-profile-payment-tab]').forEach(button => button.classList.toggle('active', button.dataset.profilePaymentTab === tab));
+    document.querySelectorAll('[data-profile-payment-panel]').forEach(panel => { panel.hidden = panel.dataset.profilePaymentPanel !== tab; });
+  }
+
+  function showCardComingSoon() {
+    alert('Cadastro de cartão estará disponível em breve.');
+  }
+
+  function renderCheckoutPaymentMethods(data) {
+    const groups = data ? infoPaymentData(data) : { delivery: [] };
+    availableCheckoutPaymentKeys = new Set(groups.delivery.map(entry => entry.method_type));
+    const buttons = Array.from(document.querySelectorAll('.fs-pay-btn[data-payment-key]'));
+    buttons.forEach(button => {
+      const available = availableCheckoutPaymentKeys.has(button.dataset.paymentKey);
+      button.disabled = !available;
+      button.classList.toggle('is-unavailable', !available);
+      button.setAttribute('aria-disabled', available ? 'false' : 'true');
+      button.title = available ? '' : 'Forma de pagamento indisponível';
+    });
+    const activeKey = infoPaymentType(paymentMethod);
+    if (!availableCheckoutPaymentKeys.has(activeKey)) {
+      const first = buttons.find(button => !button.disabled);
+      paymentMethod = first?.dataset.paymentValue || '';
+      buttons.forEach(button => button.classList.toggle('active', button === first));
+    }
+  }
+
   function setPayment(btn, type) {
+    if (!btn || btn.disabled || !availableCheckoutPaymentKeys.has(btn.dataset.paymentKey || infoPaymentType(type))) return;
     paymentMethod = type;
     document.querySelectorAll('.fs-pay-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -1830,6 +2161,10 @@
     const name = $('chkName').value.trim();
     const phone = $('chkPhone').value.trim();
     if (!name || !phone) { alert('Preencha nome e WhatsApp.'); return; }
+    if (!paymentMethod || !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) {
+      alert('Selecione uma forma de pagamento disponível.');
+      return;
+    }
     if (deliveryType === 'delivery') {
       const address = readCheckoutAddress();
       if (!address.street || !address.number || !address.neighborhood) { alert('Informe seu endereço.'); return; }
@@ -1878,6 +2213,10 @@
   }
 
   async function submitOrder() {
+    if (!paymentMethod || !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) {
+      alert('Selecione uma forma de pagamento disponível.');
+      return;
+    }
     if (!cart.length) { alert('Seu carrinho está vazio.'); return; }
     if (!operationContext?.branch_id) { alert('Selecione uma unidade para continuar.'); openOperationScreen(); return; }
     const orderType = operationContext.order_type;
@@ -2467,6 +2806,7 @@
     // mini-widgets. O endereço fica como "Use seu endereço para melhores
     // resultados" (renderWidget) e só é exigido no checkout.
     const previousEstimateKey = deliveryEstimateKey();
+    const previousInfoKey = restaurantInfoKey();
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
     persistOperationContext();
@@ -2475,6 +2815,7 @@
     setCartTab(operationContext.order_type);
     updateCartUI();
     if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
+    handleRestaurantInfoContextChange(previousInfoKey);
     requestDeliveryEstimate();
     closeOperationScreen();
     if (_pendingMenuNav) {
@@ -2490,6 +2831,7 @@
   function syncOrderTypeFromCart(type) {
     if (!operationContext || !operationConfirmed || operationContext.order_type === type) return;
     const previousEstimateKey = deliveryEstimateKey();
+    const previousInfoKey = restaurantInfoKey();
     operationContext.order_type = type;
     const current = branchById(operationContext.branch_id);
     if (!current || !branchAccepts(current, type)) {
@@ -2498,6 +2840,7 @@
     persistOperationContext();
     renderWidget();
     if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
+    handleRestaurantInfoContextChange(previousInfoKey);
     requestDeliveryEstimate();
   }
 
@@ -5693,6 +6036,16 @@
     if (subId === 'pedidos') profOrdersBackdrop?.classList.add('active');
     sub.classList.add('active');
     if (subId === 'pedidos') await loadProfPedidos();
+    if (subId === 'pagamento') {
+      const body = document.querySelector('#profSubpagamento .prof-sub-body');
+      if (body && restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando formas de pagamento...</div></div>';
+      await ensureRestaurantInfo();
+    }
+    if (subId === 'info') {
+      const body = document.querySelector('#profSubinfo .prof-sub-body');
+      if (body && restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando informações...</div></div>';
+      await ensureRestaurantInfo();
+    }
   }
   function closeProfSub() {
     closeProfOrderDetails();
@@ -5834,7 +6187,7 @@
     openAddrPicker, selectAddrPickerItem, editAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete, closeAddrDeleteConfirm,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
-    setStoreInfoTab,
+    setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement

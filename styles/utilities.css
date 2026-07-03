@@ -7584,6 +7584,22 @@ body.menu-tab .product-card.is-pressing{
 .cashback-statement-state{padding:34px 8px;color:#747b84;font-size:13px;line-height:19px;text-align:center}
 .cashback-statement-retry{display:block;margin:14px auto 0;padding:9px 16px;border:0;border-radius:8px;background:#f36f21;color:#fff;font:700 12px inherit}
 
+.store-info-load-state{padding:24px 8px;color:#858b93;font-size:12px;line-height:18px;text-align:center}
+.prof-payment-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 14px;padding:4px;border-radius:10px;background:#f2f2f2}
+.prof-payment-tabs button{min-height:38px;border:0;border-radius:8px;background:transparent;color:#818181;font:700 12px inherit}
+.prof-payment-tabs button.active{background:#fff;color:#3f454d;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.prof-payment-panel[hidden]{display:none!important}
+.prof-card-coming-soon{width:100%;min-height:45px;margin-top:12px;border:1px solid #ececec;border-radius:10px;background:#fafafa;color:#858585;font:700 12px inherit}
+.prof-card-coming-soon span{display:inline-block;margin-left:6px;color:#f36f21}
+.prof-payment-method-group+.prof-payment-method-group{margin-top:16px}
+.prof-payment-method-title{margin-bottom:8px;color:#555;font-size:12px;font-weight:800}
+.fs-pay-btn:disabled,.fs-pay-btn.is-unavailable{opacity:.42;cursor:not-allowed;filter:grayscale(.35)}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group,
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group + .store-payment-grid{transform:none!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title{margin:0 0 12px!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title:not(:first-child){margin-top:20px!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group{margin:12px 0 8px!important}
+
 /* Product modal full-sheet scroll and observation width fix. */
 @media(max-width:767px){
   #productModal.active{

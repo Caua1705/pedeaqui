@@ -671,16 +671,31 @@
     document.querySelectorAll('.cart-rest-avatar').forEach(el => el.textContent = initials(restName));
 
     const logoUrl = restaurant.logo_url || restaurant.logo_path;
-    const fallbackLogo = `<div class="mob-logo-fallback">${initials(restName)}</div>`;
-    const logoHtml = logoUrl
-      ? `<img src="${esc(logoUrl)}" alt="${esc(restName)}" ${imageAttrs({ lazy: false, priority: 'high' })} onerror="this.replaceWith(this.ownerDocument.createRange().createContextualFragment('${fallbackLogo}'))">`
-      : `<div class="mob-logo-fallback">${initials(restName)}</div>`;
-    const logo = document.querySelector('.mob-logo');
-    if (logo) logo.innerHTML = logoHtml;
-    const loginLogo = $('loginLogo');
-    if (loginLogo) loginLogo.innerHTML = logoHtml;
-    const infoLogo = $('infoStoreLogo');
-    if (infoLogo) infoLogo.innerHTML = logoHtml;
+    const fallbackLogo = () => {
+      const element = document.createElement('div');
+      element.className = 'mob-logo-fallback';
+      element.textContent = initials(restName);
+      return element;
+    };
+    const renderLogo = container => {
+      if (!container) return;
+      container.replaceChildren();
+      if (!logoUrl) {
+        container.appendChild(fallbackLogo());
+        return;
+      }
+      const image = document.createElement('img');
+      image.src = logoUrl;
+      image.alt = restName;
+      image.loading = 'eager';
+      image.decoding = 'async';
+      image.fetchPriority = 'high';
+      image.addEventListener('error', () => container.replaceChildren(fallbackLogo()), { once: true });
+      container.appendChild(image);
+    };
+    renderLogo(document.querySelector('.mob-logo'));
+    renderLogo($('loginLogo'));
+    renderLogo($('infoStoreLogo'));
 
     const isOpen = settings.is_open ?? restaurant.is_open;
     const status = isOpen === false

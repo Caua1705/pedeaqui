@@ -5327,13 +5327,13 @@
   }
 
   async function mobNavClub() {
+    setMobNavActive('mobNavOrders');
     if (!isLogged()) {
       openLoginScreen();
       return;
     }
     closeMobViews();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
-    setMobNavActive('mobNavOrders');
     $('mobViewClub')?.classList.add('active');
     if (!appState.clubLoaded) renderTabLoader('mobClubBody', 'Carregando clube...');
     await clubController.renderClubView();
@@ -5410,13 +5410,13 @@
   }
 
   async function mobNavProfile() {
+    setMobNavActive('mobNavProfile');
     if (!isLogged()) {
       openLoginScreen();
       return;
     }
     closeMobViews();
     uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
-    setMobNavActive('mobNavProfile');
     $('mobViewProfile')?.classList.add('active');
     if (!appState.profileLoaded) renderProfileLoading();
     await loadProfileData();

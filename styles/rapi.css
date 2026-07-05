@@ -1194,6 +1194,17 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition: width 0.35s ease, height 0.35s ease;
 }
 
+#mobViewRapi .rapi-orb {
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+}
+
+#mobViewRapi .rapi-orb-img {
+  object-fit: contain !important;
+  border-radius: 0 !important;
+}
+
 /* ── AI question text ── */
 .rapi-ai-question {
   font-size: 1.35rem;

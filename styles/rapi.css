@@ -963,15 +963,15 @@ body.app-error .app-loader-message {
 
 .menu-mobile-center {
   position: relative;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #ff6b35, #ff8c42);
+  width: 52px;
+  height: 52px;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   transition: transform 0.18s;
   margin-top: 0;
   border: 0;
@@ -984,12 +984,12 @@ body.app-error .app-loader-message {
 }
 
 .menu-mobile-rapi-avatar {
-  width: 46px;
-  height: 46px;
-  object-fit: cover;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
   object-position: center;
   display: block;
-  border-radius: 50%;
+  border-radius: 0;
   transform: none;
 }
 

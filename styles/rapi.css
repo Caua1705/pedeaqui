@@ -961,11 +961,17 @@ body.app-error .app-loader-message {
   position: relative;
 }
 
+.mob-nav-qr-slot {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+}
+
 .mob-bottom-nav #mobNavQr {
   position: absolute !important;
   left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  top: 22.5px !important;
+  transform: translateX(-50%) !important;
 }
 
 .menu-mobile-center {

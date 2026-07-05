@@ -963,8 +963,8 @@ body.app-error .app-loader-message {
 
 .menu-mobile-center {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: linear-gradient(145deg, #ff6b35, #ff8c42);
   box-shadow: none;
@@ -984,8 +984,8 @@ body.app-error .app-loader-message {
 }
 
 .menu-mobile-rapi-avatar {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   object-fit: cover;
   object-position: center;
   display: block;

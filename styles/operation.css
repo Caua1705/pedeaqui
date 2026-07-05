@@ -1757,13 +1757,13 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   transform:translateX(10px)!important;
 }
 .mob-bottom-nav #mobNavMenu{
-  transform:translateX(7px)!important;
+  transform:translateX(3px)!important;
 }
 .mob-bottom-nav #mobNavQr{
   transform:translateX(-5px)!important;
 }
 .mob-bottom-nav #mobNavProfile{
-  transform:translateX(-12px)!important;
+  transform:translateX(-16px)!important;
 }
 
 .coupon-card::before,

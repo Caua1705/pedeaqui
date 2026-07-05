@@ -961,6 +961,13 @@ body.app-error .app-loader-message {
   position: relative;
 }
 
+.mob-bottom-nav #mobNavQr {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
 .menu-mobile-center {
   position: relative;
   width: 52px;

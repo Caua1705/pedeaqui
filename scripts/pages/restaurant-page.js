@@ -5327,6 +5327,10 @@
   }
 
   async function mobNavClub() {
+    if (!isLogged()) {
+      openLoginScreen();
+      return;
+    }
     closeMobViews();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     setMobNavActive('mobNavOrders');

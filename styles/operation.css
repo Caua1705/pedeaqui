@@ -1760,7 +1760,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   transform:translateX(3px)!important;
 }
 .mob-bottom-nav #mobNavQr{
-  transform:translateX(-5px)!important;
+  transform:none!important;
 }
 .mob-bottom-nav #mobNavProfile{
   transform:translateX(-12px)!important;

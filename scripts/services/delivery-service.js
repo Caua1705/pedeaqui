@@ -3,13 +3,22 @@
   const cache = new Map();
   const pending = new Map();
 
+  function numberOrNull(value) {
+    if (value == null || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
   function normalizeEstimate(response) {
     const data = response?.data ?? response ?? {};
     return {
       ...data,
       serviceable: data.serviceable !== false,
-      eta_min: Number(data.eta_min ?? data.min_minutes ?? data.estimated_delivery_time_min),
-      eta_max: Number(data.eta_max ?? data.max_minutes ?? data.estimated_delivery_time_max),
+      delivery_fee: numberOrNull(data.delivery_fee ?? data.deliveryFee),
+      distance_km: numberOrNull(data.distance_km ?? data.distanceKm),
+      travel_time_min: numberOrNull(data.travel_time_min ?? data.travelTimeMin),
+      eta_min: numberOrNull(data.eta_min ?? data.min_minutes ?? data.estimated_delivery_time_min),
+      eta_max: numberOrNull(data.eta_max ?? data.max_minutes ?? data.estimated_delivery_time_max),
       message: data.message || data.detail || ''
     };
   }

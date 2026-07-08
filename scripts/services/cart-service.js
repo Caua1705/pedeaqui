@@ -5,12 +5,14 @@
       : null;
   }
 
-  function calculateTotals(items = [], settings = {}, deliveryType = 'delivery') {
+  function calculateTotals(items = [], settings = {}, deliveryType = 'delivery', deliveryEstimate = null) {
     const subtotal = items.reduce((sum, item) => {
       const unitPrice = Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
       return sum + unitPrice * Number(item.qty || 0);
     }, 0);
-    const deliveryFee = deliveryType === 'delivery' ? Number(settings.default_delivery_fee || 0) : 0;
+    const rawDeliveryFee = deliveryEstimate?.delivery_fee;
+    const estimatedDeliveryFee = rawDeliveryFee == null || rawDeliveryFee === '' ? NaN : Number(rawDeliveryFee);
+    const deliveryFee = deliveryType === 'delivery' && Number.isFinite(estimatedDeliveryFee) ? estimatedDeliveryFee : 0;
     const serviceFee = settings.service_fee_enabled === false ? 0 : Number(settings.service_fee_amount || 0);
     return { subtotal, delivery: deliveryFee, svc: serviceFee, total: subtotal + deliveryFee + serviceFee };
   }

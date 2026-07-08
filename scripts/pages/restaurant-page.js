@@ -117,7 +117,16 @@
   const fallback = () => window.PedeAquiFallbackConfig || {};
   const isLogged = () => Boolean(customer || window.PedeAquiCustomerService?.isLoggedIn?.());
   const serviceFee = () => Number(settings.service_fee_amount ?? fallback().defaultServiceFee ?? 0);
-  const deliveryFee = () => deliveryType === 'delivery' ? Number(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0) : 0;
+  const asFiniteNumber = (value) => {
+    if (value == null || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  };
+  const currentDeliveryEstimateFee = () => {
+    if (deliveryEstimate.status !== 'success' || deliveryEstimate.data?.serviceable === false) return null;
+    return asFiniteNumber(deliveryEstimate.data?.delivery_fee);
+  };
+  const deliveryFee = () => deliveryType === 'delivery' ? (currentDeliveryEstimateFee() ?? 0) : 0;
   const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
@@ -518,7 +527,8 @@
   }
 
   function renderDeliveryMeta() {
-    const feeText = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0);
+    const estimateFee = currentDeliveryEstimateFee();
+    const feeText = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);
     if ($('cartDeliveryFeeText')) $('cartDeliveryFeeText').textContent = feeText;
     renderDeliveryEstimate();
   }
@@ -1008,7 +1018,10 @@
     document.querySelectorAll('.delivery-time-text').forEach(el => {
       el.textContent = deliveryWindowText();
     });
-    document.querySelectorAll('.delivery-fee-text').forEach(el => el.textContent = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0));
+    document.querySelectorAll('.delivery-fee-text').forEach(el => {
+      const estimateFee = currentDeliveryEstimateFee();
+      el.textContent = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);
+    });
     renderDeliveryMeta();
   }
 
@@ -1823,6 +1836,13 @@
     return { subtotal, svc, delivery, total: subtotal + svc + delivery };
   }
 
+  function hasValidDeliveryEstimateFee() {
+    return deliveryType !== 'delivery'
+      || (deliveryEstimate.status === 'success'
+        && deliveryEstimate.data?.serviceable !== false
+        && currentDeliveryEstimateFee() != null);
+  }
+
   function minimumOrderValue() {
     return maxFiniteNumber(
       settings.minimum_order_value,
@@ -2157,7 +2177,7 @@
     btn.classList.add('active');
   }
 
-  function openOrderReview() {
+  async function openOrderReview() {
     const name = $('chkName').value.trim();
     const phone = $('chkPhone').value.trim();
     if (!name || !phone) { alert('Preencha nome e WhatsApp.'); return; }
@@ -2173,6 +2193,8 @@
         street: address.street, number: address.number, neighborhood: address.neighborhood,
         complement: address.complement || '', reference: address.reference || ''
       }, { confirmed: true, forceDelivery: false });
+      await requestDeliveryEstimate();
+      if (!hasValidDeliveryEstimateFee()) { alert('Aguarde o calculo da taxa de entrega.'); return; }
     }
     persistCustomer({ name, phone });
     renderReview();
@@ -2222,6 +2244,9 @@
     const orderType = operationContext.order_type;
     if (orderType === 'delivery' && !operationContext.address) {
       alert('Informe seu endereço de entrega.'); openAddressScreen(); return;
+    }
+    if (orderType === 'delivery' && !hasValidDeliveryEstimateFee()) {
+      alert('Aguarde o calculo da taxa de entrega.'); return;
     }
     const address = operationContext.address;
     // When the customer is logged in and picked a saved address, reference it by
@@ -2431,10 +2456,13 @@
 
   function renderDeliveryEstimate() {
     const text = deliveryEstimateText();
-    const feeText = fmt(settings.default_delivery_fee ?? fallback().defaultDeliveryFee ?? 0);
+    const estimateFee = currentDeliveryEstimateFee();
+    const feeText = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);
     const isPickup = operationContext?.order_type === 'pickup';
     document.querySelectorAll('.delivery-time-text').forEach(element => { element.textContent = text; });
+    document.querySelectorAll('.delivery-fee-text').forEach(element => { element.textContent = isPickup ? 'Gratis' : feeText; });
     if ($('homeAddressSub')) $('homeAddressSub').textContent = operationConfirmed ? text : '';
+    if ($('cartDeliveryFeeText')) $('cartDeliveryFeeText').textContent = isPickup ? 'Gratis' : feeText;
     if ($('cartDeliveryTimeText')) $('cartDeliveryTimeText').textContent = isPickup ? pickupWindowText() : `Hoje, ${text}`;
     if ($('cartLocationEta')) $('cartLocationEta').textContent = text;
     if ($('checkoutDeliverySub')) $('checkoutDeliverySub').textContent = `${text} · ${feeText}`;
@@ -2443,9 +2471,12 @@
   }
 
   function invalidateDeliveryEstimate() {
+    const keyToInvalidate = deliveryEstimate.key;
+    window.PedeAquiDeliveryService?.invalidate?.(keyToInvalidate);
     deliveryEstimate = { status: 'idle', key: null, data: null, updatedAt: null };
     deliveryEstimatePromise = null;
     renderDeliveryEstimate();
+    updateCartUI();
   }
 
   async function requestDeliveryEstimate() {
@@ -2470,18 +2501,36 @@
     if (branchId) payload.branch_id = branchId;
     if (addressId) payload.address_id = addressId;
     else payload.address = deliveryAddressPayload(address);
+    console.group('[Rapidex][DeliveryEstimate]');
+    console.log('payload enviado:', payload);
     deliveryEstimatePromise = window.PedeAquiDeliveryService.getEstimate(getRestaurantSlug(), payload, { key })
       .then(result => {
-        if (deliveryEstimate.key !== key) return null;
+        if (deliveryEstimate.key !== key) {
+          console.groupEnd();
+          return null;
+        }
         deliveryEstimate = { status: 'success', key, data: result.data, updatedAt: result.updatedAt };
         renderDeliveryEstimate();
+        updateCartUI();
+        const valorAplicado = currentDeliveryEstimateFee();
+        const total = cartTotals().total;
+        console.log('response recebida:', result.data);
+        console.log('delivery_fee recebido:', result.data?.delivery_fee);
+        console.log('delivery_fee aplicado no estado:', valorAplicado);
+        console.log('total recalculado:', total);
+        console.groupEnd();
         return result.data;
       })
       .catch(error => {
-        if (deliveryEstimate.key !== key) return null;
+        if (deliveryEstimate.key !== key) {
+          console.groupEnd();
+          return null;
+        }
         console.error('[PedeAqui] Falha ao calcular estimativa de entrega', error);
         deliveryEstimate = { status: 'error', key, data: null, updatedAt: Date.now() };
         renderDeliveryEstimate();
+        updateCartUI();
+        console.groupEnd();
         return null;
       })
       .finally(() => {
@@ -6201,3 +6250,4 @@
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();
+

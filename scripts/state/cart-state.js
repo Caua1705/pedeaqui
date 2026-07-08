@@ -28,9 +28,11 @@
       getItems() {
         return [...items];
       },
-      getSummary(deliveryType = 'delivery', serviceFeeEnabled = true) {
+      getSummary(deliveryType = 'delivery', serviceFeeEnabled = true, deliveryEstimate = null) {
         const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
-        const deliveryFee = deliveryType === 'delivery' ? Number(settings.default_delivery_fee || 0) : 0;
+        const rawDeliveryFee = deliveryEstimate?.delivery_fee;
+        const estimatedDeliveryFee = rawDeliveryFee == null || rawDeliveryFee === '' ? NaN : Number(rawDeliveryFee);
+        const deliveryFee = deliveryType === 'delivery' && Number.isFinite(estimatedDeliveryFee) ? estimatedDeliveryFee : 0;
         const serviceFee = serviceFeeEnabled && settings.service_fee_enabled !== false ? Number(settings.service_fee_amount || 0) : 0;
         return { subtotal, deliveryFee, serviceFee, total: subtotal + deliveryFee + serviceFee };
       },

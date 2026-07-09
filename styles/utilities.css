@@ -7736,16 +7736,59 @@ body.menu-tab .product-card.is-pressing{
     position:fixed!important;
     inset:0!important;
     z-index:260!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+  }
+  #logoutConfirm.active{
+    background:rgba(0,0,0,.58)!important;
   }
   #logoutConfirm .addr-delete-panel{
-    height:190px!important;
-    padding-top:24px!important;
+    width:min(100vw,414px)!important;
+    max-width:414px!important;
+    height:195px!important;
+    padding:18px 20px 30px!important;
+    border-radius:10px 10px 0 0!important;
+    border-top:0!important;
+    background:#fbfaf9!important;
+    box-shadow:0 -8px 24px rgba(0,0,0,.08)!important;
   }
   #logoutConfirm .addr-delete-title{
-    margin:0 0 22px!important;
+    margin:2px 0 24px!important;
+    color:#3d3d3d!important;
+    font-size:16px!important;
+    line-height:22px!important;
+    font-weight:600!important;
+    letter-spacing:0!important;
+    text-shadow:none!important;
+    -webkit-font-smoothing:auto!important;
+    font-synthesis-weight:none!important;    transform:none!important;
+    opacity:1!important;
   }
   #logoutConfirm .addr-delete-text{
     display:none!important;
+  }
+  #logoutConfirm .addr-delete-cancel,
+  #logoutConfirm .addr-delete-yes{
+    width:min(100%,374px)!important;
+    max-width:374px!important;
+    height:45px!important;
+    min-height:45px!important;
+    border-radius:10px!important;
+    font-size:12px!important;
+    line-height:18px!important;
+    font-weight:700!important;
+  }
+  #logoutConfirm .addr-delete-cancel{
+    margin:0 0 10px!important;
+    border:0!important;
+    background:#F36F21!important;
+    color:#ffffff!important;
+  }
+  #logoutConfirm .addr-delete-yes{
+    margin:0!important;
+    border:1.5px solid #F36F21!important;
+    background:#fbfaf9!important;
+    color:#F36F21!important;
   }
 }
 /* Address picker from profile: no lingering blur while returning. */

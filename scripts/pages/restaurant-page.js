@@ -5554,7 +5554,7 @@
     }
     if (open) {
       document.body.classList.add('logout-confirm-open');
-      setAccessibleDialogState(confirm, true, '.addr-delete-yes');
+      setAccessibleDialogState(confirm, true, '.addr-delete-cancel');
       return;
     }
     setAccessibleDialogState(confirm, false);

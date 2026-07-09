@@ -1493,13 +1493,32 @@
     _catStuckObserver.observe(sentinel);
   }
 
+  let scrollAnimationToken = 0;
+
+  function jumpToTop() {
+    scrollAnimationToken += 1;
+    const html = document.documentElement;
+    const previousHtmlBehavior = html.style.scrollBehavior;
+    const previousBodyBehavior = document.body.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+    document.body.style.scrollBehavior = 'auto';
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      html.style.scrollBehavior = previousHtmlBehavior;
+      document.body.style.scrollBehavior = previousBodyBehavior;
+    });
+  }
+
   function scrollToFast(targetTop, duration = 260) {
+    const token = ++scrollAnimationToken;
     const startTop = window.pageYOffset || document.documentElement.scrollTop || 0;
     const distance = targetTop - startTop;
     const startedAt = performance.now();
     const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
     function step(now) {
+      if (token !== scrollAnimationToken) return;
       const progress = Math.min(1, (now - startedAt) / duration);
       window.scrollTo(0, startTop + distance * easeOutCubic(progress));
       if (progress < 1) requestAnimationFrame(step);
@@ -1512,9 +1531,7 @@
     closeMobViews();
     showMenuTab();
     ensureMenuLoaded();
-    const el = $('menu-area');
-    if (!el) return;
-    scrollToFast(el.getBoundingClientRect().top + window.pageYOffset - 96);
+    jumpToTop();
   }
 
   function scrollToHome() {
@@ -4016,6 +4033,8 @@
 
   function openLoginScreen(origin = 'profile') {
     _loginOrigin = origin;
+    const preserveMenuChrome = document.body.classList.contains('menu-tab') && ['profile', 'club'].includes(origin);
+    document.body.classList.toggle('menu-login-open', preserveMenuChrome);
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
     openModal('loginModal');
@@ -5337,7 +5356,7 @@
     }
     closeMobViews();
     showMenuTab();
-    window.scrollTo(0, 0);
+    jumpToTop();
     await ensureMenuLoaded();
   }
 
@@ -5378,7 +5397,7 @@
   async function mobNavClub() {
     setMobNavActive('mobNavOrders');
     if (!isLogged()) {
-      openLoginScreen();
+      openLoginScreen('club');
       return;
     }
     closeMobViews();
@@ -5461,7 +5480,7 @@
   async function mobNavProfile() {
     setMobNavActive('mobNavProfile');
     if (!isLogged()) {
-      openLoginScreen();
+      openLoginScreen('profile');
       return;
     }
     closeMobViews();

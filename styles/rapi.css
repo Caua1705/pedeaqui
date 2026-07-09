@@ -219,6 +219,37 @@ body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .cart-sticky {
   pointer-events: none !important;
 }
 
+/* Login opened from menu profile/club: keep menu categories visible behind it. */
+body.menu-tab.menu-login-open:has(.lgn-screen.active) .restaurant-app-shell,
+body.menu-tab.menu-login-open:has(.lgn-screen.active) .search-cat,
+body.menu-tab.menu-login-open:has(.lgn-screen.active) .cats,
+body.menu-tab.menu-login-open:has(.reg-screen.active) .restaurant-app-shell,
+body.menu-tab.menu-login-open:has(.reg-screen.active) .search-cat,
+body.menu-tab.menu-login-open:has(.reg-screen.active) .cats,
+body.menu-tab.menu-login-open:has(.vfy-screen.active) .restaurant-app-shell,
+body.menu-tab.menu-login-open:has(.vfy-screen.active) .search-cat,
+body.menu-tab.menu-login-open:has(.vfy-screen.active) .cats,
+body.menu-tab.menu-login-open:has(#loginModal.active) .restaurant-app-shell,
+body.menu-tab.menu-login-open:has(#loginModal.active) .search-cat,
+body.menu-tab.menu-login-open:has(#loginModal.active) .cats{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+@media(max-width:767px){
+  body.menu-tab.menu-login-open:has(#loginModal.active) .cats{
+    z-index:260!important;
+  }
+  body.menu-tab.menu-login-open:has(#loginModal.active) #loginModal .modal--login{
+    top:50px!important;
+    bottom:0!important;
+    height:calc(100dvh - 50px)!important;
+    min-height:calc(100dvh - 50px)!important;
+    max-height:calc(100dvh - 50px)!important;
+  }
+}
+
 /* Selected delivery address: keep location widget text and arrow black. */
 body.home-tab .delivery-widget:has(.address-strip.has-address) #homeAddressTitle,
 body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy strong,

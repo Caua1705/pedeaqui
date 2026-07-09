@@ -498,7 +498,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .delivery-widget-tabs{
   display:flex!important;
   align-items:center!important;
-  padding:0 12px!important;
+  padding:0 9px!important;
   height:36px!important;
   gap:0!important;
 }
@@ -539,7 +539,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   display:flex!important;
   width:100%!important;
   min-height:40px!important;
-  padding:0 12px!important;
+  padding:0 9px!important;
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
@@ -1032,7 +1032,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
 .menu-area{background:#ffffff!important;padding:0 0 120px!important}
 .menu-section{padding-top:0!important;margin-bottom:0!important;scroll-margin-top:118px!important}
 .menu-section-title{
-  font-size:17px!important;font-weight:800!important;
+  font-size:17px!important;font-weight:700!important;
   color:#1a1a1a!important;letter-spacing:0!important;
   margin-bottom:0!important;padding:20px 16px 12px!important;
 }
@@ -1794,7 +1794,7 @@ body:not(.menu-tab) .home-order-cta,
 .delivery-widget-tab.active{
   background:#ffe3d3!important;
   color:#F36F21!important;
-  font-weight:700!important;
+  font-weight:800!important;
 }
 .delivery-widget-chevron{
   position:absolute!important;
@@ -2130,7 +2130,7 @@ body:not(.menu-tab) .home-order-cta,
   width:auto!important;
   height:25px!important;
   margin:auto auto 10px!important;
-  padding:0 12px!important;
+  padding:0 9px!important;
   border:0!important;
   border-radius:5px!important;
   background:#fef0e6!important;
@@ -2247,7 +2247,7 @@ body:not(.menu-tab) .home-order-cta,
   min-width:74px!important;
   max-width:none!important;
   height:32px!important;
-  padding:0 12px!important;
+  padding:0 9px!important;
   margin-left:auto!important;
   border:0!important;
   border-radius:999px!important;
@@ -2659,7 +2659,7 @@ body:not(.menu-tab) .home-order-cta,
 
   .delivery-widget-tab{
     font-size:10px!important;
-    font-weight:800!important;
+    font-weight:700!important;
     text-transform:uppercase!important;
     letter-spacing:.02em!important;
   }
@@ -3534,19 +3534,19 @@ body.home-tab .delivery-widget.pending-selection{
 }
 .coupon-use-btn{
   border:0!important;
-  background:#fef0e6!important;
+  background:#fde5d6!important;
   color:#30343b!important;
   font-size:12px!important;
-  font-weight:700!important;
+  font-weight:800!important;
   margin-top:10px!important;
-  margin-bottom:7px!important;
+  margin-bottom:9px!important;
   padding-left:9px!important;
   padding-right:9px!important;
   height:23px!important;
   min-height:23px!important;
 }
 .coupon-dash{
-  margin-top:24px!important;
+  margin:24px 18px 4px!important;
   border-top-width:1.75px!important;
   border-top-color:rgba(243,106,29,.32)!important;
 }
@@ -3974,7 +3974,7 @@ body.menu-tab .prod-name{
 /* Price stays the strongest text on the row but at semibold-bold 700,
    13px — clean, not an oversized block. "A partir de" is 600. */
 body.menu-tab .prod-price{
-  font-weight:700!important;
+  font-weight:800!important;
   font-size:13px!important;
 }
 
@@ -4072,7 +4072,7 @@ body.menu-tab .delivery-widget-tab{
 body.menu-tab .delivery-widget-tab.active{
   color:var(--primary-orange)!important;
   background:#FFE6D7!important;
-  font-weight:700!important;
+  font-weight:800!important;
 }
 
 body.menu-tab .delivery-widget-chevron{
@@ -4780,7 +4780,7 @@ body.menu-tab .delivery-widget-tab{
 body.menu-tab .delivery-widget-tab.active{
   background:#ffe3d3!important;
   color:#F36F21!important;
-  font-weight:700!important;
+  font-weight:800!important;
 }
 body.menu-tab .delivery-widget-divider{
   display:none!important;
@@ -6194,7 +6194,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
   color:#4a4a4a!important;
   font-size:13px!important;
   line-height:18px!important;
-  font-weight:800!important;
+  font-weight:700!important;
   font-family:Inter,system-ui,sans-serif!important;
   -webkit-text-stroke:.18px currentColor!important;
 }
@@ -6319,10 +6319,10 @@ body:has(#infoModal.active) .mob-bottom-nav{
   box-shadow:none!important;
 }
 .coupon-use-btn{
-  background:#fef0e6!important;
+  background:#fde5d6!important;
   color:#F36F21!important;
   border:0!important;
-  font-weight:700!important;
+  font-weight:800!important;
 }
 body:has(.coupon-detail-overlay.active) .mob-bottom-nav,
 body.coupon-nav-keep .mob-bottom-nav{
@@ -6338,6 +6338,21 @@ body.keep-bottom-nav .mob-bottom-nav{
 /* Coupon small button text back to original gray. */
 .coupon-use-btn{color:#555555!important}
 
+/* Home coupon CTA: match reference button tone and spacing. */
+body.home-tab .home-coupons-section .coupon-dash{
+  margin:26px 18px 4px!important;
+}
+body.home-tab .home-coupons-section .coupon-use-btn{
+  margin-top:7px!important;
+  margin-bottom:10px!important;
+  height:25px!important;
+  min-height:25px!important;
+  padding:0 9px!important;
+  border-radius:5px!important;
+  background:#fbddcf!important;
+  color:#4f3f36!important;
+  font-weight:800!important;
+}
 /* Compact restaurant name when API name is longer than 12 characters. */
 body.home-tab .mob-rest-name.mob-rest-name--compact{
   font-size:16px!important;

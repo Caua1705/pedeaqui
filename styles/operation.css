@@ -1812,7 +1812,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   position:absolute!important;
   display:block!important;
   z-index:2!important;
-  top:152px!important;
+  top:155px!important;
   width:10px!important;
   height:10px!important;
   border:1px solid rgba(243,106,29,.18)!important;

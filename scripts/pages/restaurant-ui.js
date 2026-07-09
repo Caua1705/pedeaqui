@@ -19,13 +19,14 @@
   }
 
   function lockBodyScroll(scrollY = currentScrollY(), mode = 'fixed') {
-    if (mode === 'soft') {
+    if (mode === 'soft' || mode === 'product-soft') {
       if (bodyScrollLocked) {
-        document.body.classList.add('modal-open');
+        document.body.classList.add(mode === 'product-soft' ? 'product-modal-open' : 'modal-open');
         return;
       }
       savedScrollY = scrollY;
       softScrollLocked = true;
+      document.body.classList.add(mode === 'product-soft' ? 'product-modal-open' : 'modal-open');
       return;
     }
     if (bodyScrollLocked) {
@@ -47,10 +48,8 @@
     if (softScrollLocked && !bodyScrollLocked) {
       softScrollLocked = false;
       savedScrollY = restoreY;
+      document.body.classList.remove('modal-open', 'product-modal-open');
       window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-      requestAnimationFrame(() => {
-        if (!hasBlockingUiOpen()) window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
-      });
       return;
     }
     if (!bodyScrollLocked) {
@@ -95,7 +94,7 @@
     const scrollY = currentScrollY();
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, id === 'productModal' ? 'product-soft' : (id === 'loginModal' ? 'soft' : 'fixed'));
   }
 
   function openModalImmediately(id) {
@@ -105,14 +104,40 @@
     el.classList.add('no-motion');
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'loginModal' ? 'soft' : 'fixed');
+    lockBodyScroll(scrollY, id === 'productModal' ? 'product-soft' : (id === 'loginModal' ? 'soft' : 'fixed'));
     setTimeout(() => el.classList.remove('no-motion'), 50);
+  }
+
+  function stopModalMomentum(el) {
+    const scrollers = [el?.querySelector('.modal--product'), el?.querySelector('.modal-body')].filter(Boolean);
+    scrollers.forEach(scroller => {
+      const top = scroller.scrollTop;
+      scroller.style.scrollBehavior = 'auto';
+      scroller.style.webkitOverflowScrolling = 'auto';
+      scroller.scrollTop = top;
+      scroller.style.overflowY = 'hidden';
+      setTimeout(() => {
+        scroller.style.scrollBehavior = '';
+        scroller.style.webkitOverflowScrolling = '';
+        scroller.style.overflowY = '';
+      }, 620);
+    });
   }
 
   function closeModalId(id) {
     const el = $(id);
     if (!el) return;
-    if (['loginModal', 'productModal'].includes(id) && (bodyScrollLocked || softScrollLocked)) {
+    if (id === 'productModal' && (bodyScrollLocked || softScrollLocked)) {
+      const restoreY = savedScrollY;
+      stopModalMomentum(el);
+      el.classList.remove('active');
+      syncBottomNavVisibility();
+      setTimeout(() => {
+        if (!hasBlockingUiOpen()) unlockBodyScroll(restoreY);
+      }, 560);
+      return;
+    }
+    if (id === 'loginModal' && (bodyScrollLocked || softScrollLocked)) {
       const restoreY = savedScrollY;
       el.classList.remove('active');
       syncBottomNavVisibility();

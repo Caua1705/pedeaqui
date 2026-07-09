@@ -5416,6 +5416,12 @@ body.modal-open{
   isolation:isolate!important;
 }
 
+
+/* Product modal soft lock: keep menu/category UI rendered behind the sliding sheet. */
+body.product-modal-open{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
 /* Product detail screen: reference-aligned 408x250 hero and footer controls. */
 @media(max-width:767px){
   #productModal{

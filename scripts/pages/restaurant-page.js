@@ -910,10 +910,49 @@
     unlockBodyScrollIfClear,
     openModal,
     openModalImmediately,
-    closeModalId,
+    closeModalId: closeUiModalId,
     closeModalImmediately,
     closeModal
   } = window.PedeAquiRestaurantUi;
+
+  let loginReturnNavId = null;
+
+  function resetMenuLoginState() {
+    document.body.classList.remove('menu-login-open');
+    $('loginModal')?.classList.remove('from-add-address', 'from-coupon');
+    if (loginReturnNavId && !isLogged() && document.body.classList.contains('menu-tab')) {
+      setMobNavActive(loginReturnNavId);
+    }
+    loginReturnNavId = null;
+  }
+
+  function holdMenuScrollPosition(scrollY, durationMs = 720) {
+    if (!document.body.classList.contains('menu-tab')) return;
+    const startedAt = performance.now();
+    const restore = () => window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+    restore();
+    requestAnimationFrame(restore);
+    const timer = setInterval(() => {
+      if (performance.now() - startedAt >= durationMs || !document.body.classList.contains('menu-tab')) {
+        clearInterval(timer);
+        return;
+      }
+      restore();
+    }, 80);
+    setTimeout(restore, durationMs + 20);
+  }
+
+  function closeModalId(id) {
+    const keepMenuCatsStable = id === 'loginModal' && document.body.classList.contains('menu-tab');
+    const menuScrollY = keepMenuCatsStable ? currentScrollY() : 0;
+    if (keepMenuCatsStable) document.body.classList.add('menu-login-closing');
+    closeUiModalId(id);
+    if (id === 'loginModal') {
+      resetMenuLoginState();
+      if (keepMenuCatsStable) holdMenuScrollPosition(menuScrollY);
+      setTimeout(() => document.body.classList.remove('menu-login-closing'), 760);
+    }
+  }
 
   function applyTheme() {
     const root = document.documentElement;
@@ -4033,8 +4072,10 @@
 
   function openLoginScreen(origin = 'profile') {
     _loginOrigin = origin;
-    const preserveMenuChrome = document.body.classList.contains('menu-tab') && ['profile', 'club'].includes(origin);
-    document.body.classList.toggle('menu-login-open', preserveMenuChrome);
+    loginReturnNavId = document.body.classList.contains('menu-tab') && ['profile', 'club'].includes(origin)
+      ? 'mobNavMenu'
+      : null;
+    document.body.classList.remove('menu-login-open');
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
     openModal('loginModal');
@@ -5351,12 +5392,16 @@
   async function mobNavMenu() {
     if (!operationConfirmed) {
       _pendingMenuNav = true;
-      openOperationScreen(true); // immediate = sem animação de entrada
+      openOperationScreen(true); // immediate = sem animacao de entrada
       return;
     }
+    const returningToVisibleMenu = document.body.classList.contains('menu-tab')
+      && Boolean(document.querySelector('.mob-view.active'));
+    const menuScrollY = returningToVisibleMenu ? currentScrollY() : 0;
     closeMobViews();
     showMenuTab();
-    jumpToTop();
+    if (returningToVisibleMenu) holdMenuScrollPosition(menuScrollY, 360);
+    else jumpToTop();
     await ensureMenuLoaded();
   }
 

@@ -4,12 +4,69 @@
   let savedScrollY = 0;
   let bodyScrollLocked = false;
   let softScrollLocked = false;
+  let correctingSoftScroll = false;
+  let categoryTransitionClone = null;
 
   function currentScrollY() {
     return window.pageYOffset
       || document.documentElement.scrollTop
       || document.body.scrollTop
       || 0;
+  }
+
+  function keepSoftScrollStable() {
+    if (!softScrollLocked || correctingSoftScroll) return;
+    const actualY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    if (Math.abs(actualY - savedScrollY) < 1) return;
+    correctingSoftScroll = true;
+    window.scrollTo({ top: savedScrollY, left: 0, behavior: 'instant' });
+    requestAnimationFrame(() => { correctingSoftScroll = false; });
+  }
+
+  window.addEventListener('scroll', keepSoftScrollStable, { passive: true });
+
+  function showCategoryTransitionClone() {
+    if (categoryTransitionClone || !document.body.classList.contains('menu-tab')) return;
+    const source = document.querySelector('.cats');
+    if (!source) return;
+    const rect = source.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const clone = source.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+    clone.setAttribute('aria-hidden', 'true');
+    clone.style.setProperty('position', 'fixed', 'important');
+    clone.style.setProperty('top', `${rect.top}px`, 'important');
+    clone.style.setProperty('left', `${rect.left}px`, 'important');
+    clone.style.setProperty('width', `${rect.width}px`, 'important');
+    clone.style.setProperty('max-width', `${rect.width}px`, 'important');
+    clone.style.setProperty('height', `${rect.height}px`, 'important');
+    clone.style.setProperty('margin', '0', 'important');
+    clone.style.setProperty('transform', 'none', 'important');
+    clone.style.setProperty('visibility', 'visible', 'important');
+    clone.style.setProperty('opacity', '1', 'important');
+    clone.style.setProperty('pointer-events', 'none', 'important');
+    clone.style.setProperty('z-index', '39', 'important');
+
+    categoryTransitionClone = {
+      clone,
+      source,
+      visibility: source.style.getPropertyValue('visibility'),
+      visibilityPriority: source.style.getPropertyPriority('visibility')
+    };
+    source.style.setProperty('visibility', 'hidden', 'important');
+    document.body.appendChild(clone);
+    clone.scrollLeft = source.scrollLeft;
+  }
+
+  function hideCategoryTransitionClone() {
+    if (!categoryTransitionClone) return;
+    const { clone, source, visibility, visibilityPriority } = categoryTransitionClone;
+    clone.remove();
+    if (visibility) source.style.setProperty('visibility', visibility, visibilityPriority);
+    else source.style.removeProperty('visibility');
+    categoryTransitionClone = null;
   }
 
   function hasBlockingUiOpen() {
@@ -26,6 +83,8 @@
       }
       savedScrollY = scrollY;
       softScrollLocked = true;
+      showCategoryTransitionClone();
+      document.body.classList.add('soft-scroll-locked');
       document.body.classList.add(mode === 'product-soft' ? 'product-modal-open' : 'modal-open');
       return;
     }
@@ -48,12 +107,14 @@
     if (softScrollLocked && !bodyScrollLocked) {
       softScrollLocked = false;
       savedScrollY = restoreY;
-      document.body.classList.remove('modal-open', 'product-modal-open');
+      document.body.classList.remove('modal-open', 'product-modal-open', 'soft-scroll-locked');
       window.scrollTo({ top: restoreY, left: 0, behavior: 'auto' });
+      hideCategoryTransitionClone();
       return;
     }
     if (!bodyScrollLocked) {
-      document.body.classList.remove('modal-open');
+      document.body.classList.remove('modal-open', 'product-modal-open', 'soft-scroll-locked');
+      hideCategoryTransitionClone();
       return;
     }
     bodyScrollLocked = false;

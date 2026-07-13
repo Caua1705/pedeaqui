@@ -4924,27 +4924,6 @@ body.menu-tab .cats{
 body.menu-tab .cats.is-stuck{
   background:#ffffff!important;
 }
-@media(max-width:767px){
-  body.menu-tab.menu-login-closing .cats,
-  body.menu-tab.modal-open .cats,
-  body.menu-tab:has(.overlay.active) .cats,
-  body.menu-tab:has(.mob-view.active) .cats,
-  body.menu-tab:has(.lgn-screen.active) .cats,
-  body.menu-tab:has(.reg-screen.active) .cats,
-  body.menu-tab:has(.vfy-screen.active) .cats{
-    position:fixed!important;
-    top:0!important;
-    left:50%!important;
-    width:min(100vw,430px)!important;
-    max-width:430px!important;
-    transform:translateX(-50%)!important;
-    z-index:39!important;
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    background:#ffffff!important;
-  }
-}
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;
 }
@@ -5442,6 +5421,13 @@ body.modal-open{
 body.product-modal-open{
   overflow:hidden!important;
   overscroll-behavior:none!important;
+}
+
+/* Soft fullscreen flows must preserve the menu's original scroll container. */
+body.soft-scroll-locked.modal-open,
+body.soft-scroll-locked.product-modal-open{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
 }
 /* Product detail screen: reference-aligned 408x250 hero and footer controls. */
 @media(max-width:767px){

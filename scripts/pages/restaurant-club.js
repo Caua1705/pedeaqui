@@ -20,10 +20,6 @@
     async function ensureClubLoaded() {
       if (clubLoadPromise) return clubLoadPromise;
       setLoading('club', true);
-      if (!appState.clubLoaded) {
-        if (renderTabLoader) renderTabLoader('mobClubBody', 'Carregando clube...');
-        else renderSectionLoader('mobClubBody', 'Carregando clube...', 'club-skeleton');
-      }
       clubLoadPromise = (async () => {
         try {
           const coupons = getCoupons();
@@ -110,31 +106,13 @@
 
     function buildClubLocationWidget() {
       const sourceWidget = document.querySelector('.home-sticky-header .delivery-widget') || document.querySelector('.delivery-widget');
-      const delivery = sourceWidget?.querySelector('#dwTabDelivery, .delivery-widget-tab.active')?.textContent?.trim() || 'DELIVERY';
-      const brand = sourceWidget?.querySelector('#dwTabBrand')?.textContent?.trim() || 'RESTAURANTE';
-      const branch = sourceWidget?.querySelector('#dwTabBranch')?.textContent?.trim() || 'LJ. SUL';
-      const title = sourceWidget?.querySelector('#homeAddressTitle, .address-card-copy strong')?.textContent?.trim() || 'Use seu endereco para melhores resultados';
-
-      return `
-        <div class="club-location-wrap">
-          <div class="delivery-widget club-location-widget" role="button" tabindex="0" onclick="openOperationScreen()" aria-label="Selecionar unidade e operacao">
-            <div class="delivery-widget-tabs">
-              <span class="delivery-widget-tab active">${esc(delivery)}</span>
-              <span class="delivery-widget-tab">${esc(brand)}</span>
-              <span class="delivery-widget-tab">${esc(branch)}</span>
-              <svg class="delivery-widget-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
-            </div>
-            <div class="delivery-widget-divider"></div>
-            <div class="club-location-address">
-              <span class="club-location-address-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </span>
-              <span class="club-location-address-text">
-                ${esc(title)}
-              </span>
-            </div>
-          </div>
-        </div>`;
+      if (!sourceWidget) return '';
+      const clone = sourceWidget.cloneNode(true);
+      clone.classList.add('club-location-widget');
+      clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+      clone.setAttribute('onclick', 'openOperationScreen()');
+      clone.setAttribute('aria-label', 'Selecionar unidade e operacao');
+      return `<div class="club-location-wrap">${clone.outerHTML}</div>`;
     }
 
     async function renderClubView() {
@@ -151,14 +129,17 @@
         <section class="club-page" aria-label="Clube">
           ${buildClubLocationWidget()}
           <div class="club-section-divider" aria-hidden="true"></div>
-          <section class="club-cashback-card" aria-label="Saldo de cashback">
-            <div class="club-cashback-copy">
-              <span>Saldo de cashback</span>
-              <strong id='clubCashbackBalance'>${cashbackText}</strong>
+          <section class="club-cashback-panel" aria-label="Saldo de cashback">
+            <div class="club-cashback-card">
+              <div class="club-cashback-copy">
+                <span>Saldo de cashback</span>
+                <strong id='clubCashbackBalance'>${cashbackText}</strong>
+              </div>
+              <button type="button" class="club-cashback-icon" aria-label="Extrato de cashback">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
+              </button>
             </div>
-            <button type="button" class="club-cashback-icon" aria-label="Extrato de cashback">
-              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
-            </button>
+            <button type="button" class="club-cashback-use" aria-label="Usar saldo de cashback">Usar saldo de cashback</button>
           </section>
           <div class="club-section-divider" aria-hidden="true"></div>
           <section class="club-coupons-section" aria-label="Meus cupons">

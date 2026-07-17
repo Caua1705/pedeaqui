@@ -392,13 +392,51 @@
       const date = cashbackTransactionDate(transaction.created_at);
       return `<article class='cashback-statement-row'>
         <div class='cashback-statement-copy'>
+          ${date ? `<time>${esc(date)}</time>` : ''}
           <strong>${esc(cashbackTransactionLabel(transaction.type))}</strong>
           ${description ? `<span>${esc(description)}</span>` : ''}
-          ${date ? `<time>${esc(date)}</time>` : ''}
         </div>
         <div class='cashback-statement-amount ${amount > 0 ? 'positive' : amount < 0 ? 'negative' : ''}'>${esc(cashbackTransactionAmount(amount))}</div>
       </article>`;
     }).join('');
+  }
+
+  function configureCashbackStatementLayout() {
+    const overlay = $('cashbackStatementModal');
+    const modal = overlay?.querySelector('.cashback-statement-modal');
+    if (!overlay || !modal) return;
+    const properties = ['display', 'align-items', 'justify-content', 'padding', 'background', 'z-index'];
+    const modalProperties = ['position', 'top', 'right', 'bottom', 'left', 'width', 'max-width', 'height', 'max-height', 'margin', 'transform', 'transition'];
+    properties.forEach(property => overlay.style.removeProperty(property));
+    modalProperties.forEach(property => modal.style.removeProperty(property));
+    if (!$('mobViewClub')?.classList.contains('active')) return;
+    overlay.style.setProperty('display', 'flex', 'important');
+    overlay.style.setProperty('align-items', 'flex-start', 'important');
+    overlay.style.setProperty('justify-content', 'center', 'important');
+    overlay.style.setProperty('padding', '10px 14px calc(95px + var(--safe-bottom))', 'important');
+    overlay.style.setProperty('background', 'transparent', 'important');
+    overlay.style.setProperty('z-index', '125', 'important');
+    modal.style.setProperty('position', 'relative', 'important');
+    modal.style.setProperty('top', '0', 'important');
+    modal.style.setProperty('width', '386px', 'important');
+    modal.style.setProperty('max-width', '100%', 'important');
+    modal.style.setProperty('height', 'calc(100dvh - 105px)', 'important');
+    modal.style.setProperty('max-height', 'none', 'important');
+    modal.style.setProperty('margin', '0', 'important');
+    modal.style.setProperty('transform', 'translateX(100%)', 'important');
+    modal.style.setProperty('transition', 'transform .28s cubic-bezier(.4,0,.2,1)', 'important');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (overlay.classList.contains('active')) modal.style.setProperty('transform', 'translateX(0)', 'important');
+    }));
+  }
+
+  function closeCashbackStatement(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = $('cashbackStatementModal');
+    const modal = overlay?.querySelector('.cashback-statement-modal');
+    if (!overlay?.classList.contains('active') || !modal) return;
+    modal.style.setProperty('transform', 'translateX(100%)', 'important');
+    setTimeout(() => closeUiModalId('cashbackStatementModal'), 280);
   }
 
   async function openCashbackStatement() {
@@ -408,6 +446,7 @@
       return;
     }
     openModal('cashbackStatementModal');
+    configureCashbackStatementLayout();
     if (!auth.isSessionReady?.()) await syncCustomerSession();
     if (!auth.getToken?.()) {
       closeModalId('cashbackStatementModal');
@@ -2013,6 +2052,7 @@
       $('cartCountSticky').dataset.count = qty;
     }
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
+    syncSecondaryViewCartSticky();
     renderSharedCashbackState();
 
     $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
@@ -5367,9 +5407,64 @@
   }
 
   const MOB_VIEWS = ['mobViewClub', 'mobViewRapi', 'mobViewProfile'];
+  let secondaryCartBottomOffset = null;
+
+  function preserveSecondaryNavGeometry() {
+    const nav = $('mobBottomNav');
+    if (!nav) return;
+    const style = getComputedStyle(nav);
+    const height = nav.getBoundingClientRect().height;
+    if (!height) return;
+    nav.style.setProperty('box-sizing', 'border-box', 'important');
+    nav.style.setProperty('height', `${height}px`, 'important');
+    nav.style.setProperty('min-height', `${height}px`, 'important');
+    nav.style.setProperty('max-height', `${height}px`, 'important');
+    nav.style.setProperty('padding', style.padding, 'important');
+    const sticky = $('cartSticky');
+    if (sticky?.classList.contains('show')) {
+      const bottom = sticky.getBoundingClientRect().bottom;
+      secondaryCartBottomOffset = Math.max(0, window.innerHeight - bottom);
+    }
+  }
+
+  function releaseSecondaryNavGeometry() {
+    const nav = $('mobBottomNav');
+    if (!nav) return;
+    ['box-sizing', 'height', 'min-height', 'max-height', 'padding'].forEach(property => nav.style.removeProperty(property));
+    secondaryCartBottomOffset = null;
+  }
+
+  function syncSecondaryViewCartSticky(forceActive) {
+    const sticky = $('cartSticky');
+    if (!sticky) return;
+    const secondaryViewActive = forceActive ?? Boolean(
+      $('mobViewClub')?.classList.contains('active') || $('mobViewProfile')?.classList.contains('active')
+    );
+    const cartCount = cart.reduce((total, item) => total + Number(item.qty || 0), 0);
+    const renderedCartCount = Number($('cartCountSticky')?.dataset.count || $('cartCountSticky')?.textContent || 0);
+    const hasCartItems = cartCount > 0 || renderedCartCount > 0;
+    const shouldFloat = secondaryViewActive && hasCartItems;
+    document.body.classList.toggle('secondary-view-cart-visible', shouldFloat);
+    const properties = ['display', 'visibility', 'opacity', 'z-index', 'bottom'];
+    if (!shouldFloat) {
+      properties.forEach(property => sticky.style.removeProperty(property));
+      return;
+    }
+    sticky.classList.add('show');
+    sticky.style.setProperty('display', 'flex', 'important');
+    sticky.style.setProperty('visibility', 'visible', 'important');
+    sticky.style.setProperty('opacity', '1', 'important');
+    sticky.style.setProperty('z-index', '131', 'important');
+    const navHeight = $('mobBottomNav')?.getBoundingClientRect().height;
+    const bottomOffset = secondaryCartBottomOffset ?? navHeight;
+    if (bottomOffset) sticky.style.setProperty('bottom', `${bottomOffset}px`, 'important');
+  }
+
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
     document.body.classList.remove('rapi-nav-keep');
+    syncSecondaryViewCartSticky(false);
+    releaseSecondaryNavGeometry();
     unlockBodyScrollIfClear();
   }
 
@@ -5446,9 +5541,10 @@
       return;
     }
     closeMobViews();
+    preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     $('mobViewClub')?.classList.add('active');
-    if (!appState.clubLoaded) renderTabLoader('mobClubBody', 'Carregando clube...');
+    syncSecondaryViewCartSticky(true);
     await clubController.renderClubView();
   }
 
@@ -5529,8 +5625,10 @@
       return;
     }
     closeMobViews();
+    preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
     $('mobViewProfile')?.classList.add('active');
+    syncSecondaryViewCartSticky(true);
     if (!appState.profileLoaded) renderProfileLoading();
     await loadProfileData();
     renderProfileView();
@@ -6307,7 +6405,7 @@
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
-    retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
   });
 
   initializeDismissedDialogs();

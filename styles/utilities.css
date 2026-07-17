@@ -4924,27 +4924,6 @@ body.menu-tab .cats{
 body.menu-tab .cats.is-stuck{
   background:#ffffff!important;
 }
-@media(max-width:767px){
-  body.menu-tab.menu-login-closing .cats,
-  body.menu-tab.modal-open .cats,
-  body.menu-tab:has(.overlay.active) .cats,
-  body.menu-tab:has(.mob-view.active) .cats,
-  body.menu-tab:has(.lgn-screen.active) .cats,
-  body.menu-tab:has(.reg-screen.active) .cats,
-  body.menu-tab:has(.vfy-screen.active) .cats{
-    position:fixed!important;
-    top:0!important;
-    left:50%!important;
-    width:min(100vw,430px)!important;
-    max-width:430px!important;
-    transform:translateX(-50%)!important;
-    z-index:39!important;
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    background:#ffffff!important;
-  }
-}
 body.menu-tab .menu-section{
   scroll-margin-top:60px!important;
 }
@@ -5442,6 +5421,257 @@ body.modal-open{
 body.product-modal-open{
   overflow:hidden!important;
   overscroll-behavior:none!important;
+}
+
+/* Club/Profile must retain the same bottom controls as Home and Menu. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cartSticky.show,
+  body:has(#mobViewProfile.active) #cartSticky.show{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    z-index:129!important;
+    pointer-events:none!important;
+  }
+  body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
+  body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
+
+  body:has(#mobViewClub.active) .mob-bottom-nav,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
+    box-sizing:border-box!important;
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    width:min(100vw,414px)!important;
+    max-width:414px!important;
+    height:calc(85px + var(--safe-bottom))!important;
+    padding:0 0 var(--safe-bottom)!important;
+    gap:0 36px!important;
+    justify-content:center!important;
+    transform:translateX(-50%)!important;
+    translate:none!important;
+    z-index:130!important;
+  }
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavHome{transform:translateX(10px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavMenu{transform:translateX(3px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavQr{transform:translateX(-20px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavProfile{transform:translateX(-12px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{flex:0 0 31.25px!important;width:31.25px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{flex:0 0 52.5625px!important;width:52.5625px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{flex:0 0 40px!important;width:40px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{flex:0 0 33.921875px!important;width:33.921875px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{flex:0 0 30.75px!important;width:30.75px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{
+    position:absolute!important;
+    left:50%!important;
+    top:22.5px!important;
+  }
+}
+@media(max-width:414px){
+  body:has(#mobViewClub.active) .mob-bottom-nav,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+  }
+}
+
+/* Club must use the same delivery-widget state colors as Home and Menu. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-strip.has-address .address-card-copy strong{
+    color:#111111!important;
+    font-size:12px!important;
+    font-weight:300!important;
+    font-synthesis-weight:none!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong{
+    color:#6a6a6a!important;
+    font-size:12px!important;
+    font-weight:300!important;
+    font-synthesis-weight:none!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget.pending-selection .address-card-copy strong{
+    color:#F36F21!important;
+  }
+
+  /* Keep the bag CTA above the fixed navigation in both logged-in secondary views. */
+  body:has(#mobViewClub.active) #cartSticky.show,
+  body:has(#mobViewProfile.active) #cartSticky.show{
+    position:fixed!important;
+    bottom:calc(85px + var(--safe-bottom))!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    z-index:131!important;
+    pointer-events:none!important;
+  }
+  body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
+  body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
+}
+
+/* Keep the cashback statement above the Club content, without the default bottom-sheet transform. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal.active{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    padding:10px 14px calc(95px + var(--safe-bottom))!important;
+    background:transparent!important;
+    z-index:125!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
+    position:relative!important;
+    top:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    width:386px!important;
+    max-width:100%!important;
+    height:calc(100dvh - 105px)!important;
+    max-height:none!important;
+    margin:0!important;
+    transform:none!important;
+    transition:none!important;
+  }
+}
+
+/* Club cashback panel and statement screen. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-panel{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:414px!important;
+    height:198px!important;
+    min-height:198px!important;
+    margin:0!important;
+    padding:16px 20px 0!important;
+    background:#ffffff!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-card{
+    box-sizing:border-box!important;
+    width:374px!important;
+    max-width:100%!important;
+    height:94px!important;
+    min-height:94px!important;
+    margin:0!important;
+    padding:0 10px 0 16px!important;
+    border:0!important;
+    border-radius:8px!important;
+    background:#f1f0ef!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy{gap:0!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy span{color:#5f6670!important;font-size:12px!important;font-weight:500!important;line-height:16px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{color:#263140!important;font-size:27px!important;font-weight:800!important;line-height:30px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon{
+    flex:0 0 40px!important;
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    border-radius:10px!important;
+    background:#e3e3e3!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon svg{width:22px!important;height:22px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-use{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:374px!important;
+    max-width:100%!important;
+    height:45px!important;
+    margin:10px 0 0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:8px!important;
+    background:#ffe5d7!important;
+    color:#F36F21!important;
+    font:700 11px/1 var(--ref-font)!important;
+  }
+
+  body:has(#mobViewClub.active) #cashbackStatementModal.active{
+    align-items:flex-start!important;
+    padding:10px 14px calc(95px + var(--safe-bottom))!important;
+    background:rgba(0,0,0,0)!important;
+    z-index:125!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-modal{
+    box-sizing:border-box!important;
+    width:386px!important;
+    max-width:100%!important;
+    height:calc(100dvh - 105px)!important;
+    max-height:none!important;
+    margin:0!important;
+    border:1px solid #d9d9d9!important;
+    border-radius:8px!important;
+    background:#ffffff!important;
+    transform:none!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    position:relative!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:38px!important;
+    padding:0!important;
+    border-bottom:5px solid #f7f5f3!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title{margin:0!important;color:#263140!important;font-size:13px!important;font-weight:700!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    position:absolute!important;
+    top:9px!important;
+    left:10px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:18px!important;
+    height:18px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:#eeeeee!important;
+    color:#7d858e!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back svg{width:12px!important;height:12px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary{padding:15px 10px 10px!important;border-bottom:4px solid #f7f5f3!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary span{margin:0!important;color:#48515c!important;font-size:10px!important;font-weight:700!important;text-transform:uppercase!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary strong{float:right;margin-top:-15px;color:#263140!important;font-size:18px!important;line-height:18px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{max-height:calc(100dvh - 215px)!important;padding:0 10px 16px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row{min-height:60px!important;padding:10px 0!important;border-bottom:1px solid #eeeeee!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row::before{
+    content:"↓";
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex:0 0 28px!important;
+    width:28px!important;
+    height:28px!important;
+    margin:7px 10px 0 0!important;
+    border-radius:50%!important;
+    background:#eff7e7!important;
+    color:#8bb44a!important;
+    font-size:16px!important;
+    font-weight:700!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row:has(.cashback-statement-amount.negative)::before{content:"→";background:#fff1d8!important;color:#c18a2e!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy strong{color:#263140!important;font-size:12px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy span,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy time{color:#727b85!important;font-size:9px!important;line-height:12px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount{align-self:center;padding:3px 8px;border-radius:10px;background:#eff7e7;font-size:10px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount.negative{background:#fff1d8;color:#a86f12!important}
+}
+
+/* Soft fullscreen flows must preserve the menu's original scroll container. */
+body.soft-scroll-locked.modal-open,
+body.soft-scroll-locked.product-modal-open{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
 }
 /* Product detail screen: reference-aligned 408x250 hero and footer controls. */
 @media(max-width:767px){
@@ -7374,6 +7604,186 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   transition:none!important;
   touch-action:manipulation!important;
 }
+
+/* Logged Club/Profile: reserve room for the persistent bag CTA above the nav. */
+@media(max-width:767px){
+  body.secondary-view-cart-visible #mobViewClub .mob-view-body,
+  body.secondary-view-cart-visible #mobViewProfile .prof-hub-wrap{
+    padding-bottom:calc(158px + env(safe-area-inset-bottom,0px))!important;
+  }
+}
+
+/* Club location header: same 414x95 composition and widget used by Menu. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-wrap{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:414px!important;
+    height:95px!important;
+    min-height:95px!important;
+    margin:0 auto!important;
+    padding:10px 20px!important;
+    background:#ffffff!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget.delivery-widget{
+    box-sizing:border-box!important;
+    position:relative!important;
+    inset:auto!important;
+    top:auto!important;
+    left:auto!important;
+    width:100%!important;
+    max-width:374px!important;
+    height:75px!important;
+    min-height:75px!important;
+    max-height:75px!important;
+    margin:0 auto!important;
+    padding:12px 14px!important;
+    border:0!important;
+    border-radius:10px!important;
+    background:#f2f2f3!important;
+    box-shadow:none!important;
+    transform:none!important;
+    display:grid!important;
+    grid-template-columns:18px minmax(0,1fr) 18px!important;
+    grid-template-rows:22px 15px!important;
+    align-items:center!important;
+    gap:6px 8px!important;
+    overflow:visible!important;
+    z-index:auto!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tabs{
+    box-sizing:border-box!important;
+    grid-column:2!important;
+    grid-row:1!important;
+    position:relative!important;
+    width:100%!important;
+    min-width:0!important;
+    height:22px!important;
+    min-height:22px!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    overflow:visible!important;
+    transform:translate(1px,5px)!important;
+    z-index:30!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab{
+    box-sizing:border-box!important;
+    flex:0 1 auto!important;
+    min-width:0!important;
+    max-width:92px!important;
+    height:22px!important;
+    padding:0 7px!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:4px!important;
+    background:#e9e9e9!important;
+    color:#4f5965!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    font-size:9.7px!important;
+    line-height:22px!important;
+    font-weight:700!important;
+    letter-spacing:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab.active{
+    background:#ffe3d3!important;
+    color:#F36F21!important;
+    font-weight:800!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-divider{display:none!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-chevron{
+    position:absolute!important;
+    right:-24px!important;
+    left:auto!important;
+    top:50%!important;
+    width:14.5px!important;
+    height:14.5px!important;
+    margin:0!important;
+    color:#F36F21!important;
+    stroke:#F36F21!important;
+    display:block!important;
+    transform:translateY(calc(-50% + 14px))!important;
+    z-index:50!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-strip.address-card{
+    box-sizing:border-box!important;
+    grid-column:1 / 4!important;
+    grid-row:1 / 3!important;
+    position:static!important;
+    width:100%!important;
+    min-width:0!important;
+    height:100%!important;
+    min-height:0!important;
+    max-height:none!important;
+    flex:initial!important;
+    align-self:stretch!important;
+    inset:auto!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    display:grid!important;
+    grid-template-columns:18px minmax(0,1fr) 18px!important;
+    grid-template-rows:22px 15px!important;
+    align-items:center!important;
+    gap:6px 8px!important;
+    transform:translate(1px,0)!important;
+    overflow:visible!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-icon{
+    grid-column:1!important;
+    grid-row:1 / span 2!important;
+    align-self:center!important;
+    justify-self:center!important;
+    width:12.5px!important;
+    height:16.5px!important;
+    min-width:12.5px!important;
+    color:#F36F21!important;
+    background:transparent!important;
+    display:flex!important;
+    transform:translate(-3px,5px)!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-icon svg{
+    width:12.5px!important;
+    height:16.5px!important;
+    display:block!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-copy{
+    grid-column:2!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    display:block!important;
+    overflow:visible!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-copy strong{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    color:#f3884c!important;
+    font-size:12px!important;
+    line-height:14px!important;
+    font-weight:100!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    transform:translate(1px,3px)!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-copy small,
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-card-chevron{display:none!important}
+}
 /* Menu product cards: no visual tap feedback; open product directly. */
 body.menu-tab .product-card,
 body.menu-tab .product-card:active,
@@ -8655,4 +9065,77 @@ body.menu-tab .product-card.is-pressing{
     content:"";position:absolute;top:50%;left:50%;box-sizing:border-box;width:18px;height:18px;margin:-9px 0 0 -9px;
     border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:reg-btn-spin .7s linear infinite;
   }
+}
+
+/* Final bottom navigation geometry for Club and Profile. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) .mob-bottom-nav,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
+    left:50%!important;
+    right:auto!important;
+    width:min(100vw,414px)!important;
+    max-width:414px!important;
+    height:calc(85px + var(--safe-bottom))!important;
+    padding:0 0 var(--safe-bottom)!important;
+    gap:0 36px!important;
+    justify-content:center!important;
+    transform:translateX(-50%)!important;
+    translate:none!important;
+  }
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavHome{transform:translateX(10px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavMenu{transform:translateX(3px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavQr{transform:translateX(-20px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavProfile{transform:translateX(-12px)!important}
+
+  /* The Club active state used to resize these flex items after the nav was laid out. */
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{flex:0 0 31.25px!important;width:31.25px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{flex:0 0 52.5625px!important;width:52.5625px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{flex:0 0 40px!important;width:40px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{flex:0 0 33.921875px!important;width:33.921875px!important}
+  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{flex:0 0 30.75px!important;width:30.75px!important}
+}
+@media(max-width:414px){
+  body:has(#mobViewClub.active) .mob-bottom-nav,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
+    left:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+  }
+}
+
+/* Final Club/Profile controls: kept last so older screen-specific rules cannot hide them. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-strip.has-address .address-card-copy strong{
+    color:#111111!important;
+    font-size:12px!important;
+    font-weight:300!important;
+    font-synthesis-weight:none!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong{
+    color:#6a6a6a!important;
+    font-size:12px!important;
+    font-weight:300!important;
+    font-synthesis-weight:none!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget.pending-selection .address-card-copy strong{color:#F36F21!important}
+
+  body:has(#mobViewClub.active) #cartSticky.show,
+  body:has(#mobViewProfile.active) #cartSticky.show{
+    position:fixed!important;
+    bottom:calc(85px + var(--safe-bottom))!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    z-index:131!important;
+    pointer-events:none!important;
+  }
+  body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
+  body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
 }

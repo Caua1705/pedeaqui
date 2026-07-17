@@ -86,13 +86,13 @@
   }
 
   function renderRapiMarkdown(text) {
-    return esc(text).replace(/(?:\r?\n){2,}/g, '\n')
+    return esc(text).replace(/(?:\r?\n){3,}/g, '\n\n')
       .replace(/\n([^\n]*\?\s*)$/, '<span class="rapi-final-question">$1</span>')
       .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
   }
 
   function renderRapiStreamingMarkdown(text) {
-    const escaped = esc(text).replace(/(?:\r?\n){2,}/g, '\n');
+    const escaped = esc(text).replace(/(?:\r?\n){3,}/g, '\n\n');
     const completed = escaped.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
     return completed.replace(/\*\*([^*]*)$/, '<strong>$1</strong>');
   }

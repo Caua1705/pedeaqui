@@ -2740,3 +2740,110 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   visibility:hidden!important;
   animation:none!important;
 }
+
+/* Rapi chat readability: warm premium surfaces and stronger content hierarchy. */
+#mobViewRapi .rapi-ai-body--searching,
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  background:#fbfaf8!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-results{
+  gap:20px!important;
+}
+#mobViewRapi .rapi-chat-assistant-message{
+  max-width:calc(100% - 32px)!important;
+  margin-left:16px!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+  padding:15px 16px 12px!important;
+  border:1px solid #e9e3da!important;
+  border-radius:16px!important;
+  background:#f7f4ef!important;
+  box-shadow:0 3px 12px rgba(44,36,28,.045)!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  padding:0!important;
+  color:#202124!important;
+  font-size:15.5px!important;
+  line-height:1.62!important;
+  font-weight:430!important;
+  letter-spacing:0!important;
+  white-space:pre-wrap!important;
+  text-wrap:pretty!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+  color:#a94f16!important;
+  font-weight:650!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+  margin-top:12px!important;
+  color:#313131!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+  gap:11px!important;
+  margin:11px 0 0!important;
+  padding-top:10px!important;
+  border-top:1px solid rgba(88,72,56,.09)!important;
+}
+#mobViewRapi .rapi-feedback-btn{
+  width:19px!important;
+  height:19px!important;
+  min-width:19px!important;
+  min-height:19px!important;
+  color:#77736e!important;
+}
+#mobViewRapi .rapi-feedback-btn svg{
+  width:18px!important;
+  height:18px!important;
+}
+
+/* Recommended products: remove the blue-gray footer and use a warm neutral base. */
+#mobViewRapi .rapi-product-rail{
+  gap:12px!important;
+  padding-top:3px!important;
+  padding-bottom:10px!important;
+}
+#mobViewRapi .rapi-product-card{
+  border:1px solid #e5ded4!important;
+  border-radius:14px!important;
+  background:#f7f4ef!important;
+  box-shadow:0 5px 16px rgba(44,36,28,.055)!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-image-wrap,
+#mobViewRapi .rapi-product-card .rapi-result-image,
+#mobViewRapi .rapi-product-card .rapi-result-image-placeholder{
+  border-radius:0!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-content{
+  height:72px!important;
+  min-height:72px!important;
+  padding:10px 13px!important;
+  border-top:1px solid #e5ded4!important;
+  background:#f7f4ef!important;
+  gap:5px!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-title{
+  color:#24211f!important;
+  font-size:15px!important;
+  line-height:19px!important;
+  font-weight:650!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-price{
+  color:#a94f16!important;
+  font-size:14px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+}
+
+/* Composer uses the same warm-neutral surface language as messages and cards. */
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+  border-color:#e5ded4!important;
+  background:#fffdfa!important;
+  box-shadow:0 7px 22px rgba(44,36,28,.07)!important;
+}
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+  border-color:rgba(243,111,33,.42)!important;
+  box-shadow:0 0 0 3px rgba(243,111,33,.07),0 8px 24px rgba(44,36,28,.075)!important;
+}
+#mobViewRapi .rapi-ai-input{
+  color:#24211f!important;
+}

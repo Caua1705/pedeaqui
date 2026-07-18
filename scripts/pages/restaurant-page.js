@@ -6413,7 +6413,7 @@
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
-    retryRestaurantBoot, retryMenuLoad, retryClubLoad, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
   });
 
   initializeDismissedDialogs();

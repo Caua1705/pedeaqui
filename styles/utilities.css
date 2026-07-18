@@ -314,7 +314,7 @@
   font-size:16px!important;
   line-height:18px!important;
   font-weight:560!important;
-  transform:translateY(2px)!important;
+  transform:translateY(1px)!important;
 }
 .coupon-detail-main span{
   display:inline-flex!important;
@@ -4894,7 +4894,7 @@ body.menu-tab .delivery-widget .address-strip .address-card-chevron{
    ════════════════════════════════════════════════════════════════ */
 body.menu-tab #mobIdentity{
   margin-top:14px!important;
-  transform:translateY(-2px)!important;
+  transform:translateY(1px)!important;
   border-bottom:1px solid #DEDEDE!important;
   height:75px!important;
   min-height:75px!important;
@@ -6413,7 +6413,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
   background-size:13px 13px!important;
 }
 #infoModal[data-store-info-tab="address"] .store-address-card p{
-  transform:translateY(-2px)!important;
+  transform:translateY(1px)!important;
 }
 
 /* Store info address/payment requested refinements. */
@@ -7345,7 +7345,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media (max-width:767px){
   #mobViewProfile .prof-account-page{padding-top:20px!important}
   #mobViewProfile .prof-account-header{margin-top:-2px!important;margin-bottom:12px!important;transform:translateY(-4px)!important}
-  #mobViewProfile .prof-account-header h1{transform:translateY(-2px)!important;color:#263241!important;font-weight:780!important}
+  #mobViewProfile .prof-account-header h1{transform:translateY(1px)!important;color:#263241!important;font-weight:780!important}
   #mobViewProfile .prof-account-list{transform:translateY(-6px)!important}
   #mobViewProfile .prof-account-row{gap:12px!important;color:#777f89!important}
   #mobViewProfile .prof-account-row-icon{margin-left:0!important;color:#b7b7b7!important}
@@ -9212,7 +9212,7 @@ body.menu-tab .product-card.is-pressing{
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
     font-size:10px!important;
-    transform:translateY(2px)!important;
+    transform:translateY(1px)!important;
   }
   body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
     transform:translateY(4px)!important;
@@ -9231,7 +9231,7 @@ body.menu-tab .product-card.is-pressing{
   body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
     height:25px!important;
     min-height:25px!important;
-    transform:translateY(-2px)!important;
+    transform:translateY(1px)!important;
   }
 }
 @media(max-width:767px){
@@ -9279,5 +9279,347 @@ body.menu-tab .product-card.is-pressing{
     min-height:316.77px!important;
     padding:14px 0 0 16px!important;
     background:#ffffff!important;
+  }
+}
+
+/* Final Club alignment and heading contrast. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-card{
+    transform:translateY(1px)!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
+    color:#354454!important;
+  }
+}
+
+/* Keep the cashback amount optically centered in its card. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{
+    transform:translateY(1px)!important;
+  }
+}
+
+/* Fine tune only the cashback amount position. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{
+    transform:translateY(-1px)!important;
+  }
+}
+
+/* Cashback statement: API-backed loading, list, empty, and error states. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    min-height:76px!important;
+    padding:0 20px!important;
+    border-bottom:5px solid #f7f5f3!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary[hidden]{display:none!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary span{
+    color:#48515c!important;
+    font-size:11px!important;
+    font-weight:800!important;
+    line-height:1!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary strong{
+    float:none!important;
+    margin:0!important;
+    color:#263140!important;
+    font-size:20px!important;
+    font-weight:800!important;
+    line-height:24px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    max-height:calc(100dvh - 215px)!important;
+    padding:0 20px 16px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    box-sizing:border-box!important;
+    min-height:300px!important;
+    padding:0 12px!important;
+    color:#5d514a!important;
+    font-size:13px!important;
+    font-weight:650!important;
+    line-height:19px!important;
+    text-align:center!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--loading{gap:10px!important;color:#6d727a!important;font-weight:600!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-spinner{
+    width:18px!important;
+    height:18px!important;
+    border:2px solid #eadcd4!important;
+    border-top-color:#f36f21!important;
+    border-radius:50%!important;
+    animation:cashback-statement-spin .7s linear infinite!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-retry{
+    margin:12px 0 0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#f36f21!important;
+    font:700 13px/18px var(--ref-font,inherit)!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row{
+    display:grid!important;
+    grid-template-columns:40px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    column-gap:12px!important;
+    min-height:98px!important;
+    padding:10px 0!important;
+    border-bottom:1px solid #eeeeee!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row::before{display:none!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-icon{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:40px!important;
+    height:40px!important;
+    border-radius:50%!important;
+    background:#eff7e7!important;
+    color:#78a91c!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-icon.negative{background:#fff1d8!important;color:#a86f12!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-icon svg{width:18px!important;height:18px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy{min-width:0!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy time,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy strong,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy span{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy time{margin:0 0 3px!important;color:#6d7580!important;font-size:11px!important;line-height:14px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy strong{color:#263140!important;font-size:14px!important;font-weight:700!important;line-height:18px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy span{margin:2px 0 0!important;color:#727b85!important;font-size:11px!important;line-height:14px!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount{
+    align-self:center!important;
+    padding:4px 10px!important;
+    border-radius:12px!important;
+    background:#eff7e7!important;
+    color:#5a9200!important;
+    font-size:11px!important;
+    font-weight:800!important;
+    line-height:14px!important;
+    white-space:nowrap!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount.negative{background:#fff1d8!important;color:#8a5817!important}
+}
+@keyframes cashback-statement-spin{to{transform:rotate(360deg)}}
+/* Cashback statement behaves as a Club screen, never as a bottom-sheet widget. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal.active{
+    display:flex!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    padding:10px 14px calc(95px + var(--safe-bottom))!important;
+    background:transparent!important;
+    backdrop-filter:none!important;
+    transition:none!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
+    position:relative!important;
+    width:386px!important;
+    max-width:100%!important;
+    height:calc(100dvh - 105px)!important;
+    max-height:none!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    transform:none!important;
+    transition:none!important;
+  }
+  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) .mob-bottom-nav{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    z-index:130!important;
+  }
+}
+/* Cashback statement is a full-screen operation view. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal.active{
+    position:fixed!important;
+    inset:0!important;
+    display:block!important;
+    width:100vw!important;
+    height:100dvh!important;
+    padding:0!important;
+    background:#ffffff!important;
+    z-index:220!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
+    position:fixed!important;
+    inset:0!important;
+    display:flex!important;
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    max-height:none!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    transform:none!important;
+    transition:none!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    min-height:70px!important;
+    height:70px!important;
+    padding:0 20px!important;
+    border-bottom:1px solid #ececec!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title{
+    color:#242424!important;
+    font-size:16px!important;
+    font-weight:600!important;
+    line-height:20px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    top:19px!important;
+    left:20px!important;
+    width:32px!important;
+    height:32px!important;
+    border-radius:9px!important;
+    background:#f0f0f0!important;
+    color:#252a31!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back svg{width:17px!important;height:17px!important;stroke-width:1.8!important}
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{flex:1!important;max-height:none!important;padding-bottom:24px!important}
+  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) .mob-bottom-nav{display:none!important}
+}
+/* Exact empty-statement geometry and no motion on return. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal,
+  body:has(#mobViewClub.active) #cashbackStatementModal.active,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-modal{
+    transition:none!important;
+    animation:none!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    border-bottom:5px solid #f7f5f3!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    background:#f5f5f5!important;
+    padding:0!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--empty{
+    width:100%!important;
+    height:300px!important;
+    min-height:300px!important;
+    background:#ffffff!important;
+  }
+}
+/* Fine alignment with the Unidades e Opera��o header and empty reference. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    border:0!important;
+    box-sizing:border-box!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    border-bottom-width:10px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--empty{
+    color:#6d625d!important;
+    font-size:14px!important;
+    font-weight:600!important;
+  }
+}
+/* Final cashback statement placement. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    background:#ececec!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    position:relative!important;
+    top:-4px!important;
+  }
+  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) .mob-bottom-nav{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    z-index:230!important;
+  }
+}
+/* Slightly larger and lower separator below the cashback header. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    border-bottom-width:14px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    top:0!important;
+  }
+}
+/* Balanced cashback header separator. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    border-bottom-width:11px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    top:4px!important;
+  }
+}
+/* Visible lower placement for the cashback empty panel. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    border-bottom-width:9px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    top:auto!important;
+    margin-top:8px!important;
+  }
+}
+/* Taller, lower cashback statement header. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
+    min-height:78px!important;
+    height:78px!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    transform:translateY(4px)!important;
+  }
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    margin-top:0!important;
+  }
+}
+/* Final micro-adjustment for the cashback header controls. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    transform:translateY(2px)!important;
+  }
+}
+/* Keep the cashback header controls at their original vertical position. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
+  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
+    transform:none!important;
+  }
+}
+/* Keep the floating cart CTA available over the cashback statement. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) #cartSticky.show{
+    position:fixed!important;
+    bottom:calc(85px + var(--safe-bottom))!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:none!important;
+    z-index:231!important;
+  }
+  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) #cartSticky.show #cartStickyBtn{
+    pointer-events:auto!important;
   }
 }

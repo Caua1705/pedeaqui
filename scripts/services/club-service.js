@@ -4,11 +4,16 @@
   let activeSession = Symbol('uninitialized');
   let cashbackPromise = null;
   let transactionsPromise = null;
+  let transactionsRequestKey = '';
   let cashbackState = createState();
-  let transactionsState = createState([]);
+  let transactionsState = createState(createTransactionsPayload());
 
   function createState(data = null) {
     return { status: 'idle', data, updatedAt: null, error: null };
+  }
+
+  function createTransactionsPayload() {
+    return { balance: null, currency: 'BRL', transactions: [] };
   }
 
   function snapshot() {
@@ -44,8 +49,9 @@
       activeSession = identity;
       cashbackPromise = null;
       transactionsPromise = null;
+      transactionsRequestKey = '';
       cashbackState = identity ? createState() : { ...createState({ balance: 0 }), status: 'anonymous' };
-      transactionsState = identity ? createState([]) : { ...createState([]), status: 'anonymous' };
+      transactionsState = identity ? createState(createTransactionsPayload()) : { ...createState(createTransactionsPayload()), status: 'anonymous' };
       notify();
     }
     return identity;
@@ -77,17 +83,21 @@
       id: transaction.id || transaction.transaction_id || `cashback-${index}`,
       type: String(transaction.type || transaction.transaction_type || transaction.kind || 'adjustment').toLowerCase(),
       amount: parseAmount(transaction.amount ?? transaction.value ?? transaction.cashback_amount) ?? 0,
-      description: transaction.description || transaction.restaurant_name || transaction.merchant_name || transaction.order_number || '',
+      description: String(transaction.description || '').trim(),
+      restaurant_name: String(transaction.restaurant_name || transaction.merchant_name || '').trim(),
+      expires_at: transaction.expires_at || null,
       created_at: transaction.created_at || transaction.date || transaction.transaction_date || null
     };
   }
 
-  function normalizeTransactions(response) {
+  function normalizeTransactionsResponse(response) {
     const payload = response?.data ?? response ?? {};
-    const list = Array.isArray(payload)
-      ? payload
-      : (payload.transactions || payload.items || payload.results || []);
-    return Array.isArray(list) ? list.map(normalizeTransaction) : [];
+    const list = Array.isArray(payload) ? payload : payload.transactions;
+    return {
+      balance: parseAmount(payload.balance ?? payload.cashback_balance),
+      currency: String(payload.currency || 'BRL').toUpperCase(),
+      transactions: Array.isArray(list) ? list.map(normalizeTransaction) : []
+    };
   }
 
   function cacheIsValid(state) {
@@ -121,19 +131,21 @@
     return cashbackPromise;
   }
 
-  async function getTransactions(options = {}) {
+  async function getCashbackTransactions({ limit = 20, offset = 0, force = false } = {}) {
     const auth = window.PedeAquiCustomerAuth;
     if (!syncSession()) return { ...transactionsState, fromCache: false };
     if (!auth?.isSessionReady?.()) return { ...transactionsState, fromCache: false };
-    if (!options.force && cacheIsValid(transactionsState)) return { ...transactionsState, fromCache: true };
-    if (transactionsPromise) return transactionsPromise;
+    const requestKey = `${limit}:${offset}`;
+    if (!force && requestKey === transactionsRequestKey && cacheIsValid(transactionsState)) return { ...transactionsState, fromCache: true };
+    if (transactionsPromise && requestKey === transactionsRequestKey) return transactionsPromise;
 
     const lastKnown = transactionsState.data;
+    transactionsRequestKey = requestKey;
     transactionsState = { ...transactionsState, status: 'loading', error: null };
     notify();
-    transactionsPromise = auth.getCustomerCashbackTransactions()
+    transactionsPromise = auth.getCustomerCashbackTransactions({ limit, offset })
       .then(response => {
-        transactionsState = { status: 'success', data: normalizeTransactions(response), updatedAt: Date.now(), error: null };
+        transactionsState = { status: 'success', data: normalizeTransactionsResponse(response), updatedAt: Date.now(), error: null };
         notify();
         return { ...transactionsState, fromCache: false };
       })
@@ -144,6 +156,10 @@
       })
       .finally(() => { transactionsPromise = null; });
     return transactionsPromise;
+  }
+
+  function getTransactions(options = {}) {
+    return getCashbackTransactions(options);
   }
 
   async function getClubData(restaurantSlug, context = {}) {
@@ -167,6 +183,7 @@
     subscribe,
     getState,
     getCashback,
+    getCashbackTransactions,
     getTransactions,
     getClubData
   };

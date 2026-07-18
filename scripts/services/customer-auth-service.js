@@ -122,8 +122,8 @@
   function getCustomerCashback() {
     return authedGet(routes().customerCashback());
   }
-  function getCustomerCashbackTransactions() {
-    return authedGet(routes().customerCashbackTransactions());
+  function getCustomerCashbackTransactions({ limit = 20, offset = 0 } = {}) {
+    return authedGet(routes().customerCashbackTransactions({ limit, offset }));
   }
   function changeCustomerPassword(payload) {
     return authedPatch(routes().customerPassword(), payload);

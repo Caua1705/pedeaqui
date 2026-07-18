@@ -40,7 +40,11 @@
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',
     customerCashback: () => '/customers/me/cashback',
-    customerCashbackTransactions: () => '/customers/me/cashback/transactions',
+    customerCashbackTransactions: ({ limit = 20, offset = 0 } = {}) => {
+      const safeLimit = Math.min(50, Math.max(1, Number.parseInt(limit, 10) || 20));
+      const safeOffset = Math.max(0, Number.parseInt(offset, 10) || 0);
+      return `/customers/me/cashback/transactions?limit=${safeLimit}&offset=${safeOffset}`;
+    },
     customerPassword: () => '/customers/me/password',
     customerAddresses: () => '/customers/me/addresses',
     customerAddressesImport: () => '/customers/me/addresses/import',

@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=277">
+<link rel="stylesheet" href="styles/utilities.css?v=296">
 <link rel="stylesheet" href="styles/operation.css?v=134">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -1783,13 +1783,13 @@
   <div class='modal cashback-statement-modal' role='dialog' aria-modal='true' aria-labelledby='cashbackStatementTitle'>
     <div class='modal-header cashback-statement-header'>
       <button class='modal-close cashback-statement-back' type='button' onclick='closeCashbackStatement()' aria-label='Voltar'>
-        <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m15 18-6-6 6-6'/></svg>
+        <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' aria-hidden='true'><path d='M19 12H5'/><path d='m12 19-7-7 7-7'/></svg>
       </button>
       <h2 class='modal-title' id='cashbackStatementTitle'>Ver extrato</h2>
     </div>
-    <div class='cashback-statement-summary'>
-      <span>Saldo atual</span>
-      <strong id='cashbackStatementBalance'>R$ 0,00</strong>
+    <div class='cashback-statement-summary' id='cashbackStatementSummary' hidden>
+      <span>SALDO DE CASHBACK</span>
+      <strong id='cashbackStatementBalance' aria-live='polite'></strong>
     </div>
     <div class='cashback-statement-body' id='cashbackStatementBody'></div>
   </div>
@@ -1812,7 +1812,7 @@
 <script src="scripts/config/app-config.js"></script>
 <script src="scripts/config/fallback-config.js"></script>
 <script src="scripts/config/routes.js"></script>
-<script src="scripts/services/api-routes.js?v=2"></script>
+<script src="scripts/services/api-routes.js?v=3"></script>
 <script src="scripts/utils/restaurant-slug.js"></script>
 <script src="scripts/utils/slugify.js"></script>
 <script src="scripts/utils/currency.js"></script>
@@ -1828,7 +1828,7 @@
 </div>
 <script src="scripts/services/api-client.js"></script>
 <script src="scripts/services/api.js"></script>
-<script src="scripts/services/customer-auth-service.js?v=3"></script>
+<script src="scripts/services/customer-auth-service.js?v=4"></script>
 <script src="scripts/services/restaurant-service.js"></script>
 <script src="scripts/services/restaurant-info-service.js"></script>
 <script src="scripts/services/menu-service.js"></script>
@@ -1837,7 +1837,7 @@
 <script src="scripts/services/delivery-service.js"></script>
 <script src="scripts/services/cart-service.js"></script>
 <script src="scripts/services/order-service.js"></script>
-<script src="scripts/services/club-service.js"></script>
+<script src="scripts/services/club-service.js?v=2"></script>
 <script src="scripts/content/privacy-policy.js"></script>
 <script src="scripts/content/loyalty-policy.js"></script>
 <script src="scripts/state/cart-state.js"></script>
@@ -1851,6 +1851,7 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=6"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=40"></script>
-<script src="scripts/pages/restaurant-page.js?v=94"></script>
+<script src="scripts/pages/restaurant-page.js?v=95"></script>
+<script src="scripts/pages/cashback-statement.js?v=3"></script>
 </body>
 </html>

@@ -9623,3 +9623,81 @@ body.menu-tab .product-card.is-pressing{
     pointer-events:auto!important;
   }
 }
+/* Club location chips: long restaurant names retain alignment. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tabs{
+    display:grid!important;
+    grid-template-columns:max-content minmax(0,1fr) max-content!important;
+    column-gap:6px!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab{
+    min-width:0!important;
+    max-width:none!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(1),
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(3){
+    width:max-content!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(2){
+    width:100%!important;
+    text-align:center!important;
+  }
+}
+/* Club location chips match the compact layout used elsewhere. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tabs{
+    display:flex!important;
+    gap:6px!important;
+    width:auto!important;
+    overflow:visible!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab{
+    flex:0 1 auto!important;
+    width:auto!important;
+    max-width:92px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(1),
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(2),
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(3){
+    width:auto!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:center!important;
+  }
+}
+/* Preserve the home widget's dedicated restaurant-name width in Clube. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .club-location-brand{
+    display:inline-block!important;
+    flex:0 1 118px!important;
+    max-width:118px!important;
+    min-width:0!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+/* Cart CTA must stay above every cashback-statement layer. */
+@media(max-width:767px){
+  body:has(#cashbackStatementModal.active) #cartSticky.show{
+    position:fixed!important;
+    right:0!important;
+    left:0!important;
+    bottom:calc(85px + var(--safe-bottom))!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:none!important;
+    z-index:999!important;
+  }
+  body:has(#cashbackStatementModal.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
+}

@@ -105,6 +105,7 @@
       if (!sourceWidget) return '';
       const clone = sourceWidget.cloneNode(true);
       clone.classList.add('club-location-widget');
+      clone.querySelector('#dwTabBrand')?.classList.add('club-location-brand');
       clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
       clone.setAttribute('onclick', 'openOperationScreen()');
       clone.setAttribute('aria-label', 'Selecionar unidade e operacao');

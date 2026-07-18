@@ -9258,3 +9258,26 @@ body.menu-tab .product-card.is-pressing{
     margin-top:-2px!important;
   }
 }
+/* Club coupon CTA matches the coupon button shown on the home screen. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
+    background:#fbddcf!important;
+    color:#4f3f36!important;
+  }
+}
+
+/* Club coupon area follows the reference: a fixed white panel over the gray page. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub,
+  body:has(#mobViewClub.active) #mobViewClub .mob-view-body,
+  body:has(#mobViewClub.active) #mobViewClub .club-page{
+    background:#f5f5f5!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section{
+    box-sizing:border-box!important;
+    height:316.77px!important;
+    min-height:316.77px!important;
+    padding:14px 0 0 16px!important;
+    background:#ffffff!important;
+  }
+}

@@ -30,6 +30,8 @@
   let _rapiResponseTimer = null;
   let _rapiActiveReveal = null;
   let _rapiOptionCache = [];
+  let _rapiProductDetailCache = [];
+  let _rapiActiveDetailProduct = null;
   let _rapiTypingStatusTimer = null;
 
   const RAPI_TYPING_STATUSES = [
@@ -619,12 +621,31 @@
       onerror="this.parentNode.innerHTML='<div class=rapi-result-image-placeholder><svg width=38 height=38 viewBox=\\'0 0 24 24\\' fill=none stroke=#ccc stroke-width=1.2><path d=\\'M3 2h18l-2 7H5L3 2z\\'/></svg></div>'">`;
   }
 
+  function cacheRapiDetailProduct(product) {
+    const productId = product?.id || product?.product_id || '';
+    const cachedIndex = _rapiProductDetailCache.findIndex(cachedProduct => {
+      const cachedId = cachedProduct?.id || cachedProduct?.product_id || '';
+      return productId && cachedId && String(cachedId) === String(productId);
+    });
+    if (cachedIndex >= 0) {
+      _rapiProductDetailCache[cachedIndex] = product;
+      return cachedIndex;
+    }
+    _rapiProductDetailCache.push(product);
+    return _rapiProductDetailCache.length - 1;
+  }
+
   function renderResultCard(product, index) {
+    const detailIndex = cacheRapiDetailProduct(product);
+    const productName = formatProductTitle(product.name);
     return `
-      <article class="rapi-result-card rapi-product-card" style="animation-delay:${index * 0.06}s">
+      <article class="rapi-result-card rapi-product-card" style="animation-delay:${index * 0.06}s"
+        role="button" tabindex="0" aria-label="Ver detalhes de ${esc(productName)}"
+        onclick="rapiOpenProductDetail(${detailIndex})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rapiOpenProductDetail(${detailIndex})}">
         <div class="rapi-result-image-wrap">${renderProductImg(product)}</div>
         <div class="rapi-result-content">
-          <div class="rapi-result-title">${esc(formatProductTitle(product.name))}</div>
+          <div class="rapi-result-title">${esc(productName)}</div>
           <div class="rapi-result-price">${fmtPrice(product.price)}</div>
         </div>
       </article>`;
@@ -739,6 +760,36 @@
 
       </div>
 
+      <div class="rapi-product-detail" id="rapiProductDetail" role="dialog" aria-modal="true"
+        aria-labelledby="rapiProductDetailTitle" hidden onclick="rapiCloseProductDetail()">
+        <article class="rapi-product-detail-panel" onclick="event.stopPropagation()">
+          <div class="rapi-product-detail-media">
+            <img class="rapi-product-detail-image" id="rapiProductDetailImage" alt="">
+            <div class="rapi-product-detail-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16v16H4z"/><circle cx="9" cy="9" r="2"/><path d="m4 17 4-4 3 3 3-3 6 6"/>
+              </svg>
+            </div>
+            <span class="rapi-product-detail-handle" aria-hidden="true"></span>
+            <button class="rapi-product-detail-close" type="button" onclick="rapiCloseProductDetail()" aria-label="Fechar detalhes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="rapi-product-detail-content">
+            <div class="rapi-product-detail-copy">
+              <h3 class="rapi-product-detail-title" id="rapiProductDetailTitle"></h3>
+              <div class="rapi-product-detail-price" id="rapiProductDetailPrice"></div>
+              <p class="rapi-product-detail-description" id="rapiProductDetailDescription"></p>
+              <div class="rapi-product-detail-recommendation">
+                <strong>Escolha do Rapi</strong>
+                <span id="rapiProductDetailRecommendation"></span>
+              </div>
+            </div>
+            <button class="rapi-product-detail-question" type="button" onclick="rapiViewProductInMenu()">Ver no cardápio</button>
+          </div>
+        </article>
+      </div>
+
     </div>
 
     <div class="rapi-toast" id="rapiToast"></div>
@@ -746,6 +797,81 @@
   }
 
   /* ── Show toast ── */
+  window.rapiOpenProductDetail = function (index) {
+    const product = _rapiProductDetailCache[Number(index)];
+    const detail = document.getElementById('rapiProductDetail');
+    if (!product || !detail) return;
+
+    const title = detail.querySelector('#rapiProductDetailTitle');
+    const price = detail.querySelector('#rapiProductDetailPrice');
+    const description = detail.querySelector('#rapiProductDetailDescription');
+    const recommendation = detail.querySelector('#rapiProductDetailRecommendation');
+    const image = detail.querySelector('#rapiProductDetailImage');
+    const media = detail.querySelector('.rapi-product-detail-media');
+    const imageSrc = product.image_url || product.image_path || '';
+    const productName = formatProductTitle(product.name);
+
+    _rapiActiveDetailProduct = product;
+    if (title) title.textContent = productName;
+    if (price) price.textContent = fmtPrice(product.price);
+    if (description) {
+      description.textContent = product.description || product.short_description || '';
+      description.hidden = !description.textContent.trim();
+    }
+    if (recommendation) {
+      recommendation.textContent = product.recommendation_reason
+        || product.reason
+        || product._reason
+        || 'Uma sugestão selecionada de acordo com o que você pediu.';
+    }
+    if (image && media) {
+      media.classList.toggle('has-no-image', !imageSrc);
+      image.alt = productName;
+      image.onerror = () => media.classList.add('has-no-image');
+      image.onload = () => media.classList.remove('has-no-image');
+      image.src = imageSrc;
+    }
+
+    if (detail._rapiCloseTimer) clearTimeout(detail._rapiCloseTimer);
+    detail.hidden = false;
+    document.body.classList.add('rapi-product-detail-open');
+    detail.getBoundingClientRect();
+    detail.classList.add('is-open');
+    setTimeout(() => {
+      detail.querySelector('.rapi-product-detail-close')?.focus({ preventScroll: true });
+    }, 0);
+  };
+
+  window.rapiCloseProductDetail = function () {
+    const detail = document.getElementById('rapiProductDetail');
+    if (!detail || detail.hidden) return;
+    detail.classList.remove('is-open');
+    document.body.classList.remove('rapi-product-detail-open');
+    detail._rapiCloseTimer = setTimeout(() => {
+      detail.hidden = true;
+      detail._rapiCloseTimer = null;
+    }, 540);
+  };
+
+  window.rapiViewProductInMenu = function () {
+    const product = _rapiActiveDetailProduct;
+    if (!product) return;
+    const productId = product.id || product.product_id;
+    const menuHasProduct = getRapiProducts().some(menuProduct => String(menuProduct.id) === String(productId));
+    if (!menuHasProduct || typeof window.openProduct !== 'function') {
+      showRapiToast('Produto não disponível no cardápio agora');
+      return;
+    }
+
+    window.rapiCloseProductDetail();
+    window.openProduct(productId);
+
+    if (typeof window.mobNavMenu === 'function') {
+      Promise.resolve(window.mobNavMenu())
+        .catch(error => console.error('[Rapi] Não foi possível preparar o cardápio atrás do produto:', error));
+    }
+  };
+
   function showRapiToast(msg) {
     const t = document.getElementById('rapiToast');
     if (!t) return;
@@ -1188,6 +1314,9 @@
   window.rapiReset = function () {
     _activeChipId = null;
     _allResults = [];
+    _rapiProductDetailCache = [];
+    _rapiActiveDetailProduct = null;
+    window.rapiCloseProductDetail();
     const inputEl = document.getElementById('rapiInput');
     if (inputEl) inputEl.value = '';
     const resultsEl = document.getElementById('rapiResults');
@@ -1212,5 +1341,11 @@
     const aiBody = document.getElementById('rapiAiBody');
     if (aiBody) aiBody.classList.remove('rapi-ai-body--searching');
   };
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.body.classList.contains('rapi-product-detail-open')) {
+      window.rapiCloseProductDetail();
+    }
+  });
 
 })();

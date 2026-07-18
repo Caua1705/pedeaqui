@@ -2392,7 +2392,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   height:100%!important;
   max-height:none!important;
   margin:0!important;
-  padding:0 0 148px!important;
+  padding:0 0 96px!important;
   box-sizing:border-box!important;
   overflow-x:hidden!important;
   overflow-y:auto!important;
@@ -2846,4 +2846,363 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewRapi .rapi-ai-input{
   color:#24211f!important;
+}
+
+/* Conversation hierarchy: keep the user as a bubble and let Rapi answer in open space. */
+#mobViewRapi .rapi-ai-body--searching,
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  background:#ffffff!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-results{
+  gap:22px!important;
+}
+#mobViewRapi .rapi-chat-user-message .rapi-result-title{
+  padding:12px 16px!important;
+  border:1px solid #ebe8e3!important;
+  border-radius:18px 18px 5px 18px!important;
+  background:#f5f3f0!important;
+  color:#34312f!important;
+  font-size:15px!important;
+  line-height:21px!important;
+  font-weight:450!important;
+}
+#mobViewRapi .rapi-chat-assistant-message{
+  max-width:calc(100% - 40px)!important;
+  margin-left:20px!important;
+  margin-right:20px!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  padding:0!important;
+  color:#292725!important;
+  font-size:15.5px!important;
+  line-height:1.65!important;
+  font-weight:420!important;
+  letter-spacing:.001em!important;
+  text-wrap:pretty!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+  color:#b95418!important;
+  font-weight:650!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+  margin-top:14px!important;
+  color:#292725!important;
+}
+#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+  justify-content:flex-start!important;
+  gap:14px!important;
+  margin:12px 0 0!important;
+  padding-top:0!important;
+  border-top:0!important;
+}
+#mobViewRapi .rapi-feedback-btn{
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  color:#85817c!important;
+}
+#mobViewRapi .rapi-feedback-btn svg{
+  width:17px!important;
+  height:17px!important;
+}
+
+/* Product recommendations: quiet neutral chrome with clear title/price hierarchy. */
+#mobViewRapi .rapi-product-rail{
+  gap:12px!important;
+  padding-top:2px!important;
+  padding-bottom:11px!important;
+}
+#mobViewRapi .rapi-product-card{
+  border-color:#e7e2dc!important;
+  background:#f8f6f3!important;
+  box-shadow:0 4px 14px rgba(44,36,28,.045)!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-content{
+  height:72px!important;
+  min-height:72px!important;
+  padding:10px 14px 11px!important;
+  border-top-color:#e7e2dc!important;
+  background:#f8f6f3!important;
+  gap:4px!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-title{
+  color:#292522!important;
+  font-weight:650!important;
+}
+#mobViewRapi .rapi-product-card .rapi-result-price{
+  color:#a94f16!important;
+  font-weight:700!important;
+}
+
+/* Composer: visually related to the neutral cards, without another heavy box. */
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+  bottom:14px!important;
+  border-color:#e7e2dc!important;
+  background:#fffefa!important;
+  box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
+}
+#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+  border-color:#e7e2dc!important;
+  box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
+  transform:translateX(-50%)!important;
+}
+
+@media (max-width:360px){
+  #mobViewRapi .rapi-chat-assistant-message{
+    max-width:calc(100% - 32px)!important;
+    margin-left:16px!important;
+    margin-right:16px!important;
+  }
+  #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+    font-size:15px!important;
+    line-height:1.62!important;
+  }
+}
+
+/* Rapi product detail: branded bottom sheet opened from AI suggestions. */
+#mobViewRapi .rapi-product-card{
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#mobViewRapi .rapi-product-card:focus-visible{
+  outline:2px solid rgba(243,111,33,.65)!important;
+  outline-offset:3px!important;
+}
+#mobViewRapi .rapi-product-detail[hidden]{
+  display:none!important;
+}
+#mobViewRapi .rapi-product-detail{
+  position:absolute!important;
+  inset:0!important;
+  z-index:260!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  padding:0!important;
+  background:rgba(16,20,26,.20)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:opacity .38s ease,visibility .38s ease!important;
+  overscroll-behavior:none!important;
+}
+#mobViewRapi .rapi-product-detail.is-open{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+#mobViewRapi .rapi-product-detail-panel{
+  width:100%!important;
+  max-width:430px!important;
+  height:min(74dvh,680px)!important;
+  max-height:calc(100dvh - 112px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:16px 16px 0 0!important;
+  background:#ffffff!important;
+  box-shadow:0 -10px 30px rgba(27,23,20,.12)!important;
+  transform:translateY(calc(100% + 18px))!important;
+  transition:transform .52s cubic-bezier(.2,.82,.25,1)!important;
+}
+#mobViewRapi .rapi-product-detail.is-open .rapi-product-detail-panel{
+  transform:translateY(0)!important;
+}
+#mobViewRapi .rapi-product-detail-media{
+  position:relative!important;
+  width:100%!important;
+  height:clamp(240px,33dvh,310px)!important;
+  min-height:240px!important;
+  flex:0 0 clamp(240px,33dvh,310px)!important;
+  overflow:hidden!important;
+  background:#f0ece7!important;
+}
+#mobViewRapi .rapi-product-detail-image{
+  position:relative!important;
+  z-index:1!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+#mobViewRapi .rapi-product-detail-placeholder{
+  position:absolute!important;
+  inset:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  color:#a39b94!important;
+  background:linear-gradient(145deg,#f4f0eb,#e8e1da)!important;
+}
+#mobViewRapi .rapi-product-detail-placeholder svg{
+  width:52px!important;
+  height:52px!important;
+}
+#mobViewRapi .rapi-product-detail-media:not(.has-no-image) .rapi-product-detail-placeholder{
+  display:none!important;
+}
+#mobViewRapi .rapi-product-detail-media.has-no-image .rapi-product-detail-image{
+  display:none!important;
+}
+#mobViewRapi .rapi-product-detail-handle{
+  position:absolute!important;
+  z-index:3!important;
+  top:14px!important;
+  left:50%!important;
+  width:30px!important;
+  height:4px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.72)!important;
+  transform:translateX(-50%)!important;
+  pointer-events:none!important;
+}
+#mobViewRapi .rapi-product-detail-close{
+  position:absolute!important;
+  z-index:4!important;
+  top:16px!important;
+  right:14px!important;
+  width:42px!important;
+  height:42px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:50%!important;
+  background:rgba(18,22,29,.72)!important;
+  color:#ffffff!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+#mobViewRapi .rapi-product-detail-close svg{
+  width:24px!important;
+  height:24px!important;
+}
+#mobViewRapi .rapi-product-detail-close:focus-visible{
+  outline:2px solid #F36F21!important;
+  outline-offset:2px!important;
+}
+#mobViewRapi .rapi-product-detail-content{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:22px!important;
+  padding:24px 16px 20px!important;
+  background:#ffffff!important;
+}
+#mobViewRapi .rapi-product-detail-copy{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  scrollbar-width:none!important;
+}
+#mobViewRapi .rapi-product-detail-copy::-webkit-scrollbar{
+  display:none!important;
+}
+#mobViewRapi .rapi-product-detail-title{
+  margin:0 0 6px!important;
+  color:#292522!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  font-size:18px!important;
+  line-height:23px!important;
+  font-weight:700!important;
+  letter-spacing:-.01em!important;
+  text-transform:none!important;
+}
+#mobViewRapi .rapi-product-detail-price{
+  margin:0 0 22px!important;
+  color:#F36F21!important;
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:700!important;
+}
+#mobViewRapi .rapi-product-detail-description{
+  margin:0!important;
+  color:#62676f!important;
+  font-size:15.5px!important;
+  line-height:1.62!important;
+  font-weight:400!important;
+  letter-spacing:.001em!important;
+  text-wrap:pretty!important;
+}
+#mobViewRapi .rapi-product-detail-recommendation{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  margin-top:24px!important;
+  padding:2px 0 2px 13px!important;
+  border-left:3px solid #F36F21!important;
+}
+#mobViewRapi .rapi-product-detail-recommendation strong{
+  color:#292522!important;
+  font-size:14px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+}
+#mobViewRapi .rapi-product-detail-recommendation span{
+  color:#6b7077!important;
+  font-size:14px!important;
+  line-height:21px!important;
+  font-weight:400!important;
+  text-wrap:pretty!important;
+}
+#mobViewRapi .rapi-product-detail-question{
+  width:100%!important;
+  min-height:56px!important;
+  flex:0 0 56px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 20px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:#F36F21!important;
+  color:#ffffff!important;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  font-size:16px!important;
+  line-height:20px!important;
+  font-weight:650!important;
+  box-shadow:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#mobViewRapi .rapi-product-detail-question:active{
+  background:#D95F18!important;
+}
+#mobViewRapi .rapi-product-detail-question:focus-visible{
+  outline:2px solid #F36F21!important;
+  outline-offset:3px!important;
+}
+body.rapi-product-detail-open{
+  overflow:hidden!important;
+}
+body.rapi-product-detail-open:has(#mobViewRapi.active) .mob-bottom-nav,
+body.rapi-nav-keep.rapi-product-detail-open:has(#mobViewRapi.active) .mob-bottom-nav{
+  display:none!important;
+}
+
+@media (max-height:700px){
+  #mobViewRapi .rapi-product-detail-media{
+    height:220px!important;
+    min-height:220px!important;
+    flex-basis:220px!important;
+  }
+  #mobViewRapi .rapi-product-detail-content{
+    gap:16px!important;
+    padding-top:20px!important;
+    padding-bottom:16px!important;
+  }
 }

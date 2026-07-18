@@ -8,7 +8,6 @@
       restaurantStore,
       setLoading,
       wait,
-      tabLoaderMinMs = 500,
       renderTabLoader,
       renderSectionLoader,
       renderSectionError,
@@ -25,10 +24,7 @@
           const coupons = getCoupons();
           const loadClubData = window.PedeAquiClubService?.getClubData?.(getRestaurantSlug(), { coupons })
             || Promise.resolve({ coupons: coupons || [], cashback_balance: null, cashback_status: 'error' });
-          const [clubData] = await Promise.all([
-            loadClubData,
-            wait ? wait(tabLoaderMinMs) : Promise.resolve()
-          ]);
+          const clubData = await loadClubData;
           appState.clubData = clubData;
           appState.clubLoaded = true;
           restaurantStore()?.setClubData?.(appState.clubData);
@@ -84,16 +80,16 @@
         ? `openCouponDetail('${esc(code)}')`
         : 'void 0';
       return `
-        <article class="club-coupon-card" role="button" tabindex="0" onclick="${action}">
-          <div class="club-coupon-ribbon">Dispon&iacute;vel para todos</div>
-          <div class="${artClass}">
+        <article class="coupon-card" role="button" tabindex="0" onclick="${action}">
+          <div class="coupon-availability-ribbon">Dispon&iacute;vel para todos</div>
+          <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
             ${image
               ? `<img src="${esc(image)}" alt="${esc(label)}">`
-              : `<span>${getCouponArtText(coupon)}</span>`}
+              : `<span>Cupom</span><strong>${label}</strong>`}
           </div>
-          <div class="club-coupon-title">${label}</div>
-          <div class="club-coupon-dash" aria-hidden="true"></div>
-          <button type="button" class="club-coupon-use" onclick="event.stopPropagation();${action}">Usar cupom</button>
+          <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
+          <div class="coupon-dash" aria-hidden="true"></div>
+          <button type="button" class="coupon-use-btn" onclick="event.stopPropagation();${action}">Usar cupom</button>
         </article>`;
     }
 
@@ -115,11 +111,7 @@
       return `<div class="club-location-wrap">${clone.outerHTML}</div>`;
     }
 
-    async function renderClubView() {
-      const body = document.getElementById('mobClubBody');
-      if (!body) return;
-      const clubData = await ensureClubLoaded();
-      if (!clubData) return;
+    function renderClubBody(body, clubData = {}) {
       const coupons = Array.isArray(clubData.coupons) && clubData.coupons.length ? clubData.coupons : (getCoupons() || []);
       const cashback = clubData.cashback_balance;
       const cashbackText = clubData.cashback_status === 'error' && cashback == null
@@ -144,12 +136,27 @@
           <div class="club-section-divider" aria-hidden="true"></div>
           <section class="club-coupons-section" aria-label="Meus cupons">
             <h2 class="club-coupons-title">Meus cupons</h2>
-            <div class="club-coupon-rail">${renderClubCoupons(coupons)}</div>
+            <div class="coupon-rail">${renderClubCoupons(coupons)}</div>
           </section>
         </section>`;
       body.querySelector('.club-cashback-icon')?.addEventListener('click', () => {
         window.openCashbackStatement?.();
       });
+    }
+
+    async function renderClubView() {
+      const body = document.getElementById('mobClubBody');
+      if (!body) return;
+
+      // Show the Club shell immediately; cashback refreshes in the background.
+      renderClubBody(body, appState.clubData || {
+        coupons: getCoupons(),
+        cashback_balance: null,
+        cashback_status: 'loading'
+      });
+
+      const clubData = await ensureClubLoaded();
+      if (clubData) renderClubBody(body, clubData);
     }
 
     function retryClubLoad() {

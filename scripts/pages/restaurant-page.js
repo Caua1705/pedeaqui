@@ -296,7 +296,6 @@
     restaurantStore,
     setLoading,
     wait,
-    tabLoaderMinMs: TAB_LOADER_MIN_MS,
     renderTabLoader,
     renderSectionLoader,
     renderSectionError,
@@ -2091,6 +2090,15 @@
       openLoginScreen();
       return;
     }
+    mobNavClub();
+  }
+
+  function openCartBenefits() {
+    if (!isLogged()) {
+      openLoginScreen('cart');
+      return;
+    }
+    closeModalId('cartModal');
     mobNavClub();
   }
 
@@ -6383,7 +6391,7 @@
     if (panel.parentElement !== document.body) document.body.appendChild(panel);
   }
   Object.assign(window, {
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, scrollToCategory, scrollToMenu,
+    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

@@ -5552,32 +5552,33 @@ body.product-modal-open{
     height:198px!important;
     min-height:198px!important;
     margin:0!important;
-    padding:16px 20px 0!important;
+    padding:18px 20px 0!important;
     background:#ffffff!important;
   }
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-card{
     box-sizing:border-box!important;
     width:374px!important;
     max-width:100%!important;
-    height:94px!important;
-    min-height:94px!important;
+    height:98px!important;
+    min-height:98px!important;
     margin:0!important;
     padding:0 10px 0 16px!important;
     border:0!important;
-    border-radius:8px!important;
+    border-radius:10px!important;
     background:#f1f0ef!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy{gap:0!important}
-  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy span{color:#5f6670!important;font-size:12px!important;font-weight:500!important;line-height:16px!important}
-  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{color:#263140!important;font-size:27px!important;font-weight:800!important;line-height:30px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy{gap:3px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy span{position:relative!important;top:2px!important;color:#536273!important;font-size:14px!important;font-weight:400!important;line-height:20px!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{margin-top:0!important;color:#29394c!important;font-size:30px!important;font-weight:700!important;line-height:36px!important}
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon{
     flex:0 0 40px!important;
     width:40px!important;
     height:40px!important;
     min-width:40px!important;
     border-radius:10px!important;
-    background:#e3e3e3!important;
+    background:#dcdcdc!important;
   }
+  body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon{transform:translate(-6px,-1px)!important}
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon svg{width:22px!important;height:22px!important}
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-use{
     display:flex!important;
@@ -5586,13 +5587,13 @@ body.product-modal-open{
     width:374px!important;
     max-width:100%!important;
     height:45px!important;
-    margin:10px 0 0!important;
+    margin:16px 0 0!important;
     padding:0!important;
     border:0!important;
-    border-radius:8px!important;
-    background:#ffe5d7!important;
+    border-radius:10px!important;
+    background:#ffede5!important;
     color:#F36F21!important;
-    font:700 11px/1 var(--ref-font)!important;
+    font:700 12px/1 var(--ref-font)!important;
   }
 
   body:has(#mobViewClub.active) #cashbackStatementModal.active{
@@ -7102,18 +7103,18 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     height:38px!important;
     border:0!important;
     border-radius:10px!important;
-    background:#e3e3e3!important;
+    background:#dcdcdc!important;
     color:#9da0a6!important;
     padding:0!important;
   }
   .club-cashback-icon svg{stroke:#9da0a6!important}
-  .club-coupons-section{padding:18px 0 0 24px!important;background:#fff!important}
+  .club-coupons-section{padding:14px 0 0 16px!important;background:#fff!important}
   .club-coupons-title{
-    margin:0 0 14px!important;
-    color:#242b35!important;
-    font-size:18px!important;
-    font-weight:800!important;
-    line-height:24px!important;
+    margin:0 0 16px!important;
+    color:#596575!important;
+    font-size:16px!important;
+    font-weight:600!important;
+    line-height:22px!important;
     letter-spacing:0!important;
   }
   .club-coupon-rail{
@@ -9138,4 +9139,122 @@ body.menu-tab .product-card.is-pressing{
   }
   body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
   body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
+}
+
+/* Club coupon heading and availability ribbon. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
+    margin-left:4px!important;
+    font-size:18px!important;
+    font-weight:700!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
+    padding-left:4px!important;
+    scroll-padding-left:4px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
+    position:absolute!important;
+    z-index:2!important;
+    top:6px!important;
+    left:6px!important;
+    right:6px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    height:24px!important;
+    border-radius:8px 8px 0 0!important;
+    background:#9fc2ff!important;
+    color:#1e355d!important;
+    font-size:9px!important;
+    font-weight:700!important;
+    line-height:1!important;
+  }
+}
+/* Club coupon dimensions matched to the approved reference. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-card{
+    flex:0 0 168.3px!important;
+    width:168.3px!important;
+    min-width:168.3px!important;
+    height:236.77px!important;
+    min-height:236.77px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
+    position:static!important;
+    flex:0 0 25px!important;
+    box-sizing:border-box!important;
+    width:157.3px!important;
+    height:25px!important;
+    min-height:25px!important;
+    margin:5px 5.5px 0!important;
+    border-radius:8px 8px 0 0!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art{
+    flex:0 0 93.77px!important;
+    box-sizing:border-box!important;
+    width:156.3px!important;
+    height:93.77px!important;
+    min-height:93.77px!important;
+    aspect-ratio:auto!important;
+    margin:0 6px!important;
+    border-radius:0 0 8px 8px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
+    border-radius:0 0 8px 8px!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-card::before,
+  body:has(#mobViewClub.active) #mobViewClub .coupon-card::after{
+    top:181px!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
+    font-size:10px!important;
+    transform:translateY(2px)!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
+    transform:translateY(4px)!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
+    transform:translateY(4px)!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
+    height:26px!important;
+    min-height:26px!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
+    height:25px!important;
+    min-height:25px!important;
+    transform:translateY(-2px)!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art,
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
+    border-radius:0 0 10px 10px!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art,
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
+    border-radius:0 0 6px 6px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
+    transform:translateY(6px)!important;
+  }
+}
+@media(max-width:767px){
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art,
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
+    border-radius:0 0 8px 8px!important;
+  }
+  body:has(#mobViewClub.active) #mobViewClub .coupon-art{
+    margin-top:-2px!important;
+  }
 }

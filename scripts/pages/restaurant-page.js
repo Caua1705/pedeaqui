@@ -5462,7 +5462,7 @@
     sticky.style.setProperty('display', 'flex', 'important');
     sticky.style.setProperty('visibility', 'visible', 'important');
     sticky.style.setProperty('opacity', '1', 'important');
-    sticky.style.setProperty('z-index', '131', 'important');
+    sticky.style.removeProperty('z-index');
     const navHeight = $('mobBottomNav')?.getBoundingClientRect().height;
     const bottomOffset = secondaryCartBottomOffset ?? navHeight;
     if (bottomOffset) sticky.style.setProperty('bottom', `${bottomOffset}px`, 'important');

@@ -13,7 +13,7 @@
   window.closeCashbackStatement=event=>{if(event&&event.target!==event.currentTarget)return;requestVersion+=1;$('cashbackStatementModal')?.classList.remove('active')};
   document.addEventListener('click',event=>{
     const overlay=$('cashbackStatementModal');
-    if(!event.target.closest('.mob-bottom-nav .mob-nav-item')||!overlay?.classList.contains('active'))return;
+    if(!event.target.closest('.mob-bottom-nav .mob-nav-item,#cartStickyBtn')||!overlay?.classList.contains('active'))return;
     requestVersion+=1;
     overlay.classList.remove('active');
     overlay.style.setProperty('display','none','important');

@@ -130,6 +130,13 @@
     align-items:center!important;
     justify-content:center!important;
     flex-shrink:0!important;
+    overflow:hidden!important;
+  }
+  #cartModal .cart-location-map img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
   }
   #cartModal .cart-location-copy{
     flex:1!important;

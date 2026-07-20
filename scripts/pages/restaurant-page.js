@@ -1989,6 +1989,13 @@
     const hasAddress = Boolean(address?.summary || addressSummary(address));
     const widget = $('cartLocationWidget');
     widget?.classList.toggle('has-address', hasAddress);
+    const locationImage = $('cartLocationImage');
+    if (locationImage) {
+      const imageSource = isLogged()
+        ? 'assets/icons/cart/cart-location-customer.png'
+        : 'assets/icons/cart/cart-location-guest.png';
+      if (locationImage.getAttribute('src') !== imageSource) locationImage.src = imageSource;
+    }
     const alert = $('cartLocationAlert');
     if (alert) alert.style.display = hasAddress ? 'none' : 'flex';
     const eta = $('cartLocationEta');
@@ -5113,6 +5120,7 @@
       phone: apiCustomer?.phone || '',
       email: apiCustomer?.email || ''
     });
+    syncCartLocationState();
     loadCashbackForHome();
   }
 

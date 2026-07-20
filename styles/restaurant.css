@@ -601,12 +601,12 @@ a{text-decoration:none;color:inherit}
 /* Cart body */
 .cart-scroll{flex:1;overflow-y:auto;background:#f5f5f5}
 /* Empty state */
-.cart-empty-state{text-align:center;padding:64px 24px 40px}
-.cart-empty-icon{width:80px;height:80px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;color:#ccc}
-.cart-empty-title{font-size:1.05rem;font-weight:800;color:#1a1a1a;margin-bottom:8px}
-.cart-empty-text{font-size:.84rem;color:#999;line-height:1.5;margin-bottom:28px}
-.cart-empty-btn{background:#F36F21;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-.cart-empty-btn:active{background:#a0420a}
+
+
+
+
+
+
 /* Address block */
 .cart-addr-block{background:#fff;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer}
 .cart-addr-inner{display:flex;align-items:center;gap:12px}

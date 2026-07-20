@@ -2058,7 +2058,12 @@
     const qty = cart.reduce((sum, item) => sum + item.qty, 0);
     const totals = cartTotals();
     cartStore()?.set?.({ items: cart, deliveryType, paymentMethod, totals });
-    if ($('cartItemCountLabel')) $('cartItemCountLabel').textContent = qty === 1 ? '1 item' : `${qty} itens`;
+    const cartItemCountLabel = $('cartItemCountLabel');
+    if (cartItemCountLabel) {
+      cartItemCountLabel.textContent = qty === 1 ? '1 item' : String(qty) + ' itens';
+      cartItemCountLabel.hidden = qty === 0;
+      cartItemCountLabel.closest('.cart-hdr')?.classList.toggle('is-empty', qty === 0);
+    }
     $('cartCountTop') && ($('cartCountTop').textContent = qty);
     $('cartCountTop')?.classList.toggle('show', qty > 0);
     $('cartSticky')?.classList.toggle('show', qty > 0);
@@ -2070,11 +2075,10 @@
     syncSecondaryViewCartSticky();
     renderSharedCashbackState();
 
-    $('cartEmpty') && ($('cartEmpty').style.display = qty ? 'none' : 'block');
-    $('cartContent') && ($('cartContent').style.display = qty ? 'block' : 'none');
-    $('cartFooter') && ($('cartFooter').style.display = qty ? 'block' : 'none');
+    if ($('cartContent')) $('cartContent').style.display = 'block';
+    if ($('cartFooter')) $('cartFooter').style.display = 'block';
+    if ($('cartOrderCard')) $('cartOrderCard').style.display = qty ? '' : 'none';
     syncCartLocationState();
-    if (!qty) return;
 
     $('cartList').innerHTML = cart.map(item => `
       <div class="cart-item-row">

@@ -9,16 +9,16 @@
 <link rel="stylesheet" href="styles/base.css?v=33">
 <link rel="stylesheet" href="styles/layout.css?v=32">
 <link rel="stylesheet" href="styles/components.css?v=32">
-<link rel="stylesheet" href="styles/restaurant.css?v=79">
+<link rel="stylesheet" href="styles/restaurant.css?v=80">
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=322">
+<link rel="stylesheet" href="styles/utilities.css?v=326">
 <link rel="stylesheet" href="styles/operation.css?v=134">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
 <link rel="stylesheet" href="styles/verify.css?v=32">
-<link rel="stylesheet" href="styles/button-theme.css?v=2">
+<link rel="stylesheet" href="styles/button-theme.css?v=3">
 <link rel="stylesheet" href="styles/rapi.css?v=157">
 </head>
 <body class="app-booting">
@@ -895,18 +895,8 @@
     <!-- Scrollable body -->
     <div class="cart-scroll" id="cartScroll">
 
-      <!-- Empty state -->
-      <div class="cart-empty-state" id="cartEmpty">
-        <div class="cart-empty-icon">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        </div>
-        <div class="cart-empty-title">Sua sacola está vazia</div>
-        <div class="cart-empty-text">Adicione itens do cardápio para continuar.</div>
-        <button class="cart-empty-btn" onclick="closeModalId('cartModal')">Ver cardápio</button>
-      </div>
-
-      <!-- Cart content (has items) -->
-      <div id="cartContent" style="display:none">
+      <!-- Cart content -->
+      <div id="cartContent">
         <button class="cart-location-widget" id="cartLocationWidget" type="button" onclick="openOperationScreen()">
           <div class="cart-location-alert" id="cartLocationAlert">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/><rect x="11" y="6.5" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="16.8" r="1.2" fill="#fff"/></svg>
@@ -977,7 +967,7 @@
         </div>
 
         <!-- 6. Cart items -->
-        <div class="cart-order-card">
+        <div class="cart-order-card" id="cartOrderCard">
           <div class="cart-order-heading">Seu pedido</div>
           <div id="cartList" class="cart-items-list"></div>
 
@@ -1046,7 +1036,7 @@
     </div>
 
     <!-- 9. Footer CTA -->
-    <div class="cart-footer" id="cartFooter" style="display:none">
+    <div class="cart-footer" id="cartFooter">
       <button class="cart-cta-btn" id="cartCtaBtn" onclick="openCheckout()">Fazer pedido</button>
     </div>
 
@@ -1833,7 +1823,7 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=7"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=41"></script>
-<script src="scripts/pages/restaurant-page.js?v=108"></script>
+<script src="scripts/pages/restaurant-page.js?v=111"></script>
 <script src="scripts/pages/cashback-statement.js?v=4"></script>
 </body>
 </html>

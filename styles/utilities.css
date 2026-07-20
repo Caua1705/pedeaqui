@@ -428,7 +428,7 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .modal--login .cart-cta-btn,.modal--login .login-secondary{font-size:12px!important;line-height:18px!important;font-weight:700!important}
 .modal--login .login-privacy{font-size:12px!important;line-height:18px!important}
 .prof-hero-label,.prof-option-title,.cart-rest-name,.cir-name,.pm-name{font-size:14px!important;line-height:18px!important;font-weight:600!important}
-.prof-hero-sub,.prof-option-desc,.cir-obs,.pm-desc,.cps-row,.cart-empty-text{font-size:12px!important;line-height:18px!important}
+.prof-hero-sub,.prof-option-desc,.cir-obs,.pm-desc,.cps-row{font-size:12px!important;line-height:18px!important}
 .pm-price,.cps-total,.cs-total{font-size:16px!important;line-height:22px!important;font-weight:700!important}
 
 /* Home tab rebuilt from API promotional images. */
@@ -9700,6 +9700,10 @@ body.menu-tab .product-card.is-pressing{
     z-index:999!important;
   }
   body:has(#cashbackStatementModal.active) #cartSticky.show #cartStickyBtn{pointer-events:auto!important}
+}
+@media(max-width:767px){
+  #cartModal .cart-hdr.is-empty .cart-hdr-sub{display:none!important}
+  #cartModal .cart-hdr.is-empty .cart-hdr-title{transform:translateY(1px)!important}
 }
 /* Checkout payment method screen matched to the mobile reference. */
 @media(max-width:767px){

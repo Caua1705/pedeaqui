@@ -3213,6 +3213,12 @@ body:has(#mobViewRapi.active) #cartSticky{
   visibility:hidden!important;
   opacity:0!important;
   pointer-events:none!important;
+}body.rapi-nav-keep .mob-bottom-nav::before,
+body:has(#mobViewRapi.active) .mob-bottom-nav::before{
+  content:none!important;
+  display:none!important;
+  height:0!important;
+  box-shadow:none!important;
 }
 #mobViewRapi .rapi-utility-header{
   position:absolute!important;

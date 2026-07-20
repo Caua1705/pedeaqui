@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=317">
+<link rel="stylesheet" href="styles/utilities.css?v=322">
 <link rel="stylesheet" href="styles/operation.css?v=134">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -1003,9 +1003,10 @@
           <div class="cart-section-heading">Forma de pagamento</div>
           <button class="cart-payment-action" type="button" onclick="openCheckout()">
             <span class="cart-payment-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
+              <img class="cart-payment-pix-icon" id="cartPaymentPixIcon" src="assets/icons/payment/pix.png" alt="" hidden>
+              <svg id="cartPaymentDefaultIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
             </span>
-            <span>Selecione a forma de pagamento</span>
+            <span id="cartPaymentLabel">Selecione a forma de pagamento</span>
             <svg class="cart-payment-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
         </div>
@@ -1832,7 +1833,7 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=7"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=41"></script>
-<script src="scripts/pages/restaurant-page.js?v=105"></script>
+<script src="scripts/pages/restaurant-page.js?v=108"></script>
 <script src="scripts/pages/cashback-statement.js?v=4"></script>
 </body>
 </html>

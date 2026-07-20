@@ -2011,7 +2011,16 @@
     if ($('cartAddrText')) $('cartAddrText').textContent = hasAddress ? (address.summary || addressSummary(address)) : 'Defina seu endereço para entrega';
     if ($('cartLocationStoreTag')) $('cartLocationStoreTag').textContent = currentCartBranchLabel();
     const paymentCard = document.querySelector('#cartModal .cart-payment-card');
-    if (paymentCard) paymentCard.style.display = hasAddress && isLogged() ? '' : 'none';
+    if (paymentCard) {
+      paymentCard.style.display = hasAddress && isLogged() ? '' : 'none';
+      const paymentKey = infoPaymentType(paymentMethod);
+      const hasSelectedPayment = Boolean(paymentMethod);
+      const isPixSelected = paymentKey === 'pix';
+      paymentCard.classList.toggle('has-selected-payment', hasSelectedPayment);
+      if ($('cartPaymentLabel')) $('cartPaymentLabel').textContent = isPixSelected ? 'PIX' : (paymentMethod || 'Selecione a forma de pagamento');
+      if ($('cartPaymentPixIcon')) $('cartPaymentPixIcon').hidden = !isPixSelected;
+      if ($('cartPaymentDefaultIcon')) $('cartPaymentDefaultIcon').hidden = isPixSelected;
+    }
     const cta = $('cartCtaBtn');
     if (cta) {
       cta.disabled = false;
@@ -2037,7 +2046,7 @@
         cta.classList.add('cart-cta-btn--minimum-required');
         cta.onclick = null;
       } else {
-        cta.textContent = 'Escolher forma de pagamento';
+        cta.textContent = paymentMethod ? 'Efetuar pagamento' : 'Escolher forma de pagamento';
         cta.classList.remove('cart-cta-btn--address-required');
         cta.classList.remove('cart-cta-btn--login-required');
         cta.onclick = openCheckout;
@@ -2269,16 +2278,25 @@
   }
 
   function openPaymentMethodScreen() {
-    const selected = document.querySelector('.payment-method-option.active');
     const overlay = $('paymentMethodModal');
-    setPaymentScreenTab(selected?.dataset.paymentScope || 'online');
+    const confirmedKey = infoPaymentType(paymentMethod);
+    const confirmedButton = paymentMethod
+      ? Array.from(document.querySelectorAll('.payment-method-option')).find(button => !button.disabled && button.dataset.paymentKey === confirmedKey)
+      : null;
+    setPaymentScreenTab(confirmedButton?.dataset.paymentScope || 'online');
     document.querySelectorAll('.payment-method-option').forEach(button => {
-      button.classList.remove('active');
-      button.setAttribute('aria-pressed', 'false');
+      const active = button === confirmedButton;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    overlay?.removeAttribute('data-payment-value');
-    overlay?.removeAttribute('data-payment-key');
-    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = true;
+    if (overlay && confirmedButton) {
+      overlay.dataset.paymentValue = paymentMethod;
+      overlay.dataset.paymentKey = confirmedKey;
+    } else {
+      overlay?.removeAttribute('data-payment-value');
+      overlay?.removeAttribute('data-payment-key');
+    }
+    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = !confirmedButton;
     overlay?.classList.remove('is-entered', 'is-closing');
     openModal('paymentMethodModal');
     requestAnimationFrame(() => requestAnimationFrame(() => {

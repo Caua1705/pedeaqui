@@ -2170,7 +2170,6 @@
       openAddressScreen();
       return;
     }
-    closeModalId('cartModal');
     const checkoutCustomer = currentCustomerSnapshot();
     if (checkoutCustomer) {
       $('chkName').value = checkoutCustomer.name || '';
@@ -2179,8 +2178,8 @@
     if (selectedAddress) fillCheckoutAddress(selectedAddress);
     setDeliveryType(deliveryType);
     requestDeliveryEstimate();
-    openModal('checkoutModal');
     await ensureRestaurantInfo();
+    openPaymentMethodScreen();
   }
 
   function fillCheckoutAddress(address) {
@@ -2197,7 +2196,7 @@
 
   function backToCheckout() {
     closeModalId('orderReviewModal');
-    setTimeout(() => openModal('checkoutModal'), 180);
+    setTimeout(() => openPaymentMethodScreen(), 180);
   }
 
   function setDeliveryType(type) {
@@ -2255,32 +2254,75 @@
     alert('Cadastro de cartão estará disponível em breve.');
   }
 
+  function setPaymentScreenTab(tab) {
+    document.querySelectorAll('[data-payment-screen-tab]').forEach(button => {
+      const active = button.dataset.paymentScreenTab === tab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-payment-screen-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.paymentScreenPanel !== tab;
+    });
+  }
+
+  function openPaymentMethodScreen() {
+    const selected = document.querySelector('.payment-method-option.active');
+    const overlay = $('paymentMethodModal');
+    setPaymentScreenTab(selected?.dataset.paymentScope || 'online');
+    overlay?.classList.remove('is-entered', 'is-closing');
+    openModal('paymentMethodModal');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (overlay?.classList.contains('active')) overlay.classList.add('is-entered');
+    }));
+  }
+
+  function closePaymentMethodScreen(afterClose) {
+    const overlay = $('paymentMethodModal');
+    if (!overlay?.classList.contains('active') || overlay.classList.contains('is-closing')) return;
+    overlay.classList.add('is-closing');
+    overlay.classList.remove('is-entered');
+    setTimeout(() => {
+      closeModalId('paymentMethodModal');
+      overlay.classList.remove('is-closing');
+      if (typeof afterClose === 'function') afterClose();
+    }, 600);
+  }
+
   function renderCheckoutPaymentMethods(data) {
-    const groups = data ? infoPaymentData(data) : { delivery: [] };
-    availableCheckoutPaymentKeys = new Set(groups.delivery.map(entry => entry.method_type));
-    const buttons = Array.from(document.querySelectorAll('.fs-pay-btn[data-payment-key]'));
+    const groups = data ? infoPaymentData(data) : { online: [], delivery: [] };
+    const onlineKeys = new Set(groups.online.map(entry => entry.method_type));
+    const deliveryKeys = new Set(groups.delivery.map(entry => entry.method_type));
+    if (deliveryKeys.has('pix')) onlineKeys.add('pix');
+    availableCheckoutPaymentKeys = new Set([...onlineKeys, ...deliveryKeys]);
+    const buttons = Array.from(document.querySelectorAll('.payment-method-option[data-payment-key]'));
     buttons.forEach(button => {
-      const available = availableCheckoutPaymentKeys.has(button.dataset.paymentKey);
+      const scopeKeys = button.dataset.paymentScope === 'online' ? onlineKeys : deliveryKeys;
+      const available = scopeKeys.has(button.dataset.paymentKey);
       button.disabled = !available;
       button.classList.toggle('is-unavailable', !available);
       button.setAttribute('aria-disabled', available ? 'false' : 'true');
       button.title = available ? '' : 'Forma de pagamento indisponível';
     });
     const activeKey = infoPaymentType(paymentMethod);
-    if (!availableCheckoutPaymentKeys.has(activeKey)) {
-      const first = buttons.find(button => !button.disabled);
-      paymentMethod = first?.dataset.paymentValue || '';
-      buttons.forEach(button => button.classList.toggle('active', button === first));
+    let activeButton = buttons.find(button => !button.disabled && button.dataset.paymentKey === activeKey);
+    if (!activeButton) {
+      activeButton = buttons.find(button => !button.disabled);
+      paymentMethod = activeButton?.dataset.paymentValue || '';
     }
+    buttons.forEach(button => button.classList.toggle('active', button === activeButton));
+    if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = paymentMethod || 'Selecione a forma de pagamento';
   }
 
   function setPayment(btn, type) {
     if (!btn || btn.disabled || !availableCheckoutPaymentKeys.has(btn.dataset.paymentKey || infoPaymentType(type))) return;
     paymentMethod = type;
-    document.querySelectorAll('.fs-pay-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.payment-method-option').forEach(button => button.classList.remove('active'));
     btn.classList.add('active');
+    if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = type;
+    if ($('paymentMethodModal')?.classList.contains('active')) {
+      closePaymentMethodScreen(() => openOrderReview());
+    }
   }
-
   async function openOrderReview() {
     const name = $('chkName').value.trim();
     const phone = $('chkPhone').value.trim();
@@ -6392,7 +6434,7 @@
   }
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, scrollToMenu,
-    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType,
+    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,

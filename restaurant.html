@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=300">
+<link rel="stylesheet" href="styles/utilities.css?v=306">
 <link rel="stylesheet" href="styles/operation.css?v=134">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -1095,13 +1095,11 @@
       </div>
       <div class="fs-section">
         <div class="fs-section-title">Forma de pagamento</div>
-        <div class="fs-pay-grid">
-          <button class="fs-pay-btn active" data-payment-key="pix" data-payment-value="Pix" onclick="setPayment(this,'Pix')">Pix</button>
-          <button class="fs-pay-btn" data-payment-key="credit" data-payment-value="Crédito" onclick="setPayment(this,'Crédito')">Crédito</button>
-          <button class="fs-pay-btn" data-payment-key="debit" data-payment-value="Débito" onclick="setPayment(this,'Débito')">Débito</button>
-          <button class="fs-pay-btn" data-payment-key="cash" data-payment-value="Dinheiro" onclick="setPayment(this,'Dinheiro')">Dinheiro</button>
-          <button class="fs-pay-btn fs-pay-btn--full" data-payment-key="voucher" data-payment-value="VR/VA" onclick="setPayment(this,'VR/VA')">Vale-refeição / Alimentação</button>
-        </div>
+        <button class="checkout-payment-selector" type="button" onclick="openPaymentMethodScreen()">
+          <span class="checkout-payment-selector-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span>
+          <span id="checkoutPaymentLabel">Selecione a forma de pagamento</span>
+          <svg class="checkout-payment-selector-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
       </div>
       <div class="fs-section" style="margin-bottom:0">
         <div class="fs-section-title">Observação geral (opcional)</div>
@@ -1114,6 +1112,42 @@
   </div>
 </div>
 
+<!-- MODAL: PAYMENT METHOD (full-screen) -->
+<div class="overlay" id="paymentMethodModal">
+  <section class="payment-method-screen" role="dialog" aria-modal="true" aria-labelledby="paymentMethodTitle">
+    <header class="payment-method-header">
+      <button class="payment-method-back" type="button" onclick="closePaymentMethodScreen()" aria-label="Voltar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 id="paymentMethodTitle">Formas de pagamento</h2>
+    </header>
+    <div class="payment-method-tabs" role="tablist" aria-label="Tipo de pagamento">
+      <button class="active" type="button" role="tab" aria-selected="true" data-payment-screen-tab="online" onclick="setPaymentScreenTab('online')">Pagamento online</button>
+      <button type="button" role="tab" aria-selected="false" data-payment-screen-tab="delivery" onclick="setPaymentScreenTab('delivery')">Pagamento na entrega</button>
+    </div>
+    <div class="payment-method-content">
+      <section class="payment-method-panel" data-payment-screen-panel="online">
+        <button class="payment-method-option" type="button" data-payment-scope="online" data-payment-key="pix" data-payment-value="Pix" onclick="setPayment(this,'Pix')">
+          <span class="payment-pix-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>PIX</span>
+        </button>
+        <div class="payment-method-divider" aria-hidden="true"></div>
+        <button class="payment-add-card" type="button" onclick="showCardComingSoon()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Cadastrar novo cartão</span>
+        </button>
+      </section>
+      <section class="payment-method-panel" data-payment-screen-panel="delivery" hidden>
+        <div class="payment-delivery-options">
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="credit" data-payment-value="Crédito" onclick="setPayment(this,'Crédito')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de crédito</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="debit" data-payment-value="Débito" onclick="setPayment(this,'Débito')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de débito</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="cash" data-payment-value="Dinheiro" onclick="setPayment(this,'Dinheiro')"><span class="payment-cash-icon" aria-hidden="true">R$</span><span>Dinheiro</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="voucher" data-payment-value="VR/VA" onclick="setPayment(this,'VR/VA')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Vale-refeição / alimentação</span></button>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
 <!-- MODAL: ORDER REVIEW (full-screen) -->
 <div class="overlay" id="orderReviewModal">
   <div class="modal modal--fs">
@@ -1851,7 +1885,7 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=7"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=40"></script>
-<script src="scripts/pages/restaurant-page.js?v=96"></script>
+<script src="scripts/pages/restaurant-page.js?v=100"></script>
 <script src="scripts/pages/cashback-statement.js?v=4"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@
   let pmSelectedOptions = {};
   let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
-  let paymentMethod = 'Pix';
+  let paymentMethod = '';
   let selectedCoupon = null;
   let pendingCartItemDeleteUid = null;
   let couponDetailScrollY = 0;
@@ -2201,10 +2201,6 @@
     setTimeout(() => openCartModal(), 180);
   }
 
-  function backToCheckout() {
-    closeModalId('orderReviewModal');
-    setTimeout(() => openPaymentMethodScreen(), 180);
-  }
 
   function setDeliveryType(type) {
     deliveryType = type;
@@ -2276,6 +2272,13 @@
     const selected = document.querySelector('.payment-method-option.active');
     const overlay = $('paymentMethodModal');
     setPaymentScreenTab(selected?.dataset.paymentScope || 'online');
+    document.querySelectorAll('.payment-method-option').forEach(button => {
+      button.classList.remove('active');
+      button.setAttribute('aria-pressed', 'false');
+    });
+    overlay?.removeAttribute('data-payment-value');
+    overlay?.removeAttribute('data-payment-key');
+    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = true;
     overlay?.classList.remove('is-entered', 'is-closing');
     openModal('paymentMethodModal');
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -2310,141 +2313,50 @@
       button.setAttribute('aria-disabled', available ? 'false' : 'true');
       button.title = available ? '' : 'Forma de pagamento indisponível';
     });
-    const activeKey = infoPaymentType(paymentMethod);
-    let activeButton = buttons.find(button => !button.disabled && button.dataset.paymentKey === activeKey);
-    if (!activeButton) {
-      activeButton = buttons.find(button => !button.disabled);
-      paymentMethod = activeButton?.dataset.paymentValue || '';
-    }
-    buttons.forEach(button => button.classList.toggle('active', button === activeButton));
+    if (paymentMethod && !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) paymentMethod = '';
+    buttons.forEach(button => {
+      button.classList.remove('active');
+      button.setAttribute('aria-pressed', 'false');
+    });
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = paymentMethod || 'Selecione a forma de pagamento';
   }
 
   function setPayment(btn, type) {
     if (!btn || btn.disabled || !availableCheckoutPaymentKeys.has(btn.dataset.paymentKey || infoPaymentType(type))) return;
+    const overlay = $('paymentMethodModal');
+    if (btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-pressed', 'false');
+      overlay?.removeAttribute('data-payment-value');
+      overlay?.removeAttribute('data-payment-key');
+      if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = true;
+      return;
+    }
+    document.querySelectorAll('.payment-method-option').forEach(button => {
+      const active = button === btn;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (overlay) {
+      overlay.dataset.paymentValue = type;
+      overlay.dataset.paymentKey = btn.dataset.paymentKey || infoPaymentType(type);
+    }
+    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = false;
+  }
+
+  function confirmPaymentMethodSelection() {
+    const overlay = $('paymentMethodModal');
+    const selected = overlay?.querySelector('.payment-method-option.active');
+    const type = overlay?.dataset.paymentValue || selected?.dataset.paymentValue || '';
+    const key = overlay?.dataset.paymentKey || selected?.dataset.paymentKey || infoPaymentType(type);
+    if (!selected || !type || !availableCheckoutPaymentKeys.has(key)) return;
     paymentMethod = type;
-    document.querySelectorAll('.payment-method-option').forEach(button => button.classList.remove('active'));
-    btn.classList.add('active');
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = type;
-    if ($('paymentMethodModal')?.classList.contains('active')) {
-      closePaymentMethodScreen(() => openOrderReview());
-    }
-  }
-  async function openOrderReview() {
-    const name = $('chkName').value.trim();
-    const phone = $('chkPhone').value.trim();
-    if (!name || !phone) { alert('Preencha nome e WhatsApp.'); return; }
-    if (!paymentMethod || !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) {
-      alert('Selecione uma forma de pagamento disponível.');
-      return;
-    }
-    if (deliveryType === 'delivery') {
-      const address = readCheckoutAddress();
-      if (!address.street || !address.number || !address.neighborhood) { alert('Informe seu endereço.'); return; }
-      setSelectedOperationAddress({
-        ...operationContext?.address,
-        street: address.street, number: address.number, neighborhood: address.neighborhood,
-        complement: address.complement || '', reference: address.reference || ''
-      }, { confirmed: true, forceDelivery: false });
-      await requestDeliveryEstimate();
-      if (!hasValidDeliveryEstimateFee()) { alert('Aguarde o calculo da taxa de entrega.'); return; }
-    }
-    persistCustomer({ name, phone });
-    renderReview();
-    closeModalId('checkoutModal');
-    openModal('orderReviewModal');
-  }
-
-  function readCheckoutAddress() {
-    const street = $('chkRua').value.trim();
-    const number = $('chkNum').value.trim();
-    const neighborhood = $('chkBairro').value.trim();
-    const complement = $('chkComp').value.trim();
-    return { street, number, neighborhood, complement, summary: `${street}, ${number} - ${neighborhood}` };
-  }
-
-  function renderReview() {
-    const totals = cartTotals();
-    $('revTypeIcon').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
-    $('revTypeName').textContent = deliveryType === 'delivery' ? 'Entrega' : 'Retirada';
-    $('revTypeSub').textContent = deliveryType === 'delivery'
-      ? `Hoje, ${deliveryEstimateText()}`
-      : pickupWindowText();
-    $('revAddrBlock').style.display = deliveryType === 'delivery' ? 'flex' : 'none';
-    const selectedAddress = currentCartAddress();
-    if (selectedAddress) $('revAddrVal').textContent = selectedAddress.summary || addressSummary(selectedAddress);
-    $('revPayVal').textContent = paymentMethod;
-    $('revItemsList').innerHTML = cart.map(item => `
-      <div class="cart-item-row">
-        <div class="cir-qty-badge">${item.qty}x</div>
-        <div class="cir-info"><div class="cir-name">${item.name}</div>${cartOptionsHtml(item)}${item.obs ? `<div class="cir-obs">${item.obs}</div>` : ''}</div>
-        <div class="cir-price">${fmt(cartItemUnitPrice(item) * item.qty)}</div>
-      </div>
-    `).join('');
-    $('revSub').textContent = fmt(totals.subtotal);
-    $('revSvcFeeVal').textContent = fmt(totals.svc);
-    $('revDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
-    $('revTotal').textContent = fmt(totals.total);
-  }
-
-  async function submitOrder() {
-    if (!paymentMethod || !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) {
-      alert('Selecione uma forma de pagamento disponível.');
-      return;
-    }
-    if (!cart.length) { alert('Seu carrinho está vazio.'); return; }
-    if (!operationContext?.branch_id) { alert('Selecione uma unidade para continuar.'); openOperationScreen(); return; }
-    const orderType = operationContext.order_type;
-    if (orderType === 'delivery' && !operationContext.address) {
-      alert('Informe seu endereço de entrega.'); openAddressScreen(); return;
-    }
-    if (orderType === 'delivery' && !hasValidDeliveryEstimateFee()) {
-      alert('Aguarde o calculo da taxa de entrega.'); return;
-    }
-    const address = operationContext.address;
-    // When the customer is logged in and picked a saved address, reference it by
-    // id. The backend resolves customer_id from the JWT — never send it here.
-    const savedAddressId = window.PedeAquiCustomerService?.isLoggedIn?.()
-      ? (address?.id || address?.address_id || null)
-      : null;
-    const orderCustomer = currentCustomerSnapshot();
-    const orderPayload = {
-      branch_id: operationContext.branch_id,
-      customer: {
-        name: orderCustomer?.name || '',
-        phone: orderCustomer?.phone || ''
-      },
-      order_type: orderType,
-      payment_method: paymentMethod,
-      ...(orderType === 'delivery' && savedAddressId ? { customer_address_id: savedAddressId } : {}),
-      address: orderType === 'delivery' ? {
-        street: address?.street || '',
-        number: address?.number || '',
-        neighborhood: address?.neighborhood || '',
-        complement: address?.complement || '',
-        reference: address?.reference || ''
-      } : null,
-      notes: $('chkObs')?.value?.trim() || '',
-      coupon_code: selectedCoupon?.code || null,
-      items: cart.map(item => ({
-        product_id: item.id,
-        quantity: item.qty,
-        observation: item.obs || '',
-        selected_options: Array.isArray(item.selected_options) ? item.selected_options : []
-      }))
-    };
-    submittedOrder = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
-    window.PedeAquiOrderState?.saveOrder(submittedOrder);
-    $('confName').textContent = orderCustomer?.name || '';
-    $('confTotal').textContent = fmt(submittedOrder.total ?? submittedOrder.total_amount ?? cartTotals().total);
-    $('confType').textContent = submittedOrder.order_type || submittedOrder.type || (deliveryType === 'delivery' ? 'Entrega' : 'Retirada');
-    $('confPay').textContent = submittedOrder.payment_method || paymentMethod;
-    closeModalId('orderReviewModal');
-    openModal('confirmModal');
-    cart = [];
     updateCartUI();
+    closePaymentMethodScreen(() => {
+      if (!$('cartModal')?.classList.contains('active')) openCartModal();
+    });
   }
-
   // ============================================================
   //  Operation context — single source of truth (per restaurant)
   // ============================================================
@@ -6442,8 +6354,8 @@
   }
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, scrollToMenu,
-    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, backToCheckout, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
-    setPayment, openOrderReview, submitOrder, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
+    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
+    setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,
     openRegisterScreen, closeRegisterScreen, maskRegPhone, maskRegCpf, maskRegBirth,

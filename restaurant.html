@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles/cart.css?v=32">
 <link rel="stylesheet" href="styles/checkout.css?v=32">
 <link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=308">
+<link rel="stylesheet" href="styles/utilities.css?v=317">
 <link rel="stylesheet" href="styles/operation.css?v=134">
 <link rel="stylesheet" href="styles/register.css?v=32">
 <link rel="stylesheet" href="styles/login.css?v=32">
@@ -1107,7 +1107,7 @@
       </div>
     </div>
     <div class="cart-footer">
-      <button class="cart-cta-btn" onclick="openOrderReview()">Revisar pedido</button>
+      <button class="cart-cta-btn" onclick="openPaymentMethodScreen()">Escolher forma de pagamento</button>
     </div>
   </div>
 </div>
@@ -1117,7 +1117,7 @@
   <section class="payment-method-screen" role="dialog" aria-modal="true" aria-labelledby="paymentMethodTitle">
     <header class="payment-method-header">
       <button class="payment-method-back" type="button" onclick="closePaymentMethodScreen()" aria-label="Voltar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 id="paymentMethodTitle">Formas de pagamento</h2>
       <div class="payment-method-header-spacer" aria-hidden="true"></div>
@@ -1147,65 +1147,11 @@
         </div>
       </section>
     </div>
+    <footer class="payment-method-footer" id="paymentMethodFooter" hidden>
+      <button class="payment-method-confirm" type="button" onclick="confirmPaymentMethodSelection()">Confirmar</button>
+    </footer>
   </section>
 </div>
-<!-- MODAL: ORDER REVIEW (full-screen) -->
-<div class="overlay" id="orderReviewModal">
-  <div class="modal modal--fs">
-    <div class="sheet-drag"></div>
-    <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="backToCheckout()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <h2 class="cart-hdr-title">Revisar pedido</h2>
-      <div class="cart-hdr-spacer"></div>
-    </div>
-    <div class="cart-scroll">
-      <div id="revDeliveryBlock" class="rev-block">
-        <div class="rev-block-icon" id="revTypeIcon">ðŸ›µ</div>
-        <div class="rev-block-content">
-          <div class="rev-block-label">Tipo</div>
-          <div class="rev-block-val" id="revTypeName">Entrega</div>
-          <div class="rev-block-sub" id="revTypeSub">Hoje, -- min · R$ 0,00</div>
-        </div>
-        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
-      </div>
-      <div id="revAddrBlock" class="rev-block">
-        <div class="rev-block-icon">ðŸ“</div>
-        <div class="rev-block-content">
-          <div class="rev-block-label">Endereço</div>
-          <div class="rev-block-val" id="revAddrVal"></div>
-        </div>
-        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
-      </div>
-      <div class="rev-block">
-        <div class="rev-block-icon">ðŸ’³</div>
-        <div class="rev-block-content">
-          <div class="rev-block-label">Pagamento</div>
-          <div class="rev-block-val" id="revPayVal"></div>
-        </div>
-        <button class="rev-edit-btn" onclick="backToCheckout()">Alterar</button>
-      </div>
-      <div class="cart-rest-block" style="margin-top:8px">
-        <div class="cart-rest-avatar">JdP</div>
-        <div class="cart-rest-name">Restaurante</div>
-      </div>
-      <div id="revItemsList" class="cart-items-list"></div>
-      <div class="cart-price-summary">
-        <div class="cps-row"><span>Subtotal</span><span id="revSub"></span></div>
-        <div class="cps-row" id="revSvcFeeRow"><span>Taxa de serviço</span><span id="revSvcFeeVal"></span></div>
-        <div class="cps-row" id="revDeliveryRow"><span>Taxa de entrega</span><span id="revDelivery"></span></div>
-        <div class="cps-divider"></div>
-        <div class="cps-total"><span>Total</span><span id="revTotal"></span></div>
-      </div>
-    </div>
-    <div class="cart-footer">
-      <button class="cart-cta-btn" onclick="submitOrder()">Confirmar e fazer pedido</button>
-      <button class="fs-cta-secondary" onclick="backToCheckout()">Alterar dados</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL: SUCCESS -->
 <div class="overlay" id="confirmModal">
   <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;overflow:hidden">
@@ -1886,7 +1832,7 @@
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
 <script src="scripts/pages/restaurant-club.js?v=7"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=41"></script>
-<script src="scripts/pages/restaurant-page.js?v=102"></script>
+<script src="scripts/pages/restaurant-page.js?v=105"></script>
 <script src="scripts/pages/cashback-statement.js?v=4"></script>
 </body>
 </html>

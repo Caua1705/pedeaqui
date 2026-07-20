@@ -1614,7 +1614,7 @@
   function scrollToHome() {
     closeMobViews();
     showHomeTab();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    jumpToTop();
   }
 
   function scrollToCategory(id, btn) {

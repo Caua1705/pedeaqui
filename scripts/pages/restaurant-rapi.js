@@ -33,6 +33,7 @@
   let _rapiProductDetailCache = [];
   let _rapiActiveDetailProduct = null;
   let _rapiTypingStatusTimer = null;
+  let _rapiCartUnsubscribe = null;
 
   const RAPI_TYPING_STATUSES = [
     'Preparando sugestões...',
@@ -64,6 +65,34 @@
 
   function fmtPrice(val) {
     return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function rapiCartQuantity(snapshot) {
+    return (snapshot?.items || []).reduce((total, item) => total + Number(item?.qty || 0), 0);
+  }
+
+  function syncRapiCartButton(snapshot = window.PedeAquiCartStore?.get?.()) {
+    const button = document.getElementById('rapiCartButton');
+    const count = document.getElementById('rapiCartCount');
+    if (!button || !count) return;
+    const quantity = rapiCartQuantity(snapshot);
+    button.hidden = quantity <= 0;
+    count.textContent = String(quantity);
+    button.setAttribute('aria-label', quantity === 1
+      ? 'Abrir sacola com 1 item'
+      : `Abrir sacola com ${quantity} itens`);
+  }
+
+  function ensureRapiCartSubscription() {
+    const store = window.PedeAquiCartStore;
+    if (_rapiCartUnsubscribe || !store?.subscribe) return;
+    _rapiCartUnsubscribe = store.subscribe((current, previous) => {
+      syncRapiCartButton(current);
+      const addedQuantity = rapiCartQuantity(current) - rapiCartQuantity(previous);
+      if (addedQuantity > 0 && document.getElementById('mobViewRapi')?.classList.contains('active')) {
+        showRapiToast('Adicionado à sacola');
+      }
+    });
   }
 
   function esc(text) {
@@ -699,6 +728,12 @@
 
     return `
     <div class="rapi-page" id="rapiPage">
+      <header class="rapi-utility-header" aria-label="Ações do Rapi">
+        <button class="rapi-cart-button" id="rapiCartButton" type="button" onclick="openModal('cartModal')" aria-label="Abrir sacola" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="rapi-cart-count" id="rapiCartCount">0</span>
+        </button>
+      </header>
 
       ${locationWidget}
 
@@ -785,7 +820,7 @@
                 <span id="rapiProductDetailRecommendation"></span>
               </div>
             </div>
-            <button class="rapi-product-detail-question" type="button" onclick="rapiViewProductInMenu()">Ver no cardápio</button>
+            <button class="rapi-product-detail-question" type="button" onclick="rapiAddActiveProduct()">Adicionar à sacola</button>
           </div>
         </article>
       </div>
@@ -851,6 +886,13 @@
       detail.hidden = true;
       detail._rapiCloseTimer = null;
     }, 540);
+  };
+
+  window.rapiAddActiveProduct = function () {
+    const product = _rapiActiveDetailProduct;
+    if (!product) return;
+    window.rapiCloseProductDetail();
+    window.rapiAddProduct(product);
   };
 
   window.rapiViewProductInMenu = function () {
@@ -1268,6 +1310,8 @@
       }
     }
 
+    ensureRapiCartSubscription();
+    syncRapiCartButton();
     setupRapiSuggestionDrag();
     setupRapiKeyboardViewport();
 

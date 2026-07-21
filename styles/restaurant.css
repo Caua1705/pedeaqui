@@ -2795,13 +2795,14 @@ a{text-decoration:none;color:inherit}
     border-radius:0!important;
     background:#f5f3f2!important;
     transform:translateX(100vw)!important;
-    transition:transform .53s cubic-bezier(.4,0,.2,1)!important;
+    transition:transform .6s ease!important;
     overflow:hidden!important;
     display:flex!important;
     flex-direction:column!important;
   }
   #cartModal.active .modal--cart{
     transform:translateX(-50%)!important;
+    transition:transform .53s ease!important;
   }
   #cartModal .cart-hdr{
     width:100%!important;

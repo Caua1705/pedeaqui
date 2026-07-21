@@ -2310,14 +2310,10 @@
 
   function closePaymentMethodScreen(afterClose) {
     const overlay = $('paymentMethodModal');
-    if (!overlay?.classList.contains('active') || overlay.classList.contains('is-closing')) return;
-    overlay.classList.add('is-closing');
-    overlay.classList.remove('is-entered');
-    setTimeout(() => {
-      closeModalId('paymentMethodModal');
-      overlay.classList.remove('is-closing');
-      if (typeof afterClose === 'function') afterClose();
-    }, 600);
+    if (!overlay?.classList.contains('active')) return;
+    overlay.classList.remove('is-entered', 'is-closing');
+    closeModalId('paymentMethodModal');
+    if (typeof afterClose === 'function') setTimeout(afterClose, 600);
   }
 
   function renderCheckoutPaymentMethods(data) {

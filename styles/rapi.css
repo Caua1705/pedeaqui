@@ -3303,3 +3303,43 @@ body:has(#mobViewRapi.active) .mob-bottom-nav::before{
 body:has(#mobViewRapi.active) .rapi-toast{
   bottom:calc(174px + env(safe-area-inset-bottom,0px))!important;
 }
+/* Keep the product detail sheet completely out of recommendation rendering until opened. */
+#mobViewRapi .rapi-product-detail:not(.is-open),
+#mobViewRapi .rapi-product-detail[hidden]{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+#mobViewRapi .rapi-product-detail.is-open:not([hidden]){
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+#mobViewRapi .rapi-product-rail,
+#mobViewRapi .rapi-product-card,
+#mobViewRapi .rapi-product-card .rapi-result-image-wrap,
+#mobViewRapi .rapi-product-card .rapi-result-content{
+  position:relative!important;
+}
+#mobViewRapi .rapi-product-rail,
+#mobViewRapi .rapi-product-card{
+  z-index:1!important;
+}
+/* Let chat content scroll to the composer instead of being clipped by a blank band. */
+#mobViewRapi .rapi-ai-body--searching{
+  padding:72px 0 0!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+  flex:1 1 auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:0 0 112px!important;
+  scroll-padding-bottom:112px!important;
+  background:#ffffff!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;
+}

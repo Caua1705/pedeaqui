@@ -115,6 +115,7 @@
     function renderClubBody(body, clubData = {}) {
       const coupons = Array.isArray(clubData.coupons) && clubData.coupons.length ? clubData.coupons : (getCoupons() || []);
       const cashback = clubData.cashback_balance;
+      const hasCashbackBalance = Number.isFinite(Number(cashback)) && Number(cashback) > 0;
       const cashbackText = clubData.cashback_status === 'error' && cashback == null
         ? 'R$ --,--'
         : fmtClubCurrency(cashback ?? 0);
@@ -122,7 +123,7 @@
         <section class="club-page" aria-label="Clube">
           ${buildClubLocationWidget()}
           <div class="club-section-divider" aria-hidden="true"></div>
-          <section class="club-cashback-panel" aria-label="Saldo de cashback">
+          <section class="club-cashback-panel${hasCashbackBalance ? '' : ' club-cashback-panel--no-balance'}" aria-label="Saldo de cashback">
             <div class="club-cashback-card">
               <div class="club-cashback-copy">
                 <span>Saldo de cashback</span>
@@ -132,7 +133,7 @@
                 <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
               </button>
             </div>
-            <button type="button" class="club-cashback-use" aria-label="Usar saldo de cashback">Usar saldo de cashback</button>
+            ${hasCashbackBalance ? '<button type="button" class="club-cashback-use" aria-label="Usar saldo de cashback">Usar saldo de cashback</button>' : ''}
           </section>
           <div class="club-section-divider" aria-hidden="true"></div>
           <section class="club-coupons-section" aria-label="Meus cupons">

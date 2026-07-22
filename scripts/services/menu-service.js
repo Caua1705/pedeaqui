@@ -141,11 +141,11 @@
           sort_order: Number(banner.sort_order || banner.order || index)
         }))
         .sort((a, b) => a.sort_order - b.sort_order),
+      // Home keeps the legacy public menu feed as its source. Do not apply
+      // customer eligibility rules here: those belong exclusively to the
+      // Club view and /coupons/available.
       coupons: Array.isArray(raw.coupons)
-        ? raw.coupons.filter(coupon => {
-          const type = String(coupon.discount_type || '').toLowerCase();
-          return coupon.is_active !== false && !['cashback', 'club', 'wallet'].includes(type);
-        })
+        ? raw.coupons.filter(coupon => coupon.is_active !== false)
         : [],
       categories,
       products

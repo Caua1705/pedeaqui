@@ -6424,6 +6424,8 @@
     products = Array.isArray(payload.products) ? payload.products : [];
     banners = Array.isArray(payload.banners) ? payload.banners : [];
     highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
+    // Home coupons come from the public /menu payload. They are intentionally
+    // independent from the customer-specific /coupons/available Club feed.
     coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
     restaurantStore()?.set?.({
       restaurant,

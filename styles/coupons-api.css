@@ -1,0 +1,66 @@
+/* API-backed coupons in the Club view. */
+@media(max-width:767px){
+  body:has(#mobViewClub.active){overflow-x:hidden!important}
+  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section{
+    height:auto!important;
+    min-height:317px!important;
+    padding:18px 0 calc(132px + env(safe-area-inset-bottom,0px)) 16px!important;
+    overflow:hidden!important;
+  }
+  .club-available-coupon-rail,.club-coupon-skeleton-rail{
+    display:flex;align-items:stretch;gap:12px;width:100%;box-sizing:border-box;
+    padding:0 24px 8px 4px;overflow-x:auto;overflow-y:hidden;
+    scroll-snap-type:x proximity;scroll-padding-left:4px;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .club-available-coupon-rail::-webkit-scrollbar,.club-coupon-skeleton-rail::-webkit-scrollbar{display:none}
+  .club-available-coupon-card,.club-coupon-skeleton{
+    flex:0 0 calc(100vw - 108px);width:calc(100vw - 108px);max-width:282px;
+    min-height:382px;box-sizing:border-box;scroll-snap-align:start;
+    border:1px solid #f2d5c7;border-radius:14px;background:#fff;
+  }
+  .club-available-coupon-card{
+    display:flex;flex-direction:column;overflow:hidden;color:#354454;
+    box-shadow:0 4px 14px rgba(51,68,87,.08);
+  }
+  .club-available-coupon-badge{
+    min-height:34px;display:flex;align-items:center;justify-content:center;
+    box-sizing:border-box;padding:7px 12px;background:#e8f0ff;color:#27466f;
+    font-size:12px;font-weight:700;line-height:16px;text-align:center;
+  }
+  .club-available-coupon-image{width:100%;height:110px;display:block;object-fit:cover}
+  .club-available-coupon-content{display:flex;flex:1;flex-direction:column;padding:16px 16px 10px}
+  .club-available-coupon-discount{color:#f36f21;font-size:22px;line-height:27px;font-weight:850}
+  .club-available-coupon-content h3{margin:5px 0 0;color:#2f3f50;font-size:17px;line-height:22px;font-weight:800}
+  .club-available-coupon-content p{margin:7px 0 0;color:#687584;font-size:13px;line-height:18px;overflow-wrap:anywhere}
+  .club-available-coupon-meta{display:grid;gap:4px;margin-top:auto;padding-top:12px;color:#596777;font-size:12px;line-height:17px}
+  .club-available-coupon-use{
+    min-height:44px;margin:0 16px 16px;border:0;border-radius:9px;
+    background:#f36f21;color:#fff;font:800 14px/20px inherit;cursor:pointer;
+  }
+}
+@media(max-width:767px){
+  .club-coupon-skeleton{
+    border:0;background:linear-gradient(90deg,#eee 25%,#f7f7f7 40%,#eee 65%);
+    background-size:400% 100%;animation:clubCouponSkeleton 1.25s ease-in-out infinite;
+  }
+  .club-coupon-empty,.club-coupon-error{
+    width:calc(100% - 32px)!important;min-height:116px!important;box-sizing:border-box;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    text-align:center!important;background:#fff!important;color:#687584!important;
+  }
+  .club-coupon-error{flex-direction:column;gap:12px}
+  .club-coupon-error button{
+    min-height:40px;padding:0 18px;border:1px solid #f36f21;border-radius:8px;
+    background:#fff;color:#d85d16;font-weight:750;
+  }
+}
+@keyframes clubCouponSkeleton{0%{background-position:100% 0}100%{background-position:0 0}}
+.coupon-notice{
+  position:fixed;z-index:2000;left:50%;bottom:calc(94px + env(safe-area-inset-bottom,0px));
+  width:calc(100% - 40px);max-width:390px;box-sizing:border-box;padding:12px 16px;
+  border-radius:10px;background:#293746;color:#fff;font-size:14px;line-height:20px;
+  text-align:center;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:.2s ease;
+}
+.coupon-notice.is-visible{opacity:1;transform:translate(-50%,0)}
+.cart-coupon-discount-row{color:#267a43;font-weight:700}

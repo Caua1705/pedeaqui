@@ -12,6 +12,10 @@
 
     menu: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/menu`,
+    availableCoupons: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/coupons/available`,
+    previewCoupon: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/coupons/preview`,
     deliveryEstimate: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/delivery/estimate`,
 

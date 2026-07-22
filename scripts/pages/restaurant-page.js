@@ -26,6 +26,9 @@
   let deliveryType = 'delivery';
   let paymentMethod = '';
   let selectedCoupon = null;
+  let selectedCouponPreview = null;
+  let couponPreviewPromise = null;
+  let couponPreviewKey = '';
   let pendingCartItemDeleteUid = null;
   let couponDetailScrollY = 0;
   let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
@@ -215,6 +218,9 @@
     availableCheckoutPaymentKeys = new Set();
     currentProd = null;
     selectedCoupon = null;
+    selectedCouponPreview = null;
+    couponPreviewPromise = null;
+    couponPreviewKey = '';
     heroBannerIndex = 0;
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
@@ -290,16 +296,18 @@
 
   const clubController = window.PedeAquiRestaurantClub.createRestaurantClubController({
     appState,
-    fallback,
     getRestaurantSlug,
-    getCoupons: () => coupons,
+    getCouponContext: () => {
+      const totals = cartTotals();
+      return { subtotal: totals.subtotal, deliveryFee: totals.delivery, orderType: deliveryType };
+    },
     restaurantStore,
     setLoading,
-    wait,
-    renderTabLoader,
-    renderSectionLoader,
-    renderSectionError,
     logAppError,
+    handleUnauthorized: async () => {
+      await syncCustomerSession();
+      openLoginScreen('club');
+    },
     esc
   });
 
@@ -1923,11 +1931,34 @@
     updateCartUI();
   }
 
+  function couponPreviewData() {
+    const payload = selectedCouponPreview?.data ?? selectedCouponPreview ?? {};
+    return payload.preview ?? payload;
+  }
+
+  function couponDiscountAmount() {
+    const preview = couponPreviewData();
+    const value = Number(preview.discount_amount ?? preview.total_discount ?? preview.discount_total ?? preview.delivery_discount ?? preview.discount ?? preview.coupon_discount ?? preview.discount_value ?? 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+
+  function couponPreviewTotal() {
+    const preview = couponPreviewData();
+    const value = Number(preview.final_total ?? preview.total_after_discount ?? preview.discounted_total ?? preview.payable_amount);
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+
   function cartTotals() {
     const subtotal = cart.reduce((sum, item) => sum + cartItemUnitPrice(item) * item.qty, 0);
     const svc = settings.service_fee_enabled === false ? 0 : serviceFee();
     const delivery = deliveryFee();
-    return { subtotal, svc, delivery, total: subtotal + svc + delivery };
+    const beforeDiscount = subtotal + svc + delivery;
+    const discount = couponDiscountAmount();
+    const previewTotal = couponPreviewTotal();
+    const total = selectedCouponPreview
+      ? (previewTotal ?? Math.max(0, beforeDiscount - discount))
+      : beforeDiscount;
+    return { subtotal, svc, delivery, discount, total };
   }
 
   function hasValidDeliveryEstimateFee() {
@@ -2056,8 +2087,12 @@
 
   function updateCartUI() {
     const qty = cart.reduce((sum, item) => sum + item.qty, 0);
+    if (qty === 0 && selectedCouponPreview) {
+      selectedCouponPreview = null;
+      couponPreviewKey = '';
+    }
     const totals = cartTotals();
-    cartStore()?.set?.({ items: cart, deliveryType, paymentMethod, totals });
+    cartStore()?.set?.({ items: cart, deliveryType, paymentMethod, coupon: selectedCoupon, couponPreview: selectedCouponPreview, totals });
     const cartItemCountLabel = $('cartItemCountLabel');
     if (cartItemCountLabel) {
       cartItemCountLabel.textContent = qty === 1 ? '1 item' : String(qty) + ' itens';
@@ -2102,7 +2137,12 @@
     $('csSub').textContent = fmt(totals.subtotal);
     $('csSvcFeeBtn').textContent = fmt(totals.svc);
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
+    const couponRow = $('csCouponRow');
+    if (couponRow) couponRow.hidden = !(selectedCouponPreview && totals.discount > 0);
+    if ($('csCouponLabel')) $('csCouponLabel').textContent = selectedCoupon?.code || selectedCoupon?.coupon_code || 'Cupom';
+    if ($('csCouponDiscount')) $('csCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
     $('csTotal').textContent = fmt(totals.total);
+    if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }
 
   function handleHomeCartValueClick() {
@@ -5096,6 +5136,19 @@
     updateCartUI();
     if (_loginOrigin === 'coupon') {
       closeModalId('loginModal');
+      closeCouponDetail();
+      selectedCoupon = null;
+      selectedCouponPreview = null;
+      couponPreviewKey = '';
+      updateCartUI();
+      clubController.invalidateCoupons();
+      if ($('mobViewClub')?.classList.contains('active')) clubController.renderClubView({ force: true });
+      return;
+    }
+    if (_loginOrigin === 'club') {
+      closeModalId('loginModal');
+      clubController.invalidateCoupons();
+      mobNavClub();
       return;
     }
     closeModalId('loginModal');
@@ -5318,32 +5371,90 @@
     unlockBodyScrollIfClear();
   }
 
+  function showCouponNotice(message) {
+    let notice = $('couponNotice');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.id = 'couponNotice';
+      notice.className = 'coupon-notice';
+      notice.setAttribute('role', 'status');
+      notice.setAttribute('aria-live', 'polite');
+      document.body.appendChild(notice);
+    }
+    notice.textContent = message;
+    notice.classList.add('is-visible');
+    clearTimeout(showCouponNotice.timer);
+    showCouponNotice.timer = setTimeout(() => notice.classList.remove('is-visible'), 3600);
+  }
+
+  function couponIdentity(coupon) {
+    return String(coupon?.id ?? coupon?.coupon_id ?? coupon?.code ?? coupon?.coupon_code ?? '');
+  }
+
+  async function previewSelectedCoupon({ silent = false } = {}) {
+    if (!selectedCoupon || !cart.length) return null;
+    const totals = cartTotals();
+    const key = [couponIdentity(selectedCoupon), totals.subtotal, totals.delivery, deliveryType].join(':');
+    if (selectedCouponPreview && couponPreviewKey === key) return selectedCouponPreview;
+    if (couponPreviewPromise && couponPreviewKey === key) return couponPreviewPromise;
+    couponPreviewKey = key;
+    const requestKey = key;
+    couponPreviewPromise = window.PedeAquiClubService.previewCoupon({
+      restaurantSlug: getRestaurantSlug(),
+      couponId: selectedCoupon.id ?? selectedCoupon.coupon_id,
+      couponCode: selectedCoupon.code || selectedCoupon.coupon_code,
+      subtotal: totals.subtotal,
+      deliveryFee: totals.delivery,
+      orderType: deliveryType
+    }).then(response => {
+      if (couponPreviewKey !== requestKey) return response;
+      selectedCouponPreview = response;
+      updateCartUI();
+      return response;
+    }).catch(async error => {
+      if (couponPreviewKey === requestKey) selectedCouponPreview = null;
+      if (error?.status === 401) {
+        await syncCustomerSession();
+        openLoginScreen('coupon');
+      } else if (!silent) {
+        showCouponNotice('Não foi possível aplicar este cupom. Tente novamente.');
+      }
+      return null;
+    }).finally(() => {
+      if (couponPreviewKey === requestKey) couponPreviewPromise = null;
+    });
+    return couponPreviewPromise;
+  }
+
   function couponLabel(coupon) {
-    const type = String(coupon.discount_type || '').toLowerCase();
-    if (['percent', 'percentage'].includes(type)) return `${Number(coupon.discount_value || 0)}% OFF`;
-    if (type === 'free_delivery') return 'Frete grátis';
-    if (Number(coupon.discount_value) > 0) return `${fmt(coupon.discount_value)} OFF`;
+    const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
+    const value = Number(coupon.discount_value ?? coupon.value ?? coupon.amount ?? 0);
+    if (['percent', 'percentage'].includes(type)) return `${value.toLocaleString('pt-BR')}% OFF`;
+    if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
+    if (value > 0) return `${fmt(value)} OFF`;
     return coupon.name || coupon.title || coupon.code || 'Cupom';
   }
 
   function couponRules(coupon) {
     const rules = [];
-    if (Number(coupon.min_order_value) > 0) rules.push(`Pedido mínimo ${fmt(coupon.min_order_value)}`);
+    const minimum = Number(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal ?? 0);
+    const maximum = Number(coupon.max_discount ?? coupon.maximum_discount ?? coupon.max_discount_value ?? 0);
+    if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
     if (coupon.expires_at || coupon.valid_until) rules.push(`Válido até ${coupon.expires_at || coupon.valid_until}`);
+    if (maximum > 0) rules.push(`Desconto máximo de ${fmt(maximum)}`);
     if (coupon.description) rules.push(coupon.description);
-    rules.push('Disponível para pedidos neste restaurante');
-    rules.push('Sujeito à disponibilidade e regras do restaurante');
     return rules;
   }
 
   function openCouponDetail(code) {
-    const coupon = coupons.find(c => String(c.code) === String(code));
+    const coupon = clubController.getCoupon(code)
+      || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
     if (!coupon) return;
     selectedCoupon = coupon;
     document.body.classList.add('coupon-nav-keep');
     couponDetailScrollY = currentScrollY();
     lockBodyScroll(couponDetailScrollY, 'soft');
-    const image = coupon.image_url || coupon.image_path || '';
+    const image = coupon.image_url || coupon.image || coupon.image_path || '';
     const label = couponLabel(coupon);
     const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
     const art = $('couponDetailArt');
@@ -5371,14 +5482,34 @@
     }, 560);
   }
 
-  function confirmCouponDetail() {
+  async function confirmCouponDetail() {
     if (!selectedCoupon) return;
-    if (!isLogged()) {
+    if (selectedCoupon.requires_login === true && !isLogged()) {
       openLoginScreen('coupon');
       return;
     }
+    selectedCouponPreview = null;
+    couponPreviewKey = '';
+    if (!cart.length) {
+      cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
+      closeCouponDetail();
+      await mobNavMenu();
+      showCouponNotice('Cupom selecionado. Adicione produtos à sacola para usar.');
+      return;
+    }
+    const button = document.querySelector('.coupon-detail-use');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Validando...';
+    }
+    const preview = await previewSelectedCoupon();
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Usar cupom';
+    }
+    if (!preview) return;
     closeCouponDetail();
-    alert(`Cupom ${selectedCoupon.code} selecionado.`);
+    showCouponNotice(`Cupom aplicado. Desconto de ${fmt(couponDiscountAmount())}.`);
   }
 
   function useCoupon(code) {
@@ -6356,6 +6487,12 @@
     return clubController.retryClubLoad();
   }
 
+  function refreshAvailableCoupons() {
+    clubController.invalidateCoupons();
+    if ($('mobViewClub')?.classList.contains('active')) return clubController.renderClubView({ force: true });
+    return Promise.resolve();
+  }
+
 
   function mountProfOrdersOverlay() {
     const panel = $('profSubpedidos');
@@ -6393,10 +6530,11 @@
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
-    retryRestaurantBoot, retryMenuLoad, retryClubLoad, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
   });
 
   initializeDismissedDialogs();
+  window.addEventListener('pedeaqui:order-confirmed', refreshAvailableCoupons);
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

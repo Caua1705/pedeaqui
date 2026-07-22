@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="styles/verify.css?v=32">
 <link rel="stylesheet" href="styles/button-theme.css?v=3">
 <link rel="stylesheet" href="styles/rapi.css?v=159">
+<link rel="stylesheet" href="styles/coupons-api.css?v=1">
 </head>
 <body class="app-booting">
 <div class="app-loader" id="appLoader" role="status" aria-live="polite">
@@ -1016,6 +1017,10 @@
             <span>Taxa de entrega</span>
             <span id="csDelivery">A definir</span>
           </div>
+          <div class="cps-row cart-coupon-discount-row" id="csCouponRow" hidden>
+            <span id="csCouponLabel">Cupom</span>
+            <span id="csCouponDiscount">- R$ 0,00</span>
+          </div>
           <div class="cps-divider"></div>
           <div class="cps-total">
             <span>Total</span>
@@ -1784,7 +1789,7 @@
 <script src="scripts/config/app-config.js"></script>
 <script src="scripts/config/fallback-config.js"></script>
 <script src="scripts/config/routes.js"></script>
-<script src="scripts/services/api-routes.js?v=3"></script>
+<script src="scripts/services/api-routes.js?v=4"></script>
 <script src="scripts/utils/restaurant-slug.js"></script>
 <script src="scripts/utils/slugify.js"></script>
 <script src="scripts/utils/currency.js"></script>
@@ -1799,7 +1804,7 @@
   </div>
 </div>
 <script src="scripts/services/api-client.js"></script>
-<script src="scripts/services/api.js"></script>
+<script src="scripts/services/api.js?v=2"></script>
 <script src="scripts/services/customer-auth-service.js?v=4"></script>
 <script src="scripts/services/restaurant-service.js"></script>
 <script src="scripts/services/restaurant-info-service.js"></script>
@@ -1809,21 +1814,21 @@
 <script src="scripts/services/delivery-service.js"></script>
 <script src="scripts/services/cart-service.js"></script>
 <script src="scripts/services/order-service.js"></script>
-<script src="scripts/services/club-service.js?v=2"></script>
+<script src="scripts/services/club-service.js?v=3"></script>
 <script src="scripts/content/privacy-policy.js"></script>
 <script src="scripts/content/loyalty-policy.js"></script>
 <script src="scripts/state/cart-state.js"></script>
 <script src="scripts/state/customer-state.js"></script>
-<script src="scripts/state/order-state.js"></script>
+<script src="scripts/state/order-state.js?v=2"></script>
 <script src="scripts/state/ui-state.js"></script>
 <script src="scripts/stores/restaurant-store.js"></script>
 <script src="scripts/stores/customer-store.js"></script>
-<script src="scripts/stores/cart-store.js?v=2"></script>
+<script src="scripts/stores/cart-store.js?v=3"></script>
 <script src="scripts/stores/ui-store.js"></script>
 <script src="scripts/pages/restaurant-ui.js?v=2"></script>
-<script src="scripts/pages/restaurant-club.js?v=9"></script>
+<script src="scripts/pages/restaurant-club.js?v=10"></script>
 <script src="scripts/pages/restaurant-rapi.js?v=41"></script>
-<script src="scripts/pages/restaurant-page.js?v=112"></script>
+<script src="scripts/pages/restaurant-page.js?v=113"></script>
 <script src="scripts/pages/cashback-statement.js?v=4"></script>
 </body>
 </html>

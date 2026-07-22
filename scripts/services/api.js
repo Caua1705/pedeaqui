@@ -31,6 +31,40 @@
     return window.PedeAquiApiClient.get(routes().productDetail(slug, productSlug));
   }
 
+  function authOptions() {
+    const headers = window.PedeAquiCustomerAuth?.authHeaders?.() || {};
+    return Object.keys(headers).length ? { headers } : {};
+  }
+
+  function couponContextQuery({ subtotal, deliveryFee, orderType } = {}) {
+    const params = new URLSearchParams();
+    if (Number.isFinite(Number(subtotal))) params.set('subtotal', String(Number(subtotal)));
+    if (Number.isFinite(Number(deliveryFee))) params.set('delivery_fee', String(Number(deliveryFee)));
+    if (orderType) params.set('order_type', String(orderType));
+    const query = params.toString();
+    return query ? `?${query}` : '';
+  }
+
+  async function getAvailableCoupons({ restaurantSlug, subtotal, deliveryFee, orderType } = {}) {
+    const path = routes().availableCoupons(restaurantSlug) + couponContextQuery({ subtotal, deliveryFee, orderType });
+    return window.PedeAquiApiClient.request(path, { method: 'GET', ...authOptions() });
+  }
+
+  async function previewCoupon({ restaurantSlug, couponId, couponCode, subtotal, deliveryFee, orderType } = {}) {
+    const body = {
+      subtotal: Number(subtotal) || 0,
+      delivery_fee: Number(deliveryFee) || 0,
+      order_type: orderType || 'delivery'
+    };
+    if (couponId != null && couponId !== '') body.coupon_id = couponId;
+    else if (couponCode) body.coupon_code = couponCode;
+    return window.PedeAquiApiClient.request(routes().previewCoupon(restaurantSlug), {
+      method: 'POST',
+      body: JSON.stringify(body),
+      ...authOptions()
+    });
+  }
+
   async function createOrder(slug, payload) {
     if (useMockData()) {
       return {
@@ -61,6 +95,8 @@
     getRestaurantMenu,
     getCategoryProducts,
     getProduct,
+    getAvailableCoupons,
+    previewCoupon,
     createOrder,
     getOrder
   };

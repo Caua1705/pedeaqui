@@ -3,6 +3,8 @@
     items: [],
     deliveryType: 'delivery',
     paymentMethod: 'Pix',
+    coupon: null,
+    couponPreview: null,
     totals: { subtotal: 0, svc: 0, delivery: 0, total: 0 }
   };
   const listeners = new Set();
@@ -44,6 +46,8 @@
   function clear() {
     const previous = get();
     state.items = [];
+    state.coupon = null;
+    state.couponPreview = null;
     state.totals = { subtotal: 0, svc: 0, delivery: 0, total: 0 };
     return emit(previous);
   }

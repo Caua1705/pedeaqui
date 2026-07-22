@@ -162,11 +162,31 @@
     return getCashbackTransactions(options);
   }
 
+  function normalizeAvailableCoupons(response) {
+    const payload = response?.data ?? response ?? {};
+    const list = Array.isArray(payload) ? payload : (payload.coupons || payload.items || []);
+    if (!Array.isArray(list)) return [];
+    const backendSentEligibility = list.some(coupon => Object.prototype.hasOwnProperty.call(coupon || {}, 'eligible'));
+    return backendSentEligibility ? list.filter(coupon => coupon?.eligible === true) : list;
+  }
+
+  async function getAvailableCoupons(options = {}) {
+    const response = await window.PedeAquiApi.getAvailableCoupons(options);
+    return normalizeAvailableCoupons(response);
+  }
+
+  async function previewCoupon(options = {}) {
+    return window.PedeAquiApi.previewCoupon(options);
+  }
+
   async function getClubData(restaurantSlug, context = {}) {
-    const cashback = await getCashback();
+    const [cashback, coupons] = await Promise.all([
+      getCashback(),
+      getAvailableCoupons({ restaurantSlug, ...context })
+    ]);
     return {
       restaurant_slug: restaurantSlug,
-      coupons: Array.isArray(context.coupons) ? context.coupons : [],
+      coupons,
       cashback_balance: cashback.data?.balance ?? null,
       cashback_status: cashback.status,
       cashback_updated_at: cashback.updatedAt
@@ -185,6 +205,8 @@
     getCashback,
     getCashbackTransactions,
     getTransactions,
+    getAvailableCoupons,
+    previewCoupon,
     getClubData
   };
 })();

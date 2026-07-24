@@ -534,7 +534,9 @@
     const apiResponse = await window.PedeAquiApiClient.request('/chat', {
       method: 'POST',
       body: JSON.stringify(payload),
-      signal
+      signal,
+      // LLM answer, much slower than a normal endpoint — the 8s default would cut it off.
+      timeout: 30000
     });
     console.log('[Rapi] Resposta completa da API:', apiResponse);
     return normalizeChatResponse(apiResponse);

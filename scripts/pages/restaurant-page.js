@@ -2150,14 +2150,32 @@
       : esc(fallback);
   }
 
+  // Unidade onde o pedido é retirado. Em retirada é ELA que ocupa o lugar do
+  // endereço de entrega no widget do carrinho.
+  function currentPickupBranch() {
+    return branchById(operationContext?.branch_id) || branches[0] || {};
+  }
+
+  function pickupBranchText() {
+    const branch = currentPickupBranch();
+    return branch.full_address
+      || [branch.address, branch.neighborhood, branch.city].filter(Boolean).join(', ')
+      || branch.name
+      || '';
+  }
+
   function syncCartLocationState() {
     const totals = cartTotals();
     const minOrderValue = minimumOrderValue();
     const isBelowMinimumOrder = minOrderValue > 0 && totals.subtotal < minOrderValue;
     const address = currentCartAddress();
     const hasAddress = Boolean(address?.summary || addressSummary(address));
+    // Em retirada o cliente vai até a loja: exigir endereço de entrega aqui
+    // travava o pedido por um dado que o fluxo não usa.
+    const isPickup = deliveryType === 'pickup';
+    const needsAddress = !isPickup && !hasAddress;
     const widget = $('cartLocationWidget');
-    widget?.classList.toggle('has-address', hasAddress);
+    widget?.classList.toggle('has-address', hasAddress || isPickup);
     const locationImage = $('cartLocationImage');
     if (locationImage) {
       const imageSource = isLogged()
@@ -2166,22 +2184,28 @@
       if (locationImage.getAttribute('src') !== imageSource) locationImage.src = imageSource;
     }
     const alert = $('cartLocationAlert');
-    if (alert) alert.style.display = hasAddress ? 'none' : 'flex';
+    if (alert) alert.style.display = needsAddress ? 'flex' : 'none';
     const eta = $('cartLocationEta');
     if (eta) {
-      eta.style.display = hasAddress ? 'block' : 'none';
+      eta.style.display = isPickup || hasAddress ? 'block' : 'none';
       eta.textContent = cartEtaText();
     }
-    if ($('cartLocationLabel')) $('cartLocationLabel').textContent = hasAddress ? 'Endereço de entrega' : 'Não há endereço definido';
+    if ($('cartLocationLabel')) {
+      $('cartLocationLabel').textContent = isPickup
+        ? 'Retirada na loja'
+        : (hasAddress ? 'Endereço de entrega' : 'Não há endereço definido');
+    }
     if ($('cartLocationText')) {
-      if (hasAddress) $('cartLocationText').innerHTML = cartAddressHtml(address);
+      if (isPickup) $('cartLocationText').textContent = pickupBranchText();
+      else if (hasAddress) $('cartLocationText').innerHTML = cartAddressHtml(address);
       else $('cartLocationText').textContent = '';
     }
     if ($('cartAddrText')) $('cartAddrText').textContent = hasAddress ? (address.summary || addressSummary(address)) : 'Defina seu endereço para entrega';
     if ($('cartLocationStoreTag')) $('cartLocationStoreTag').textContent = currentCartBranchLabel();
+    if ($('cartLocationModeTag')) $('cartLocationModeTag').textContent = isPickup ? 'RETIRADA' : 'DELIVERY';
     const paymentCard = document.querySelector('#cartModal .cart-payment-card');
     if (paymentCard) {
-      paymentCard.style.display = hasAddress && isLogged() ? '' : 'none';
+      paymentCard.style.display = (isPickup || hasAddress) && isLogged() ? '' : 'none';
       const paymentKey = infoPaymentType(paymentMethod);
       const hasSelectedPayment = Boolean(paymentMethod);
       const isPixSelected = paymentKey === 'pix';
@@ -2194,7 +2218,7 @@
     if (cta) {
       cta.disabled = false;
       cta.classList.remove('cart-cta-btn--minimum-required');
-      if (!hasAddress) {
+      if (needsAddress) {
         cta.textContent = 'Informe seu endereço';
         cta.classList.add('cart-cta-btn--address-required');
         cta.classList.remove('cart-cta-btn--login-required');

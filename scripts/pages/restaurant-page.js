@@ -6439,10 +6439,7 @@
     });
     };
     bootPromise = (async () => {
-    await Promise.all([
-      loadInitialData(),
-      wait(1000)
-    ]);
+    await loadInitialData();
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     initOperationContext();
     applyTheme();

@@ -66,7 +66,9 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.node }
+      // Tests reference browser globals too: unit tests alias window->globalThis,
+      // and E2E page.evaluate/addInitScript callbacks run in the page context.
+      globals: { ...globals.node, ...globals.browser }
     },
     rules: {
       eqeqeq: ['error', 'smart'],

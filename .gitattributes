@@ -1,0 +1,12 @@
+# Normalize line endings to LF in the repository (fixes mixed CRLF/LF going
+# forward). Files already stored as LF are unaffected; this only prevents new
+# CRLF from entering the repo. Binary assets are left untouched.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ico binary

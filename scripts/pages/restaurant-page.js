@@ -2735,6 +2735,15 @@
     if (error?.status === 409) {
       return error.detail || error.message || 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.';
     }
+    if (error?.status === 401 || error?.status === 403) {
+      return 'Sua sessão expirou. Entre novamente para concluir o pedido.';
+    }
+    if (error?.name === 'NetworkError') {
+      return 'Sem conexão com o servidor. Verifique sua internet e toque em Confirmar novamente.';
+    }
+    if (Number(error?.status) >= 500) {
+      return 'O servidor não conseguiu processar o pedido agora. Tente novamente em instantes.';
+    }
     if (error?.status === 422) {
       const detail = error.data?.detail;
       if (Array.isArray(detail) && detail.length) {
@@ -2757,26 +2766,43 @@
 
     hideOrderReviewError();
     setOrderSubmitting(true);
+
+    let response;
     try {
-      const response = await window.PedeAquiOrderService.createOrder(
+      response = await window.PedeAquiOrderService.createOrder(
         getRestaurantSlug(),
         orderPayload,
         { idempotencyKey: ensureOrderIdempotencyKey(orderPayload) }
       );
-      handleOrderCreated(response);
     } catch (error) {
-      // A Idempotency-Key é PRESERVADA de propósito: a retentativa precisa ser
-      // reconhecida como a mesma tentativa, não como um pedido novo.
+      // Falha REAL da requisição: o carrinho não é tocado e a Idempotency-Key é
+      // preservada de propósito — a retentativa precisa ser reconhecida como a
+      // mesma tentativa, não como um pedido novo.
       logAppError('Falha ao criar pedido', error);
       showOrderReviewError(orderErrorMessage(error));
       setOrderSubmitting(false); // reabilita para retry
+      return;
+    }
+
+    // Daqui para frente o pedido JÁ EXISTE no servidor. Um erro de renderização
+    // não pode virar mensagem de falha: o usuário tentaria de novo e criaria um
+    // pedido duplicado. Na dúvida, seguimos para a tela de sucesso.
+    try {
+      handleOrderCreated(response);
+    } catch (error) {
+      logAppError('Pedido criado, mas falhou ao exibir a confirmação', error);
+      setOrderSubmitting(false);
+      closeModalImmediately('orderReviewModal');
     }
   }
 
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
     submittedOrder = response || null;
-    window.PedeAquiOrderState?.saveOrder?.(response);
+    // Persistir/disparar evento não pode derrubar a confirmação: o pedido já
+    // existe, e uma falha aqui é de cache, não do pedido.
+    try { window.PedeAquiOrderState?.saveOrder?.(response); }
+    catch (error) { logAppError('Falha ao registrar o pedido localmente', error); }
     cart = [];
     selectedCoupon = null;
     selectedCouponPreview = null;

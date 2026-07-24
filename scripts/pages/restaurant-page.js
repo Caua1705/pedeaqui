@@ -3,10 +3,12 @@
   const storageKeys = () => window.RapidexStorage;
   const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
   const STORAGE_ADDRESS_LIST = storageKeys()?.KEYS.customerAddressList || 'rapidex.customerAddresses.local';
-  const STORAGE_CUSTOMER = storageKeys()?.KEYS.customerLocal || 'rapidex.customer.local';
   const readStorageKey = (key) => storageKeys()?.readWithMigration
     ? storageKeys().readWithMigration(key)
     : localStorage.getItem(key);
+  // Sessão do cliente: global, chave única. Esta página gravava o mesmo cliente
+  // numa segunda chave (rapidex.customer.local) que podia divergir da do auth.
+  const readSessionCustomer = () => storageKeys()?.readSessionCustomer?.() || null;
 
   let payload = {};
   let restaurant = {};
@@ -40,7 +42,7 @@
   let couponPreviewKey = '';
   let pendingCartItemDeleteUid = null;
   let couponDetailScrollY = 0;
-  let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(readStorageKey(STORAGE_CUSTOMER) || 'null');
+  let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || readSessionCustomer();
   let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(readStorageKey(STORAGE_ADDRESS) || 'null');
   let submittedOrder = null;
   let heroBannerIndex = 0;
@@ -182,8 +184,8 @@
     customer = nextCustomer || null;
     appState.customer = customer;
     customerStore()?.setCustomer?.(customer);
-    if (customer) localStorage.setItem(STORAGE_CUSTOMER, JSON.stringify(customer));
-    else localStorage.removeItem(STORAGE_CUSTOMER);
+    if (customer) storageKeys()?.writeSessionCustomer?.(customer);
+    else storageKeys()?.clearSessionCustomer?.();
     return customer;
   }
 
@@ -5785,7 +5787,7 @@
         appState.customerAddresses = null;
         appState.profileLoaded = false;
         customerStore()?.clear?.();
-        localStorage.removeItem(STORAGE_CUSTOMER);
+        // persistCustomer(null) e auth.logout() já limparam a sessão: uma chave só.
         renderHomeLoginPrompt();
         renderProfileView();
         requestDeliveryEstimate();

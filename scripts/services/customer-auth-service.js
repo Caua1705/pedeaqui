@@ -28,7 +28,11 @@
     sessionStatus = 'anonymous';
   }
 
+  // Sessão global do Rapidex: uma conta vale em todos os restaurantes, então
+  // estas chaves NÃO levam slug. Todo acesso passa por RapidexStorage, que é a
+  // fonte única (ver scripts/utils/storage-keys.js).
   function getStoredCustomer() {
+    if (store()?.readSessionCustomer) return store().readSessionCustomer();
     try {
       return JSON.parse(readKey(CUSTOMER_KEY)) || null;
     } catch {
@@ -36,10 +40,13 @@
     }
   }
   function setStoredCustomer(customer) {
-    if (customer) localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
+    if (!customer) return;
+    if (store()?.writeSessionCustomer) store().writeSessionCustomer(customer);
+    else localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
   }
   function clearStoredCustomer() {
-    localStorage.removeItem(CUSTOMER_KEY);
+    if (store()?.clearSessionCustomer) store().clearSessionCustomer();
+    else localStorage.removeItem(CUSTOMER_KEY);
   }
 
   function isLoggedIn() {

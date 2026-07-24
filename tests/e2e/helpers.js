@@ -82,8 +82,10 @@ export async function seedPickupSession(page) {
         `rapidex.operationContext.${slug}`,
         JSON.stringify({ order_type: 'pickup', branch_id: branchId, branch_label: 'Matriz', confirmed: true })
       );
+      // Chave única e global da sessão (Fase 3). Sem slug: a conta é do
+      // Rapidex, não do restaurante.
       localStorage.setItem(
-        'rapidex.customer.local',
+        'rapidex.customer.profile',
         JSON.stringify({ name: 'E2E Test', phone: '85999999999' })
       );
     },

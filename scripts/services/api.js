@@ -82,7 +82,7 @@
 
   async function getOrder(slug, orderNumber, phone) {
     if (useMockData()) {
-      const orders = JSON.parse(localStorage.getItem('pedeaqui.orders') || '[]');
+      const orders = window.PedeAquiOrderState?.listOrders?.() || [];
       return orders.find(order => String(order.order_number) === String(orderNumber)) || null;
     }
 

@@ -1,7 +1,11 @@
 (function () {
   const auth = () => window.PedeAquiCustomerAuth;
-  const STORAGE_ADDRESS = 'pedeaqui.customerAddress';
-  const STORAGE_ADDRESS_LIST = 'pedeaqui.customerAddresses.local';
+  const store = () => window.RapidexStorage;
+  const STORAGE_ADDRESS = store()?.KEYS.customerAddress || 'rapidex.customerAddress';
+  const STORAGE_ADDRESS_LIST = store()?.KEYS.customerAddressList || 'rapidex.customerAddresses.local';
+  const readKey = (key) => store()?.readWithMigration
+    ? store().readWithMigration(key)
+    : localStorage.getItem(key);
 
   function normalizeAddress(address = {}) {
     if (!address) return null;
@@ -29,7 +33,7 @@
 
   function readSelectedAddress() {
     try {
-      return normalizeAddress(JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null'));
+      return normalizeAddress(JSON.parse(readKey(STORAGE_ADDRESS) || 'null'));
     } catch {
       return null;
     }
@@ -43,7 +47,7 @@
 
   function readLocalAddressList() {
     try {
-      const list = JSON.parse(localStorage.getItem(STORAGE_ADDRESS_LIST) || '[]');
+      const list = JSON.parse(readKey(STORAGE_ADDRESS_LIST) || '[]');
       return Array.isArray(list) ? list.map(normalizeAddress).filter(Boolean) : [];
     } catch {
       return [];

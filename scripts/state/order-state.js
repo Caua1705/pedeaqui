@@ -1,8 +1,11 @@
 (function () {
-  const STORAGE_KEY = 'pedeaqui.orders';
+  const store = () => window.RapidexStorage;
+  const STORAGE_KEY = store()?.KEYS.orders || 'rapidex.orders';
 
   function listOrders() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (store()?.readJson) return store().readJson(STORAGE_KEY, []) || [];
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
   }
 
   function saveOrder(order) {

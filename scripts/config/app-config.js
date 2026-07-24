@@ -10,7 +10,7 @@
 
   window.APP_CONFIG = APP_CONFIG;
   window.PedeAquiConfig = {
-    appName: 'PedeAqui',
+    appName: 'Rapidex',
     defaultRestaurantSlug: APP_CONFIG.DEFAULT_RESTAURANT_SLUG,
     storagePrefix: APP_CONFIG.STORAGE_PREFIX,
     useMockData: APP_CONFIG.USE_MOCK_DATA,

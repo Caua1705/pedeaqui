@@ -1,8 +1,12 @@
 (function () {
   const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
-  const STORAGE_ADDRESS = 'pedeaqui.customerAddress';
-  const STORAGE_ADDRESS_LIST = 'pedeaqui.customerAddresses.local';
-  const STORAGE_CUSTOMER = 'pedeaqui.customer';
+  const storageKeys = () => window.RapidexStorage;
+  const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
+  const STORAGE_ADDRESS_LIST = storageKeys()?.KEYS.customerAddressList || 'rapidex.customerAddresses.local';
+  const STORAGE_CUSTOMER = storageKeys()?.KEYS.customerLocal || 'rapidex.customer.local';
+  const readStorageKey = (key) => storageKeys()?.readWithMigration
+    ? storageKeys().readWithMigration(key)
+    : localStorage.getItem(key);
 
   let payload = {};
   let restaurant = {};
@@ -31,8 +35,8 @@
   let couponPreviewKey = '';
   let pendingCartItemDeleteUid = null;
   let couponDetailScrollY = 0;
-  let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(localStorage.getItem(STORAGE_CUSTOMER) || 'null');
-  let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(localStorage.getItem(STORAGE_ADDRESS) || 'null');
+  let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || JSON.parse(readStorageKey(STORAGE_CUSTOMER) || 'null');
+  let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(readStorageKey(STORAGE_ADDRESS) || 'null');
   let submittedOrder = null;
   let heroBannerIndex = 0;
   let heroBannerTimer = null;
@@ -130,7 +134,7 @@
     return asFiniteNumber(deliveryEstimate.data?.delivery_fee);
   };
   const deliveryFee = () => deliveryType === 'delivery' ? (currentDeliveryEstimateFee() ?? 0) : 0;
-  const initials = (name) => (name || 'PedeAqui').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+  const initials = (name) => (name || 'Rapidex').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
   const formatProductTitle = (value) => {
@@ -1022,7 +1026,7 @@
     root.style.setProperty('--brand-d', secondary);
     root.style.setProperty('--m-accent', primary);
     root.style.setProperty('--m-accent-light', primary + '22');
-    document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | PedeAqui`;
+    document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
   }
 
   function renderRestaurantShell() {
@@ -2440,7 +2444,7 @@
   // ============================================================
   //  Operation context — single source of truth (per restaurant)
   // ============================================================
-  const OP_STORAGE_PREFIX = 'rapidex_operation_context_';
+  const OP_STORAGE_PREFIX = storageKeys()?.PREFIXES.operationContext || 'rapidex.operationContext.';
   let operationContext = null;
   let opDraft = null; // working copy edited while the operation modal is open
   let operationConfirmed = false;
@@ -2449,7 +2453,7 @@
   const opStorageKey = () => OP_STORAGE_PREFIX + getRestaurantSlug();
 
   function loadOperationContext() {
-    try { return JSON.parse(localStorage.getItem(opStorageKey()) || 'null'); }
+    try { return JSON.parse(readStorageKey(opStorageKey()) || 'null'); }
     catch { return null; }
   }
 
@@ -2471,7 +2475,7 @@
     return window.PedeAquiAddressService?.writeLocalAddressList?.(list) || [];
   }
 
-  const ADDRESS_IMPORT_SIGNATURE_PREFIX = 'rapidex_address_import_signature_';
+  const ADDRESS_IMPORT_SIGNATURE_PREFIX = storageKeys()?.PREFIXES.addressImportSignature || 'rapidex.addressImportSignature.';
   let customerAddressesSyncPromise = null;
 
   function normalizeAddressValue(address) {
@@ -2788,7 +2792,7 @@
       const customerKey = currentCustomerSnapshot()?.id || window.PedeAquiCustomerAuth?.getStoredCustomer?.()?.id || 'session';
       const signatureKey = ADDRESS_IMPORT_SIGNATURE_PREFIX + customerKey;
       const signature = addressImportSignature(pending);
-      if (options.importLocal !== false && pending.length && localStorage.getItem(signatureKey) !== signature) {
+      if (options.importLocal !== false && pending.length && readStorageKey(signatureKey) !== signature) {
         try {
           await window.PedeAquiAddressService.importCustomerAddresses(pending.map(importAddressPayload));
           localStorage.setItem(signatureKey, signature);
@@ -4173,7 +4177,7 @@
   }
 
   function mockLogin(mode) {
-    persistCustomer({ name: mode === 'signup' ? 'Cliente PedeAqui' : 'Cliente identificado', phone: '' });
+    persistCustomer({ name: mode === 'signup' ? 'Cliente Rapidex' : 'Cliente identificado', phone: '' });
     appState.profileLoaded = false;
     customerStore()?.set?.({ profileLoaded: false });
     closeModalId('loginModal');

@@ -1,16 +1,21 @@
 (function () {
   // Storage keys (shared across screens / sessions).
-  const TOKEN_KEY = 'rapidex_customer_token';
-  const CUSTOMER_KEY = 'rapidex_customer';
+  const store = () => window.RapidexStorage;
+  const TOKEN_KEY = store()?.KEYS.customerToken || 'rapidex.customer.token';
+  const CUSTOMER_KEY = store()?.KEYS.customerProfile || 'rapidex.customer.profile';
+  const readKey = (key) => store()?.readWithMigration
+    ? store().readWithMigration(key)
+    : localStorage.getItem(key);
 
   const client = () => window.PedeAquiApiClient;
   const routes = () => window.PedeAquiApiRoutes || window.API_ROUTES;
-  let sessionStatus = localStorage.getItem(TOKEN_KEY) ? 'pending' : 'anonymous';
+  // Migrates the legacy token in on first boot, so the pilot stays logged in.
+  let sessionStatus = readKey(TOKEN_KEY) ? 'pending' : 'anonymous';
 
   /* ---------- Token + customer storage ---------- */
 
   function getToken() {
-    return localStorage.getItem(TOKEN_KEY) || null;
+    return readKey(TOKEN_KEY) || null;
   }
   function setToken(token) {
     if (token) {
@@ -25,7 +30,7 @@
 
   function getStoredCustomer() {
     try {
-      return JSON.parse(localStorage.getItem(CUSTOMER_KEY)) || null;
+      return JSON.parse(readKey(CUSTOMER_KEY)) || null;
     } catch {
       return null;
     }

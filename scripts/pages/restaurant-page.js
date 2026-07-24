@@ -1000,10 +1000,21 @@
     }
   }
 
+  // Brand colours come from the API. Only #rgb/#rrggbb is accepted: the value is
+  // concatenated with an alpha suffix below, so anything else would silently
+  // produce an invalid custom property.
+  function normalizeBrandColor(value, fallbackColor) {
+    const raw = String(value ?? '').trim();
+    if (/^#[0-9a-f]{3}$/i.test(raw)) {
+      return '#' + raw.slice(1).split('').map(char => char + char).join('');
+    }
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallbackColor;
+  }
+
   function applyTheme() {
     const root = document.documentElement;
-    const primary = '#F36F21';
-    const secondary = restaurant.secondary_color || '#111111';
+    const primary = normalizeBrandColor(restaurant.primary_color, '#F36F21');
+    const secondary = normalizeBrandColor(restaurant.secondary_color, '#111111');
     root.style.setProperty('--brand-primary', primary);
     root.style.setProperty('--brand-secondary', secondary);
     root.style.setProperty('--brand-accent', primary);

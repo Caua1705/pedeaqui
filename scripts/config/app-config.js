@@ -1,6 +1,15 @@
 (function () {
+  // API base comes from Vite env (VITE_API_BASE_URL in .env — see .env.example),
+  // falling back to the production URL so the app still boots without a .env.
+  var envApiBase = '';
+  try {
+    envApiBase = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
+  } catch (error) {
+    envApiBase = '';
+  }
+
   const APP_CONFIG = {
-    API_BASE_URL: 'https://api.pederapidex.com',
+    API_BASE_URL: envApiBase || 'https://api.pederapidex.com',
     DEFAULT_RESTAURANT_SLUG: 'junior-da-picanha',
     STORAGE_MODE: 'api',
     USE_MOCK_DATA: false,

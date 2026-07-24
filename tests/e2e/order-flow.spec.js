@@ -1,0 +1,115 @@
+import { test, expect } from '@playwright/test';
+import {
+  mockApi,
+  seedPickupSession,
+  addH2OToCart,
+  successOrder,
+  RESTAURANT_URL
+} from './helpers.js';
+
+// Drives product -> cart -> review -> confirm on the BUILT app, with every API
+// call mocked (no production traffic, no real orders). Also pins the Fase 1
+// invariants: one request per double-click, and a retry reuses the key.
+
+async function goToReview(page) {
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3); // 3 x R$7,05 = R$21,15, above the R$20 minimum
+
+  // openCheckout() is the same entry the cart CTA calls once its gates pass; we
+  // invoke it directly to sidestep the (pre-existing) address gate on pickup,
+  // then drive payment and confirmation through the real UI controls.
+  await page.evaluate(() => window.openCheckout());
+
+  await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+  await page.locator('.payment-method-confirm').click();
+
+  await expect(page.locator('#orderReviewModal')).toHaveClass(/active/);
+  await expect(page.locator('#orvConfirmBtn')).toBeEnabled();
+}
+
+test('product -> cart -> review -> confirm creates an order and shows the real number', async ({
+  page
+}) => {
+  const { orderRequests } = await mockApi(page);
+  await seedPickupSession(page);
+
+  await goToReview(page);
+
+  // Review reflects the cart the user built.
+  await expect(page.locator('#orvItems')).toContainText('H2O');
+  await expect(page.locator('#orvTotal')).toContainText('22,14');
+  await expect(page.locator('#orvPayment')).toContainText('Pix');
+
+  await page.locator('#orvConfirmBtn').click();
+
+  // Success screen is filled from the createOrder RESPONSE, not hardcoded.
+  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  await expect(page.locator('#ordSuccessNumber')).toHaveText(`#${successOrder(1).order_number}`);
+  await expect(page.locator('#ordSuccessTotal')).toContainText('22,14');
+
+  // Exactly one order was created, with the contract-shaped payload.
+  expect(orderRequests).toHaveLength(1);
+  const { body } = orderRequests[0];
+  expect(body.order_type).toBe('pickup');
+  expect(body.payment_method).toBe('pix');
+  expect(body.items[0]).toMatchObject({ product_id: expect.any(String), quantity: 3 });
+  expect(body).not.toHaveProperty('total'); // backend is authoritative
+
+  // Cart is cleared only after confirmed success.
+  const cartCount = await page.evaluate(
+    () => (window.PedeAquiCartStore?.get?.().items || []).length
+  );
+  expect(cartCount).toBe(0);
+});
+
+test('double-click on Confirm creates only ONE order', async ({ page }) => {
+  // Hold the response open briefly so both clicks land while the request is in flight.
+  const { orderRequests } = await mockApi(page, {
+    onCreateOrder: async (route) => {
+      await new Promise((r) => setTimeout(r, 800));
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(successOrder(1))
+      });
+    }
+  });
+  await seedPickupSession(page);
+  await goToReview(page);
+
+  const confirm = page.locator('#orvConfirmBtn');
+  await confirm.click();
+  await confirm.click({ force: true }).catch(() => {}); // second click while disabled/in-flight
+
+  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  expect(orderRequests).toHaveLength(1);
+});
+
+test('a retry after a network failure reuses the same Idempotency-Key', async ({ page }) => {
+  // Fail the first attempt at the network layer, succeed on the second.
+  const { orderRequests } = await mockApi(page, {
+    onCreateOrder: async (route, _request, attempt) => {
+      if (attempt === 1) return route.abort('connectionfailed');
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(successOrder(2))
+      });
+    }
+  });
+  await seedPickupSession(page);
+  await goToReview(page);
+
+  await page.locator('#orvConfirmBtn').click();
+
+  // First attempt failed: error shown, cart intact, button re-enabled.
+  await expect(page.locator('#orvError')).toBeVisible();
+  await expect(page.locator('#orvConfirmBtn')).toBeEnabled();
+
+  await page.locator('#orvConfirmBtn').click();
+  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+
+  expect(orderRequests).toHaveLength(2);
+  expect(orderRequests[0].idempotencyKey).toBeTruthy();
+  expect(orderRequests[1].idempotencyKey).toBe(orderRequests[0].idempotencyKey);
+});

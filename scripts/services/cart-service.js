@@ -17,12 +17,20 @@
     return { subtotal, delivery: deliveryFee, svc: serviceFee, total: subtotal + deliveryFee + serviceFee };
   }
 
+  // uid identifica a LINHA do carrinho (para editar/remover), não o produto.
+  // Date.now() colidia quando dois itens eram adicionados no mesmo milissegundo
+  // — e aí remover um apagava o outro.
+  function newCartItemUid() {
+    return window.crypto?.randomUUID?.()
+      || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
   function normalizeCartItem(product, qty = 1, obs = '', extras = {}) {
     return {
       ...product,
       qty: Number(qty || 1),
       obs: String(obs || ''),
-      uid: Date.now(),
+      uid: newCartItemUid(),
       ...extras
     };
   }
@@ -30,6 +38,7 @@
   window.PedeAquiCartService = {
     createCart,
     calculateTotals,
-    normalizeCartItem
+    normalizeCartItem,
+    newCartItemUid
   };
 })();

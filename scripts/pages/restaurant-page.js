@@ -1955,7 +1955,7 @@
     const selected_options = selectedOptionsPayload();
     const selected_options_snapshot = selectedOptionsSnapshot();
     const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
-      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: Date.now() };
+      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: newCartItemUid() };
     cart.push({
       ...cartItem,
       price: Number(currentProd.price),
@@ -2130,6 +2130,7 @@
       couponPreviewKey = '';
     }
     const totals = cartTotals();
+    persistCart(); // ponto único de gravação: toda mutação do carrinho passa aqui
     cartStore()?.set?.({ items: cart, deliveryType, paymentMethod, coupon: selectedCoupon, couponPreview: selectedCouponPreview, totals });
     const cartItemCountLabel = $('cartItemCountLabel');
     if (cartItemCountLabel) {
@@ -2607,6 +2608,79 @@
   function closeOrderReview() {
     closeModalId('orderReviewModal');
     setTimeout(() => openCartModal(), 180);
+  }
+
+  // ============================================================
+  //  Persistência do carrinho — rapidex.cart.<slug>
+  //
+  //  Namespaced por restaurante (carrinhos não se misturam entre lojas) e com
+  //  TTL: um carrinho de dias atrás tem preços possivelmente vencidos, então
+  //  expira em vez de ressuscitar. Só persistimos os campos necessários para
+  //  reconstruir a linha — os valores continuam vindo do backend.
+  // ============================================================
+  const CART_TTL_MS = 24 * 60 * 60 * 1000;
+  const cartStorageKey = () =>
+    (storageKeys()?.PREFIXES.cart || 'rapidex.cart.') + getRestaurantSlug();
+
+  // `cart` começa vazio no load. Se qualquer updateCartUI() rodasse antes da
+  // restauração, persistCart() apagaria o carrinho salvo. Só gravamos depois
+  // que restoreCart() teve sua chance.
+  let cartRestored = false;
+
+  function persistCart() {
+    if (!cartRestored) return;
+    try {
+      if (!cart.length) {
+        localStorage.removeItem(cartStorageKey());
+        return;
+      }
+      localStorage.setItem(cartStorageKey(), JSON.stringify({
+        saved_at: Date.now(),
+        items: cart
+      }));
+    } catch {
+      // Cota estourada / modo privativo: o carrinho em memória segue válido.
+    }
+  }
+
+  function restoreCart() {
+    let stored = null;
+    try { stored = JSON.parse(localStorage.getItem(cartStorageKey()) || 'null'); }
+    catch { stored = null; }
+    cartRestored = true; // a partir daqui persistCart() pode gravar
+    if (!stored || !Array.isArray(stored.items) || !stored.items.length) return;
+
+    const savedAt = Number(stored.saved_at);
+    if (!Number.isFinite(savedAt) || Date.now() - savedAt > CART_TTL_MS) {
+      try { localStorage.removeItem(cartStorageKey()); } catch {}
+      return;
+    }
+
+    // Só restaura itens ainda existentes e disponíveis no cardápio atual: um
+    // produto removido/desativado não pode voltar pelo carrinho.
+    const byId = new Map(products.map(product => [String(product.id), product]));
+    cart = stored.items.reduce((accumulator, item) => {
+      const product = byId.get(String(item.product_id ?? item.id));
+      if (!product || product.is_available === false) return accumulator;
+      // Preço SEMPRE recalculado a partir do cardápio recém-carregado: o valor
+      // salvo pode estar velho. cartItemUnitPrice() prefere visual_unit_price,
+      // então ele precisa ser refeito junto, senão a tela mostra preço antigo.
+      const basePrice = Number(product.price);
+      const optionsExtra = (Array.isArray(item.selected_options_snapshot) ? item.selected_options_snapshot : [])
+        .reduce((sum, option) => sum + Number(option.additional_price || 0), 0);
+      const unitPrice = basePrice + optionsExtra;
+      accumulator.push({
+        ...item,
+        uid: item.uid || newCartItemUid(),
+        qty: Math.max(1, Number.parseInt(item.qty, 10) || 1),
+        price: basePrice,
+        base_price: basePrice,
+        unit_price: unitPrice,
+        visual_unit_price: unitPrice
+      });
+      return accumulator;
+    }, []);
+    if (cart.length !== stored.items.length) persistCart();
   }
 
   // ---- Idempotency-Key ----
@@ -6797,6 +6871,7 @@
     bootPromise = (async () => {
     await loadInitialData();
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
+    restoreCart(); // depois do menu carregar: precisa de `products` para validar
     initOperationContext();
     applyTheme();
     initStoreInfoModal();

@@ -19,7 +19,8 @@
 
   const PREFIXES = {
     operationContext: 'rapidex.operationContext.',
-    addressImportSignature: 'rapidex.addressImportSignature.'
+    addressImportSignature: 'rapidex.addressImportSignature.',
+    cart: 'rapidex.cart.'
   };
 
   // new key -> legacy names it replaces, most recent first

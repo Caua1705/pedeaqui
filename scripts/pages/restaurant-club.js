@@ -166,7 +166,10 @@
                 <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"/><path d="M8 12h10"/><path d="M8 18h10"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
               </button>
             </div>
-            ${hasCashbackBalance ? '<button type="button" class="club-cashback-use" aria-label="Usar saldo de cashback">Usar saldo de cashback</button>' : ''}
+            <!-- "Usar saldo de cashback" removido na Fase 1: o backend ainda grava
+                 cashback = 0, então oferecer o resgate criaria divergência entre o
+                 total exibido e o cobrado. Saldo e extrato seguem visíveis.
+                 Reativar junto com o suporte de resgate no backend. -->
           </section>
           <div class="club-section-divider" aria-hidden="true"></div>
           <section class="club-coupons-section" aria-label="Meus cupons">

@@ -7,6 +7,10 @@
     {
       "source": "/r/:slug",
       "destination": "/restaurant.html?slug=:slug"
+    },
+    {
+      "source": "/:slug([a-z0-9]+(?:-[a-z0-9]+)*)",
+      "destination": "/restaurant.html?slug=:slug"
     }
   ]
 }

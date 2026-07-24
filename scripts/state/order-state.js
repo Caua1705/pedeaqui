@@ -11,7 +11,7 @@
   function saveOrder(order) {
     const orders = [order, ...listOrders()];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-    window.dispatchEvent(new CustomEvent('pedeaqui:order-confirmed', { detail: { order } }));
+    window.dispatchEvent(new CustomEvent('rapidex:order-confirmed', { detail: { order } }));
     return order;
   }
 

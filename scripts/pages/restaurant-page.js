@@ -6965,7 +6965,15 @@
   });
 
   initializeDismissedDialogs();
-  window.addEventListener('pedeaqui:order-confirmed', refreshAvailableCoupons);
+  // Antes da Fase 1 este evento nunca chegava a disparar: nenhum pedido era
+  // criado. Agora ele dispara de verdade e precisa invalidar o que o pedido
+  // acabou de tornar obsoleto — cupons (podem ter sido consumidos) e cashback
+  // (o pedido pode ter gerado crédito).
+  window.addEventListener('rapidex:order-confirmed', () => {
+    refreshAvailableCoupons();
+    clubController?.invalidateCoupons?.();
+    loadCashbackForHome({ force: true });
+  });
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

@@ -1474,10 +1474,13 @@
       const catProducts = productsByCategory[cat.slug] || [];
       if (!catProducts.length) return;
       const isFirstRenderedCategory = renderedCategoryCount === 0;
-      nav.insertAdjacentHTML('beforeend', `<button class="cat ${isFirstRenderedCategory ? 'active' : ''}" onclick="scrollToCategory('${cat.slug}', this)">${cat.name}</button>`);
+      // The slug is carried in a data attribute and bound below with
+      // addEventListener: inside onclick="" it would be a JS-string injection
+      // point that HTML escaping alone does not close.
+      nav.insertAdjacentHTML('beforeend', `<button class="cat ${isFirstRenderedCategory ? 'active' : ''}" data-cat-slug="${esc(cat.slug)}">${esc(cat.name)}</button>`);
       container.insertAdjacentHTML('beforeend', `
-        <section class="menu-section" id="${cat.slug}">
-          <h2 class="menu-section-title">${cat.name}</h2>
+        <section class="menu-section" id="${esc(cat.slug)}">
+          <h2 class="menu-section-title">${esc(cat.name)}</h2>
           <div class="products-grid">
             ${catProducts.map(product => ProductCard(product)).join('')}
           </div>
@@ -1487,6 +1490,9 @@
     });
     menuSectionsCache = Array.from(container.querySelectorAll('.menu-section'));
     categoryButtonsCache = Array.from(nav.querySelectorAll('.cat'));
+    categoryButtonsCache.forEach(btn => {
+      btn.addEventListener('click', () => scrollToCategory(btn.dataset.catSlug, btn));
+    });
     setFirstCategoryActive();
     appState.menuLoaded = true;
     appState.productsByCategory = productsByCategory;
@@ -1623,6 +1629,11 @@
     closeMobViews();
     showHomeTab();
     jumpToTop();
+  }
+
+  function findCategoryButton(slugValue) {
+    const buttons = categoryButtonsCache.length ? categoryButtonsCache : Array.from(document.querySelectorAll('.cat'));
+    return buttons.find(b => b.dataset.catSlug === slugValue) || null;
   }
 
   function scrollToCategory(id, btn) {
@@ -2119,9 +2130,9 @@
       <div class="cart-item-row">
         <div class="cir-photo">${productImage(item, 'cir-photo-img')}</div>
         <div class="cir-info">
-          <div class="cir-name"><span>${item.qty}x</span> ${item.name}</div>
+          <div class="cir-name"><span>${item.qty}x</span> ${esc(item.name)}</div>
           ${cartOptionsHtml(item)}
-          ${item.obs ? `<div class="cir-obs">Obs: ${item.obs}</div>` : ''}
+          ${item.obs ? `<div class="cir-obs">Obs: ${esc(item.obs)}</div>` : ''}
           <div class="cir-actions">
             <button class="cir-edit-btn" onclick="editCartItem(${item.uid})" aria-label="Editar item">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -3772,8 +3783,10 @@
     };
   }
 
+  // Thin wrapper (kept hoisted) so there is a single escaper behind the
+  // address/Places rendering.
   function _esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    return esc(s);
   }
 
   function _predictionText(textValue) {
@@ -5519,7 +5532,7 @@
   function handleBannerAction(type, value) {
     if (type === 'category' && value) {
       scrollToMenu();
-      setTimeout(() => scrollToCategory(value, document.querySelector(`.cat[onclick*="'${value}'"]`)), 250);
+      setTimeout(() => scrollToCategory(value, findCategoryButton(value)), 250);
       return;
     }
     scrollToMenu();
@@ -5764,8 +5777,8 @@
     const identityBox = $('profileIdentity');
     if (identityBox) {
       identityBox.innerHTML = isLogged()
-        ? `<div class="prof-hero-label">${profileCustomer?.name || ''}</div><div class="prof-hero-sub">Cliente identificado</div>`
-        : `<div class="prof-hero-label">${restaurant.name || fallback().restaurantName || ''}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
+        ? `<div class="prof-hero-label">${esc(profileCustomer?.name || '')}</div><div class="prof-hero-sub">Cliente identificado</div>`
+        : `<div class="prof-hero-label">${esc(restaurant.name || fallback().restaurantName || '')}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
     if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
@@ -6507,7 +6520,7 @@
     if (panel.parentElement !== document.body) document.body.appendChild(panel);
   }
   Object.assign(window, {
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, scrollToMenu,
+    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

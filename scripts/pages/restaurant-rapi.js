@@ -1285,7 +1285,9 @@
     if (typeof window.mobNavMenu === 'function') window.mobNavMenu();
     if (categorySlug && typeof window.scrollToCategory === 'function') {
       setTimeout(() => {
-        const btn = document.querySelector(`.cat[onclick*="'${categorySlug}'"]`);
+        const btn = typeof window.findCategoryButton === 'function'
+          ? window.findCategoryButton(categorySlug)
+          : Array.from(document.querySelectorAll('.cat')).find(b => b.dataset.catSlug === categorySlug) || null;
         window.scrollToCategory(categorySlug, btn);
       }, 400);
     }

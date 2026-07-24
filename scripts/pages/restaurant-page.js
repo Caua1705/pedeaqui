@@ -1054,8 +1054,11 @@
 
   function applyTheme() {
     const root = document.documentElement;
-    const primary = normalizeBrandColor(restaurant.primary_color, '#F36F21');
-    const secondary = normalizeBrandColor(restaurant.secondary_color, '#111111');
+    // O fallback é a cor da PLATAFORMA, não a de um restaurante específico:
+    // usá-la significa "a API não mandou cor", nunca "use a marca do tenant X".
+    const config = window.APP_CONFIG || {};
+    const primary = normalizeBrandColor(restaurant.primary_color, config.PLATFORM_BRAND_PRIMARY || '#F36F21');
+    const secondary = normalizeBrandColor(restaurant.secondary_color, config.PLATFORM_BRAND_SECONDARY || '#111111');
     root.style.setProperty('--brand-primary', primary);
     root.style.setProperty('--brand-secondary', secondary);
     root.style.setProperty('--brand-accent', primary);

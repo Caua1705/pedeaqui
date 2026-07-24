@@ -25,6 +25,11 @@
     // Não existe DEFAULT_RESTAURANT_SLUG. Um slug ausente ou desconhecido tem
     // que virar "Restaurante não encontrado"; cair num restaurante padrão
     // mostraria cardápio, marca e preços de OUTRO tenant.
+    // Cor da PLATAFORMA (Rapidex), não de um restaurante. Só é usada enquanto o
+    // tema do tenant não chegou, ou quando a API não informa primary/secondary.
+    // Assim que /menu responde, applyTheme() sobrescreve com a cor do tenant.
+    PLATFORM_BRAND_PRIMARY: '#F36F21',
+    PLATFORM_BRAND_SECONDARY: '#111111',
     STORAGE_MODE: 'api',
     USE_MOCK_DATA: false,
     MOCK_DATA_BASE_PATH: 'data/restaurants',

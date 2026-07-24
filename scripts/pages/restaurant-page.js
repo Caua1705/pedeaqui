@@ -280,13 +280,33 @@
     });
   }
 
+  // Erro lançado quando a URL não corresponde a um restaurante existente/ativo.
+  // Marcado para que showAppError() o distinga de uma falha de rede: aqui
+  // "tentar novamente" não resolve nada.
+  function restaurantNotFoundError(slugValue) {
+    const error = new Error('Restaurante não encontrado');
+    error.isRestaurantNotFound = true;
+    error.slug = slugValue || '';
+    return error;
+  }
+
   function showAppError(error) {
     setLoading('app', false);
     document.body.classList.remove('app-booting');
     document.body.classList.add('app-error');
-    if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Não foi possível carregar';
-    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Verifique sua conexão e tente novamente.';
-    logAppError('Falha ao carregar restaurante', error);
+    const notFound = error?.isRestaurantNotFound === true;
+    document.body.classList.toggle('app-error--not-found', notFound);
+    if ($('appLoaderTitle')) {
+      $('appLoaderTitle').textContent = notFound ? 'Restaurante não encontrado' : 'Não foi possível carregar';
+    }
+    if ($('appLoaderMessage')) {
+      $('appLoaderMessage').textContent = notFound
+        ? 'Confira o endereço que você acessou. Este link não corresponde a nenhum restaurante ativo no Rapidex.'
+        : 'Verifique sua conexão e tente novamente.';
+    }
+    // Retry só faz sentido para falha transitória; um slug errado continuaria errado.
+    if ($('appLoaderRetry')) $('appLoaderRetry').hidden = notFound;
+    logAppError(notFound ? 'Restaurante não encontrado' : 'Falha ao carregar restaurante', error);
   }
 
   function renderSectionLoader(targetId, message, className = 'section-loader') {
@@ -501,12 +521,11 @@
     loginPrompt.onclick = name ? mobNavProfile : () => openLoginScreen();
   }
 
+  // Sem fallback: se a URL não identifica um restaurante, o slug é vazio e o
+  // boot para com "Restaurante não encontrado". Servir outro tenant no lugar
+  // (o que acontecia com DEFAULT_RESTAURANT_SLUG) é falha de isolamento.
   function getRestaurantSlug() {
-    return window.PedeAquiRestaurantSlug?.getRestaurantSlugFromUrl()
-      || window.PEDEAQUI_RESTAURANT_SLUG
-      || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
-      || fallback().defaultRestaurantSlug
-      || '';
+    return window.RapidexTenant?.resolveSlug?.() || '';
   }
 
   function normalizePayload(raw) {
@@ -6877,8 +6896,22 @@
     setAppBooting(true);
     renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
     const loadInitialData = async () => {
-    payload = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
+    const restaurantSlug = getRestaurantSlug();
+    // URL que não identifica um restaurante: nem chega a bater na API.
+    if (!restaurantSlug) throw restaurantNotFoundError('');
+    try {
+      payload = await window.PedeAquiRestaurantService.getRestaurantMenu(restaurantSlug);
+    } catch (error) {
+      // 404 = slug inexistente; 410 = desativado. Ambos são "não encontrado";
+      // qualquer outro status continua sendo falha de carregamento (com retry).
+      if (error?.status === 404 || error?.status === 410) throw restaurantNotFoundError(restaurantSlug);
+      throw error;
+    }
     restaurant = payload.restaurant || {};
+    // Backend que responde 200 com corpo vazio, ou com o restaurante inativo,
+    // também não pode virar tela em branco nem cair em outro tenant.
+    if (!restaurant.id && !restaurant.slug && !restaurant.name) throw restaurantNotFoundError(restaurantSlug);
+    if (restaurant.is_active === false) throw restaurantNotFoundError(restaurantSlug);
     appState.restaurant = restaurant;
     settings = payload.settings || {};
     branches = Array.isArray(payload.branches) ? payload.branches : [];

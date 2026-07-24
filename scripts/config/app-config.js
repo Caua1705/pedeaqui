@@ -22,7 +22,9 @@
   const APP_CONFIG = {
     API_BASE_URL: envApiBase || 'https://api.pederapidex.com',
     TENANT_ROOT_DOMAINS: rootDomains.length ? rootDomains : ['rapidex.com', 'pederapidex.com'],
-    DEFAULT_RESTAURANT_SLUG: 'junior-da-picanha',
+    // Não existe DEFAULT_RESTAURANT_SLUG. Um slug ausente ou desconhecido tem
+    // que virar "Restaurante não encontrado"; cair num restaurante padrão
+    // mostraria cardápio, marca e preços de OUTRO tenant.
     STORAGE_MODE: 'api',
     USE_MOCK_DATA: false,
     MOCK_DATA_BASE_PATH: 'data/restaurants',
@@ -32,7 +34,6 @@
   window.APP_CONFIG = APP_CONFIG;
   window.PedeAquiConfig = {
     appName: 'Rapidex',
-    defaultRestaurantSlug: APP_CONFIG.DEFAULT_RESTAURANT_SLUG,
     storagePrefix: APP_CONFIG.STORAGE_PREFIX,
     useMockData: APP_CONFIG.USE_MOCK_DATA,
     apiBaseUrl: APP_CONFIG.API_BASE_URL

@@ -135,8 +135,7 @@
       || store.branches?.[0]?.restaurant_id
       || store.products?.[0]?.restaurant_id
       || store.restaurant?.slug
-      || window.PedeAquiRestaurantSlug?.get?.()
-      || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
+      || window.RapidexTenant?.resolveSlug?.()
       || '';
   }
 

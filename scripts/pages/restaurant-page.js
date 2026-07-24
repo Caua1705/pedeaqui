@@ -2609,6 +2609,39 @@
     setTimeout(() => openCartModal(), 180);
   }
 
+  // ---- Idempotency-Key ----
+  // A chave identifica UMA tentativa de pedido. Ela é gerada ao entrar na
+  // revisão e permanece a MESMA em todas as retentativas do mesmo pedido — é
+  // isso que torna seguro reenviar após um timeout. Ela só troca quando o
+  // pedido deixa de ser o mesmo: sucesso, ou qualquer mudança no payload
+  // (itens, endereço, cupom, pagamento). Assim um retry nunca duplica e uma
+  // alteração de verdade nunca é confundida com a tentativa anterior.
+  let orderIdempotencyKey = null;
+  let orderIdempotencySignature = '';
+
+  function newUuid() {
+    if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
+    // Fallback para navegadores sem randomUUID (ou contexto não seguro).
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
+      const random = Math.random() * 16 | 0;
+      return (char === 'x' ? random : (random & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+  function ensureOrderIdempotencyKey(orderPayload) {
+    const signature = JSON.stringify(orderPayload);
+    if (!orderIdempotencyKey || orderIdempotencySignature !== signature) {
+      orderIdempotencyKey = newUuid();
+      orderIdempotencySignature = signature;
+    }
+    return orderIdempotencyKey;
+  }
+
+  function resetOrderIdempotencyKey() {
+    orderIdempotencyKey = null;
+    orderIdempotencySignature = '';
+  }
+
   let orderSubmitInFlight = false;
 
   function setOrderSubmitting(active) {
@@ -2651,9 +2684,15 @@
     hideOrderReviewError();
     setOrderSubmitting(true);
     try {
-      const response = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
+      const response = await window.PedeAquiOrderService.createOrder(
+        getRestaurantSlug(),
+        orderPayload,
+        { idempotencyKey: ensureOrderIdempotencyKey(orderPayload) }
+      );
       handleOrderCreated(response);
     } catch (error) {
+      // A Idempotency-Key é PRESERVADA de propósito: a retentativa precisa ser
+      // reconhecida como a mesma tentativa, não como um pedido novo.
       logAppError('Falha ao criar pedido', error);
       showOrderReviewError(orderErrorMessage(error));
       setOrderSubmitting(false); // reabilita para retry
@@ -2668,6 +2707,7 @@
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewKey = '';
+    resetOrderIdempotencyKey(); // próximo pedido = chave nova
     updateCartUI();
     setOrderSubmitting(false);
     closeModalImmediately('orderReviewModal');

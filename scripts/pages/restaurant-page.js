@@ -2928,6 +2928,10 @@
   }
 
   function renderDeliveryEstimate() {
+    // A revisão pode estar aberta enquanto a estimativa ainda chega. Re-renderizar
+    // atualiza a taxa exibida E o estado do botão Confirmar, sem o usuário
+    // precisar sair e voltar. (renderOrderReview não chama esta função: sem laço.)
+    if ($('orderReviewModal')?.classList.contains('active')) renderOrderReview();
     const text = deliveryEstimateText();
     const estimateFee = currentDeliveryEstimateFee();
     const feeText = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);

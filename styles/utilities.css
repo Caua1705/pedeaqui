@@ -9521,7 +9521,7 @@ body.menu-tab .product-card.is-pressing{
     background:#ffffff!important;
   }
 }
-/* Fine alignment with the Unidades e Operação header and empty reference. */
+/* Fine alignment with the Unidades e OperaÃ§Ã£o header and empty reference. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
     display:flex!important;

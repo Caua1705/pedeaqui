@@ -1,4 +1,4 @@
-﻿*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --o:#E67E22;--og:rgba(230,126,34,.22);--o2:rgba(230,126,34,.08);
   --bg:#050507;--s1:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);

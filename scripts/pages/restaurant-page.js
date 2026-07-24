@@ -1043,31 +1043,18 @@
     }
   }
 
-  // Brand colours come from the API. Only #rgb/#rrggbb is accepted: the value is
-  // concatenated with an alpha suffix below, so anything else would silently
-  // produce an invalid custom property.
-  function normalizeBrandColor(value, fallbackColor) {
-    const raw = String(value ?? '').trim();
-    if (/^#[0-9a-f]{3}$/i.test(raw)) {
-      return '#' + raw.slice(1).split('').map(char => char + char).join('');
-    }
-    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallbackColor;
-  }
-
+  // O tema inteiro sai de UMA cor cadastrada pelo lojista. A derivação (hover,
+  // ativo, tons claros, borda) e a guarda de contraste do texto sobre a marca
+  // vivem em scripts/utils/brand-theme.js, que é puro e tem teste unitário.
+  //
+  // Um hex ausente ou inválido cai na cor da PLATAFORMA — que significa "a API
+  // não mandou cor", nunca "use a marca do tenant X".
   function applyTheme() {
-    const root = document.documentElement;
-    // O fallback é a cor da PLATAFORMA, não a de um restaurante específico:
-    // usá-la significa "a API não mandou cor", nunca "use a marca do tenant X".
     const config = window.APP_CONFIG || {};
-    const primary = normalizeBrandColor(restaurant.primary_color, config.PLATFORM_BRAND_PRIMARY || '#F36F21');
-    const secondary = normalizeBrandColor(restaurant.secondary_color, config.PLATFORM_BRAND_SECONDARY || '#111111');
-    root.style.setProperty('--brand-primary', primary);
-    root.style.setProperty('--brand-secondary', secondary);
-    root.style.setProperty('--brand-accent', primary);
-    root.style.setProperty('--brand', primary);
-    root.style.setProperty('--brand-d', secondary);
-    root.style.setProperty('--m-accent', primary);
-    root.style.setProperty('--m-accent-light', primary + '22');
+    window.RapidexTheme.applyBrandTheme(
+      restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
+      restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
+    );
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
   }
 

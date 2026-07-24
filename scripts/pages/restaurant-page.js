@@ -1145,6 +1145,8 @@
     if ($('footerContactPrimary')) $('footerContactPrimary').textContent = branch.whatsapp || branch.phone || 'Contato não informado';
     if ($('footerBranchSecondary')) $('footerBranchSecondary').textContent = branches[1] ? [branches[1].address, branches[1].neighborhood, branches[1].city, branches[1].state].filter(Boolean).join(' - ') : 'Informações da loja';
     if ($('footerContactSecondary')) $('footerContactSecondary').textContent = branches[1]?.whatsapp || branches[1]?.phone || '';
+    renderFooterInfo();
+    renderProfileHelpContacts();
     const closeTime = restaurant.closing_time || settings.closing_time || settings.close_time || '';
     const closeEl = $('mobCloseTime');
     if (closeEl) {
@@ -1163,6 +1165,73 @@
       el.textContent = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);
     });
     renderDeliveryMeta();
+  }
+
+  const WHATSAPP_ICON = '<svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
+  const PHONE_ICON = '<svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>';
+
+  // Contatos da tela de Ajuda: uma linha por unidade que a API trouxe. O HTML
+  // trazia duas unidades fixas do piloto ("— Matriz") e links href="#" mortos.
+  function renderProfileHelpContacts() {
+    const card = $('profHelpContacts');
+    if (!card) return;
+    // Só faz sentido nomear a unidade quando existe mais de uma.
+    const suffix = branch => (branches.length > 1 && branch.name ? ` — ${esc(branch.name)}` : '');
+    const rows = branches.flatMap(branch => {
+      const entries = [];
+      const whatsapp = onlyDigits(branch.whatsapp);
+      if (whatsapp) {
+        entries.push(`
+          <div class="prof-info-row">${WHATSAPP_ICON}
+            <div>
+              <div class="prof-info-row-label">WhatsApp${suffix(branch)}</div>
+              <a class="prof-info-row-link" href="https://wa.me/${esc(whatsapp)}" target="_blank" rel="noopener">Falar no WhatsApp →</a>
+            </div>
+          </div>`);
+      }
+      if (branch.phone) {
+        entries.push(`
+          <div class="prof-info-row">${PHONE_ICON}
+            <div>
+              <div class="prof-info-row-label">Telefone${suffix(branch)}</div>
+              <div class="prof-info-row-val">${esc(branch.phone)}</div>
+            </div>
+          </div>`);
+      }
+      return entries;
+    });
+    const header = `
+      <div class="prof-info-card-header">
+        <div class="prof-info-card-icon">${WHATSAPP_ICON}</div>
+        <span class="prof-info-card-title">Contato</span>
+      </div>`;
+    card.innerHTML = rows.length
+      ? header + rows.join('')
+      : header + '<div class="prof-info-row"><div><div class="prof-info-row-val">Contato não informado pelo restaurante.</div></div></div>';
+  }
+
+  // Coluna "Informações" do rodapé. Era markup fixo com o horário e o couvert de
+  // um restaurante só; agora sai da API, e o que a API não informa não aparece.
+  function renderFooterInfo() {
+    const hoursEl = $('footerHours');
+    if (hoursEl) {
+      const hours = restaurant.opening_hours_text
+        || settings.opening_hours_text
+        || settings.business_hours_text
+        || '';
+      hoursEl.textContent = hours;
+      hoursEl.hidden = !hours;
+    }
+    const feeEl = $('footerServiceFee');
+    if (feeEl) {
+      const feeAmount = asFiniteNumber(settings.service_fee_amount);
+      const feeNote = settings.service_fee_description || settings.service_fee_note || '';
+      const parts = [];
+      if (feeAmount != null && feeAmount > 0) parts.push(`Taxa de serviço: ${fmt(feeAmount)}`);
+      if (feeNote) parts.push(feeNote);
+      feeEl.textContent = parts.join(' · ');
+      feeEl.hidden = !parts.length;
+    }
   }
 
   function renderBanners() {
@@ -2053,11 +2122,12 @@
     return operationContext?.address || null;
   }
 
+  // A unidade é exibida com o nome que a API deu. O prefixo "LJ." era a
+  // convenção de UMA rede; num restaurante de unidade única, ou que chame suas
+  // unidades de outra coisa, ele inventa um rótulo que não existe.
   function currentCartBranchLabel() {
     const label = operationContext?.branch_label || operationContext?.branch_name || branches[0]?.name || fallback().branchLabelText || '';
-    return String(label).toUpperCase().startsWith('LJ.')
-      ? String(label).toUpperCase()
-      : (fallback().branchLabel?.(label) || `LJ. ${String(label).toUpperCase()}`);
+    return String(label).toUpperCase();
   }
 
   function cartEtaText() {

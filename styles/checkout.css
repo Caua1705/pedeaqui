@@ -1,1 +1,31 @@
 ﻿/* Checkout-specific styles are currently preserved in restaurant.css during the safe extraction phase. */
+
+/* ---- Tela de revisão do pedido (Fase 1) ---- */
+.orv-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+.orv-item:last-child { border-bottom: 0; }
+.orv-item-name { font-size: .84rem; font-weight: 600; }
+.orv-item-meta { font-size: .74rem; opacity: .7; margin-top: 2px; }
+.orv-item-price { font-size: .84rem; font-weight: 700; white-space: nowrap; }
+.orv-address { font-size: .8rem; line-height: 1.45; }
+.orv-note { font-size: .7rem; opacity: .65; margin: 8px 0 0; }
+
+.orv-error {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(214, 40, 40, .09);
+  border: 1px solid rgba(214, 40, 40, .25);
+  color: #a41f1f;
+  font-size: .8rem;
+  line-height: 1.45;
+}
+.orv-error ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* Estado "enviando": trava o botão enquanto a requisição está em voo. */
+#orvConfirmBtn[disabled] { opacity: .6; cursor: not-allowed; }

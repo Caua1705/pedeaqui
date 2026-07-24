@@ -980,6 +980,83 @@
   </div>
 </div>
 
+<!-- MODAL: ORDER REVIEW (full-screen) — última tela antes de criar o pedido.
+     Tudo aqui é preenchido por renderOrderReview(); nada é chumbado. -->
+<div class="overlay" id="orderReviewModal">
+  <div class="modal modal--fs">
+    <div class="sheet-drag"></div>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" type="button" onclick="closeOrderReview()" aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title">Revisar pedido</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+    <div class="cart-scroll">
+      <div class="cart-price-summary">
+        <div class="cart-section-heading">Itens</div>
+        <div id="orvItems"></div>
+      </div>
+
+      <div class="cart-price-summary" id="orvDeliveryBlock">
+        <div class="cart-section-heading" id="orvDeliveryHeading">Entrega</div>
+        <div id="orvAddress"></div>
+      </div>
+
+      <div class="cart-price-summary">
+        <div class="cart-section-heading">Forma de pagamento</div>
+        <div class="cps-row"><span id="orvPayment">—</span></div>
+      </div>
+
+      <div class="fs-section">
+        <div class="fs-section-title">Observação do pedido (opcional)</div>
+        <textarea id="orvNotes" class="fs-input fs-textarea" maxlength="500" placeholder="Troco para R$ 100, deixar na portaria..."></textarea>
+      </div>
+
+      <div class="cart-price-summary">
+        <div class="cart-section-heading">Valores</div>
+        <div class="cps-row"><span>Subtotal</span><span id="orvSub">R$ 0,00</span></div>
+        <div class="cps-row" id="orvSvcRow"><span>Taxa de serviço</span><span id="orvSvc">R$ 0,00</span></div>
+        <div class="cps-row" id="orvDeliveryFeeRow"><span>Taxa de entrega</span><span id="orvDeliveryFee">R$ 0,00</span></div>
+        <div class="cps-row cart-coupon-discount-row" id="orvCouponRow" hidden>
+          <span id="orvCouponLabel">Cupom</span><span id="orvCouponDiscount">- R$ 0,00</span>
+        </div>
+        <div class="cps-divider"></div>
+        <div class="cps-total"><span>Total</span><span id="orvTotal">R$ 0,00</span></div>
+        <p class="orv-note">Os valores são confirmados pelo restaurante ao criar o pedido.</p>
+      </div>
+
+      <div class="orv-error" id="orvError" hidden role="alert"></div>
+    </div>
+    <div class="cart-footer">
+      <button class="cart-cta-btn" id="orvConfirmBtn" type="button" onclick="submitOrder()">Confirmar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ORDER SUCCESS — preenchido pela RESPOSTA do createOrder -->
+<div class="overlay" id="orderSuccessModal">
+  <div class="modal" style="margin:auto;max-width:400px;border-radius:24px;overflow:hidden">
+    <div class="success-body">
+      <div class="success-icon-wrap">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title">Pedido enviado!</div>
+      <div class="success-subtitle" id="ordSuccessMessage"></div>
+      <div class="success-card">
+        <div class="success-card-row"><span>Pedido</span><strong id="ordSuccessNumber">—</strong></div>
+        <div class="success-card-row"><span>Status</span><strong id="ordSuccessStatus">—</strong></div>
+        <div class="success-card-row"><span>Subtotal</span><strong id="ordSuccessSubtotal">—</strong></div>
+        <div class="success-card-row" id="ordSuccessSvcRow"><span>Taxa de serviço</span><strong id="ordSuccessSvc">—</strong></div>
+        <div class="success-card-row" id="ordSuccessDeliveryRow"><span>Taxa de entrega</span><strong id="ordSuccessDelivery">—</strong></div>
+        <div class="success-card-row" id="ordSuccessDiscountRow" hidden><span>Desconto</span><strong id="ordSuccessDiscount">—</strong></div>
+        <div class="success-card-row"><span>Total</span><strong id="ordSuccessTotal">—</strong></div>
+      </div>
+      <button class="cart-cta-btn" style="max-width:320px" type="button" onclick="closeOrderSuccess()">Concluir</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: CHECKOUT FORM (full-screen) -->
 <div class="overlay" id="checkoutModal">
   <div class="modal modal--fs">

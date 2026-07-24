@@ -28,7 +28,12 @@
   let pmSelectedOptions = {};
   let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
+  // paymentMethod = rótulo exibido ("Pix"); paymentMethodKey = chave da UI ("pix");
+  // paymentApiTypeByKey mapeia a chave da UI para o method_type do backend
+  // ("credit" -> "credit_card"), que é o valor enviado em POST /orders.
   let paymentMethod = '';
+  let paymentMethodKey = '';
+  const paymentApiTypeByKey = new Map();
   let selectedCoupon = null;
   let selectedCouponPreview = null;
   let couponPreviewPromise = null;
@@ -220,6 +225,8 @@
     restaurantInfoState = { status: 'idle', key: null, data: null, updatedAt: null };
     restaurantInfoPromise = null;
     availableCheckoutPaymentKeys = new Set();
+    paymentMethodKey = '';
+    paymentApiTypeByKey.clear();
     currentProd = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
@@ -664,6 +671,11 @@
       entries.push({
         ...object,
         method_type: methodType,
+        // method_type acima é a chave NORMALIZADA da UI (credit, debit, pix...).
+        // O backend usa outra grafia (credit_card, debit_card...) e é ela que
+        // precisa voltar em POST /orders.payment_method — por isso guardamos a
+        // original aqui antes de perdê-la.
+        api_method_type: String(object.method_type || object.type || object.code || object.method || fallbackType || '').trim(),
         brand: object.brand || object.card_brand || fallbackBrand || '',
         name: object.display_name || object.name || object.label || fallbackBrand || ''
       });
@@ -2386,6 +2398,11 @@
     const groups = data ? infoPaymentData(data) : { online: [], delivery: [] };
     const onlineKeys = new Set(groups.online.map(entry => entry.method_type));
     const deliveryKeys = new Set(groups.delivery.map(entry => entry.method_type));
+    // chave da UI -> method_type do backend, para o payload do pedido
+    paymentApiTypeByKey.clear();
+    [...groups.online, ...groups.delivery].forEach(entry => {
+      if (entry.method_type && entry.api_method_type) paymentApiTypeByKey.set(entry.method_type, entry.api_method_type);
+    });
     if (deliveryKeys.has('pix')) onlineKeys.add('pix');
     availableCheckoutPaymentKeys = new Set([...onlineKeys, ...deliveryKeys]);
     const buttons = Array.from(document.querySelectorAll('.payment-method-option[data-payment-key]'));
@@ -2435,11 +2452,278 @@
     const key = overlay?.dataset.paymentKey || selected?.dataset.paymentKey || infoPaymentType(type);
     if (!selected || !type || !availableCheckoutPaymentKeys.has(key)) return;
     paymentMethod = type;
+    paymentMethodKey = key;
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = type;
     updateCartUI();
+    // Antes isto reabria o carrinho e o fluxo morria aqui (P0-1).
+    // Agora segue para a revisão, que é a única porta para createOrder.
     closePaymentMethodScreen(() => {
-      if (!$('cartModal')?.classList.contains('active')) openCartModal();
+      closeModalImmediately('cartModal');
+      openOrderReview();
     });
+  }
+
+  // ============================================================
+  //  Checkout — revisão e criação do pedido
+  //
+  //  Único caminho até POST /orders. O payload é montado por
+  //  RapidexOrderPayload.buildOrderPayload (ver docs/order-contract.md);
+  //  aqui só reunimos o estado e cuidamos da UI.
+  // ============================================================
+
+  function orderPaymentMethodForApi() {
+    const key = paymentMethodKey || infoPaymentType(paymentMethod) || '';
+    // Sem correspondência do backend, mandamos a chave da UI: um 422 legível é
+    // melhor do que inventar um valor que o servidor não conhece.
+    return paymentApiTypeByKey.get(key) || key;
+  }
+
+  function currentOrderState() {
+    return {
+      cart,
+      operationContext: {
+        branch_id: operationContext?.branch_id,
+        order_type: deliveryType || operationContext?.order_type || 'delivery',
+        address: currentCartAddress()
+      },
+      coupon: selectedCoupon,
+      paymentMethod: orderPaymentMethodForApi(),
+      customer: currentCustomerSnapshot(),
+      isAuthenticated: Boolean(window.PedeAquiCustomerAuth?.isLoggedIn?.()),
+      notes: $('orvNotes')?.value || null
+    };
+  }
+
+  function buildCurrentOrderPayload() {
+    return window.RapidexOrderPayload.buildOrderPayload(currentOrderState());
+  }
+
+  function validateCurrentOrder(orderPayload) {
+    return window.RapidexOrderPayload.validateOrderPayload(orderPayload, {
+      hasValidDeliveryFee: hasValidDeliveryEstimateFee(),
+      isAuthenticated: Boolean(window.PedeAquiCustomerAuth?.isLoggedIn?.())
+    });
+  }
+
+  function orderReviewItemHtml(item) {
+    const options = Array.isArray(item.selected_options_snapshot) ? item.selected_options_snapshot : [];
+    const meta = [
+      options.map(option => `${option.group_name}: ${option.option_name}`).join(' · '),
+      item.obs ? `Obs: ${item.obs}` : ''
+    ].filter(Boolean).join(' — ');
+    return `
+      <div class="orv-item">
+        <div>
+          <div class="orv-item-name">${item.qty}x ${esc(item.name)}</div>
+          ${meta ? `<div class="orv-item-meta">${esc(meta)}</div>` : ''}
+        </div>
+        <div class="orv-item-price">${fmt(cartItemUnitPrice(item) * item.qty)}</div>
+      </div>`;
+  }
+
+  function renderOrderReview() {
+    const totals = cartTotals();
+    const isDelivery = deliveryType === 'delivery';
+
+    if ($('orvItems')) $('orvItems').innerHTML = cart.map(orderReviewItemHtml).join('');
+
+    const deliveryBlock = $('orvDeliveryBlock');
+    if (deliveryBlock) {
+      const address = currentCartAddress();
+      if ($('orvDeliveryHeading')) $('orvDeliveryHeading').textContent = isDelivery ? 'Entrega' : 'Retirada';
+      if ($('orvAddress')) {
+        $('orvAddress').innerHTML = isDelivery
+          ? `<div class="orv-address">${address ? esc([[address.street, address.number].filter(Boolean).join(', '), address.neighborhood, address.complement].filter(Boolean).join(' · ')) : 'Endereço não informado'}</div>`
+          : `<div class="orv-address">Retirada na loja ${esc(currentCartBranchLabel())}</div>`;
+      }
+    }
+
+    if ($('orvPayment')) $('orvPayment').textContent = paymentMethod || 'Não selecionada';
+
+    if ($('orvSub')) $('orvSub').textContent = fmt(totals.subtotal);
+    if ($('orvSvc')) $('orvSvc').textContent = fmt(totals.svc);
+    if ($('orvSvcRow')) $('orvSvcRow').style.display = totals.svc > 0 ? 'flex' : 'none';
+    if ($('orvDeliveryFeeRow')) $('orvDeliveryFeeRow').style.display = isDelivery ? 'flex' : 'none';
+    if ($('orvDeliveryFee')) {
+      $('orvDeliveryFee').textContent = hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir';
+    }
+    const couponRow = $('orvCouponRow');
+    if (couponRow) {
+      couponRow.hidden = !(totals.discount > 0);
+      if ($('orvCouponLabel')) $('orvCouponLabel').textContent = selectedCoupon?.code ? `Cupom ${selectedCoupon.code}` : 'Cupom';
+      if ($('orvCouponDiscount')) $('orvCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
+    }
+    if ($('orvTotal')) $('orvTotal').textContent = fmt(totals.total);
+
+    refreshOrderReviewValidity();
+  }
+
+  // Revalida e reflete no botão. Chamado ao abrir a revisão e sempre que a
+  // estimativa de entrega muda, para o bloqueio não ficar preso num estado velho.
+  function refreshOrderReviewValidity() {
+    if (!$('orderReviewModal')?.classList.contains('active')) return;
+    const problems = validateCurrentOrder(buildCurrentOrderPayload());
+    const confirmButton = $('orvConfirmBtn');
+    if (problems.length) {
+      showOrderReviewProblems(problems);
+      if (confirmButton && !orderSubmitInFlight) confirmButton.disabled = true;
+    } else {
+      hideOrderReviewError();
+      if (confirmButton && !orderSubmitInFlight) confirmButton.disabled = false;
+    }
+    return problems;
+  }
+
+  function showOrderReviewProblems(problems) {
+    const box = $('orvError');
+    if (!box) return;
+    box.hidden = false;
+    box.innerHTML = problems.length === 1
+      ? esc(problems[0])
+      : `<strong>Revise antes de continuar:</strong><ul>${problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
+  }
+
+  function showOrderReviewError(message) {
+    const box = $('orvError');
+    if (!box) return;
+    box.hidden = false;
+    box.textContent = message;
+  }
+
+  function hideOrderReviewError() {
+    const box = $('orvError');
+    if (!box) return;
+    box.hidden = true;
+    box.textContent = '';
+  }
+
+  function openOrderReview() {
+    if (!cart.length) return;
+    hideOrderReviewError();
+    openModal('orderReviewModal');
+    renderOrderReview();
+  }
+
+  function closeOrderReview() {
+    closeModalId('orderReviewModal');
+    setTimeout(() => openCartModal(), 180);
+  }
+
+  let orderSubmitInFlight = false;
+
+  function setOrderSubmitting(active) {
+    orderSubmitInFlight = active;
+    const confirmButton = $('orvConfirmBtn');
+    if (!confirmButton) return;
+    confirmButton.disabled = active;
+    confirmButton.textContent = active ? 'Enviando pedido...' : 'Confirmar pedido';
+  }
+
+  // Traduz a falha do createOrder em algo acionável. O carrinho NUNCA é tocado
+  // aqui: erro não pode custar o pedido do cliente.
+  function orderErrorMessage(error) {
+    if (error?.name === 'TimeoutError') {
+      return 'O servidor demorou para responder. Verifique sua conexão e toque em Confirmar novamente.';
+    }
+    if (error?.status === 409) {
+      return error.detail || error.message || 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.';
+    }
+    if (error?.status === 422) {
+      const detail = error.data?.detail;
+      if (Array.isArray(detail) && detail.length) {
+        const fields = detail.map(entry => entry.msg || entry.message).filter(Boolean);
+        if (fields.length) return `Não foi possível criar o pedido: ${fields.join('; ')}`;
+      }
+      return typeof detail === 'string' ? detail : 'Alguns dados do pedido não foram aceitos. Revise e tente novamente.';
+    }
+    return error?.detail || error?.message || 'Não foi possível criar o pedido. Tente novamente.';
+  }
+
+  async function submitOrder() {
+    if (orderSubmitInFlight) return; // trava de duplo-clique
+    const orderPayload = buildCurrentOrderPayload();
+    const problems = validateCurrentOrder(orderPayload);
+    if (problems.length) {
+      showOrderReviewProblems(problems);
+      return;
+    }
+
+    hideOrderReviewError();
+    setOrderSubmitting(true);
+    try {
+      const response = await window.PedeAquiOrderService.createOrder(getRestaurantSlug(), orderPayload);
+      handleOrderCreated(response);
+    } catch (error) {
+      logAppError('Falha ao criar pedido', error);
+      showOrderReviewError(orderErrorMessage(error));
+      setOrderSubmitting(false); // reabilita para retry
+    }
+  }
+
+  // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
+  function handleOrderCreated(response) {
+    submittedOrder = response || null;
+    window.PedeAquiOrderState?.saveOrder?.(response);
+    cart = [];
+    selectedCoupon = null;
+    selectedCouponPreview = null;
+    couponPreviewKey = '';
+    updateCartUI();
+    setOrderSubmitting(false);
+    closeModalImmediately('orderReviewModal');
+    showOrderSuccess(response);
+  }
+
+  // Totais vêm como number; descontos vêm como string decimal ("0.00").
+  // Ver docs/order-contract.md (CreateOrderResponse).
+  function orderAmount(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function showOrderSuccess(response) {
+    const order = response || {};
+    const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
+
+    setText('ordSuccessMessage', order.message || 'Aguardando confirmação do restaurante.');
+    setText('ordSuccessNumber', order.order_number != null ? `#${order.order_number}` : '—');
+    setText('ordSuccessStatus', orderStatusLabel(order.status));
+    setText('ordSuccessSubtotal', fmt(orderAmount(order.subtotal)));
+
+    const serviceFeeValue = orderAmount(order.service_fee);
+    setText('ordSuccessSvc', fmt(serviceFeeValue));
+    if ($('ordSuccessSvcRow')) $('ordSuccessSvcRow').style.display = serviceFeeValue > 0 ? '' : 'none';
+
+    const deliveryFeeValue = orderAmount(order.delivery_fee);
+    setText('ordSuccessDelivery', fmt(deliveryFeeValue));
+    if ($('ordSuccessDeliveryRow')) $('ordSuccessDeliveryRow').style.display = deliveryFeeValue > 0 ? '' : 'none';
+
+    const discount = orderAmount(order.discount_total ?? order.coupon_discount_amount);
+    if ($('ordSuccessDiscountRow')) $('ordSuccessDiscountRow').hidden = !(discount > 0);
+    setText('ordSuccessDiscount', `- ${fmt(discount)}`);
+
+    setText('ordSuccessTotal', fmt(orderAmount(order.total)));
+    openModal('orderSuccessModal');
+  }
+
+  function orderStatusLabel(status) {
+    const labels = {
+      pending: 'Aguardando confirmação',
+      submitted: 'Enviado',
+      confirmed: 'Confirmado',
+      preparing: 'Em preparo',
+      ready: 'Pronto',
+      delivering: 'Saiu para entrega',
+      delivered: 'Entregue',
+      cancelled: 'Cancelado'
+    };
+    return labels[String(status || '').toLowerCase()] || String(status || '—');
+  }
+
+  // Sem reload: fecha, volta pra home e mantém o app vivo.
+  function closeOrderSuccess() {
+    closeModalId('orderSuccessModal');
+    setTimeout(() => { showHomeTab(); jumpToTop(); }, 160);
   }
   // ============================================================
   //  Operation context — single source of truth (per restaurant)
@@ -6537,6 +6821,7 @@
   Object.assign(window, {
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
+    openOrderReview, closeOrderReview, submitOrder, closeOrderSuccess,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,

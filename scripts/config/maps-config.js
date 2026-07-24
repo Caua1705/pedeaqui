@@ -1,4 +1,10 @@
-// Google Maps API Key — plain-HTML project config
-// Paste your key below. This file is in .gitignore — never commit real keys.
-// See maps-config.example.js for a template.
-window.GOOGLE_MAPS_API_KEY = 'AIzaSyDXCyLiKTD4afWQhos711UX7qbg3rirRL4';
+// Google Maps API key resolver — contains NO credential.
+//
+// The real key is provided at runtime by `maps-config.local.js` (gitignored),
+// which must be loaded BEFORE this file. See `maps-config.example.js`.
+(function () {
+  var key = window.RAPIDEX_MAPS_KEY || '';
+  window.RAPIDEX_MAPS_KEY = key;
+  // Back-compat: existing callers still read window.GOOGLE_MAPS_API_KEY.
+  window.GOOGLE_MAPS_API_KEY = key;
+})();

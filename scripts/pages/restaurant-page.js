@@ -3545,7 +3545,7 @@
     const key = window.GOOGLE_MAPS_API_KEY || '';
     if (!key) {
       const err = new Error('Chave do Google Maps nao configurada.');
-      console.warn('[PedeAqui] Google Maps API key not configured. Edit scripts/config/maps-config.js.');
+      console.warn('[Rapidex] Google Maps API key not configured. Copy scripts/config/maps-config.example.js to maps-config.local.js and set the key.');
       _googleMapsPromise = Promise.reject(err);
       return _googleMapsPromise;
     }

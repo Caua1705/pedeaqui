@@ -1,7 +1,11 @@
 /**
  * Rapi — Assistente inteligente de pedido — PREMIUM UI v3
- * Módulo isolado. Não altera lógica existente.
- * Acessa produtos/cupons via variáveis globais já expostas.
+ *
+ * O Rapi é TRANSPORTE, não motor de recomendação: manda mensagem +
+ * restaurant_id para POST /chat (onde o backend faz o RAG sobre o cardápio
+ * daquele restaurante) e renderiza a resposta. Nada aqui pode saber o que o
+ * restaurante vende — qualquer heurística de segmento (nomes de pratos, faixas
+ * de preço em reais) quebra no primeiro tenant de outro vertical.
  */
 (function () {
   'use strict';
@@ -10,18 +14,8 @@
   const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot.png';
   const RAPI_SESSION_STORAGE_KEY = 'rapi.session_id';
 
-  const ALCOHOL_KEYWORDS = [
-    'cerveja', 'cervejas', 'drink', 'drinks', 'whisky', 'whiskey',
-    'licor', 'licores', 'aperitivo', 'caipirinha', 'vinho', 'vinhos',
-    'chopp', 'draft', 'gin', 'vodka', 'rum', 'espumante', 'sake',
-    'club do whisky', 'alcool', 'alcoólico', 'alcoólica'
-  ];
-
-  const MAX_INITIAL_RESULTS = 3;
-
   /* ── State ── */
   let _rapiLoaded = false;
-  let _activeChipId = null;
   let _allResults = [];
   let _introTypeTimer = null;
   let _rapiSessionId = null;
@@ -44,23 +38,6 @@
   /* ── Helpers ── */
   function getRapiProducts() {
     return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
-  }
-
-  function getRapiCoupons() {
-    return (window.PedeAquiRestaurantStore?.get?.()?.coupons || []);
-  }
-
-  function isAlcoholic(product) {
-    const text = [
-      product.name || '',
-      product.description || '',
-      product.category_name || ''
-    ].join(' ').toLowerCase();
-    return ALCOHOL_KEYWORDS.some(k => text.includes(k));
-  }
-
-  function safeProducts() {
-    return getRapiProducts().filter(p => !isAlcoholic(p) && Number.isFinite(p.price));
   }
 
   function fmtPrice(val) {
@@ -135,8 +112,7 @@
       || store.branches?.[0]?.restaurant_id
       || store.products?.[0]?.restaurant_id
       || store.restaurant?.slug
-      || window.PedeAquiRestaurantSlug?.get?.()
-      || window.APP_CONFIG?.DEFAULT_RESTAURANT_SLUG
+      || window.RapidexTenant?.resolveSlug?.()
       || '';
   }
 
@@ -541,105 +517,6 @@
     console.log('[Rapi] Resposta completa da API:', apiResponse);
     return normalizeChatResponse(apiResponse);
   }
-  function detectIntent(message) {
-    const msg = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (/barato|economico|pouco|baratao|menos|ate \d|r\$\s*\d/.test(msg)) return 'budget';
-    if (/muita fome|faminto|esfomeado|serve \d|kg|1kg|porcao grande|grand/.test(msg)) return 'hungry';
-    if (/2 pessoa|para dois|dividir|casal|duas pessoas/.test(msg)) return 'for2';
-    if (/cupom|desconto|promo/.test(msg)) return 'coupon';
-    if (/surpreend|qualquer|tanto faz|escolha/.test(msg)) return 'surprise';
-    if (/popular|mais pedido|destaque|famoso/.test(msg)) return 'popular';
-    if (/rapido|rapida|pratico|simples|basico/.test(msg)) return 'quick';
-    if (/sobremesa|docin|doce|pudim|brownie|sorvete/.test(msg)) return 'dessert';
-    if (/bebida|suco|refrigerante|agua/.test(msg)) return 'drink';
-    if (/carne|frango|peixe|file|bife|picanha/.test(msg)) return { type: 'category', term: msg };
-    if (/massa|macarrao|pizza|lasanha/.test(msg)) return { type: 'category', term: 'massa' };
-    const priceMatch = msg.match(/ate\s*r?\$?\s*(\d+)|r\$\s*(\d+)/);
-    if (priceMatch) {
-      return { type: 'price', limit: Number(priceMatch[1] || priceMatch[2]) };
-    }
-    return 'value';
-  }
-
-  /* ── Local recommendation engine ── */
-  function getLocalRapiRecommendations({ intent, products, coupons }) {
-    const all = products || safeProducts();
-    if (!all.length) return [];
-    const sorted = [...all].sort((a, b) => a.price - b.price);
-    let result = [];
-    let reasons = {};
-
-    if (intent === 'budget' || intent?.type === 'price') {
-      const limit = intent?.limit || 45;
-      result = sorted.filter(p => p.price <= limit).slice(0, 6);
-      result.forEach(p => { reasons[p.id || p.name] = `Cabe no orçamento de ${fmtPrice(limit)}.`; });
-      if (!result.length) result = sorted.slice(0, 5);
-    } else if (intent === 'hungry') {
-      const kw = ['serve 2', 'serve 3', 'serve 4', '1kg', 'combo', 'completo', 'família', 'porção'];
-      result = all.filter(p => kw.some(k => (p.name + ' ' + (p.description || '')).toLowerCase().includes(k)));
-      result.forEach(p => { reasons[p.id || p.name] = 'Ideal para quem está com muita fome.'; });
-      if (result.length < 2) result = [...all].sort((a, b) => b.price - a.price).slice(0, 5);
-    } else if (intent === 'for2') {
-      const kw = ['2 pessoas', 'serve 2', 'para 2', 'casal', 'combo'];
-      result = all.filter(p => kw.some(k => (p.name + ' ' + (p.description || '')).toLowerCase().includes(k)));
-      result.forEach(p => { reasons[p.id || p.name] = 'Serve bem para dividir.'; });
-      if (result.length < 2) result = all.filter(p => p.price >= 30 && p.price <= 80).slice(0, 5);
-    } else if (intent === 'coupon') {
-      const activeCoupons = coupons || getRapiCoupons();
-      if (activeCoupons.length) {
-        const minVal = Math.max(...activeCoupons.map(c => Number(c.min_order_value || 0)));
-        result = sorted.filter(p => p.price >= minVal * 0.4 && p.price <= minVal * 1.3).slice(0, 5);
-        result.forEach(p => { reasons[p.id || p.name] = 'Boa escolha para aproveitar seu cupom.'; });
-      }
-      if (!result.length) result = sorted.slice(0, 5);
-    } else if (intent === 'surprise') {
-      const shuffled = [...all].sort(() => Math.random() - 0.5);
-      result = shuffled.slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Escolha especial do Rapi pra você ✨'; });
-    } else if (intent === 'quick') {
-      result = sorted.slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Rápido, simples e muito bom.'; });
-    } else if (intent === 'popular') {
-      result = [...all].sort(() => Math.random() - 0.5).slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Um dos mais pedidos da casa.'; });
-    } else if (intent === 'dessert') {
-      const kw = ['sobremesa', 'doce', 'pudim', 'brownie', 'sorvete', 'mousse', 'torta'];
-      result = all.filter(p => kw.some(k => (p.name + ' ' + (p.description || '') + ' ' + (p.category_name || '')).toLowerCase().includes(k))).slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Boa pedida para finalizar.'; });
-      if (!result.length) result = sorted.slice(-5).reverse();
-    } else if (intent === 'drink') {
-      const kw = ['suco', 'refrigerante', 'água', 'agua', 'limonada', 'chá', 'cha', 'vitamina'];
-      result = all.filter(p => kw.some(k => (p.name + ' ' + (p.description || '') + ' ' + (p.category_name || '')).toLowerCase().includes(k))).slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Boa bebida para acompanhar.'; });
-      if (!result.length) result = sorted.slice(0, 5);
-    } else if (intent?.type === 'category') {
-      const term = intent.term;
-      result = all.filter(p => (p.name + ' ' + (p.description || '') + ' ' + (p.category_name || '')).toLowerCase().includes(term)).slice(0, 6);
-      result.forEach(p => { reasons[p.id || p.name] = `Boa escolha de ${term}.`; });
-      if (!result.length) result = sorted.slice(0, 5);
-    } else {
-      // value / default
-      const mid = all.filter(p => p.price >= 20 && p.price <= 60);
-      result = (mid.length >= 3 ? mid : sorted).slice(0, 5);
-      result.forEach(p => { reasons[p.id || p.name] = 'Boa escolha para gastar bem.'; });
-    }
-
-    return result.map(p => ({ ...p, _reason: reasons[p.id || p.name] || 'Recomendado pelo Rapi.' }));
-  }
-
-  /* ── AI endpoint hook ── */
-  async function askRapiAssistant(input) {
-    // Replace with real API call when available
-    return null;
-  }
-
-  async function getRapiRecommendations({ message, intent, products, coupons }) {
-    try {
-      const remote = await askRapiAssistant({ message });
-      if (remote && Array.isArray(remote) && remote.length) return remote;
-    } catch (_) {}
-    return getLocalRapiRecommendations({ intent, products, coupons, message });
-  }
 
   /* ── Render helpers ── */
   function renderProductImg(product) {
@@ -724,6 +601,35 @@
       </div>`;
   }
 
+  // Sugestões iniciais. Vêm do restaurante quando ele as configura; o padrão é
+  // deliberadamente neutro — sem nome de prato, sem segmento e sem valor em
+  // reais, que era o caso de "Me recomenda um prato" / "Quero gastar até R$ 50"
+  // (essas frases só fazem sentido num restaurante de comida com esse ticket).
+  const DEFAULT_RAPI_SUGGESTIONS = [
+    'O que você recomenda?',
+    'Quais são os mais pedidos?',
+    'Quero uma sugestão para duas pessoas',
+    'Me surpreenda'
+  ];
+
+  function rapiStarterSuggestions() {
+    const store = window.PedeAquiRestaurantStore?.get?.() || {};
+    const configured = store.restaurant?.rapi_suggestions || store.settings?.rapi_suggestions;
+    const list = (Array.isArray(configured) ? configured : [])
+      .map(item => String(item?.label ?? item ?? '').trim())
+      .filter(Boolean);
+    return list.length ? list.slice(0, 6) : DEFAULT_RAPI_SUGGESTIONS;
+  }
+
+  // O texto passou a vir da API, então ele NÃO pode ser interpolado dentro de um
+  // onclick="...('texto')": um apóstrofo no texto configurado quebraria o JS do
+  // atributo. Vai como data-attribute e o clique é tratado por delegação.
+  function starterChips() {
+    return rapiStarterSuggestions()
+      .map(suggestion => `<button class="rapi-suggest-chip" type="button" data-rapi-suggestion="${esc(suggestion)}">${esc(suggestion)}</button>`)
+      .join('');
+  }
+
   /* ── Build the full view HTML ── */
   function buildRapiView() {
     const locationWidget = buildRapiLocationWidget();
@@ -776,10 +682,7 @@
         <!-- Suggestion chips (horizontal scroll) -->
         <div class="rapi-suggest-rail rapi-suggest-rail--waiting" id="rapiStarter"
           style="opacity:0!important;visibility:hidden!important;pointer-events:none!important">
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me recomenda um prato')">Me recomenda um prato</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Quero gastar ate R$ 50')">Quero gastar at&eacute; R$ 50</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Pedido para 2 pessoas')">Pedido para 2 pessoas</button>
-          <button class="rapi-suggest-chip" type="button" onclick="rapiUseSuggestion('Me surpreenda')">Me surpreenda</button>
+          ${starterChips()}
         </div>
 
         <!-- Input bar -->
@@ -925,7 +828,7 @@
   }
 
   /* ── Show/hide results ── */
-  async function rapiSearch(message, intent, chipId) {
+  async function rapiSearch(message) {
     const resultsEl = document.getElementById('rapiResults');
     const labelEl = document.getElementById('rapiResultsLabel');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
@@ -939,7 +842,6 @@
     if (!cleanMessage) return;
     inputEl?.blur?.();
 
-    _activeChipId = chipId || null;
     _rapiSending = true;
     _rapiAbortController = new AbortController();
     if (_introTypeTimer) {
@@ -1077,6 +979,15 @@
       event.stopPropagation();
       dragged = false;
     }, true);
+
+    // Delegação: o rótulo do chip vem da API, então ele viaja em data-attribute
+    // em vez de ser interpolado num onclick. O listener de captura acima já
+    // engole o clique quando o gesto foi arrasto, então este só vê cliques reais.
+    rail.addEventListener('click', event => {
+      const chip = event.target.closest?.('.rapi-suggest-chip');
+      const suggestion = chip?.dataset?.rapiSuggestion;
+      if (suggestion) window.rapiUseSuggestion(suggestion);
+    });
   }
   function startRapiIntroAnimation() {
     const questionEl = document.getElementById('rapiIntroQuestion');
@@ -1149,7 +1060,7 @@
     const msg = (inputEl?.value || '').trim();
     if (!msg) return;
     if (inputEl) inputEl.value = '';
-    rapiSearch(msg, null, null);
+    rapiSearch(msg);
   };
 
   const RAPI_COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -1248,7 +1159,7 @@
     if (_rapiSending) return;
     const inputEl = document.getElementById('rapiInput');
     if (inputEl) inputEl.value = '';
-    rapiSearch(message, null, null);
+    rapiSearch(message);
   };
 
   window.rapiUseOption = function (index) {
@@ -1360,7 +1271,6 @@
     requestAnimationFrame(waitForKeyboardLayout);
   };
   window.rapiReset = function () {
-    _activeChipId = null;
     _allResults = [];
     _rapiProductDetailCache = [];
     _rapiActiveDetailProduct = null;

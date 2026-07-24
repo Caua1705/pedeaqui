@@ -3280,6 +3280,8 @@ body.app-error .cart-sticky{visibility:hidden}
 }
 body.app-error .app-loader-spinner{display:none}
 body.app-error .app-loader-retry{display:inline-flex;align-items:center;justify-content:center}
+/* Slug inexistente/inativo: recarregar daria o mesmo erro, então o botão some. */
+body.app-error .app-loader-retry[hidden]{display:none}
 .section-loader,
 .menu-skeleton,
 .club-skeleton,

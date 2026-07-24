@@ -69,9 +69,11 @@
   <!-- DELIVERY MODE WIDGET -->
   <div class="delivery-widget" role="button" tabindex="0" onclick="openOperationScreen()" aria-label="Selecionar unidade e operação">
     <div class="delivery-widget-tabs">
+      <!-- Preenchidos por renderWidget() a partir da API. Não colocar nome de
+           restaurante nem de unidade aqui: é markup servido a todos os tenants. -->
       <span class="delivery-widget-tab active" id="dwTabDelivery">DELIVERY</span>
-      <span class="delivery-widget-tab" id="dwTabBrand">RESTAURANTE</span>
-      <span class="delivery-widget-tab" id="dwTabBranch">LJ. SUL</span>
+      <span class="delivery-widget-tab" id="dwTabBrand"></span>
+      <span class="delivery-widget-tab" id="dwTabBranch"></span>
       <svg class="delivery-widget-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
     </div>
     <div class="delivery-widget-divider"></div>
@@ -183,8 +185,10 @@
     </div>
     <div class="ft-col">
       <h4>Informações</h4>
-      <p>Todos os dias, de 11h às 00h</p>
-      <span>Taxa de serviço: R$ 0,99<br>Cobramos couvert artístico</span>
+      <!-- Horário e taxa de serviço vêm da API (renderRestaurantShell). Estavam
+           fixos no HTML com o horário e o couvert de UM restaurante. -->
+      <p id="footerHours"></p>
+      <span id="footerServiceFee"></span>
     </div>
   </div>
   <div class="ft-bottom">Tecnologia de pedidos por Rapidex</div>
@@ -356,80 +360,9 @@
       <span class="prof-sub-title">Informações do restaurante</span>
     </div>
     <div class="prof-sub-body">
-
-      <!-- Horário -->
-      <div class="prof-info-card">
-        <div class="prof-info-card-header">
-          <div class="prof-info-card-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <span class="prof-info-card-title">Horário de funcionamento</span>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div>
-            <div class="prof-info-row-label">Dias</div>
-            <div class="prof-info-row-val">Todos os dias da semana</div>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <div>
-            <div class="prof-info-row-label">Horário</div>
-            <div class="prof-info-row-val">11h00 às 00h00</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Informações -->
-      <div class="prof-info-card">
-        <div class="prof-info-card-header">
-          <div class="prof-info-card-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          </div>
-          <span class="prof-info-card-title">Informações</span>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          <div>
-            <div class="prof-info-row-label">Taxa de serviço</div>
-            <div class="prof-info-row-val">R$ 0,99</div>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          <div>
-            <div class="prof-info-row-label">Couvert artístico</div>
-            <div class="prof-info-row-val">Cobrado durante apresentações</div>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div>
-            <div class="prof-info-row-label">Aviso legal</div>
-            <div class="prof-info-row-val">Proibida a venda de bebidas alcoólicas para menores de 18 anos</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagamentos -->
-      <div class="prof-info-card">
-        <div class="prof-info-card-header">
-          <div class="prof-info-card-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          </div>
-          <span class="prof-info-card-title">Formas de pagamento</span>
-        </div>
-        <div class="prof-pay-chips">
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Crédito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Débito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
-        </div>
-      </div>
-
+      <!-- Preenchido por renderProfileRestaurantInfo() a partir de /info.
+           O markup estático que vivia aqui trazia o horário, o couvert e o
+           aviso de bebida alcoólica de UM restaurante. -->
     </div>
   </div><!-- /profSubinfo -->
 
@@ -515,42 +448,9 @@
         <div class="prof-placeholder-title">Fale com o restaurante</div>
         <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o restaurante pelos canais abaixo.</div>
       </div>
-      <div class="prof-info-card">
-        <div class="prof-info-card-header">
-          <div class="prof-info-card-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          </div>
-          <span class="prof-info-card-title">Contato</span>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          <div>
-            <div class="prof-info-row-label">WhatsApp — Matriz</div>
-            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-          <div>
-            <div class="prof-info-row-label">WhatsApp</div>
-            <a class="prof-info-row-link" href="#" target="_blank" rel="noopener">WhatsApp da loja →</a>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-          <div>
-            <div class="prof-info-row-label">Telefone — Matriz</div>
-            <div class="prof-info-row-val">Telefone da loja</div>
-          </div>
-        </div>
-        <div class="prof-info-row">
-          <svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-          <div>
-            <div class="prof-info-row-label">Telefone</div>
-            <div class="prof-info-row-val">Telefone da loja</div>
-          </div>
-        </div>
-      </div>
+      <!-- Uma linha por unidade da API (renderProfileHelpContacts). Estava fixo
+           com "WhatsApp — Matriz" / "Telefone — Matriz" e links href="#". -->
+      <div class="prof-info-card" id="profHelpContacts"></div>
     </div>
   </div><!-- /profSubajuda -->
 
@@ -835,7 +735,8 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/><rect x="11" y="6.5" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="16.8" r="1.2" fill="#fff"/></svg>
             <span>Informe seu endereço</span>
           </div>
-          <strong class="cart-location-eta" id="cartLocationEta">39 - 45 min</strong>
+          <!-- ETA real vem de /delivery/estimate (deliveryEstimateText()). -->
+          <strong class="cart-location-eta" id="cartLocationEta"></strong>
           <div class="cart-location-main">
             <div class="cart-location-map" aria-hidden="true">
               <img id="cartLocationImage" src="assets/icons/cart/cart-location-guest.png" alt="">
@@ -846,8 +747,8 @@
             </div>
           </div>
           <div class="cart-location-tags">
-            <span class="cart-location-tag cart-location-tag--delivery">DELIVERY</span>
-            <span class="cart-location-tag" id="cartLocationStoreTag">LJ. SUL</span>
+            <span class="cart-location-tag cart-location-tag--delivery" id="cartLocationModeTag">DELIVERY</span>
+            <span class="cart-location-tag" id="cartLocationStoreTag"></span>
           </div>
         </button>
 

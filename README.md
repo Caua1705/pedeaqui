@@ -5,7 +5,32 @@ Static white-label frontend for Rapidex, a restaurant ordering SaaS.
 ## Pages
 
 - `index.html`: Rapidex landing page.
-- `restaurant.html?slug=junior-da-picanha`: generic restaurant ordering page loaded by slug.
+- `restaurant.html?slug=<slug>`: generic restaurant ordering page loaded by slug.
+
+## Tenant resolution
+
+Which restaurant a page serves is decided in one place, `scripts/utils/restaurant-slug.js`,
+with this precedence:
+
+1. **Subdomain** — `<slug>.rapidex.com`. Only read when the host ends in one of
+   `VITE_TENANT_ROOT_DOMAINS`, so Vercel previews and `localhost` are never
+   mistaken for a tenant. Reserved names (`www`, `api`, `admin`, …) and the apex
+   resolve to no tenant.
+2. **Query** — `?slug=<slug>`, which is what the `vercel.json` rewrites produce.
+3. **Path** — `rapidex.com/<slug>`, plus the older `/r/<slug>` and
+   `/restaurantes/<slug>`.
+
+There is **no default restaurant**. An absent, malformed or unknown slug renders
+"Restaurante não encontrado" — serving a different tenant's menu, brand and
+prices in its place is a multi-tenant isolation failure, not a friendly fallback.
+
+## Storage model
+
+The customer account is global to Rapidex, matching the backend (`customers.phone`
+is unique across the table and `customers` has no `restaurant_id`). So session,
+profile and addresses are stored **unnamespaced** and stay valid across every
+restaurant. The **cart is the only per-restaurant key** (`rapidex.cart.<slug>`),
+along with the chosen order type/branch. See `scripts/utils/storage-keys.js`.
 
 ## API Configuration
 
@@ -31,7 +56,7 @@ python -m http.server 4174 --bind 127.0.0.1
 Then open:
 
 ```text
-http://127.0.0.1:4174/restaurant.html?slug=junior-da-picanha
+http://127.0.0.1:4174/restaurant.html?slug=<slug>
 ```
 
 ## Architecture

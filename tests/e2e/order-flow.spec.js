@@ -15,10 +15,13 @@ async function goToReview(page) {
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3); // 3 x R$7,05 = R$21,15, above the R$20 minimum
 
-  // openCheckout() is the same entry the cart CTA calls once its gates pass; we
-  // invoke it directly to sidestep the (pre-existing) address gate on pickup,
-  // then drive payment and confirmation through the real UI controls.
-  await page.evaluate(() => window.openCheckout());
+  // Fase 3 (item 7): on pickup the CTA no longer demands a delivery address, so
+  // the test drives the real button instead of calling openCheckout() directly.
+  // If the address gate ever comes back on pickup, this click stops working.
+  await page.evaluate(() => window.openModal('cartModal'));
+  const cta = page.locator('#cartCtaBtn');
+  await expect(cta).not.toHaveText('Informe seu endereço');
+  await cta.click();
 
   await page.locator('.payment-method-option[data-payment-key="pix"]').click();
   await page.locator('.payment-method-confirm').click();

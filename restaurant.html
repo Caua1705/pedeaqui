@@ -5,22 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
 <title>Rapidex — Pedido Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/tokens.css?v=32">
-<link rel="stylesheet" href="styles/base.css?v=33">
-<link rel="stylesheet" href="styles/layout.css?v=32">
-<link rel="stylesheet" href="styles/components.css?v=32">
-<link rel="stylesheet" href="styles/restaurant.css?v=81">
-<link rel="stylesheet" href="styles/cart.css?v=32">
-<link rel="stylesheet" href="styles/checkout.css?v=32">
-<link rel="stylesheet" href="styles/mobile.css?v=32">
-<link rel="stylesheet" href="styles/utilities.css?v=335">
-<link rel="stylesheet" href="styles/operation.css?v=134">
-<link rel="stylesheet" href="styles/register.css?v=32">
-<link rel="stylesheet" href="styles/login.css?v=32">
-<link rel="stylesheet" href="styles/verify.css?v=32">
-<link rel="stylesheet" href="styles/button-theme.css?v=3">
-<link rel="stylesheet" href="styles/rapi.css?v=159">
-<link rel="stylesheet" href="styles/coupons-api.css?v=1">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/restaurant.css">
+<link rel="stylesheet" href="styles/cart.css">
+<link rel="stylesheet" href="styles/checkout.css">
+<link rel="stylesheet" href="styles/mobile.css">
+<link rel="stylesheet" href="styles/utilities.css">
+<link rel="stylesheet" href="styles/operation.css">
+<link rel="stylesheet" href="styles/register.css">
+<link rel="stylesheet" href="styles/login.css">
+<link rel="stylesheet" href="styles/verify.css">
+<link rel="stylesheet" href="styles/button-theme.css">
+<link rel="stylesheet" href="styles/rapi.css">
+<link rel="stylesheet" href="styles/coupons-api.css">
 </head>
 <body class="app-booting">
 <div class="app-loader" id="appLoader" role="status" aria-live="polite">
@@ -215,7 +215,7 @@
   <div class="mob-nav-qr-slot">
     <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Rapi" type="button" onclick="mobNavRapi()">
     <div class="menu-mobile-center">
-      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png?v=2" alt="Rapi" onerror="this.style.display='none'">
+      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png" alt="Rapi" onerror="this.style.display='none'">
     </div>
   </button>
   </div>
@@ -1078,12 +1078,12 @@
         <div class="fs-section-title">Como deseja receber?</div>
         <div class="fs-type-grid">
           <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
-            <div class="fs-type-card-icon">ðŸ›µ</div>
+            <div class="fs-type-card-icon">🛵</div>
             <div class="fs-type-card-name">Entrega</div>
             <div class="fs-type-card-sub" id="checkoutDeliverySub">-- min · R$ 0,00</div>
           </button>
           <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
-            <div class="fs-type-card-icon">ðŸª</div>
+            <div class="fs-type-card-icon">🏪</div>
             <div class="fs-type-card-name">Retirada</div>
             <div class="fs-type-card-sub" id="checkoutPickupSub">Retirada · Grátis</div>
           </button>
@@ -1773,20 +1773,6 @@
   </div>
 </div>
 
-<!-- maps-config.local.js is gitignored and holds the real key (see maps-config.example.js).
-     A 404 here is expected on a fresh clone until the file is created. -->
-<script src="scripts/config/maps-config.local.js"></script>
-<script src="scripts/config/maps-config.js"></script>
-<script src="scripts/config/app-config.js"></script>
-<script src="scripts/config/fallback-config.js"></script>
-<!-- Must precede every script that reads localStorage. -->
-<script src="scripts/utils/storage-keys.js"></script>
-<script src="scripts/services/api-routes.js?v=4"></script>
-<script src="scripts/utils/restaurant-slug.js"></script>
-<script src="scripts/utils/slugify.js"></script>
-<script src="scripts/utils/dom.js"></script>
-<script src="scripts/utils/validators.js"></script>
-
 <div class="addr-delete-confirm" id="logoutConfirm" aria-hidden="true" onclick="closeLogoutConfirm()">
   <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" onclick="event.stopPropagation()">
     <h3 class="addr-delete-title" id="logoutConfirmTitle">Deseja sair?</h3>
@@ -1794,31 +1780,9 @@
     <button class="addr-delete-yes" type="button" onclick="confirmLogout()">Sair</button>
   </div>
 </div>
-<script src="scripts/services/api-client.js"></script>
-<script src="scripts/services/api.js?v=2"></script>
-<script src="scripts/services/customer-auth-service.js?v=4"></script>
-<script src="scripts/services/restaurant-service.js"></script>
-<script src="scripts/services/restaurant-info-service.js"></script>
-<script src="scripts/services/menu-service.js?v=2"></script>
-<script src="scripts/services/customer-service.js?v=2"></script>
-<script src="scripts/services/address-service.js"></script>
-<script src="scripts/services/delivery-service.js"></script>
-<script src="scripts/services/cart-service.js"></script>
-<script src="scripts/services/order-service.js"></script>
-<script src="scripts/services/order-payload.js"></script>
-<script src="scripts/services/club-service.js?v=3"></script>
-<script src="scripts/content/privacy-policy.js"></script>
-<script src="scripts/content/loyalty-policy.js"></script>
-<script src="scripts/state/order-state.js?v=2"></script>
-<script src="scripts/state/ui-state.js"></script>
-<script src="scripts/stores/restaurant-store.js"></script>
-<script src="scripts/stores/customer-store.js"></script>
-<script src="scripts/stores/cart-store.js?v=3"></script>
-<script src="scripts/stores/ui-store.js"></script>
-<script src="scripts/pages/restaurant-ui.js?v=2"></script>
-<script src="scripts/pages/restaurant-club.js?v=10"></script>
-<script src="scripts/pages/restaurant-rapi.js?v=41"></script>
-<script src="scripts/pages/restaurant-page.js?v=114"></script>
-<script src="scripts/pages/cashback-statement.js?v=4"></script>
+<!-- All app scripts are bundled by Vite via this single module entry, which
+     imports them in their original dependency order (see scripts/entry-restaurant.js).
+     Vite handles minification and hashing; the old ?v=N cache-busting is gone. -->
+<script type="module" src="/scripts/entry-restaurant.js"></script>
 </body>
 </html>

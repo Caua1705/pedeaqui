@@ -1,0 +1,29 @@
+{
+  "name": "rapidex-front",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "White-label restaurant ordering frontend (Rapidex).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{js,css,html,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,css,html,json,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6",
+    "vite": "^8.1.5",
+    "vite-plugin-static-copy": "^4.1.1",
+    "vitest": "^4.1.10"
+  }
+}

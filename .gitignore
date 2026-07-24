@@ -30,3 +30,10 @@ yarn-error.log*
 dist/
 build/
 .cache/
+.vite/
+
+# Test / tooling artifacts
+playwright-report/
+test-results/
+.playwright/
+coverage/

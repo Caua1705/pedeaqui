@@ -167,6 +167,12 @@
   const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
   const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
   const cartItemUnitPrice = (item) => Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
+  // Delegates to the canonical uid generator in cart-service (Fase 1). Previously
+  // this file called a bare newCartItemUid() that was never in scope here — a
+  // latent ReferenceError on the uid-less restore path, surfaced by ESLint.
+  const newCartItemUid = () =>
+    window.PedeAquiCartService?.newCartItemUid?.() ||
+    (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
   const maxFiniteNumber = (...values) => values.reduce((max, value) => {
     const number = Number(value);
     return Number.isFinite(number) ? Math.max(max, number) : max;
@@ -3679,7 +3685,7 @@
         ${isSel
           ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#15803d"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
              <span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
-             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereÃ§o">${ADDR_PICKER_DELETE_ICON}</span>`
+             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`
           : `<span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
              <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`}
       </button>`;
@@ -6091,7 +6097,7 @@
     lockBodyScroll();
     if (!products.length || !categories.length) {
       const view = $('mobViewRapi');
-      if (view) view.innerHTML = '<div class="rapi-preparing-loader">Rapi estÃ¡ preparando sugestÃµes...</div>';
+      if (view) view.innerHTML = '<div class="rapi-preparing-loader">Rapi está preparando sugestões...</div>';
       await ensureMenuLoaded();
     }
     if (window.renderRapiView) window.renderRapiView({ deferIntro: shouldFocusRapiInput });
@@ -6317,7 +6323,7 @@
   function confirmLogout() {
     closeLogoutConfirm();
     if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Carregando restaurante';
-    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando sua experiÃªncia.';
+    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando sua experiência.';
     setAppBooting(true);
     persistCustomer(null);
     appState.customerOrders = null;
@@ -6823,7 +6829,7 @@
     document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
     const sub = $('profSub' + subId);
     if (!sub) return;
-    if (subId === 'pedidos') profOrdersBackdrop?.classList.add('active');
+    if (subId === 'pedidos') $('profOrdersBackdrop')?.classList.add('active');
     sub.classList.add('active');
     if (subId === 'pedidos') await loadProfPedidos();
     if (subId === 'pagamento') {
@@ -6839,7 +6845,7 @@
   }
   function closeProfSub() {
     closeProfOrderDetails();
-    profOrdersBackdrop?.classList.remove('active');
+    $('profOrdersBackdrop')?.classList.remove('active');
     document.querySelectorAll('#mobViewProfile .prof-sub, #profSubpedidos').forEach(el => el.classList.remove('active'));
   }
 

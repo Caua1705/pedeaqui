@@ -1,0 +1,12 @@
+dist
+node_modules
+playwright-report
+test-results
+coverage
+tests/fixtures
+scripts/config/maps-config.local.js
+# Large hand-maintained stylesheets — do not mass-reformat (would bury real diffs).
+styles/utilities.css
+styles/restaurant.css
+styles/rapi.css
+styles/operation.css

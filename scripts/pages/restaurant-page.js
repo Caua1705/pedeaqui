@@ -5934,6 +5934,10 @@
   let _authSuppressedNavNext = null;
 
   const AUTH_SCREEN_SELECTOR = '.lgn-screen.active,.reg-screen.active,.vfy-screen.active,#forgotPasswordScreen.active,#recoverCodeScreen.active,#resetPasswordScreen.active';
+  // As MESMAS telas, sem o `.active`. Uma é o ESTADO que interessa (tela de auth
+  // aberta), a outra é o CONJUNTO a vigiar — os elementos existem o tempo todo,
+  // só a classe entra e sai.
+  const AUTH_SCREEN_ELEMENTS = '.lgn-screen,.reg-screen,.vfy-screen,#forgotPasswordScreen,#recoverCodeScreen,#resetPasswordScreen';
   function setBottomNavSuppressedForAuth(active) {
     const nav = _authSuppressedNav || $('mobBottomNav');
     document.body.classList.toggle('auth-screen-open', active);
@@ -5972,8 +5976,33 @@
   function syncAuthScreenOpenClass() {
     setBottomNavSuppressedForAuth(Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));
   }
+  // C2 — o escopo do observer.
+  //
+  // Antes: `observe(document.body, { subtree: true })`. Isso pede ao browser um
+  // MutationRecord para CADA mudança de class em QUALQUER um dos ~1,4 mil
+  // elementos da página — aba trocada, chip de categoria, card em :active,
+  // sticky do scroll — para checar seis seletores que só podem mudar em seis
+  // elementos. O trabalho era proporcional ao tamanho da página; o interesse,
+  // não.
+  //
+  // Agora: os seis elementos, sem subtree. Eles são markup ESTÁTICO do
+  // restaurant.html (nenhum é criado em runtime — se um dia for, precisa entrar
+  // em observeAuthScreens), e o script roda como módulo, ou seja, depois do
+  // parse: todos já existem quando isto executa.
   const authScreenObserver = new MutationObserver(syncAuthScreenOpenClass);
-  authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  function observeAuthScreens() {
+    const screens = document.querySelectorAll(AUTH_SCREEN_ELEMENTS);
+    if (!screens.length) {
+      // O markup mudou de nome debaixo do JS. Volta ao escopo largo: a barra
+      // aparecendo por cima da tela de login é bug visível; o custo, não.
+      authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      return;
+    }
+    for (const screen of screens) {
+      authScreenObserver.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+  observeAuthScreens();
   syncAuthScreenOpenClass();
 
   function policyScrollBody() {

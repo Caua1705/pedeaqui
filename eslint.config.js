@@ -55,12 +55,29 @@ export default [
     }
   },
 
+  // Service worker: outro escopo global (self, caches, clients), sem window nem
+  // document. Fica FORA do bloco de scripts/ de propósito — se os globais de
+  // browser valessem aqui, um `document.` esquecido no worker passaria no lint e
+  // só falharia em runtime, onde ninguém está olhando.
+  {
+    files: ['public/sw.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'script',
+      globals: globals.serviceworker
+    },
+    rules: {
+      eqeqeq: ['error', 'smart']
+    }
+  },
+
   // Node-side tooling and tests.
   {
     files: [
       '*.config.js',
       'tests/**/*.js',
       'tools/**/*.mjs',
+      'tools/**/*.js',
       'playwright.config.js',
       'vitest.config.js'
     ],

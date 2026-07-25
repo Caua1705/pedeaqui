@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { vercelRewrites } from './tools/vercel-rewrites.js';
 
 // Multi-page build. Both HTML files are entry points; each pulls in a single
 // module entry that side-effect-imports the app scripts in their original order
@@ -10,7 +11,30 @@ export default defineConfig({
   // Served at domain root (Vercel), same as today.
   base: '/',
 
+  // public/ é o diretório dos arquivos que o Vite copia VERBATIM: mesmo nome,
+  // mesmo caminho, sem hash e sem entrar no module graph. É o único mecanismo
+  // que atende os três arquivos do PWA, para os quais o caminho é contrato:
+  //
+  //  - public/sw.js -> /sw.js. Um service worker só controla o diretório em que
+  //    ele mora; hasheado ou movido para /assets, o escopo deixaria de ser "/".
+  //  - public/manifest.webmanifest -> /manifest.webmanifest. É o destino do
+  //    rewrite /:slug/manifest.webmanifest da vercel.json, e seu start_url é o
+  //    relativo "./" — em /assets/manifest-<hash>.webmanifest o escopo do app
+  //    instalado viraria /assets/.
+  //  - public/assets/icons/pwa/*.png. São citados por caminho ABSOLUTO dentro
+  //    do JSON do manifest, que o Vite não lê nem reescreve.
+  //
+  // Não é redundante com o viteStaticCopy abaixo: aquele existe para arquivos
+  // que ficam FORA daqui (assets/ é a árvore de origem, com os PNGs master que
+  // não podem ir para o build). Este é o oposto — nasce pronto para o dist.
+  publicDir: 'public',
+
   plugins: [
+    // O roteamento de produção vive na vercel.json e não existe localmente. Sem
+    // este espelho, /<slug>/manifest.webmanifest — a URL de que o manifest por
+    // tenant depende — daria 404 em dev, no preview e no e2e.
+    vercelRewrites(resolve(import.meta.dirname, 'vercel.json')),
+
     // Algumas imagens são montadas por string em runtime (a URL só existe
     // depois que o JS roda), então o module graph do Vite nunca as vê e é
     // preciso copiá-las verbatim.

@@ -1146,6 +1146,13 @@
       restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
     );
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
+    // Mesma cor e mesmo nome que acabaram de entrar na tela vão para o manifest:
+    // o app instalado tem que ter a cara do restaurante, não a da plataforma.
+    window.RapidexPWA?.applyTenantManifest({
+      name: restaurant.name || fallback().restaurantName || '',
+      themeColor: restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
+      logoUrl: restaurant.logo_url || restaurant.logo_path
+    });
   }
 
   function renderRestaurantShell() {

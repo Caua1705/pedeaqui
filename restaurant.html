@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
 <title>Rapidex — Pedido Online</title>
+<!-- PWA. O href do manifest é reescrito no boot para /<slug>/manifest.webmanifest
+     e, quando a marca chega da API, para um blob com nome e logo do tenant.
+     A âncora estática garante um manifest válido antes de o JS rodar.
+     Ver scripts/utils/pwa.js. A landing (index.html) NÃO tem manifest: ela teria
+     escopo "/" e o app da plataforma engoliria a URL de todo restaurante. -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#F36F21">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/assets/icons/pwa/rapidex-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">

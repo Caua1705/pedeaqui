@@ -11,9 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 24 traz npm 11, o mesmo major usado no desenvolvimento. O major do
+      # npm precisa bater: o npm 10 materializa peerDependencies opcionais (ex.
+      # @emnapi/*, via @napi-rs/wasm-runtime) como entradas top-level do lock e o
+      # npm 11 nao, entao cada um recusa o lock gerado pelo outro com EUSAGE.
+      # "engines" + engine-strict (.npmrc) travam o outro lado: um npm fora desta
+      # faixa falha o install em vez de gravar um lock divergente.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies

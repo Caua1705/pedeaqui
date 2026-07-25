@@ -20,9 +20,17 @@ import './utils/storage-keys.js';
 import './services/api-routes.js';
 import './utils/restaurant-slug.js';
 import './utils/brand-theme.js';
+// Depende de restaurant-slug (topologia do tenant) e de brand-theme (cor).
+import './utils/pwa.js';
 import './utils/actions.js';
 import './utils/slugify.js';
 import './utils/dom.js';
+// Registro de desligamento (signal + onTeardown). Precisa vir antes das páginas,
+// que registram os observers e intervalos nele.
+import './utils/lifecycle.js';
+// Cache com prazo e teto. Precisa vir antes dos serviços que o instanciam.
+import './utils/ttl-cache.js';
+import './utils/image-cdn.js';
 import './utils/validators.js';
 import './services/api-client.js';
 import './services/api.js';

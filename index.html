@@ -18,17 +18,17 @@
 <!-- GRID LINES -->
 <div class="grid-lines" aria-hidden="true">
   <div class="gl">
-    <div class="beam beam-1" style="left:0"></div>
+    <div class="beam beam-1 beam--x0"></div>
   </div>
   <div class="gl">
-    <div class="beam beam-2" style="left:0"></div>
+    <div class="beam beam-2 beam--x0"></div>
   </div>
   <div class="gl">
-    <div class="beam beam-1" style="left:0;animation-delay:1.5s"></div>
-    <div class="beam beam-3" style="left:50%;animation-delay:3s"></div>
+    <div class="beam beam-1 beam--x0 beam--d15"></div>
+    <div class="beam beam-3 beam--x50 beam--d30"></div>
   </div>
   <div class="gl">
-    <div class="beam beam-2" style="left:0;animation-delay:4s"></div>
+    <div class="beam beam-2 beam--x0 beam--d40"></div>
   </div>
   <div class="gl"></div>
 </div>
@@ -36,7 +36,13 @@
 <!-- NAV -->
 <nav>
   <a href="#" class="logo">
-    <img src="assets/brand/pedeaqui-logo.png" alt="Rapidex" class="logo-img">
+    <!-- O master 634x640 (140 kB) desenhava um logo de 34px. Serve-se agora a
+         variante do DPR da tela; width/height fixam a caixa antes do byte
+         chegar, então o nav não pula quando a imagem carrega. -->
+    <img
+      src="assets/brand/pedeaqui-logo@1x.webp"
+      srcset="assets/brand/pedeaqui-logo@1x.webp 1x, assets/brand/pedeaqui-logo@2x.webp 2x, assets/brand/pedeaqui-logo@3x.webp 3x"
+      alt="Rapidex" class="logo-img" width="34" height="34" decoding="async">
     <span class="logo-name">Pede<b>Aqui</b></span>
   </a>
   <div class="nav-links">
@@ -120,18 +126,18 @@
   </div>
 
   <!-- Mobile-only compact benefits -->
-  <div class="benefits-mobile" style="display:none;justify-content:center;gap:16px;margin-bottom:20px;opacity:0;animation:fu .8s .5s both">
-    <span class="ben" style="padding:4px 0;font-size:.7rem">
+  <div class="benefits-mobile benefits-mobile--init">
+    <span class="ben ben--compact">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       Cardápio online
     </span>
     <span class="ben-sep"></span>
-    <span class="ben" style="padding:4px 0;font-size:.7rem">
+    <span class="ben ben--compact">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       Pedidos diretos
     </span>
     <span class="ben-sep"></span>
-    <span class="ben" style="padding:4px 0;font-size:.7rem">
+    <span class="ben ben--compact">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       Gestão simples
     </span>
@@ -173,9 +179,9 @@
       <div class="cart-item"><span>1× Combo da Casa</span><span>R$ 47,90</span></div>
       <div class="cart-divider"></div>
       <div class="cart-total"><span>Total · 2 itens</span><span>R$ 87,80</span></div>
-      <div style="margin-top:10px;display:flex;gap:7px">
-        <div style="flex:1;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;font-size:.6rem;color:var(--fg2);text-align:center">🛵 Entrega</div>
-        <div style="flex:1;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;font-size:.6rem;color:var(--fg2);text-align:center">🏠 Retirada</div>
+      <div class="order-chips">
+        <div class="order-chip">🛵 Entrega</div>
+        <div class="order-chip">🏠 Retirada</div>
       </div>
       <button class="cart-cta">Finalizar pedido →</button>
     </div>
@@ -190,7 +196,7 @@
           <span class="order-badge">Aguardando aceite</span>
         </div>
         <div class="order-info">Picanha Executiva · Combo da Casa</div>
-        <div class="order-info" style="font-weight:600;color:var(--fg)">Total R$ 87,80</div>
+        <div class="order-info order-info--strong">Total R$ 87,80</div>
         <div class="order-btns">
           <button class="ob-acc">Aceitar</button>
           <button class="ob-rej">Recusar</button>
@@ -416,7 +422,7 @@
 </section>
 
 <!-- FOOTER -->
-<footer style="text-align:center;padding:32px 24px;border-top:1px solid var(--bd);color:var(--fg3);font-size:.72rem">
+<footer class="landing-footer">
   © 2025 Rapidex. Todos os direitos reservados.
 </footer>
 

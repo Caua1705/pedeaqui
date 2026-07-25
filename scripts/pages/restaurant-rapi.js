@@ -11,7 +11,12 @@
   'use strict';
 
   /* ── Constants ── */
-  const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot.png';
+  // O master era um PNG 1254x1254 de 1,0 MB para desenhar um orbe de 110px —
+  // 130x mais pixels do que a maior tela consome. As variantes WebP por DPR
+  // custam 1,2 / 2,9 / 4,8 kB. Regeradas por tools/optimize-images.mjs.
+  const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot@1x.webp';
+  const RAPI_AVATAR_SRCSET =
+    'assets/brand/rapi-mascot@1x.webp 1x, assets/brand/rapi-mascot@2x.webp 2x, assets/brand/rapi-mascot@3x.webp 3x';
   const RAPI_SESSION_STORAGE_KEY = 'rapi.session_id';
 
   /* ── State ── */
@@ -682,7 +687,7 @@
         <div class="rapi-orb-wrap">
           <div class="rapi-orb-glow"></div>
           <div class="rapi-orb">
-            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" alt="Rapi" data-act-error="$hide">
+            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" srcset="${RAPI_AVATAR_SRCSET}" alt="Rapi" width="110" height="110" decoding="async" data-act-error="$hide">
           </div>
         </div>
 
@@ -959,9 +964,12 @@
         view.style.removeProperty('--rapi-intro-shift');
       }, 80);
     });
-    viewport?.addEventListener('resize', updateKeyboardOffset);
-    viewport?.addEventListener('scroll', updateKeyboardOffset);
-    window.addEventListener('resize', updateKeyboardOffset);
+    // O visualViewport sobrevive a qualquer view: sem o signal, estes tres
+    // ficariam medindo teclado ate a pagina morrer.
+    const signal = window.RapidexLifecycle?.signal;
+    viewport?.addEventListener('resize', updateKeyboardOffset, { signal });
+    viewport?.addEventListener('scroll', updateKeyboardOffset, { signal });
+    window.addEventListener('resize', updateKeyboardOffset, { signal });
   }
   function setupRapiSuggestionDrag() {
     const rail = document.getElementById('rapiStarter');
@@ -1334,7 +1342,7 @@
     if (event.key === 'Escape' && document.body.classList.contains('rapi-product-detail-open')) {
       window.rapiCloseProductDetail();
     }
-  });
+  }, { signal: window.RapidexLifecycle?.signal });
 
   // rapiImagePlaceholder é a única ação deste módulo que NÃO existe em window —
   // ela nasceu já como ação. As demais continuam globais porque restaurant-page.js

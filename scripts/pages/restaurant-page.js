@@ -1,4 +1,11 @@
 (function () {
+  // C3 — todo listener de vida longa em document/window carrega este signal, e
+  // um único abort() no teardown remove os que estiverem pendurados nele. É o
+  // que evita ter de guardar referência de cada handler só para poder removê-lo
+  // (metade deles é função anônima). Ver scripts/utils/lifecycle.js.
+  const LIFECYCLE_SIGNAL = window.RapidexLifecycle?.signal;
+  const onTeardown = (dispose) => window.RapidexLifecycle?.onTeardown(dispose);
+
   const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const storageKeys = () => window.RapidexStorage;
   const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
@@ -86,6 +93,15 @@
   const TAB_LOADER_MIN_MS = 500;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
+
+  // Mostrar/esconder passa por classe, não por style.display.
+  //
+  // O estado inicial escondido vinha de style="display:none" no HTML, e era o
+  // que obrigava a CSP a liberar style-src 'unsafe-inline'. Sem o atributo, um
+  // `style.display = ''` não desfaz mais nada — quem esconde agora é .u-hidden,
+  // então quem mostra tem que tirar a classe.
+  const showEl = (element, shown) => element?.classList.toggle('u-hidden', !shown);
+
   const dialogFocusOrigins = new WeakMap();
 
   function releaseFocusFrom(container, fallback) {
@@ -250,8 +266,7 @@
     couponPreviewPromise = null;
     couponPreviewKey = '';
     heroBannerIndex = 0;
-    clearInterval(heroBannerTimer);
-    heroBannerTimer = null;
+    stopHeroAutoplay();
     menuLoadPromise = null;
     profileLoadPromise = null;
     menuRenderSignature = '';
@@ -590,9 +605,77 @@
     ]);
   }
 
+  // Emite srcset para a foto de catálogo quando a origem é transformável.
+  //
+  // `box`: { w, h } em CSS px quando a caixa tem tamanho fixo — aí o DPR é a
+  //        única variável e descritores `x` bastam, sem repetir o CSS num
+  //        `sizes`. w e h são declarados SEPARADAMENTE de propósito: a arte do
+  //        cupom é 168x90, e assumir caixa quadrada publicaria uma proporção
+  //        intrínseca errada, que é justamente o reflow que queremos evitar.
+  // `fluid`: { widths, sizes } quando a caixa acompanha a viewport.
+  //
+  // Sem nenhum dos dois — ou com uma URL que não é do Storage — devolve vazio e
+  // a imagem sai exatamente como saía antes: só o original em src.
+  function responsiveImageAttrs(url, { box, fluid } = {}) {
+    const cdn = window.RapidexImageCdn;
+    if (!cdn || !url) return '';
+
+    if (box) {
+      const set = cdn.srcsetByDpr(url, box.w);
+      // width/height reservam a caixa antes do byte chegar. O CSS já fixa esses
+      // mesmos lados, então não muda layout — só evita o reflow do carregamento.
+      return set ? ` srcset="${esc(set)}" width="${box.w}" height="${box.h}"` : '';
+    }
+    if (fluid) {
+      const set = cdn.srcsetByWidth(url, fluid.widths);
+      return set ? ` srcset="${esc(set)}" sizes="${esc(fluid.sizes)}"` : '';
+    }
+    return '';
+  }
+
+  // O herói é full-bleed (aspect-ratio 1080/500 — styles/utilities.css:652) e a
+  // arte é autorada a 1080 de largura, então a grade para aí.
+  const HERO_FLUID = { widths: [480, 768, 1080, 1440], sizes: '(max-width: 1080px) 100vw, 1080px' };
+  // .coupon-card tem 168px de largura (styles/utilities.css:1205) e a arte
+  // dentro dela tem 90px de altura (.coupon-art — styles/utilities.css:768).
+  const RAIL_BOX = { w: 168, h: 90 };
+  // .highlight-banner troca de regime por breakpoint: 290px fixos no desktop,
+  // 65%/78% da viewport no mobile (styles/utilities.css:857/1260/1414). Como
+  // não é largura fixa em todo lugar, vai de `w` + sizes.
+  const HIGHLIGHT_FLUID = {
+    widths: [290, 440, 580, 780, 870],
+    sizes: '(max-width: 900px) 78vw, 290px'
+  };
+  // .coupon-detail-art — width:min(100%,414px) (styles/utilities.css:237).
+  const COUPON_DETAIL_FLUID = {
+    widths: [414, 620, 828, 1242],
+    sizes: '(max-width: 414px) 100vw, 414px'
+  };
+
+  // Versão para <img> que JÁ existe no DOM (o herói é atualizado por
+  // propriedade, não recriado por template).
+  function applyResponsiveImage(img, url, { box, fluid } = {}) {
+    const cdn = window.RapidexImageCdn;
+    if (!img || !cdn) return;
+    const set = fluid ? cdn.srcsetByWidth(url, fluid.widths) : cdn.srcsetByDpr(url, box.w);
+    if (!set) {
+      // Origem não transformável: limpa o srcset ANTERIOR. Sem isto, trocar o
+      // banner por um de outro CDN deixaria o srcset velho no elemento e o
+      // browser continuaria pintando a imagem antiga, ignorando o src novo.
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+      return;
+    }
+    img.srcset = set;
+    if (fluid) img.sizes = fluid.sizes;
+    else img.removeAttribute('sizes');
+  }
+
   function productImage(product, className = 'product-image', options = {}) {
     const image = product.image_url || product.image_path;
-    if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}" ${imageAttrs(options)}>`;
+    if (image) {
+      return `<img class="${className}" src="${esc(image)}"${responsiveImageAttrs(image, options)} alt="${esc(product.name)}" ${imageAttrs(options)}>`;
+    }
     return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
   }
 
@@ -993,7 +1076,8 @@
           </div>
         </div>
         <div class="product-image-frame">
-          ${productImage(product, 'product-image')}
+          ${/* 110px fixos — body.menu-tab .product-image, styles/utilities.css:4655 */ ''}
+          ${productImage(product, 'product-image', { box: { w: 110, h: 110 } })}
         </div>
       </article>
     `;
@@ -1068,6 +1152,13 @@
       restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
     );
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
+    // Mesma cor e mesmo nome que acabaram de entrar na tela vão para o manifest:
+    // o app instalado tem que ter a cara do restaurante, não a da plataforma.
+    window.RapidexPWA?.applyTenantManifest({
+      name: restaurant.name || fallback().restaurantName || '',
+      themeColor: restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
+      logoUrl: restaurant.logo_url || restaurant.logo_path
+    });
   }
 
   function renderRestaurantShell() {
@@ -1249,8 +1340,7 @@
     ]));
     if (bannersRenderSignature === nextSignature) return;
     bannersRenderSignature = nextSignature;
-    clearInterval(heroBannerTimer);
-    heroBannerTimer = null;
+    stopHeroAutoplay();
     heroBannerIndex = 1;
     const visualBanners = banners.filter(banner => banner.image_url || banner.image_path);
 
@@ -1258,6 +1348,8 @@
       cover.classList.remove('has-carousel');
       if (track) track.innerHTML = '';
       img.removeAttribute('src');
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
       img.alt = restaurant.name || fallback().restaurantName || '';
       if (heroFallback) heroFallback.setAttribute('aria-hidden', 'false');
       if (dots) dots.innerHTML = '';
@@ -1265,7 +1357,9 @@
     }
 
     const first = visualBanners[0];
-    img.src = first.image_url || first.image_path || '';
+    const firstImage = first.image_url || first.image_path || '';
+    img.src = firstImage;
+    applyResponsiveImage(img, firstImage, { fluid: HERO_FLUID });
     img.alt = first.title || first.subtitle || restaurant.name || 'Banner promocional';
     img.loading = 'eager';
     img.decoding = 'async';
@@ -1277,7 +1371,8 @@
       const mkSlide = banner => {
         const image = banner.image_url || banner.image_path || '';
         const alt = banner.title || banner.subtitle || restaurant.name || 'Banner';
-        return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
+        const responsive = responsiveImageAttrs(image, { fluid: HERO_FLUID });
+        return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
       };
       const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
       const cloneFirst = mkSlide(visualBanners[0]);
@@ -1319,11 +1414,20 @@
     });
   }
 
-  function startHeroAutoplay() {
-    const total = $('restaurantHeroTrack')?.children.length || 0;
+  function stopHeroAutoplay() {
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
+  }
+
+  function startHeroAutoplay() {
+    const total = $('restaurantHeroTrack')?.children.length || 0;
+    stopHeroAutoplay();
     if (total <= 3) return;
+    // Aba oculta não anima. Sem esta guarda o intervalo continuaria girando o
+    // carrossel — escrita no DOM e recálculo de estilo — numa página que
+    // ninguém está vendo, e o usuário voltaria para um banner que "andou
+    // sozinho" enquanto ele estava em outro lugar.
+    if (document.visibilityState === 'hidden') return;
     heroBannerTimer = setInterval(() => {
       const track = $('restaurantHeroTrack');
       if (!track) return;
@@ -1341,6 +1445,19 @@
       }
     }, HERO_BANNER_INTERVAL_MS);
   }
+
+  // O par que fecha o intervalo do hero: pausa quando a aba sai de vista, volta
+  // quando ela retorna, e some de vez no teardown da página.
+  window.RapidexLifecycle?.onVisibility({
+    onHidden: stopHeroAutoplay,
+    onVisible: () => {
+      // Só reativa se o carrossel existe de fato — em restaurante sem banner o
+      // startHeroAutoplay já sai pelo total <= 3, mas checar aqui evita a
+      // chamada inteira a cada volta de aba.
+      if ($('restaurantHeroTrack')) startHeroAutoplay();
+    }
+  });
+  window.RapidexLifecycle?.onTeardown(stopHeroAutoplay);
 
   function initHeroSwipe() {
     const track = $('restaurantHeroTrack');
@@ -1391,8 +1508,7 @@
           dot.classList.toggle('active', i === realIndex);
         });
       }
-      clearInterval(heroBannerTimer);
-      heroBannerTimer = null;
+      stopHeroAutoplay();
       heroDragStartX = event.clientX;
       heroDragDeltaX = 0;
       track.classList.add('is-dragging');
@@ -1416,7 +1532,7 @@
     window.addEventListener('scroll', () => {
       if (!document.body.classList.contains('menu-tab')) return;
       document.body.classList.toggle('menu-scrolled', (window.scrollY || document.documentElement.scrollTop) > 40);
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function initPageRubberBand() {
@@ -1450,7 +1566,7 @@
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       delta = 0; tracking = true; isHoriz = false;
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
 
     document.addEventListener('touchmove', e => {
       if (!tracking) return;
@@ -1464,10 +1580,10 @@
       }
       delta = dx;
       applyMove(parseFloat((delta * 0.18).toFixed(1)));
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
 
-    document.addEventListener('touchend', snapBack, { passive: true });
-    document.addEventListener('touchcancel', snapBack, { passive: true });
+    document.addEventListener('touchend', snapBack, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('touchcancel', snapBack, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function renderCoupons() {
@@ -1501,7 +1617,7 @@
       return `
         <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code)}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
+            ${image ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
@@ -1536,7 +1652,7 @@
       return `
         <article class="highlight-banner">
           ${image
-            ? `<img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
+            ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
             : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || restaurant.name || '')}</span></div>`}
         </article>
       `;
@@ -1555,10 +1671,10 @@
     const highlightsSection = $('homeHighlightsSection');
     const heroSeparator = $('homeHeroSeparator');
     const separator = $('homeSeparator');
-    if (couponSection) couponSection.style.display = hasCoupons ? '' : 'none';
-    if (highlightsSection) highlightsSection.style.display = hasHighlights ? '' : 'none';
-    if (heroSeparator) heroSeparator.style.display = '';
-    if (separator) separator.style.display = hasCoupons && hasHighlights ? '' : 'none';
+    showEl(couponSection, hasCoupons);
+    showEl(highlightsSection, hasHighlights);
+    showEl(heroSeparator, true);
+    showEl(separator, hasCoupons && hasHighlights);
   }
 
   function renderMenu() {
@@ -1707,6 +1823,10 @@
       catNav.classList.toggle('is-stuck', !entry.isIntersecting);
     }, { threshold: 0 });
     _catStuckObserver.observe(sentinel);
+    onTeardown(() => {
+      _catStuckObserver?.disconnect();
+      _catStuckObserver = null;
+    });
   }
 
   let scrollAnimationToken = 0;
@@ -1790,7 +1910,7 @@
         const active = btn.getAttribute('onclick')?.includes(`'${currentId}'`);
         btn.classList.toggle('active', Boolean(active));
       });
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function initProductPressFeedback() {
@@ -1805,10 +1925,10 @@
       if (event.button !== 0 || document.body.classList.contains('modal-open')) return;
       const target = event.target.closest?.('.no-press-feedback');
       if (!target) return;
-    }, { passive: true });
-    document.addEventListener('pointerup', clearPressed, { passive: true });
-    document.addEventListener('pointercancel', clearPressed, { passive: true });
-    window.addEventListener('scroll', clearPressed, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('pointerup', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('pointercancel', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
+    window.addEventListener('scroll', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
   function initSearch() {
     if (searchReady) return;
@@ -1832,7 +1952,7 @@
           });
           sec.style.display = secFound ? 'block' : 'none';
         });
-        if ($('emptySearch')) $('emptySearch').style.display = foundAny ? 'none' : 'block';
+        showEl($('emptySearch'), !foundAny);
         searchFrame = null;
       });
     });
@@ -1852,8 +1972,16 @@
     bindProductObservationCounter();
     updateProductObservationCount();
     const hero = $('pmHero');
-    if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo', { lazy: false, priority: 'high' });
-    $('pmWarning').style.display = Number.isFinite(currentProd.price) ? 'none' : 'block';
+    // O herói do modal é a única foto FLUIDA: 100% da largura do modal, que no
+    // celular é a viewport inteira. Por isso `w` + sizes, e não descritores x.
+    if (hero) {
+      hero.innerHTML = productImage(currentProd, 'pm-hero-photo', {
+        lazy: false,
+        priority: 'high',
+        fluid: { widths: [360, 480, 640, 960, 1280], sizes: '(max-width: 560px) 100vw, 560px' }
+      });
+    }
+    showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
     if ($('pmAddBtn')) $('pmAddBtn').onclick = addToCart;
@@ -1888,8 +2016,8 @@
     const body = $('productModal')?.querySelector('.modal-body');
     if (!body) return;
     productScrollIndicatorReady = true;
-    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true });
-    window.addEventListener('resize', syncProductScrollIndicator);
+    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true, signal: LIFECYCLE_SIGNAL });
+    window.addEventListener('resize', syncProductScrollIndicator, { signal: LIFECYCLE_SIGNAL });
   }
 
   function syncProductScrollIndicator() {
@@ -2177,10 +2305,17 @@
     widget?.classList.toggle('has-address', hasAddress || isPickup);
     const locationImage = $('cartLocationImage');
     if (locationImage) {
-      const imageSource = isLogged()
-        ? 'assets/icons/cart/cart-location-customer.png'
-        : 'assets/icons/cart/cart-location-guest.png';
-      if (locationImage.getAttribute('src') !== imageSource) locationImage.src = imageSource;
+      const stem = isLogged()
+        ? 'assets/icons/cart/cart-location-customer'
+        : 'assets/icons/cart/cart-location-guest';
+      const imageSource = `${stem}@1x.webp`;
+      if (locationImage.getAttribute('src') !== imageSource) {
+        // srcset precisa ser trocado JUNTO com src: quando os dois existem, o
+        // browser resolve pelo srcset e um src novo sozinho seria ignorado —
+        // o ícone ficaria travado no do estado anterior.
+        locationImage.srcset = `${stem}@1x.webp 1x, ${stem}@2x.webp 2x`;
+        locationImage.src = imageSource;
+      }
     }
     const alert = $('cartLocationAlert');
     if (alert) alert.style.display = needsAddress ? 'flex' : 'none';
@@ -2204,7 +2339,7 @@
     if ($('cartLocationModeTag')) $('cartLocationModeTag').textContent = isPickup ? 'RETIRADA' : 'DELIVERY';
     const paymentCard = document.querySelector('#cartModal .cart-payment-card');
     if (paymentCard) {
-      paymentCard.style.display = (isPickup || hasAddress) && isLogged() ? '' : 'none';
+      showEl(paymentCard, (isPickup || hasAddress) && isLogged());
       const paymentKey = infoPaymentType(paymentMethod);
       const hasSelectedPayment = Boolean(paymentMethod);
       const isPixSelected = paymentKey === 'pix';
@@ -2279,7 +2414,8 @@
 
     $('cartList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
-        <div class="cir-photo">${productImage(item, 'cir-photo-img')}</div>
+        ${/* 48px fixos — #cartModal .cir-photo, styles/restaurant.css:212 */ ''}
+        <div class="cir-photo">${productImage(item, 'cir-photo-img', { box: { w: 48, h: 48 } })}</div>
         <div class="cir-info">
           <div class="cir-name"><span>${item.qty}x</span> ${esc(item.name)}</div>
           ${cartOptionsHtml(item)}
@@ -2379,7 +2515,7 @@
     $('cartTabRetirada')?.classList.toggle('active', type === 'pickup');
     if ($('cartAddrBlock')) $('cartAddrBlock').style.display = type === 'delivery' ? 'block' : 'none';
     if ($('cartDeliveryOpt')) $('cartDeliveryOpt').style.display = type === 'delivery' ? 'block' : 'none';
-    if ($('cartPickupBlock')) $('cartPickupBlock').style.display = type === 'pickup' ? 'block' : 'none';
+    showEl($('cartPickupBlock'), type === 'pickup');
     if ($('csDeliveryRow')) $('csDeliveryRow').style.display = type === 'delivery' ? 'flex' : 'none';
     syncCartLocationState();
     updateCartUI();
@@ -5199,6 +5335,9 @@
   function stopVfyTimer() {
     if (_vfyTimer) { clearInterval(_vfyTimer); _vfyTimer = null; }
   }
+  // A contagem já para ao fechar a tela de verificação; isto cobre o caso em
+  // que a página some com ela ainda aberta.
+  onTeardown(stopVfyTimer);
   function startVfyTimer() {
     stopVfyTimer();
     _vfyRemaining = VFY_RESEND_SECONDS;
@@ -5828,6 +5967,10 @@
   let _authSuppressedNavNext = null;
 
   const AUTH_SCREEN_SELECTOR = '.lgn-screen.active,.reg-screen.active,.vfy-screen.active,#forgotPasswordScreen.active,#recoverCodeScreen.active,#resetPasswordScreen.active';
+  // As MESMAS telas, sem o `.active`. Uma é o ESTADO que interessa (tela de auth
+  // aberta), a outra é o CONJUNTO a vigiar — os elementos existem o tempo todo,
+  // só a classe entra e sai.
+  const AUTH_SCREEN_ELEMENTS = '.lgn-screen,.reg-screen,.vfy-screen,#forgotPasswordScreen,#recoverCodeScreen,#resetPasswordScreen';
   function setBottomNavSuppressedForAuth(active) {
     const nav = _authSuppressedNav || $('mobBottomNav');
     document.body.classList.toggle('auth-screen-open', active);
@@ -5866,8 +6009,34 @@
   function syncAuthScreenOpenClass() {
     setBottomNavSuppressedForAuth(Boolean(document.querySelector(AUTH_SCREEN_SELECTOR)));
   }
+  // C2 — o escopo do observer.
+  //
+  // Antes: `observe(document.body, { subtree: true })`. Isso pede ao browser um
+  // MutationRecord para CADA mudança de class em QUALQUER um dos ~1,4 mil
+  // elementos da página — aba trocada, chip de categoria, card em :active,
+  // sticky do scroll — para checar seis seletores que só podem mudar em seis
+  // elementos. O trabalho era proporcional ao tamanho da página; o interesse,
+  // não.
+  //
+  // Agora: os seis elementos, sem subtree. Eles são markup ESTÁTICO do
+  // restaurant.html (nenhum é criado em runtime — se um dia for, precisa entrar
+  // em observeAuthScreens), e o script roda como módulo, ou seja, depois do
+  // parse: todos já existem quando isto executa.
   const authScreenObserver = new MutationObserver(syncAuthScreenOpenClass);
-  authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  function observeAuthScreens() {
+    const screens = document.querySelectorAll(AUTH_SCREEN_ELEMENTS);
+    if (!screens.length) {
+      // O markup mudou de nome debaixo do JS. Volta ao escopo largo: a barra
+      // aparecendo por cima da tela de login é bug visível; o custo, não.
+      authScreenObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      return;
+    }
+    for (const screen of screens) {
+      authScreenObserver.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+  observeAuthScreens();
+  onTeardown(() => authScreenObserver.disconnect());
   syncAuthScreenOpenClass();
 
   function policyScrollBody() {
@@ -6039,7 +6208,7 @@
     const art = $('couponDetailArt');
     if (art) {
       art.innerHTML = image
-        ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
+        ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: COUPON_DETAIL_FLUID })} alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
         : `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
     }
     if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
@@ -6347,7 +6516,7 @@
         : `<div class="prof-hero-label">${esc(restaurant.name || fallback().restaurantName || '')}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" ${act('click', 'openLoginScreen')}>Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
-    if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
+    showEl(logoutGroup, isLogged());
   }
 
   function renderGuestProfileHub() {
@@ -7166,7 +7335,7 @@
     refreshAvailableCoupons();
     clubController?.invalidateCoupons?.();
     loadCashbackForHome({ force: true });
-  });
+  }, { signal: LIFECYCLE_SIGNAL });
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

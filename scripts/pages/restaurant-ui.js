@@ -23,7 +23,10 @@
     requestAnimationFrame(() => { correctingSoftScroll = false; });
   }
 
-  window.addEventListener('scroll', keepSoftScrollStable, { passive: true });
+  window.addEventListener('scroll', keepSoftScrollStable, {
+    passive: true,
+    signal: window.RapidexLifecycle?.signal
+  });
 
   function showCategoryTransitionClone() {
     if (categoryTransitionClone || !document.body.classList.contains('menu-tab')) return;

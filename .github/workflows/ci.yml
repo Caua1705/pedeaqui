@@ -16,19 +16,17 @@ jobs:
           node-version: 24
           cache: npm
 
-      # A forma do lockfile depende da versao EXATA do npm, nao so do major: o
-      # npm <=11.3 grava peerDependencies opcionais (@emnapi/*, via
-      # @napi-rs/wasm-runtime) como entradas top-level e o 11.6.2 nao, entao cada
-      # um recusa o lock do outro com EUSAGE. O npm que vem embutido no Node muda
-      # sem aviso, entao nao da para depender dele: fixamos aqui a mesma versao
-      # declarada em engines.npm, que e a unica fonte da verdade.
-      # --engine-strict=false so neste passo: o alvo e o npm global, nao este
-      # projeto, e o npm do runner ainda e o "errado" quando ele roda.
-      - name: Pin npm to the version in engines.npm
+      # O lockfile deste repo e aceito por qualquer npm (10.x ate 11.12.x), entao
+      # o CI nao depende desta versao para instalar. Ela existe so para o runner
+      # nao cair no npm 11.6.2 caso o Node passe a embutir justamente ele: aquela
+      # versao tem uma regressao no lockfile e engines.npm (>=11.7.0) a barra, o
+      # que faria o install falhar com EBADENGINE. Espelha o npm da Vercel, para
+      # os dois ambientes de build serem iguais. Ver .npmrc.
+      # --engine-strict=false so aqui: o alvo e o npm global, nao este projeto.
+      - name: Pin npm (mirrors Vercel's npm)
         run: |
-          want=$(node -p "require('./package.json').engines.npm")
-          echo "runner trouxe npm $(npm -v); fixando em $want"
-          npm i -g "npm@$want" --engine-strict=false
+          echo "runner trouxe npm $(npm -v)"
+          npm i -g npm@11.12.1 --engine-strict=false
           npm -v
 
       - name: Install dependencies

@@ -599,9 +599,77 @@
     ]);
   }
 
+  // Emite srcset para a foto de catálogo quando a origem é transformável.
+  //
+  // `box`: { w, h } em CSS px quando a caixa tem tamanho fixo — aí o DPR é a
+  //        única variável e descritores `x` bastam, sem repetir o CSS num
+  //        `sizes`. w e h são declarados SEPARADAMENTE de propósito: a arte do
+  //        cupom é 168x90, e assumir caixa quadrada publicaria uma proporção
+  //        intrínseca errada, que é justamente o reflow que queremos evitar.
+  // `fluid`: { widths, sizes } quando a caixa acompanha a viewport.
+  //
+  // Sem nenhum dos dois — ou com uma URL que não é do Storage — devolve vazio e
+  // a imagem sai exatamente como saía antes: só o original em src.
+  function responsiveImageAttrs(url, { box, fluid } = {}) {
+    const cdn = window.RapidexImageCdn;
+    if (!cdn || !url) return '';
+
+    if (box) {
+      const set = cdn.srcsetByDpr(url, box.w);
+      // width/height reservam a caixa antes do byte chegar. O CSS já fixa esses
+      // mesmos lados, então não muda layout — só evita o reflow do carregamento.
+      return set ? ` srcset="${esc(set)}" width="${box.w}" height="${box.h}"` : '';
+    }
+    if (fluid) {
+      const set = cdn.srcsetByWidth(url, fluid.widths);
+      return set ? ` srcset="${esc(set)}" sizes="${esc(fluid.sizes)}"` : '';
+    }
+    return '';
+  }
+
+  // O herói é full-bleed (aspect-ratio 1080/500 — styles/utilities.css:652) e a
+  // arte é autorada a 1080 de largura, então a grade para aí.
+  const HERO_FLUID = { widths: [480, 768, 1080, 1440], sizes: '(max-width: 1080px) 100vw, 1080px' };
+  // .coupon-card tem 168px de largura (styles/utilities.css:1205) e a arte
+  // dentro dela tem 90px de altura (.coupon-art — styles/utilities.css:768).
+  const RAIL_BOX = { w: 168, h: 90 };
+  // .highlight-banner troca de regime por breakpoint: 290px fixos no desktop,
+  // 65%/78% da viewport no mobile (styles/utilities.css:857/1260/1414). Como
+  // não é largura fixa em todo lugar, vai de `w` + sizes.
+  const HIGHLIGHT_FLUID = {
+    widths: [290, 440, 580, 780, 870],
+    sizes: '(max-width: 900px) 78vw, 290px'
+  };
+  // .coupon-detail-art — width:min(100%,414px) (styles/utilities.css:237).
+  const COUPON_DETAIL_FLUID = {
+    widths: [414, 620, 828, 1242],
+    sizes: '(max-width: 414px) 100vw, 414px'
+  };
+
+  // Versão para <img> que JÁ existe no DOM (o herói é atualizado por
+  // propriedade, não recriado por template).
+  function applyResponsiveImage(img, url, { box, fluid } = {}) {
+    const cdn = window.RapidexImageCdn;
+    if (!img || !cdn) return;
+    const set = fluid ? cdn.srcsetByWidth(url, fluid.widths) : cdn.srcsetByDpr(url, box.w);
+    if (!set) {
+      // Origem não transformável: limpa o srcset ANTERIOR. Sem isto, trocar o
+      // banner por um de outro CDN deixaria o srcset velho no elemento e o
+      // browser continuaria pintando a imagem antiga, ignorando o src novo.
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+      return;
+    }
+    img.srcset = set;
+    if (fluid) img.sizes = fluid.sizes;
+    else img.removeAttribute('sizes');
+  }
+
   function productImage(product, className = 'product-image', options = {}) {
     const image = product.image_url || product.image_path;
-    if (image) return `<img class="${className}" src="${esc(image)}" alt="${esc(product.name)}" ${imageAttrs(options)}>`;
+    if (image) {
+      return `<img class="${className}" src="${esc(image)}"${responsiveImageAttrs(image, options)} alt="${esc(product.name)}" ${imageAttrs(options)}>`;
+    }
     return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
   }
 
@@ -1002,7 +1070,8 @@
           </div>
         </div>
         <div class="product-image-frame">
-          ${productImage(product, 'product-image')}
+          ${/* 110px fixos — body.menu-tab .product-image, styles/utilities.css:4655 */ ''}
+          ${productImage(product, 'product-image', { box: { w: 110, h: 110 } })}
         </div>
       </article>
     `;
@@ -1267,6 +1336,8 @@
       cover.classList.remove('has-carousel');
       if (track) track.innerHTML = '';
       img.removeAttribute('src');
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
       img.alt = restaurant.name || fallback().restaurantName || '';
       if (heroFallback) heroFallback.setAttribute('aria-hidden', 'false');
       if (dots) dots.innerHTML = '';
@@ -1274,7 +1345,9 @@
     }
 
     const first = visualBanners[0];
-    img.src = first.image_url || first.image_path || '';
+    const firstImage = first.image_url || first.image_path || '';
+    img.src = firstImage;
+    applyResponsiveImage(img, firstImage, { fluid: HERO_FLUID });
     img.alt = first.title || first.subtitle || restaurant.name || 'Banner promocional';
     img.loading = 'eager';
     img.decoding = 'async';
@@ -1286,7 +1359,8 @@
       const mkSlide = banner => {
         const image = banner.image_url || banner.image_path || '';
         const alt = banner.title || banner.subtitle || restaurant.name || 'Banner';
-        return `<div class="restaurant-hero-slide"><img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
+        const responsive = responsiveImageAttrs(image, { fluid: HERO_FLUID });
+        return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
       };
       const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
       const cloneFirst = mkSlide(visualBanners[0]);
@@ -1510,7 +1584,7 @@
       return `
         <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code)}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
+            ${image ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
@@ -1545,7 +1619,7 @@
       return `
         <article class="highlight-banner">
           ${image
-            ? `<img src="${esc(image)}" alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
+            ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
             : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || restaurant.name || '')}</span></div>`}
         </article>
       `;
@@ -1861,7 +1935,15 @@
     bindProductObservationCounter();
     updateProductObservationCount();
     const hero = $('pmHero');
-    if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo', { lazy: false, priority: 'high' });
+    // O herói do modal é a única foto FLUIDA: 100% da largura do modal, que no
+    // celular é a viewport inteira. Por isso `w` + sizes, e não descritores x.
+    if (hero) {
+      hero.innerHTML = productImage(currentProd, 'pm-hero-photo', {
+        lazy: false,
+        priority: 'high',
+        fluid: { widths: [360, 480, 640, 960, 1280], sizes: '(max-width: 560px) 100vw, 560px' }
+      });
+    }
     showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
@@ -2186,10 +2268,17 @@
     widget?.classList.toggle('has-address', hasAddress || isPickup);
     const locationImage = $('cartLocationImage');
     if (locationImage) {
-      const imageSource = isLogged()
-        ? 'assets/icons/cart/cart-location-customer.png'
-        : 'assets/icons/cart/cart-location-guest.png';
-      if (locationImage.getAttribute('src') !== imageSource) locationImage.src = imageSource;
+      const stem = isLogged()
+        ? 'assets/icons/cart/cart-location-customer'
+        : 'assets/icons/cart/cart-location-guest';
+      const imageSource = `${stem}@1x.webp`;
+      if (locationImage.getAttribute('src') !== imageSource) {
+        // srcset precisa ser trocado JUNTO com src: quando os dois existem, o
+        // browser resolve pelo srcset e um src novo sozinho seria ignorado —
+        // o ícone ficaria travado no do estado anterior.
+        locationImage.srcset = `${stem}@1x.webp 1x, ${stem}@2x.webp 2x`;
+        locationImage.src = imageSource;
+      }
     }
     const alert = $('cartLocationAlert');
     if (alert) alert.style.display = needsAddress ? 'flex' : 'none';
@@ -2288,7 +2377,8 @@
 
     $('cartList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
-        <div class="cir-photo">${productImage(item, 'cir-photo-img')}</div>
+        ${/* 48px fixos — #cartModal .cir-photo, styles/restaurant.css:212 */ ''}
+        <div class="cir-photo">${productImage(item, 'cir-photo-img', { box: { w: 48, h: 48 } })}</div>
         <div class="cir-info">
           <div class="cir-name"><span>${item.qty}x</span> ${esc(item.name)}</div>
           ${cartOptionsHtml(item)}
@@ -6048,7 +6138,7 @@
     const art = $('couponDetailArt');
     if (art) {
       art.innerHTML = image
-        ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
+        ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: COUPON_DETAIL_FLUID })} alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
         : `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
     }
     if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;

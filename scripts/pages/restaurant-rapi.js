@@ -11,7 +11,12 @@
   'use strict';
 
   /* ── Constants ── */
-  const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot.png';
+  // O master era um PNG 1254x1254 de 1,0 MB para desenhar um orbe de 110px —
+  // 130x mais pixels do que a maior tela consome. As variantes WebP por DPR
+  // custam 1,2 / 2,9 / 4,8 kB. Regeradas por tools/optimize-images.mjs.
+  const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot@1x.webp';
+  const RAPI_AVATAR_SRCSET =
+    'assets/brand/rapi-mascot@1x.webp 1x, assets/brand/rapi-mascot@2x.webp 2x, assets/brand/rapi-mascot@3x.webp 3x';
   const RAPI_SESSION_STORAGE_KEY = 'rapi.session_id';
 
   /* ── State ── */
@@ -682,7 +687,7 @@
         <div class="rapi-orb-wrap">
           <div class="rapi-orb-glow"></div>
           <div class="rapi-orb">
-            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" alt="Rapi" data-act-error="$hide">
+            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" srcset="${RAPI_AVATAR_SRCSET}" alt="Rapi" width="110" height="110" decoding="async" data-act-error="$hide">
           </div>
         </div>
 

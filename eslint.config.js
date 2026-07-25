@@ -60,6 +60,7 @@ export default [
     files: [
       '*.config.js',
       'tests/**/*.js',
+      'tools/**/*.mjs',
       'playwright.config.js',
       'vitest.config.js'
     ],

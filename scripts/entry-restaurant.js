@@ -23,6 +23,7 @@ import './utils/brand-theme.js';
 import './utils/actions.js';
 import './utils/slugify.js';
 import './utils/dom.js';
+import './utils/image-cdn.js';
 import './utils/validators.js';
 import './services/api-client.js';
 import './services/api.js';

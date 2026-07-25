@@ -36,7 +36,13 @@
 <!-- NAV -->
 <nav>
   <a href="#" class="logo">
-    <img src="assets/brand/pedeaqui-logo.png" alt="Rapidex" class="logo-img">
+    <!-- O master 634x640 (140 kB) desenhava um logo de 34px. Serve-se agora a
+         variante do DPR da tela; width/height fixam a caixa antes do byte
+         chegar, então o nav não pula quando a imagem carrega. -->
+    <img
+      src="assets/brand/pedeaqui-logo@1x.webp"
+      srcset="assets/brand/pedeaqui-logo@1x.webp 1x, assets/brand/pedeaqui-logo@2x.webp 2x, assets/brand/pedeaqui-logo@3x.webp 3x"
+      alt="Rapidex" class="logo-img" width="34" height="34" decoding="async">
     <span class="logo-name">Pede<b>Aqui</b></span>
   </a>
   <div class="nav-links">

@@ -11,16 +11,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Node 24 traz npm 11, o mesmo major usado no desenvolvimento. O major do
-      # npm precisa bater: o npm 10 materializa peerDependencies opcionais (ex.
-      # @emnapi/*, via @napi-rs/wasm-runtime) como entradas top-level do lock e o
-      # npm 11 nao, entao cada um recusa o lock gerado pelo outro com EUSAGE.
-      # "engines" + engine-strict (.npmrc) travam o outro lado: um npm fora desta
-      # faixa falha o install em vez de gravar um lock divergente.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+
+      # A forma do lockfile depende da versao EXATA do npm, nao so do major: o
+      # npm <=11.3 grava peerDependencies opcionais (@emnapi/*, via
+      # @napi-rs/wasm-runtime) como entradas top-level e o 11.6.2 nao, entao cada
+      # um recusa o lock do outro com EUSAGE. O npm que vem embutido no Node muda
+      # sem aviso, entao nao da para depender dele: fixamos aqui a mesma versao
+      # declarada em engines.npm, que e a unica fonte da verdade.
+      # --engine-strict=false so neste passo: o alvo e o npm global, nao este
+      # projeto, e o npm do runner ainda e o "errado" quando ele roda.
+      - name: Pin npm to the version in engines.npm
+        run: |
+          want=$(node -p "require('./package.json').engines.npm")
+          echo "runner trouxe npm $(npm -v); fixando em $want"
+          npm i -g "npm@$want" --engine-strict=false
+          npm -v
 
       - name: Install dependencies
         run: npm ci

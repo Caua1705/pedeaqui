@@ -6,7 +6,7 @@
   "description": "White-label restaurant ordering frontend (Rapidex).",
   "engines": {
     "node": ">=22.12.0",
-    "npm": ">=11.0.0"
+    "npm": "11.6.2"
   },
   "scripts": {
     "dev": "vite",

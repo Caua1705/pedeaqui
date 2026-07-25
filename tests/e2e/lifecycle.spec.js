@@ -106,24 +106,44 @@ test('o teardown desliga intervalos, observers e listeners de uma vez', async ({
   expect(await page.evaluate(() => window.RapidexLifecycle.signal.aborted)).toBe(true);
 });
 
+/**
+ * Rola e devolve se `menu-scrolled` ficou na body.
+ *
+ * A rolagem tem de ser REAPLICADA a cada tentativa, e nao feita uma vez antes
+ * de um expect que so repolla a classe: `menu-scrolled` muda em EVENTO de
+ * scroll, entao se a primeira rolagem nao pegar — pagina ainda sem altura
+ * suficiente, ou o keepSoftScrollStable puxando de volta para a posicao salva —
+ * nenhum evento novo dispara e o retry fica esperando por algo que nao vai
+ * acontecer. Foi assim que este teste passou isolado e falhou na suite cheia,
+ * onde quatro workers deixam o primeiro render mais lento.
+ */
+function scrolledClassAfter(page, y) {
+  return page.evaluate(top => {
+    window.scrollTo(0, top);
+    return document.body.classList.contains('menu-scrolled');
+  }, y);
+}
+
 test('depois do teardown, o listener de scroll não reage mais', async ({ page }) => {
   await boot(page);
   // O handler de menu-scrolled é um dos que carregam o signal.
   await page.evaluate(() => window.RapidexActions.resolve('mobNavMenu')());
-  await page.evaluate(() => window.scrollTo(0, 400));
-  await expect(page.locator('body')).toHaveClass(/menu-scrolled/);
+  await expect(page.locator('body')).toHaveClass(/menu-tab/);
 
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(page.locator('body')).not.toHaveClass(/menu-scrolled/);
+  await expect.poll(() => scrolledClassAfter(page, 400), { timeout: 10_000 }).toBe(true);
+  await expect.poll(() => scrolledClassAfter(page, 0), { timeout: 10_000 }).toBe(false);
 
   await page.evaluate(() => window.RapidexLifecycle.teardown());
-  await page.evaluate(() => window.scrollTo(0, 400));
-  await page.waitForTimeout(300);
 
-  await expect(
-    page.locator('body'),
-    'o listener continuou vivo depois do abort'
-  ).not.toHaveClass(/menu-scrolled/);
+  // Agora o contrário: insistir na rolagem por ~1,5 s e a classe NUNCA voltar.
+  // Uma tentativa só não distinguiria "listener morto" de "rolagem não pegou".
+  for (let attempt = 0; attempt < 5; attempt++) {
+    expect(
+      await scrolledClassAfter(page, attempt % 2 ? 500 : 400),
+      'o listener continuou vivo depois do abort'
+    ).toBe(false);
+    await page.waitForTimeout(300);
+  }
 });
 
 test('pagehide para bfcache NÃO desliga a página', async ({ page }) => {

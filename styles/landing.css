@@ -263,3 +263,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
   .cta-btns .btn-spin,.cta-btns .btn-ghost-lg{width:100%;justify-content:center}
   .section-sub{margin-bottom:36px}
 }
+
+/* ── Estilos que estavam no atributo style= do index.html ──
+ * Saíram do markup para que a CSP possa dispensar style-src 'unsafe-inline'.
+ * Ver styles/markup.css para o equivalente do restaurant.html. */
+.beam--x0{left:0}
+.beam--x50{left:50%}
+.beam--d15{animation-delay:1.5s}
+.beam--d30{animation-delay:3s}
+.beam--d40{animation-delay:4s}
+/* estado inicial: a media query de mobile troca para flex */
+.benefits-mobile--init{display:none;justify-content:center;gap:16px;margin-bottom:20px;opacity:0;animation:fu .8s .5s both}
+.ben--compact{padding:4px 0;font-size:.7rem}
+.order-chips{margin-top:10px;display:flex;gap:7px}
+.order-chip{flex:1;padding:7px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;font-size:.6rem;color:var(--fg2);text-align:center}
+.order-info--strong{font-weight:600;color:var(--fg)}
+.landing-footer{text-align:center;padding:32px 24px;border-top:1px solid var(--bd);color:var(--fg3);font-size:.72rem}

@@ -86,6 +86,15 @@
   const TAB_LOADER_MIN_MS = 500;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
+
+  // Mostrar/esconder passa por classe, não por style.display.
+  //
+  // O estado inicial escondido vinha de style="display:none" no HTML, e era o
+  // que obrigava a CSP a liberar style-src 'unsafe-inline'. Sem o atributo, um
+  // `style.display = ''` não desfaz mais nada — quem esconde agora é .u-hidden,
+  // então quem mostra tem que tirar a classe.
+  const showEl = (element, shown) => element?.classList.toggle('u-hidden', !shown);
+
   const dialogFocusOrigins = new WeakMap();
 
   function releaseFocusFrom(container, fallback) {
@@ -1555,10 +1564,10 @@
     const highlightsSection = $('homeHighlightsSection');
     const heroSeparator = $('homeHeroSeparator');
     const separator = $('homeSeparator');
-    if (couponSection) couponSection.style.display = hasCoupons ? '' : 'none';
-    if (highlightsSection) highlightsSection.style.display = hasHighlights ? '' : 'none';
-    if (heroSeparator) heroSeparator.style.display = '';
-    if (separator) separator.style.display = hasCoupons && hasHighlights ? '' : 'none';
+    showEl(couponSection, hasCoupons);
+    showEl(highlightsSection, hasHighlights);
+    showEl(heroSeparator, true);
+    showEl(separator, hasCoupons && hasHighlights);
   }
 
   function renderMenu() {
@@ -1832,7 +1841,7 @@
           });
           sec.style.display = secFound ? 'block' : 'none';
         });
-        if ($('emptySearch')) $('emptySearch').style.display = foundAny ? 'none' : 'block';
+        showEl($('emptySearch'), !foundAny);
         searchFrame = null;
       });
     });
@@ -1853,7 +1862,7 @@
     updateProductObservationCount();
     const hero = $('pmHero');
     if (hero) hero.innerHTML = productImage(currentProd, 'pm-hero-photo', { lazy: false, priority: 'high' });
-    $('pmWarning').style.display = Number.isFinite(currentProd.price) ? 'none' : 'block';
+    showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
     if ($('pmAddBtn')) $('pmAddBtn').onclick = addToCart;
@@ -2204,7 +2213,7 @@
     if ($('cartLocationModeTag')) $('cartLocationModeTag').textContent = isPickup ? 'RETIRADA' : 'DELIVERY';
     const paymentCard = document.querySelector('#cartModal .cart-payment-card');
     if (paymentCard) {
-      paymentCard.style.display = (isPickup || hasAddress) && isLogged() ? '' : 'none';
+      showEl(paymentCard, (isPickup || hasAddress) && isLogged());
       const paymentKey = infoPaymentType(paymentMethod);
       const hasSelectedPayment = Boolean(paymentMethod);
       const isPixSelected = paymentKey === 'pix';
@@ -2379,7 +2388,7 @@
     $('cartTabRetirada')?.classList.toggle('active', type === 'pickup');
     if ($('cartAddrBlock')) $('cartAddrBlock').style.display = type === 'delivery' ? 'block' : 'none';
     if ($('cartDeliveryOpt')) $('cartDeliveryOpt').style.display = type === 'delivery' ? 'block' : 'none';
-    if ($('cartPickupBlock')) $('cartPickupBlock').style.display = type === 'pickup' ? 'block' : 'none';
+    showEl($('cartPickupBlock'), type === 'pickup');
     if ($('csDeliveryRow')) $('csDeliveryRow').style.display = type === 'delivery' ? 'flex' : 'none';
     syncCartLocationState();
     updateCartUI();
@@ -6347,7 +6356,7 @@
         : `<div class="prof-hero-label">${esc(restaurant.name || fallback().restaurantName || '')}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" ${act('click', 'openLoginScreen')}>Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
-    if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
+    showEl(logoutGroup, isLogged());
   }
 
   function renderGuestProfileHub() {

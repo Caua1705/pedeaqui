@@ -31,6 +31,23 @@ const BRAND_SURFACES = [
   ['ação secundária do login', 'button.login-secondary', 'color']
 ];
 
+// applyTheme() reescreve --brand-primary depois que os botões já estão pintados,
+// e duas superfícies de marca animam esse repaint (.btn-primary tem `transition:.25s`,
+// que é `all`; .cart-cta-btn tem `transition:background .2s`). Amostrar a cor
+// computada durante a interpolação devolve um valor intermediário — foi o que
+// deixou este spec verde no Windows e vermelho no runner do CI, só por timing.
+//
+// Estes testes provam a cor FINAL pintada, não a animação até ela, então zeramos
+// as transições. Injetado DEPOIS do load de propósito: como <style> no fim do
+// <head>, vence por ordem de documento as regras de transição do app. Aplicar
+// `transition:none` no meio de uma transição já em curso a cancela e faz o estilo
+// computado saltar para o valor final, então isto vale mesmo se o repaint já começou.
+async function freezeTransitions(page) {
+  await page.addStyleTag({
+    content: '*,*::before,*::after{transition:none!important;animation:none!important}'
+  });
+}
+
 /** Boota o app com a cor de marca pedida e devolve a página pronta. */
 async function bootWithPrimary(page, primaryColor) {
   await mockApi(page);
@@ -52,6 +69,7 @@ async function bootWithPrimary(page, primaryColor) {
   }
   await page.goto(`/restaurant.html?slug=${SLUG}`);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await freezeTransitions(page);
   return page;
 }
 

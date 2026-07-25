@@ -17,7 +17,7 @@
   .club-available-coupon-card,.club-coupon-skeleton{
     flex:0 0 calc(100vw - 108px);width:calc(100vw - 108px);max-width:282px;
     min-height:382px;box-sizing:border-box;scroll-snap-align:start;
-    border:1px solid #f2d5c7;border-radius:14px;background:#fff;
+    border:1px solid var(--brand-border);border-radius:14px;background:#fff;
   }
   .club-available-coupon-card{
     display:flex;flex-direction:column;overflow:hidden;color:#354454;
@@ -30,13 +30,13 @@
   }
   .club-available-coupon-image{width:100%;height:110px;display:block;object-fit:cover}
   .club-available-coupon-content{display:flex;flex:1;flex-direction:column;padding:16px 16px 10px}
-  .club-available-coupon-discount{color:#f36f21;font-size:22px;line-height:27px;font-weight:850}
+  .club-available-coupon-discount{color:var(--brand-primary);font-size:22px;line-height:27px;font-weight:850}
   .club-available-coupon-content h3{margin:5px 0 0;color:#2f3f50;font-size:17px;line-height:22px;font-weight:800}
   .club-available-coupon-content p{margin:7px 0 0;color:#687584;font-size:13px;line-height:18px;overflow-wrap:anywhere}
   .club-available-coupon-meta{display:grid;gap:4px;margin-top:auto;padding-top:12px;color:#596777;font-size:12px;line-height:17px}
   .club-available-coupon-use{
     min-height:44px;margin:0 16px 16px;border:0;border-radius:9px;
-    background:#f36f21;color:#fff;font:800 14px/20px inherit;cursor:pointer;
+    background:var(--brand-primary);color:var(--brand-on);font:800 14px/20px inherit;cursor:pointer;
   }
 }
 @media(max-width:767px){
@@ -51,8 +51,8 @@
   }
   .club-coupon-error{flex-direction:column;gap:12px}
   .club-coupon-error button{
-    min-height:40px;padding:0 18px;border:1px solid #f36f21;border-radius:8px;
-    background:#fff;color:#d85d16;font-weight:750;
+    min-height:40px;padding:0 18px;border:1px solid var(--brand-primary);border-radius:8px;
+    background:#fff;color:var(--brand-primary);font-weight:750;
   }
 }
 @keyframes clubCouponSkeleton{0%{background-position:100% 0}100%{background-position:0 0}}

@@ -216,8 +216,8 @@
   transition: transform .12s ease;
 }
 .reg-check-input:checked + .reg-check-box {
-  background: #FF5F01;
-  border-color: #FF5F01;
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
 }
 .reg-check-input:checked + .reg-check-box::after {
   transform: rotate(45deg) scale(1);
@@ -264,12 +264,12 @@
   margin: 0 auto;
   border: none;
   border-radius: 10px;
-  background: #FF5F01;
+  background: var(--brand-primary);
   font-family: inherit;
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--brand-on);
   cursor: pointer;
 }
 .reg-submit:disabled {

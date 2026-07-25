@@ -153,7 +153,7 @@
 }
 .vfy-msg.is-error { background: #FEF2F2; color: #E49090; }
 .vfy-msg.is-error .vfy-msg-icon { background: #FEE8E8; color: #E0392F; font-weight: 700; }
-.vfy-msg.is-success { background: #FFF3EC; color: #C76A2C; }
+.vfy-msg.is-success { background: var(--brand-tint); color: var(--brand-hover); }
 .vfy-msg.is-success .vfy-msg-icon { display: none; }
 
 /* ---------- Resend ---------- */
@@ -366,19 +366,19 @@
   margin: 0;
   border: none;
   border-radius: 10px;
-  background: #F36F21;
+  background: var(--brand-primary);
   font-family: inherit;
   font-size: 12px;
   line-height: 16px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--brand-on);
   cursor: pointer;
 }
 /* Disabled = same brand orange, just faded, so it stays visually orange. */
 .vfy-submit:disabled {
-  background: #F36F21;
+  background: var(--brand-primary);
   opacity: 0.5;
-  color: #FFFFFF;
+  color: var(--brand-on);
   cursor: not-allowed;
 }
 .vfy-foot {
@@ -472,8 +472,8 @@
   height: 38px;
   border: none;
   border-radius: 10px;
-  background: #F36F21;
-  color: #FFFFFF;
+  background: var(--brand-primary);
+  color: var(--brand-on);
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;

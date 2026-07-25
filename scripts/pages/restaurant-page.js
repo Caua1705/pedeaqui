@@ -144,6 +144,15 @@
   const initials = (name) => (name || 'Rapidex').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
+
+  // Atributo de ação para markup gerado em template (ver scripts/utils/actions.js).
+  // Passe o valor CRU: a spec vira JSON e só então é escapada, então uma aspa
+  // dentro de um id é neutralizada duas vezes e volta intacta na leitura — nem
+  // quebra o parse, nem escapa do atributo.
+  const act = (event, name, ...args) =>
+    `data-act-${event}="${esc(args.length ? JSON.stringify([name, ...args]) : name)}"`;
+  // Sequência de ações (ex.: parar a propagação e então abrir algo).
+  const actAll = (event, steps) => `data-act-${event}="${esc(JSON.stringify(steps))}"`;
   const formatProductTitle = (value) => {
     const minorWords = new Set(['a','à','ao','aos','as','às','com','da','das','de','do','dos','e','em','na','nas','no','nos','ou','para','por']);
     let firstWord = true;
@@ -317,14 +326,17 @@
     target.innerHTML = `<div class="${className}">${esc(message)}</div>`;
   }
 
-  function renderSectionError(targetId, message, retryCall) {
+  // `retryAction` é o NOME de uma ação registrada, não um trecho de código:
+  // o botão declara data-act-click e o despachante resolve. Antes isto era uma
+  // string de JS costurada dentro de onclick="".
+  function renderSectionError(targetId, message, retryAction) {
     const target = $(targetId);
     if (!target) return;
     target.innerHTML = `
       <div class="section-loader section-loader-error">
         <div>
           <div>${esc(message)}</div>
-          ${retryCall ? `<button class="section-loader-retry" type="button" onclick="${retryCall}">Tentar novamente</button>` : ''}
+          ${retryAction ? `<button class="section-loader-retry" type="button" ${act('click', retryAction)}>Tentar novamente</button>` : ''}
         </div>
       </div>`;
   }
@@ -424,7 +436,7 @@
       return;
     }
     if (transactions.status === 'error') {
-      body.innerHTML = `<div class='cashback-statement-state'>Não foi possível carregar o extrato.<button class='cashback-statement-retry' type='button' onclick='retryCashbackStatement()'>Tentar novamente</button></div>`;
+      body.innerHTML = `<div class='cashback-statement-state'>Não foi possível carregar o extrato.<button class='cashback-statement-retry' type='button' ${act('click', 'retryCashbackStatement')}>Tentar novamente</button></div>`;
       return;
     }
     const items = Array.isArray(transactions.data) ? transactions.data : [];
@@ -656,9 +668,9 @@
     if (header) header.classList.add('store-info-header--reference');
     if (tabs) {
       tabs.innerHTML = [
-        '<button class="active" type="button" data-store-tab="hours" onclick="setStoreInfoTab(\'hours\')">Horários</button>',
-        '<button type="button" data-store-tab="address" onclick="setStoreInfoTab(\'address\')">Endereço</button>',
-        '<button type="button" data-store-tab="payment" onclick="setStoreInfoTab(\'payment\')">Pagamento</button>'
+        `<button class="active" type="button" data-store-tab="hours" ${act('click', 'setStoreInfoTab', 'hours')}>Horários</button>`,
+        `<button type="button" data-store-tab="address" ${act('click', 'setStoreInfoTab', 'address')}>Endereço</button>`,
+        `<button type="button" data-store-tab="payment" ${act('click', 'setStoreInfoTab', 'payment')}>Pagamento</button>`
       ].join('');
     }
     if (hoursCard) {
@@ -971,7 +983,7 @@
     const oldPrice = Number(productOldPrice(product));
     const hasOldPrice = Number.isFinite(oldPrice) && Number.isFinite(product.price) && oldPrice > product.price;
     return `
-      <article class="product-card" data-product-id="${esc(product.id)}" onclick="openProduct('${esc(product.id)}')">
+      <article class="product-card" data-product-id="${esc(product.id)}" ${act('click', 'openProduct', product.id)}>
         <div class="product-content">
           <h3 class="product-name">${esc(formatProductTitle(product.name))}</h3>
           ${product.description ? `<p class="product-description">${esc(product.description)}</p>` : ''}
@@ -1043,31 +1055,18 @@
     }
   }
 
-  // Brand colours come from the API. Only #rgb/#rrggbb is accepted: the value is
-  // concatenated with an alpha suffix below, so anything else would silently
-  // produce an invalid custom property.
-  function normalizeBrandColor(value, fallbackColor) {
-    const raw = String(value ?? '').trim();
-    if (/^#[0-9a-f]{3}$/i.test(raw)) {
-      return '#' + raw.slice(1).split('').map(char => char + char).join('');
-    }
-    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallbackColor;
-  }
-
+  // O tema inteiro sai de UMA cor cadastrada pelo lojista. A derivação (hover,
+  // ativo, tons claros, borda) e a guarda de contraste do texto sobre a marca
+  // vivem em scripts/utils/brand-theme.js, que é puro e tem teste unitário.
+  //
+  // Um hex ausente ou inválido cai na cor da PLATAFORMA — que significa "a API
+  // não mandou cor", nunca "use a marca do tenant X".
   function applyTheme() {
-    const root = document.documentElement;
-    // O fallback é a cor da PLATAFORMA, não a de um restaurante específico:
-    // usá-la significa "a API não mandou cor", nunca "use a marca do tenant X".
     const config = window.APP_CONFIG || {};
-    const primary = normalizeBrandColor(restaurant.primary_color, config.PLATFORM_BRAND_PRIMARY || '#F36F21');
-    const secondary = normalizeBrandColor(restaurant.secondary_color, config.PLATFORM_BRAND_SECONDARY || '#111111');
-    root.style.setProperty('--brand-primary', primary);
-    root.style.setProperty('--brand-secondary', secondary);
-    root.style.setProperty('--brand-accent', primary);
-    root.style.setProperty('--brand', primary);
-    root.style.setProperty('--brand-d', secondary);
-    root.style.setProperty('--m-accent', primary);
-    root.style.setProperty('--m-accent-light', primary + '22');
+    window.RapidexTheme.applyBrandTheme(
+      restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
+      restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
+    );
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
   }
 
@@ -1292,7 +1291,7 @@
 
     if (dots) {
       dots.innerHTML = visualBanners.length > 1
-        ? visualBanners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}" onclick="setHeroBanner(${index})"></span>`).join('')
+        ? visualBanners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}" ${act('click', 'setHeroBanner', index)}></span>`).join('')
         : '';
     }
 
@@ -1500,15 +1499,15 @@
       // The gradient + discount text is only a fallback when there's no image
       // (or it fails to load — onerror reverts to the fallback).
       return `
-        <article class="coupon-card" onclick="openCouponDetail('${esc(coupon.code)}')">
+        <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code)}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} onerror="this.closest('.coupon-art').classList.remove('coupon-art--has-img');this.remove()">` : ''}
+            ${image ? `<img src="${esc(image)}" alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
           <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
           <div class="coupon-dash"></div>
-          <button type="button" class="coupon-use-btn" onclick="event.stopPropagation();openCouponDetail('${esc(coupon.code)}')">Usar cupom</button>
+          <button type="button" class="coupon-use-btn" ${actAll('click', [['$stop'], ['openCouponDetail', coupon.code]])}>Usar cupom</button>
         </article>
       `;
     }).join('');
@@ -1665,7 +1664,7 @@
       } catch (error) {
         appState.menuLoaded = false;
         logAppError('Falha ao carregar cardápio', error);
-        renderSectionError('menuContainer', 'Não foi possível carregar o cardápio.', 'retryMenuLoad()');
+        renderSectionError('menuContainer', 'Não foi possível carregar o cardápio.', 'retryMenuLoad');
       } finally {
         setLoading('menu', false);
         menuLoadPromise = null;
@@ -1933,7 +1932,7 @@
     const selected = selections.includes(optionId);
     const price = optionAdditionalPrice(option);
     return `
-      <button class="pm-option-row ${selected ? 'selected' : ''}" type="button" onclick="toggleProductOption('${esc(groupId)}','${esc(optionId)}')">
+      <button class="pm-option-row ${selected ? 'selected' : ''}" type="button" ${act('click', 'toggleProductOption', groupId, optionId)}>
         <span class="pm-option-copy">
           <span class="pm-option-name">${esc(option.name)}</span>
           ${option.description ? `<span class="pm-option-desc">${esc(option.description)}</span>` : ''}
@@ -2286,10 +2285,10 @@
           ${cartOptionsHtml(item)}
           ${item.obs ? `<div class="cir-obs">Obs: ${esc(item.obs)}</div>` : ''}
           <div class="cir-actions">
-            <button class="cir-edit-btn" onclick="editCartItem(${item.uid})" aria-label="Editar item">
+            <button class="cir-edit-btn" ${act('click', 'editCartItem', item.uid)} aria-label="Editar item">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </button>
-            <button class="cir-remove-btn" onclick="openCartItemDeleteConfirm(${item.uid})" aria-label="Remover item">
+            <button class="cir-remove-btn" ${act('click', 'openCartItemDeleteConfirm', item.uid)} aria-label="Remover item">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
             </button>
           </div>
@@ -2447,12 +2446,12 @@
     const groups = infoPaymentData(data);
     body.innerHTML = `
       <div class='prof-payment-tabs'>
-        <button class='active' type='button' data-profile-payment-tab='online' onclick='setProfilePaymentTab("online")'>Pagamento online</button>
-        <button type='button' data-profile-payment-tab='delivery' onclick='setProfilePaymentTab("delivery")'>Pagamento na entrega</button>
+        <button class='active' type='button' data-profile-payment-tab='online' ${act('click', 'setProfilePaymentTab', 'online')}>Pagamento online</button>
+        <button type='button' data-profile-payment-tab='delivery' ${act('click', 'setProfilePaymentTab', 'delivery')}>Pagamento na entrega</button>
       </div>
       <section class='prof-payment-panel' data-profile-payment-panel='online'>
         <div class='prof-info-card'>${profilePaymentChips(groups.online)}</div>
-        <button class='prof-card-coming-soon' type='button' onclick='showCardComingSoon()'>Cadastrar novo cartão <span>Em breve</span></button>
+        <button class='prof-card-coming-soon' type='button' ${act('click', 'showCardComingSoon')}>Cadastrar novo cartão <span>Em breve</span></button>
       </section>
       <section class='prof-payment-panel' data-profile-payment-panel='delivery' hidden>
         <div class='prof-info-card'>${profileDeliveryPaymentGroups(groups.delivery)}</div>
@@ -3524,7 +3523,7 @@
       const badge = b.is_open
         ? '<span class="op-branch-badge open">Aberto</span>'
         : '<span class="op-branch-badge closed">Fechado</span>';
-      return `<button type="button" class="op-branch-card${selected ? ' selected' : ''}" onclick="selectBranch('${esc(b.id)}')">
+      return `<button type="button" class="op-branch-card${selected ? ' selected' : ''}" ${act('click', 'selectBranch', b.id)}>
         <span class="op-branch-radio"></span>
         <span class="op-branch-body">
           <span class="op-branch-name">${esc(b.name)}</span>
@@ -3795,17 +3794,17 @@
         const btn = $('addrPickerConfirmBtn');
         if (btn) btn.disabled = false;
       }
-      return `<button class="addr-picker-item${isSel ? ' selected' : ''}" onclick="selectAddrPickerItem('${esc(id)}')" data-addr-id="${esc(id)}">
+      return `<button class="addr-picker-item${isSel ? ' selected' : ''}" ${act('click', 'selectAddrPickerItem', id)} data-addr-id="${esc(id)}">
         <span class="addr-picker-pin${isSel ? ' active' : ''}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="addr-picker-copy" onclick="editAddrPickerItem(event,'${esc(id)}')"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
+        <span class="addr-picker-copy" ${act('click', 'editAddrPickerItem', '$event', id)}><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
         ${isSel
           ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#15803d"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-             <span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
-             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`
-          : `<span class="addr-picker-dots" onclick="toggleAddrPickerActions(event,this)">${ADDR_PICKER_DOTS_VERTICAL}</span>
-             <span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`}
+             <span class="addr-picker-dots" ${act('click', 'toggleAddrPickerActions', '$event', '$this')}>${ADDR_PICKER_DOTS_VERTICAL}</span>
+             <span class="addr-picker-delete" ${act('click', 'removeAddrPickerItem', '$event', '$this')} aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`
+          : `<span class="addr-picker-dots" ${act('click', 'toggleAddrPickerActions', '$event', '$this')}>${ADDR_PICKER_DOTS_VERTICAL}</span>
+             <span class="addr-picker-delete" ${act('click', 'removeAddrPickerItem', '$event', '$this')} aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`}
       </button>`;
     }).join('');
   }
@@ -3975,7 +3974,7 @@
         indicator.setAttribute('onclick', 'toggleAddrPickerActions(event,this)');
         indicator.innerHTML = ADDR_PICKER_DOTS_VERTICAL;
         if (!el.querySelector('.addr-picker-delete')) {
-          el.insertAdjacentHTML('beforeend', `<span class="addr-picker-delete" onclick="removeAddrPickerItem(event,this)" aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`);
+          el.insertAdjacentHTML('beforeend', `<span class="addr-picker-delete" ${act('click', 'removeAddrPickerItem', '$event', '$this')} aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`);
         }
       }
     });
@@ -4427,7 +4426,7 @@
     }
     sug.innerHTML = _addrSuggestionCache.map((s, index) => {
       const main = _esc([s.main, s.sub].filter(Boolean).join(s.sub ? ' - ' : ''));
-      return `<button class="addr-sug-item" onclick="selectAddrSuggestion(${index})">
+      return `<button class="addr-sug-item" ${act('click', 'selectAddrSuggestion', index)}>
         <svg class="addr-sug-pin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <div class="addr-sug-copy">
           <span class="addr-sug-main">${main}</span>
@@ -6345,7 +6344,7 @@
     if (identityBox) {
       identityBox.innerHTML = isLogged()
         ? `<div class="prof-hero-label">${esc(profileCustomer?.name || '')}</div><div class="prof-hero-sub">Cliente identificado</div>`
-        : `<div class="prof-hero-label">${esc(restaurant.name || fallback().restaurantName || '')}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" onclick="openLoginScreen()">Entrar ou cadastrar</button>`;
+        : `<div class="prof-hero-label">${esc(restaurant.name || fallback().restaurantName || '')}</div><div class="prof-hero-sub">Entre para acessar promo&ccedil;&otilde;es e pedidos</div><button class="profile-login-btn" ${act('click', 'openLoginScreen')}>Entrar ou cadastrar</button>`;
     }
     const logoutGroup = $('profLogoutGroup');
     if (logoutGroup) logoutGroup.style.display = isLogged() ? '' : 'none';
@@ -6360,8 +6359,8 @@
         <div id="profileIdentity"></div>
       </div>
       <div class="prof-options-group">
-        <button class="prof-option-row" onclick="openProfSub('info')"><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div><div><div class="prof-option-title">Informa&ccedil;&otilde;es do restaurante</div><div class="prof-option-desc">Endere&ccedil;os, hor&aacute;rios e contato</div></div></button>
-        <button class="prof-option-row" onclick="openLoginScreen()"><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></div><div><div class="prof-option-title">Entrar ou cadastrar</div><div class="prof-option-desc">Acesse promo&ccedil;&otilde;es e pedidos</div></div></button>
+        <button class="prof-option-row" ${act('click', 'openProfSub', 'info')}><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div><div><div class="prof-option-title">Informa&ccedil;&otilde;es do restaurante</div><div class="prof-option-desc">Endere&ccedil;os, hor&aacute;rios e contato</div></div></button>
+        <button class="prof-option-row" ${act('click', 'openLoginScreen')}><div class="prof-option-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></div><div><div class="prof-option-title">Entrar ou cadastrar</div><div class="prof-option-desc">Acesse promo&ccedil;&otilde;es e pedidos</div></div></button>
       </div>
     `;
   }
@@ -6379,8 +6378,10 @@
 
   function renderLoggedProfileHub(profileCustomer) {
     const displayName = firstName(profileCustomer?.name || customer?.name || '').toUpperCase() || 'CLIENTE';
+    // `action` deixou de ser um trecho de JS costurado no onclick e passou a ser
+    // [nome, ...argumentos] — o que o despachante sabe resolver sem eval.
     const row = (icon, label, action, extra = '') => `
-      <button class="prof-account-row ${extra}" type="button" onclick="${action}">
+      <button class="prof-account-row ${extra}" type="button" ${act('click', ...action)}>
         <span class="prof-account-row-icon">${profileMenuIcon(icon)}</span>
         <span class="prof-account-row-label">${label}</span>
       </button>
@@ -6396,11 +6397,11 @@
           <h1>Ol&aacute;, ${esc(displayName)}!</h1>
         </div>
         <nav class="prof-account-list" aria-label="Op&ccedil;&otilde;es da conta">
-          ${row('user', 'Gerenciar perfil', "openProfSub('meusdados')")}
-          ${row('receipt', 'Meus pedidos', "openProfSub('pedidos')")}
-          ${row('pin', 'Meus endere&ccedil;os', "openAddrPicker('profile')")}
-          ${row('doc', 'Pol&iacute;tica de privacidade', "openPolicyScreen('privacy')")}
-          ${row('exit', 'Sair', 'logout()', 'prof-account-row--logout')}
+          ${row('user', 'Gerenciar perfil', ['openProfSub', 'meusdados'])}
+          ${row('receipt', 'Meus pedidos', ['openProfSub', 'pedidos'])}
+          ${row('pin', 'Meus endere&ccedil;os', ['openAddrPicker', 'profile'])}
+          ${row('doc', 'Pol&iacute;tica de privacidade', ['openPolicyScreen', 'privacy'])}
+          ${row('exit', 'Sair', ['logout'], 'prof-account-row--logout')}
         </nav>
       </section>
     `;
@@ -6833,7 +6834,7 @@
               : `${esc(status.label)} ${esc(profOrderDate(order.created_at))}`}</span>
           </div>
         </div>
-        <button class="prof-order-details-button" type="button" onclick="openProfOrderDetails(${index})">Ver detalhes</button>
+        <button class="prof-order-details-button" type="button" ${act('click', 'openProfOrderDetails', index)}>Ver detalhes</button>
       </article>
     `;
   }
@@ -6877,7 +6878,7 @@
     body.innerHTML = `
       <div class="prof-orders-feedback prof-orders-feedback--error">
         <p>Não foi possível carregar seus pedidos.</p>
-        <button type="button" onclick="loadProfPedidos()">Tentar novamente</button>
+        <button type="button" ${act('click', 'loadProfPedidos')}>Tentar novamente</button>
       </div>
     `;
   }
@@ -7101,7 +7102,18 @@
     }
     if (panel.parentElement !== document.body) document.body.appendChild(panel);
   }
-  Object.assign(window, {
+  // Handlers de tela. O markup referencia estes nomes por data-act-*, e o
+  // despachante (scripts/utils/actions.js) resolve pelo registro — não por
+  // window. Ver a lista curta logo abaixo para o que continua global e por quê.
+  // A arte do cupom não carregou: volta para o fundo de fallback. Era um
+  // onerror inline mexendo em classList.
+  function couponArtImageFailed(image) {
+    image?.closest('.coupon-art')?.classList.remove('coupon-art--has-img');
+    image?.remove();
+  }
+
+  const ACTIONS = {
+    couponArtImageFailed,
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     openOrderReview, closeOrderReview, submitOrder, closeOrderSuccess,
@@ -7126,6 +7138,23 @@
     mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
+  };
+
+  window.RapidexActions.register(ACTIONS);
+
+  // 152 nomes iam para window; 141 deles existiam SÓ para alimentar handlers
+  // on*= inline e agora vivem apenas no registro de ações. Os 11 abaixo ficam
+  // porque outro módulo ou a suíte E2E os chama pelo nome global — cada um foi
+  // conferido por grep (window.X e chamada bare), não por suposição.
+  Object.assign(window, {
+    // scripts/pages/restaurant-rapi.js
+    openProduct, scrollToCategory, findCategoryButton, mobNavMenu,
+    // scripts/pages/restaurant-club.js
+    openCouponDetail, openCashbackStatement,
+    // scripts/pages/cashback-statement.js
+    openLoginScreen, syncCustomerSession,
+    // tests/e2e/helpers.js e order-flow.spec.js
+    openModal, changeQty, addToCart
   });
 
   initializeDismissedDialogs();

@@ -77,6 +77,13 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  // Atributo de ação para markup gerado (ver scripts/utils/actions.js).
+  // Mesmo contrato do helper de restaurant-page.js: passe o valor CRU, que a
+  // spec vira JSON e só então é escapada.
+  const act = (event, name, ...args) =>
+    `data-act-${event}="${esc(args.length ? JSON.stringify([name, ...args]) : name)}"`;
+  const actAll = (event, steps) => `data-act-${event}="${esc(JSON.stringify(steps))}"`;
+
   function formatProductTitle(value) {
     const minorWords = new Set(['a','à','ao','aos','as','às','com','da','das','de','do','dos','e','em','na','nas','no','nos','ou','para','por']);
     let firstWord = true;
@@ -237,13 +244,13 @@
   function renderRapiFeedbackActions() {
     return `
       <div class="rapi-feedback-actions" aria-label="Acoes da resposta">
-        <button class="rapi-feedback-btn rapi-copy-btn" type="button" aria-label="Copiar resposta" onclick="rapiCopyResponse(this)">
+        <button class="rapi-feedback-btn rapi-copy-btn" type="button" aria-label="Copiar resposta" ${act('click', 'rapiCopyResponse', '$this')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
-        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Gostei da resposta" aria-pressed="false" data-feedback="like" onclick="rapiRateResponse(this)">
+        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Gostei da resposta" aria-pressed="false" data-feedback="like" ${act('click', 'rapiRateResponse', '$this')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/><path d="M7 11 11 2a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-1 7a3 3 0 0 1-3 3H7Z"/></svg>
         </button>
-        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Nao gostei da resposta" aria-pressed="false" data-feedback="dislike" onclick="rapiRateResponse(this)">
+        <button class="rapi-feedback-btn rapi-rating-btn" type="button" aria-label="Nao gostei da resposta" aria-pressed="false" data-feedback="dislike" ${act('click', 'rapiRateResponse', '$this')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/><path d="M17 13 13 22a3 3 0 0 1-3-3v-4H5a2 2 0 0 1-2-2l1-7a3 3 0 0 1 3-3h10Z"/></svg>
         </button>
       </div>`;
@@ -441,7 +448,7 @@
       _rapiOptionCache = options;
       resultsEl.insertAdjacentHTML('beforeend', `
         <div class="rapi-suggest-rail rapi-suggest-rail--ready">
-          ${options.map((option, index) => `<button class="rapi-suggest-chip" type="button" onclick="rapiUseOption(${index})">${esc(option.label)}</button>`).join('')}
+          ${options.map((option, index) => `<button class="rapi-suggest-chip" type="button" ${act('click', 'rapiUseOption', index)}>${esc(option.label)}</button>`).join('')}
         </div>`);
       scrollRapiToLatest();
     };
@@ -525,8 +532,31 @@
       <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.2">
         <path d="M3 2h18l-2 7H5L3 2z"/><path d="M5 9l-1 13h16l-1-13"/>
       </svg></div>`;
+    // O fallback era um onerror inline que montava HTML por string. Virou ação
+    // registrada: o evento `error` não borbulha, mas o despachante escuta na
+    // fase de captura, então a delegação alcança imagens criadas depois do boot.
     return `<img class="rapi-result-image" src="${esc(src)}" alt="${esc(product.name)}" loading="lazy"
-      onerror="this.parentNode.innerHTML='<div class=rapi-result-image-placeholder><svg width=38 height=38 viewBox=\\'0 0 24 24\\' fill=none stroke=#ccc stroke-width=1.2><path d=\\'M3 2h18l-2 7H5L3 2z\\'/></svg></div>'">`;
+      data-act-error="rapiImagePlaceholder">`;
+  }
+
+  // Troca a imagem quebrada pelo mesmo placeholder de sempre, montado por DOM.
+  function rapiImagePlaceholder(image) {
+    const parent = image?.parentNode;
+    if (!parent) return;
+    const box = document.createElement('div');
+    box.className = 'rapi-result-image-placeholder';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '38');
+    svg.setAttribute('height', '38');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', '#ccc');
+    svg.setAttribute('stroke-width', '1.2');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M3 2h18l-2 7H5L3 2z');
+    svg.appendChild(path);
+    box.appendChild(svg);
+    parent.replaceChildren(box);
   }
 
   function cacheRapiDetailProduct(product) {
@@ -549,8 +579,8 @@
     return `
       <article class="rapi-result-card rapi-product-card" style="animation-delay:${index * 0.06}s"
         role="button" tabindex="0" aria-label="Ver detalhes de ${esc(productName)}"
-        onclick="rapiOpenProductDetail(${detailIndex})"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rapiOpenProductDetail(${detailIndex})}">
+        ${act('click', 'rapiOpenProductDetail', detailIndex)}
+        ${actAll('keydown', [['$enter'], ['rapiOpenProductDetail', detailIndex]])}>
         <div class="rapi-result-image-wrap">${renderProductImg(product)}</div>
         <div class="rapi-result-content">
           <div class="rapi-result-title">${esc(productName)}</div>
@@ -579,7 +609,7 @@
 
     return `
       <div class="rapi-location-wrap">
-        <div class="delivery-widget rapi-location-widget ${classes}" role="button" tabindex="0" onclick="openOperationScreen()" aria-label="Selecionar unidade e operação">
+        <div class="delivery-widget rapi-location-widget ${classes}" role="button" tabindex="0" ${act('click', 'openOperationScreen')} aria-label="Selecionar unidade e operação">
           <div class="delivery-widget-tabs">
             <span class="delivery-widget-tab rapi-location-tab rapi-location-tab--mode active">${esc(delivery)}</span>
             <span class="delivery-widget-tab rapi-location-tab rapi-location-tab--brand">${esc(brand)}</span>
@@ -637,7 +667,7 @@
     return `
     <div class="rapi-page" id="rapiPage">
       <header class="rapi-utility-header" aria-label="Ações do Rapi">
-        <button class="rapi-cart-button" id="rapiCartButton" type="button" onclick="openModal('cartModal')" aria-label="Abrir sacola" hidden>
+        <button class="rapi-cart-button" id="rapiCartButton" type="button" ${act('click', 'openModal', 'cartModal')} aria-label="Abrir sacola" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span class="rapi-cart-count" id="rapiCartCount">0</span>
         </button>
@@ -652,7 +682,7 @@
         <div class="rapi-orb-wrap">
           <div class="rapi-orb-glow"></div>
           <div class="rapi-orb">
-            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" alt="Rapi" onerror="this.style.display='none'">
+            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" alt="Rapi" data-act-error="$hide">
           </div>
         </div>
 
@@ -669,7 +699,7 @@
           </div>
           <div class="rapi-results-label rapi-results-label--dark" id="rapiResultsLabel">Sugestões para você</div>
           <div class="rapi-results" id="rapiResults"></div>
-          <button class="rapi-show-more-btn rapi-show-more-btn--dark" id="rapiShowMoreBtn" onclick="rapiShowMoreResults()" type="button">
+          <button class="rapi-show-more-btn rapi-show-more-btn--dark" id="rapiShowMoreBtn" ${act('click', 'rapiShowMoreResults')} type="button">
             Ver mais sugestões
           </button>
         </div>
@@ -689,9 +719,9 @@
         <div class="rapi-ai-input-bar">
           <input class="rapi-ai-input" id="rapiInput" type="text"
             placeholder="Pergunte qualquer coisa..."
-            oninput="rapiUpdateSendButton()"
-            onkeydown="rapiInputKeydown(event)">
-          <button class="rapi-ai-send is-inactive" onclick="rapiSendMessage()" type="button" aria-label="Enviar" disabled>
+            ${act('input', 'rapiUpdateSendButton')}
+            ${act('keydown', 'rapiInputKeydown', '$event')}>
+          <button class="rapi-ai-send is-inactive" ${act('click', 'rapiSendMessage')} type="button" aria-label="Enviar" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
             </svg>
@@ -701,8 +731,8 @@
       </div>
 
       <div class="rapi-product-detail" id="rapiProductDetail" role="dialog" aria-modal="true"
-        aria-labelledby="rapiProductDetailTitle" hidden onclick="rapiCloseProductDetail()">
-        <article class="rapi-product-detail-panel" onclick="event.stopPropagation()">
+        aria-labelledby="rapiProductDetailTitle" hidden ${act('click', 'rapiCloseProductDetail')}>
+        <article class="rapi-product-detail-panel" ${act('click', '$stop')}>
           <div class="rapi-product-detail-media">
             <img class="rapi-product-detail-image" id="rapiProductDetailImage" alt="">
             <div class="rapi-product-detail-placeholder" aria-hidden="true">
@@ -711,7 +741,7 @@
               </svg>
             </div>
             <span class="rapi-product-detail-handle" aria-hidden="true"></span>
-            <button class="rapi-product-detail-close" type="button" onclick="rapiCloseProductDetail()" aria-label="Fechar detalhes">
+            <button class="rapi-product-detail-close" type="button" ${act('click', 'rapiCloseProductDetail')} aria-label="Fechar detalhes">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
           </div>
@@ -725,7 +755,7 @@
                 <span id="rapiProductDetailRecommendation"></span>
               </div>
             </div>
-            <button class="rapi-product-detail-question" type="button" onclick="rapiAddActiveProduct()">Adicionar à sacola</button>
+            <button class="rapi-product-detail-question" type="button" ${act('click', 'rapiAddActiveProduct')}>Adicionar à sacola</button>
           </div>
         </article>
       </div>
@@ -1305,5 +1335,10 @@
       window.rapiCloseProductDetail();
     }
   });
+
+  // rapiImagePlaceholder é a única ação deste módulo que NÃO existe em window —
+  // ela nasceu já como ação. As demais continuam globais porque restaurant-page.js
+  // as chama por nome; o despachante resolve por window como fallback.
+  window.RapidexActions?.register({ rapiImagePlaceholder });
 
 })();

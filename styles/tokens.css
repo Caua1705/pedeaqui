@@ -1,10 +1,134 @@
+/* =========================================================================
+   CONTRATO DE TEMA — este arquivo é o ÚNICO lugar que define as variáveis de
+   marca. Nenhum outro CSS pode redeclarar --brand*: se redeclarar, o tema do
+   tenant deixa de chegar na tela e todo restaurante novo nasce com a cor do
+   restaurante piloto.
+
+   Existem DUAS camadas, e a diferença entre elas é comercial, não estética:
+
+   1. CAMADA DE MARCA  (varia por tenant)
+      Cor primária e todos os tons derivados dela, logo e capa. Os valores
+      abaixo são só o ESTADO INICIAL — a cor da plataforma, usada enquanto
+      /menu não respondeu. Assim que responde, scripts/utils/brand-theme.js
+      reescreve tudo isto como style inline no <html>, a partir de UMA cor
+      cadastrada pelo lojista (primary_color). Os tons não vêm do banco.
+
+   2. CAMADA DE ESTRUTURA  (fixa do Rapidex — NÃO varia por tenant)
+      Fundos, cinzas, texto, cards, bordas, tipografia, sombras e espaçamento.
+      É o que faz um pedido no Rapidex parecer um pedido no Rapidex, seja qual
+      for o restaurante. Cor de erro/sucesso também é estrutura: vermelho é
+      vermelho mesmo numa marca vermelha.
+
+   Regra prática ao escrever CSS novo:
+      pintou algo que é DO RESTAURANTE (botão de ação, preço, aba ativa,
+      ícone de destaque, chip, cupom) -> var(--brand-*)
+      pintou CHROME do app (fundo, divisória, texto corrido, sombra) -> estrutura.
+   ========================================================================= */
+
 :root {
-  --brand-primary: #F36F21;
+  /* ---------------------------------------------------------------------
+     1. CAMADA DE MARCA — sobrescrita em runtime por applyBrandTheme().
+     Os valores aqui são a cor da PLATAFORMA (Rapidex), nunca a de um
+     restaurante específico. Ver scripts/utils/brand-theme.js.
+     --------------------------------------------------------------------- */
+
+  /* A única cor que o lojista cadastra. */
+  --brand-primary: #f36f21;
+  /* Componentes cruas da primária, para rgba(var(--brand-primary-rgb), .12). */
+  --brand-primary-rgb: 243, 111, 33;
+
+  /* Estados de interação, derivados da primária. */
+  --brand-hover: #e55f11;
+  --brand-active: #c14e0d;
+
+  /* Parceira de gradiente (um passo mais clara que a primária). */
+  --brand-light: #f78c4b;
+
+  /* Base das rampas escuras (hero sem foto, capa de cupom). */
+  --brand-deep: #3f1c05;
+
+  /* Fundos de marca, do mais leve ao mais presente. */
+  --brand-tint: #fef4ee;
+  --brand-surface: #fde3d3;
+  --brand-tint-strong: #fcd7c1;
+
+  /* Contorno de cartão/chip com cara de marca (cupom, seleção). */
+  --brand-border: #f4b389;
+
+  /* Texto e ícone SOBRE a cor de marca. Calculado por luminosidade, nunca
+     fixo em #fff: uma marca amarela receberia texto ilegível. */
+  --brand-on: #ffffff;
+  --brand-on-soft: rgba(255, 255, 255, 0.78);
+
+  /* Sombra/halo colorido da marca. */
+  --brand-glow: rgba(243, 111, 33, 0.28);
+
+  /* Secundária, opcional no cadastro. */
   --brand-secondary: #111111;
-  --brand-accent: #F36F21;
-  --page-bg: #FFFFFF;
-  --surface: #F7F7F7;
-  --text-main: #111111;
-  --text-muted: #777777;
-  --border: #E6E6E6;
+
+  /* Alias legados: 700 KB de CSS já consomem estes nomes. brand-theme.js os
+     mantém apontando para a paleta derivada — não crie nomes novos aqui. */
+  --brand: var(--brand-primary);
+  --brand-accent: var(--brand-primary);
+  --brand-d: var(--brand-active);
+  --m-accent: var(--brand-primary);
+  --m-accent-light: var(--brand-tint);
+  --m-red: var(--brand-primary);
+  --primary-orange: var(--brand-primary);
+  --op-orange: var(--brand-primary);
+  --op-orange-soft: var(--brand-tint-strong);
+  --op-orange-tint: var(--brand-tint);
+
+  /* ---------------------------------------------------------------------
+     2. CAMADA DE ESTRUTURA — fixa. Não derivar do tenant, não sobrescrever
+     em runtime. Mudar um valor daqui muda TODOS os restaurantes.
+     --------------------------------------------------------------------- */
+
+  /* Superfícies */
+  --page-bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-2: #f9f9f9;
+  --surface-3: #f0f0f0;
+
+  /* Bordas e divisórias */
+  --border: #e8e8e8;
+  --border-strong: #cccccc;
+
+  /* Texto */
+  --text-main: #1a1a1a;
+  --text-muted: #666666;
+  --text-faint: #999999;
+
+  /* Estado — semântico, não de marca. */
+  --state-success: #2f7d49;
+  --state-danger: #ef5a5a;
+  --state-warning: #d97706;
+
+  /* Sombra neutra dos cards. */
+  --shadow-card: rgba(0, 0, 0, 0.05);
+
+  /* Tipografia */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* Layout */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ---------------------------------------------------------------------
+     3. COR DA PLATAFORMA — o Rapidex falando por si (landing, rodapé
+     "Tecnologia por Rapidex", telas de erro antes de saber qual é o tenant).
+     Fixa de propósito: não é a marca de nenhum restaurante.
+     --------------------------------------------------------------------- */
+  --platform-brand: #e67e22;
+  --platform-brand-fallback: #f36f21;
+}
+
+/* SVG inline no HTML não aceita var() em atributo de apresentação (fill="..."),
+   e um fill chumbado é uma cor de marca que o tema nunca alcança. Estas duas
+   classes existem para os ícones desenhados direto no restaurant.html. */
+.brand-fill {
+  fill: var(--brand-primary);
+}
+
+.brand-fill-soft {
+  fill: var(--brand-tint-strong);
 }

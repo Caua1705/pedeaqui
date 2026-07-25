@@ -1,4 +1,11 @@
 (function () {
+  // C3 — todo listener de vida longa em document/window carrega este signal, e
+  // um único abort() no teardown remove os que estiverem pendurados nele. É o
+  // que evita ter de guardar referência de cada handler só para poder removê-lo
+  // (metade deles é função anônima). Ver scripts/utils/lifecycle.js.
+  const LIFECYCLE_SIGNAL = window.RapidexLifecycle?.signal;
+  const onTeardown = (dispose) => window.RapidexLifecycle?.onTeardown(dispose);
+
   const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const storageKeys = () => window.RapidexStorage;
   const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
@@ -259,8 +266,7 @@
     couponPreviewPromise = null;
     couponPreviewKey = '';
     heroBannerIndex = 0;
-    clearInterval(heroBannerTimer);
-    heroBannerTimer = null;
+    stopHeroAutoplay();
     menuLoadPromise = null;
     profileLoadPromise = null;
     menuRenderSignature = '';
@@ -1334,8 +1340,7 @@
     ]));
     if (bannersRenderSignature === nextSignature) return;
     bannersRenderSignature = nextSignature;
-    clearInterval(heroBannerTimer);
-    heroBannerTimer = null;
+    stopHeroAutoplay();
     heroBannerIndex = 1;
     const visualBanners = banners.filter(banner => banner.image_url || banner.image_path);
 
@@ -1409,11 +1414,20 @@
     });
   }
 
-  function startHeroAutoplay() {
-    const total = $('restaurantHeroTrack')?.children.length || 0;
+  function stopHeroAutoplay() {
     clearInterval(heroBannerTimer);
     heroBannerTimer = null;
+  }
+
+  function startHeroAutoplay() {
+    const total = $('restaurantHeroTrack')?.children.length || 0;
+    stopHeroAutoplay();
     if (total <= 3) return;
+    // Aba oculta não anima. Sem esta guarda o intervalo continuaria girando o
+    // carrossel — escrita no DOM e recálculo de estilo — numa página que
+    // ninguém está vendo, e o usuário voltaria para um banner que "andou
+    // sozinho" enquanto ele estava em outro lugar.
+    if (document.visibilityState === 'hidden') return;
     heroBannerTimer = setInterval(() => {
       const track = $('restaurantHeroTrack');
       if (!track) return;
@@ -1431,6 +1445,19 @@
       }
     }, HERO_BANNER_INTERVAL_MS);
   }
+
+  // O par que fecha o intervalo do hero: pausa quando a aba sai de vista, volta
+  // quando ela retorna, e some de vez no teardown da página.
+  window.RapidexLifecycle?.onVisibility({
+    onHidden: stopHeroAutoplay,
+    onVisible: () => {
+      // Só reativa se o carrossel existe de fato — em restaurante sem banner o
+      // startHeroAutoplay já sai pelo total <= 3, mas checar aqui evita a
+      // chamada inteira a cada volta de aba.
+      if ($('restaurantHeroTrack')) startHeroAutoplay();
+    }
+  });
+  window.RapidexLifecycle?.onTeardown(stopHeroAutoplay);
 
   function initHeroSwipe() {
     const track = $('restaurantHeroTrack');
@@ -1481,8 +1508,7 @@
           dot.classList.toggle('active', i === realIndex);
         });
       }
-      clearInterval(heroBannerTimer);
-      heroBannerTimer = null;
+      stopHeroAutoplay();
       heroDragStartX = event.clientX;
       heroDragDeltaX = 0;
       track.classList.add('is-dragging');
@@ -1506,7 +1532,7 @@
     window.addEventListener('scroll', () => {
       if (!document.body.classList.contains('menu-tab')) return;
       document.body.classList.toggle('menu-scrolled', (window.scrollY || document.documentElement.scrollTop) > 40);
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function initPageRubberBand() {
@@ -1540,7 +1566,7 @@
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       delta = 0; tracking = true; isHoriz = false;
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
 
     document.addEventListener('touchmove', e => {
       if (!tracking) return;
@@ -1554,10 +1580,10 @@
       }
       delta = dx;
       applyMove(parseFloat((delta * 0.18).toFixed(1)));
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
 
-    document.addEventListener('touchend', snapBack, { passive: true });
-    document.addEventListener('touchcancel', snapBack, { passive: true });
+    document.addEventListener('touchend', snapBack, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('touchcancel', snapBack, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function renderCoupons() {
@@ -1797,6 +1823,10 @@
       catNav.classList.toggle('is-stuck', !entry.isIntersecting);
     }, { threshold: 0 });
     _catStuckObserver.observe(sentinel);
+    onTeardown(() => {
+      _catStuckObserver?.disconnect();
+      _catStuckObserver = null;
+    });
   }
 
   let scrollAnimationToken = 0;
@@ -1880,7 +1910,7 @@
         const active = btn.getAttribute('onclick')?.includes(`'${currentId}'`);
         btn.classList.toggle('active', Boolean(active));
       });
-    }, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
   function initProductPressFeedback() {
@@ -1895,10 +1925,10 @@
       if (event.button !== 0 || document.body.classList.contains('modal-open')) return;
       const target = event.target.closest?.('.no-press-feedback');
       if (!target) return;
-    }, { passive: true });
-    document.addEventListener('pointerup', clearPressed, { passive: true });
-    document.addEventListener('pointercancel', clearPressed, { passive: true });
-    window.addEventListener('scroll', clearPressed, { passive: true });
+    }, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('pointerup', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
+    document.addEventListener('pointercancel', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
+    window.addEventListener('scroll', clearPressed, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
   function initSearch() {
     if (searchReady) return;
@@ -1986,8 +2016,8 @@
     const body = $('productModal')?.querySelector('.modal-body');
     if (!body) return;
     productScrollIndicatorReady = true;
-    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true });
-    window.addEventListener('resize', syncProductScrollIndicator);
+    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true, signal: LIFECYCLE_SIGNAL });
+    window.addEventListener('resize', syncProductScrollIndicator, { signal: LIFECYCLE_SIGNAL });
   }
 
   function syncProductScrollIndicator() {
@@ -5305,6 +5335,9 @@
   function stopVfyTimer() {
     if (_vfyTimer) { clearInterval(_vfyTimer); _vfyTimer = null; }
   }
+  // A contagem já para ao fechar a tela de verificação; isto cobre o caso em
+  // que a página some com ela ainda aberta.
+  onTeardown(stopVfyTimer);
   function startVfyTimer() {
     stopVfyTimer();
     _vfyRemaining = VFY_RESEND_SECONDS;
@@ -6003,6 +6036,7 @@
     }
   }
   observeAuthScreens();
+  onTeardown(() => authScreenObserver.disconnect());
   syncAuthScreenOpenClass();
 
   function policyScrollBody() {
@@ -7301,7 +7335,7 @@
     refreshAvailableCoupons();
     clubController?.invalidateCoupons?.();
     loadCashbackForHome({ force: true });
-  });
+  }, { signal: LIFECYCLE_SIGNAL });
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();

@@ -83,5 +83,5 @@
     requestVersion+=1;
     overlay.classList.remove('active');
     overlay.style.setProperty('display','none','important');
-  },true);
+  },{capture:true,signal:window.RapidexLifecycle?.signal});
 })();

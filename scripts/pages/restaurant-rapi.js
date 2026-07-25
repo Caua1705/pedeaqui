@@ -964,9 +964,12 @@
         view.style.removeProperty('--rapi-intro-shift');
       }, 80);
     });
-    viewport?.addEventListener('resize', updateKeyboardOffset);
-    viewport?.addEventListener('scroll', updateKeyboardOffset);
-    window.addEventListener('resize', updateKeyboardOffset);
+    // O visualViewport sobrevive a qualquer view: sem o signal, estes tres
+    // ficariam medindo teclado ate a pagina morrer.
+    const signal = window.RapidexLifecycle?.signal;
+    viewport?.addEventListener('resize', updateKeyboardOffset, { signal });
+    viewport?.addEventListener('scroll', updateKeyboardOffset, { signal });
+    window.addEventListener('resize', updateKeyboardOffset, { signal });
   }
   function setupRapiSuggestionDrag() {
     const rail = document.getElementById('rapiStarter');
@@ -1339,7 +1342,7 @@
     if (event.key === 'Escape' && document.body.classList.contains('rapi-product-detail-open')) {
       window.rapiCloseProductDetail();
     }
-  });
+  }, { signal: window.RapidexLifecycle?.signal });
 
   // rapiImagePlaceholder é a única ação deste módulo que NÃO existe em window —
   // ela nasceu já como ação. As demais continuam globais porque restaurant-page.js

@@ -25,6 +25,9 @@ import './utils/pwa.js';
 import './utils/actions.js';
 import './utils/slugify.js';
 import './utils/dom.js';
+// Registro de desligamento (signal + onTeardown). Precisa vir antes das páginas,
+// que registram os observers e intervalos nele.
+import './utils/lifecycle.js';
 import './utils/image-cdn.js';
 import './utils/validators.js';
 import './services/api-client.js';

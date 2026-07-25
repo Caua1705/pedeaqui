@@ -151,6 +151,9 @@
       '--brand-primary-rgb': `${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}`,
       '--brand-hover': hslToHex({ ...hsl, l: stateShift(hsl, 8) }),
       '--brand-active': hslToHex({ ...hsl, l: stateShift(hsl, 16) }),
+      // Base das rampas escuras (hero, capa sem foto). Luminosidade fixa: um
+      // degradê "quase preto -> marca" precisa começar escuro em qualquer hex.
+      '--brand-deep': hslToHex({ h: hsl.h, s: Math.min(hsl.s, 88), l: 13 }),
       // Parceira de gradiente: um passo mais clara e levemente mais quente.
       '--brand-light': hslToHex({ h: hsl.h + 6, s: softS, l: clamp(hsl.l + 11, 24, 92) }),
       '--brand-tint': hslToHex({ h: hsl.h, s: softS, l: 96 }),

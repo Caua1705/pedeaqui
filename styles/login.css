@@ -207,12 +207,12 @@ label[for="loginPassword"].lgn-label { top: -11px; }
   margin: 0 auto;
   border: none;
   border-radius: 10px;
-  background: #FF5F01;
+  background: var(--brand-primary);
   font-family: inherit;
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--brand-on);
   cursor: pointer;
 }
 .lgn-submit:disabled {

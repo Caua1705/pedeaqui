@@ -1,11 +1,15 @@
-:root{
-  --brand:#F36F21;
-  --brand-primary:#F36F21;
-  --brand-accent:#F36F21;
-  --m-accent:#F36F21;
-  --primary-orange:#F36F21;
-  --op-orange:#F36F21;
-}
+/* Camada de ação: garante que TODO botão primário do app use a cor do tenant,
+   qualquer que seja a folha que o pintou antes.
+
+   Este arquivo já teve um :root próprio repetindo #F36F21 em seis apelidos. Era
+   o bloqueio comercial: como ele carrega depois de tokens.css, a cor do piloto
+   voltava para todo restaurante. Marca agora só em styles/tokens.css.
+
+   O !important abaixo permanece de propósito, e não bloqueia mais o tema: o
+   valor é um token, então quem vence a disputa de cascata pinta a cor do tenant
+   de qualquer jeito. Ele só arbitra contra as folhas de override que vieram
+   antes (utilities.css, operation.css) — sem ele, botão primário volta a herdar
+   o cinza da regra genérica. */
 
 .home-order-cta,
 .btn-cart,
@@ -25,9 +29,9 @@
 #cartModal .cart-cta-btn,
 #loginModal .cart-cta-btn,
 .modal--login .cart-cta-btn{
-  background:#F36F21!important;
-  border-color:#F36F21!important;
-  color:#fff!important;
+  background:var(--brand-primary)!important;
+  border-color:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
 }
 
 .home-order-cta:hover,
@@ -60,9 +64,9 @@
 .section-loader-retry:active,
 .profile-login-btn:hover,
 .profile-login-btn:active{
-  background:#F36F21!important;
-  border-color:#F36F21!important;
-  color:#fff!important;
+  background:var(--brand-primary)!important;
+  border-color:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
 }
 
 .login-secondary,
@@ -77,12 +81,12 @@
 .coupon-use-btn,
 .rev-edit-btn,
 .fs-cta-secondary{
-  color:#F36F21!important;
-  border-color:#F36F21!important;
+  color:var(--brand-primary)!important;
+  border-color:var(--brand-primary)!important;
 }
 
 .app-loader-spinner{
-  border-top-color:#F36F21!important;
+  border-top-color:var(--brand-primary)!important;
 }
 
 .addr-picker-add-btn{

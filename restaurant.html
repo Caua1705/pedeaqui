@@ -199,7 +199,7 @@
   <button class="btn-cart" onclick="openModal('cartModal')" id="cartStickyBtn">
     <div style="position:relative;display:flex;align-items:center;width:60px">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <span id="cartCountSticky" style="position:absolute;top:-6px;left:14px;background:#fff;color:#C8520A;font-size:.62rem;font-weight:800;padding:0 5px;border-radius:10px;border:1.5px solid rgba(255,255,255,.6);min-width:18px;text-align:center;line-height:1.6"></span>
+      <span id="cartCountSticky" style="position:absolute;top:-6px;left:14px;background:#fff;color:var(--brand-hover);font-size:.62rem;font-weight:800;padding:0 5px;border-radius:10px;border:1.5px solid rgba(255,255,255,.6);min-width:18px;text-align:center;line-height:1.6"></span>
     </div>
     <div style="flex:1;text-align:center">Ver sacola</div>
     <div id="cartTotalSticky" style="width:70px;text-align:right"></div>
@@ -677,7 +677,7 @@
       <p class="pm-desc" id="pmDesc"></p>
       <div class="pm-price" id="pmPrice"></div>
       
-      <div id="pmWarning" style="display:none;background:rgba(200,82,10,.1);border:1px solid var(--bd3);padding:12px;border-radius:10px;font-size:.8rem;color:var(--brand);margin-bottom:20px">
+      <div id="pmWarning" style="display:none;background:rgba(var(--brand-primary-rgb),.1);border:1px solid var(--bd3);padding:12px;border-radius:10px;font-size:.8rem;color:var(--brand);margin-bottom:20px">
         Consulte a disponibilidade e o valor com o restaurante.
       </div>
 
@@ -1121,8 +1121,8 @@
           <path d="M10 31.5 30.5 12 51 31.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M16 29.5V53h29V29.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M26 53V39h10v14" stroke="#111111" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M55 34.5c0 8.5-10 17.5-10 17.5s-10-9-10-17.5a10 10 0 1 1 20 0Z" fill="#F36F21" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
-          <circle cx="45" cy="34.5" r="3" fill="#FFD7BC" stroke="#111111" stroke-width="2"/>
+          <path d="M55 34.5c0 8.5-10 17.5-10 17.5s-10-9-10-17.5a10 10 0 1 1 20 0Z" class="brand-fill" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="45" cy="34.5" r="3" class="brand-fill-soft" stroke="#111111" stroke-width="2"/>
         </svg>
       </div>
       <h3 class="adc-title">Informe seu endereço</h3>
@@ -1198,8 +1198,8 @@
           <path d="M10 31.5 30.5 12 51 31.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M16 29.5V53h29V29.5" stroke="#111111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M26 53V39h10v14" stroke="#111111" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M55 34.5c0 8.5-10 17.5-10 17.5s-10-9-10-17.5a10 10 0 1 1 20 0Z" fill="#F36F21" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
-          <circle cx="45" cy="34.5" r="3" fill="#FFD7BC" stroke="#111111" stroke-width="2"/>
+          <path d="M55 34.5c0 8.5-10 17.5-10 17.5s-10-9-10-17.5a10 10 0 1 1 20 0Z" class="brand-fill" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="45" cy="34.5" r="3" class="brand-fill-soft" stroke="#111111" stroke-width="2"/>
         </svg>
       </div>
       <h3 class="addr-search-title">Endereço</h3>
@@ -1237,7 +1237,7 @@
       <div id="addrMapContainer" class="addr-map-container"></div>
       <div class="addr-map-center-pin" aria-hidden="true">
         <svg viewBox="0 0 40 48" fill="none">
-          <path d="M20 46S36 31.4 36 18A16 16 0 1 0 4 18c0 13.4 16 28 16 28Z" fill="#F36F21" stroke="#fff" stroke-width="3"/>
+          <path d="M20 46S36 31.4 36 18A16 16 0 1 0 4 18c0 13.4 16 28 16 28Z" class="brand-fill" stroke="#fff" stroke-width="3"/>
           <circle cx="20" cy="18" r="6" fill="#fff"/>
         </svg>
       </div>
@@ -1625,7 +1625,7 @@
       <div class="coupon-detail-art" id="couponDetailArt"></div>
       <div class="coupon-detail-summary">
         <div class="coupon-detail-ticket-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 12.2 12.2 20.8 3.2 11.8V3.2h8.6l9 9Z" fill="currentColor"/><circle cx="8.1" cy="8.1" r="1.35" fill="#fde1d4"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 12.2 12.2 20.8 3.2 11.8V3.2h8.6l9 9Z" fill="currentColor"/><circle cx="8.1" cy="8.1" r="1.35" class="brand-fill-soft"/></svg>
         </div>
         <div class="coupon-detail-main">
           <strong id="couponDetailTitle">Cupom</strong>

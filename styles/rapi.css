@@ -39,7 +39,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 /* ── HERO SECTION ── */
 .rapi-hero {
   position: relative;
-  background: linear-gradient(160deg, #fff8f3 0%, #fff3ea 60%, #ffeedd 100%);
+  background: linear-gradient(160deg, var(--brand-tint) 0%, var(--brand-tint) 60%, var(--brand-tint-strong) 100%);
   padding: 28px 20px 22px;
   overflow: hidden;
   display: flex;
@@ -55,7 +55,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   left: -40px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(255, 140, 66, 0.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.18) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -66,7 +66,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   right: -30px;
   width: 160px;
   height: 160px;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.10) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.10) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -89,7 +89,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 140, 66, 0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.22) 0%, transparent 70%);
   animation: rapi-glow-pulse 3s ease-in-out infinite;
 }
 
@@ -104,7 +104,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   object-fit: contain;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 8px 24px rgba(255, 140, 66, 0.30));
+  filter: drop-shadow(0 8px 24px rgba(var(--brand-primary-rgb), 0.30));
 }
 
 /* ── Title block ── */
@@ -389,7 +389,7 @@ body.coupon-nav-keep .mob-bottom-nav {
   width: 13px !important;
   height: 13px !important;
   border-radius: 50% !important;
-  background: #F36F21 !important;
+  background: var(--brand-primary) !important;
   display: block !important;
   animation: appLoaderDotPulse 0.9s ease-in-out infinite both !important;
 }
@@ -443,9 +443,9 @@ body.app-error .app-loader-message {
   height: 8px !important;
   margin-left: 8px !important;
   background:
-    radial-gradient(circle, #F36F21 58%, transparent 60%) 0 50% / 8px 8px no-repeat,
-    radial-gradient(circle, #F36F21 58%, transparent 60%) 13px 50% / 8px 8px no-repeat,
-    radial-gradient(circle, #F36F21 58%, transparent 60%) 26px 50% / 8px 8px no-repeat !important;
+    radial-gradient(circle, var(--brand-primary) 58%, transparent 60%) 0 50% / 8px 8px no-repeat,
+    radial-gradient(circle, var(--brand-primary) 58%, transparent 60%) 13px 50% / 8px 8px no-repeat,
+    radial-gradient(circle, var(--brand-primary) 58%, transparent 60%) 26px 50% / 8px 8px no-repeat !important;
   animation: tabLoaderDots 0.9s ease-in-out infinite !important;
 }
 
@@ -534,8 +534,8 @@ body.app-error .app-loader-message {
 }
 
 .rapi-input-card:focus-within {
-  border-color: #ff6b35;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.10);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.10);
   background: #fff;
 }
 
@@ -559,15 +559,15 @@ body.app-error .app-loader-message {
   height: 38px;
   border-radius: 11px;
   border: none;
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  color: #fff;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
+  color: var(--brand-on);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
-  box-shadow: 0 3px 10px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 3px 10px rgba(var(--brand-primary-rgb), 0.35);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -627,17 +627,17 @@ body.app-error .app-loader-message {
 
 .rapi-chip:active,
 .rapi-chip--active {
-  background: linear-gradient(135deg, #fff3ee, #fff8f5);
-  border-color: #ff6b35;
-  color: #ff5500;
-  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.15);
+  background: linear-gradient(135deg, var(--brand-tint), var(--brand-tint));
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  box-shadow: 0 2px 10px rgba(var(--brand-primary-rgb), 0.15);
 }
 
 .rapi-chip--active {
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  color: #fff;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
+  color: var(--brand-on);
   border-color: transparent;
-  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.32);
+  box-shadow: 0 4px 14px rgba(var(--brand-primary-rgb), 0.32);
 }
 
 .rapi-chip--active .rapi-chip-icon {
@@ -667,7 +667,7 @@ body.app-error .app-loader-message {
   border: none;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #ff6b35;
+  color: var(--brand-primary);
   cursor: pointer;
   padding: 10px 0 4px;
   -webkit-tap-highlight-color: transparent;
@@ -726,7 +726,7 @@ body.app-error .app-loader-message {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
   animation: rapi-dot-bounce 0.9s ease-in-out infinite both;
 }
 
@@ -829,7 +829,7 @@ body.app-error .app-loader-message {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #fff8f5, #ffeedd);
+  background: linear-gradient(135deg, var(--brand-tint), var(--brand-tint-strong));
 }
 
 .rapi-result-image-placeholder svg {
@@ -843,7 +843,7 @@ body.app-error .app-loader-message {
 .rapi-result-category {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #ff6b35;
+  color: var(--brand-primary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 4px;
@@ -872,13 +872,13 @@ body.app-error .app-loader-message {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 107, 53, 0.07);
-  border: 1px solid rgba(255, 107, 53, 0.14);
+  background: rgba(var(--brand-primary-rgb), 0.07);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
   border-radius: 20px;
   padding: 3px 9px;
   font-size: 0.70rem;
   font-weight: 600;
-  color: #ff6b35;
+  color: var(--brand-primary);
   margin-bottom: 11px;
 }
 
@@ -896,8 +896,8 @@ body.app-error .app-loader-message {
 }
 
 .rapi-add-btn {
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  color: #fff;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
+  color: var(--brand-on);
   border: none;
   border-radius: 11px;
   padding: 9px 17px;
@@ -906,7 +906,7 @@ body.app-error .app-loader-message {
   cursor: pointer;
   transition: all 0.18s;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 3px 10px rgba(255, 107, 53, 0.30);
+  box-shadow: 0 3px 10px rgba(var(--brand-primary-rgb), 0.30);
   font-family: inherit;
   white-space: nowrap;
 }
@@ -946,7 +946,7 @@ body.app-error .app-loader-message {
   padding: 12px 16px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #ff6b35;
+  color: var(--brand-primary);
   cursor: pointer;
   font-family: inherit;
   margin-top: 4px;
@@ -959,8 +959,8 @@ body.app-error .app-loader-message {
 }
 
 .rapi-show-more-btn:active {
-  background: #fff8f5;
-  border-color: #ff6b35;
+  background: var(--brand-tint);
+  border-color: var(--brand-primary);
 }
 
 /* ── Toast feedback ── */
@@ -1063,9 +1063,9 @@ body.app-error .app-loader-message {
 .rapi-content{padding:0 14px!important}
 .rapi-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:10px!important;letter-spacing:.08em!important}
 .rapi-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:12px!important;font-weight:700!important}
-.rapi-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:#fff4ee!important;color:#f36f21!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.rapi-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 .rapi-chip-svg{width:15px!important;height:15px!important;display:block!important}
-.rapi-chip--active{background:#fff5ef!important;color:#f36f21!important;border-color:rgba(243,111,33,.34)!important;box-shadow:none!important}
+.rapi-chip--active{background:var(--brand-tint)!important;color:var(--brand-primary)!important;border-color:rgba(var(--brand-primary-rgb), .34)!important;box-shadow:none!important}
 .rapi-starter.hidden{display:none!important}
 .rapi-result-image-wrap{height:104px!important}
 .rapi-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
@@ -1212,7 +1212,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   overflow: hidden;
   position: relative;
   z-index: 1;
-  background: radial-gradient(circle at 38% 38%, #f5c06a 0%, #e08530 45%, #b05a18 100%);
+  background: radial-gradient(circle at 38% 38%, var(--brand-tint-strong) 0%, var(--brand-light) 45%, var(--brand-hover) 100%);
   box-shadow: none;
   transition: width 0.35s ease, height 0.35s ease;
 }
@@ -1285,7 +1285,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #C8520A;
+  background: var(--brand-hover);
   animation: rapi-dot-bounce 0.9s ease-in-out infinite both;
 }
 
@@ -1307,7 +1307,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 .rapi-show-more-btn--dark {
   background: #f4f4f4;
   border: 1.5px solid #e8e8e8;
-  color: #C8520A;
+  color: var(--brand-hover);
   width: 100%;
   border-radius: 12px;
   padding: 11px 16px;
@@ -1397,8 +1397,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 .rapi-ai-input-bar:focus-within {
-  border-color: #d06030 !important;
-  box-shadow: 0 0 0 3px rgba(200, 82, 10, 0.09) !important;
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.09) !important;
   background: #fff !important;
 }
 
@@ -1422,8 +1422,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   height: 40px !important;
   border-radius: 50% !important;
   border: none !important;
-  background: #C8520A !important;
-  color: #fff !important;
+  background: var(--brand-hover) !important;
+  color: var(--brand-on) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1549,9 +1549,9 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 #mobViewRapi .rapi-suggest-chip:hover,
 #mobViewRapi .rapi-suggest-chip:active{
-  background:#fff7f1!important;
-  border-color:rgba(243,111,33,.22)!important;
-  color:#F36F21!important;
+  background:var(--brand-tint)!important;
+  border-color:rgba(var(--brand-primary-rgb), .22)!important;
+  color:var(--brand-primary)!important;
   transform:translateY(-1px)!important;
 }
 #mobViewRapi .rapi-ai-input-bar{
@@ -1565,8 +1565,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
 }
 #mobViewRapi .rapi-ai-input-bar:focus-within{
-  border-color:rgba(243,111,33,.36)!important;
-  box-shadow:0 0 0 3px rgba(243,111,33,.08),0 10px 28px rgba(21,28,36,.07)!important;
+  border-color:rgba(var(--brand-primary-rgb), .36)!important;
+  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .08),0 10px 28px rgba(21,28,36,.07)!important;
   transform:translateY(-1px)!important;
 }
 #mobViewRapi .rapi-ai-input{
@@ -1582,13 +1582,13 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   width:42px!important;
   height:42px!important;
   border-radius:14px!important;
-  background:#F36F21!important;
-  color:#ffffff!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
   box-shadow:none!important;
   transition:transform .14s ease,opacity .14s ease,background .14s ease!important;
 }
 #mobViewRapi .rapi-ai-send:hover{
-  background:#ec6418!important;
+  background:var(--brand-primary)!important;
 }
 #mobViewRapi .rapi-ai-send:active{
   transform:scale(.94)!important;
@@ -2224,15 +2224,15 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   opacity:1!important;
 }
 #mobViewRapi .rapi-ai-send.is-ready{
-  background:#f36f21!important;
-  color:#fff!important;
-  border-color:#f36f21!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+  border-color:var(--brand-primary)!important;
   cursor:pointer!important;
 }
 #mobViewRapi .rapi-ai-send.is-stopping{
-  background:rgba(243,111,33,.16)!important;
-  color:#f36f21!important;
-  border-color:rgba(243,111,33,.22)!important;
+  background:rgba(var(--brand-primary-rgb), .16)!important;
+  color:var(--brand-primary)!important;
+  border-color:rgba(var(--brand-primary-rgb), .22)!important;
   cursor:pointer!important;
 }#mobViewRapi .rapi-ai-send .rapi-stop-icon{
   display:block;
@@ -2488,7 +2488,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   white-space:pre-wrap!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
-  color:#F36F21!important;
+  color:var(--brand-primary)!important;
   font-weight:600!important;
 }
 /* Keep assistant messages visually compact without changing their Markdown. */
@@ -2597,7 +2597,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   grid-template-columns:repeat(5,2px)!important;grid-template-rows:repeat(5,2px)!important;gap:2px!important;
 }
 #mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
-  width:2px!important;height:2px!important;background:#d97706!important;
+  width:2px!important;height:2px!important;background:var(--brand-hover)!important;
   opacity:.18;transform:scale(.55);animation:rapi-dot-radial-wave-visible 1.65s ease-in-out infinite!important;
 }
 @keyframes rapi-dot-radial-wave-visible{
@@ -2616,7 +2616,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 #mobViewRapi .rapi-chat-typing .rapi-thinking--dark{border-radius:2px!important}
 #mobViewRapi .rapi-typing-label{
   display:inline-block!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
-  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,#f7a46f 41%,#f36f21 48%,#ff8a43 52%,#f36f21 56%,#f7a46f 63%,#747474 72%,#747474 100%)!important;
+  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;
   background-repeat:no-repeat!important;background-size:240% 100%!important;background-position:140% 0;
   animation:rapi-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
 }
@@ -2639,20 +2639,20 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 @keyframes rapi-polygon-ring-0{
   0%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px rgba(217,119,6,.75)}
+  12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px var(--brand-hover)}
 }
 @keyframes rapi-polygon-ring-1{
   0%,18%,82%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px rgba(217,119,6,.6)}
+  30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px var(--brand-hover)}
 }
 @keyframes rapi-polygon-ring-2{
   0%,36%,64%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
-  46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px rgba(217,119,6,.5)}
+  46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px var(--brand-hover)}
 }
 /* Single-layer traveling beam clipped inside the glyphs. */
 #mobViewRapi .rapi-typing-label{
   position:relative!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
-  background:linear-gradient(90deg,#747474 0%,#747474 42%,#f7a46f 47%,#f36f21 50%,#f7a46f 53%,#747474 58%,#747474 100%)!important;
+  background:linear-gradient(90deg,#747474 0%,#747474 42%,var(--brand-light) 47%,var(--brand-primary) 50%,var(--brand-light) 53%,#747474 58%,#747474 100%)!important;
   background-repeat:no-repeat!important;background-size:300% 100%!important;background-position:100% 0;
   -webkit-background-clip:text!important;background-clip:text!important;
   animation:rapi-typing-beam-inside 1.8s linear infinite!important;
@@ -2665,7 +2665,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 
 /* Chat color refinement. Product cards intentionally remain unchanged. */
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{color:#2f2f2f!important}
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{color:#d97706!important}
+#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{color:var(--brand-hover)!important}
 #mobViewRapi .rapi-chat-user-message .rapi-result-title{background:#f4f4f5!important}
 #mobViewRapi .rapi-rating-btn{
   color:#737373!important;transition:color .18s ease,background-color .18s ease!important;
@@ -2675,12 +2675,12 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition:color .18s ease,fill .18s ease,stroke .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-rating-btn:hover{color:#d97706!important}
+  #mobViewRapi .rapi-rating-btn:hover{color:var(--brand-hover)!important}
 }
 #mobViewRapi .rapi-rating-btn.is-selected,
-#mobViewRapi .rapi-rating-btn[aria-pressed="true"]{color:#d97706!important}
+#mobViewRapi .rapi-rating-btn[aria-pressed="true"]{color:var(--brand-hover)!important}
 #mobViewRapi .rapi-rating-btn.is-selected svg path:last-child,
-#mobViewRapi .rapi-rating-btn[aria-pressed="true"] svg path:last-child{fill:#d97706!important}
+#mobViewRapi .rapi-rating-btn[aria-pressed="true"] svg path:last-child{fill:var(--brand-hover)!important}
 /* Unified copy / like / dislike icon states. */
 #mobViewRapi .rapi-feedback-btn{color:#6b7280!important;transition:color .18s ease!important}
 #mobViewRapi .rapi-feedback-btn svg,
@@ -2690,12 +2690,12 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   stroke:currentColor!important;transition:color .18s ease,stroke .18s ease,fill .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-feedback-btn:hover{color:#d97706!important}
+  #mobViewRapi .rapi-feedback-btn:hover{color:var(--brand-hover)!important}
 }
 #mobViewRapi .rapi-rating-btn.is-selected,
 #mobViewRapi .rapi-rating-btn[aria-pressed="true"],
 #mobViewRapi .rapi-copy-btn.is-copied,
-#mobViewRapi .rapi-copy-btn.is-restoring{color:#d97706!important}
+#mobViewRapi .rapi-copy-btn.is-restoring{color:var(--brand-hover)!important}
 /* Product names use application-wide Title Case presentation. */
 body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}
 
@@ -2711,12 +2711,12 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 @media (hover:hover){
   #mobViewRapi .rapi-suggest-chip:hover{
-    background:#fff7ed!important;border-color:#d97706!important;color:#d97706!important;
+    background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
   }
 }
 #mobViewRapi .rapi-suggest-chip:active,
 #mobViewRapi .rapi-suggest-chip:focus-visible{
-  background:#fff7ed!important;border-color:#d97706!important;color:#d97706!important;
+  background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
 }
 /* Native two-axis gestures inside chat results and product cards. */
 #mobViewRapi .rapi-ai-body--searching,
@@ -2771,7 +2771,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   text-wrap:pretty!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
-  color:#a94f16!important;
+  color:var(--brand-hover)!important;
   font-weight:650!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
@@ -2828,7 +2828,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   font-weight:650!important;
 }
 #mobViewRapi .rapi-product-card .rapi-result-price{
-  color:#a94f16!important;
+  color:var(--brand-hover)!important;
   font-size:14px!important;
   line-height:18px!important;
   font-weight:700!important;
@@ -2841,8 +2841,8 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   box-shadow:0 7px 22px rgba(44,36,28,.07)!important;
 }
 #mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
-  border-color:rgba(243,111,33,.42)!important;
-  box-shadow:0 0 0 3px rgba(243,111,33,.07),0 8px 24px rgba(44,36,28,.075)!important;
+  border-color:rgba(var(--brand-primary-rgb), .42)!important;
+  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .07),0 8px 24px rgba(44,36,28,.075)!important;
 }
 #mobViewRapi .rapi-ai-input{
   color:#24211f!important;
@@ -2888,7 +2888,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   text-wrap:pretty!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
-  color:#b95418!important;
+  color:var(--brand-hover)!important;
   font-weight:650!important;
 }
 #mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
@@ -2938,7 +2938,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   font-weight:650!important;
 }
 #mobViewRapi .rapi-product-card .rapi-result-price{
-  color:#a94f16!important;
+  color:var(--brand-hover)!important;
   font-weight:700!important;
 }
 
@@ -2973,7 +2973,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   -webkit-tap-highlight-color:transparent!important;
 }
 #mobViewRapi .rapi-product-card:focus-visible{
-  outline:2px solid rgba(243,111,33,.65)!important;
+  outline:2px solid rgba(var(--brand-primary-rgb), .65)!important;
   outline-offset:3px!important;
 }
 #mobViewRapi .rapi-product-detail[hidden]{
@@ -3092,7 +3092,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   height:24px!important;
 }
 #mobViewRapi .rapi-product-detail-close:focus-visible{
-  outline:2px solid #F36F21!important;
+  outline:2px solid var(--brand-primary)!important;
   outline-offset:2px!important;
 }
 #mobViewRapi .rapi-product-detail-content{
@@ -3125,7 +3125,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewRapi .rapi-product-detail-price{
   margin:0 0 22px!important;
-  color:#F36F21!important;
+  color:var(--brand-primary)!important;
   font-size:16px!important;
   line-height:20px!important;
   font-weight:700!important;
@@ -3145,7 +3145,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   gap:5px!important;
   margin-top:24px!important;
   padding:2px 0 2px 13px!important;
-  border-left:3px solid #F36F21!important;
+  border-left:3px solid var(--brand-primary)!important;
 }
 #mobViewRapi .rapi-product-detail-recommendation strong{
   color:#292522!important;
@@ -3170,8 +3170,8 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   padding:0 20px!important;
   border:0!important;
   border-radius:999px!important;
-  background:#F36F21!important;
-  color:#ffffff!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
   font-size:16px!important;
   line-height:20px!important;
@@ -3180,10 +3180,10 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   -webkit-tap-highlight-color:transparent!important;
 }
 #mobViewRapi .rapi-product-detail-question:active{
-  background:#D95F18!important;
+  background:var(--brand-primary)!important;
 }
 #mobViewRapi .rapi-product-detail-question:focus-visible{
-  outline:2px solid #F36F21!important;
+  outline:2px solid var(--brand-primary)!important;
   outline-offset:3px!important;
 }
 body.rapi-product-detail-open{
@@ -3271,15 +3271,15 @@ body:has(#mobViewRapi.active) .mob-bottom-nav::before{
   padding:0 5px!important;
   border:2px solid #ffffff!important;
   border-radius:10px!important;
-  background:#f36f21!important;
-  color:#ffffff!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
   font-size:10px!important;
   line-height:15px!important;
   font-weight:800!important;
   box-sizing:border-box!important;
 }
 #mobViewRapi .rapi-cart-button:focus-visible{
-  outline:2px solid #f36f21!important;
+  outline:2px solid var(--brand-primary)!important;
   outline-offset:2px!important;
 }
 #mobViewRapi .rapi-ai-body--searching{

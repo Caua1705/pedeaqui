@@ -44,6 +44,9 @@
   /* Parceira de gradiente (um passo mais clara que a primária). */
   --brand-light: #f78c4b;
 
+  /* Base das rampas escuras (hero sem foto, capa de cupom). */
+  --brand-deep: #3f1c05;
+
   /* Fundos de marca, do mais leve ao mais presente. */
   --brand-tint: #fef4ee;
   --brand-surface: #fde3d3;
@@ -117,4 +120,15 @@
      --------------------------------------------------------------------- */
   --platform-brand: #e67e22;
   --platform-brand-fallback: #f36f21;
+}
+
+/* SVG inline no HTML não aceita var() em atributo de apresentação (fill="..."),
+   e um fill chumbado é uma cor de marca que o tema nunca alcança. Estas duas
+   classes existem para os ícones desenhados direto no restaurant.html. */
+.brand-fill {
+  fill: var(--brand-primary);
+}
+
+.brand-fill-soft {
+  fill: var(--brand-tint-strong);
 }

@@ -32,7 +32,7 @@
     </div>
     <div class="app-loader-title" id="appLoaderTitle">Carregando restaurante</div>
     <div class="app-loader-message" id="appLoaderMessage">Preparando sua experiência.</div>
-    <button class="app-loader-retry" id="appLoaderRetry" type="button" onclick="retryRestaurantBoot()">Tentar novamente</button>
+    <button class="app-loader-retry" id="appLoaderRetry" type="button" data-act-click='retryRestaurantBoot'>Tentar novamente</button>
   </div>
 </div>
 
@@ -47,13 +47,13 @@
     <h1 class="nav-title">Restaurante</h1>
   </div>
   <div class="nav-actions">
-    <button class="mob-search-btn" id="mobSearchBtn" aria-label="Buscar" onclick="mobFocusSearch()">
+    <button class="mob-search-btn" id="mobSearchBtn" aria-label="Buscar" data-act-click='mobFocusSearch'>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
-    <button class="nav-btn" onclick="openRestaurantInfo()" aria-label="Informações">
+    <button class="nav-btn" data-act-click='openRestaurantInfo' aria-label="Informações">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </button>
-    <button class="nav-btn cart-btn" onclick="openModal('cartModal')" aria-label="Sacola">
+    <button class="nav-btn cart-btn" data-act-click='["openModal","cartModal"]' aria-label="Sacola">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <span class="cart-count" id="cartCountTop">0</span>
     </button>
@@ -67,7 +67,7 @@
   <div class="home-sticky-header" id="homeStickyHeader">
 
   <!-- DELIVERY MODE WIDGET -->
-  <div class="delivery-widget" role="button" tabindex="0" onclick="openOperationScreen()" aria-label="Selecionar unidade e operação">
+  <div class="delivery-widget" role="button" tabindex="0" data-act-click='openOperationScreen' aria-label="Selecionar unidade e operação">
     <div class="delivery-widget-tabs">
       <!-- Preenchidos por renderWidget() a partir da API. Não colocar nome de
            restaurante nem de unidade aqui: é markup servido a todos os tenants. -->
@@ -94,17 +94,17 @@
     <div class="mob-logo"></div>
     <div class="mob-rest-details">
       <div class="mob-rest-name">Restaurante</div>
-      <button class="mob-rest-sub" id="homeLoginPrompt" onclick="openLoginScreen()">Entre ou cadastre-se</button>
+      <button class="mob-rest-sub" id="homeLoginPrompt" data-act-click='openLoginScreen'>Entre ou cadastre-se</button>
       <div class="mob-rest-status">
         <span class="mob-badge-open">Aberto agora</span>
         <span class="mob-status-sep" aria-hidden="true">|</span>
         <span class="mob-pedido-min">Mín R$ 0,00</span>
       </div>
     </div>
-    <button class="home-cart-pill" onclick="handleHomeCartValueClick()" aria-label="Abrir sacola">
+    <button class="home-cart-pill" data-act-click='handleHomeCartValueClick' aria-label="Abrir sacola">
       <span id="homeCartTotal">R$ 0,00</span>
     </button>
-    <button class="mob-info-btn" onclick="openRestaurantInfo()" aria-label="Informações da loja">
+    <button class="mob-info-btn" data-act-click='openRestaurantInfo' aria-label="Informações da loja">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
     </button>
   </section>
@@ -138,7 +138,7 @@
     <div class="home-highlight-gray-space" aria-hidden="true"></div>
   </section>
 
-  <button class="home-order-cta" onclick="goToMenuTab()">Faça seu pedido</button>
+  <button class="home-order-cta" data-act-click='goToMenuTab'>Faça seu pedido</button>
 </main>
 
 <!-- SEARCH -->
@@ -148,7 +148,7 @@
       <div class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Buscar por..." id="searchInput">
-        <button class="search-clear-btn" id="searchClearBtn" onclick="closeSearch()" aria-label="Limpar busca">×</button>
+        <button class="search-clear-btn" id="searchClearBtn" data-act-click='closeSearch' aria-label="Limpar busca">×</button>
       </div>
     </div>
   </div>
@@ -196,7 +196,7 @@
 
 <!-- CART STICKY -->
 <div class="cart-sticky" id="cartSticky">
-  <button class="btn-cart" onclick="openModal('cartModal')" id="cartStickyBtn">
+  <button class="btn-cart" data-act-click='["openModal","cartModal"]' id="cartStickyBtn">
     <div style="position:relative;display:flex;align-items:center;width:60px">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <span id="cartCountSticky" style="position:absolute;top:-6px;left:14px;background:#fff;color:var(--brand-hover);font-size:.62rem;font-weight:800;padding:0 5px;border-radius:10px;border:1.5px solid rgba(255,255,255,.6);min-width:18px;text-align:center;line-height:1.6"></span>
@@ -208,26 +208,26 @@
 
 <!-- MOBILE BOTTOM NAVIGATION -->
 <nav class="mob-bottom-nav" id="mobBottomNav" aria-label="Navegação principal">
-  <button class="mob-nav-item active" id="mobNavHome" onclick="mobNavHome()">
+  <button class="mob-nav-item active" id="mobNavHome" data-act-click='mobNavHome'>
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--home" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6 8 .75 15 6"/><path d="M2.5 5.25v8h11v-8"/><path d="M6.25 13.25V9h3.5v4.25"/></svg></span>
     <span>Início</span>
   </button>
-  <button class="mob-nav-item" id="mobNavMenu" onclick="mobNavMenu()">
+  <button class="mob-nav-item" id="mobNavMenu" data-act-click='mobNavMenu'>
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h6a3 3 0 0 1 3 3V21a3 3 0 0 0-3-3H3z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3V21a3 3 0 0 1 3-3h6z"/></svg></span>
     <span>Cardápio</span>
   </button>
   <div class="mob-nav-qr-slot">
-    <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Rapi" type="button" onclick="mobNavRapi()">
+    <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Rapi" type="button" data-act-click='mobNavRapi'>
     <div class="menu-mobile-center">
-      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png" alt="Rapi" onerror="this.style.display='none'">
+      <img class="menu-mobile-rapi-avatar" src="assets/brand/rapi-nav-avatar.png" alt="Rapi" data-act-error="$hide">
     </div>
   </button>
   </div>
-  <button class="mob-nav-item" id="mobNavOrders" onclick="mobNavClub()">
+  <button class="mob-nav-item" id="mobNavOrders" data-act-click='mobNavClub'>
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--club" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M2 8h20v4H2zM12 8v13"/><path d="M12 8H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 5.6 12 8 12 8zM12 8h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 5.6 12 8 12 8z"/></svg></span>
     <span>Clube</span>
   </button>
-  <button class="mob-nav-item" id="mobNavProfile" onclick="mobNavProfile()">
+  <button class="mob-nav-item" id="mobNavProfile" data-act-click='mobNavProfile'>
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--profile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0z"/></svg></span>
     <span>Perfil</span>
   </button>
@@ -266,7 +266,7 @@
 
     <!-- Group 1: Restaurant & Orders -->
     <div class="prof-options-group">
-      <button class="prof-option-row" onclick="openProfSub('info')">
+      <button class="prof-option-row" data-act-click='["openProfSub","info"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </div>
@@ -276,7 +276,7 @@
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="prof-option-row" onclick="openProfSub('pedidos')">
+      <button class="prof-option-row" data-act-click='["openProfSub","pedidos"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
         </div>
@@ -286,7 +286,7 @@
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="prof-option-row" onclick="openProfSub('pagamento')">
+      <button class="prof-option-row" data-act-click='["openProfSub","pagamento"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
@@ -296,7 +296,7 @@
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="prof-option-row" onclick="openProfSub('cupons')">
+      <button class="prof-option-row" data-act-click='["openProfSub","cupons"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </div>
@@ -310,7 +310,7 @@
 
     <!-- Group 2: Account & Support -->
     <div class="prof-options-group">
-      <button class="prof-option-row" onclick="openProfSub('meusdados')">
+      <button class="prof-option-row" data-act-click='["openProfSub","meusdados"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
@@ -320,7 +320,7 @@
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="prof-option-row" onclick="openProfSub('seguranca')">
+      <button class="prof-option-row" data-act-click='["openProfSub","seguranca"]'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
@@ -334,7 +334,7 @@
 
     <!-- Group 3: Logout (only when logged in) -->
     <div class="prof-options-group prof-logout-group" id="profLogoutGroup" style="display:none">
-      <button class="prof-option-row prof-logout-row" onclick="logout()">
+      <button class="prof-option-row prof-logout-row" data-act-click='logout'>
         <div class="prof-option-icon prof-logout-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </div>
@@ -354,7 +354,7 @@
   <!-- -- SUB: Informações do restaurante -- -->
   <div class="prof-sub" id="profSubinfo">
     <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
       <span class="prof-sub-title">Informações do restaurante</span>
@@ -369,7 +369,7 @@
   <!-- -- SUB: Pedidos -- -->
   <div class="prof-sub" id="profSubpedidos">
     <div class="prof-manage-header">
-      <button class="cart-hdr-back prof-manage-back" type="button" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h1>Pedidos</h1>
@@ -380,7 +380,7 @@
     </div>
     <section class="prof-order-detail" id="profOrderDetail" aria-hidden="true" aria-label="Detalhes do pedido">
       <div class="prof-manage-header">
-        <button class="cart-hdr-back prof-manage-back" type="button" onclick="closeProfOrderDetails()" aria-label="Voltar">
+        <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfOrderDetails' aria-label="Voltar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
         <h1>Detalhes do pedido</h1>
@@ -393,7 +393,7 @@
   <!-- -- SUB: Pagamento -- -->
   <div class="prof-sub" id="profSubpagamento">
     <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
       <span class="prof-sub-title">Pagamento</span>
@@ -419,7 +419,7 @@
   <!-- -- SUB: Cupons -- -->
   <div class="prof-sub" id="profSubcupons">
     <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
       <span class="prof-sub-title">Cupons</span>
@@ -438,7 +438,7 @@
   <!-- -- SUB: Ajuda -- -->
   <div class="prof-sub" id="profSubajuda">
     <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
       <span class="prof-sub-title">Ajuda</span>
@@ -457,7 +457,7 @@
   <!-- -- SUB: Gerenciar perfil -- -->
   <div class="prof-sub prof-manage" id="profSubmeusdados">
     <div class="prof-manage-header">
-      <button class="cart-hdr-back prof-manage-back" type="button" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h1>Gerenciar perfil</h1>
@@ -466,7 +466,7 @@
     <div class="prof-manage-body">
       <section class="prof-manage-section">
         <h2>Meu perfil</h2>
-        <button class="prof-manage-row" type="button" onclick="openCustomerDataScreen()">
+        <button class="prof-manage-row" type="button" data-act-click='openCustomerDataScreen'>
           <span class="prof-manage-row-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3.5 18c.5-3.7 2.3-5.6 5.5-5.6 1.4 0 2.5.4 3.4 1.1"/><path d="m14 17 4.8-4.8 2 2L16 19l-3 .8z"/></svg></span>
           <span>Meus dados</span>
           <svg class="prof-manage-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
@@ -474,7 +474,7 @@
       </section>
       <section class="prof-manage-section">
         <h2>Configurar conta</h2>
-        <button class="prof-manage-row" type="button" onclick="openCustomerPasswordScreen()">
+        <button class="prof-manage-row" type="button" data-act-click='openCustomerPasswordScreen'>
           <span class="prof-manage-row-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.8 2.6"/><path d="M9.9 4.2A10.8 10.8 0 0 1 21 12s-1.1 2-3.2 4"/><path d="M6.2 6.2C4.1 7.7 3 10 3 12c0 0 3 5.5 9 5.5.7 0 1.4-.1 2-.2"/></svg></span>
           <span>Alterar senha</span>
           <svg class="prof-manage-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
@@ -485,21 +485,21 @@
     <div class="prof-data-backdrop" id="profDataBackdrop" aria-hidden="true"></div>
     <section class="prof-data-screen" id="profDataScreen" aria-hidden="true" aria-label="Meus dados">
       <header class="prof-data-header">
-        <button class="prof-data-back" type="button" onclick="closeCustomerDataScreen()" aria-label="Voltar">
+        <button class="prof-data-back" type="button" data-act-click='closeCustomerDataScreen' aria-label="Voltar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
         <h1>Meus dados</h1>
         <span aria-hidden="true"></span>
       </header>
-      <form class="prof-data-form" id="profDataForm" onsubmit="submitCustomerData(event)" novalidate>
+      <form class="prof-data-form" id="profDataForm" data-act-submit='["submitCustomerData","$event"]' novalidate>
         <div class="prof-data-field" id="profDataNameField">
           <label for="profDataName">Nome e Sobrenome</label>
-          <input id="profDataName" name="name" type="text" autocomplete="name" oninput="handleCustomerDataInput('name')">
+          <input id="profDataName" name="name" type="text" autocomplete="name" data-act-input='["handleCustomerDataInput","name"]'>
           <p class="prof-data-error" id="profDataNameError"></p>
         </div>
         <div class="prof-data-field" id="profDataEmailField">
           <label for="profDataEmail">E-mail</label>
-          <input id="profDataEmail" name="email" type="email" autocomplete="email" inputmode="email" oninput="handleCustomerDataInput('email')">
+          <input id="profDataEmail" name="email" type="email" autocomplete="email" inputmode="email" data-act-input='["handleCustomerDataInput","email"]'>
           <p class="prof-data-error" id="profDataEmailError"></p>
         </div>
         <div class="prof-data-field-row">
@@ -510,7 +510,7 @@
           </div>
           <div class="prof-data-field" id="profDataPhoneField">
             <label for="profDataPhone">Telefone</label>
-            <input id="profDataPhone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(00) 0 0000-0000" oninput="maskRegPhone(this); handleCustomerDataInput('phone')">
+            <input id="profDataPhone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(00) 0 0000-0000" data-act-input='[["maskRegPhone","$this"],["handleCustomerDataInput","phone"]]'>
             <p class="prof-data-error" id="profDataPhoneError"></p>
           </div>
         </div>
@@ -522,18 +522,18 @@
     </section>
     <section class="prof-password-screen" id="profPasswordScreen" aria-hidden="true" aria-label="Alterar senha">
       <header class="prof-password-header">
-        <button class="prof-password-back" type="button" onclick="closeCustomerPasswordScreen()" aria-label="Voltar">
+        <button class="prof-password-back" type="button" data-act-click='closeCustomerPasswordScreen' aria-label="Voltar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
         <h1>Alterar senha</h1>
         <span aria-hidden="true"></span>
       </header>
-      <form class="prof-password-form" id="profPasswordForm" onsubmit="submitCustomerPassword(event)" novalidate>
+      <form class="prof-password-form" id="profPasswordForm" data-act-submit='["submitCustomerPassword","$event"]' novalidate>
         <div class="prof-password-field" id="profCurrentPasswordField">
           <label for="profCurrentPassword">Senha atual</label>
           <div class="prof-password-input-wrap">
-            <input id="profCurrentPassword" type="password" autocomplete="current-password" oninput="handleCustomerPasswordInput('current')">
-            <button type="button" onclick="toggleRegPassword('profCurrentPassword', this)" aria-label="Mostrar senha">
+            <input id="profCurrentPassword" type="password" autocomplete="current-password" data-act-input='["handleCustomerPasswordInput","current"]'>
+            <button type="button" data-act-click='["toggleRegPassword","profCurrentPassword","$this"]' aria-label="Mostrar senha">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.8 2.6"/><path d="M9.9 4.2A10.8 10.8 0 0 1 21 12s-1.1 2-3.2 4"/><path d="M6.2 6.2C4.1 7.7 3 10 3 12c0 0 3 5.5 9 5.5.7 0 1.4-.1 2-.2"/></svg>
             </button>
           </div>
@@ -542,8 +542,8 @@
         <div class="prof-password-field" id="profNewPasswordField">
           <label for="profNewPassword">Nova senha</label>
           <div class="prof-password-input-wrap">
-            <input id="profNewPassword" type="password" autocomplete="new-password" oninput="handleCustomerPasswordInput('new')">
-            <button type="button" onclick="toggleRegPassword('profNewPassword', this)" aria-label="Mostrar senha">
+            <input id="profNewPassword" type="password" autocomplete="new-password" data-act-input='["handleCustomerPasswordInput","new"]'>
+            <button type="button" data-act-click='["toggleRegPassword","profNewPassword","$this"]' aria-label="Mostrar senha">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.8 2.6"/><path d="M9.9 4.2A10.8 10.8 0 0 1 21 12s-1.1 2-3.2 4"/><path d="M6.2 6.2C4.1 7.7 3 10 3 12c0 0 3 5.5 9 5.5.7 0 1.4-.1 2-.2"/></svg>
             </button>
           </div>
@@ -552,8 +552,8 @@
         <div class="prof-password-field" id="profConfirmPasswordField">
           <label for="profConfirmPassword">Confirme a nova senha</label>
           <div class="prof-password-input-wrap">
-            <input id="profConfirmPassword" type="password" autocomplete="new-password" oninput="handleCustomerPasswordInput('confirm')">
-            <button type="button" onclick="toggleRegPassword('profConfirmPassword', this)" aria-label="Mostrar senha">
+            <input id="profConfirmPassword" type="password" autocomplete="new-password" data-act-input='["handleCustomerPasswordInput","confirm"]'>
+            <button type="button" data-act-click='["toggleRegPassword","profConfirmPassword","$this"]' aria-label="Mostrar senha">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.8 2.6"/><path d="M9.9 4.2A10.8 10.8 0 0 1 21 12s-1.1 2-3.2 4"/><path d="M6.2 6.2C4.1 7.7 3 10 3 12c0 0 3 5.5 9 5.5.7 0 1.4-.1 2-.2"/></svg>
             </button>
           </div>
@@ -570,7 +570,7 @@
       <div class="prof-password-success" id="profPasswordSuccess" aria-hidden="true">
         <div class="prof-password-success-dialog" role="dialog" aria-modal="true" aria-labelledby="profPasswordSuccessTitle">
           <h2 id="profPasswordSuccessTitle">Senha alterada com sucesso!</h2>
-          <button type="button" onclick="confirmCustomerPasswordSuccess()">Ok</button>
+          <button type="button" data-act-click='confirmCustomerPasswordSuccess'>Ok</button>
         </div>
       </div>
     </section>
@@ -579,7 +579,7 @@
   <!-- -- SUB: Segurança -- -->
   <div class="prof-sub" id="profSubseguranca">
     <div class="prof-sub-header">
-      <button class="prof-sub-back" onclick="closeProfSub()" aria-label="Voltar">
+      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </button>
       <span class="prof-sub-title">Segurança</span>
@@ -618,12 +618,12 @@
 </div><!-- /mobViewProfile -->
 
 <!-- MODAL: INFO -->
-<div class="overlay" id="infoModal" onclick="closeModal(event, 'infoModal')">
+<div class="overlay" id="infoModal" data-act-click='["closeModal","$event","infoModal"]'>
   <div class="modal modal--store-info">
     <div class="store-info-header">
       <div class="store-info-spacer"></div>
       <h2>Informações da loja</h2>
-      <button class="store-info-close" onclick="closeModalId('infoModal')" aria-label="Fechar">✕</button>
+      <button class="store-info-close" data-act-click='["closeModalId","infoModal"]' aria-label="Fechar">✕</button>
     </div>
     <div class="store-info-body">
       <section class="store-info-card">
@@ -665,12 +665,12 @@
 </div>
 
 <!-- MODAL: PRODUTO -->
-<div class="overlay" id="productModal" onclick="closeModal(event, 'productModal')">
+<div class="overlay" id="productModal" data-act-click='["closeModal","$event","productModal"]'>
   <div class="modal modal--product">
     <div class="product-hero" id="pmHero"></div>
     <div class="modal-header">
       <h2 class="modal-title">Detalhes</h2>
-      <button class="modal-close" onclick="closeModalId('productModal')">✕</button>
+      <button class="modal-close" data-act-click='["closeModalId","productModal"]'>✕</button>
     </div>
     <div class="modal-body">
       <h3 class="pm-name" id="pmName"></h3>
@@ -693,23 +693,23 @@
     </div>
     <div class="modal-footer" id="pmFooter" style="display:flex;gap:12px">
       <div class="qty-bar">
-        <button class="qty-btn" onclick="changeQty(-1)">-</button>
+        <button class="qty-btn" data-act-click='["changeQty",-1]'>-</button>
         <span class="qty-val" id="pmQty">1</span>
-        <button class="qty-btn" onclick="changeQty(1)">+</button>
+        <button class="qty-btn" data-act-click='["changeQty",1]'>+</button>
       </div>
-      <button class="btn-primary" style="flex:1" id="pmAddBtn" onclick="addToCart()">Adicionar • R$ 0,00</button>
+      <button class="btn-primary" style="flex:1" id="pmAddBtn" data-act-click='addToCart'>Adicionar • R$ 0,00</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: CART -->
-<div class="overlay" id="cartModal" onclick="closeModal(event, 'cartModal')">
+<div class="overlay" id="cartModal" data-act-click='["closeModal","$event","cartModal"]'>
   <div class="modal modal--cart">
     <div class="sheet-drag"></div>
 
     <!-- 1. Cart Header -->
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeModalId('cartModal')" aria-label="Fechar sacola">
+      <button class="cart-hdr-back" data-act-click='["closeModalId","cartModal"]' aria-label="Fechar sacola">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="cart-hdr-copy">
@@ -721,8 +721,8 @@
 
     <!-- 2. Delivery type tabs -->
     <div class="cart-tabs">
-      <button class="cart-tab active" id="cartTabEntrega" onclick="setCartTab('delivery')">Entrega</button>
-      <button class="cart-tab" id="cartTabRetirada" onclick="setCartTab('pickup')">Retirada</button>
+      <button class="cart-tab active" id="cartTabEntrega" data-act-click='["setCartTab","delivery"]'>Entrega</button>
+      <button class="cart-tab" id="cartTabRetirada" data-act-click='["setCartTab","pickup"]'>Retirada</button>
     </div>
 
     <!-- Scrollable body -->
@@ -730,7 +730,7 @@
 
       <!-- Cart content -->
       <div id="cartContent">
-        <button class="cart-location-widget" id="cartLocationWidget" type="button" onclick="openOperationScreen()">
+        <button class="cart-location-widget" id="cartLocationWidget" type="button" data-act-click='openOperationScreen'>
           <div class="cart-location-alert" id="cartLocationAlert">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/><rect x="11" y="6.5" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="16.8" r="1.2" fill="#fff"/></svg>
             <span>Informe seu endereço</span>
@@ -806,7 +806,7 @@
           <div id="cartList" class="cart-items-list"></div>
 
           <!-- 7. Add more items -->
-          <button class="cart-add-more-btn" onclick="closeModalId('cartModal')">
+          <button class="cart-add-more-btn" data-act-click='["closeModalId","cartModal"]'>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Adicionar mais itens
           </button>
@@ -814,7 +814,7 @@
 
         <div class="cart-benefit-card">
           <div class="cart-section-heading">Benef&iacute;cio</div>
-          <button class="cart-benefit-action" type="button" onclick="openCartBenefits()">
+          <button class="cart-benefit-action" type="button" data-act-click='openCartBenefits'>
             <span class="cart-benefit-icon" aria-hidden="true">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 4.6 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 4.6 12 7 12 7z"/></svg>
             </span>
@@ -825,7 +825,7 @@
 
         <div class="cart-payment-card" style="display:none">
           <div class="cart-section-heading">Forma de pagamento</div>
-          <button class="cart-payment-action" type="button" onclick="openCheckout()">
+          <button class="cart-payment-action" type="button" data-act-click='openCheckout'>
             <span class="cart-payment-icon" aria-hidden="true">
               <img class="cart-payment-pix-icon" id="cartPaymentPixIcon" src="assets/icons/payment/pix.png" alt="" hidden>
               <svg id="cartPaymentDefaultIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
@@ -843,7 +843,7 @@
             <span id="csSub">R$ 0,00</span>
           </div>
           <div class="cps-row">
-            <span>Taxa de serviço <button class="fee-info-btn" onclick="openServiceFeeInfo()" aria-label="Sobre a taxa de serviço">?</button></span>
+            <span>Taxa de serviço <button class="fee-info-btn" data-act-click='openServiceFeeInfo' aria-label="Sobre a taxa de serviço">?</button></span>
             <span id="csSvcFeeBtn">R$ 0,00</span>
           </div>
           <div class="cps-row" id="csDeliveryRow">
@@ -864,18 +864,18 @@
       </div><!-- /cartContent -->
 
     </div><!-- /cart-scroll -->
-    <div class="addr-delete-confirm" id="cartItemDeleteConfirm" aria-hidden="true" onclick="closeCartItemDeleteConfirm()">
-      <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="cartItemDeleteTitle" onclick="event.stopPropagation()">
+    <div class="addr-delete-confirm" id="cartItemDeleteConfirm" aria-hidden="true" data-act-click='closeCartItemDeleteConfirm'>
+      <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="cartItemDeleteTitle" data-act-click='["$stop"]'>
         <h3 class="addr-delete-title" id="cartItemDeleteTitle">Excluir</h3>
         <p class="addr-delete-text">Deseja excluir este item do seu carrinho?</p>
-        <button class="addr-delete-yes" type="button" onclick="confirmCartItemDelete()">Sim</button>
-        <button class="addr-delete-cancel" type="button" onclick="cancelCartItemDelete()">Cancelar</button>
+        <button class="addr-delete-yes" type="button" data-act-click='confirmCartItemDelete'>Sim</button>
+        <button class="addr-delete-cancel" type="button" data-act-click='cancelCartItemDelete'>Cancelar</button>
       </div>
     </div>
 
     <!-- 9. Footer CTA -->
     <div class="cart-footer" id="cartFooter">
-      <button class="cart-cta-btn" id="cartCtaBtn" onclick="openCheckout()">Fazer pedido</button>
+      <button class="cart-cta-btn" id="cartCtaBtn" data-act-click='openCheckout'>Fazer pedido</button>
     </div>
 
   </div>
@@ -887,7 +887,7 @@
   <div class="modal modal--fs">
     <div class="sheet-drag"></div>
     <div class="cart-hdr">
-      <button class="cart-hdr-back" type="button" onclick="closeOrderReview()" aria-label="Voltar">
+      <button class="cart-hdr-back" type="button" data-act-click='closeOrderReview' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Revisar pedido</h2>
@@ -930,7 +930,7 @@
       <div class="orv-error" id="orvError" hidden role="alert"></div>
     </div>
     <div class="cart-footer">
-      <button class="cart-cta-btn" id="orvConfirmBtn" type="button" onclick="submitOrder()">Confirmar pedido</button>
+      <button class="cart-cta-btn" id="orvConfirmBtn" type="button" data-act-click='submitOrder'>Confirmar pedido</button>
     </div>
   </div>
 </div>
@@ -953,7 +953,7 @@
         <div class="success-card-row" id="ordSuccessDiscountRow" hidden><span>Desconto</span><strong id="ordSuccessDiscount">—</strong></div>
         <div class="success-card-row"><span>Total</span><strong id="ordSuccessTotal">—</strong></div>
       </div>
-      <button class="cart-cta-btn" style="max-width:320px" type="button" onclick="closeOrderSuccess()">Concluir</button>
+      <button class="cart-cta-btn" style="max-width:320px" type="button" data-act-click='closeOrderSuccess'>Concluir</button>
     </div>
   </div>
 </div>
@@ -963,7 +963,7 @@
   <div class="modal modal--fs">
     <div class="sheet-drag"></div>
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="backToCart()">
+      <button class="cart-hdr-back" data-act-click='backToCart'>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Finalizar pedido</h2>
@@ -978,12 +978,12 @@
       <div class="fs-section">
         <div class="fs-section-title">Como deseja receber?</div>
         <div class="fs-type-grid">
-          <button class="fs-type-card active" id="btnDel" onclick="setDeliveryType('delivery')">
+          <button class="fs-type-card active" id="btnDel" data-act-click='["setDeliveryType","delivery"]'>
             <div class="fs-type-card-icon">🛵</div>
             <div class="fs-type-card-name">Entrega</div>
             <div class="fs-type-card-sub" id="checkoutDeliverySub">-- min · R$ 0,00</div>
           </button>
-          <button class="fs-type-card" id="btnPick" onclick="setDeliveryType('pickup')">
+          <button class="fs-type-card" id="btnPick" data-act-click='["setDeliveryType","pickup"]'>
             <div class="fs-type-card-icon">🏪</div>
             <div class="fs-type-card-name">Retirada</div>
             <div class="fs-type-card-sub" id="checkoutPickupSub">Retirada · Grátis</div>
@@ -1001,7 +1001,7 @@
       </div>
       <div class="fs-section">
         <div class="fs-section-title">Forma de pagamento</div>
-        <button class="checkout-payment-selector" type="button" onclick="openPaymentMethodScreen()">
+        <button class="checkout-payment-selector" type="button" data-act-click='openPaymentMethodScreen'>
           <span class="checkout-payment-selector-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span>
           <span id="checkoutPaymentLabel">Selecione a forma de pagamento</span>
           <svg class="checkout-payment-selector-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
@@ -1013,7 +1013,7 @@
       </div>
     </div>
     <div class="cart-footer">
-      <button class="cart-cta-btn" onclick="openPaymentMethodScreen()">Escolher forma de pagamento</button>
+      <button class="cart-cta-btn" data-act-click='openPaymentMethodScreen'>Escolher forma de pagamento</button>
     </div>
   </div>
 </div>
@@ -1022,39 +1022,39 @@
 <div class="overlay" id="paymentMethodModal">
   <section class="payment-method-screen" role="dialog" aria-modal="true" aria-labelledby="paymentMethodTitle">
     <header class="payment-method-header">
-      <button class="payment-method-back" type="button" onclick="closePaymentMethodScreen()" aria-label="Voltar">
+      <button class="payment-method-back" type="button" data-act-click='closePaymentMethodScreen' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 id="paymentMethodTitle">Formas de pagamento</h2>
       <div class="payment-method-header-spacer" aria-hidden="true"></div>
     </header>
     <div class="payment-method-tabs" role="tablist" aria-label="Tipo de pagamento">
-      <button class="active" type="button" role="tab" aria-selected="true" data-payment-screen-tab="online" onclick="setPaymentScreenTab('online')">Pagamento online</button>
-      <button type="button" role="tab" aria-selected="false" data-payment-screen-tab="delivery" onclick="setPaymentScreenTab('delivery')">Pagamento na entrega</button>
+      <button class="active" type="button" role="tab" aria-selected="true" data-payment-screen-tab="online" data-act-click='["setPaymentScreenTab","online"]'>Pagamento online</button>
+      <button type="button" role="tab" aria-selected="false" data-payment-screen-tab="delivery" data-act-click='["setPaymentScreenTab","delivery"]'>Pagamento na entrega</button>
     </div>
     <div class="payment-method-content">
       <section class="payment-method-panel" data-payment-screen-panel="online">
-        <button class="payment-method-option" type="button" data-payment-scope="online" data-payment-key="pix" data-payment-value="Pix" onclick="setPayment(this,'Pix')">
+        <button class="payment-method-option" type="button" data-payment-scope="online" data-payment-key="pix" data-payment-value="Pix" data-act-click='["setPayment","$this","Pix"]'>
           <img class="payment-pix-icon" src="assets/icons/payment/pix.png" alt="">
           <span>PIX</span>
         </button>
         <div class="payment-method-divider" aria-hidden="true"></div>
-        <button class="payment-add-card" type="button" onclick="showCardComingSoon()">
+        <button class="payment-add-card" type="button" data-act-click='showCardComingSoon'>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span>Cadastrar novo cartão</span>
         </button>
       </section>
       <section class="payment-method-panel" data-payment-screen-panel="delivery" hidden>
         <div class="payment-delivery-options">
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="credit" data-payment-value="Crédito" onclick="setPayment(this,'Crédito')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de crédito</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="debit" data-payment-value="Débito" onclick="setPayment(this,'Débito')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de débito</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="cash" data-payment-value="Dinheiro" onclick="setPayment(this,'Dinheiro')"><span class="payment-cash-icon" aria-hidden="true">R$</span><span>Dinheiro</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="voucher" data-payment-value="VR/VA" onclick="setPayment(this,'VR/VA')"><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Vale-refeição / alimentação</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="credit" data-payment-value="Crédito" data-act-click='["setPayment","$this","Crédito"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de crédito</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="debit" data-payment-value="Débito" data-act-click='["setPayment","$this","Débito"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de débito</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="cash" data-payment-value="Dinheiro" data-act-click='["setPayment","$this","Dinheiro"]'><span class="payment-cash-icon" aria-hidden="true">R$</span><span>Dinheiro</span></button>
+          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="voucher" data-payment-value="VR/VA" data-act-click='["setPayment","$this","VR/VA"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Vale-refeição / alimentação</span></button>
         </div>
       </section>
     </div>
     <footer class="payment-method-footer" id="paymentMethodFooter" hidden>
-      <button class="payment-method-confirm" type="button" onclick="confirmPaymentMethodSelection()">Confirmar</button>
+      <button class="payment-method-confirm" type="button" data-act-click='confirmPaymentMethodSelection'>Confirmar</button>
     </footer>
   </section>
 </div>
@@ -1062,7 +1062,7 @@
 <div class="overlay" id="operationModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeOperationScreen()" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='closeOperationScreen' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Unidades e Operação</h2>
@@ -1070,7 +1070,7 @@
     </div>
     <div class="cart-scroll">
       <div class="op-top">
-        <button class="op-addr-card" id="opAddrCard" onclick="openAddressChoice()">
+        <button class="op-addr-card" id="opAddrCard" data-act-click='openAddressChoice'>
           <span class="op-addr-pin">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </span>
@@ -1082,8 +1082,8 @@
         </button>
 
         <div class="op-segment">
-          <button class="op-seg-tab active" id="opSegDelivery" onclick="setOperationType('delivery')">Delivery</button>
-          <button class="op-seg-tab" id="opSegPickup" onclick="setOperationType('pickup')">Retirada</button>
+          <button class="op-seg-tab active" id="opSegDelivery" data-act-click='["setOperationType","delivery"]'>Delivery</button>
+          <button class="op-seg-tab" id="opSegPickup" data-act-click='["setOperationType","pickup"]'>Retirada</button>
         </div>
       </div>
 
@@ -1093,14 +1093,14 @@
         <h3 class="op-section-title">Escolha uma unidade</h3>
         <div class="op-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="opBranchSearch" placeholder="Buscar por loja..." oninput="renderOperationBranches()">
+          <input type="text" id="opBranchSearch" placeholder="Buscar por loja..." data-act-input='renderOperationBranches'>
         </div>
 
         <div class="op-branches" id="opBranchList"></div>
       </div>
     </div>
     <div class="cart-footer">
-      <button class="op-confirm" id="opConfirmBtn" onclick="confirmOperation()" disabled>Confirmar</button>
+      <button class="op-confirm" id="opConfirmBtn" data-act-click='confirmOperation' disabled>Confirmar</button>
     </div>
   </div>
 </div>
@@ -1109,7 +1109,7 @@
 <div class="overlay" id="addAddressModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="backFromAddAddress()" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='backFromAddAddress' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Adicionar novo endereço</h2>
@@ -1127,7 +1127,7 @@
       </div>
       <h3 class="adc-title">Informe seu endereço</h3>
       <div class="adc-opt-cards">
-        <button class="adc-opt-card" id="adcBtnGeo" onclick="selectAdcOption('geo')">
+        <button class="adc-opt-card" id="adcBtnGeo" data-act-click='["selectAdcOption","geo"]'>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:translateY(-1px)">
             <line x1="2" y1="12" x2="5" y2="12"/>
             <line x1="19" y1="12" x2="22" y2="12"/>
@@ -1138,15 +1138,15 @@
           </svg>
           <span>Localização atual</span>
         </button>
-        <button class="adc-opt-card" id="adcBtnManual" onclick="selectAdcOption('manual')">
+        <button class="adc-opt-card" id="adcBtnManual" data-act-click='["selectAdcOption","manual"]'>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <span>Outra localização</span>
         </button>
       </div>
     </div>
     <div class="adc-footer">
-      <button class="adc-confirm-btn" id="adcConfirmBtn" onclick="adcConfirm()" disabled>Confirmar</button>
-      <button class="adc-account-btn" onclick="openLoginScreen('address')">Já possuo uma conta</button>
+      <button class="adc-confirm-btn" id="adcConfirmBtn" data-act-click='adcConfirm' disabled>Confirmar</button>
+      <button class="adc-account-btn" data-act-click='["openLoginScreen","address"]'>Já possuo uma conta</button>
     </div>
   </div>
 </div>
@@ -1155,29 +1155,29 @@
 <div class="overlay" id="addrPickerModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeModalId('addrPickerModal')" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='["closeModalId","addrPickerModal"]' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Endereço</h2>
       <div class="cart-hdr-spacer"></div>
     </div>
     <div class="cart-scroll addr-picker-body">
-      <button class="addr-picker-add-btn" onclick="openAddressChoiceDirect()">
+      <button class="addr-picker-add-btn" data-act-click='openAddressChoiceDirect'>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Adicionar novo endereço</span>
       </button>
       <div id="addrPickerList"></div>
     </div>
-    <div class="addr-delete-confirm" id="addrDeleteConfirm" aria-hidden="true" onclick="closeAddrDeleteConfirm()">
-      <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="addrDeleteTitle" onclick="event.stopPropagation()">
+    <div class="addr-delete-confirm" id="addrDeleteConfirm" aria-hidden="true" data-act-click='closeAddrDeleteConfirm'>
+      <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="addrDeleteTitle" data-act-click='["$stop"]'>
         <h3 class="addr-delete-title" id="addrDeleteTitle">Excluir</h3>
         <p class="addr-delete-text">Deseja excluir este endereço?</p>
-        <button class="addr-delete-yes" type="button" onclick="confirmAddrPickerDelete()">Sim</button>
-        <button class="addr-delete-cancel" type="button" onclick="cancelAddrPickerDelete()">Cancelar</button>
+        <button class="addr-delete-yes" type="button" data-act-click='confirmAddrPickerDelete'>Sim</button>
+        <button class="addr-delete-cancel" type="button" data-act-click='cancelAddrPickerDelete'>Cancelar</button>
       </div>
     </div>
     <div class="cart-footer">
-      <button class="op-confirm" id="addrPickerConfirmBtn" onclick="confirmAddrPicker()" disabled>Confirmar</button>
+      <button class="op-confirm" id="addrPickerConfirmBtn" data-act-click='confirmAddrPicker' disabled>Confirmar</button>
     </div>
   </div>
 </div>
@@ -1186,7 +1186,7 @@
 <div class="overlay" id="addrSearchModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="backFromAddrSearch()" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='backFromAddrSearch' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title" id="addrSearchHeaderTitle">Restaurante</h2>
@@ -1209,7 +1209,7 @@
         <input type="text" id="addrSearchInput" class="addr-search-input"
                placeholder="Buscar endereço e número"
                autocomplete="off"
-               oninput="onAddrSearchInput()">
+               data-act-input='onAddrSearchInput'>
       </div>
       <div class="addr-google-powered" aria-label="Powered by Google">
         <span>powered by</span>
@@ -1217,7 +1217,7 @@
           <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
         </strong>
       </div>
-      <button class="addr-notfound-btn" onclick="adcUseGeoSearch(true)">Não achei meu endereço</button>
+      <button class="addr-notfound-btn" data-act-click='["adcUseGeoSearch",true]'>Não achei meu endereço</button>
       <div id="addrSuggestions" class="addr-suggestions"></div>
     </div>
   </div>
@@ -1227,7 +1227,7 @@
 <div class="overlay" id="addrMapModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="backFromAddrMap()" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='backFromAddrMap' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Confirme sua localização</h2>
@@ -1243,7 +1243,7 @@
       </div>
     </div>
     <div class="addr-map-footer">
-      <button class="adc-confirm-btn" onclick="confirmAddrMap()">Confirmar localização</button>
+      <button class="adc-confirm-btn" data-act-click='confirmAddrMap'>Confirmar localização</button>
     </div>
   </div>
 </div>
@@ -1252,7 +1252,7 @@
 <div class="overlay" id="addrDetailsModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" onclick="closeModalId('addrDetailsModal')" aria-label="Voltar">
+      <button class="cart-hdr-back" data-act-click='["closeModalId","addrDetailsModal"]' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Endereço de entrega</h2>
@@ -1264,22 +1264,22 @@
         <strong id="addrDetLocationTitle">—</strong>
         <small id="addrDetLocationSub"></small>
       </span>
-      <button class="addr-det-edit-btn" onclick="editAddrDetailsLocation()" aria-label="Editar localização">
+      <button class="addr-det-edit-btn" data-act-click='editAddrDetailsLocation' aria-label="Editar localização">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
     </div>
     <div class="addr-det-scroll">
       <div class="addr-det-form">
         <label class="addr-det-label" for="addrDetCep">CEP *</label>
-        <input type="text" id="addrDetCep" class="addr-det-input" placeholder="00000-000" maxlength="9" inputmode="numeric" oninput="maskCep(this);validateAddrDetails()">
+        <input type="text" id="addrDetCep" class="addr-det-input" placeholder="00000-000" maxlength="9" inputmode="numeric" data-act-input='[["maskCep","$this"],["validateAddrDetails"]]'>
 
         <label class="addr-det-label" for="addrDetStreet">Logradouro *</label>
-        <input type="text" id="addrDetStreet" class="addr-det-input" placeholder="Rua, Avenida, Travessa..." oninput="validateAddrDetails()">
+        <input type="text" id="addrDetStreet" class="addr-det-input" placeholder="Rua, Avenida, Travessa..." data-act-input='validateAddrDetails'>
 
         <label class="addr-det-label" for="addrDetNumber">Número *</label>
-        <input type="text" id="addrDetNumber" class="addr-det-input" placeholder="Ex: 123" inputmode="numeric" oninput="validateAddrDetails()">
+        <input type="text" id="addrDetNumber" class="addr-det-input" placeholder="Ex: 123" inputmode="numeric" data-act-input='validateAddrDetails'>
         <label class="addr-det-checkbox-label">
-          <input type="checkbox" id="addrDetNoNumber" onchange="toggleAddrNoNumber()">
+          <input type="checkbox" id="addrDetNoNumber" data-act-change='toggleAddrNoNumber'>
           <span>Sem número</span>
         </label>
 
@@ -1287,7 +1287,7 @@
         <input type="text" id="addrDetComplement" class="addr-det-input" placeholder="Apto, Bloco, Casa...">
 
         <label class="addr-det-label" for="addrDetNeighborhood">Bairro *</label>
-        <input type="text" id="addrDetNeighborhood" class="addr-det-input" placeholder="Nome do bairro" oninput="validateAddrDetails()">
+        <input type="text" id="addrDetNeighborhood" class="addr-det-input" placeholder="Nome do bairro" data-act-input='validateAddrDetails'>
 
         <label class="addr-det-label" for="addrDetReference">Ponto de referência</label>
         <input type="text" id="addrDetReference" class="addr-det-input" placeholder="Próximo a...">
@@ -1297,7 +1297,7 @@
       </div>
     </div>
     <div class="addr-det-footer">
-      <button class="adc-confirm-btn" id="addrDetSaveBtn" onclick="saveAddressDetails()" disabled>Salvar endereço e concluir</button>
+      <button class="adc-confirm-btn" id="addrDetSaveBtn" data-act-click='saveAddressDetails' disabled>Salvar endereço e concluir</button>
     </div>
   </div>
 </div>
@@ -1305,13 +1305,13 @@
 <!-- SCREEN: LOGIN / IDENTIFICATION -->
 <div class="overlay" id="loginModal">
   <div class="modal modal--login">
-    <button class="login-close" onclick="closeModalId('loginModal')" aria-label="Fechar">✕</button>
+    <button class="login-close" data-act-click='["closeModalId","loginModal"]' aria-label="Fechar">✕</button>
     <div class="login-logo" id="loginLogo"></div>
     <h2 class="login-rest-name">Restaurante</h2>
-    <button class="cart-cta-btn" onclick="openRegisterScreen()">Cadastre-se</button>
-    <button class="login-secondary" onclick="openSigninScreen()">Entrar</button>
+    <button class="cart-cta-btn" data-act-click='openRegisterScreen'>Cadastre-se</button>
+    <button class="login-secondary" data-act-click='openSigninScreen'>Entrar</button>
     <div class="login-policy-links">
-      <button id="privacyPolicyButton" type="button" class="policy-link" onclick="openPolicyScreen('privacy')">Política de privacidade</button>
+      <button id="privacyPolicyButton" type="button" class="policy-link" data-act-click='["openPolicyScreen","privacy"]'>Política de privacidade</button>
     </div>
     <a href="#" class="login-privacy">Política de privacidade</a>
   </div>
@@ -1319,7 +1319,7 @@
 
 <section id="privacyPolicyScreen" class="policy-screen privacy-policy-screen" aria-label="Política de Privacidade">
   <header class="policy-header">
-    <button id="privacyPolicyBack" class="policy-back" type="button" onclick="closePolicyScreen('privacy')" aria-label="Voltar">
+    <button id="privacyPolicyBack" class="policy-back" type="button" data-act-click='["closePolicyScreen","privacy"]' aria-label="Voltar">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="policy-title">Política de Privacidade</h1>
@@ -1331,49 +1331,49 @@
 <!-- SCREEN: REGISTER ("Cadastre-se") -->
 <section id="registerScreen" class="reg-screen" aria-label="Cadastre-se">
   <header class="reg-header">
-    <button class="reg-back" type="button" onclick="closeRegisterScreen()" aria-label="Voltar">
+    <button class="reg-back" type="button" data-act-click='closeRegisterScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="reg-title">Cadastre-se</h1>
   </header>
 
-  <form id="registerForm" class="reg-scroll" novalidate onsubmit="submitRegister(event)">
+  <form id="registerForm" class="reg-scroll" novalidate data-act-submit='["submitRegister","$event"]'>
     <div class="reg-form">
       <div class="reg-field">
         <label class="reg-label" for="regFullName">Nome e Sobrenome</label>
-        <input class="reg-input" id="regFullName" type="text" autocomplete="name" oninput="handleRegFieldInput('regFullName')" onblur="handleRegFieldBlur('regFullName')">
+        <input class="reg-input" id="regFullName" type="text" autocomplete="name" data-act-input='["handleRegFieldInput","regFullName"]' data-act-blur='["handleRegFieldBlur","regFullName"]'>
         <div class="reg-error" id="regFullNameErr"></div>
       </div>
 
       <div class="reg-field">
         <label class="reg-label" for="regEmail">Email</label>
-        <input class="reg-input" id="regEmail" type="email" autocomplete="email" oninput="handleRegFieldInput('regEmail')" onblur="handleRegFieldBlur('regEmail')">
+        <input class="reg-input" id="regEmail" type="email" autocomplete="email" data-act-input='["handleRegFieldInput","regEmail"]' data-act-blur='["handleRegFieldBlur","regEmail"]'>
         <div class="reg-error" id="regEmailErr"></div>
       </div>
 
       <div class="reg-row">
         <div class="reg-field reg-field--half">
           <label class="reg-label" for="regPhone">Seu número de celular</label>
-          <input class="reg-input" id="regPhone" type="tel" inputmode="numeric" placeholder="(00) 0 0000-0000" oninput="maskRegPhone(this); handleRegFieldInput('regPhone')" onblur="handleRegFieldBlur('regPhone')">
+          <input class="reg-input" id="regPhone" type="tel" inputmode="numeric" placeholder="(00) 0 0000-0000" data-act-input='[["maskRegPhone","$this"],["handleRegFieldInput","regPhone"]]' data-act-blur='["handleRegFieldBlur","regPhone"]'>
           <div class="reg-error" id="regPhoneErr"></div>
         </div>
         <div class="reg-field reg-field--half">
           <label class="reg-label" for="regBirth">Data de nascimento</label>
-          <input class="reg-input" id="regBirth" type="tel" inputmode="numeric" placeholder="DD/MM/AAAA" oninput="maskRegBirth(this); handleRegFieldInput('regBirth')" onblur="handleRegFieldBlur('regBirth')">
+          <input class="reg-input" id="regBirth" type="tel" inputmode="numeric" placeholder="DD/MM/AAAA" data-act-input='[["maskRegBirth","$this"],["handleRegFieldInput","regBirth"]]' data-act-blur='["handleRegFieldBlur","regBirth"]'>
           <div class="reg-error" id="regBirthErr"></div>
         </div>
       </div>
 
       <div class="reg-field">
         <label class="reg-label" for="regCpf">Informe o CPF</label>
-        <input class="reg-input" id="regCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" oninput="maskRegCpf(this); handleRegFieldInput('regCpf')" onblur="handleRegFieldBlur('regCpf')">
+        <input class="reg-input" id="regCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" data-act-input='[["maskRegCpf","$this"],["handleRegFieldInput","regCpf"]]' data-act-blur='["handleRegFieldBlur","regCpf"]'>
         <div class="reg-error" id="regCpfErr"></div>
       </div>
 
       <div class="reg-field">
         <label class="reg-label" for="regPassword">Senha</label>
-        <input class="reg-input reg-input--pw" id="regPassword" type="password" autocomplete="new-password" oninput="handleRegFieldInput('regPassword')" onblur="handleRegFieldBlur('regPassword')">
-        <button class="reg-eye" type="button" onclick="toggleRegPassword('regPassword', this)" aria-label="Mostrar senha">
+        <input class="reg-input reg-input--pw" id="regPassword" type="password" autocomplete="new-password" data-act-input='["handleRegFieldInput","regPassword"]' data-act-blur='["handleRegFieldBlur","regPassword"]'>
+        <button class="reg-eye" type="button" data-act-click='["toggleRegPassword","regPassword","$this"]' aria-label="Mostrar senha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </button>
         <div class="reg-error" id="regPasswordErr"></div>
@@ -1381,8 +1381,8 @@
 
       <div class="reg-field">
         <label class="reg-label" for="regPasswordConfirm">Confirme sua senha</label>
-        <input class="reg-input reg-input--pw" id="regPasswordConfirm" type="password" autocomplete="new-password" oninput="handleRegFieldInput('regPasswordConfirm')" onblur="handleRegFieldBlur('regPasswordConfirm')">
-        <button class="reg-eye" type="button" onclick="toggleRegPassword('regPasswordConfirm', this)" aria-label="Mostrar senha">
+        <input class="reg-input reg-input--pw" id="regPasswordConfirm" type="password" autocomplete="new-password" data-act-input='["handleRegFieldInput","regPasswordConfirm"]' data-act-blur='["handleRegFieldBlur","regPasswordConfirm"]'>
+        <button class="reg-eye" type="button" data-act-click='["toggleRegPassword","regPasswordConfirm","$this"]' aria-label="Mostrar senha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </button>
         <div class="reg-error" id="regPasswordConfirmErr"></div>
@@ -1395,9 +1395,9 @@
       </label>
 
       <label class="reg-check">
-        <input class="reg-check-input" id="regPrivacy" type="checkbox" onchange="handleRegPrivacyInput()">
+        <input class="reg-check-input" id="regPrivacy" type="checkbox" data-act-change='handleRegPrivacyInput'>
         <span class="reg-check-box" aria-hidden="true"></span>
-        <span class="reg-check-label">Declaro que li e concordo com a <span class="reg-privacy-link" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();openPolicyScreen('privacy')">política de privacidade</span></span>
+        <span class="reg-check-label">Declaro que li e concordo com a <span class="reg-privacy-link" role="link" tabindex="0" data-act-click='[["$prevent"],["$stop"],["openPolicyScreen","privacy"]]'>política de privacidade</span></span>
       </label>
       <div class="reg-error reg-error--check" id="regPrivacyErr"></div>
 
@@ -1416,24 +1416,24 @@
 <!-- SCREEN: LOGIN ("Entrar") -->
 <section id="loginScreen" class="lgn-screen" aria-label="Entrar">
   <header class="lgn-header">
-    <button class="lgn-back" type="button" onclick="closeSigninScreen()" aria-label="Voltar">
+    <button class="lgn-back" type="button" data-act-click='closeSigninScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="lgn-title">Entrar</h1>
   </header>
 
-  <form id="loginForm" class="lgn-scroll" novalidate onsubmit="submitLogin(event)">
+  <form id="loginForm" class="lgn-scroll" novalidate data-act-submit='["submitLogin","$event"]'>
     <div class="lgn-form">
       <div class="lgn-field">
         <label class="lgn-label" for="loginEmail">Email ou número de telefone</label>
-        <input class="lgn-input" id="loginEmail" type="text" autocomplete="username" inputmode="email" oninput="handleLoginFieldInput('loginEmail')" onblur="handleLoginFieldBlur('loginEmail')">
+        <input class="lgn-input" id="loginEmail" type="text" autocomplete="username" inputmode="email" data-act-input='["handleLoginFieldInput","loginEmail"]' data-act-blur='["handleLoginFieldBlur","loginEmail"]'>
         <div class="lgn-error" id="loginEmailErr"></div>
       </div>
 
       <div class="lgn-field">
         <label class="lgn-label" for="loginPassword">Senha</label>
-        <input class="lgn-input lgn-input--pw" id="loginPassword" type="password" autocomplete="current-password" oninput="handleLoginFieldInput('loginPassword')" onblur="handleLoginFieldBlur('loginPassword')">
-        <button class="lgn-eye" type="button" onclick="toggleRegPassword('loginPassword', this)" aria-label="Mostrar senha">
+        <input class="lgn-input lgn-input--pw" id="loginPassword" type="password" autocomplete="current-password" data-act-input='["handleLoginFieldInput","loginPassword"]' data-act-blur='["handleLoginFieldBlur","loginPassword"]'>
+        <button class="lgn-eye" type="button" data-act-click='["toggleRegPassword","loginPassword","$this"]' aria-label="Mostrar senha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </button>
         <div class="lgn-error" id="loginPasswordErr"></div>
@@ -1445,7 +1445,7 @@
       </div>
 
       <div class="lgn-forgot-row">
-        <button class="lgn-forgot" type="button" onclick="loginForgotPassword()">Esqueceu a sua senha?</button>
+        <button class="lgn-forgot" type="button" data-act-click='loginForgotPassword'>Esqueceu a sua senha?</button>
       </div>
     </div>
   </form>
@@ -1458,7 +1458,7 @@
 <!-- SCREEN: CODE VERIFICATION (email verification / password reset) -->
 <section id="verifyScreen" class="vfy-screen" aria-label="Validação de e-mail">
   <header class="vfy-header">
-    <button class="vfy-back" type="button" onclick="closeVerifyScreen()" aria-label="Voltar">
+    <button class="vfy-back" type="button" data-act-click='closeVerifyScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="vfy-htitle" id="vfyHeaderTitle">Validação de e-mail</h1>
@@ -1468,14 +1468,14 @@
     <div class="vfy-body">
       <p class="vfy-text" id="vfyText"></p>
 
-      <form id="vfyForm" novalidate onsubmit="submitVerify(event)">
-        <div class="vfy-code" id="vfyCode" onpaste="handleVfyPaste(event)">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" oninput="handleVfyInput(this,0)" onkeydown="handleVfyKeydown(event,0)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" oninput="handleVfyInput(this,1)" onkeydown="handleVfyKeydown(event,1)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" oninput="handleVfyInput(this,2)" onkeydown="handleVfyKeydown(event,2)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" oninput="handleVfyInput(this,3)" onkeydown="handleVfyKeydown(event,3)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" oninput="handleVfyInput(this,4)" onkeydown="handleVfyKeydown(event,4)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" oninput="handleVfyInput(this,5)" onkeydown="handleVfyKeydown(event,5)" onfocus="this.select()">
+      <form id="vfyForm" novalidate data-act-submit='["submitVerify","$event"]'>
+        <div class="vfy-code" id="vfyCode" data-act-paste='["handleVfyPaste","$event"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" data-act-input='["handleVfyInput","$this",0]' data-act-keydown='["handleVfyKeydown","$event",0]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" data-act-input='["handleVfyInput","$this",1]' data-act-keydown='["handleVfyKeydown","$event",1]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" data-act-input='["handleVfyInput","$this",2]' data-act-keydown='["handleVfyKeydown","$event",2]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" data-act-input='["handleVfyInput","$this",3]' data-act-keydown='["handleVfyKeydown","$event",3]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" data-act-input='["handleVfyInput","$this",4]' data-act-keydown='["handleVfyKeydown","$event",4]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" data-act-input='["handleVfyInput","$this",5]' data-act-keydown='["handleVfyKeydown","$event",5]' data-act-focus='["$select"]'>
         </div>
         <div class="vfy-msg" id="vfyMsg" role="alert">
           <span class="vfy-msg-icon" aria-hidden="true">!</span>
@@ -1484,21 +1484,21 @@
       </form>
 
       <div class="vfy-resend-row">
-        <button class="vfy-resend" id="vfyResend" type="button" onclick="resendVfyCode()">Reenviar código</button>
+        <button class="vfy-resend" id="vfyResend" type="button" data-act-click='resendVfyCode'>Reenviar código</button>
       </div>
     </div>
   </div>
 
   <div class="vfy-bottom">
     <button class="vfy-submit" id="vfySubmitBtn" type="submit" form="vfyForm" disabled>Validar código</button>
-    <button class="vfy-foot" type="button" onclick="closeVerifyScreen()">Voltar</button>
+    <button class="vfy-foot" type="button" data-act-click='closeVerifyScreen'>Voltar</button>
   </div>
 </section>
 
 <!-- SCREEN: NEW PASSWORD (password reset step 3) -->
 <section id="resetPasswordScreen" class="vfy-screen" aria-label="Recuperar senha">
   <header class="vfy-header">
-    <button class="vfy-back" type="button" onclick="closeResetPasswordScreen()" aria-label="Voltar">
+    <button class="vfy-back" type="button" data-act-click='closeResetPasswordScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="vfy-htitle">Redefina sua senha</h1>
@@ -1508,19 +1508,19 @@
     <div class="vfy-body">
       <p class="vfy-text">Cadastre uma nova senha para acessar sua conta.</p>
 
-      <form id="resetPwForm" novalidate onsubmit="submitResetPassword(event)">
+      <form id="resetPwForm" novalidate data-act-submit='["submitResetPassword","$event"]'>
         <div class="vfy-field">
           <label class="vfy-label" for="resetNewPw">Crie uma senha</label>
-          <input class="vfy-input" id="resetNewPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
-          <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetNewPw', this)" aria-label="Mostrar senha">
+          <input class="vfy-input" id="resetNewPw" type="password" autocomplete="new-password" data-act-input='handleResetPwInput'>
+          <button class="vfy-eye" type="button" data-act-click='["toggleRegPassword","resetNewPw","$this"]' aria-label="Mostrar senha">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           </button>
           <div class="vfy-field-err" id="resetNewPwErr"></div>
         </div>
         <div class="vfy-field">
           <label class="vfy-label" for="resetConfirmPw">Confirme sua senha</label>
-          <input class="vfy-input" id="resetConfirmPw" type="password" autocomplete="new-password" oninput="handleResetPwInput()">
-          <button class="vfy-eye" type="button" onclick="toggleRegPassword('resetConfirmPw', this)" aria-label="Mostrar senha">
+          <input class="vfy-input" id="resetConfirmPw" type="password" autocomplete="new-password" data-act-input='handleResetPwInput'>
+          <button class="vfy-eye" type="button" data-act-click='["toggleRegPassword","resetConfirmPw","$this"]' aria-label="Mostrar senha">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           </button>
           <div class="vfy-field-err" id="resetConfirmPwErr"></div>
@@ -1537,7 +1537,7 @@
 <!-- SCREEN: FORGOT PASSWORD (request reset code) -->
 <section id="forgotPasswordScreen" class="vfy-screen" aria-label="Redefina sua senha">
   <header class="vfy-header">
-    <button class="vfy-back" type="button" onclick="closeForgotPasswordScreen()" aria-label="Voltar">
+    <button class="vfy-back" type="button" data-act-click='closeForgotPasswordScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="vfy-htitle">Redefina sua senha</h1>
@@ -1547,10 +1547,10 @@
     <div class="vfy-body">
       <p class="vfy-text">Insira o email associado à sua conta e enviaremos código de verificação para redefinir a sua senha.</p>
 
-      <form id="forgotPwForm" novalidate onsubmit="submitForgotPassword(event)">
+      <form id="forgotPwForm" novalidate data-act-submit='["submitForgotPassword","$event"]'>
         <div class="vfy-field">
           <label class="vfy-label" for="forgotEmail">Email</label>
-          <input class="vfy-input vfy-input--plain" id="forgotEmail" type="email" autocomplete="email" inputmode="email" oninput="handleForgotEmailInput()">
+          <input class="vfy-input vfy-input--plain" id="forgotEmail" type="email" autocomplete="email" inputmode="email" data-act-input='handleForgotEmailInput'>
         </div>
         <div class="vfy-field-err" id="forgotEmailErr"></div>
       </form>
@@ -1565,7 +1565,7 @@
 <!-- SCREEN: RECOVER PASSWORD — code step (own screen, not the e-mail verify one) -->
 <section id="recoverCodeScreen" class="vfy-screen" aria-label="Redefina sua senha">
   <header class="vfy-header">
-    <button class="vfy-back" type="button" onclick="closeRecoverCodeScreen()" aria-label="Voltar">
+    <button class="vfy-back" type="button" data-act-click='closeRecoverCodeScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="vfy-htitle">Redefina sua senha</h1>
@@ -1576,14 +1576,14 @@
       <p class="vfy-text" id="recEmailText"></p>
       <div class="rec-code-label">Insira o código recebido</div>
 
-      <form id="recForm" novalidate onsubmit="submitRecoverCode(event)">
-        <div class="vfy-code" id="recCode" onpaste="handleRecPaste(event)">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" oninput="handleRecInput(this,0)" onkeydown="handleRecKeydown(event,0)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" oninput="handleRecInput(this,1)" onkeydown="handleRecKeydown(event,1)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" oninput="handleRecInput(this,2)" onkeydown="handleRecKeydown(event,2)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" oninput="handleRecInput(this,3)" onkeydown="handleRecKeydown(event,3)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" oninput="handleRecInput(this,4)" onkeydown="handleRecKeydown(event,4)" onfocus="this.select()">
-          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" oninput="handleRecInput(this,5)" onkeydown="handleRecKeydown(event,5)" onfocus="this.select()">
+      <form id="recForm" novalidate data-act-submit='["submitRecoverCode","$event"]'>
+        <div class="vfy-code" id="recCode" data-act-paste='["handleRecPaste","$event"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Dígito 1" data-act-input='["handleRecInput","$this",0]' data-act-keydown='["handleRecKeydown","$event",0]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 2" data-act-input='["handleRecInput","$this",1]' data-act-keydown='["handleRecKeydown","$event",1]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 3" data-act-input='["handleRecInput","$this",2]' data-act-keydown='["handleRecKeydown","$event",2]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 4" data-act-input='["handleRecInput","$this",3]' data-act-keydown='["handleRecKeydown","$event",3]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 5" data-act-input='["handleRecInput","$this",4]' data-act-keydown='["handleRecKeydown","$event",4]' data-act-focus='["$select"]'>
+          <input class="vfy-digit" type="tel" inputmode="numeric" maxlength="1" aria-label="Dígito 6" data-act-input='["handleRecInput","$this",5]' data-act-keydown='["handleRecKeydown","$event",5]' data-act-focus='["$select"]'>
         </div>
         <div class="vfy-msg" id="recMsg" role="alert">
           <span class="vfy-msg-icon" aria-hidden="true">!</span>
@@ -1593,7 +1593,7 @@
 
       <div class="vfy-resend-row">
         <span>Não recebeu o código?</span>
-        <button class="vfy-resend" type="button" onclick="resendRecoverCode()">Reenviar</button>
+        <button class="vfy-resend" type="button" data-act-click='resendRecoverCode'>Reenviar</button>
       </div>
     </div>
   </div>
@@ -1604,18 +1604,18 @@
 </section>
 
 <!-- MODAL: e-mail not found (password recovery) -->
-<div class="vfy-alert-overlay" id="forgotNotFoundModal" onclick="closeForgotNotFound(event)">
+<div class="vfy-alert-overlay" id="forgotNotFoundModal" data-act-click='["closeForgotNotFound","$event"]'>
   <div class="vfy-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="forgotNotFoundTitle">
     <h2 class="vfy-alert-title" id="forgotNotFoundTitle">E-mail não encontrado</h2>
-    <button class="vfy-alert-btn" type="button" onclick="closeForgotNotFound()">Tentar novamente</button>
+    <button class="vfy-alert-btn" type="button" data-act-click='closeForgotNotFound'>Tentar novamente</button>
   </div>
 </div>
 
 <!-- SCREEN: COUPON DETAILS -->
-<div class="coupon-detail-overlay" id="couponDetailOverlay" onclick="closeCouponDetail(event)">
+<div class="coupon-detail-overlay" id="couponDetailOverlay" data-act-click='["closeCouponDetail","$event"]'>
   <section class="coupon-detail-screen" id="couponDetailScreen" aria-label="Detalhes do cupom">
     <header class="coupon-detail-header">
-      <button class="coupon-detail-back" onclick="closeCouponDetail()" aria-label="Voltar">
+      <button class="coupon-detail-back" data-act-click='closeCouponDetail' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <strong>Usar cupom</strong>
@@ -1639,16 +1639,16 @@
       </div>
     </div>
     <footer class="coupon-detail-footer">
-      <button class="coupon-detail-use" onclick="confirmCouponDetail()">Usar cupom</button>
+      <button class="coupon-detail-use" data-act-click='confirmCouponDetail'>Usar cupom</button>
     </footer>
   </section>
 </div>
 
 <!-- MODAL: CASHBACK STATEMENT -->
-<div class='overlay' id='cashbackStatementModal' onclick='closeCashbackStatement(event)'>
+<div class='overlay' id='cashbackStatementModal' data-act-click='["closeCashbackStatement","$event"]'>
   <div class='modal cashback-statement-modal' role='dialog' aria-modal='true' aria-labelledby='cashbackStatementTitle'>
     <div class='modal-header cashback-statement-header'>
-      <button class='modal-close cashback-statement-back' type='button' onclick='closeCashbackStatement()' aria-label='Voltar'>
+      <button class='modal-close cashback-statement-back' type='button' data-act-click='closeCashbackStatement' aria-label='Voltar'>
         <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' aria-hidden='true'><path d='M19 12H5'/><path d='m12 19-7-7 7-7'/></svg>
       </button>
       <h2 class='modal-title' id='cashbackStatementTitle'>Ver extrato</h2>
@@ -1662,11 +1662,11 @@
 </div>
 
 <!-- MODAL: SERVICE FEE -->
-<div class="overlay" id="serviceFeeModal" onclick="closeModal(event, 'serviceFeeModal')">
+<div class="overlay" id="serviceFeeModal" data-act-click='["closeModal","$event","serviceFeeModal"]'>
   <div class="modal modal--info">
     <div class="modal-header">
       <h2 class="modal-title">Taxa de serviço</h2>
-      <button class="modal-close" onclick="closeModalId('serviceFeeModal')">✕</button>
+      <button class="modal-close" data-act-click='["closeModalId","serviceFeeModal"]'>✕</button>
     </div>
     <div class="modal-body">
       <p>A taxa de serviço contribui para custos operacionais da plataforma, manutenção, melhorias contínuas e suporte ao sistema.</p>
@@ -1674,11 +1674,11 @@
   </div>
 </div>
 
-<div class="addr-delete-confirm" id="logoutConfirm" aria-hidden="true" onclick="closeLogoutConfirm()">
-  <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" onclick="event.stopPropagation()">
+<div class="addr-delete-confirm" id="logoutConfirm" aria-hidden="true" data-act-click='closeLogoutConfirm'>
+  <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" data-act-click='["$stop"]'>
     <h3 class="addr-delete-title" id="logoutConfirmTitle">Deseja sair?</h3>
-    <button class="addr-delete-cancel" type="button" onclick="cancelLogout()">Cancelar</button>
-    <button class="addr-delete-yes" type="button" onclick="confirmLogout()">Sair</button>
+    <button class="addr-delete-cancel" type="button" data-act-click='cancelLogout'>Cancelar</button>
+    <button class="addr-delete-yes" type="button" data-act-click='confirmLogout'>Sair</button>
   </div>
 </div>
 <!-- All app scripts are bundled by Vite via this single module entry, which

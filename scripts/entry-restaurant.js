@@ -20,6 +20,7 @@ import './utils/storage-keys.js';
 import './services/api-routes.js';
 import './utils/restaurant-slug.js';
 import './utils/brand-theme.js';
+import './utils/actions.js';
 import './utils/slugify.js';
 import './utils/dom.js';
 import './utils/validators.js';

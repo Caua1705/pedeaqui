@@ -69,6 +69,14 @@
   window.openCashbackStatement=async()=>{const auth=window.PedeAquiCustomerAuth;if(!auth?.getToken?.()){window.openLoginScreen?.();return}const modal=$('cashbackStatementModal');modal?.style.removeProperty('display');modal?.classList.add('active');render({transactions:{status:'loading'}});if(!auth.isSessionReady?.())await window.syncCustomerSession?.();if(!auth.getToken?.()){modal?.classList.remove('active');window.openLoginScreen?.();return}load(false)};
   window.retryCashbackStatement=()=>load(true);
   window.closeCashbackStatement=event=>{if(event&&event.target!==event.currentTarget)return;requestVersion+=1;$('cashbackStatementModal')?.classList.remove('active')};
+  // Este arquivo carrega DEPOIS de restaurant-page.js e sempre foi a versão que
+  // vencia em window. Registrar aqui mantém exatamente essa precedência agora
+  // que o markup resolve as ações pelo registro.
+  window.RapidexActions?.register({
+    openCashbackStatement:window.openCashbackStatement,
+    retryCashbackStatement:window.retryCashbackStatement,
+    closeCashbackStatement:window.closeCashbackStatement
+  });
   document.addEventListener('click',event=>{
     const overlay=$('cashbackStatementModal');
     if(!event.target.closest('.mob-bottom-nav .mob-nav-item,#cartStickyBtn')||!overlay?.classList.contains('active'))return;

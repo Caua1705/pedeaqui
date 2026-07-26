@@ -510,6 +510,13 @@ a{text-decoration:none;color:inherit}
 }
 
 /* Modals */
+/* NÃO acrescente `-webkit-backdrop-filter` aqui nem em nenhuma regra que
+   desligue este blur. O minificador do build colapsa o par padrão+prefixado
+   mantendo só o prefixado, que o Chrome atual não reconhece — o resultado é a
+   declaração sumir do bundle. Foi assim que os 14 `backdrop-filter:none` dos
+   modais de tela cheia foram apagados e o app inteiro passou a renderizar
+   desfocado atrás de overlays transparentes. O esbuild já emite o prefixo
+   sozinho. Ver tests/unit/css-vendor-prefix.test.js. */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.3s ease}
 .overlay.active{opacity:1;pointer-events:auto}
 .modal{background:var(--bg);width:100%;max-width:600px;border-radius:20px 20px 0 0;border:1px solid var(--bd3);border-bottom:none;display:flex;flex-direction:column;max-height:90vh;transform:translateY(100%);transition:.3s cubic-bezier(0.2,0.8,0.2,1);position:relative}
@@ -742,7 +749,6 @@ a{text-decoration:none;color:inherit}
     background:#ffffff;
     border-bottom:1px solid #ebebeb;
     backdrop-filter:none;
-    -webkit-backdrop-filter:none;
     padding:0;
   }
   .search-cat-inner{gap:0;padding:0}
@@ -1285,7 +1291,10 @@ a{text-decoration:none;color:inherit}
     padding:12px 16px max(18px,env(safe-area-inset-bottom));
     gap:12px;
   }
-  #loginModal,#serviceFeeModal,#operationModal,#addAddressModal,#addrSearchModal,#addrMapModal,#addrDetailsModal,#addrPickerModal{background:transparent}
+  /* Tirar o scrim tem de tirar o blur junto: sem fundo, o backdrop-filter de
+     `.overlay` vira uma camada invisível que desfoca o app inteiro enquanto o
+     painel por cima continua nítido. */
+  #loginModal,#serviceFeeModal,#operationModal,#addAddressModal,#addrSearchModal,#addrMapModal,#addrDetailsModal,#addrPickerModal{background:transparent;backdrop-filter:none}
   #operationModal .modal--fs,#loginModal .modal--login,#addAddressModal .modal--fs,#addrSearchModal .modal--fs,#addrMapModal .modal--fs,#addrDetailsModal .modal--fs,#addrPickerModal .modal--fs{
     position:fixed;inset:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;
     border-radius:0;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
@@ -1588,7 +1597,6 @@ a{text-decoration:none;color:inherit}
 #orderReviewModal{
   background:transparent !important;
   backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
   opacity:1 !important;
   transition:none !important;
 }
@@ -1829,7 +1837,6 @@ a{text-decoration:none;color:inherit}
 #confirmModal{
   background:rgba(0,0,0,.5);
   backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
   opacity:0;
   transition:.3s ease;
   align-items:center;
@@ -1888,7 +1895,8 @@ a{text-decoration:none;color:inherit}
   .modal--product .modal-close{margin-left:auto;background:rgba(255,255,255,.92);color:#222;box-shadow:0 6px 18px rgba(0,0,0,.12)}
   .modal--product .modal-body{flex:1;padding:22px 18px 18px;border-radius:24px 24px 0 0;margin-top:-24px;background:#fff;position:relative}
   .modal--product .modal-footer{padding:12px 16px max(18px,env(safe-area-inset-bottom));gap:12px}
-  #loginModal,#operationModal,#addAddressModal,#addrSearchModal,#addrMapModal,#addrDetailsModal,#addrPickerModal{background:transparent !important;opacity:0;transition:.2s ease}
+  /* idem: fundo transparente e blur andam juntos (ver nota em .overlay). */
+  #loginModal,#operationModal,#addAddressModal,#addrSearchModal,#addrMapModal,#addrDetailsModal,#addrPickerModal{background:transparent !important;backdrop-filter:none !important;opacity:0;transition:.2s ease}
   #loginModal.active,#operationModal.active,#addAddressModal.active,#addrSearchModal.active,#addrMapModal.active,#addrDetailsModal.active,#addrPickerModal.active{opacity:1}
   #operationModal .modal--fs,#loginModal .modal--login,#addAddressModal .modal--fs,#addrSearchModal .modal--fs,#addrMapModal .modal--fs,#addrDetailsModal .modal--fs,#addrPickerModal .modal--fs{
     position:fixed;inset:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;
@@ -2390,7 +2398,6 @@ a{text-decoration:none;color:inherit}
     padding:0 12px;
     background:rgba(255,255,255,.96);
     backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
   }
   .nav-left,.nav-actions{min-width:84px}
   .nav-back,.mob-search-btn{

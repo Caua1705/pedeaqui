@@ -22,7 +22,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--f
 .gl:last-child{border-right:1px solid rgba(255,255,255,.04)}
 
 /* ── NAV ── */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,4vw,48px);height:64px;background:rgba(5,5,7,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,4vw,48px);height:64px;background:rgba(5,5,7,.78);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
 .logo-img{width:34px;height:34px;object-fit:contain}
 .logo-name{font-size:1rem;font-weight:700;letter-spacing:-.03em;color:var(--fg)}

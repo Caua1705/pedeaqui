@@ -12,7 +12,7 @@
 .prod-add-btn{right:0!important;bottom:0!important;width:30px!important;height:30px!important}
 
 /* Store info modal and login screen based on the mobile references. */
-#infoModal{background:#f7f7f7!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
+#infoModal{background:#f7f7f7!important;backdrop-filter:none!important;align-items:stretch!important}
 #infoModal .modal--store-info{width:100%!important;max-width:430px!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#f7f7f7!important;transform:translateY(0)!important;display:flex!important;flex-direction:column!important}
 .store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:#fff;border-bottom:1px solid #e9e9e9;flex-shrink:0}
 .store-info-header h2{font-size:1rem;font-weight:800;color:#1f2933;text-align:center}
@@ -41,7 +41,7 @@
 .store-address-card h3{font-size:.9rem;color:#333;margin-bottom:10px}
 .store-address-card p{font-size:.8rem;color:#8a8a8a;line-height:1.55;margin-bottom:12px}
 
-#loginModal{background:#EEF3FA!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important;overflow:hidden!important}
+#loginModal{background:#EEF3FA!important;backdrop-filter:none!important;align-items:stretch!important;overflow:hidden!important}
 #loginModal .modal--login{position:relative!important;width:calc(100% - 20px)!important;max-width:400px!important;min-height:calc(100dvh - 20px)!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;overflow:hidden!important;margin:10px auto!important;border:0!important;border-radius:14px!important;background:#fff!important;transform:translateY(0)!important;padding:0 18px 20px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important}
 .modal--login .login-close{position:absolute!important;top:20px!important;right:20px!important;width:42px!important;height:42px!important;border-radius:10px!important;background:#F5F5F5!important;color:#a0a0a0!important;border:0!important;font-size:11.5px!important;font-weight:900!important;-webkit-text-stroke:0.45px currentColor!important;display:flex!important;align-items:center!important;justify-content:center!important}
 .modal--login .login-logo{width:150px!important;height:150px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:85px auto 0!important;background:var(--brand-accent)!important}
@@ -5314,7 +5314,6 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
     opacity:1!important;
     background:rgba(0,0,0,0)!important;
     backdrop-filter:none!important;
-    -webkit-backdrop-filter:none!important;
     visibility:hidden!important;
     pointer-events:none!important;
     transition:background .28s ease,visibility 0s linear .6s!important;
@@ -5935,7 +5934,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Store information screen - reference layout. */
-#infoModal{background:#eef3fa!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:stretch!important}
+#infoModal{background:#eef3fa!important;backdrop-filter:none!important;align-items:stretch!important}
 #infoModal .modal--store-info{width:100%!important;max-width:430px!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#ffffff!important;transform:none!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
 #infoModal .store-info-header{height:88px!important;min-height:88px!important;padding:20px 27px 17px!important;display:grid!important;grid-template-columns:42px 1fr 42px!important;align-items:center!important;background:#ffffff!important;border-bottom:1px solid #eeeeee!important}
 #infoModal .store-info-header h2{color:#202124!important;font-size:16px!important;line-height:22px!important;font-weight:700!important;text-align:center!important}
@@ -8255,19 +8254,16 @@ body.menu-tab .product-card.is-pressing{
 #addrPickerModal,
 #addrPickerModal.active{
   backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
 }
 
 /* Address picker opened from profile uses the same dimming effect as coupon details. */
 #addrPickerModal.from-profile{
   background:rgba(0,0,0,0)!important;
   backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
 }
 #addrPickerModal.from-profile.active{
   background:rgba(0,0,0,.42)!important;
   backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
   transition:background .1s ease-out,visibility 0s linear 0s!important;
 }
 
@@ -9714,7 +9710,7 @@ body.menu-tab .product-card.is-pressing{
 }
 /* Checkout payment method screen matched to the mobile reference. */
 @media(max-width:767px){
-  #paymentMethodModal{z-index:280!important;display:flex!important;align-items:stretch!important;justify-content:center!important;background:rgba(0,0,0,0)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;opacity:1!important;visibility:hidden!important;pointer-events:none!important;transition:background .28s ease,visibility 0s linear .6s!important}
+  #paymentMethodModal{z-index:280!important;display:flex!important;align-items:stretch!important;justify-content:center!important;background:rgba(0,0,0,0)!important;backdrop-filter:none!important;opacity:1!important;visibility:hidden!important;pointer-events:none!important;transition:background .28s ease,visibility 0s linear .6s!important}
   #paymentMethodModal.active{background:rgba(0,0,0,.42)!important;visibility:visible!important;pointer-events:auto!important;transition:background .28s ease,visibility 0s linear 0s!important}
   #paymentMethodModal .payment-method-screen{position:relative!important;display:flex!important;flex-direction:column!important;width:100%!important;max-width:414px!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;background:#f8f6f5!important;transform:translateX(100%)!important;transition:transform .6s ease!important}
   #paymentMethodModal.active.is-entered .payment-method-screen{transform:translateX(0)!important;transition:transform .53s ease!important}

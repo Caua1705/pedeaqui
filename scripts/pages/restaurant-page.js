@@ -544,12 +544,20 @@
     renderCashbackStatement(service?.getState?.());
   }
 
+  function handleHomeLoginPromptClick() {
+    if (isLogged()) return;
+    openLoginScreen();
+  }
+
   function renderHomeLoginPrompt() {
     const loginPrompt = $('homeLoginPrompt');
     if (!loginPrompt) return;
+    const logged = isLogged();
     const name = firstName(customer?.name);
-    loginPrompt.textContent = name ? `Olá, ${name}` : 'Entre ou cadastre-se';
-    loginPrompt.onclick = name ? mobNavProfile : () => openLoginScreen();
+    loginPrompt.textContent = logged ? `Olá, ${name || 'Cliente'}` : 'Entre ou cadastre-se';
+    loginPrompt.dataset.actClick = 'handleHomeLoginPromptClick';
+    loginPrompt.disabled = logged;
+    loginPrompt.setAttribute('aria-disabled', String(logged));
   }
 
   // Sem fallback: se a URL não identifica um restaurante, o slug é vazio e o
@@ -7299,7 +7307,7 @@
 
   const ACTIONS = {
     couponArtImageFailed,
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
+    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     openOrderReview, closeOrderReview, submitOrder, closeOrderSuccess,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,

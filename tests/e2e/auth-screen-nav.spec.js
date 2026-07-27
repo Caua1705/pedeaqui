@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
 
 // Fase 5, bloco C2. A barra inferior some quando uma tela de autenticação abre.
 //
@@ -83,6 +83,22 @@ test('churn de classe no resto da página não liga a supressão', async ({ page
 
   await expect(page.locator('body')).not.toHaveClass(/auth-screen-open/);
   await expect(page.locator('#mobBottomNav')).toHaveCount(1);
+});
+
+test('saudação da Home fica inerte quando o cliente está conectado', async ({ page }) => {
+  await seedPickupSession(page);
+  await boot(page);
+  await page.evaluate(() => window.act('closeOperationScreen'));
+
+  const greeting = page.locator('#homeLoginPrompt');
+  await expect(greeting).toHaveText(/Olá, E2E/);
+  await expect(greeting).toBeDisabled();
+  await page.locator('.mob-rest-name').click();
+  await greeting.evaluate(button => button.click());
+
+  await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#mobViewProfile')).not.toHaveClass(/active/);
+  await expect(page.locator('body')).toHaveClass(/home-tab/);
 });
 
 for (const [label, action] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavClub']]) {

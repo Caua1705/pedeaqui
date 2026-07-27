@@ -63,4 +63,3 @@
   text-align:center;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:.2s ease;
 }
 .coupon-notice.is-visible{opacity:1;transform:translate(-50%,0)}
-.cart-coupon-discount-row{color:#267a43;font-weight:700}

@@ -84,3 +84,31 @@ test('churn de classe no resto da página não liga a supressão', async ({ page
   await expect(page.locator('body')).not.toHaveClass(/auth-screen-open/);
   await expect(page.locator('#mobBottomNav')).toHaveCount(1);
 });
+
+for (const [label, action] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavClub']]) {
+  test(`${label} deslogado preserva o widget da Home durante a abertura do login`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await boot(page);
+    await page.evaluate(() => window.act('closeOperationScreen'));
+
+    await expect.poll(() => page.evaluate(() => {
+      window.scrollTo({ top: 500, behavior: 'auto' });
+      return window.scrollY;
+    })).toBeGreaterThan(100);
+
+    const widget = page.locator('.home-sticky-header .delivery-widget');
+    const before = await widget.boundingBox();
+    expect((before?.y || 0) + (before?.height || 0)).toBeGreaterThan(0);
+
+    await page.evaluate(navAction => window.act(navAction), action);
+    await expect(page.locator('#loginModal')).toHaveClass(/active/);
+    await expect(page.locator('#loginModal')).toHaveClass(/from-bottom-nav/);
+    await expect.poll(() => page.locator('#loginModal').evaluate(modal =>
+      getComputedStyle(modal).backgroundColor
+    )).toBe('rgba(0, 0, 0, 0)');
+
+    const after = await widget.boundingBox();
+    expect((after?.y || 0) + (after?.height || 0)).toBeGreaterThan(0);
+    expect(Math.abs((after?.y || 0) - (before?.y || 0))).toBeLessThanOrEqual(1);
+  });
+}

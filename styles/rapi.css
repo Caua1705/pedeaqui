@@ -302,6 +302,14 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
   background: rgba(0, 0, 0, 0.42) !important;
 }
 
+/* Perfil/Clube deslogado: o painel branco entra por cima da tela atual. A
+   camada do overlay precisa continuar transparente durante esse movimento;
+   um scrim instantâneo fazia localização + identidade da Home desaparecerem
+   antes de o painel realmente cobri-los. */
+#loginModal.active.from-bottom-nav:not(.signin-open) {
+  background: transparent !important;
+}
+
 body.home-tab .home-coupons-section .coupon-use-btn,
 body.home-tab .coupon-rail .coupon-use-btn {
   color: #555555 !important;

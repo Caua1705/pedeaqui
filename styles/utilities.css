@@ -5680,6 +5680,14 @@ body.soft-scroll-locked.product-modal-open{
   overflow-x:hidden!important;
   overflow-y:auto!important;
 }
+/* Opening guest login from a scrolled Home must not replace the viewport as
+   the sticky header's scroll container. Otherwise the location widget jumps
+   back to its off-screen document position while the login panel slides in. */
+html:has(body.home-tab.soft-scroll-locked.modal-open:has(#loginModal.active)),
+body.home-tab.soft-scroll-locked.modal-open:has(#loginModal.active){
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+}
 /* Product detail screen: reference-aligned 408x250 hero and footer controls. */
 @media(max-width:767px){
   #productModal{

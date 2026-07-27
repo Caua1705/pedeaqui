@@ -35,6 +35,7 @@
   let currentProd = null;
   let pmQty = 1;
   let pmSelectedOptions = {};
+  let editingCartItemUid = null;
   let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
   // paymentMethod = rótulo exibido ("Pix"); paymentMethodKey = chave da UI ("pix");
@@ -261,6 +262,7 @@
     paymentMethodKey = '';
     paymentApiTypeByKey.clear();
     currentProd = null;
+    editingCartItemUid = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewPromise = null;
@@ -1104,7 +1106,7 @@
 
   function resetMenuLoginState() {
     document.body.classList.remove('menu-login-open');
-    $('loginModal')?.classList.remove('from-add-address', 'from-coupon');
+    $('loginModal')?.classList.remove('from-add-address', 'from-coupon', 'from-bottom-nav');
     if (loginReturnNavId && !isLogged() && document.body.classList.contains('menu-tab')) {
       setMobNavActive(loginReturnNavId);
     }
@@ -1986,6 +1988,7 @@
   function openProduct(id) {
     currentProd = products.find(p => String(p.id) === String(id));
     if (!currentProd) return;
+    editingCartItemUid = null;
     pmQty = 1;
     pmSelectedOptions = {};
     $('pmName').textContent = currentProd.name;
@@ -2009,7 +2012,6 @@
     showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
-    if ($('pmAddBtn')) $('pmAddBtn').onclick = addToCart;
     renderProductOptions();
     updatePmUI();
     openModal('productModal');
@@ -2207,6 +2209,8 @@
     const selected_options_snapshot = selectedOptionsSnapshot();
     const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
       || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: newCartItemUid() };
+    if (editingCartItemUid) cart = cart.filter(item => item.uid !== editingCartItemUid);
+    editingCartItemUid = null;
     cart.push({
       ...cartItem,
       price: Number(currentProd.price),
@@ -2460,10 +2464,6 @@
     $('csSub').textContent = fmt(totals.subtotal);
     $('csSvcFeeBtn').textContent = fmt(totals.svc);
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
-    const couponRow = $('csCouponRow');
-    if (couponRow) couponRow.hidden = !(selectedCouponPreview && totals.discount > 0);
-    if ($('csCouponLabel')) $('csCouponLabel').textContent = selectedCoupon?.code || selectedCoupon?.coupon_code || 'Cupom';
-    if ($('csCouponDiscount')) $('csCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
     $('csTotal').textContent = fmt(totals.total);
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }
@@ -2521,15 +2521,11 @@
     const item = cart.find(i => i.uid === uid);
     if (!item) return;
     openProduct(item.id);
+    editingCartItemUid = uid;
     pmQty = item.qty;
     restoreSelectedOptions(item);
     $('pmObs').value = item.obs || '';
     updateProductObservationCount();
-    $('pmAddBtn').onclick = function () {
-      cart = cart.filter(i => i.uid !== uid);
-      $('pmAddBtn').onclick = addToCart;
-      addToCart();
-    };
     updatePmUI();
   }
 
@@ -2831,12 +2827,6 @@
     if ($('orvDeliveryFeeRow')) $('orvDeliveryFeeRow').style.display = isDelivery ? 'flex' : 'none';
     if ($('orvDeliveryFee')) {
       $('orvDeliveryFee').textContent = hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir';
-    }
-    const couponRow = $('orvCouponRow');
-    if (couponRow) {
-      couponRow.hidden = !(totals.discount > 0);
-      if ($('orvCouponLabel')) $('orvCouponLabel').textContent = selectedCoupon?.code ? `Cupom ${selectedCoupon.code}` : 'Cupom';
-      if ($('orvCouponDiscount')) $('orvCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
     }
     if ($('orvTotal')) $('orvTotal').textContent = fmt(totals.total);
 
@@ -4885,6 +4875,7 @@
     document.body.classList.remove('menu-login-open');
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
+    $('loginModal')?.classList.toggle('from-bottom-nav', ['profile', 'club'].includes(origin));
     openModal('loginModal');
   }
 
@@ -6188,7 +6179,7 @@
       if (couponPreviewKey === requestKey) selectedCouponPreview = null;
       if (error?.status === 401) {
         await syncCustomerSession();
-        openLoginScreen('coupon');
+        if (!silent) openLoginScreen('coupon');
       } else if (!silent) {
         showCouponNotice('Não foi possível aplicar este cupom. Tente novamente.');
       }
@@ -7364,4 +7355,3 @@
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();
-

@@ -3309,8 +3309,9 @@ body:has(#mobViewRapi.active) .mob-bottom-nav::before{
 body:has(#mobViewRapi.active) .rapi-toast{
   bottom:calc(174px + env(safe-area-inset-bottom,0px))!important;
 }
-/* Keep the product detail sheet completely out of recommendation rendering until opened. */
-#mobViewRapi .rapi-product-detail:not(.is-open),
+/* Keep the detail out of recommendation rendering only after its closing
+   transition finishes and JS restores `hidden`. While it is merely missing
+   `.is-open`, it must stay flex-rendered so transform can animate both ways. */
 #mobViewRapi .rapi-product-detail[hidden]{
   display:none!important;
   visibility:hidden!important;

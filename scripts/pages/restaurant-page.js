@@ -1881,11 +1881,29 @@
     return buttons.find(b => b.dataset.catSlug === slugValue) || null;
   }
 
+  // Mantém a aba ativa visível na barra horizontal enquanto o scroll da página
+  // troca a categoria. É feito por scrollLeft, e NÃO por scrollIntoView: este
+  // último rola todos os ancestrais roláveis, incluindo a própria página, e
+  // brigaria com o scroll que acabou de disparar o scrollspy.
+  function revealActiveCategory() {
+    const nav = $('catNav');
+    if (!nav) return;
+    const active = nav.querySelector('.cat.active');
+    if (!active) return;
+    // Alvo: botão centralizado no trilho, limitado às bordas.
+    const target = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+    const max = nav.scrollWidth - nav.clientWidth;
+    const next = Math.max(0, Math.min(target, max));
+    if (Math.abs(next - nav.scrollLeft) < 2) return;
+    nav.scrollTo({ left: next, behavior: 'smooth' });
+  }
+
   function scrollToCategory(id, btn) {
     isClickScrolling = true;
     (categoryButtonsCache.length ? categoryButtonsCache : Array.from(document.querySelectorAll('.cat')))
       .forEach(b => b.classList.remove('active'));
     btn?.classList.add('active');
+    revealActiveCategory();
     const el = $(id);
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 92, behavior: 'smooth' });
     setTimeout(() => { isClickScrolling = false; }, 700);
@@ -1904,12 +1922,19 @@
       });
       if (!currentId) {
         setFirstCategoryActive();
+        revealActiveCategory();
         return;
       }
+      // O vínculo botão -> seção é o data-cat-slug. Até a Fase 0 era o texto do
+      // onclick="scrollToCategory('...')", que 5618157 removeu ao trocar o
+      // handler inline por addEventListener — e como este trecho continuou
+      // lendo getAttribute('onclick'), a busca passou a devolver null para todo
+      // botão e NENHUM ficava ativo. Ler o mesmo atributo que o clique usa
+      // (findCategoryButton) mantém os dois caminhos com uma fonte só.
       buttons.forEach(btn => {
-        const active = btn.getAttribute('onclick')?.includes(`'${currentId}'`);
-        btn.classList.toggle('active', Boolean(active));
+        btn.classList.toggle('active', btn.dataset.catSlug === currentId);
       });
+      revealActiveCategory();
     }, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 

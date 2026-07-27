@@ -30,6 +30,20 @@
     );
   }
 
+  // `resize=contain` NÃO é opcional. O modo padrão do Storage é `cover`, e com
+  // `cover` recebendo só `width` o alvo de altura vira a altura ORIGINAL — a
+  // derivada sai com a largura pedida e a altura intacta, ou seja, achatada na
+  // horizontal. Medido neste bucket:
+  //
+  //   ?width=168                  -> 168x719  (original 1200x719, r 1.669 -> 0.234)
+  //   ?width=330                  -> 330x1024 (original 1024x1024)
+  //   ?width=168&resize=contain   -> 168x101  proporção preservada
+  //
+  // Com `object-fit:cover` no CSS, o browser então amplia essa imagem achatada
+  // até cobrir a caixa e corta o excedente: era daí que vinham os cupons e as
+  // fotos de produto "cortados de forma desproporcional".
+  const RESIZE_MODE = 'contain';
+
   // Devolve a URL da derivada com `width`, ou null se a origem não for
   // transformável — null é o sinal de "não mexe, usa o original".
   function variant(url, width, quality = DEFAULT_QUALITY) {
@@ -39,7 +53,7 @@
     const rendered = url.replace(OBJECT_SEGMENT, RENDER_SEGMENT);
     // O objeto pode já vir com query (?t=..., token de cache). Preserva.
     const separator = rendered.includes('?') ? '&' : '?';
-    return `${rendered}${separator}width=${Math.round(width)}&quality=${quality}`;
+    return `${rendered}${separator}width=${Math.round(width)}&resize=${RESIZE_MODE}&quality=${quality}`;
   }
 
   // Descritores `x`, para caixas de tamanho FIXO em CSS (a miniatura de 110px

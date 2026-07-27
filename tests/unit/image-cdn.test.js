@@ -29,13 +29,13 @@ describe('image-cdn — reconhece o que é transformável', () => {
 describe('image-cdn — monta a URL da derivada', () => {
   it('troca /object/ por /render/image/ e anexa width', () => {
     expect(variant(ORIGINAL, 240)).toBe(
-      `${BUCKET}/render/image/public/restaurant-assets/junior-da-picanha/products/arroz-branco.webp?width=240&quality=72`
+      `${BUCKET}/render/image/public/restaurant-assets/junior-da-picanha/products/arroz-branco.webp?width=240&resize=contain&quality=72`
     );
   });
 
   it('preserva a query que já existia no objeto', () => {
     const withToken = `${ORIGINAL}?t=abc123`;
-    expect(variant(withToken, 110)).toContain('?t=abc123&width=110');
+    expect(variant(withToken, 110)).toContain('?t=abc123&width=110&resize=contain');
   });
 
   it('arredonda larguras fracionadas (110 * 1.5 de DPR)', () => {
@@ -65,17 +65,32 @@ describe('image-cdn — na dúvida, devolve o original', () => {
 describe('image-cdn — srcset', () => {
   it('descritores x saem do lado fixo em CSS vezes o DPR', () => {
     const set = srcsetByDpr(ORIGINAL, 110);
-    expect(set).toContain('width=110&quality=72 1x');
-    expect(set).toContain('width=220&quality=72 2x');
-    expect(set).toContain('width=330&quality=72 3x');
+    expect(set).toContain('width=110&resize=contain&quality=72 1x');
+    expect(set).toContain('width=220&resize=contain&quality=72 2x');
+    expect(set).toContain('width=330&resize=contain&quality=72 3x');
     expect(set.split(', ')).toHaveLength(3);
   });
 
   it('descritores w saem da grade pedida', () => {
     const set = srcsetByWidth(ORIGINAL, [360, 640]);
-    expect(set).toContain('width=360&quality=72 360w');
-    expect(set).toContain('width=640&quality=72 640w');
+    expect(set).toContain('width=360&resize=contain&quality=72 360w');
+    expect(set).toContain('width=640&resize=contain&quality=72 640w');
     expect(set.split(', ')).toHaveLength(2);
+  });
+
+  it('toda derivada pede resize=contain', () => {
+    // O modo padrão do Storage é `cover`. Recebendo só `width`, ele usa a
+    // altura ORIGINAL como alvo e devolve a imagem achatada na horizontal
+    // (medido: ?width=168 de um 1200x719 volta 168x719, não 168x101). Com
+    // object-fit:cover no CSS isso vira um corte enorme — foi a regressão de
+    // enquadramento do bloco B. `contain` é o que preserva a proporção.
+    const urls = [
+      variant(ORIGINAL, 240),
+      ...[...srcsetByDpr(ORIGINAL, 110).matchAll(/(https:[^\s,]+)/g)].map(m => m[1]),
+      ...[...srcsetByWidth(ORIGINAL, [360, 640]).matchAll(/(https:[^\s,]+)/g)].map(m => m[1])
+    ];
+    expect(urls.length).toBeGreaterThan(4);
+    for (const url of urls) expect(url).toContain('resize=contain');
   });
 
   it('a miniatura de 110px nunca pede a foto inteira', () => {

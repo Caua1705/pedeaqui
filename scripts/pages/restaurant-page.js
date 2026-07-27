@@ -35,6 +35,7 @@
   let currentProd = null;
   let pmQty = 1;
   let pmSelectedOptions = {};
+  let editingCartItemUid = null;
   let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
   // paymentMethod = rótulo exibido ("Pix"); paymentMethodKey = chave da UI ("pix");
@@ -261,6 +262,7 @@
     paymentMethodKey = '';
     paymentApiTypeByKey.clear();
     currentProd = null;
+    editingCartItemUid = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewPromise = null;
@@ -1986,6 +1988,7 @@
   function openProduct(id) {
     currentProd = products.find(p => String(p.id) === String(id));
     if (!currentProd) return;
+    editingCartItemUid = null;
     pmQty = 1;
     pmSelectedOptions = {};
     $('pmName').textContent = currentProd.name;
@@ -2009,7 +2012,6 @@
     showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
-    if ($('pmAddBtn')) $('pmAddBtn').onclick = addToCart;
     renderProductOptions();
     updatePmUI();
     openModal('productModal');
@@ -2207,6 +2209,8 @@
     const selected_options_snapshot = selectedOptionsSnapshot();
     const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
       || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: newCartItemUid() };
+    if (editingCartItemUid) cart = cart.filter(item => item.uid !== editingCartItemUid);
+    editingCartItemUid = null;
     cart.push({
       ...cartItem,
       price: Number(currentProd.price),
@@ -2218,6 +2222,7 @@
     });
     closeModalId('productModal');
     updateCartUI();
+    setTimeout(() => openCartModal(), 180);
   }
 
   function couponPreviewData() {
@@ -2517,15 +2522,11 @@
     const item = cart.find(i => i.uid === uid);
     if (!item) return;
     openProduct(item.id);
+    editingCartItemUid = uid;
     pmQty = item.qty;
     restoreSelectedOptions(item);
     $('pmObs').value = item.obs || '';
     updateProductObservationCount();
-    $('pmAddBtn').onclick = function () {
-      cart = cart.filter(i => i.uid !== uid);
-      $('pmAddBtn').onclick = addToCart;
-      addToCart();
-    };
     updatePmUI();
   }
 
@@ -6178,7 +6179,7 @@
       if (couponPreviewKey === requestKey) selectedCouponPreview = null;
       if (error?.status === 401) {
         await syncCustomerSession();
-        openLoginScreen('coupon');
+        if (!silent) openLoginScreen('coupon');
       } else if (!silent) {
         showCouponNotice('Não foi possível aplicar este cupom. Tente novamente.');
       }

@@ -4,6 +4,7 @@ import {
   seedPickupSession,
   addH2OToCart,
   successOrder,
+  PRODUCT_H2O,
   RESTAURANT_URL
 } from './helpers.js';
 
@@ -115,4 +116,39 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
   expect(orderRequests).toHaveLength(2);
   expect(orderRequests[0].idempotencyKey).toBeTruthy();
   expect(orderRequests[1].idempotencyKey).toBe(orderRequests[0].idempotencyKey);
+});
+test('guest adds one item, sees the bag, and is gated only by the cart CTA', async ({ page }) => {
+  await mockApi(page);
+  await page.route('**/coupons/preview', route => route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ message: 'Authentication required' })
+  }));
+
+  await page.goto(RESTAURANT_URL);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await expect(page.locator('#operationModal')).not.toHaveClass(/active/);
+
+  // A public coupon may be selected before the guest has any cart items.
+  // Its automatic preview must never hijack Add-to-cart with the login modal.
+  await page.evaluate(() => window.openCouponDetail('JP10'));
+  await page.locator('.coupon-detail-use').click();
+  await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await expect(page.locator('#operationModal')).not.toHaveClass(/active/);
+
+  await page.evaluate(productId => window.openProduct(productId), PRODUCT_H2O);
+  await page.locator('#pmAddBtn').click();
+
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartList .cart-item-row')).toHaveCount(1);
+  await expect(page.locator('#cartItemCountLabel')).toHaveText('1 item');
+
+  const cta = page.locator('#cartCtaBtn');
+  await expect(cta).toHaveText('Informe seu endereço');
+  await page.locator('#cartTabRetirada').click();
+  await expect(cta).toHaveText('Entre ou cadastre-se');
+  await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
 });

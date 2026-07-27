@@ -141,10 +141,15 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await page.evaluate(productId => window.openProduct(productId), PRODUCT_H2O);
   await page.locator('#pmAddBtn').click();
 
-  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await page.waitForTimeout(250);
+  await expect(page.locator('#productModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).not.toHaveClass(/active/);
   await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
   await expect(page.locator('#cartList .cart-item-row')).toHaveCount(1);
   await expect(page.locator('#cartItemCountLabel')).toHaveText('1 item');
+
+  await page.locator('#cartStickyBtn').evaluate(button => button.click());
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
 
   const cta = page.locator('#cartCtaBtn');
   await expect(cta).toHaveText('Informe seu endereço');

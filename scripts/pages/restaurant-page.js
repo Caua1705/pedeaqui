@@ -1106,7 +1106,7 @@
 
   function resetMenuLoginState() {
     document.body.classList.remove('menu-login-open');
-    $('loginModal')?.classList.remove('from-add-address', 'from-coupon');
+    $('loginModal')?.classList.remove('from-add-address', 'from-coupon', 'from-bottom-nav');
     if (loginReturnNavId && !isLogged() && document.body.classList.contains('menu-tab')) {
       setMobNavActive(loginReturnNavId);
     }
@@ -2222,7 +2222,6 @@
     });
     closeModalId('productModal');
     updateCartUI();
-    setTimeout(() => openCartModal(), 180);
   }
 
   function couponPreviewData() {
@@ -4876,6 +4875,7 @@
     document.body.classList.remove('menu-login-open');
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
+    $('loginModal')?.classList.toggle('from-bottom-nav', ['profile', 'club'].includes(origin));
     openModal('loginModal');
   }
 
@@ -7355,4 +7355,3 @@
   mountProfOrdersOverlay();
   initRestaurantApp().catch(showAppError);
 })();
-

@@ -2460,10 +2460,6 @@
     $('csSub').textContent = fmt(totals.subtotal);
     $('csSvcFeeBtn').textContent = fmt(totals.svc);
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
-    const couponRow = $('csCouponRow');
-    if (couponRow) couponRow.hidden = !(selectedCouponPreview && totals.discount > 0);
-    if ($('csCouponLabel')) $('csCouponLabel').textContent = selectedCoupon?.code || selectedCoupon?.coupon_code || 'Cupom';
-    if ($('csCouponDiscount')) $('csCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
     $('csTotal').textContent = fmt(totals.total);
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }
@@ -2831,12 +2827,6 @@
     if ($('orvDeliveryFeeRow')) $('orvDeliveryFeeRow').style.display = isDelivery ? 'flex' : 'none';
     if ($('orvDeliveryFee')) {
       $('orvDeliveryFee').textContent = hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir';
-    }
-    const couponRow = $('orvCouponRow');
-    if (couponRow) {
-      couponRow.hidden = !(totals.discount > 0);
-      if ($('orvCouponLabel')) $('orvCouponLabel').textContent = selectedCoupon?.code ? `Cupom ${selectedCoupon.code}` : 'Cupom';
-      if ($('orvCouponDiscount')) $('orvCouponDiscount').textContent = `- ${fmt(totals.discount)}`;
     }
     if ($('orvTotal')) $('orvTotal').textContent = fmt(totals.total);
 

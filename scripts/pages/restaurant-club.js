@@ -178,7 +178,7 @@
           </section>
         </section>`;
       body.querySelectorAll('.club-available-coupon-card').forEach(card => {
-        const open = () => window.openCouponDetail?.(card.dataset.couponKey);
+        const open = () => window.openCouponDetail?.(card.dataset.couponKey, card);
         card.addEventListener('click', event => {
           if (!event.target.closest('button')) open();
         });

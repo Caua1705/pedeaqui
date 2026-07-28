@@ -1444,12 +1444,15 @@ a{text-decoration:none;color:inherit}
 .coupon-card strong{display:block;color:#171717;font-size:.95rem;font-weight:900;margin-bottom:4px}
 .coupon-card small{display:block;color:#777;font-size:.72rem;line-height:1.35;min-height:30px}
 .coupon-card em{display:block;color:var(--brand);font-size:.75rem;font-style:normal;font-weight:850;margin-top:10px}
-.prod-photo.prod-photo--placeholder,.pm-hero-photo.prod-photo--placeholder{
+.prod-photo.prod-photo--placeholder,
+.pm-hero-photo.prod-photo--placeholder,
+.pm-hero-photo.product-image--placeholder{
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--brand-tint),#f2f2f2);
   color:var(--brand);
 }
-.prod-photo--placeholder span{font-weight:900}
+.prod-photo--placeholder span,
+.pm-hero-photo.product-image--placeholder span{font-weight:900}
 .home-cta{padding:18px 0 8px}
 .home-cta-btn{
   width:100%;

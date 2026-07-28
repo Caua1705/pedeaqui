@@ -239,13 +239,40 @@
   height:248.39px!important;
   margin:0 auto!important;
   padding:0!important;
-  background:linear-gradient(135deg,var(--brand-primary),var(--brand-light))!important;
+  background:#f2f2f2!important;
 }
 .coupon-detail-art img{
   width:100%!important;
   height:100%!important;
   display:block!important;
   object-fit:cover!important;
+}
+#productModal .product-hero,
+.coupon-detail-art{
+  position:relative!important;
+}
+#productModal .detail-image-preview,
+#productModal .detail-image-full,
+.coupon-detail-art .detail-image-preview,
+.coupon-detail-art .detail-image-full{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+#productModal .detail-image-preview,
+.coupon-detail-art .detail-image-preview{
+  z-index:1!important;
+}
+#productModal .detail-image-full,
+.coupon-detail-art .detail-image-full{
+  z-index:2!important;
+  opacity:0!important;
+}
+#productModal .detail-image-full.is-ready,
+.coupon-detail-art .detail-image-full.is-ready{
+  opacity:1!important;
 }
 .coupon-detail-art-fallback{
   height:100%!important;
@@ -256,6 +283,7 @@
   border:3px dotted rgba(255,255,255,.55)!important;
   color:#30343b!important;
   text-align:center!important;
+  background:linear-gradient(135deg,var(--brand-primary),var(--brand-light))!important;
 }
 .coupon-detail-art-fallback span{
   font-size:28px!important;
@@ -5727,19 +5755,32 @@ body.home-tab.soft-scroll-locked.modal-open{
     min-height:250px!important;
     max-height:250px!important;
     margin:0!important;
-    background:var(--brand-primary)!important;
+    background:#f2f2f2!important;
     border-radius:0!important;
     overflow:hidden!important;
   }
 
   #productModal .pm-hero-photo,
   #productModal .pm-hero-photo.product-image,
-  #productModal .pm-hero-photo.prod-photo--placeholder{
+  #productModal .pm-hero-photo.prod-photo--placeholder,
+  #productModal .pm-hero-photo.product-image--placeholder{
     width:100%!important;
     height:100%!important;
     max-width:none!important;
     object-fit:cover!important;
     border-radius:0!important;
+  }
+
+  #productModal .pm-hero-photo.product-image--placeholder{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    background:linear-gradient(135deg,var(--brand-tint),#f2f2f2)!important;
+    color:var(--brand-primary)!important;
+  }
+
+  #productModal .pm-hero-photo.product-image--placeholder span{
+    font-weight:900!important;
   }
 
   #productModal .modal-header{

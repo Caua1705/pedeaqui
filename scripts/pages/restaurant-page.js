@@ -692,6 +692,82 @@
     return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
   }
 
+  let detailImageRenderSequence = 0;
+
+  function readyCardImage(source, cardSelector, imageSelector) {
+    const card = source?.closest?.(cardSelector);
+    const image = card?.querySelector?.(imageSelector);
+    return image?.complete && image.naturalWidth > 0 ? image : null;
+  }
+
+  function couponImageUrl(coupon = {}) {
+    return coupon.image_url || coupon.image || coupon.image_path || coupon.banner_url || coupon.cover_url || '';
+  }
+
+  // A miniatura do card já está baixada e decodificada no momento do clique.
+  // Ela ocupa o detalhe imediatamente; a variante maior só assume depois de
+  // terminar o decode. Assim o fundo do contêiner nunca pisca entre as telas.
+  function renderDetailImage(container, { url, alt, className, fluid, preview, fallbackMarkup = '' }) {
+    if (!container) return;
+    const renderId = String(++detailImageRenderSequence);
+    container.dataset.detailImageRender = renderId;
+    container.replaceChildren();
+
+    const previewSrc = preview?.currentSrc || preview?.src || '';
+    let previewImage = null;
+    if (previewSrc) {
+      previewImage = document.createElement('img');
+      previewImage.className = `${className} detail-image-preview`;
+      previewImage.alt = '';
+      previewImage.setAttribute('aria-hidden', 'true');
+      previewImage.decoding = 'sync';
+      previewImage.src = previewSrc;
+      container.appendChild(previewImage);
+    }
+
+    const fullImage = document.createElement('img');
+    fullImage.className = `${className} detail-image-full`;
+    fullImage.alt = alt || '';
+    fullImage.loading = 'eager';
+    fullImage.decoding = 'async';
+    fullImage.fetchPriority = 'high';
+    applyResponsiveImage(fullImage, url, { fluid });
+
+    let settled = false;
+    let retryingOriginal = false;
+    const isCurrent = () => container.dataset.detailImageRender === renderId && fullImage.isConnected;
+    const reveal = async () => {
+      if (settled) return;
+      settled = true;
+      if (fullImage.decode) await fullImage.decode().catch(() => {});
+      if (!isCurrent()) return;
+      fullImage.classList.add('is-ready');
+      previewImage?.remove();
+    };
+    const fail = () => {
+      if (settled || !isCurrent()) return;
+      if (!retryingOriginal && fullImage.hasAttribute('srcset')) {
+        retryingOriginal = true;
+        fullImage.removeAttribute('srcset');
+        fullImage.removeAttribute('sizes');
+        fullImage.src = url;
+        return;
+      }
+      settled = true;
+      fullImage.remove();
+      if (!previewImage && fallbackMarkup) container.innerHTML = fallbackMarkup;
+    };
+
+    fullImage.addEventListener('load', reveal, { once: true });
+    fullImage.addEventListener('error', fail);
+    fullImage.src = url;
+    container.appendChild(fullImage);
+    if (fullImage.complete) {
+      if (fullImage.naturalWidth > 0) reveal();
+      else fail();
+    }
+  }
+
   function productOldPrice(product) {
     return product.old_price ?? product.original_price ?? product.price_old ?? product.compare_at_price ?? product.list_price ?? null;
   }
@@ -1079,7 +1155,7 @@
     const oldPrice = Number(productOldPrice(product));
     const hasOldPrice = Number.isFinite(oldPrice) && Number.isFinite(product.price) && oldPrice > product.price;
     return `
-      <article class="product-card" data-product-id="${esc(product.id)}" ${act('click', 'openProduct', product.id)}>
+      <article class="product-card" data-product-id="${esc(product.id)}" ${act('click', 'openProduct', product.id, '$this')}>
         <div class="product-content">
           <h3 class="product-name">${esc(formatProductTitle(product.name))}</h3>
           ${product.description ? `<p class="product-description">${esc(product.description)}</p>` : ''}
@@ -1607,7 +1683,7 @@
     const nextSignature = JSON.stringify(coupons.map(coupon => [
       coupon.code,
       coupon.title || coupon.name || '',
-      coupon.image_url || coupon.image_path || '',
+      couponImageUrl(coupon),
       coupon.discount_type || '',
       coupon.discount_value || ''
     ]));
@@ -1617,7 +1693,7 @@
     }
     couponsRenderSignature = nextSignature;
     wrap.innerHTML = coupons.map(coupon => {
-      const image = coupon.image_url || coupon.image_path || '';
+      const image = couponImageUrl(coupon);
       const discountType = String(coupon.discount_type || '').toLowerCase();
       const discount = ['percent', 'percentage'].includes(discountType)
         ? `${Number(coupon.discount_value || 0)}% off`
@@ -1628,7 +1704,7 @@
       // The gradient + discount text is only a fallback when there's no image
       // (or it fails to load — onerror reverts to the fallback).
       return `
-        <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code)}>
+        <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code, '$this')}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
             ${image ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
             <span>Cupom</span>
@@ -1636,7 +1712,7 @@
           </div>
           <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
           <div class="coupon-dash"></div>
-          <button type="button" class="coupon-use-btn" ${actAll('click', [['$stop'], ['openCouponDetail', coupon.code]])}>Usar cupom</button>
+          <button type="button" class="coupon-use-btn" ${actAll('click', [['$stop'], ['openCouponDetail', coupon.code, '$this']])}>Usar cupom</button>
         </article>
       `;
     }).join('');
@@ -1996,7 +2072,7 @@
     });
   }
 
-  function openProduct(id) {
+  function openProduct(id, source) {
     currentProd = products.find(p => String(p.id) === String(id));
     if (!currentProd) return;
     editingCartItemUid = null;
@@ -2014,11 +2090,22 @@
     // O herói do modal é a única foto FLUIDA: 100% da largura do modal, que no
     // celular é a viewport inteira. Por isso `w` + sizes, e não descritores x.
     if (hero) {
-      hero.innerHTML = productImage(currentProd, 'pm-hero-photo', {
-        lazy: false,
-        priority: 'high',
-        fluid: { widths: [360, 480, 640, 960, 1280], sizes: '(max-width: 560px) 100vw, 560px' }
-      });
+      const image = currentProd.image_url || currentProd.image_path || '';
+      const sourceCard = source?.closest?.('.product-card')
+        || Array.from(document.querySelectorAll('.product-card')).find(card => String(card.dataset.productId) === String(id));
+      const preview = readyCardImage(sourceCard, '.product-card', '.product-image');
+      if (image) {
+        renderDetailImage(hero, {
+          url: image,
+          alt: currentProd.name,
+          className: 'pm-hero-photo',
+          fluid: { widths: [360, 480, 640, 960, 1280], sizes: '(max-width: 560px) 100vw, 560px' },
+          preview,
+          fallbackMarkup: `<div class="pm-hero-photo product-image--placeholder"><span>${esc(initials(currentProd.name))}</span></div>`
+        });
+      } else {
+        hero.innerHTML = productImage(currentProd, 'pm-hero-photo');
+      }
     }
     showEl($('pmWarning'), !Number.isFinite(currentProd.price));
     $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
@@ -6304,7 +6391,7 @@
     return rules;
   }
 
-  function openCouponDetail(code) {
+  function openCouponDetail(code, source) {
     const coupon = clubController.getCoupon(code)
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
     if (!coupon) return;
@@ -6312,14 +6399,26 @@
     document.body.classList.add('coupon-nav-keep');
     couponDetailScrollY = currentScrollY();
     lockBodyScroll(couponDetailScrollY, 'soft');
-    const image = coupon.image_url || coupon.image || coupon.image_path || '';
+    const image = couponImageUrl(coupon);
     const label = couponLabel(coupon);
     const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
     const art = $('couponDetailArt');
     if (art) {
-      art.innerHTML = image
-        ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: COUPON_DETAIL_FLUID })} alt="${esc(coupon.name || coupon.title || label)}" ${imageAttrs({ lazy: true })}>`
-        : `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
+      const fallbackMarkup = `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
+      const preview = readyCardImage(source, '.coupon-card', '.coupon-art img')
+        || readyCardImage(source, '.club-available-coupon-card', '.club-available-coupon-image');
+      if (image) {
+        renderDetailImage(art, {
+          url: image,
+          alt: coupon.name || coupon.title || label,
+          className: 'coupon-detail-photo',
+          fluid: COUPON_DETAIL_FLUID,
+          preview,
+          fallbackMarkup
+        });
+      } else {
+        art.innerHTML = fallbackMarkup;
+      }
     }
     if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
     if ($('couponDetailCode')) $('couponDetailCode').textContent = coupon.code || 'CUPOM';

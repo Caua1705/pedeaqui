@@ -4897,11 +4897,19 @@
 
   /* ---------- Register screen ("Cadastre-se") ---------- */
 
+  // Auth screens opened from the guest sheet must inherit Home's soft lock.
+  // Promoting it to position:fixed moves the sticky header while returning.
+  function lockAuthScreenScroll() {
+    const preserveScrolledHome = document.body.classList.contains('home-tab')
+      && document.body.classList.contains('soft-scroll-locked');
+    lockBodyScroll(currentScrollY(), preserveScrolledHome ? 'soft' : 'fixed');
+  }
+
   function openRegisterScreen() {
     closeModalId('loginModal');
     $('registerScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     $('registerForm')?.scrollTo?.(0, 0);
     clearAllRegErrors();
   }
@@ -5287,7 +5295,7 @@
     closeModalId('loginModal');
     $('verifyScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     startVfyTimer();
     setTimeout(() => vfyDigits()[0]?.focus(), 60);
   }
@@ -5445,7 +5453,7 @@
     hideResetPwErr();
     $('resetPasswordScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     setTimeout(() => $('resetNewPw')?.focus(), 60);
   }
   function closeResetPasswordScreen() {
@@ -5576,7 +5584,7 @@
     $('loginModal')?.classList.add('signin-open');
     $('loginScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     $('loginForm')?.scrollTo?.(0, 0);
     clearAllLoginErrors();
   }
@@ -5585,6 +5593,7 @@
     $('loginScreen')?.classList.remove('active');
     $('loginModal')?.classList.remove('signin-open');
     syncAuthScreenOpenClass();
+    unlockBodyScrollIfClear();
   }
 
   const isEmailValue = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
@@ -5606,7 +5615,7 @@
     closeModalId('loginModal');
     $('forgotPasswordScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     setTimeout(() => $('forgotEmail')?.focus(), 60);
   }
 
@@ -5641,7 +5650,7 @@
     _vfyAlertAfterClose = typeof afterClose === 'function' ? afterClose : null;
     modal.classList.remove('closing');
     modal.classList.add('active');
-    lockBodyScroll();
+    lockAuthScreenScroll();
   }
 
   // Card shown when the backend says the e-mail isn't registered.
@@ -5735,7 +5744,7 @@
     closeModalId('loginModal');
     $('recoverCodeScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
-    lockBodyScroll();
+    lockAuthScreenScroll();
     setTimeout(() => recDigits()[0]?.focus(), 60);
   }
 
@@ -6122,7 +6131,7 @@
     document.body.classList.toggle('policy-from-profile', _policyReturn === 'profile');
     screen.classList.add('active');
     attachPolicyScrollGuard();
-    lockBodyScroll();
+    lockAuthScreenScroll();
     body.scrollTop = 0;
     window.scrollTo(0, 0);
   }
@@ -6426,11 +6435,11 @@
   }
 
   async function mobNavClub() {
-    setMobNavActive('mobNavOrders');
     if (!isLogged()) {
       openLoginScreen('club');
       return;
     }
+    setMobNavActive('mobNavOrders');
     closeMobViews();
     preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
@@ -6510,11 +6519,11 @@
   }
 
   async function mobNavProfile() {
-    setMobNavActive('mobNavProfile');
     if (!isLogged()) {
       openLoginScreen('profile');
       return;
     }
+    setMobNavActive('mobNavProfile');
     closeMobViews();
     preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });

@@ -101,8 +101,8 @@ test('saudação da Home fica inerte quando o cliente está conectado', async ({
   await expect(page.locator('body')).toHaveClass(/home-tab/);
 });
 
-for (const [label, action] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavClub']]) {
-  test(`${label} deslogado preserva o widget da Home durante a abertura do login`, async ({ page }) => {
+for (const [label, navId] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavOrders']]) {
+  test(`${label} deslogado preserva o cabeçalho da Home durante a abertura do login`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await boot(page);
     await page.evaluate(() => window.act('closeOperationScreen'));
@@ -112,19 +112,99 @@ for (const [label, action] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavClu
       return window.scrollY;
     })).toBeGreaterThan(100);
 
-    const widget = page.locator('.home-sticky-header .delivery-widget');
-    const before = await widget.boundingBox();
-    expect((before?.y || 0) + (before?.height || 0)).toBeGreaterThan(0);
+    const header = page.locator('#homeStickyHeader');
+    const widget = header.locator('.delivery-widget');
+    const identity = header.locator('#mobIdentity');
+    const loginPrompt = header.locator('#homeLoginPrompt');
+    const before = await header.boundingBox();
 
-    await page.evaluate(navAction => window.act(navAction), action);
+    await expect(header).toBeVisible();
+    await expect(widget).toBeVisible();
+    await expect(identity).toBeVisible();
+    await expect(loginPrompt).toBeVisible();
+    await expect(loginPrompt).toHaveText('Entre ou cadastre-se');
+    expect(before?.y).toBe(0);
+
+    await page.locator(`#${navId}`).click();
     await expect(page.locator('#loginModal')).toHaveClass(/active/);
     await expect(page.locator('#loginModal')).toHaveClass(/from-bottom-nav/);
+    await expect(page.locator('body')).toHaveClass(/home-tab/);
+    await expect(page.locator('#mobNavHome')).toHaveClass(/active/);
+    await expect(page.locator(`#${navId}`)).not.toHaveClass(/active/);
+    await expect(page.locator('#mobViewProfile')).not.toHaveClass(/active/);
+    await expect(page.locator('#mobViewClub')).not.toHaveClass(/active/);
     await expect.poll(() => page.locator('#loginModal').evaluate(modal =>
       getComputedStyle(modal).backgroundColor
     )).toBe('rgba(0, 0, 0, 0)');
+    await expect.poll(() => page.evaluate(() =>
+      getComputedStyle(document.documentElement).overflowY
+    )).toBe('visible');
 
-    const after = await widget.boundingBox();
-    expect((after?.y || 0) + (after?.height || 0)).toBeGreaterThan(0);
+    const after = await header.boundingBox();
+    await expect(header).toBeVisible();
+    await expect(widget).toBeVisible();
+    await expect(identity).toBeVisible();
+    await expect(loginPrompt).toBeVisible();
     expect(Math.abs((after?.y || 0) - (before?.y || 0))).toBeLessThanOrEqual(1);
+
+    await page.locator('#loginModal .login-secondary').click();
+    await expect(page.locator('#loginScreen')).toHaveClass(/active/);
+    await page.locator('#loginScreen .lgn-back').click();
+    await expect(page.locator('#loginScreen')).not.toHaveClass(/active/);
+    await expect(page.locator('#loginModal')).toHaveClass(/active/);
+
+    const afterSigninBack = await header.boundingBox();
+    expect(await page.evaluate(() => document.body.style.position)).toBe('');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflowY)).toBe('visible');
+    expect(Math.abs((afterSigninBack?.y || 0) - (before?.y || 0))).toBeLessThanOrEqual(1);
+
+    await page.locator('#loginModal .login-close').click();
+    await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
+    await expect(page.locator('body')).toHaveClass(/soft-scroll-locked/);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflowY)).toBe('visible');
+    const whileClosing = await header.boundingBox();
+    expect(Math.abs((whileClosing?.y || 0) - (before?.y || 0))).toBeLessThanOrEqual(1);
+
+    await expect(page.locator('body')).not.toHaveClass(/modal-open/);
+    await expect(header).toBeVisible();
+    await expect(loginPrompt).toHaveText('Entre ou cadastre-se');
+  });
+}
+
+const AUTH_RETURN_PATHS = [
+  ['Cadastro', async page => {
+    await page.locator('#loginModal .cart-cta-btn').click();
+    await expect(page.locator('#registerScreen')).toHaveClass(/active/);
+    await page.locator('#registerScreen .reg-back').click();
+  }],
+  ['Esqueci a senha', async page => {
+    await page.locator('#loginModal .login-secondary').click();
+    await page.locator('#loginScreen .lgn-forgot').click();
+    await expect(page.locator('#forgotPasswordScreen')).toHaveClass(/active/);
+    await page.locator('#forgotPasswordScreen .vfy-back').click();
+  }]
+];
+
+for (const [label, navigateAndReturn] of AUTH_RETURN_PATHS) {
+  test(`${label}: retorno ao login preserva a Home rolada`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await boot(page);
+    await page.evaluate(() => window.act('closeOperationScreen'));
+    await expect.poll(() => page.evaluate(() => {
+      window.scrollTo({ top: 500, behavior: 'auto' });
+      return window.scrollY;
+    })).toBeGreaterThan(100);
+
+    const header = page.locator('#homeStickyHeader');
+    const before = await header.boundingBox();
+    await page.locator('#mobNavProfile').click();
+    await navigateAndReturn(page);
+
+    await expect(page.locator('#loginModal')).toHaveClass(/active/);
+    expect(await page.evaluate(() => document.body.style.position)).toBe('');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflowY)).toBe('visible');
+    const after = await header.boundingBox();
+    expect(Math.abs((after?.y || 0) - (before?.y || 0))).toBeLessThanOrEqual(1);
+    await expect(page.locator('#homeLoginPrompt')).toHaveText('Entre ou cadastre-se');
   });
 }

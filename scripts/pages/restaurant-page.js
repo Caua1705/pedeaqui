@@ -3824,7 +3824,17 @@
   }
 
   function openAddressChoice() {
-    if (opDraft?.address) { openAddrPicker(); return; }
+    const hasSavedAddresses = Boolean(
+      opDraft?.address
+      || operationContext?.address
+      || customerAddress
+      || readLocalAddressList().length
+      || appState.customerAddresses?.length
+    );
+    if (isLogged() || hasSavedAddresses) {
+      openAddrPicker('operation');
+      return;
+    }
     openAddressChoiceDirect(true);
   }
 
@@ -4024,7 +4034,7 @@
         <span class="addr-picker-pin${isSel ? ' active' : ''}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="addr-picker-copy" ${act('click', 'editAddrPickerItem', '$event', id)}><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
+        <span class="addr-picker-copy"><strong>${esc(label)}</strong><small data-full-text="${esc(summary)}" data-short-text="${esc(truncateAddrPickerText(summary, 35))}">${esc(truncateAddrPickerText(summary, 35))}</small></span>
         ${isSel
           ? `<span class="addr-picker-check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#15803d"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
              <span class="addr-picker-dots" ${act('click', 'toggleAddrPickerActions', '$event', '$this')}>${ADDR_PICKER_DOTS_VERTICAL}</span>

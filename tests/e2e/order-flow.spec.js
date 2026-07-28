@@ -8,11 +8,11 @@ import {
   RESTAURANT_URL
 } from './helpers.js';
 
-// Drives product -> cart -> review -> confirm on the BUILT app, with every API
+// Drives product -> cart -> payment -> submit on the BUILT app, with every API
 // call mocked (no production traffic, no real orders). Also pins the Fase 1
 // invariants: one request per double-click, and a retry reuses the key.
 
-async function goToReview(page) {
+async function selectPixAndReturnToCart(page) {
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3); // 3 x R$7,05 = R$21,15, above the R$20 minimum
 
@@ -25,26 +25,29 @@ async function goToReview(page) {
   await cta.click();
 
   await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+  await expect(page.locator('#paymentMethodFooter')).toBeVisible();
   await page.locator('.payment-method-confirm').click();
 
-  await expect(page.locator('#orderReviewModal')).toHaveClass(/active/);
-  await expect(page.locator('#orvConfirmBtn')).toBeEnabled();
+  await expect(page.locator('#paymentMethodModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#orderReviewModal')).toHaveCount(0);
+  await expect(page.locator('#cartPaymentTitle')).toBeHidden();
+  await expect(page.locator('#cartPaymentTitle')).toHaveText('');
+  await expect(page.locator('#cartPaymentLabel')).toHaveText('PIX');
+  await expect(cta).toHaveText('Efetuar pagamento');
 }
 
-test('product -> cart -> review -> confirm creates an order and shows the real number', async ({
+test('product -> cart -> payment -> submit creates an order and shows the real number', async ({
   page
 }) => {
   const { orderRequests } = await mockApi(page);
   await seedPickupSession(page);
 
-  await goToReview(page);
+  await selectPixAndReturnToCart(page);
 
-  // Review reflects the cart the user built.
-  await expect(page.locator('#orvItems')).toContainText('H2O');
-  await expect(page.locator('#orvTotal')).toContainText('22,14');
-  await expect(page.locator('#orvPayment')).toContainText('Pix');
-
-  await page.locator('#orvConfirmBtn').click();
+  await expect(page.locator('#cartList')).toContainText('H2O');
+  await expect(page.locator('#csTotal')).toContainText('22,14');
+  await page.locator('#cartCtaBtn').click();
 
   // Success screen is filled from the createOrder RESPONSE, not hardcoded.
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
@@ -66,7 +69,7 @@ test('product -> cart -> review -> confirm creates an order and shows the real n
   expect(cartCount).toBe(0);
 });
 
-test('double-click on Confirm creates only ONE order', async ({ page }) => {
+test('double-click on Efetuar pagamento creates only ONE order', async ({ page }) => {
   // Hold the response open briefly so both clicks land while the request is in flight.
   const { orderRequests } = await mockApi(page, {
     onCreateOrder: async (route) => {
@@ -79,11 +82,11 @@ test('double-click on Confirm creates only ONE order', async ({ page }) => {
     }
   });
   await seedPickupSession(page);
-  await goToReview(page);
+  await selectPixAndReturnToCart(page);
 
-  const confirm = page.locator('#orvConfirmBtn');
-  await confirm.click();
-  await confirm.click({ force: true }).catch(() => {}); // second click while disabled/in-flight
+  const submitButton = page.locator('#cartCtaBtn');
+  await submitButton.click();
+  await submitButton.click({ force: true }).catch(() => {}); // second click while disabled/in-flight
 
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
   expect(orderRequests).toHaveLength(1);
@@ -102,15 +105,15 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
     }
   });
   await seedPickupSession(page);
-  await goToReview(page);
+  await selectPixAndReturnToCart(page);
 
-  await page.locator('#orvConfirmBtn').click();
+  await page.locator('#cartCtaBtn').click();
 
   // First attempt failed: error shown, cart intact, button re-enabled.
-  await expect(page.locator('#orvError')).toBeVisible();
-  await expect(page.locator('#orvConfirmBtn')).toBeEnabled();
+  await expect(page.locator('#cartOrderError')).toBeVisible();
+  await expect(page.locator('#cartCtaBtn')).toBeEnabled();
 
-  await page.locator('#orvConfirmBtn').click();
+  await page.locator('#cartCtaBtn').click();
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
 
   expect(orderRequests).toHaveLength(2);
@@ -156,4 +159,8 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await page.locator('#cartTabRetirada').click();
   await expect(cta).toHaveText('Entre ou cadastre-se');
   await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
+  await cta.click();
+  await expect(page.locator('#loginModal')).toHaveClass(/active/);
+  await page.waitForTimeout(800);
+  await expect(page.locator('#paymentMethodModal')).not.toHaveClass(/active/);
 });

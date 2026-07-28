@@ -847,7 +847,10 @@
               <img class="cart-payment-pix-icon" id="cartPaymentPixIcon" src="assets/icons/payment/pix.png" alt="" hidden>
               <svg id="cartPaymentDefaultIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
             </span>
-            <span id="cartPaymentLabel">Selecione a forma de pagamento</span>
+            <span class="cart-payment-copy">
+              <strong id="cartPaymentTitle">Escolher forma de pagamento</strong>
+              <span id="cartPaymentLabel">Selecione a forma de pagamento</span>
+            </span>
             <svg class="cart-payment-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
         </div>
@@ -873,6 +876,7 @@
             <span id="csTotal">R$ 0,00</span>
           </div>
         </div>
+        <div class="cart-order-error" id="cartOrderError" hidden role="alert"></div>
 
       </div><!-- /cartContent -->
 
@@ -888,60 +892,9 @@
 
     <!-- 9. Footer CTA -->
     <div class="cart-footer" id="cartFooter">
-      <button class="cart-cta-btn" id="cartCtaBtn" data-act-click='openCheckout'>Fazer pedido</button>
+      <button class="cart-cta-btn" id="cartCtaBtn" data-act-click='handleCartCta'>Fazer pedido</button>
     </div>
 
-  </div>
-</div>
-
-<!-- MODAL: ORDER REVIEW (full-screen) — última tela antes de criar o pedido.
-     Tudo aqui é preenchido por renderOrderReview(); nada é chumbado. -->
-<div class="overlay" id="orderReviewModal">
-  <div class="modal modal--fs">
-    <div class="sheet-drag"></div>
-    <div class="cart-hdr">
-      <button class="cart-hdr-back" type="button" data-act-click='closeOrderReview' aria-label="Voltar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <h2 class="cart-hdr-title">Revisar pedido</h2>
-      <div class="cart-hdr-spacer"></div>
-    </div>
-    <div class="cart-scroll">
-      <div class="cart-price-summary">
-        <div class="cart-section-heading">Itens</div>
-        <div id="orvItems"></div>
-      </div>
-
-      <div class="cart-price-summary" id="orvDeliveryBlock">
-        <div class="cart-section-heading" id="orvDeliveryHeading">Entrega</div>
-        <div id="orvAddress"></div>
-      </div>
-
-      <div class="cart-price-summary">
-        <div class="cart-section-heading">Forma de pagamento</div>
-        <div class="cps-row"><span id="orvPayment">—</span></div>
-      </div>
-
-      <div class="fs-section">
-        <div class="fs-section-title">Observação do pedido (opcional)</div>
-        <textarea id="orvNotes" class="fs-input fs-textarea" maxlength="500" placeholder="Troco para R$ 100, deixar na portaria..."></textarea>
-      </div>
-
-      <div class="cart-price-summary">
-        <div class="cart-section-heading">Valores</div>
-        <div class="cps-row"><span>Subtotal</span><span id="orvSub">R$ 0,00</span></div>
-        <div class="cps-row" id="orvSvcRow"><span>Taxa de serviço</span><span id="orvSvc">R$ 0,00</span></div>
-        <div class="cps-row" id="orvDeliveryFeeRow"><span>Taxa de entrega</span><span id="orvDeliveryFee">R$ 0,00</span></div>
-        <div class="cps-divider"></div>
-        <div class="cps-total"><span>Total</span><span id="orvTotal">R$ 0,00</span></div>
-        <p class="orv-note">Os valores são confirmados pelo restaurante ao criar o pedido.</p>
-      </div>
-
-      <div class="orv-error" id="orvError" hidden role="alert"></div>
-    </div>
-    <div class="cart-footer">
-      <button class="cart-cta-btn" id="orvConfirmBtn" type="button" data-act-click='submitOrder'>Confirmar pedido</button>
-    </div>
   </div>
 </div>
 
@@ -1055,12 +1008,7 @@
         </button>
       </section>
       <section class="payment-method-panel" data-payment-screen-panel="delivery" hidden>
-        <div class="payment-delivery-options">
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="credit" data-payment-value="Crédito" data-act-click='["setPayment","$this","Crédito"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de crédito</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="debit" data-payment-value="Débito" data-act-click='["setPayment","$this","Débito"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Cartão de débito</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="cash" data-payment-value="Dinheiro" data-act-click='["setPayment","$this","Dinheiro"]'><span class="payment-cash-icon" aria-hidden="true">R$</span><span>Dinheiro</span></button>
-          <button class="payment-method-option" type="button" data-payment-scope="delivery" data-payment-key="voucher" data-payment-value="VR/VA" data-act-click='["setPayment","$this","VR/VA"]'><span class="payment-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg></span><span>Vale-refeição / alimentação</span></button>
-        </div>
+        <div class="payment-delivery-groups" id="paymentDeliveryGroups"></div>
       </section>
     </div>
     <footer class="payment-method-footer" id="paymentMethodFooter" hidden>

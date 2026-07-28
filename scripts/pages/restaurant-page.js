@@ -44,6 +44,7 @@
   let paymentMethod = '';
   let paymentMethodKey = '';
   const paymentApiTypeByKey = new Map();
+  const paymentScopeByKey = new Map();
   let selectedCoupon = null;
   let selectedCouponPreview = null;
   let couponPreviewPromise = null;
@@ -259,8 +260,10 @@
     restaurantInfoState = { status: 'idle', key: null, data: null, updatedAt: null };
     restaurantInfoPromise = null;
     availableCheckoutPaymentKeys = new Set();
+    paymentMethod = '';
     paymentMethodKey = '';
     paymentApiTypeByKey.clear();
+    paymentScopeByKey.clear();
     currentProd = null;
     editingCartItemUid = null;
     selectedCoupon = null;
@@ -838,7 +841,7 @@
   }
 
   function infoPaymentLabel(entry) {
-    if (entry.brand || entry.name) return entry.brand || entry.name;
+    if (entry.name || entry.brand) return entry.name || entry.brand;
     return ({
       pix: 'PIX',
       credit: 'Cartão de crédito',
@@ -2328,6 +2331,51 @@
       || '';
   }
 
+  function selectedPaymentSummary() {
+    const key = paymentMethodKey || infoPaymentType(paymentMethod);
+    const scope = paymentScopeByKey.get(key) || (String(key).includes(':') ? 'delivery' : 'online');
+    const type = String(key).split(':')[0] || infoPaymentType(paymentMethod);
+    const typeLabel = ({
+      credit: 'Crédito',
+      debit: 'Débito',
+      cash: 'Dinheiro',
+      voucher: 'Vale-refeição / alimentação',
+      card: 'Cartão'
+    })[type] || paymentMethod;
+    return {
+      scope,
+      title: scope === 'delivery' ? 'Pagar na entrega' : 'Pagar online',
+      detail: type === 'pix'
+        ? 'PIX'
+        : (scope === 'delivery' && typeLabel !== paymentMethod
+          ? `${typeLabel} - ${paymentMethod}`
+          : paymentMethod)
+    };
+  }
+
+  function handleCartCta() {
+    const address = currentCartAddress();
+    const hasAddress = Boolean(address?.summary || addressSummary(address));
+    const needsAddress = deliveryType !== 'pickup' && !hasAddress;
+    if (needsAddress) {
+      closeModalImmediately('cartModal');
+      openAddressChoiceDirect(false);
+      return;
+    }
+    if (!isLogged()) {
+      openLoginScreen('cart');
+      return;
+    }
+    const minOrderValue = minimumOrderValue();
+    if (minOrderValue > 0 && cartTotals().subtotal < minOrderValue) return;
+    hideCartOrderError();
+    if (paymentMethod) {
+      submitOrder();
+      return;
+    }
+    openCheckout();
+  }
+
   function syncCartLocationState() {
     const totals = cartTotals();
     const minOrderValue = minimumOrderValue();
@@ -2380,40 +2428,47 @@
       const paymentKey = infoPaymentType(paymentMethod);
       const hasSelectedPayment = Boolean(paymentMethod);
       const isPixSelected = paymentKey === 'pix';
+      const summary = hasSelectedPayment ? selectedPaymentSummary() : null;
       paymentCard.classList.toggle('has-selected-payment', hasSelectedPayment);
-      if ($('cartPaymentLabel')) $('cartPaymentLabel').textContent = isPixSelected ? 'PIX' : (paymentMethod || 'Selecione a forma de pagamento');
+      paymentCard.classList.toggle('is-pix-payment', isPixSelected);
+      if ($('cartPaymentTitle')) {
+        $('cartPaymentTitle').hidden = isPixSelected;
+        $('cartPaymentTitle').textContent = isPixSelected
+          ? ''
+          : (summary?.title || 'Escolher forma de pagamento');
+      }
+      if ($('cartPaymentLabel')) $('cartPaymentLabel').textContent = summary?.detail || 'Selecione a forma de pagamento';
       if ($('cartPaymentPixIcon')) $('cartPaymentPixIcon').hidden = !isPixSelected;
       if ($('cartPaymentDefaultIcon')) $('cartPaymentDefaultIcon').hidden = isPixSelected;
     }
     const cta = $('cartCtaBtn');
     if (cta) {
-      cta.disabled = false;
+      // O clique é delegado exclusivamente para handleCartCta. Manter também
+      // um onclick por estado executava DUAS ações: login e openCheckout.
+      cta.onclick = null;
+      cta.disabled = orderSubmitInFlight;
       cta.classList.remove('cart-cta-btn--minimum-required');
-      if (needsAddress) {
+      if (orderSubmitInFlight) {
+        cta.textContent = 'Enviando pedido...';
+        cta.classList.remove('cart-cta-btn--address-required', 'cart-cta-btn--login-required');
+      } else if (needsAddress) {
         cta.textContent = 'Informe seu endereço';
         cta.classList.add('cart-cta-btn--address-required');
         cta.classList.remove('cart-cta-btn--login-required');
-        cta.onclick = () => {
-          closeModalImmediately('cartModal');
-          openAddressChoiceDirect(false);
-        };
       } else if (!isLogged()) {
         cta.textContent = 'Entre ou cadastre-se';
         cta.classList.remove('cart-cta-btn--address-required');
         cta.classList.add('cart-cta-btn--login-required');
-        cta.onclick = () => openLoginScreen('cart');
       } else if (isBelowMinimumOrder) {
         cta.textContent = `Valor abaixo do pedido mínimo (${fmt(minOrderValue)})`;
         cta.disabled = true;
         cta.classList.remove('cart-cta-btn--address-required');
         cta.classList.remove('cart-cta-btn--login-required');
         cta.classList.add('cart-cta-btn--minimum-required');
-        cta.onclick = null;
       } else {
         cta.textContent = paymentMethod ? 'Efetuar pagamento' : 'Escolher forma de pagamento';
         cta.classList.remove('cart-cta-btn--address-required');
         cta.classList.remove('cart-cta-btn--login-required');
-        cta.onclick = openCheckout;
       }
     }
   }
@@ -2551,6 +2606,10 @@
   }
 
   async function openCheckout() {
+    if (!isLogged()) {
+      openLoginScreen('cart');
+      return;
+    }
     const selectedAddress = currentCartAddress();
     if (deliveryType === 'delivery' && !selectedAddress) {
       closeModalId('cartModal');
@@ -2637,6 +2696,12 @@
     alert('Cadastro de cartão estará disponível em breve.');
   }
 
+  function syncPaymentMethodFooter() {
+    const onlineTabActive = document.querySelector('[data-payment-screen-tab=online]')?.classList.contains('active');
+    const onlineSelection = document.querySelector('.payment-method-option[data-payment-scope=online].active');
+    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = !(onlineTabActive && onlineSelection);
+  }
+
   function setPaymentScreenTab(tab) {
     document.querySelectorAll('[data-payment-screen-tab]').forEach(button => {
       const active = button.dataset.paymentScreenTab === tab;
@@ -2646,11 +2711,12 @@
     document.querySelectorAll('[data-payment-screen-panel]').forEach(panel => {
       panel.hidden = panel.dataset.paymentScreenPanel !== tab;
     });
+    syncPaymentMethodFooter();
   }
 
   function openPaymentMethodScreen() {
     const overlay = $('paymentMethodModal');
-    const confirmedKey = infoPaymentType(paymentMethod);
+    const confirmedKey = paymentMethodKey || infoPaymentType(paymentMethod);
     const confirmedButton = paymentMethod
       ? Array.from(document.querySelectorAll('.payment-method-option')).find(button => !button.disabled && button.dataset.paymentKey === confirmedKey)
       : null;
@@ -2667,7 +2733,7 @@
       overlay?.removeAttribute('data-payment-value');
       overlay?.removeAttribute('data-payment-key');
     }
-    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = !confirmedButton;
+    syncPaymentMethodFooter();
     overlay?.classList.remove('is-entered', 'is-closing');
     openModal('paymentMethodModal');
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -2675,24 +2741,88 @@
     }));
   }
 
-  function closePaymentMethodScreen(afterClose) {
+  function closePaymentMethodScreen() {
     const overlay = $('paymentMethodModal');
     if (!overlay?.classList.contains('active')) return;
     overlay.classList.remove('is-entered', 'is-closing');
     closeModalId('paymentMethodModal');
-    if (typeof afterClose === 'function') setTimeout(afterClose, 600);
+  }
+
+  function checkoutDeliveryEntryKey(entry) {
+    const type = entry.method_type || 'payment';
+    const identity = slug(entry.name || entry.brand || '');
+    return identity ? `${type}:${identity}` : type;
+  }
+
+  function checkoutDeliveryIcon(entry, label) {
+    const brandClass = infoBrandClass(entry.brand || label);
+    if (brandClass) return `<span class='payment-brand-icon ${brandClass}' aria-hidden='true'></span>`;
+    if (entry.method_type === 'pix') return `<img class='payment-pix-icon' src='assets/icons/payment/pix.png' alt=''>`;
+    if (entry.method_type === 'cash') return `<span class='payment-cash-icon' aria-hidden='true'>R$</span>`;
+    return `<span class='payment-card-icon' aria-hidden='true'><svg viewBox='0 0 24 24'><rect x='2.5' y='5' width='19' height='14' rx='2'/><path d='M2.5 10h19'/></svg></span>`;
+  }
+
+  function renderCheckoutDeliveryGroups(entries) {
+    const container = $('paymentDeliveryGroups');
+    const keyedEntries = entries.map(entry => ({
+      ...entry,
+      checkout_key: checkoutDeliveryEntryKey(entry)
+    }));
+    const knownOrder = ['credit', 'debit', 'cash', 'pix', 'voucher', 'card'];
+    const presentTypes = [...new Set(keyedEntries.map(entry => entry.method_type))];
+    const typeOrder = [
+      ...knownOrder.filter(type => presentTypes.includes(type)),
+      ...presentTypes.filter(type => !knownOrder.includes(type))
+    ];
+    const groupLabels = {
+      credit: 'Cr\u00e9dito',
+      debit: 'D\u00e9bito',
+      cash: 'Dinheiro',
+      pix: 'PIX na entrega',
+      voucher: 'Vale-refei\u00e7\u00e3o / alimenta\u00e7\u00e3o',
+      card: 'Cart\u00e3o'
+    };
+    if (container) {
+      container.innerHTML = typeOrder.map(type => {
+        const groupEntries = keyedEntries.filter(entry => entry.method_type === type);
+        const title = groupLabels[type] || infoPaymentLabel({ method_type: type });
+        return `<section class='payment-delivery-group' data-payment-delivery-group='${esc(type)}'>
+          <h3 class='payment-delivery-title'>${esc(title)}</h3>
+          <div class='payment-delivery-options'>${groupEntries.map(entry => {
+            const label = infoPaymentLabel(entry);
+            return `<button class='payment-method-option payment-method-option--delivery' type='button' data-payment-scope='delivery' data-payment-key='${esc(entry.checkout_key)}' data-payment-type='${esc(entry.method_type)}' data-payment-value='${esc(label)}' aria-pressed='false' ${act('click', 'setPayment', '$this', label)}>${checkoutDeliveryIcon(entry, label)}<span class='payment-method-option-label'>${esc(label)}</span></button>`;
+          }).join('')}</div>
+        </section>`;
+      }).join('');
+    }
+    return keyedEntries;
   }
 
   function renderCheckoutPaymentMethods(data) {
     const groups = data ? infoPaymentData(data) : { online: [], delivery: [] };
     const onlineKeys = new Set(groups.online.map(entry => entry.method_type));
-    const deliveryKeys = new Set(groups.delivery.map(entry => entry.method_type));
+    const deliveryEntries = renderCheckoutDeliveryGroups(groups.delivery);
+    const deliveryKeys = new Set(deliveryEntries.map(entry => entry.checkout_key));
+    const deliveryTypes = new Set(deliveryEntries.map(entry => entry.method_type));
     // chave da UI -> method_type do backend, para o payload do pedido
     paymentApiTypeByKey.clear();
-    [...groups.online, ...groups.delivery].forEach(entry => {
-      if (entry.method_type && entry.api_method_type) paymentApiTypeByKey.set(entry.method_type, entry.api_method_type);
+    paymentScopeByKey.clear();
+    groups.online.forEach(entry => {
+      if (entry.method_type) {
+        paymentApiTypeByKey.set(entry.method_type, entry.api_method_type || entry.method_type);
+        paymentScopeByKey.set(entry.method_type, 'online');
+      }
     });
-    if (deliveryKeys.has('pix')) onlineKeys.add('pix');
+    deliveryEntries.forEach(entry => {
+      paymentApiTypeByKey.set(entry.checkout_key, entry.api_method_type || entry.method_type);
+      paymentScopeByKey.set(entry.checkout_key, 'delivery');
+    });
+    if (deliveryTypes.has('pix')) {
+      onlineKeys.add('pix');
+      const deliveryPix = deliveryEntries.find(entry => entry.method_type === 'pix');
+      if (!paymentApiTypeByKey.has('pix') && deliveryPix) paymentApiTypeByKey.set('pix', deliveryPix.api_method_type || 'pix');
+      paymentScopeByKey.set('pix', 'online');
+    }
     availableCheckoutPaymentKeys = new Set([...onlineKeys, ...deliveryKeys]);
     const buttons = Array.from(document.querySelectorAll('.payment-method-option[data-payment-key]'));
     buttons.forEach(button => {
@@ -2703,7 +2833,11 @@
       button.setAttribute('aria-disabled', available ? 'false' : 'true');
       button.title = available ? '' : 'Forma de pagamento indisponível';
     });
-    if (paymentMethod && !availableCheckoutPaymentKeys.has(infoPaymentType(paymentMethod))) paymentMethod = '';
+    const selectedKey = paymentMethodKey || infoPaymentType(paymentMethod);
+    if (paymentMethod && !availableCheckoutPaymentKeys.has(selectedKey)) {
+      paymentMethod = '';
+      paymentMethodKey = '';
+    }
     buttons.forEach(button => {
       button.classList.remove('active');
       button.setAttribute('aria-pressed', 'false');
@@ -2711,15 +2845,40 @@
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = paymentMethod || 'Selecione a forma de pagamento';
   }
 
+  function commitPaymentMethod(value, key) {
+    paymentMethod = value;
+    paymentMethodKey = key;
+    if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = value;
+    hideCartOrderError();
+    updateCartUI();
+  }
+
+  function returnToCartFromPayment() {
+    closePaymentMethodScreen();
+    if ($('checkoutModal')?.classList.contains('active')) closeModalImmediately('checkoutModal');
+    if (!$('cartModal')?.classList.contains('active')) openCartModal();
+  }
+
   function setPayment(btn, type) {
-    if (!btn || btn.disabled || !availableCheckoutPaymentKeys.has(btn.dataset.paymentKey || infoPaymentType(type))) return;
+    const key = btn?.dataset.paymentKey || infoPaymentType(type);
+    if (!btn || btn.disabled || !availableCheckoutPaymentKeys.has(key)) return;
     const overlay = $('paymentMethodModal');
+    if (btn.dataset.paymentScope === 'delivery') {
+      document.querySelectorAll('.payment-method-option').forEach(button => {
+        const active = button === btn;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      commitPaymentMethod(type, key);
+      returnToCartFromPayment();
+      return;
+    }
     if (btn.classList.contains('active')) {
       btn.classList.remove('active');
       btn.setAttribute('aria-pressed', 'false');
       overlay?.removeAttribute('data-payment-value');
       overlay?.removeAttribute('data-payment-key');
-      if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = true;
+      syncPaymentMethodFooter();
       return;
     }
     document.querySelectorAll('.payment-method-option').forEach(button => {
@@ -2729,9 +2888,9 @@
     });
     if (overlay) {
       overlay.dataset.paymentValue = type;
-      overlay.dataset.paymentKey = btn.dataset.paymentKey || infoPaymentType(type);
+      overlay.dataset.paymentKey = key;
     }
-    if ($('paymentMethodFooter')) $('paymentMethodFooter').hidden = false;
+    syncPaymentMethodFooter();
   }
 
   function confirmPaymentMethodSelection() {
@@ -2739,25 +2898,13 @@
     const selected = overlay?.querySelector('.payment-method-option.active');
     const type = overlay?.dataset.paymentValue || selected?.dataset.paymentValue || '';
     const key = overlay?.dataset.paymentKey || selected?.dataset.paymentKey || infoPaymentType(type);
-    if (!selected || !type || !availableCheckoutPaymentKeys.has(key)) return;
-    paymentMethod = type;
-    paymentMethodKey = key;
-    if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = type;
-    updateCartUI();
-    // Antes isto reabria o carrinho e o fluxo morria aqui (P0-1).
-    // Agora segue para a revisão, que é a única porta para createOrder.
-    closePaymentMethodScreen(() => {
-      closeModalImmediately('cartModal');
-      openOrderReview();
-    });
+    if (!selected || selected.dataset.paymentScope !== 'online' || !type || !availableCheckoutPaymentKeys.has(key)) return;
+    commitPaymentMethod(type, key);
+    returnToCartFromPayment();
   }
 
   // ============================================================
-  //  Checkout — revisão e criação do pedido
-  //
-  //  Único caminho até POST /orders. O payload é montado por
-  //  RapidexOrderPayload.buildOrderPayload (ver docs/order-contract.md);
-  //  aqui só reunimos o estado e cuidamos da UI.
+  //  Checkout — criação do pedido diretamente pela sacola
   // ============================================================
 
   function orderPaymentMethodForApi() {
@@ -2779,7 +2926,7 @@
       paymentMethod: orderPaymentMethodForApi(),
       customer: currentCustomerSnapshot(),
       isAuthenticated: Boolean(window.PedeAquiCustomerAuth?.isLoggedIn?.()),
-      notes: $('orvNotes')?.value || null
+      notes: null
     };
   }
 
@@ -2794,102 +2941,25 @@
     });
   }
 
-  function orderReviewItemHtml(item) {
-    const options = Array.isArray(item.selected_options_snapshot) ? item.selected_options_snapshot : [];
-    const meta = [
-      options.map(option => `${option.group_name}: ${option.option_name}`).join(' · '),
-      item.obs ? `Obs: ${item.obs}` : ''
-    ].filter(Boolean).join(' — ');
-    return `
-      <div class="orv-item">
-        <div>
-          <div class="orv-item-name">${item.qty}x ${esc(item.name)}</div>
-          ${meta ? `<div class="orv-item-meta">${esc(meta)}</div>` : ''}
-        </div>
-        <div class="orv-item-price">${fmt(cartItemUnitPrice(item) * item.qty)}</div>
-      </div>`;
+  function showCartOrderProblems(problems) {
+    const message = problems.length === 1
+      ? problems[0]
+      : `Revise antes de continuar: ${problems.join(' · ')}`;
+    showCartOrderError(message);
   }
 
-  function renderOrderReview() {
-    const totals = cartTotals();
-    const isDelivery = deliveryType === 'delivery';
-
-    if ($('orvItems')) $('orvItems').innerHTML = cart.map(orderReviewItemHtml).join('');
-
-    const deliveryBlock = $('orvDeliveryBlock');
-    if (deliveryBlock) {
-      const address = currentCartAddress();
-      if ($('orvDeliveryHeading')) $('orvDeliveryHeading').textContent = isDelivery ? 'Entrega' : 'Retirada';
-      if ($('orvAddress')) {
-        $('orvAddress').innerHTML = isDelivery
-          ? `<div class="orv-address">${address ? esc([[address.street, address.number].filter(Boolean).join(', '), address.neighborhood, address.complement].filter(Boolean).join(' · ')) : 'Endereço não informado'}</div>`
-          : `<div class="orv-address">Retirada na loja ${esc(currentCartBranchLabel())}</div>`;
-      }
-    }
-
-    if ($('orvPayment')) $('orvPayment').textContent = paymentMethod || 'Não selecionada';
-
-    if ($('orvSub')) $('orvSub').textContent = fmt(totals.subtotal);
-    if ($('orvSvc')) $('orvSvc').textContent = fmt(totals.svc);
-    if ($('orvSvcRow')) $('orvSvcRow').style.display = totals.svc > 0 ? 'flex' : 'none';
-    if ($('orvDeliveryFeeRow')) $('orvDeliveryFeeRow').style.display = isDelivery ? 'flex' : 'none';
-    if ($('orvDeliveryFee')) {
-      $('orvDeliveryFee').textContent = hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir';
-    }
-    if ($('orvTotal')) $('orvTotal').textContent = fmt(totals.total);
-
-    refreshOrderReviewValidity();
-  }
-
-  // Revalida e reflete no botão. Chamado ao abrir a revisão e sempre que a
-  // estimativa de entrega muda, para o bloqueio não ficar preso num estado velho.
-  function refreshOrderReviewValidity() {
-    if (!$('orderReviewModal')?.classList.contains('active')) return;
-    const problems = validateCurrentOrder(buildCurrentOrderPayload());
-    const confirmButton = $('orvConfirmBtn');
-    if (problems.length) {
-      showOrderReviewProblems(problems);
-      if (confirmButton && !orderSubmitInFlight) confirmButton.disabled = true;
-    } else {
-      hideOrderReviewError();
-      if (confirmButton && !orderSubmitInFlight) confirmButton.disabled = false;
-    }
-    return problems;
-  }
-
-  function showOrderReviewProblems(problems) {
-    const box = $('orvError');
-    if (!box) return;
-    box.hidden = false;
-    box.innerHTML = problems.length === 1
-      ? esc(problems[0])
-      : `<strong>Revise antes de continuar:</strong><ul>${problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
-  }
-
-  function showOrderReviewError(message) {
-    const box = $('orvError');
+  function showCartOrderError(message) {
+    const box = $('cartOrderError');
     if (!box) return;
     box.hidden = false;
     box.textContent = message;
   }
 
-  function hideOrderReviewError() {
-    const box = $('orvError');
+  function hideCartOrderError() {
+    const box = $('cartOrderError');
     if (!box) return;
     box.hidden = true;
     box.textContent = '';
-  }
-
-  function openOrderReview() {
-    if (!cart.length) return;
-    hideOrderReviewError();
-    openModal('orderReviewModal');
-    renderOrderReview();
-  }
-
-  function closeOrderReview() {
-    closeModalId('orderReviewModal');
-    setTimeout(() => openCartModal(), 180);
   }
 
   // ============================================================
@@ -2966,8 +3036,8 @@
   }
 
   // ---- Idempotency-Key ----
-  // A chave identifica UMA tentativa de pedido. Ela é gerada ao entrar na
-  // revisão e permanece a MESMA em todas as retentativas do mesmo pedido — é
+  // A chave identifica UMA tentativa de pedido. Ela é gerada no primeiro envio
+  // pela sacola e permanece a MESMA em todas as retentativas do mesmo pedido — é
   // isso que torna seguro reenviar após um timeout. Ela só troca quando o
   // pedido deixa de ser o mesmo: sucesso, ou qualquer mudança no payload
   // (itens, endereço, cupom, pagamento). Assim um retry nunca duplica e uma
@@ -3002,17 +3072,14 @@
 
   function setOrderSubmitting(active) {
     orderSubmitInFlight = active;
-    const confirmButton = $('orvConfirmBtn');
-    if (!confirmButton) return;
-    confirmButton.disabled = active;
-    confirmButton.textContent = active ? 'Enviando pedido...' : 'Confirmar pedido';
+    syncCartLocationState();
   }
 
   // Traduz a falha do createOrder em algo acionável. O carrinho NUNCA é tocado
   // aqui: erro não pode custar o pedido do cliente.
   function orderErrorMessage(error) {
     if (error?.name === 'TimeoutError') {
-      return 'O servidor demorou para responder. Verifique sua conexão e toque em Confirmar novamente.';
+      return 'O servidor demorou para responder. Verifique sua conexão e toque em Efetuar pagamento novamente.';
     }
     if (error?.status === 409) {
       return error.detail || error.message || 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.';
@@ -3021,7 +3088,7 @@
       return 'Sua sessão expirou. Entre novamente para concluir o pedido.';
     }
     if (error?.name === 'NetworkError') {
-      return 'Sem conexão com o servidor. Verifique sua internet e toque em Confirmar novamente.';
+      return 'Sem conexão com o servidor. Verifique sua internet e toque em Efetuar pagamento novamente.';
     }
     if (Number(error?.status) >= 500) {
       return 'O servidor não conseguiu processar o pedido agora. Tente novamente em instantes.';
@@ -3042,11 +3109,11 @@
     const orderPayload = buildCurrentOrderPayload();
     const problems = validateCurrentOrder(orderPayload);
     if (problems.length) {
-      showOrderReviewProblems(problems);
+      showCartOrderProblems(problems);
       return;
     }
 
-    hideOrderReviewError();
+    hideCartOrderError();
     setOrderSubmitting(true);
 
     let response;
@@ -3061,7 +3128,7 @@
       // preservada de propósito — a retentativa precisa ser reconhecida como a
       // mesma tentativa, não como um pedido novo.
       logAppError('Falha ao criar pedido', error);
-      showOrderReviewError(orderErrorMessage(error));
+      showCartOrderError(orderErrorMessage(error));
       setOrderSubmitting(false); // reabilita para retry
       return;
     }
@@ -3074,7 +3141,8 @@
     } catch (error) {
       logAppError('Pedido criado, mas falhou ao exibir a confirmação', error);
       setOrderSubmitting(false);
-      closeModalImmediately('orderReviewModal');
+      closeModalImmediately('cartModal');
+      showOrderSuccess(response);
     }
   }
 
@@ -3089,10 +3157,13 @@
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewKey = '';
+    paymentMethod = '';
+    paymentMethodKey = '';
     resetOrderIdempotencyKey(); // próximo pedido = chave nova
     updateCartUI();
     setOrderSubmitting(false);
-    closeModalImmediately('orderReviewModal');
+    hideCartOrderError();
+    closeModalImmediately('cartModal');
     showOrderSuccess(response);
   }
 
@@ -3310,10 +3381,6 @@
   }
 
   function renderDeliveryEstimate() {
-    // A revisão pode estar aberta enquanto a estimativa ainda chega. Re-renderizar
-    // atualiza a taxa exibida E o estado do botão Confirmar, sem o usuário
-    // precisar sair e voltar. (renderOrderReview não chama esta função: sem laço.)
-    if ($('orderReviewModal')?.classList.contains('active')) renderOrderReview();
     const text = deliveryEstimateText();
     const estimateFee = currentDeliveryEstimateFee();
     const feeText = estimateFee == null ? 'Taxa indisponivel' : fmt(estimateFee);
@@ -7317,8 +7384,8 @@
   const ACTIONS = {
     couponArtImageFailed,
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
-    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
-    openOrderReview, closeOrderReview, submitOrder, closeOrderSuccess,
+    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
+    submitOrder, closeOrderSuccess,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,

@@ -664,7 +664,7 @@ a{text-decoration:none;color:inherit}
 .cart-cta-btn{width:100%;background:var(--brand-primary);color:var(--brand-on);border:none;border-radius:14px;padding:16px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;transition:background .2s;letter-spacing:-.01em}
 .cart-cta-btn:active{background:var(--brand-active)}
 
-/* ── FULL-SCREEN CHECKOUT / REVIEW MODALS ── */
+/* ── FULL-SCREEN CHECKOUT MODALS ── */
 .modal--fs{display:flex;flex-direction:column}
 .fs-section{background:#fff;margin-bottom:8px;padding:18px 16px}
 .fs-section-title{font-size:.7rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
@@ -1593,8 +1593,7 @@ a{text-decoration:none;color:inherit}
 
 /* 1. Strip dark backdrop — these are screens, not modals */
 #cartModal,
-#checkoutModal,
-#orderReviewModal{
+#checkoutModal{
   background:transparent !important;
   backdrop-filter:none !important;
   opacity:1 !important;
@@ -1603,8 +1602,7 @@ a{text-decoration:none;color:inherit}
 
 /* 2. Modals fill the entire viewport (position:fixed escapes the overlay) */
 #cartModal .modal--cart,
-#checkoutModal .modal--fs,
-#orderReviewModal .modal--fs{
+#checkoutModal .modal--fs{
   position:fixed;
   inset:0;
   width:100%;
@@ -1623,8 +1621,7 @@ a{text-decoration:none;color:inherit}
 
 /* 3. Slide in from right when active */
 #cartModal.active .modal--cart,
-#checkoutModal.active .modal--fs,
-#orderReviewModal.active .modal--fs{
+#checkoutModal.active .modal--fs{
   transform:translateX(0);
 }
 

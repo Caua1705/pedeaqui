@@ -3,8 +3,8 @@
 // POR QUÊ: os PNGs foram commitados no tamanho em que saíram do design, não no
 // tamanho em que a tela usa. O mascote é 1254x1254 (1,0 MB) para ser desenhado
 // num quadrado de 110px — 130x mais pixels do que a maior tela precisa. O logo
-// da landing é 634x640 (143 kB) para 34px. Isso é banda paga por pixel que o
-// usuário nunca vê.
+// mestre também é muito maior que os 34px usados na landing. Isso é banda paga
+// por pixel que o usuário nunca vê.
 //
 // COMO: cada entrada declara o tamanho de RENDERIZAÇÃO real (lido do CSS, com o
 // seletor anotado ao lado para que a conta continue auditável) e o script emite

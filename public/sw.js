@@ -21,7 +21,7 @@
 //     revalidate. São logo e mascote, não preço.
 //   - o HTML — network-first. Cai no cache SÓ quando a rede falha, e o HTML não
 //     carrega nenhum preço: ele é a casca, os dados chegam por fetch depois.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `rapidex-shell-${VERSION}`;
 const ASSET_CACHE = `rapidex-assets-${VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, ASSET_CACHE];

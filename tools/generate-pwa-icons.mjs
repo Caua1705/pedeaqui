@@ -1,8 +1,7 @@
 // Gera os ícones do manifest a partir do mark da PLATAFORMA.
 //
-// POR QUÊ: o manifest precisa de PNGs quadrados em 192 e 512 px. O único mark
-// que existe no repo é assets/brand/pedeaqui-logo.png (634x640) — quase
-// quadrado, mas não exatamente, e o manifest exige `sizes` exatos.
+// POR QUÊ: o manifest precisa de PNGs quadrados em 192 e 512 px. O mark mestre
+// fica em assets/brand/pedeaqui-logo.png e o manifest exige `sizes` exatos.
 //
 // São TRÊS saídas, não duas:
 //   - 192 e 512 `purpose: any`      -> fundo transparente, arte inteira visível
@@ -51,21 +50,14 @@ async function writeIcon(name, buffer) {
 // 512 sai com 106 kB — peso de foto para um pin vetorial.
 const PNG_OPTIONS = { compressionLevel: 9, palette: true, effort: 10 };
 
-// `contain`, nunca `fill`: o mark é 634x640, então esticá-lo para um quadrado o
-// deformaria. Encaixar preserva a proporção, centraliza e completa as sobras
-// com a mesma cor de fundo do próprio mark.
+// `contain`, nunca `fill`: assim uma futura troca de fonte não deforma a arte.
+// Encaixar preserva a proporção, centraliza e completa qualquer sobra com o
+// mesmo fundo preto do próprio mark.
 function square(size) {
   return sharp(SOURCE)
-    .extract(SOURCE_ART)
     .resize(size, size, { fit: 'contain', background: MARK_BACKGROUND })
     .png(PNG_OPTIONS);
 }
-
-// As duas primeiras linhas do PNG de origem são BRANCAS — sobra de digitalização.
-// A 34px (o uso na landing) ninguém vê; a 512 vira um risco branco atravessando
-// o topo do ícone. Recortadas aqui, não no asset, para não mexer nas variantes
-// que o tools/optimize-images.mjs já gerou e commitou.
-const SOURCE_ART = { left: 0, top: 2, width: 634, height: 638 };
 
 await mkdir(OUT_DIR, { recursive: true });
 

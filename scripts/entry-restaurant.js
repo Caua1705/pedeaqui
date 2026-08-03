@@ -31,6 +31,9 @@ import './utils/lifecycle.js';
 // Cache com prazo e teto. Precisa vir antes dos serviços que o instanciam.
 import './utils/ttl-cache.js';
 import './utils/image-cdn.js';
+// Gerador do QR do Pix. Sem dependência de runtime e sem imagem externa — a
+// CSP proíbe as duas coisas. Ver o cabeçalho do arquivo.
+import './utils/qrcode.js';
 import './utils/validators.js';
 import './services/api-client.js';
 import './services/api.js';

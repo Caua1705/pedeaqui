@@ -1,11 +1,28 @@
-# Contrato — `POST /restaurants/{slug}/orders`
+# Contrato — pedido e pagamento online
 
 Derivado do **OpenAPI publicado pela própria API** (`GET https://api.pederapidex.com/openapi.json`),
-schemas `CreateOrderRequest` / `CreateOrderResponse`. Não é suposição: é o schema que o
-backend expõe. Os pontos que **são** suposição estão marcados com ⚠️ no fim.
+schemas `CreateOrderRequest` / `CreateOrderResponse` / `StartPaymentResponse` /
+`OrderDetailResponse`. Não é suposição: é o schema que o backend expõe. Os pontos que
+**são** suposição estão marcados com ⚠️ no fim.
 
 Montagem centralizada em `scripts/services/order-payload.js` → `buildOrderPayload(state)`.
 Se o contrato mudar, é esse arquivo que muda.
+
+## As três rotas do ciclo
+
+| Rota | Quem autoriza | Quando |
+|---|---|---|
+| `POST /restaurants/{slug}/orders` | Bearer **opcional** | cria o pedido; devolve `tracking_token` |
+| `POST /restaurants/{slug}/orders/{tracking_token}/payment` | o próprio token (sem security) | abre a cobrança no gateway |
+| `GET /restaurants/{slug}/orders/track/{tracking_token}` | o próprio token (sem security) | acompanha status e pagamento |
+
+Cliente logado tem um quarto caminho, `GET /customers/me/orders/{order_id}`, autorizado pelo
+Bearer.
+
+**A consulta pública por telefone não existe mais.** Verificado no OpenAPI atual: nenhuma
+rota expõe `phone` como query param para buscar pedido. Para um visitante, perder o
+`tracking_token` é perder o acesso ao pedido — daí ele ser persistido por slug em
+`scripts/state/order-tracking.js` **antes** de qualquer renderização de confirmação.
 
 ## Requisição
 
@@ -30,7 +47,7 @@ Se o contrato mudar, é esse arquivo que muda.
 | `address.street/number/neighborhood/complement/reference/city/state` | string\|null | não | `operationContext.address` |
 | `address.zipcode` | string\|null | não | ⚠️ front guarda como `postal_code` — **é remapeado** |
 | `address.latitude/longitude` | number\|string\|null | não | `operationContext.address` |
-| `payment_method` | string\|null | não | `method_type` do backend |
+| `payment_method` | string (max 50)\|null | não **no schema** — ver abaixo | `method_type` do backend |
 | `coupon_id` | uuid\|null | não | `selectedCoupon.id` |
 | `coupon_code` | string 1..100\|null | não | `selectedCoupon.code` |
 | `notes` | string\|null | não | observação do pedido (hoje não usado pela UI) |
@@ -49,6 +66,12 @@ front manda inputs, o servidor devolve os valores.
 - **Cliente autenticado**: identidade vem do JWT. **Nunca** mandamos `customer_id`
   (o campo nem existe); `customer` só vai no fluxo visitante.
 - Campos vazios/nulos são omitidos em vez de enviados como `""`.
+- **`payment_method` é obrigatório para o front, mesmo sendo opcional no schema.** O
+  OpenAPI declara `anyOf: [{string, maxLength 50}, {null}]` **fora de `required`**, ou seja,
+  o schema aceita ausência. Mas é ele que decide o `payment_flow` do pedido, e sem ele não
+  há como saber se a cobrança online deve existir. Por isso a chave vai **sempre** no JSON
+  (`buildOrderPayload`), e `validateOrderPayload` **barra o envio** quando ela está vazia —
+  o erro vira "Escolha a forma de pagamento" na tela, não um 422 genérico.
 
 ## Resposta de sucesso (200) — `CreateOrderResponse`
 
@@ -56,7 +79,10 @@ front manda inputs, o servidor devolve os valores.
 |---|---|---|
 | `id` | uuid | sim |
 | `order_number` | **integer** | sim |
+| `tracking_token` | string | sim |
 | `status` | string | sim |
+| `payment_flow` | string | sim |
+| `payment_status` | string | sim |
 | `subtotal` | number | sim |
 | `delivery_fee` | number | sim |
 | `service_fee` | number | sim |
@@ -69,6 +95,43 @@ front manda inputs, o servidor devolve os valores.
 
 Atenção ao tipo misto: totais são `number`, descontos são `string` decimal. A tela de
 sucesso normaliza com `Number()` antes de formatar.
+
+`tracking_token` é gravado por slug **antes de renderizar a confirmação**
+(`RapidexOrderTracking.remember`). É a única credencial do visitante para o próprio pedido.
+
+## Cobrança online — `POST /restaurants/{slug}/orders/{tracking_token}/payment`
+
+**Sem corpo de requisição** (o schema não define `requestBody`): o método de pagamento já
+foi gravado no pedido. **Sem `security`**: o token no path é a autorização.
+
+Resposta 200 — `StartPaymentResponse`:
+
+| Campo | Tipo | Obrig. |
+|---|---|---|
+| `provider` | string | sim |
+| `provider_payment_id` | string | sim |
+| `payment_status` | string | sim |
+| `qr_code` | string\|null | não |
+| `checkout_url` | string\|null | não |
+
+`qr_code` é o **copia-e-cola** do Pix (payload EMV em texto), não uma imagem: o schema não
+tem nenhum campo de imagem. O QR é desenhado no cliente a partir dessa string
+(`scripts/utils/qrcode.js`), sem dependência nem host externo.
+
+`qr_code` e `checkout_url` são ambos anuláveis e **alternativos** — a tela renderiza o que
+vier e só falha se vierem os dois vazios. `checkout_url` é filtrado para `http(s)` antes de
+virar link.
+
+## Acompanhamento — `GET /restaurants/{slug}/orders/track/{tracking_token}`
+
+**Sem `security`** no OpenAPI: rota pública autorizada pelo próprio token. Devolve
+`OrderDetailResponse`, cujos campos de pagamento são:
+
+| Campo | Tipo | Obrig. |
+|---|---|---|
+| `payment_status` | string | sim |
+| `payment_flow` | string\|null | não |
+| `payment_method` | string\|null | não |
 
 ## Erros
 
@@ -95,3 +158,19 @@ sucesso normaliza com `Number()` antes de formatar.
 6. Não há endpoint de "preview do pedido". A revisão exibe o cálculo **local** (mesma conta
    que o carrinho sempre fez) e o substitui pelos valores do servidor após o 200.
    Divergência entre os dois vira pendência de backend, não de front.
+7. **`payment_flow` não tem enum no schema** — é `string` livre. Assumimos que o valor
+   `"online"` (case-insensitive) é o que marca o pedido que precisa de cobrança; qualquer
+   outro valor cai no fluxo de pagar na entrega, que vai direto para a tela de sucesso.
+   Ou seja: a decisão é **do backend**, e o desconhecido falha para o caminho seguro (não
+   inventa uma cobrança). Validar a lista real de valores com o backend.
+8. **`payment_status` não tem enum no schema** — também é `string` livre. O front
+   normaliza em três grupos (`paid` / `failed` / `pending`) a partir de uma lista de
+   sinônimos (`paid|approved|succeeded|confirmed|captured|settled|completed` →
+   pago; `failed|canceled|expired|refused|rejected|declined|refunded|chargeback|voided` →
+   falhou), e **tudo o que não reconhece é tratado como pendente** — o polling continua em
+   vez de declarar pago por engano. Validar os valores reais do gateway.
+9. **A cobrança não declara validade.** `StartPaymentResponse` não tem `expires_at` nem
+   equivalente, então o front não sabe quando o Pix vence: usa uma janela **própria** de
+   10 min de polling (`PIX_POLL_WINDOW_MS`) e, ao estourar, para de consultar e oferece
+   verificação manual em vez de afirmar que expirou de verdade. Se o backend passar a
+   expor a validade, é ela que deve mandar.

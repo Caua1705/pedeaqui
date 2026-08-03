@@ -61,7 +61,12 @@ export default defineConfig({
         // scripts/pages/restaurant-rapi.js — RAPI_AVATAR_SRC/SRCSET
         { src: 'assets/brand/rapi-mascot@*.webp', dest: '.' },
         // scripts/pages/restaurant-page.js — troca o ícone conforme o login
-        { src: 'assets/icons/cart/cart-location-*@*.webp', dest: '.' }
+        { src: 'assets/icons/cart/cart-location-*@*.webp', dest: '.' },
+        // scripts/pages/restaurant-page.js — marca do Pix na lista de formas de
+        // pagamento. Montada por string, então nunca esteve no module graph: no
+        // build ela respondia com o fallback de SPA (200 text/html) em vez da
+        // imagem, e o ícone não pintava.
+        { src: 'assets/icons/payment/pix.png', dest: '.' }
       ]
     })
   ],

@@ -80,14 +80,9 @@
     return window.PedeAquiApiClient.post(routes().createOrder(slug), payload);
   }
 
-  async function getOrder(slug, orderNumber, phone) {
-    if (useMockData()) {
-      const orders = window.PedeAquiOrderState?.listOrders?.() || [];
-      return orders.find(order => String(order.order_number) === String(orderNumber)) || null;
-    }
-
-    return window.PedeAquiApiClient.get(routes().getOrder(slug, orderNumber, phone || ''));
-  }
+  // A busca de pedido por telefone foi REMOVIDA da API. O acompanhamento passa
+  // pelo tracking_token (window.PedeAquiOrderService.trackOrder) e o histórico
+  // do cliente logado por /customers/me/orders — não há substituto aqui.
 
   window.PedeAquiApi = {
     getHealth,
@@ -97,7 +92,6 @@
     getProduct,
     getAvailableCoupons,
     previewCoupon,
-    createOrder,
-    getOrder
+    createOrder
   };
 })();

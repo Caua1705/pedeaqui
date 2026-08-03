@@ -932,12 +932,22 @@
 <div class="overlay" id="pixPaymentModal">
   <div class="modal modal--fs" role="dialog" aria-modal="true" aria-labelledby="pixPaymentTitle">
     <div class="sheet-drag"></div>
+    <!-- Sair daqui não é um voltar comum: o pedido já existe e a saída é o
+         cancelamento. Por isso os DOIS botões abrem a mesma confirmação. -->
     <div class="cart-hdr">
-      <button class="cart-hdr-back" type="button" data-act-click='closePixPayment' aria-label="Voltar">
+      <button class="cart-hdr-back" type="button" data-act-click='openPixExitConfirm' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
-      <h2 class="cart-hdr-title" id="pixPaymentTitle">Pagamento via Pix</h2>
-      <div class="cart-hdr-spacer"></div>
+      <h2 class="cart-hdr-title" id="pixPaymentTitle">Pagamento PIX</h2>
+      <button class="cart-hdr-back" type="button" data-act-click='openPixExitConfirm' aria-label="Fechar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <!-- Cobre o título enquanto aparece, como na referência. aria-live faz o
+           leitor de tela anunciar a cópia sem precisar de foco. -->
+      <div class="pix-toast" id="pixToast" role="status" aria-live="polite" hidden>
+        <svg class="pix-toast-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="m8 12.5 2.5 2.5L16 9.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="pixToastText"></span>
+      </div>
     </div>
 
     <div class="cart-scroll pix-body">
@@ -950,30 +960,56 @@
 
       <!-- Cobrança pronta: QR, copia-e-cola e link do checkout -->
       <section class="pix-state" data-pix-state="ready" hidden>
-        <div class="pix-order-line">
-          <span id="pixOrderNumber">—</span>
-          <strong id="pixOrderTotal">—</strong>
-        </div>
-        <div class="pix-qr-frame" id="pixQrFrame">
-          <div class="pix-qr" id="pixQrCode"></div>
-        </div>
-        <p class="pix-instruction">Abra o app do seu banco, escolha Pix e escaneie o QR Code.</p>
+        <div class="pix-card">
+          <div class="pix-card-row">
+            <span class="pix-card-icon pix-card-icon--brand" aria-hidden="true">
+              <img src="assets/icons/payment/pix.png" alt="">
+            </span>
+            <div class="pix-card-row-text">
+              <strong>Pedido aguardando pagamento</strong>
+              <span class="pix-order-line">
+                <span id="pixOrderNumber">—</span>
+                <strong id="pixOrderTotal">—</strong>
+              </span>
+            </div>
+          </div>
 
-        <div class="pix-code-block">
-          <span class="pix-code-label">Pix copia e cola</span>
-          <code class="pix-code" id="pixCopyCode"></code>
+          <div class="pix-card-rule"></div>
+
+          <div class="pix-card-row">
+            <span class="pix-card-icon pix-card-icon--clock" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <!-- Conta a MESMA janela em que a tela ainda verifica o pagamento
+                 sozinha; ao zerar, o estado "expired" assume. -->
+            <strong class="pix-countdown" id="pixCountdown">(--:--)</strong>
+          </div>
+
+          <ul class="pix-steps">
+            <li>Acesse seu app de pagamentos</li>
+            <li>Escolha pagar via PIX</li>
+            <li id="pixStepLast">Escaneie o QR Code ou cole o código abaixo</li>
+          </ul>
+
+          <div class="pix-qr-frame" id="pixQrFrame">
+            <div class="pix-qr" id="pixQrCode"></div>
+          </div>
+
+          <div class="pix-code-block">
+            <span class="pix-code-label">Código PIX</span>
+            <code class="pix-code" id="pixCopyCode"></code>
+          </div>
+
+          <button class="pix-copy-btn" type="button" id="pixCopyBtn" data-act-click='copyPixCode'>
+            <span id="pixCopyBtnLabel">Copiar código PIX</span>
+          </button>
+          <a class="pix-checkout-link" id="pixCheckoutLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir a página de pagamento</a>
         </div>
-        <button class="pix-copy-btn" type="button" id="pixCopyBtn" data-act-click='copyPixCode'>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          <span id="pixCopyBtnLabel">Copiar código</span>
-        </button>
-        <a class="pix-checkout-link" id="pixCheckoutLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir a página de pagamento</a>
 
         <div class="pix-status" id="pixStatus" role="status" aria-live="polite">
           <span class="pix-status-dot" aria-hidden="true"></span>
           <span id="pixStatusText">Aguardando o pagamento...</span>
         </div>
-        <p class="pix-state-note" id="pixDeadlineNote"></p>
         <p class="pix-state-note">O pedido segue para a cozinha assim que o pagamento for confirmado.</p>
       </section>
 
@@ -998,6 +1034,18 @@
         <button class="cart-cta-btn u-max-w-320" type="button" data-act-click='checkPixStatusNow'>Verificar agora</button>
         <button class="pix-secondary-btn" type="button" data-act-click='closePixPayment'>Voltar para a loja</button>
       </section>
+    </div>
+
+    <!-- Confirmação de saída. Vive DENTRO da tela de Pix para subir por cima
+         só dela, sem mexer na pilha de modais do app. -->
+    <div class="pix-exit" id="pixExitConfirm" hidden>
+      <div class="pix-exit-scrim" data-act-click='closePixExitConfirm'></div>
+      <div class="pix-exit-sheet" role="dialog" aria-modal="true" aria-labelledby="pixExitTitle">
+        <h3 class="pix-exit-title" id="pixExitTitle">Atenção</h3>
+        <p class="pix-exit-text">Ao confirmar esta ação, o seu pedido será cancelado permanentemente</p>
+        <button class="pix-exit-primary" type="button" data-act-click='closePixExitConfirm'>Voltar para PIX</button>
+        <button class="pix-exit-ghost" type="button" data-act-click='confirmPixExit'>Cancelar pedido</button>
+      </div>
     </div>
   </div>
 </div>

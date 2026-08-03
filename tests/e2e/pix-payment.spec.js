@@ -80,10 +80,82 @@ test('o botão de copiar coloca o payload do Pix na área de transferência', as
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
 
   await page.locator('#pixCopyBtn').click();
-  await expect(page.locator('#pixCopyBtnLabel')).toHaveText('Código copiado!');
+
+  // O retorno é o aviso sobre o cabeçalho — o rótulo do botão não muda.
+  const toast = page.locator('#pixToast');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveText('PIX copiado com sucesso!');
+  await expect(page.locator('#pixCopyBtnLabel')).toHaveText('Copiar código PIX');
 
   const clipboard = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboard).toBe(PIX_QR_CODE);
+
+  // E some sozinho, sem deixar o cabeçalho coberto.
+  await expect(toast).toBeHidden({ timeout: 6000 });
+});
+
+test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nada', async ({
+  page
+}) => {
+  const { paymentRequests } = await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const confirm = page.locator('#pixExitConfirm');
+  await expect(confirm).toBeHidden();
+
+  // Os DOIS botões do cabeçalho levam ao mesmo aviso: voltar e fechar.
+  for (const label of ['Voltar', 'Fechar']) {
+    await page.locator(`#pixPaymentModal .cart-hdr [aria-label="${label}"]`).click();
+    await expect(confirm).toBeVisible();
+    await expect(page.locator('#pixExitTitle')).toHaveText('Atenção');
+
+    // "Voltar para PIX" só desce a folha: a tela continua na cobrança e
+    // nenhuma requisição nova é feita.
+    await page.getByRole('button', { name: 'Voltar para PIX' }).click();
+    await expect(confirm).toBeHidden();
+    await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+    await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+  }
+
+  expect(paymentRequests).toHaveLength(1);
+});
+
+test('"Cancelar pedido" sai da cobrança sem um segundo aviso', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  await page.locator('#pixPaymentModal .cart-hdr [aria-label="Fechar"]').click();
+  await page.getByRole('button', { name: 'Cancelar pedido' }).click();
+
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#pixExitConfirm')).toBeHidden();
+  // Nenhum aviso extra fica na tela depois da saída.
+  await expect(page.locator('#pixToast')).toBeHidden();
+});
+
+test('o contador regressivo anda para trás enquanto a cobrança espera', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const countdown = page.locator('#pixCountdown');
+  await expect(countdown).toHaveText(/^\(\d{2}:\d{2}\)$/);
+
+  const toSeconds = async () => {
+    const text = (await countdown.textContent()) || '';
+    const [, m, s] = text.match(/\((\d{2}):(\d{2})\)/) || [];
+    return Number(m) * 60 + Number(s);
+  };
+
+  const first = await toSeconds();
+  // A janela de espera é de 10 min — o contador nasce nela, não em zero.
+  expect(first).toBeGreaterThan(9 * 60);
+  await expect.poll(toSeconds, { timeout: 8000 }).toBeLessThan(first);
 });
 
 test('detecta o pagamento pelo polling e leva à tela de sucesso, parando de consultar', async ({
@@ -242,8 +314,10 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
   await submitPixOrder(page);
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
 
-  // Sai da tela: o pedido e o tracking_token continuam guardados.
-  await page.locator('#pixPaymentModal .cart-hdr-back').click();
+  // Sai da tela pela confirmação: o pedido e o tracking_token continuam
+  // guardados — sair da cobrança não apaga a pendência.
+  await page.locator('#pixPaymentModal .cart-hdr [aria-label="Voltar"]').click();
+  await page.getByRole('button', { name: 'Cancelar pedido' }).click();
   await expect(page.locator('#pendingPaymentBar')).toBeVisible();
 
   // Recarrega a loja como quem volta depois — a pendência sobrevive ao reload.

@@ -26,6 +26,12 @@
   display: none;
 }
 
+/* O cartão encosta no topo, como na referência — o respiro maior é dos estados
+   de texto (carregando/erro), que ficam centrados no vazio. */
+.pix-state[data-pix-state='ready'] {
+  padding-top: 14px;
+}
+
 .pix-state-title {
   font-size: 1.05rem;
   font-weight: 700;
@@ -73,82 +79,178 @@
   }
 }
 
-/* ---- Cobrança pronta ---- */
+/* ---- Cobrança pronta ----
+
+   O cartão é a referência da tela: 374px de largura com 20px de respiro
+   interno, o que dá exatamente os 334px do botão de copiar. As medidas abaixo
+   (42px dos ícones, 45px do botão, 20px acima dele) saem daí. */
+
+.pix-card {
+  width: 100%;
+  max-width: 374px;
+  box-sizing: border-box;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--shadow-card);
+  text-align: left;
+}
+
+.pix-card-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pix-card-icon {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.pix-card-icon--brand {
+  background: var(--surface-3);
+}
+
+.pix-card-icon--brand img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Fundo derivado da marca, não um âmbar fixo: numa loja azul o relógio precisa
+   sair azul (tests/e2e/tenant-theme.spec.js). */
+.pix-card-icon--clock {
+  background: rgba(var(--brand-primary-rgb), 0.12);
+  color: var(--brand-primary);
+}
+
+.pix-card-icon--clock svg {
+  width: 21px;
+  height: 21px;
+}
+
+.pix-card-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pix-card-row-text > strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-main);
+}
 
 .pix-order-line {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 320px;
-  font-size: 0.83rem;
+  gap: 8px;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  margin-bottom: 16px;
 }
 
 .pix-order-line strong {
-  font-size: 1.15rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: var(--text-main);
 }
 
-.pix-qr-frame {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 2px 10px var(--shadow-card);
+.pix-countdown {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
 }
 
-/* O SVG do QR é gerado em runtime (scripts/utils/qrcode.js) e ocupa o quadro
-   inteiro. Largura fixa em vez de %: um QR reescalado por fração de pixel
-   borra as bordas dos módulos e piora a leitura. */
-.pix-qr svg {
-  display: block;
-  width: 232px;
-  height: 232px;
+.pix-card-rule {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
 }
 
-.pix-instruction {
-  font-size: 0.85rem;
-  line-height: 1.5;
+.pix-steps {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.pix-steps li {
+  font-size: 0.82rem;
+  line-height: 1.4;
   color: var(--text-muted);
-  margin: 16px 0 20px;
-  max-width: 300px;
+  margin-bottom: 10px;
 }
 
-.pix-code-block {
-  width: 100%;
-  max-width: 320px;
-  background: var(--surface);
+.pix-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.pix-qr-frame {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 10px 12px;
-  text-align: left;
+  background: #ffffff;
+}
+
+.pix-qr-frame[hidden] {
+  display: none;
+}
+
+/* O SVG do QR é gerado em runtime (scripts/utils/qrcode.js). Largura fixa em
+   vez de %: um QR reescalado por fração de pixel borra as bordas dos módulos e
+   piora a leitura. */
+.pix-qr svg {
+  display: block;
+  width: 196px;
+  height: 196px;
+}
+
+/* Caixa com a legenda encaixada na borda, como na referência. */
+.pix-code-block {
+  position: relative;
+  margin-top: 20px;
+  padding: 14px 12px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.pix-code-block[hidden] {
+  display: none;
 }
 
 .pix-code-label {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  position: absolute;
+  top: -7px;
+  left: 11px;
+  padding: 0 5px;
+  background: var(--surface);
+  font-size: 0.7rem;
   color: var(--text-faint);
-  margin-bottom: 4px;
 }
 
 /* O payload EMV é uma linha só e longuíssima: quebra em qualquer ponto e é
-   truncado em três linhas — quem paga usa o botão de copiar, não a leitura. */
+   truncado em seis linhas — quem paga usa o botão de copiar, não a leitura. */
 .pix-code {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.7rem;
-  line-height: 1.45;
-  color: var(--text-muted);
+  /* <code> puxaria monospace do agente; a referência usa a fonte do app. */
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-main);
   overflow-wrap: anywhere;
   word-break: break-all;
 }
@@ -157,13 +259,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   width: 100%;
-  max-width: 320px;
-  margin-top: 12px;
-  padding: 13px 16px;
+  height: 45px;
+  margin-top: 20px;
+  padding: 0 16px;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--brand-primary);
   /* --brand-on é calculado por luminosidade em brand-theme.js: numa marca
      clara ele vira texto escuro. Fixar #fff aqui quebraria essas marcas. */
@@ -172,25 +273,24 @@
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
+  transition: filter 0.15s;
 }
 
-.pix-copy-btn svg {
-  width: 17px;
-  height: 17px;
-  flex: none;
+.pix-copy-btn[hidden] {
+  display: none;
 }
 
-.pix-copy-btn.is-copied {
-  background: var(--state-success);
-  color: #ffffff;
+.pix-copy-btn:active {
+  filter: brightness(0.88);
 }
 
 .pix-checkout-link {
   display: block;
-  margin-top: 12px;
+  margin-top: 14px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--brand-primary);
+  text-align: center;
   text-decoration: underline;
 }
 
@@ -246,6 +346,167 @@
 .pix-status.is-paid .pix-status-dot {
   background: var(--state-success);
   animation: none;
+}
+
+/* ---- Aviso de "copiado" ----
+
+   Cobre o título do cabeçalho enquanto aparece, entre os dois botões. Fica
+   dentro de .cart-hdr (que é position:relative pela regra abaixo) para
+   acompanhar a tela, e não a viewport. */
+
+.cart-hdr {
+  position: relative;
+}
+
+.pix-toast {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+  opacity: 0;
+  transform: translateY(-50%) scale(0.94);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.pix-toast[hidden] {
+  display: none;
+}
+
+.pix-toast.is-open {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.pix-toast-icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  color: var(--state-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pix-toast {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* ---- Confirmação de saída ----
+
+   Sobe de baixo para cima por cima da tela de Pix, como os outros sheets do
+   app. Só o "Cancelar pedido" sai daqui; "Voltar para PIX" desce a folha e
+   devolve a cobrança intacta. */
+
+/* A folha é absoluta dentro da tela; sem o recorte, o scrim passaria por cima
+   dos cantos arredondados do topo do modal. */
+#pixPaymentModal .modal {
+  overflow: hidden;
+}
+
+.pix-exit {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.pix-exit[hidden] {
+  display: none;
+}
+
+.pix-exit-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.26s ease;
+}
+
+.pix-exit.is-open .pix-exit-scrim {
+  opacity: 1;
+}
+
+.pix-exit-sheet {
+  position: relative;
+  box-sizing: border-box;
+  padding: 22px 20px calc(20px + var(--safe-bottom));
+  border-radius: 18px 18px 0 0;
+  background: var(--surface-2);
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pix-exit.is-open .pix-exit-sheet {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pix-exit-scrim,
+  .pix-exit-sheet {
+    transition-duration: 0.01ms;
+  }
+}
+
+.pix-exit-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+
+.pix-exit-text {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 auto 20px;
+  max-width: 300px;
+}
+
+.pix-exit-primary,
+.pix-exit-ghost {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.pix-exit-primary {
+  border: none;
+  background: var(--brand-primary);
+  color: var(--brand-on);
+}
+
+.pix-exit-ghost {
+  margin-top: 10px;
+  border: 1px solid var(--brand-primary);
+  background: var(--surface);
+  color: var(--brand-primary);
+}
+
+.pix-exit-primary:active,
+.pix-exit-ghost:active {
+  filter: brightness(0.92);
 }
 
 /* ---- Erro e expiração ---- */

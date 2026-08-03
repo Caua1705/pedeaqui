@@ -3378,6 +3378,11 @@
   // voo da anterior (a comparação `pixSession !== session` aparece em todo
   // ponto que retoma depois de um await).
   let pixSession = null;
+  // Tickers da tela de Pix, independentes da sessão: o contador regressivo e o
+  // sumiço automático do aviso de "copiado".
+  let pixCountdownTimer = null;
+  let pixToastTimer = null;
+  let pixExitTimer = null;
 
   const isOnlinePaymentFlow = order =>
     String(order?.payment_flow || '').trim().toLowerCase() === 'online';
@@ -3465,7 +3470,9 @@
       $('pixOrderNumber').textContent = order?.order_number != null ? `Pedido #${order.order_number}` : 'Seu pedido';
     }
     if ($('pixOrderTotal')) $('pixOrderTotal').textContent = fmt(orderAmount(order?.total));
-    resetPixCopyButton();
+    hidePixToast();
+    closePixExitConfirm({ animate: false });
+    updatePixCountdown();
     setPixState('loading');
     openModal('pixPaymentModal');
 
@@ -3564,11 +3571,12 @@
     }
     if (frame) frame.hidden = !qrDrawn;
 
-    const instruction = document.querySelector('#pixPaymentModal .pix-instruction');
-    if (instruction) {
-      instruction.textContent = qrDrawn
-        ? 'Abra o app do seu banco, escolha Pix e escaneie o QR Code.'
-        : 'Abra o app do seu banco, escolha Pix e use o código copia e cola.';
+    // O último passo muda conforme o QR tenha sido desenhado ou não: mandar
+    // escanear um QR que não está na tela é pior do que não citá-lo.
+    if ($('pixStepLast')) {
+      $('pixStepLast').textContent = qrDrawn
+        ? 'Escaneie o QR Code ou cole o código abaixo'
+        : 'Cole o código abaixo';
     }
 
     const link = $('pixCheckoutLink');
@@ -3584,10 +3592,28 @@
     return true;
   }
 
-  function resetPixCopyButton() {
-    const button = $('pixCopyBtn');
-    button?.classList.remove('is-copied');
-    if ($('pixCopyBtnLabel')) $('pixCopyBtnLabel').textContent = 'Copiar código';
+  /**
+   * Aviso curto sobre o cabeçalho. O [hidden] sai antes da classe que anima
+   * para o elemento já estar no fluxo quando a transição começa — trocar os
+   * dois no mesmo quadro faria o toast surgir sem animação.
+   */
+  function showPixToast(message) {
+    const toast = $('pixToast');
+    if (!toast) return;
+    clearTimeout(pixToastTimer);
+    if ($('pixToastText')) $('pixToastText').textContent = message;
+    toast.hidden = false;
+    requestAnimationFrame(() => toast.classList.add('is-open'));
+    pixToastTimer = setTimeout(hidePixToast, 2400);
+  }
+
+  function hidePixToast() {
+    const toast = $('pixToast');
+    clearTimeout(pixToastTimer);
+    pixToastTimer = null;
+    if (!toast) return;
+    toast.classList.remove('is-open');
+    pixToastTimer = setTimeout(() => { toast.hidden = true; }, 200);
   }
 
   async function copyPixCode() {
@@ -3604,10 +3630,7 @@
       copied = copyTextFallback(code);
     }
 
-    const button = $('pixCopyBtn');
-    if ($('pixCopyBtnLabel')) $('pixCopyBtnLabel').textContent = copied ? 'Código copiado!' : 'Não foi possível copiar';
-    button?.classList.toggle('is-copied', copied);
-    setTimeout(resetPixCopyButton, 2400);
+    showPixToast(copied ? 'PIX copiado com sucesso!' : 'Não foi possível copiar');
   }
 
   function copyTextFallback(value) {
@@ -3634,7 +3657,7 @@
     if (!session) return;
     session.pollUntil = Date.now() + PIX_POLL_WINDOW_MS;
     session.pollFailures = 0;
-    updatePixWaitingLabel();
+    startPixCountdown();
     schedulePixPoll(PIX_POLL_INTERVAL_MS);
   }
 
@@ -3646,24 +3669,38 @@
   }
 
   function stopPixPolling() {
+    stopPixCountdown();
     if (!pixSession) return;
     pixSession.stopped = true;
     clearTimeout(pixSession.pollTimer);
     pixSession.pollTimer = null;
   }
 
-  function updatePixWaitingLabel() {
+  /**
+   * Contador regressivo do cabeçalho do cartão. Conta a MESMA janela em que o
+   * polling ainda verifica sozinho — ao zerar, `pollPixStatus` leva a tela para
+   * o estado "expired". Um contador com prazo próprio mentiria numa das pontas.
+   */
+  function updatePixCountdown() {
+    const node = $('pixCountdown');
+    if (!node) return;
     const session = pixSession;
-    const note = $('pixDeadlineNote');
-    if (!note) return;
-    if (!session || session.stopped) {
-      note.textContent = '';
-      return;
-    }
-    const remainingMinutes = Math.max(0, Math.ceil((session.pollUntil - Date.now()) / 60000));
-    note.textContent = remainingMinutes
-      ? `Esta tela verifica o pagamento sozinha por mais ${remainingMinutes} min.`
-      : '';
+    const remainingMs = session && !session.stopped ? Math.max(0, session.pollUntil - Date.now()) : 0;
+    const totalSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    node.textContent = `(${minutes}:${seconds})`;
+  }
+
+  function startPixCountdown() {
+    stopPixCountdown();
+    updatePixCountdown();
+    pixCountdownTimer = setInterval(updatePixCountdown, 1000);
+  }
+
+  function stopPixCountdown() {
+    clearInterval(pixCountdownTimer);
+    pixCountdownTimer = null;
   }
 
   async function pollPixStatus() {
@@ -3722,7 +3759,6 @@
       return;
     }
 
-    updatePixWaitingLabel();
     schedulePixPoll(PIX_POLL_INTERVAL_MS);
   }
 
@@ -3780,6 +3816,8 @@
       payment_status: merged.payment_status
     });
     renderPendingPaymentBar();
+    hidePixToast();
+    closePixExitConfirm({ animate: false });
     closeModalImmediately('pixPaymentModal');
     showOrderSuccess(merged);
   }
@@ -3790,9 +3828,44 @@
     startPixCharge();
   }
 
+  /* ---------------- Confirmação de saída ---------------- */
+
+  // Os dois botões do cabeçalho (voltar e X) caem aqui: uma vez que o pedido
+  // existe, sair da cobrança não é um "voltar" qualquer.
+  function openPixExitConfirm() {
+    const sheet = $('pixExitConfirm');
+    if (!sheet) return;
+    clearTimeout(pixExitTimer);
+    sheet.hidden = false;
+    // Mesmo motivo do toast: o elemento precisa estar no fluxo um quadro antes
+    // da classe que anima, senão a folha aparece já no lugar.
+    requestAnimationFrame(() => sheet.classList.add('is-open'));
+  }
+
+  /** Só desce a folha — a cobrança continua exatamente como estava. */
+  function closePixExitConfirm({ animate = true } = {}) {
+    const sheet = $('pixExitConfirm');
+    if (!sheet) return;
+    clearTimeout(pixExitTimer);
+    sheet.classList.remove('is-open');
+    if (!animate) {
+      sheet.hidden = true;
+      return;
+    }
+    pixExitTimer = setTimeout(() => { sheet.hidden = true; }, 300);
+  }
+
+  /** "Cancelar pedido": sai direto, sem um segundo aviso. */
+  function confirmPixExit() {
+    closePixExitConfirm({ animate: false });
+    closePixPayment();
+  }
+
   /** Sai da tela sem cancelar nada: o pedido e o token continuam guardados. */
   function closePixPayment() {
     stopPixPolling();
+    hidePixToast();
+    closePixExitConfirm({ animate: false });
     const session = pixSession;
     pixSession = null;
     closeModalId('pixPaymentModal');
@@ -8083,6 +8156,7 @@
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     submitOrder, closeOrderSuccess, refreshTrackedOrder,
     closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow,
+    openPixExitConfirm, closePixExitConfirm, confirmPixExit,
     resumePendingPayment, dismissPendingPayment,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

@@ -699,6 +699,10 @@ a{text-decoration:none;color:inherit}
 .success-subtitle{font-size:.85rem;color:#888;margin-bottom:28px;line-height:1.5}
 .success-card{width:100%;background:#fafafa;border:1px solid #efefef;border-radius:16px;padding:16px;text-align:left;margin-bottom:28px}
 .success-card-row{display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:#666;padding:7px 0;border-bottom:1px solid #f0f0f0}
+/* O display:flex acima vence o [hidden] da folha do browser, então as linhas
+   opcionais do cartão (desconto, pagamento) apareciam mesmo marcadas como
+   hidden — a de desconto exibia "- R$ 0,00" em todo pedido sem cupom. */
+.success-card-row[hidden]{display:none}
 .success-card-row:last-child{border-bottom:none}
 .success-card-row strong{color:#1a1a1a;font-weight:700}
 

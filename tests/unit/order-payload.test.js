@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Importing the IIFE for its side effect publishes window.RapidexOrderPayload.
 import '../../scripts/services/order-payload.js';

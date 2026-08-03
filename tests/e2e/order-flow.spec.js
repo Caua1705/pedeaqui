@@ -4,6 +4,7 @@ import {
   seedPickupSession,
   addH2OToCart,
   successOrder,
+  pixOrder,
   PRODUCT_H2O,
   RESTAURANT_URL
 } from './helpers.js';
@@ -37,10 +38,10 @@ async function selectPixAndReturnToCart(page) {
   await expect(cta).toHaveText('Efetuar pagamento');
 }
 
-test('product -> cart -> payment -> submit creates an order and shows the real number', async ({
+test('product -> cart -> payment -> submit creates an order with the contract payload', async ({
   page
 }) => {
-  const { orderRequests } = await mockApi(page);
+  const { orderRequests } = await mockApi(page, { orderResponse: pixOrder });
   await seedPickupSession(page);
 
   await selectPixAndReturnToCart(page);
@@ -49,16 +50,15 @@ test('product -> cart -> payment -> submit creates an order and shows the real n
   await expect(page.locator('#csTotal')).toContainText('22,14');
   await page.locator('#cartCtaBtn').click();
 
-  // Success screen is filled from the createOrder RESPONSE, not hardcoded.
-  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
-  await expect(page.locator('#ordSuccessNumber')).toHaveText(`#${successOrder(1).order_number}`);
-  await expect(page.locator('#ordSuccessTotal')).toContainText('22,14');
+  // Pix é fluxo online: o pedido criado leva à cobrança, não à confirmação.
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
+  await expect(page.locator('#pixOrderNumber')).toHaveText(`Pedido #${pixOrder(1).order_number}`);
 
   // Exactly one order was created, with the contract-shaped payload.
   expect(orderRequests).toHaveLength(1);
   const { body } = orderRequests[0];
   expect(body.order_type).toBe('pickup');
-  expect(body.payment_method).toBe('pix');
+  expect(body.payment_method).toBe('pix'); // obrigatório desde o pagamento online
   expect(body.items[0]).toMatchObject({ product_id: expect.any(String), quantity: 3 });
   expect(body).not.toHaveProperty('total'); // backend is authoritative
 
@@ -69,6 +69,39 @@ test('product -> cart -> payment -> submit creates an order and shows the real n
   expect(cartCount).toBe(0);
 });
 
+test('pedido pago na entrega vai direto para a tela de sucesso, sem passar pelo Pix', async ({
+  page
+}) => {
+  // O caminho que já existia. Ele não pode ter mudado: quem paga na entrega
+  // nunca vê cobrança, e o app não chama o endpoint de pagamento.
+  const { orderRequests, paymentRequests } = await mockApi(page);
+  await seedPickupSession(page);
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+
+  await page.locator('[data-payment-screen-tab=delivery]').click();
+  // Crédito Visa: escolher na entrega confirma na hora e volta para a sacola.
+  await page.locator('.payment-method-option[data-payment-key="credit:visa"]').click();
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#cartCtaBtn')).toHaveText('Efetuar pagamento');
+
+  await page.locator('#cartCtaBtn').click();
+
+  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  await expect(page.locator('#ordSuccessNumber')).toHaveText(`#${successOrder(1).order_number}`);
+  await expect(page.locator('#ordSuccessTotal')).toContainText('22,14');
+  // A tela de sucesso continua idêntica: sem linha de pagamento, que é do Pix.
+  await expect(page.locator('#ordSuccessPaymentRow')).toBeHidden();
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+
+  expect(orderRequests).toHaveLength(1);
+  expect(orderRequests[0].body.payment_method).toBe('credit_card');
+  expect(paymentRequests, 'pagamento na entrega não cria cobrança').toHaveLength(0);
+});
+
 test('double-click on Efetuar pagamento creates only ONE order', async ({ page }) => {
   // Hold the response open briefly so both clicks land while the request is in flight.
   const { orderRequests } = await mockApi(page, {
@@ -77,7 +110,7 @@ test('double-click on Efetuar pagamento creates only ONE order', async ({ page }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(successOrder(1))
+        body: JSON.stringify(pixOrder(1))
       });
     }
   });
@@ -88,7 +121,7 @@ test('double-click on Efetuar pagamento creates only ONE order', async ({ page }
   await submitButton.click();
   await submitButton.click({ force: true }).catch(() => {}); // second click while disabled/in-flight
 
-  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
   expect(orderRequests).toHaveLength(1);
 });
 
@@ -100,7 +133,7 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(successOrder(2))
+        body: JSON.stringify(pixOrder(2))
       });
     }
   });
@@ -114,7 +147,7 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
   await expect(page.locator('#cartCtaBtn')).toBeEnabled();
 
   await page.locator('#cartCtaBtn').click();
-  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
 
   expect(orderRequests).toHaveLength(2);
   expect(orderRequests[0].idempotencyKey).toBeTruthy();

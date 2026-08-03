@@ -216,7 +216,9 @@
   height: 8px;
   flex: none;
   border-radius: 50%;
-  background: var(--state-warning);
+  /* Pulso de "aguardando": cor da loja, não um âmbar fixo. Um tenant azul
+     precisa pintar azul aqui (tests/e2e/tenant-theme.spec.js). */
+  background: var(--brand-primary);
   animation: pix-pulse 1.6s ease-in-out infinite;
 }
 
@@ -260,9 +262,12 @@
   color: var(--state-danger);
 }
 
+/* Expirado não é erro: o cobrador venceu, nada quebrou. Fica neutro (o ícone
+   vermelho acima é só para falha de gateway), o que também mantém a tela sem
+   cor chumbada quando a loja não é laranja. */
 .pix-state[data-pix-state='expired'] .pix-alert-icon {
-  background: rgba(217, 119, 6, 0.1);
-  color: var(--state-warning);
+  background: var(--surface-3);
+  color: var(--text-muted);
 }
 
 .pix-alert-icon svg {

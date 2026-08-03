@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="styles/button-theme.css">
 <link rel="stylesheet" href="styles/rapi.css">
 <link rel="stylesheet" href="styles/coupons-api.css">
+<link rel="stylesheet" href="styles/pix.css">
 <link rel="stylesheet" href="styles/markup.css">
 </head>
 <body class="app-booting">
@@ -914,11 +915,107 @@
         <div class="success-card-row" id="ordSuccessSvcRow"><span>Taxa de serviço</span><strong id="ordSuccessSvc">—</strong></div>
         <div class="success-card-row" id="ordSuccessDeliveryRow"><span>Taxa de entrega</span><strong id="ordSuccessDelivery">—</strong></div>
         <div class="success-card-row" id="ordSuccessDiscountRow" hidden><span>Desconto</span><strong id="ordSuccessDiscount">—</strong></div>
+        <div class="success-card-row" id="ordSuccessPaymentRow" hidden><span>Pagamento</span><strong id="ordSuccessPayment">—</strong></div>
         <div class="success-card-row"><span>Total</span><strong id="ordSuccessTotal">—</strong></div>
       </div>
+      <!-- Só aparece quando temos o tracking_token: é ele que dá ao visitante
+           acesso ao próprio pedido depois que a rota por telefone saiu da API. -->
+      <button class="success-track-btn" type="button" id="ordSuccessTrackBtn" hidden data-act-click='refreshTrackedOrder'>Atualizar status do pedido</button>
       <button class="cart-cta-btn u-max-w-320" type="button" data-act-click='closeOrderSuccess'>Concluir</button>
     </div>
   </div>
+</div>
+
+<!-- MODAL: PAGAMENTO PIX — cobrança criada por
+     POST /restaurants/{slug}/orders/{tracking_token}/payment.
+     O pedido JÁ EXISTE quando esta tela abre; ela só resolve o pagamento. -->
+<div class="overlay" id="pixPaymentModal">
+  <div class="modal modal--fs" role="dialog" aria-modal="true" aria-labelledby="pixPaymentTitle">
+    <div class="sheet-drag"></div>
+    <div class="cart-hdr">
+      <button class="cart-hdr-back" type="button" data-act-click='closePixPayment' aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="cart-hdr-title" id="pixPaymentTitle">Pagamento via Pix</h2>
+      <div class="cart-hdr-spacer"></div>
+    </div>
+
+    <div class="cart-scroll pix-body">
+      <!-- Gerando a cobrança no gateway -->
+      <section class="pix-state" data-pix-state="loading">
+        <div class="pix-spinner" aria-hidden="true"></div>
+        <p class="pix-state-title">Gerando o código de pagamento...</p>
+        <p class="pix-state-text">Seu pedido já foi registrado. Estamos criando a cobrança.</p>
+      </section>
+
+      <!-- Cobrança pronta: QR, copia-e-cola e link do checkout -->
+      <section class="pix-state" data-pix-state="ready" hidden>
+        <div class="pix-order-line">
+          <span id="pixOrderNumber">—</span>
+          <strong id="pixOrderTotal">—</strong>
+        </div>
+        <div class="pix-qr-frame" id="pixQrFrame">
+          <div class="pix-qr" id="pixQrCode"></div>
+        </div>
+        <p class="pix-instruction">Abra o app do seu banco, escolha Pix e escaneie o QR Code.</p>
+
+        <div class="pix-code-block">
+          <span class="pix-code-label">Pix copia e cola</span>
+          <code class="pix-code" id="pixCopyCode"></code>
+        </div>
+        <button class="pix-copy-btn" type="button" id="pixCopyBtn" data-act-click='copyPixCode'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span id="pixCopyBtnLabel">Copiar código</span>
+        </button>
+        <a class="pix-checkout-link" id="pixCheckoutLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir a página de pagamento</a>
+
+        <div class="pix-status" id="pixStatus" role="status" aria-live="polite">
+          <span class="pix-status-dot" aria-hidden="true"></span>
+          <span id="pixStatusText">Aguardando o pagamento...</span>
+        </div>
+        <p class="pix-state-note" id="pixDeadlineNote"></p>
+        <p class="pix-state-note">O pedido segue para a cozinha assim que o pagamento for confirmado.</p>
+      </section>
+
+      <!-- Falha do gateway / cobrança sem meio de pagamento -->
+      <section class="pix-state" data-pix-state="error" hidden>
+        <div class="pix-alert-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5"/><path d="M12 16.5v.01"/><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <p class="pix-state-title" id="pixErrorTitle">Não foi possível gerar a cobrança</p>
+        <p class="pix-state-text" id="pixErrorMessage"></p>
+        <button class="cart-cta-btn u-max-w-320" type="button" id="pixRetryBtn" data-act-click='retryPixPayment'>Tentar novamente</button>
+        <button class="pix-secondary-btn" type="button" data-act-click='closePixPayment'>Voltar para a loja</button>
+      </section>
+
+      <!-- Janela de espera esgotada: nada de polling infinito -->
+      <section class="pix-state" data-pix-state="expired" hidden>
+        <div class="pix-alert-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <p class="pix-state-title">Ainda não recebemos o pagamento</p>
+        <p class="pix-state-text">Paramos de verificar automaticamente. Se você já pagou, a confirmação pode levar alguns instantes — toque em Verificar agora.</p>
+        <button class="cart-cta-btn u-max-w-320" type="button" data-act-click='checkPixStatusNow'>Verificar agora</button>
+        <button class="pix-secondary-btn" type="button" data-act-click='closePixPayment'>Voltar para a loja</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de retomada: só existe quando há um pagamento online pendente
+     guardado para esta loja (rapidex.orderTracking.<slug>). Sem pendência, o
+     app fica exatamente como era. -->
+<div class="pending-payment-bar" id="pendingPaymentBar" hidden>
+  <button class="pending-payment-main" type="button" data-act-click='resumePendingPayment'>
+    <img class="pending-payment-icon" src="assets/icons/payment/pix.png" alt="">
+    <span class="pending-payment-texts">
+      <strong id="pendingPaymentTitle">Pagamento pendente</strong>
+      <span id="pendingPaymentSubtitle">Toque para concluir o pagamento</span>
+    </span>
+  </button>
+  <button class="pending-payment-dismiss" type="button" data-act-click='dismissPendingPayment' aria-label="Dispensar">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
 </div>
 
 <!-- MODAL: CHECKOUT FORM (full-screen) -->

@@ -3236,6 +3236,10 @@
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
     submittedOrder = response || null;
+    // O tracking_token é gravado ANTES de qualquer renderização: ele é a única
+    // porta do visitante para o próprio pedido, e uma exceção mais adiante não
+    // pode ser o motivo de ele se perder.
+    rememberTrackingToken(response);
     // Persistir/disparar evento não pode derrubar a confirmação: o pedido já
     // existe, e uma falha aqui é de cache, não do pedido.
     try { window.PedeAquiOrderState?.saveOrder?.(response); }
@@ -3251,7 +3255,18 @@
     setOrderSubmitting(false);
     hideCartOrderError();
     closeModalImmediately('cartModal');
-    showOrderSuccess(response);
+    routeCreatedOrder(response);
+  }
+
+  // O backend decide o caminho, não a UI: `payment_flow` vem na resposta da
+  // criação. Pagamento na entrega segue direto para a confirmação, exatamente
+  // como sempre; pagamento online precisa da cobrança antes de o pedido valer.
+  function routeCreatedOrder(response) {
+    if (!isOnlinePaymentFlow(response)) {
+      showOrderSuccess(response);
+      return;
+    }
+    openPixPayment(response);
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -3264,6 +3279,10 @@
   function showOrderSuccess(response) {
     const order = response || {};
     const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
+
+    // O pedido acompanhado na tela de sucesso: é dele que sai o tracking_token
+    // do botão "Atualizar status".
+    trackedOrder = order.tracking_token ? order : (trackedOrder?.id === order.id ? trackedOrder : null);
 
     setText('ordSuccessMessage', order.message || 'Aguardando confirmação do restaurante.');
     setText('ordSuccessNumber', order.order_number != null ? `#${order.order_number}` : '—');
@@ -3283,7 +3302,33 @@
     setText('ordSuccessDiscount', `- ${fmt(discount)}`);
 
     setText('ordSuccessTotal', fmt(orderAmount(order.total)));
+
+    // Linha de pagamento: só faz sentido quando houve cobrança online. Num
+    // pedido pago na entrega ela continua ausente, e o cartão fica idêntico ao
+    // que sempre foi.
+    const paymentLabel = onlinePaymentStatusLabel(order);
+    if ($('ordSuccessPaymentRow')) $('ordSuccessPaymentRow').hidden = !paymentLabel;
+    if (paymentLabel) setText('ordSuccessPayment', paymentLabel);
+
+    // Botão de acompanhamento: aparece só quando temos o token que o autoriza.
+    const trackButton = $('ordSuccessTrackBtn');
+    if (trackButton) {
+      trackButton.hidden = !trackedOrder?.tracking_token;
+      trackButton.disabled = false;
+      trackButton.textContent = 'Atualizar status do pedido';
+    }
+
     openModal('orderSuccessModal');
+  }
+
+  /** Rótulo da linha "Pagamento" — vazio quando o pedido não é de fluxo online. */
+  function onlinePaymentStatusLabel(order) {
+    if (!isOnlinePaymentFlow(order)) return '';
+    return ({
+      paid: 'Pago',
+      pending: 'Aguardando pagamento',
+      failed: 'Não aprovado'
+    })[paymentStatusKind(order?.payment_status)] || 'Aguardando pagamento';
   }
 
   function orderStatusLabel(status) {
@@ -3300,9 +3345,551 @@
     return labels[String(status || '').toLowerCase()] || String(status || '—');
   }
 
+  // ============================================================
+  //  Pagamento online (Pix)
+  //
+  //  O pedido JÁ EXISTE quando esta parte começa: POST /orders respondeu, o
+  //  carrinho foi limpo e o tracking_token está guardado. O que falta é a
+  //  cobrança — e é ela, não o pedido, que pode falhar daqui para frente. Por
+  //  isso nenhum erro deste bloco volta a falar em "não foi possível criar o
+  //  pedido": seria mentira, e levaria o cliente a pedir de novo.
+  //
+  //  Sequência:
+  //    POST .../orders/{token}/payment  -> qr_code e/ou checkout_url
+  //    GET  .../orders/track/{token}    -> repetido até payment_status virar
+  //                                        pago, com prazo (ver PIX_POLL_*)
+  //
+  //  As duas rotas são autorizadas pelo próprio tracking_token, então o fluxo
+  //  inteiro funciona para visitante sem conta.
+  // ============================================================
+
+  // Intervalo entre consultas e teto da janela de espera. O teto existe para
+  // que a tela não fique consultando para sempre uma cobrança que ninguém vai
+  // pagar: ao estourar, o polling PARA e o cliente decide se verifica de novo.
+  const PIX_POLL_INTERVAL_MS = 5000;
+  const PIX_POLL_WINDOW_MS = 10 * 60 * 1000;
+  // Falhas de rede seguidas na consulta não são falha de pagamento — só
+  // desistimos de consultar depois de algumas.
+  const PIX_POLL_MAX_FAILURES = 5;
+
+  // Pedido exibido na tela de sucesso, quando ele tem tracking_token.
+  let trackedOrder = null;
+  // Sessão de pagamento em aberto. Trocar de sessão invalida as respostas em
+  // voo da anterior (a comparação `pixSession !== session` aparece em todo
+  // ponto que retoma depois de um await).
+  let pixSession = null;
+
+  const isOnlinePaymentFlow = order =>
+    String(order?.payment_flow || '').trim().toLowerCase() === 'online';
+
+  /**
+   * `payment_status` é `string` livre no OpenAPI — não há enum publicado. Em
+   * vez de adivinhar um valor único, classificamos em três desfechos e tratamos
+   * o desconhecido como PENDENTE: seguir esperando é o erro barato; dar um
+   * pedido como pago sem estar é o caro.
+   */
+  function paymentStatusKind(status) {
+    const value = String(status || '').trim().toLowerCase();
+    if (['paid', 'approved', 'succeeded', 'success', 'confirmed', 'captured', 'settled', 'completed'].includes(value)) return 'paid';
+    if (['failed', 'failure', 'canceled', 'cancelled', 'expired', 'refused', 'rejected', 'declined', 'error', 'refunded', 'chargeback', 'voided'].includes(value)) return 'failed';
+    return 'pending';
+  }
+
+  function rememberTrackingToken(response) {
+    try {
+      const saved = window.RapidexOrderTracking?.remember?.(getRestaurantSlug(), response);
+      if (!saved && isOnlinePaymentFlow(response)) {
+        // Sem token não há como iniciar a cobrança nem acompanhar o pedido.
+        logAppError('Pedido online criado sem tracking_token', new Error('tracking_token ausente na resposta'));
+      }
+      return saved;
+    } catch (error) {
+      logAppError('Falha ao guardar o tracking_token', error);
+      return null;
+    }
+  }
+
+  function updateTrackingEntry(trackingToken, patch) {
+    try { window.RapidexOrderTracking?.update?.(getRestaurantSlug(), trackingToken, patch); }
+    catch (error) { logAppError('Falha ao atualizar o pedido guardado', error); }
+  }
+
+  function setPixState(state) {
+    document.querySelectorAll('#pixPaymentModal [data-pix-state]').forEach(section => {
+      section.hidden = section.dataset.pixState !== state;
+    });
+  }
+
+  /** Traduz a falha de CRIAR A COBRANÇA. O pedido já existe — nunca sugerir refazê-lo. */
+  function pixChargeErrorMessage(error) {
+    if (error?.name === 'TimeoutError' || error?.name === 'NetworkError') {
+      return 'Não conseguimos falar com o provedor de pagamento. Verifique sua conexão e tente de novo — seu pedido já está registrado.';
+    }
+    if (error?.status === 404) {
+      return 'Este pedido não foi encontrado para pagamento. Procure o restaurante informando o número do pedido.';
+    }
+    if (error?.status === 409) {
+      return error.detail || error.message || 'Este pedido não está mais aguardando pagamento.';
+    }
+    if (Number(error?.status) >= 500) {
+      return 'O provedor de pagamento não respondeu agora. Tente de novo em instantes — seu pedido continua registrado.';
+    }
+    return error?.detail || error?.message || 'Não foi possível gerar a cobrança do Pix. Tente novamente.';
+  }
+
+  function showPixError(message, { title = 'Não foi possível gerar a cobrança', canRetry = true } = {}) {
+    stopPixPolling();
+    if ($('pixErrorTitle')) $('pixErrorTitle').textContent = title;
+    if ($('pixErrorMessage')) $('pixErrorMessage').textContent = message;
+    if ($('pixRetryBtn')) $('pixRetryBtn').hidden = !canRetry;
+    setPixState('error');
+  }
+
+  /**
+   * Abre a tela e dispara a criação da cobrança.
+   * @param {object} order resposta de POST /orders (ou entrada guardada com os mesmos campos)
+   */
+  function openPixPayment(order) {
+    const trackingToken = String(order?.tracking_token || '').trim();
+    pixSession = {
+      order,
+      trackingToken,
+      payment: null,
+      pollTimer: null,
+      pollUntil: 0,
+      pollFailures: 0,
+      stopped: false
+    };
+
+    if ($('pixOrderNumber')) {
+      $('pixOrderNumber').textContent = order?.order_number != null ? `Pedido #${order.order_number}` : 'Seu pedido';
+    }
+    if ($('pixOrderTotal')) $('pixOrderTotal').textContent = fmt(orderAmount(order?.total));
+    resetPixCopyButton();
+    setPixState('loading');
+    openModal('pixPaymentModal');
+
+    if (!trackingToken) {
+      // Sem token não há rota: nem cobrança, nem acompanhamento. Retentar não
+      // resolveria nada, então o botão de retry não aparece.
+      showPixError(
+        'Seu pedido foi registrado, mas não recebemos o código de acompanhamento necessário para o pagamento online. Procure o restaurante informando o número do pedido.',
+        { canRetry: false }
+      );
+      return Promise.resolve();
+    }
+
+    return startPixCharge();
+  }
+
+  async function startPixCharge() {
+    const session = pixSession;
+    if (!session?.trackingToken) return;
+
+    setPixState('loading');
+    let payment;
+    try {
+      payment = await window.PedeAquiOrderService.startOrderPayment(getRestaurantSlug(), session.trackingToken);
+    } catch (error) {
+      if (pixSession !== session) return;
+      logAppError('Falha ao criar a cobrança do Pix', error);
+      showPixError(pixChargeErrorMessage(error));
+      return;
+    }
+    if (pixSession !== session) return; // a tela mudou enquanto esperávamos
+
+    session.payment = payment;
+    const kind = paymentStatusKind(payment?.payment_status);
+    if (kind === 'paid') {
+      // A cobrança já nasceu paga (retomada de um pagamento feito antes).
+      showPixPaid(payment);
+      return;
+    }
+    if (kind === 'failed') {
+      showPixError(
+        'A cobrança deste pedido não está mais válida. Procure o restaurante informando o número do pedido.',
+        { title: 'Cobrança não está mais válida', canRetry: false }
+      );
+      return;
+    }
+
+    if (!renderPixCharge(payment)) return;
+    setPixState('ready');
+    startPixPolling();
+  }
+
+  /**
+   * Preenche a tela com o que o gateway devolveu.
+   * @returns {boolean} false quando não há como pagar (a tela já foi para erro)
+   */
+  function renderPixCharge(payment) {
+    const code = String(payment?.qr_code || '').trim();
+    const checkoutUrl = String(payment?.checkout_url || '').trim();
+
+    // Documentado no próprio OpenAPI: qr_code e checkout_url são alternativos e
+    // o sandbox não devolve nenhum dos dois. Sem os dois não há para onde mandar
+    // o cliente, e dizer isso é melhor do que mostrar uma tela vazia.
+    if (!code && !checkoutUrl) {
+      showPixError(
+        'A cobrança foi criada, mas o provedor não devolveu o QR Code nem o link de pagamento. Seu pedido está registrado — procure o restaurante informando o número do pedido.',
+        { title: 'Cobrança sem forma de pagamento', canRetry: true }
+      );
+      return false;
+    }
+
+    const frame = $('pixQrFrame');
+    const codeBlock = $('pixCopyCode')?.closest('.pix-code-block');
+    const copyButton = $('pixCopyBtn');
+    if ($('pixCopyCode')) $('pixCopyCode').textContent = code;
+    if (codeBlock) codeBlock.hidden = !code;
+    if (copyButton) copyButton.hidden = !code;
+
+    let qrDrawn = false;
+    if (code && $('pixQrCode')) {
+      try {
+        // Nível M: o padrão do Pix e o equilíbrio certo entre tolerância a
+        // sujeira/reflexo na tela e densidade dos módulos.
+        $('pixQrCode').innerHTML = window.RapidexQrCode.toSvg(code, {
+          ecc: 'M',
+          border: 2,
+          title: 'QR Code para pagamento via Pix'
+        });
+        qrDrawn = true;
+      } catch (error) {
+        // Um payload que não cabe em nenhuma versão não pode custar a tela
+        // inteira: o copia-e-cola continua valendo.
+        logAppError('Falha ao desenhar o QR Code do Pix', error);
+        $('pixQrCode').innerHTML = '';
+      }
+    }
+    if (frame) frame.hidden = !qrDrawn;
+
+    const instruction = document.querySelector('#pixPaymentModal .pix-instruction');
+    if (instruction) {
+      instruction.textContent = qrDrawn
+        ? 'Abra o app do seu banco, escolha Pix e escaneie o QR Code.'
+        : 'Abra o app do seu banco, escolha Pix e use o código copia e cola.';
+    }
+
+    const link = $('pixCheckoutLink');
+    if (link) {
+      // Só http(s): um checkout_url com esquema estranho viraria um vetor de
+      // navegação que não controlamos.
+      const safeUrl = /^https?:\/\//i.test(checkoutUrl) ? checkoutUrl : '';
+      link.hidden = !safeUrl;
+      if (safeUrl) link.href = safeUrl;
+      else link.removeAttribute('href');
+    }
+
+    return true;
+  }
+
+  function resetPixCopyButton() {
+    const button = $('pixCopyBtn');
+    button?.classList.remove('is-copied');
+    if ($('pixCopyBtnLabel')) $('pixCopyBtnLabel').textContent = 'Copiar código';
+  }
+
+  async function copyPixCode() {
+    const code = $('pixCopyCode')?.textContent?.trim();
+    if (!code) return;
+
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(code);
+      copied = true;
+    } catch {
+      // Clipboard API exige contexto seguro e nem todo webview a tem. O
+      // caminho antigo ainda funciona nesses casos.
+      copied = copyTextFallback(code);
+    }
+
+    const button = $('pixCopyBtn');
+    if ($('pixCopyBtnLabel')) $('pixCopyBtnLabel').textContent = copied ? 'Código copiado!' : 'Não foi possível copiar';
+    button?.classList.toggle('is-copied', copied);
+    setTimeout(resetPixCopyButton, 2400);
+  }
+
+  function copyTextFallback(value) {
+    const field = document.createElement('textarea');
+    field.value = value;
+    field.setAttribute('readonly', '');
+    field.className = 'u-visually-hidden';
+    document.body.appendChild(field);
+    let copied = false;
+    try {
+      field.select();
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+    field.remove();
+    return copied;
+  }
+
+  /* ---------------- Acompanhamento do pagamento ---------------- */
+
+  function startPixPolling() {
+    const session = pixSession;
+    if (!session) return;
+    session.pollUntil = Date.now() + PIX_POLL_WINDOW_MS;
+    session.pollFailures = 0;
+    updatePixWaitingLabel();
+    schedulePixPoll(PIX_POLL_INTERVAL_MS);
+  }
+
+  function schedulePixPoll(delay) {
+    const session = pixSession;
+    if (!session || session.stopped) return;
+    clearTimeout(session.pollTimer);
+    session.pollTimer = setTimeout(() => { pollPixStatus(); }, delay);
+  }
+
+  function stopPixPolling() {
+    if (!pixSession) return;
+    pixSession.stopped = true;
+    clearTimeout(pixSession.pollTimer);
+    pixSession.pollTimer = null;
+  }
+
+  function updatePixWaitingLabel() {
+    const session = pixSession;
+    const note = $('pixDeadlineNote');
+    if (!note) return;
+    if (!session || session.stopped) {
+      note.textContent = '';
+      return;
+    }
+    const remainingMinutes = Math.max(0, Math.ceil((session.pollUntil - Date.now()) / 60000));
+    note.textContent = remainingMinutes
+      ? `Esta tela verifica o pagamento sozinha por mais ${remainingMinutes} min.`
+      : '';
+  }
+
+  async function pollPixStatus() {
+    const session = pixSession;
+    if (!session || session.stopped) return;
+
+    // Aba em segundo plano não consulta: o pageshow retoma. Consultar em
+    // background só gastaria bateria e requisição numa tela que ninguém vê.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      session.pollTimer = null;
+      return;
+    }
+
+    if (Date.now() >= session.pollUntil) {
+      stopPixPolling();
+      setPixState('expired');
+      return;
+    }
+
+    let detail;
+    try {
+      detail = await window.PedeAquiOrderService.trackOrder(getRestaurantSlug(), session.trackingToken);
+    } catch (error) {
+      if (pixSession !== session || session.stopped) return;
+      session.pollFailures++;
+      if (session.pollFailures >= PIX_POLL_MAX_FAILURES) {
+        logAppError('Consulta do pagamento falhou repetidamente', error);
+        showPixError(
+          'Perdemos o contato com o servidor enquanto aguardávamos o pagamento. Se você já pagou, o restaurante confirma assim que a conexão voltar.',
+          { title: 'Não conseguimos verificar o pagamento', canRetry: true }
+        );
+        return;
+      }
+      // Recuo progressivo: uma instabilidade curta não vira uma rajada.
+      schedulePixPoll(PIX_POLL_INTERVAL_MS * (session.pollFailures + 1));
+      return;
+    }
+    if (pixSession !== session || session.stopped) return;
+
+    session.pollFailures = 0;
+    updateTrackingEntry(session.trackingToken, {
+      status: detail?.status,
+      payment_status: detail?.payment_status
+    });
+
+    const kind = paymentStatusKind(detail?.payment_status);
+    if (kind === 'paid') {
+      showPixPaid(detail);
+      return;
+    }
+    if (kind === 'failed') {
+      showPixError(
+        'O pagamento não foi aprovado. Você pode tentar novamente pelo app do seu banco ou procurar o restaurante.',
+        { title: 'Pagamento não aprovado', canRetry: false }
+      );
+      return;
+    }
+
+    updatePixWaitingLabel();
+    schedulePixPoll(PIX_POLL_INTERVAL_MS);
+  }
+
+  /** Consulta única, disparada pelo cliente depois que a janela automática fechou. */
+  async function checkPixStatusNow() {
+    const session = pixSession;
+    if (!session?.trackingToken) return;
+    session.stopped = false;
+    session.pollFailures = 0;
+    setPixState('loading');
+
+    let detail;
+    try {
+      detail = await window.PedeAquiOrderService.trackOrder(getRestaurantSlug(), session.trackingToken);
+    } catch (error) {
+      if (pixSession !== session) return;
+      logAppError('Falha ao verificar o pagamento', error);
+      showPixError(
+        'Não conseguimos verificar o pagamento agora. Tente novamente em instantes.',
+        { title: 'Não conseguimos verificar o pagamento', canRetry: true }
+      );
+      return;
+    }
+    if (pixSession !== session) return;
+
+    updateTrackingEntry(session.trackingToken, {
+      status: detail?.status,
+      payment_status: detail?.payment_status
+    });
+
+    if (paymentStatusKind(detail?.payment_status) === 'paid') {
+      showPixPaid(detail);
+      return;
+    }
+    // Continua pendente: reabre a janela de espera do ponto zero.
+    if (session.payment && !renderPixCharge(session.payment)) return;
+    setPixState('ready');
+    startPixPolling();
+  }
+
+  /** Pagamento confirmado: para tudo e entrega a tela de sucesso. */
+  function showPixPaid(detail) {
+    stopPixPolling();
+    const base = pixSession?.order || {};
+    // A resposta da criação tem `message`, a de acompanhamento não; a de
+    // acompanhamento tem o status atual. As duas juntas dão a tela completa.
+    const merged = {
+      ...base,
+      ...(detail && typeof detail === 'object' ? detail : {}),
+      tracking_token: base.tracking_token || detail?.tracking_token,
+      message: 'Pagamento confirmado! Seu pedido foi enviado ao restaurante.'
+    };
+    updateTrackingEntry(merged.tracking_token, {
+      status: merged.status,
+      payment_status: merged.payment_status
+    });
+    renderPendingPaymentBar();
+    closeModalImmediately('pixPaymentModal');
+    showOrderSuccess(merged);
+  }
+
+  function retryPixPayment() {
+    if (!pixSession) return;
+    pixSession.stopped = false;
+    startPixCharge();
+  }
+
+  /** Sai da tela sem cancelar nada: o pedido e o token continuam guardados. */
+  function closePixPayment() {
+    stopPixPolling();
+    const session = pixSession;
+    pixSession = null;
+    closeModalId('pixPaymentModal');
+    renderPendingPaymentBar();
+    if (session?.order) trackedOrder = session.order;
+    setTimeout(() => { showHomeTab(); jumpToTop(); }, 160);
+  }
+
+  /* ---------------- Retomada e acompanhamento ---------------- */
+
+  // Pagamento pendente guardado para esta loja. Sem pendência a barra nem
+  // existe na tela, e a loja fica exatamente como era.
+  let pendingPaymentDismissed = false;
+
+  function pendingOnlinePayment() {
+    if (pendingPaymentDismissed) return null;
+    const entries = window.RapidexOrderTracking?.list?.(getRestaurantSlug()) || [];
+    return entries.find(entry =>
+      String(entry.payment_flow || '').toLowerCase() === 'online' &&
+      paymentStatusKind(entry.payment_status) === 'pending'
+    ) || null;
+  }
+
+  function renderPendingPaymentBar() {
+    const bar = $('pendingPaymentBar');
+    if (!bar) return;
+    const pending = pendingOnlinePayment();
+    bar.hidden = !pending;
+    if (!pending) return;
+    if ($('pendingPaymentTitle')) {
+      $('pendingPaymentTitle').textContent = pending.order_number != null
+        ? `Pedido #${pending.order_number} aguardando pagamento`
+        : 'Pedido aguardando pagamento';
+    }
+    if ($('pendingPaymentSubtitle')) {
+      $('pendingPaymentSubtitle').textContent = pending.total != null
+        ? `Toque para pagar ${fmt(orderAmount(pending.total))} via Pix`
+        : 'Toque para concluir o pagamento';
+    }
+  }
+
+  function resumePendingPayment() {
+    const pending = pendingOnlinePayment();
+    if (!pending) {
+      renderPendingPaymentBar();
+      return;
+    }
+    $('pendingPaymentBar')?.setAttribute('hidden', '');
+    // Chamar o endpoint de pagamento de novo é seguro: o backend devolve a
+    // cobrança corrente do pedido em vez de criar outra.
+    openPixPayment(pending);
+  }
+
+  function dismissPendingPayment() {
+    pendingPaymentDismissed = true;
+    renderPendingPaymentBar();
+  }
+
+  /**
+   * Botão "Atualizar status" da tela de sucesso — o caminho de acompanhamento
+   * do VISITANTE, autorizado só pelo tracking_token.
+   */
+  async function refreshTrackedOrder() {
+    const trackingToken = trackedOrder?.tracking_token;
+    const button = $('ordSuccessTrackBtn');
+    if (!trackingToken) return;
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Consultando...';
+    }
+    try {
+      const detail = await window.PedeAquiOrderService.trackOrder(getRestaurantSlug(), trackingToken);
+      updateTrackingEntry(trackingToken, {
+        status: detail?.status,
+        payment_status: detail?.payment_status
+      });
+      renderPendingPaymentBar();
+      showOrderSuccess({
+        ...trackedOrder,
+        ...detail,
+        tracking_token: trackingToken,
+        message: trackedOrder.message
+      });
+    } catch (error) {
+      logAppError('Falha ao acompanhar o pedido', error);
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Não foi possível atualizar. Tentar de novo';
+      }
+    }
+  }
+
   // Sem reload: fecha, volta pra home e mantém o app vivo.
   function closeOrderSuccess() {
     closeModalId('orderSuccessModal');
+    renderPendingPaymentBar();
     setTimeout(() => { showHomeTab(); jumpToTop(); }, 160);
   }
   // ============================================================
@@ -7494,7 +8081,9 @@
     couponArtImageFailed,
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
-    submitOrder, closeOrderSuccess,
+    submitOrder, closeOrderSuccess, refreshTrackedOrder,
+    closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow,
+    resumePendingPayment, dismissPendingPayment,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,
     openLoginScreen, mockLogin,
@@ -7534,6 +8123,25 @@
     // tests/e2e/helpers.js e order-flow.spec.js
     openModal, changeQty, addToCart
   });
+
+  // A consulta do pagamento não roda com a aba escondida (ver pollPixStatus).
+  // Quando ela volta, retomamos na hora em vez de esperar o próximo intervalo:
+  // é justamente o momento em que o cliente voltou do app do banco.
+  window.RapidexLifecycle?.onVisibility?.({
+    onVisible: () => {
+      if (pixSession && !pixSession.stopped && !pixSession.pollTimer) pollPixStatus();
+    },
+    onHidden: () => {
+      if (pixSession?.pollTimer) {
+        clearTimeout(pixSession.pollTimer);
+        pixSession.pollTimer = null;
+      }
+    }
+  });
+  // Sair da página não pode deixar um timer segurando a sessão por closure.
+  window.RapidexLifecycle?.onTeardown?.(() => stopPixPolling());
+  // Pagamento pendente de uma visita anterior: só desenha se existir um.
+  renderPendingPaymentBar();
 
   initializeDismissedDialogs();
   // Antes da Fase 1 este evento nunca chegava a disparar: nenhum pedido era

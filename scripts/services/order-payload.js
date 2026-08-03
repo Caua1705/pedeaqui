@@ -79,7 +79,8 @@
    * @param {Array}  state.cart             itens do carrinho
    * @param {object} state.operationContext {branch_id, order_type, address}
    * @param {object} [state.coupon]         cupom selecionado (id e/ou code)
-   * @param {string} [state.paymentMethod]  method_type canônico do backend
+   * @param {string} state.paymentMethod    method_type canônico do backend —
+   *        OBRIGATÓRIO; sem ele o pedido não é aceito
    * @param {object} [state.customer]       snapshot {name, phone} — visitante
    * @param {boolean} state.isAuthenticated true => identidade vem do JWT
    * @param {string} [state.notes]          observação do pedido
@@ -130,8 +131,16 @@
     if (couponId) payload.coupon_id = couponId;
     else if (couponCode) payload.coupon_code = couponCode.slice(0, 100);
 
-    const method = text(paymentMethod);
-    if (method) payload.payment_method = method;
+    // payment_method é OBRIGATÓRIO na criação do pedido. O schema ainda o
+    // declara `string|null` fora de `required`, mas o backend recusa o pedido
+    // sem ele — e é ele que decide, na criação, se o pedido segue pelo fluxo
+    // online (cobrança no gateway) ou pagamento na entrega.
+    //
+    // A chave vai SEMPRE no JSON, inclusive como null. Omitir faria a falta
+    // parecer "não informado" e voltar como um 422 genérico de campo ausente;
+    // mandar null explícito é o que o payload de fato quer dizer. Na prática o
+    // null nem chega a sair daqui: validateOrderPayload barra antes da chamada.
+    payload.payment_method = text(paymentMethod);
 
     const orderNotes = text(notes);
     if (orderNotes) payload.notes = orderNotes;
@@ -153,6 +162,8 @@
 
     if (!payload?.branch_id) problems.push('Escolha a unidade da loja antes de continuar.');
     if (!payload?.items?.length) problems.push('Seu carrinho está vazio.');
+    // Obrigatório no backend desde que o pagamento online existe: é o
+    // payment_method que define se o pedido nasce esperando cobrança.
     if (!payload?.payment_method) problems.push('Escolha a forma de pagamento.');
 
     if (payload?.order_type === 'delivery') {

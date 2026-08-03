@@ -28,8 +28,15 @@
     createOrder: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders`,
 
-    getOrder: (restaurantSlug, orderNumber, phone) =>
-      `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(orderNumber)}?phone=${encodeURIComponent(phone)}`,
+    // A consulta pública por telefone (?phone=) NÃO EXISTE MAIS na API. O único
+    // jeito de um visitante alcançar o próprio pedido é o tracking_token que
+    // POST /orders devolve — quem tem o token é quem fez o pedido. Cliente
+    // logado usa customerOrder(orderId), que autoriza pelo Bearer.
+    trackOrder: (restaurantSlug, trackingToken) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/orders/track/${routeSlug(trackingToken)}`,
+
+    startOrderPayment: (restaurantSlug, trackingToken) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(trackingToken)}/payment`,
 
     // ---- Customer authentication ----
     authRegister: () => '/auth/register',
@@ -43,6 +50,7 @@
     // ---- Authenticated customer ----
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',
+    customerOrder: orderId => `/customers/me/orders/${routeSlug(orderId)}`,
     customerCashback: () => '/customers/me/cashback',
     customerCashbackTransactions: ({ limit = 20, offset = 0 } = {}) => {
       const safeLimit = Math.min(50, Math.max(1, Number.parseInt(limit, 10) || 20));

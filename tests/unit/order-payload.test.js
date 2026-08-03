@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Importing the IIFE for its side effect publishes window.RapidexOrderPayload.
 import '../../scripts/services/order-payload.js';
@@ -96,6 +96,29 @@ describe('buildOrderPayload', () => {
       customer: { name: 'Ana', phone: '85999990000' }
     });
     expect(p.payment_method).toBe('credit_card');
+  });
+
+  // payment_method virou obrigatório no backend. A chave existe SEMPRE no JSON,
+  // inclusive como null: um campo ausente vira um 422 genérico de "faltando",
+  // enquanto o null diz exatamente o que aconteceu.
+  it('always carries the payment_method key, even without a selection', () => {
+    const p = buildOrderPayload({
+      cart: [{ id: UUID.product, qty: 1 }],
+      operationContext: { branch_id: UUID.branch, order_type: 'pickup' },
+      customer: { name: 'Ana', phone: '85999990000' }
+    });
+    expect(p).toHaveProperty('payment_method');
+    expect(p.payment_method).toBeNull();
+  });
+
+  it('never sends an empty string as the payment method', () => {
+    const p = buildOrderPayload({
+      cart: [{ id: UUID.product, qty: 1 }],
+      operationContext: { branch_id: UUID.branch, order_type: 'pickup' },
+      paymentMethod: '   ',
+      customer: { name: 'Ana', phone: '85999990000' }
+    });
+    expect(p.payment_method).toBeNull();
   });
 
   describe('delivery address: id XOR object', () => {
@@ -219,5 +242,17 @@ describe('validateOrderPayload', () => {
     );
     expect(problems.some((m) => /carrinho/i.test(m))).toBe(true);
     expect(problems.some((m) => /pagamento/i.test(m))).toBe(true);
+  });
+
+  it('blocks the request when the payment method is null', () => {
+    // Este é o guarda que impede o payload de sair com payment_method: null.
+    const problems = validateOrderPayload(
+      buildOrderPayload({
+        cart: [{ id: UUID.product, qty: 1 }],
+        operationContext: { branch_id: UUID.branch, order_type: 'pickup' }
+      }),
+      { isAuthenticated: true }
+    );
+    expect(problems).toContain('Escolha a forma de pagamento.');
   });
 });

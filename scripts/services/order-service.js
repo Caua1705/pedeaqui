@@ -33,8 +33,44 @@
     );
   }
 
-  async function getOrder(restaurantSlug, orderNumber, phone) {
-    return window.PedeAquiApiClient.get(window.PedeAquiApiRoutes.getOrder(restaurantSlug, orderNumber, phone || ''));
+  /**
+   * GET /restaurants/{slug}/orders/track/{tracking_token} → OrderDetailResponse.
+   *
+   * Rota PÚBLICA (sem security no OpenAPI): a autorização é o próprio token.
+   * É o que substituiu a consulta por telefone, removida da API.
+   */
+  async function trackOrder(restaurantSlug, trackingToken, options = {}) {
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.trackOrder(restaurantSlug, trackingToken),
+      {
+        method: 'GET',
+        ...(Number.isFinite(options.timeout) ? { timeout: options.timeout } : {}),
+        ...(options.signal ? { signal: options.signal } : {})
+      }
+    );
+  }
+
+  /**
+   * POST /restaurants/{slug}/orders/{tracking_token}/payment → StartPaymentResponse.
+   *
+   * Cria a cobrança no gateway. Também é autorizada pelo tracking token, e é
+   * deliberadamente separada da criação do pedido (o backend não fala com o
+   * gateway dentro da transação do pedido). Sem corpo: o método de pagamento já
+   * foi gravado no pedido.
+   *
+   * Chamar duas vezes é seguro pelo lado do front — o backend devolve a cobrança
+   * corrente —, mas ainda assim só chamamos uma vez por pedido.
+   */
+  async function startOrderPayment(restaurantSlug, trackingToken, options = {}) {
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.startOrderPayment(restaurantSlug, trackingToken),
+      {
+        method: 'POST',
+        // Criar cobrança passa por um gateway externo: mais lento que uma
+        // leitura, mais rápido que criar o pedido.
+        timeout: Number.isFinite(options.timeout) ? options.timeout : 15000
+      }
+    );
   }
 
   async function getCustomerOrders() {
@@ -42,5 +78,19 @@
     return Array.isArray(result) ? result : (result?.orders || result?.items || result?.data || []);
   }
 
-  window.PedeAquiOrderService = { createOrder, getOrder, getCustomerOrders };
+  /** GET /customers/me/orders/{order_id} — caminho do cliente autenticado. */
+  async function getCustomerOrder(orderId) {
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.customerOrder(orderId),
+      { method: 'GET', ...authOptions() }
+    );
+  }
+
+  window.PedeAquiOrderService = {
+    createOrder,
+    trackOrder,
+    startOrderPayment,
+    getCustomerOrders,
+    getCustomerOrder
+  };
 })();

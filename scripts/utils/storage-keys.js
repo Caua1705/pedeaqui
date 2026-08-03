@@ -18,6 +18,11 @@
 //     rapidex.cart.<slug>              carrinho — o ÚNICO dado que não pode vazar
 //     rapidex.operationContext.<slug>  entrega/retirada + unidade escolhida
 //     rapidex.addressImportSignature.<slug>
+//     rapidex.orderTracking.<slug>     tracking_token dos pedidos feitos aqui
+//
+// orderTracking é por restaurante porque o token só vale na rota daquele slug
+// (GET /restaurants/<slug>/orders/track/<token>). Guardar tudo numa lista só
+// obrigaria a carregar o token de uma loja para descobrir que ele é de outra.
 //
 // Quem logou em /junior-da-picanha continua logado em /fuji: mesma conta
 // Rapidex. O que NÃO atravessa é o carrinho — o do Júnior não aparece no Fuji.
@@ -53,7 +58,8 @@
   const PREFIXES = {
     operationContext: 'rapidex.operationContext.',
     addressImportSignature: 'rapidex.addressImportSignature.',
-    cart: 'rapidex.cart.'
+    cart: 'rapidex.cart.',
+    orderTracking: 'rapidex.orderTracking.'
   };
 
   // chave nova -> nomes legados que ela substitui, do mais recente para o mais antigo

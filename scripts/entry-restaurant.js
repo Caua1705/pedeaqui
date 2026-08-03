@@ -48,6 +48,9 @@ import './services/club-service.js';
 import './content/privacy-policy.js';
 import './content/loyalty-policy.js';
 import './state/order-state.js';
+// tracking_token por slug. Precisa vir antes das páginas, que gravam o token no
+// mesmo instante em que a resposta de POST /orders chega.
+import './state/order-tracking.js';
 import './state/ui-state.js';
 import './stores/restaurant-store.js';
 import './stores/customer-store.js';

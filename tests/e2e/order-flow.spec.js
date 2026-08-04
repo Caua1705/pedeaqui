@@ -153,6 +153,41 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
   expect(orderRequests[0].idempotencyKey).toBeTruthy();
   expect(orderRequests[1].idempotencyKey).toBe(orderRequests[0].idempotencyKey);
 });
+// A criação do pedido é o outro ponto que renderiza `detail`. Vale a mesma
+// regra da cobrança: o formato do `detail` muda (string, array de 422, objeto),
+// a garantia não — o cliente lê português, nunca "[object Object]", e o
+// carrinho continua intacto para ele tentar de novo.
+for (const [nome, status, detail] of [
+  ['array de validação (422)', 422, [{ loc: ['body', 'items'], msg: 'campo obrigatório', type: 'missing' }]],
+  ['objeto estruturado', 409, { code: 'COUPON_ALREADY_USED', retryable: false }],
+  ['string simples', 409, 'cupom já utilizado']
+]) {
+  test(`erro de criação com detail em ${nome} vira mensagem legível`, async ({ page }) => {
+    await mockApi(page, {
+      onCreateOrder: (route) =>
+        route.fulfill({
+          status,
+          contentType: 'application/json',
+          body: JSON.stringify({ detail })
+        })
+    });
+    await seedPickupSession(page);
+    await selectPixAndReturnToCart(page);
+
+    await page.locator('#cartCtaBtn').click();
+
+    const error = page.locator('#cartOrderError');
+    await expect(error).toBeVisible();
+    await expect(error).not.toContainText('[object Object]');
+    await expect(error).not.toContainText('undefined');
+    await expect(error).not.toBeEmpty();
+
+    // O carrinho não pode ter sido esvaziado pela falha, e o botão volta.
+    await expect(page.locator('#cartList')).toContainText('H2O');
+    await expect(page.locator('#cartCtaBtn')).toBeEnabled();
+  });
+}
+
 test('guest adds one item, sees the bag, and is gated only by the cart CTA', async ({ page }) => {
   await mockApi(page);
   await page.route('**/coupons/preview', route => route.fulfill({

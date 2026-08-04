@@ -237,6 +237,22 @@
     console.error(`[PedeAqui] ${message}`, error);
   }
 
+  /**
+   * Toda mensagem de erro de API desta página passa por aqui. O `detail` chega
+   * como string, array (422) ou objeto (pagamento), e só o PedeAquiApiError sabe
+   * ler os três — interpolar o valor cru mostraria "[object Object]" ao cliente.
+   * O fallback é sempre uma frase em português: se não houver texto legível, é
+   * ele que vai para a tela.
+   */
+  function apiErrorMessage(error, fallback) {
+    return window.PedeAquiApiError?.errorMessage?.(error, fallback) || fallback;
+  }
+
+  /** Texto legível de um `detail` cru (string | array | objeto). '' se não houver. */
+  function detailText(value) {
+    return window.PedeAquiApiError?.detailText?.(value) || '';
+  }
+
   function setAppBooting(active) {
     setLoading('app', active);
     document.body.classList.toggle('app-booting', active);
@@ -3169,7 +3185,7 @@
       return 'O servidor demorou para responder. Verifique sua conexão e toque em Efetuar pagamento novamente.';
     }
     if (error?.status === 409) {
-      return error.detail || error.message || 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.';
+      return apiErrorMessage(error, 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.');
     }
     if (error?.status === 401 || error?.status === 403) {
       return 'Sua sessão expirou. Entre novamente para concluir o pedido.';
@@ -3182,13 +3198,15 @@
     }
     if (error?.status === 422) {
       const detail = error.data?.detail;
+      // O 422 do FastAPI vem como ARRAY de ValidationError — juntar os `msg` é
+      // o que transforma isso em frase, em vez de "[object Object]".
       if (Array.isArray(detail) && detail.length) {
-        const fields = detail.map(entry => entry.msg || entry.message).filter(Boolean);
-        if (fields.length) return `Não foi possível criar o pedido: ${fields.join('; ')}`;
+        const fields = detailText(detail);
+        if (fields) return `Não foi possível criar o pedido: ${fields}`;
       }
-      return typeof detail === 'string' ? detail : 'Alguns dados do pedido não foram aceitos. Revise e tente novamente.';
+      return apiErrorMessage(error, 'Alguns dados do pedido não foram aceitos. Revise e tente novamente.');
     }
-    return error?.detail || error?.message || 'Não foi possível criar o pedido. Tente novamente.';
+    return apiErrorMessage(error, 'Não foi possível criar o pedido. Tente novamente.');
   }
 
   async function submitOrder() {
@@ -6105,7 +6123,7 @@
       if (handled) { showRegSummary('Revise os campos destacados'); return; }
     }
 
-    const raw = String(error?.message || data?.detail || data?.message || '');
+    const raw = apiErrorMessage(error, '');
     const msg = raw.toLowerCase();
     const dup = /(already|já|ja |cadastrad|registr|exist|in use|em uso|duplicad)/.test(msg);
 
@@ -6608,7 +6626,7 @@
       $('forgotPasswordScreen')?.classList.remove('active');
       openRecoverCodeScreen(email);
     } catch (error) {
-      const detail = String(error?.data?.detail || error?.message || '').toLowerCase();
+      const detail = apiErrorMessage(error, '').toLowerCase();
       const notFound = error?.status === 404 || /não encontrad|nao encontrad|not found/.test(detail);
       if (notFound) {
         // E-mail not registered → show the "not found" card.
@@ -7708,9 +7726,7 @@
     return valid ? { name, email, phone, birth_date: customerBirthDateToIso(birth) } : null;
   }
   function customerDataApiMessage(error) {
-    const detail = error?.data?.detail;
-    const message = Array.isArray(detail) ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ') : (detail || error?.data?.message || error?.message || 'Não foi possível atualizar seus dados');
-    return String(message);
+    return apiErrorMessage(error, 'Não foi possível atualizar seus dados');
   }
   async function submitCustomerData(event) {
     event?.preventDefault();
@@ -7821,10 +7837,7 @@
   }
 
   function customerPasswordApiMessage(error) {
-    const detail = error?.data?.detail;
-    const message = Array.isArray(detail)
-      ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ')
-      : (detail || error?.data?.message || error?.message || 'Não foi possível alterar a senha');
+    const message = apiErrorMessage(error, 'Não foi possível alterar a senha');
     const normalized = String(message).toLocaleLowerCase('pt-BR');
     if (normalized.includes('senha atual') && (normalized.includes('incorret') || normalized.includes('invalid'))) {
       return 'Senha atual incorreta';

@@ -29,7 +29,9 @@
       travel_time_min: numberOrNull(data.travel_time_min ?? data.travelTimeMin),
       eta_min: numberOrNull(data.eta_min ?? data.min_minutes ?? data.estimated_delivery_time_min),
       eta_max: numberOrNull(data.eta_max ?? data.max_minutes ?? data.estimated_delivery_time_max),
-      message: data.message || data.detail || ''
+      // `detail` pode vir como string, array ou objeto — este `message` é
+      // exibido ao cliente, então nunca pode virar "[object Object]".
+      message: data.message || window.PedeAquiApiError?.detailText?.(data.detail) || ''
     };
   }
 

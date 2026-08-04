@@ -3425,28 +3425,119 @@
     });
   }
 
-  /** Traduz a falha de CRIAR A COBRANÇA. O pedido já existe — nunca sugerir refazê-lo. */
-  function pixChargeErrorMessage(error) {
+  /**
+   * Traduz a falha de CRIAR A COBRANÇA em título, mensagem e desfecho.
+   *
+   * Duas regras valem em todos os ramos:
+   *
+   * 1. O pedido JÁ EXISTE quando chegamos aqui. Nenhuma mensagem pode sugerir
+   *    refazê-lo — o cliente que refaz acaba com dois pedidos.
+   * 2. Retentável e definitivo são telas diferentes. No definitivo o botão
+   *    "Tentar novamente" não aparece: ele só levaria o cliente a repetir uma
+   *    tentativa que já se sabe que falha. No lugar dele, a orientação de
+   *    combinar outra forma de pagamento com o restaurante.
+   *
+   * ⚠️ Não existe rota para trocar a forma de pagamento de um pedido já criado
+   * (o OpenAPI só expõe POST /orders, POST .../payment e GET .../track). Por
+   * isso "escolher outra forma" é orientação para resolver com o restaurante
+   * pelo número do pedido, e não um botão que prometeria algo que a API não faz.
+   *
+   * @returns {{message: string, title: string, canRetry: boolean, code: string}}
+   */
+  function pixChargeErrorOutcome(error) {
+    const info = window.PedeAquiApiError?.paymentErrorInfo?.(error)
+      || { code: '', retryable: false, text: '', structured: false };
+    const code = info.code;
+
+    // Num 5xx o `detail` é mensagem INTERNA do servidor ("gateway indisponível"),
+    // escrita para log, não para o cliente. Só aproveitamos o texto quando ele
+    // vem estruturado — aí foi feito para ser exibido — ou quando a resposta não
+    // é erro de servidor. Fora isso, quem escreve a frase é esta função.
+    const serverText = Number(error?.status) >= 500 && !info.structured ? '' : info.text;
+
+    // Transporte: a requisição nem chegou a ter resposta. Sempre retentável, e
+    // o `detail` (se houver) não diria nada de útil aqui.
     if (error?.name === 'TimeoutError' || error?.name === 'NetworkError') {
-      return 'Não conseguimos falar com o provedor de pagamento. Verifique sua conexão e tente de novo — seu pedido já está registrado.';
+      return {
+        title: 'Não foi possível gerar a cobrança',
+        message: 'Não conseguimos falar com o provedor de pagamento. Verifique sua conexão e tente de novo — seu pedido já está registrado.',
+        canRetry: true,
+        code
+      };
     }
+
     if (error?.status === 404) {
-      return 'Este pedido não foi encontrado para pagamento. Procure o restaurante informando o número do pedido.';
+      return {
+        title: 'Pedido não encontrado para pagamento',
+        message: 'Não localizamos este pedido para pagamento. Procure o restaurante informando o número do pedido — ele não foi perdido.',
+        canRetry: false,
+        code
+      };
     }
+
+    // 409 tem leitura própria: o pedido saiu do estado "aguardando pagamento",
+    // e um dos motivos possíveis é ele JÁ ESTAR PAGO. Mandar esse cliente
+    // "escolher outra forma de pagamento" seria empurrá-lo a pagar duas vezes.
     if (error?.status === 409) {
-      return error.detail || error.message || 'Este pedido não está mais aguardando pagamento.';
+      return {
+        title: 'Este pedido não está mais aguardando pagamento',
+        message: serverText
+          ? `${serverText} Confira a situação do pedido com o restaurante antes de pagar de novo.`
+          : 'Este pedido não está mais aguardando pagamento — ele pode já ter sido pago. Confira a situação com o restaurante informando o número do pedido antes de pagar de novo.',
+        canRetry: false,
+        code
+      };
     }
-    if (Number(error?.status) >= 500) {
-      return 'O provedor de pagamento não respondeu agora. Tente de novo em instantes — seu pedido continua registrado.';
+
+    // A partir daqui o backend respondeu, e é o `retryable` dele que decide.
+    if (info.retryable) {
+      return {
+        title: 'Não foi possível gerar a cobrança',
+        message: serverText
+          ? `${serverText} Seu pedido continua registrado — toque em Tentar novamente.`
+          : 'O provedor de pagamento não conseguiu criar a cobrança agora. Seu pedido continua registrado — toque em Tentar novamente.',
+        canRetry: true,
+        code
+      };
     }
-    return error?.detail || error?.message || 'Não foi possível gerar a cobrança do Pix. Tente novamente.';
+
+    return {
+      title: 'Pix indisponível para este pedido',
+      message: serverText
+        ? `${serverText} Não adianta tentar de novo por Pix: combine outra forma de pagamento com o restaurante informando o número do pedido.`
+        : 'Não foi possível cobrar por Pix neste pedido, e tentar de novo levaria ao mesmo resultado. Combine outra forma de pagamento com o restaurante informando o número do pedido.',
+      canRetry: false,
+      code
+    };
   }
 
-  function showPixError(message, { title = 'Não foi possível gerar a cobrança', canRetry = true } = {}) {
+  /**
+   * @param {string} message
+   * @param {object} [options]
+   * @param {boolean} [options.canRetry] false esconde "Tentar novamente"
+   * @param {string}  [options.code]     código do gateway, exibido como referência
+   */
+  function showPixError(message, { title = 'Não foi possível gerar a cobrança', canRetry = true, code = '' } = {}) {
     stopPixPolling();
     if ($('pixErrorTitle')) $('pixErrorTitle').textContent = title;
     if ($('pixErrorMessage')) $('pixErrorMessage').textContent = message;
     if ($('pixRetryBtn')) $('pixRetryBtn').hidden = !canRetry;
+
+    // O número do pedido é a prova, na tela, de que ele sobreviveu à falha.
+    const orderLine = $('pixErrorOrder');
+    if (orderLine) {
+      const orderNumber = pixSession?.order?.order_number;
+      orderLine.hidden = orderNumber == null;
+      orderLine.textContent = orderNumber == null ? '' : `Seu pedido #${orderNumber} está registrado.`;
+    }
+
+    const codeLine = $('pixErrorCode');
+    if (codeLine) {
+      // `code` é texto do servidor: vai por textContent, nunca por innerHTML.
+      codeLine.hidden = !code;
+      codeLine.textContent = code ? `Código do erro: ${code}` : '';
+    }
+
     setPixState('error');
   }
 
@@ -3500,7 +3591,8 @@
     } catch (error) {
       if (pixSession !== session) return;
       logAppError('Falha ao criar a cobrança do Pix', error);
-      showPixError(pixChargeErrorMessage(error));
+      const outcome = pixChargeErrorOutcome(error);
+      showPixError(outcome.message, outcome);
       return;
     }
     if (pixSession !== session) return; // a tela mudou enquanto esperávamos

@@ -249,6 +249,134 @@ test('falha do gateway vira mensagem clara, sem sugerir refazer o pedido', async
   expect(paymentRequests).toHaveLength(2);
 });
 
+// ---------------------------------------------------------------------------
+// `detail` como OBJETO (PaymentErrorDetail: code + retryable).
+//
+// ⚠️ Este schema NÃO está no OpenAPI publicado — `POST .../payment` declara só
+// 200 e 422. Os testes abaixo fixam o comportamento pelos campos que o backend
+// informou (`code`, `retryable`) e, principalmente, fixam o que vale para
+// QUALQUER formato: o cliente nunca lê "[object Object]" e nunca é levado a
+// refazer um pedido que já existe.
+// ---------------------------------------------------------------------------
+
+/** Responde a criação da cobrança com um detail em objeto. */
+const paymentErrorRoute = (detail, status = 402) => (route) =>
+  route.fulfill({
+    status,
+    contentType: 'application/json',
+    body: JSON.stringify({ detail })
+  });
+
+test('erro RETENTÁVEL em objeto: mensagem em português e botão de tentar de novo', async ({
+  page
+}) => {
+  const { paymentRequests } = await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: (route, _request, attempt) =>
+      attempt === 1
+        ? paymentErrorRoute({ code: 'GATEWAY_TIMEOUT', retryable: true })(route)
+        : route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(pixCharge())
+          })
+  });
+
+  await submitPixOrder(page);
+
+  await expect(page.locator('[data-pix-state=error]')).toBeVisible();
+  const message = page.locator('#pixErrorMessage');
+  await expect(message).not.toContainText('[object Object]');
+  await expect(message).toContainText('pedido continua registrado');
+  // O pedido existe: nada de mandar refazer.
+  await expect(message).not.toContainText(/refaça|refazer|criar o pedido/i);
+  await expect(page.locator('#pixErrorOrder')).toContainText(`#${pixOrder(1).order_number}`);
+  // O código do gateway fica à mão para o cliente citar ao suporte.
+  await expect(page.locator('#pixErrorCode')).toHaveText('Código do erro: GATEWAY_TIMEOUT');
+
+  // Retentável => o botão existe e funciona, sem tocar no pedido.
+  const retry = page.locator('#pixRetryBtn');
+  await expect(retry).toBeVisible();
+  await retry.click();
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+  expect(paymentRequests).toHaveLength(2);
+});
+
+test('erro DEFINITIVO em objeto: sem botão de retry, orienta outra forma de pagamento', async ({
+  page
+}) => {
+  const { orderRequests, paymentRequests } = await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: paymentErrorRoute({ code: 'PIX_NOT_SUPPORTED', retryable: false })
+  });
+
+  await submitPixOrder(page);
+
+  await expect(page.locator('[data-pix-state=error]')).toBeVisible();
+  await expect(page.locator('#pixErrorTitle')).toHaveText('Pix indisponível para este pedido');
+
+  const message = page.locator('#pixErrorMessage');
+  await expect(message).not.toContainText('[object Object]');
+  await expect(message).toContainText('outra forma de pagamento');
+  await expect(message).not.toContainText(/refaça|refazer|criar o pedido/i);
+
+  // Retry INÚTIL não é oferecido — este é o ponto do teste.
+  await expect(page.locator('#pixRetryBtn')).toBeHidden();
+  await expect(page.locator('#pixErrorCode')).toHaveText('Código do erro: PIX_NOT_SUPPORTED');
+
+  // O pedido não pode ter se perdido: número na tela, pedido criado UMA vez,
+  // cobrança tentada UMA vez, e a pendência continua guardada para a loja.
+  await expect(page.locator('#pixErrorOrder')).toContainText(`#${pixOrder(1).order_number}`);
+  expect(orderRequests).toHaveLength(1);
+  expect(paymentRequests).toHaveLength(1);
+
+  await page.getByRole('button', { name: 'Voltar para a loja' }).click();
+  await expect(page.locator('#pendingPaymentBar')).toBeVisible();
+  const saved = await page.evaluate(
+    (slug) => window.RapidexOrderTracking.latest(slug),
+    SLUG
+  );
+  expect(saved?.tracking_token).toBe(pixOrder(1).tracking_token);
+});
+
+test('detail em objeto SEM texto legível nunca vira "[object Object]" na tela', async ({
+  page
+}) => {
+  // O pior caso: o objeto não traz nenhuma frase, só os campos de controle.
+  // A tela precisa escrever a frase sozinha.
+  await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: paymentErrorRoute({ code: 'UNKNOWN_CODE_FROM_FUTURE', retryable: false })
+  });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=error]')).toBeVisible();
+
+  // Nenhum texto visível do modal pode conter a marca de um objeto interpolado.
+  const modalText = await page.locator('#pixPaymentModal').innerText();
+  expect(modalText).not.toContain('[object Object]');
+  expect(modalText).not.toContain('undefined');
+  await expect(page.locator('#pixErrorMessage')).not.toBeEmpty();
+});
+
+test('409 não manda pagar de novo: o pedido pode já estar pago', async ({ page }) => {
+  await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: paymentErrorRoute({ code: 'ORDER_NOT_AWAITING_PAYMENT' }, 409)
+  });
+
+  await submitPixOrder(page);
+
+  await expect(page.locator('[data-pix-state=error]')).toBeVisible();
+  const message = page.locator('#pixErrorMessage');
+  await expect(message).not.toContainText('[object Object]');
+  await expect(message).toContainText('já ter sido pago');
+  // Nem retry, nem "escolha outra forma de pagamento": as duas levariam a
+  // pagar duas vezes.
+  await expect(page.locator('#pixRetryBtn')).toBeHidden();
+  await expect(message).not.toContainText('outra forma de pagamento');
+});
+
 test('cobrança sem QR e sem checkout é dita em voz alta, não vira tela vazia', async ({ page }) => {
   // O próprio OpenAPI avisa: no sandbox o gateway não devolve nenhum dos dois.
   await mockApi(page, {

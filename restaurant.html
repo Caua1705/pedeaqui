@@ -1020,7 +1020,16 @@
         </div>
         <p class="pix-state-title" id="pixErrorTitle">Não foi possível gerar a cobrança</p>
         <p class="pix-state-text" id="pixErrorMessage"></p>
+        <!-- O pedido EXISTE. Este número é o que o cliente cita ao restaurante
+             para pagar de outro jeito, e é o que impede a leitura de que a
+             falha da cobrança teria desfeito o pedido. -->
+        <p class="pix-state-note" id="pixErrorOrder" hidden></p>
+        <!-- Só aparece no erro RETENTÁVEL: num erro definitivo o botão levaria
+             o cliente a repetir uma tentativa que já se sabe que falha. -->
         <button class="cart-cta-btn u-max-w-320" type="button" id="pixRetryBtn" data-act-click='retryPixPayment'>Tentar novamente</button>
+        <!-- Referência do gateway, para o suporte. Fica por último e em tom
+             discreto: é dado técnico, não instrução. -->
+        <p class="pix-state-note" id="pixErrorCode" hidden></p>
         <button class="pix-secondary-btn" type="button" data-act-click='closePixPayment'>Voltar para a loja</button>
       </section>
 

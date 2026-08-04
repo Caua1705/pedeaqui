@@ -237,6 +237,22 @@
     console.error(`[PedeAqui] ${message}`, error);
   }
 
+  /**
+   * Toda mensagem de erro de API desta página passa por aqui. O `detail` chega
+   * como string, array (422) ou objeto (pagamento), e só o PedeAquiApiError sabe
+   * ler os três — interpolar o valor cru mostraria "[object Object]" ao cliente.
+   * O fallback é sempre uma frase em português: se não houver texto legível, é
+   * ele que vai para a tela.
+   */
+  function apiErrorMessage(error, fallback) {
+    return window.PedeAquiApiError?.errorMessage?.(error, fallback) || fallback;
+  }
+
+  /** Texto legível de um `detail` cru (string | array | objeto). '' se não houver. */
+  function detailText(value) {
+    return window.PedeAquiApiError?.detailText?.(value) || '';
+  }
+
   function setAppBooting(active) {
     setLoading('app', active);
     document.body.classList.toggle('app-booting', active);
@@ -3169,7 +3185,7 @@
       return 'O servidor demorou para responder. Verifique sua conexão e toque em Efetuar pagamento novamente.';
     }
     if (error?.status === 409) {
-      return error.detail || error.message || 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.';
+      return apiErrorMessage(error, 'Este cupom não está mais disponível. Remova-o ou escolha outro para continuar.');
     }
     if (error?.status === 401 || error?.status === 403) {
       return 'Sua sessão expirou. Entre novamente para concluir o pedido.';
@@ -3182,13 +3198,15 @@
     }
     if (error?.status === 422) {
       const detail = error.data?.detail;
+      // O 422 do FastAPI vem como ARRAY de ValidationError — juntar os `msg` é
+      // o que transforma isso em frase, em vez de "[object Object]".
       if (Array.isArray(detail) && detail.length) {
-        const fields = detail.map(entry => entry.msg || entry.message).filter(Boolean);
-        if (fields.length) return `Não foi possível criar o pedido: ${fields.join('; ')}`;
+        const fields = detailText(detail);
+        if (fields) return `Não foi possível criar o pedido: ${fields}`;
       }
-      return typeof detail === 'string' ? detail : 'Alguns dados do pedido não foram aceitos. Revise e tente novamente.';
+      return apiErrorMessage(error, 'Alguns dados do pedido não foram aceitos. Revise e tente novamente.');
     }
-    return error?.detail || error?.message || 'Não foi possível criar o pedido. Tente novamente.';
+    return apiErrorMessage(error, 'Não foi possível criar o pedido. Tente novamente.');
   }
 
   async function submitOrder() {
@@ -3425,28 +3443,119 @@
     });
   }
 
-  /** Traduz a falha de CRIAR A COBRANÇA. O pedido já existe — nunca sugerir refazê-lo. */
-  function pixChargeErrorMessage(error) {
+  /**
+   * Traduz a falha de CRIAR A COBRANÇA em título, mensagem e desfecho.
+   *
+   * Duas regras valem em todos os ramos:
+   *
+   * 1. O pedido JÁ EXISTE quando chegamos aqui. Nenhuma mensagem pode sugerir
+   *    refazê-lo — o cliente que refaz acaba com dois pedidos.
+   * 2. Retentável e definitivo são telas diferentes. No definitivo o botão
+   *    "Tentar novamente" não aparece: ele só levaria o cliente a repetir uma
+   *    tentativa que já se sabe que falha. No lugar dele, a orientação de
+   *    combinar outra forma de pagamento com o restaurante.
+   *
+   * ⚠️ Não existe rota para trocar a forma de pagamento de um pedido já criado
+   * (o OpenAPI só expõe POST /orders, POST .../payment e GET .../track). Por
+   * isso "escolher outra forma" é orientação para resolver com o restaurante
+   * pelo número do pedido, e não um botão que prometeria algo que a API não faz.
+   *
+   * @returns {{message: string, title: string, canRetry: boolean, code: string}}
+   */
+  function pixChargeErrorOutcome(error) {
+    const info = window.PedeAquiApiError?.paymentErrorInfo?.(error)
+      || { code: '', retryable: false, text: '', structured: false };
+    const code = info.code;
+
+    // Num 5xx o `detail` é mensagem INTERNA do servidor ("gateway indisponível"),
+    // escrita para log, não para o cliente. Só aproveitamos o texto quando ele
+    // vem estruturado — aí foi feito para ser exibido — ou quando a resposta não
+    // é erro de servidor. Fora isso, quem escreve a frase é esta função.
+    const serverText = Number(error?.status) >= 500 && !info.structured ? '' : info.text;
+
+    // Transporte: a requisição nem chegou a ter resposta. Sempre retentável, e
+    // o `detail` (se houver) não diria nada de útil aqui.
     if (error?.name === 'TimeoutError' || error?.name === 'NetworkError') {
-      return 'Não conseguimos falar com o provedor de pagamento. Verifique sua conexão e tente de novo — seu pedido já está registrado.';
+      return {
+        title: 'Não foi possível gerar a cobrança',
+        message: 'Não conseguimos falar com o provedor de pagamento. Verifique sua conexão e tente de novo — seu pedido já está registrado.',
+        canRetry: true,
+        code
+      };
     }
+
     if (error?.status === 404) {
-      return 'Este pedido não foi encontrado para pagamento. Procure o restaurante informando o número do pedido.';
+      return {
+        title: 'Pedido não encontrado para pagamento',
+        message: 'Não localizamos este pedido para pagamento. Procure o restaurante informando o número do pedido — ele não foi perdido.',
+        canRetry: false,
+        code
+      };
     }
+
+    // 409 tem leitura própria: o pedido saiu do estado "aguardando pagamento",
+    // e um dos motivos possíveis é ele JÁ ESTAR PAGO. Mandar esse cliente
+    // "escolher outra forma de pagamento" seria empurrá-lo a pagar duas vezes.
     if (error?.status === 409) {
-      return error.detail || error.message || 'Este pedido não está mais aguardando pagamento.';
+      return {
+        title: 'Este pedido não está mais aguardando pagamento',
+        message: serverText
+          ? `${serverText} Confira a situação do pedido com o restaurante antes de pagar de novo.`
+          : 'Este pedido não está mais aguardando pagamento — ele pode já ter sido pago. Confira a situação com o restaurante informando o número do pedido antes de pagar de novo.',
+        canRetry: false,
+        code
+      };
     }
-    if (Number(error?.status) >= 500) {
-      return 'O provedor de pagamento não respondeu agora. Tente de novo em instantes — seu pedido continua registrado.';
+
+    // A partir daqui o backend respondeu, e é o `retryable` dele que decide.
+    if (info.retryable) {
+      return {
+        title: 'Não foi possível gerar a cobrança',
+        message: serverText
+          ? `${serverText} Seu pedido continua registrado — toque em Tentar novamente.`
+          : 'O provedor de pagamento não conseguiu criar a cobrança agora. Seu pedido continua registrado — toque em Tentar novamente.',
+        canRetry: true,
+        code
+      };
     }
-    return error?.detail || error?.message || 'Não foi possível gerar a cobrança do Pix. Tente novamente.';
+
+    return {
+      title: 'Pix indisponível para este pedido',
+      message: serverText
+        ? `${serverText} Não adianta tentar de novo por Pix: combine outra forma de pagamento com o restaurante informando o número do pedido.`
+        : 'Não foi possível cobrar por Pix neste pedido, e tentar de novo levaria ao mesmo resultado. Combine outra forma de pagamento com o restaurante informando o número do pedido.',
+      canRetry: false,
+      code
+    };
   }
 
-  function showPixError(message, { title = 'Não foi possível gerar a cobrança', canRetry = true } = {}) {
+  /**
+   * @param {string} message
+   * @param {object} [options]
+   * @param {boolean} [options.canRetry] false esconde "Tentar novamente"
+   * @param {string}  [options.code]     código do gateway, exibido como referência
+   */
+  function showPixError(message, { title = 'Não foi possível gerar a cobrança', canRetry = true, code = '' } = {}) {
     stopPixPolling();
     if ($('pixErrorTitle')) $('pixErrorTitle').textContent = title;
     if ($('pixErrorMessage')) $('pixErrorMessage').textContent = message;
     if ($('pixRetryBtn')) $('pixRetryBtn').hidden = !canRetry;
+
+    // O número do pedido é a prova, na tela, de que ele sobreviveu à falha.
+    const orderLine = $('pixErrorOrder');
+    if (orderLine) {
+      const orderNumber = pixSession?.order?.order_number;
+      orderLine.hidden = orderNumber == null;
+      orderLine.textContent = orderNumber == null ? '' : `Seu pedido #${orderNumber} está registrado.`;
+    }
+
+    const codeLine = $('pixErrorCode');
+    if (codeLine) {
+      // `code` é texto do servidor: vai por textContent, nunca por innerHTML.
+      codeLine.hidden = !code;
+      codeLine.textContent = code ? `Código do erro: ${code}` : '';
+    }
+
     setPixState('error');
   }
 
@@ -3500,7 +3609,8 @@
     } catch (error) {
       if (pixSession !== session) return;
       logAppError('Falha ao criar a cobrança do Pix', error);
-      showPixError(pixChargeErrorMessage(error));
+      const outcome = pixChargeErrorOutcome(error);
+      showPixError(outcome.message, outcome);
       return;
     }
     if (pixSession !== session) return; // a tela mudou enquanto esperávamos
@@ -6013,7 +6123,7 @@
       if (handled) { showRegSummary('Revise os campos destacados'); return; }
     }
 
-    const raw = String(error?.message || data?.detail || data?.message || '');
+    const raw = apiErrorMessage(error, '');
     const msg = raw.toLowerCase();
     const dup = /(already|já|ja |cadastrad|registr|exist|in use|em uso|duplicad)/.test(msg);
 
@@ -6516,7 +6626,7 @@
       $('forgotPasswordScreen')?.classList.remove('active');
       openRecoverCodeScreen(email);
     } catch (error) {
-      const detail = String(error?.data?.detail || error?.message || '').toLowerCase();
+      const detail = apiErrorMessage(error, '').toLowerCase();
       const notFound = error?.status === 404 || /não encontrad|nao encontrad|not found/.test(detail);
       if (notFound) {
         // E-mail not registered → show the "not found" card.
@@ -7616,9 +7726,7 @@
     return valid ? { name, email, phone, birth_date: customerBirthDateToIso(birth) } : null;
   }
   function customerDataApiMessage(error) {
-    const detail = error?.data?.detail;
-    const message = Array.isArray(detail) ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ') : (detail || error?.data?.message || error?.message || 'Não foi possível atualizar seus dados');
-    return String(message);
+    return apiErrorMessage(error, 'Não foi possível atualizar seus dados');
   }
   async function submitCustomerData(event) {
     event?.preventDefault();
@@ -7729,10 +7837,7 @@
   }
 
   function customerPasswordApiMessage(error) {
-    const detail = error?.data?.detail;
-    const message = Array.isArray(detail)
-      ? detail.map(item => item?.msg || item?.message || '').filter(Boolean).join(' ')
-      : (detail || error?.data?.message || error?.message || 'Não foi possível alterar a senha');
+    const message = apiErrorMessage(error, 'Não foi possível alterar a senha');
     const normalized = String(message).toLocaleLowerCase('pt-BR');
     if (normalized.includes('senha atual') && (normalized.includes('incorret') || normalized.includes('invalid'))) {
       return 'Senha atual incorreta';

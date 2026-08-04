@@ -142,6 +142,41 @@ virar link.
 | 4xx/5xx | genérico | mensagem do `detail`/`message` |
 | — | `TimeoutError` (8s, Fase 0) | mensagem de retry; **mesma** Idempotency-Key |
 
+### `detail` não tem UM formato
+
+O mesmo campo chega em três formas diferentes, e é isso que torna perigoso
+exibi-lo direto:
+
+| Forma | De onde vem | Exemplo |
+|---|---|---|
+| string | `HTTPException` do FastAPI | `{"detail": "cupom expirado"}` |
+| array | `HTTPValidationError` (422) | `{"detail": [{loc, msg, type}]}` |
+| objeto | erro estruturado do pagamento | `{"detail": {"code": "...", "retryable": false}}` |
+
+Interpolar os dois últimos numa mensagem imprime **`[object Object]`** na tela do
+cliente. Toda leitura passa por `scripts/utils/api-error.js`
+(`PedeAquiApiError`), que é o único lugar que conhece as três formas. Quando não
+há texto legível ele devolve `''` — nunca `String(objeto)` —, e quem chama cai
+no fallback em português.
+
+### Cobrança: retentável × definitivo
+
+`paymentErrorInfo(error)` devolve `{code, retryable, text, structured}` e é o
+`retryable` que decide a **tela**, não o status:
+
+- **retentável** → mantém "Tentar novamente", dizendo que o pedido segue registrado;
+- **definitivo** → esconde o botão e orienta a combinar outra forma de pagamento
+  com o restaurante. Oferecer retry aqui seria oferecer a mesma falha de novo;
+- **409** → ramo próprio: o pedido pode **já estar pago**, então não sugere nem
+  retentar nem pagar de outro jeito, e sim conferir antes.
+
+Sem a flag, o front decide pelo transporte (timeout/rede/5xx = retentável) e o
+desconhecido cai em **não retentável** — mesmo princípio do `payment_status`:
+o desconhecido falha para o lado barato.
+
+Em todos os ramos a tela mostra o **número do pedido**: ele existe, e nenhuma
+mensagem pode levar o cliente a refazê-lo.
+
 ## ⚠️ Suposições a validar com o backend
 
 1. **`Idempotency-Key` não está no OpenAPI.** O endpoint declara só o path param
@@ -169,7 +204,24 @@ virar link.
    pago; `failed|canceled|expired|refused|rejected|declined|refunded|chargeback|voided` →
    falhou), e **tudo o que não reconhece é tratado como pendente** — o polling continua em
    vez de declarar pago por engano. Validar os valores reais do gateway.
-9. **A cobrança não declara validade.** `StartPaymentResponse` não tem `expires_at` nem
+9. **`PaymentErrorDetail` NÃO EXISTE no OpenAPI publicado.** Verificado em
+   `GET https://api.pederapidex.com/openapi.json` (80 schemas, nenhum com esse
+   nome; as strings `retryable`, `PaymentError` e `error_code` não aparecem em
+   lugar nenhum do documento). O endpoint `POST .../payment` declara **só** `200`
+   (`StartPaymentResponse`) e `422` (`HTTPValidationError`) — nenhuma resposta de
+   erro de pagamento. Os nomes `code`/`retryable` vieram **do backend por fora do
+   contrato**, e a **lista de valores de `code` é desconhecida**.
+   Consequência no front: não existe tabela de códigos. Um `code` desconhecido
+   não vira mensagem errada — ele só é exibido como referência para o cliente
+   citar ao restaurante, e quem decide a tela é o `retryable`.
+   **Pendência de backend:** publicar o schema e o enum de `code` no OpenAPI.
+10. **Não há rota para trocar a forma de pagamento de um pedido já criado.** O
+   OpenAPI expõe, para o cliente, apenas `POST /orders`, `POST .../payment` e
+   `GET .../track` (o único `PATCH` é `/admin/orders/{id}/status`). Por isso, no
+   erro definitivo, "escolher outra forma de pagamento" é **orientação** para
+   resolver com o restaurante pelo número do pedido — não um botão, que
+   prometeria algo que a API não faz.
+11. **A cobrança não declara validade.** `StartPaymentResponse` não tem `expires_at` nem
    equivalente, então o front não sabe quando o Pix vence: usa uma janela **própria** de
    10 min de polling (`PIX_POLL_WINDOW_MS`) e, ao estourar, para de consultar e oferece
    verificação manual em vez de afirmar que expirou de verdade. Se o backend passar a

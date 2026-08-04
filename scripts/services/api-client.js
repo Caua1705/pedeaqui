@@ -88,7 +88,14 @@
     if (!response.ok) {
       // Never log the request body: it carries e-mail, phone, CPF and password.
       console.error(`[API ${response.status}] ${method} ${url}`);
-      const message = data?.detail || data?.message || `API request failed: ${response.status}`;
+      // `detail` chega como string, array (422) OU objeto (erro estruturado da
+      // rota de pagamento). Interpolar os dois últimos direto viraria
+      // "[object Object]" na tela — quem sabe ler as três formas é o
+      // PedeAquiApiError. O `detail` cru continua no erro, intacto, para quem
+      // precisa dos campos (ver `paymentErrorInfo`).
+      const detailText = window.PedeAquiApiError?.detailText?.(data?.detail) ?? '';
+      const message = detailText || (typeof data?.message === 'string' ? data.message : '')
+        || `API request failed: ${response.status}`;
       const error = new Error(message);
       error.status = response.status;
       error.data = data;

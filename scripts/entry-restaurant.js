@@ -35,6 +35,9 @@ import './utils/image-cdn.js';
 // CSP proíbe as duas coisas. Ver o cabeçalho do arquivo.
 import './utils/qrcode.js';
 import './utils/validators.js';
+// Leitura do `detail` de erro da API (string | array 422 | objeto estruturado).
+// Precisa vir antes do api-client, que o usa para montar a mensagem do erro.
+import './utils/api-error.js';
 import './services/api-client.js';
 import './services/api.js';
 import './services/customer-auth-service.js';

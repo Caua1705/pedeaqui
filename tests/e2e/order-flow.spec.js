@@ -52,7 +52,9 @@ test('product -> cart -> payment -> submit creates an order with the contract pa
 
   // Pix é fluxo online: o pedido criado leva à cobrança, não à confirmação.
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
-  await expect(page.locator('#pixOrderNumber')).toHaveText(`Pedido #${pixOrder(1).order_number}`);
+  await expect(page.locator('#pixOrderNumber')).toHaveText(
+    `Nº do pedido ${pixOrder(1).order_number}`
+  );
 
   // Exactly one order was created, with the contract-shaped payload.
   expect(orderRequests).toHaveLength(1);
@@ -158,7 +160,11 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
 // a garantia não — o cliente lê português, nunca "[object Object]", e o
 // carrinho continua intacto para ele tentar de novo.
 for (const [nome, status, detail] of [
-  ['array de validação (422)', 422, [{ loc: ['body', 'items'], msg: 'campo obrigatório', type: 'missing' }]],
+  [
+    'array de validação (422)',
+    422,
+    [{ loc: ['body', 'items'], msg: 'campo obrigatório', type: 'missing' }]
+  ],
   ['objeto estruturado', 409, { code: 'COUPON_ALREADY_USED', retryable: false }],
   ['string simples', 409, 'cupom já utilizado']
 ]) {
@@ -190,11 +196,13 @@ for (const [nome, status, detail] of [
 
 test('guest adds one item, sees the bag, and is gated only by the cart CTA', async ({ page }) => {
   await mockApi(page);
-  await page.route('**/coupons/preview', route => route.fulfill({
-    status: 401,
-    contentType: 'application/json',
-    body: JSON.stringify({ message: 'Authentication required' })
-  }));
+  await page.route('**/coupons/preview', (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Authentication required' })
+    })
+  );
 
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
@@ -209,7 +217,7 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await expect(page.locator('#operationModal')).not.toHaveClass(/active/);
 
-  await page.evaluate(productId => window.openProduct(productId), PRODUCT_H2O);
+  await page.evaluate((productId) => window.openProduct(productId), PRODUCT_H2O);
   await page.locator('#pmAddBtn').click();
 
   await page.waitForTimeout(250);
@@ -219,7 +227,7 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await expect(page.locator('#cartList .cart-item-row')).toHaveCount(1);
   await expect(page.locator('#cartItemCountLabel')).toHaveText('1 item');
 
-  await page.locator('#cartStickyBtn').evaluate(button => button.click());
+  await page.locator('#cartStickyBtn').evaluate((button) => button.click());
   await expect(page.locator('#cartModal')).toHaveClass(/active/);
 
   const cta = page.locator('#cartCtaBtn');

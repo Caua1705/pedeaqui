@@ -26,10 +26,21 @@
   display: none;
 }
 
-/* O cartão encosta no topo, como na referência — o respiro maior é dos estados
-   de texto (carregando/erro), que ficam centrados no vazio. */
-.pix-state[data-pix-state='ready'] {
-  padding-top: 14px;
+/* A cobrança sobe até o topo — o respiro maior é dos estados de texto
+   (carregando/erro), que ficam centrados no vazio. */
+.pix-ready {
+  padding-top: 8px;
+}
+
+/* Coluna única de 374px: a mesma largura útil dos outros full-screen do app. */
+.pix-ready > * {
+  width: 100%;
+  max-width: 374px;
+}
+
+/* O aviso do polling é uma pílula: mede o próprio texto, não a coluna. */
+.pix-ready > .pix-status {
+  width: auto;
 }
 
 .pix-state-title {
@@ -79,209 +90,114 @@
   }
 }
 
-/* ---- Cobrança pronta ----
+/* ---- Cobrança pronta ---- */
 
-   O cartão é a referência da tela: 374px de largura com 20px de respiro
-   interno, o que dá exatamente os 334px do botão de copiar. As medidas abaixo
-   (42px dos ícones, 45px do botão, 20px acima dele) saem daí. */
-
-.pix-card {
-  width: 100%;
-  max-width: 374px;
-  box-sizing: border-box;
-  padding: 20px;
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: 0 1px 3px var(--shadow-card);
-  text-align: left;
+/* Ilustração do topo. Toda a cor sai do tema — SVG inline no HTML não aceita
+   var() em atributo de apresentação, então quem pinta é daqui (mesma razão das
+   .brand-fill em styles/tokens.css). */
+.pix-art {
+  display: block;
+  width: 168px;
+  max-width: 168px;
+  height: auto;
+  margin: 6px auto 0;
 }
 
-.pix-card-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.pix-art-bg {
+  fill: rgba(var(--brand-primary-rgb), 0.12);
 }
 
-.pix-card-icon {
-  width: 42px;
-  height: 42px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
+.pix-art-surface {
+  fill: var(--surface);
 }
 
-.pix-card-icon--brand {
-  background: var(--surface-3);
+.pix-art-soft {
+  fill: rgba(var(--brand-primary-rgb), 0.35);
 }
 
-.pix-card-icon--brand img {
-  width: 24px;
-  height: 24px;
+.pix-art-line {
+  stroke: var(--brand-primary);
 }
 
-/* Fundo derivado da marca, não um âmbar fixo: numa loja azul o relógio precisa
-   sair azul (tests/e2e/tenant-theme.spec.js). */
-.pix-card-icon--clock {
-  background: rgba(var(--brand-primary-rgb), 0.12);
-  color: var(--brand-primary);
+.pix-art-solid {
+  fill: var(--brand-primary);
 }
 
-.pix-card-icon--clock svg {
-  width: 21px;
-  height: 21px;
+/* --brand-on é calculado por luminosidade em brand-theme.js: numa marca clara
+   ele vira escuro. Fixar #fff aqui quebraria essas marcas. */
+.pix-art-on {
+  stroke: var(--brand-on);
 }
 
-.pix-card-row-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.pix-card-row-text > strong {
-  font-size: 0.92rem;
+.pix-headline {
+  margin: 18px 0 0;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.3;
   color: var(--text-main);
 }
 
-.pix-order-line {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.pix-order-line strong {
+.pix-lede {
+  margin: 8px 0 0;
   font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--text-main);
-}
-
-.pix-countdown {
-  font-size: 1rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-main);
-}
-
-.pix-card-rule {
-  height: 1px;
-  background: var(--border);
-  margin: 16px 0;
-}
-
-.pix-steps {
-  margin: 14px 0 0;
-  padding-left: 20px;
-  list-style: disc;
-}
-
-.pix-steps li {
-  font-size: 0.82rem;
-  line-height: 1.4;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.pix-steps li:last-child {
-  margin-bottom: 0;
-}
-
-.pix-qr-frame {
-  display: flex;
-  justify-content: center;
-  margin-top: 18px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.pix-qr-frame[hidden] {
-  display: none;
-}
-
-/* O SVG do QR é gerado em runtime (scripts/utils/qrcode.js). Largura fixa em
-   vez de %: um QR reescalado por fração de pixel borra as bordas dos módulos e
-   piora a leitura. */
-.pix-qr svg {
-  display: block;
-  width: 196px;
-  height: 196px;
-}
-
-/* Caixa com a legenda encaixada na borda, como na referência. */
-.pix-code-block {
-  position: relative;
-  margin-top: 20px;
-  padding: 14px 12px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.pix-code-block[hidden] {
-  display: none;
-}
-
-.pix-code-label {
-  position: absolute;
-  top: -7px;
-  left: 11px;
-  padding: 0 5px;
-  background: var(--surface);
-  font-size: 0.7rem;
-  color: var(--text-faint);
-}
-
-/* O payload EMV é uma linha só e longuíssima: quebra em qualquer ponto e é
-   truncado em seis linhas — quem paga usa o botão de copiar, não a leitura. */
-.pix-code {
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  /* <code> puxaria monospace do agente; a referência usa a fonte do app. */
-  font-family: inherit;
-  font-size: 0.8rem;
   line-height: 1.5;
-  color: var(--text-main);
-  overflow-wrap: anywhere;
-  word-break: break-all;
+  color: var(--text-muted);
 }
 
-.pix-copy-btn {
+.pix-lede[hidden] {
+  display: none;
+}
+
+/* ---- Campo do código ----
+
+   O payload EMV tem centenas de caracteres. Ele aparece truncado numa linha só:
+   ninguém o digita, e o texto inteiro só tomaria a tela. O valor completo
+   continua no elemento — é dele que sai a cópia. */
+
+.pix-code-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 13px 12px 13px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.pix-code-field[hidden] {
+  display: none;
+}
+
+.pix-code-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.pix-code-copy {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 45px;
-  margin-top: 20px;
-  padding: 0 16px;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 8px;
-  background: var(--brand-primary);
-  /* --brand-on é calculado por luminosidade em brand-theme.js: numa marca
-     clara ele vira texto escuro. Fixar #fff aqui quebraria essas marcas. */
-  color: var(--brand-on);
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-radius: 9px;
+  background: none;
+  color: var(--brand-primary);
   cursor: pointer;
-  transition: filter 0.15s;
+  transition: background 0.15s;
 }
 
-.pix-copy-btn[hidden] {
-  display: none;
-}
-
-.pix-copy-btn:active {
-  filter: brightness(0.88);
+.pix-code-copy:active {
+  background: rgba(var(--brand-primary-rgb), 0.12);
 }
 
 .pix-checkout-link {
@@ -295,6 +211,211 @@
 }
 
 .pix-checkout-link[hidden] {
+  display: none;
+}
+
+/* ---- Prazo ---- */
+
+.pix-timer {
+  margin-top: 22px;
+  text-align: left;
+}
+
+.pix-timer-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.pix-countdown {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  /* Sem largura tabular o número dança a cada segundo. */
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.pix-timer-track {
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+/* A largura é escrita a cada segundo pelo mesmo tique do contador — a barra e o
+   número medem a MESMA janela, então nunca divergem. */
+.pix-timer-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-primary);
+  transition: width 0.9s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pix-timer-fill {
+    transition: none;
+  }
+}
+
+.pix-howto-link {
+  display: block;
+  margin-top: 16px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ---- Cartão do pedido ---- */
+
+.pix-order-card {
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--shadow-card);
+  text-align: left;
+}
+
+.pix-order-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pix-order-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pix-order-id strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-main);
+}
+
+.pix-order-id span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.pix-order-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.pix-order-total strong {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.pix-order-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 14px 0 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.pix-order-toggle[hidden] {
+  display: none;
+}
+
+.pix-order-chevron {
+  flex: none;
+  color: var(--brand-primary);
+  transition: transform 0.2s ease;
+}
+
+.pix-order-toggle.is-open .pix-order-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pix-order-chevron {
+    transition: none;
+  }
+}
+
+.pix-order-items {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pix-order-items[hidden] {
+  display: none;
+}
+
+.pix-order-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.pix-order-item-name {
+  min-width: 0;
+}
+
+.pix-order-item-name span {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pix-order-item-price {
+  flex: none;
+  color: var(--text-main);
+}
+
+.pix-consequence {
+  margin: 18px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* ---- Rodapé ----
+
+   Reaproveita .cart-footer/.cart-cta-btn: a ação principal desta tela tem que
+   ser a mesma barra dos outros full-screen, não um botão próprio. */
+
+#pixPaymentModal .pix-footer[hidden] {
   display: none;
 }
 
@@ -404,11 +525,11 @@
   }
 }
 
-/* ---- Confirmação de saída ----
+/* ---- Folhas da tela de Pix ----
 
-   Sobe de baixo para cima por cima da tela de Pix, como os outros sheets do
-   app. Só o "Cancelar pedido" sai daqui; "Voltar para PIX" desce a folha e
-   devolve a cobrança intacta. */
+   Duas usam esta casca: a confirmação de saída e o "Como funciona". Sobem de
+   baixo para cima por cima da tela de Pix, como os outros sheets do app, e não
+   encostam na pilha de modais — por isso vivem DENTRO do #pixPaymentModal. */
 
 /* A folha é absoluta dentro da tela; sem o recorte, o scrim passaria por cima
    dos cantos arredondados do topo do modal. */
@@ -416,7 +537,7 @@
   overflow: hidden;
 }
 
-.pix-exit {
+.pix-sheet {
   position: absolute;
   inset: 0;
   z-index: 20;
@@ -425,11 +546,11 @@
   justify-content: flex-end;
 }
 
-.pix-exit[hidden] {
+.pix-sheet[hidden] {
   display: none;
 }
 
-.pix-exit-scrim {
+.pix-sheet-scrim {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
@@ -437,11 +558,11 @@
   transition: opacity 0.26s ease;
 }
 
-.pix-exit.is-open .pix-exit-scrim {
+.pix-sheet.is-open .pix-sheet-scrim {
   opacity: 1;
 }
 
-.pix-exit-sheet {
+.pix-sheet-panel {
   position: relative;
   box-sizing: border-box;
   padding: 22px 20px calc(20px + var(--safe-bottom));
@@ -452,25 +573,25 @@
   transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.pix-exit.is-open .pix-exit-sheet {
+.pix-sheet.is-open .pix-sheet-panel {
   transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pix-exit-scrim,
-  .pix-exit-sheet {
+  .pix-sheet-scrim,
+  .pix-sheet-panel {
     transition-duration: 0.01ms;
   }
 }
 
-.pix-exit-title {
+.pix-sheet-title {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-main);
   margin: 0 0 8px;
 }
 
-.pix-exit-text {
+.pix-sheet-text {
   font-size: 0.83rem;
   line-height: 1.5;
   color: var(--text-muted);
@@ -478,8 +599,8 @@
   max-width: 300px;
 }
 
-.pix-exit-primary,
-.pix-exit-ghost {
+.pix-sheet-primary,
+.pix-sheet-ghost {
   display: block;
   width: 100%;
   height: 48px;
@@ -491,22 +612,73 @@
   transition: filter 0.15s;
 }
 
-.pix-exit-primary {
+.pix-sheet-primary {
   border: none;
   background: var(--brand-primary);
+  /* --brand-on é calculado por luminosidade em brand-theme.js: numa marca clara
+     ele vira texto escuro. Fixar #fff aqui quebraria essas marcas. */
   color: var(--brand-on);
 }
 
-.pix-exit-ghost {
+.pix-sheet-ghost {
   margin-top: 10px;
   border: 1px solid var(--brand-primary);
   background: var(--surface);
   color: var(--brand-primary);
 }
 
-.pix-exit-primary:active,
-.pix-exit-ghost:active {
+.pix-sheet-primary:active,
+.pix-sheet-ghost:active {
   filter: brightness(0.92);
+}
+
+/* ---- Passo a passo do "Como funciona" ---- */
+
+.pix-howto-steps {
+  margin: 4px 0 20px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.pix-howto-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.pix-howto-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  color: var(--brand-on);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.pix-howto-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pix-howto-copy strong {
+  font-size: 0.87rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pix-howto-copy span {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 /* ---- Erro e expiração ---- */

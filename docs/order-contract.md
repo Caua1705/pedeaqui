@@ -115,12 +115,18 @@ Resposta 200 — `StartPaymentResponse`:
 | `checkout_url` | string\|null | não |
 
 `qr_code` é o **copia-e-cola** do Pix (payload EMV em texto), não uma imagem: o schema não
-tem nenhum campo de imagem. O QR é desenhado no cliente a partir dessa string
-(`scripts/utils/qrcode.js`), sem dependência nem host externo.
+tem nenhum campo de imagem.
+
+A tela de pagamento exibe esse payload **truncado** (uma linha, cortada pelo CSS) com o
+botão de copiar ao lado — ninguém digita um EMV, e o texto inteiro só tomaria a tela. O
+elemento guarda a string **completa**: é dela que a cópia sai. **Não existe mais QR
+desenhado na tela** (decisão de produto ao alinhar a tela com a referência de mercado);
+`scripts/utils/qrcode.js` continua no bundle, mas sem chamador.
 
 `qr_code` e `checkout_url` são ambos anuláveis e **alternativos** — a tela renderiza o que
-vier e só falha se vierem os dois vazios. `checkout_url` é filtrado para `http(s)` antes de
-virar link.
+vier e só falha se vierem os dois vazios. Quando vem só `checkout_url`, o campo do código e
+o rodapé "Copiar código" somem e a saída é o link, que é filtrado para `http(s)` antes de
+virar `href`.
 
 ## Acompanhamento — `GET /restaurants/{slug}/orders/track/{tracking_token}`
 
@@ -226,3 +232,12 @@ mensagem pode levar o cliente a refazê-lo.
    10 min de polling (`PIX_POLL_WINDOW_MS`) e, ao estourar, para de consultar e oferece
    verificação manual em vez de afirmar que expirou de verdade. Se o backend passar a
    expor a validade, é ela que deve mandar.
+   É por isso que o contador, a barra de progresso e o texto de consequência da tela
+   saem todos de `PIX_POLL_WINDOW_MS`, e que esse texto diz que **a verificação
+   automática** acaba no prazo — não que o pedido será cancelado. **Pendência de
+   backend:** se pedido não pago é cancelado, publicar o prazo; aí a tela pode avisar.
+12. **Os itens do pedido não voltam.** `CreateOrderResponse` traz só totais, e o carrinho
+   é esvaziado no instante da criação. Para que "Ver itens do pedido" exista na cobrança
+   depois de um reload, uma foto enxuta das linhas (nome, quantidade, valor) é gravada
+   junto do `tracking_token` em `scripts/state/order-tracking.js`. Se o backend passar a
+   devolver os itens em `GET .../track`, essa cópia local perde a razão de ser.

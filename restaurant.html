@@ -941,7 +941,7 @@
       </button>
       <h2 class="cart-hdr-title" id="pixPaymentTitle">Pagamento PIX</h2>
       <button class="cart-hdr-back" type="button" data-act-click='openPixExitConfirm' aria-label="Fechar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
       <!-- Cobre o título enquanto aparece, como na referência. aria-live faz o
            leitor de tela anunciar a cópia sem precisar de foco. -->
@@ -1013,7 +1013,10 @@
              Os itens ficam numa gaveta — são o detalhe, não a informação. -->
         <div class="pix-order-card">
           <div class="pix-order-head">
-            <span class="cart-rest-avatar" aria-hidden="true">JdP</span>
+            <!-- Nasce com as iniciais e recebe a logo da loja no boot
+                 (renderRestaurantShell). Sem logo cadastrada, ou se ela falhar
+                 ao carregar, as iniciais é que ficam. -->
+            <span class="cart-rest-avatar" id="pixOrderLogo" aria-hidden="true">JdP</span>
             <span class="pix-order-id">
               <strong id="pixOrderStore">—</strong>
               <span id="pixOrderNumber">—</span>

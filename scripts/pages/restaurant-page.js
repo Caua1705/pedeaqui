@@ -1304,6 +1304,25 @@
     renderLogo($('loginLogo'));
     renderLogo($('infoStoreLogo'));
 
+    // O cartão de conferência do Pix mostra a MARCA da loja, não as iniciais:
+    // ali o cliente confere para quem está prestes a pagar, e uma sigla não
+    // confirma nada. Não usa renderLogo() porque o fallback de lá é a caixa
+    // .mob-logo-fallback, grande demais para um avatar de 32px — aqui o que
+    // sobra são as iniciais que o loop acima já escreveu.
+    const pixAvatar = $('pixOrderLogo');
+    if (pixAvatar && logoUrl) {
+      const avatarImage = document.createElement('img');
+      avatarImage.src = logoUrl;
+      avatarImage.alt = '';
+      avatarImage.decoding = 'async';
+      avatarImage.addEventListener(
+        'error',
+        () => { pixAvatar.textContent = initials(restName); },
+        { once: true }
+      );
+      pixAvatar.replaceChildren(avatarImage);
+    }
+
     const isOpen = settings.is_open ?? restaurant.is_open;
     const status = isOpen === false
       ? (fallback().closedStatusText || 'Fechado no momento')

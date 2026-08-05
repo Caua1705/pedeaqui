@@ -120,12 +120,24 @@
   display: none;
 }
 
+/* Fundo branco na tela toda: .cart-scroll é cinza (#f5f5f5) para as telas em
+   que os cartões flutuam sobre o fundo, e aqui não é o caso — o cartão do
+   pedido é recortado por uma borda, não levantado. Na referência a página
+   inteira é branca. */
+#pixPaymentModal .pix-body {
+  background: var(--surface);
+}
+
 /* O conteúdo da cobrança começa mais abaixo do cabeçalho: a ilustração maior
    pede o respiro, e o bloco todo desce junto. O respiro AINDA maior dos estados
    de texto (carregando/erro) continua vindo de .pix-state — lá o conteúdo é
-   pouco e fica centrado no vazio. */
+   pouco e fica centrado no vazio.
+
+   Embaixo é o contrário: o pouco espaço é para o texto de consequência não
+   ficar longe do botão de copiar. */
 .pix-ready {
   padding-top: 26px;
+  padding-bottom: calc(14px + var(--safe-bottom));
 }
 
 /* Coluna única de 374px: a mesma largura útil dos outros full-screen do app. */
@@ -224,10 +236,12 @@
   stroke: var(--brand-on);
 }
 
+/* Peso médio de propósito: o negrito desta tela é do CÓDIGO, que é o que o
+   cliente precisa achar. Um título em 700 disputava essa atenção. */
 .pix-headline {
   margin: 18px 0 0;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.3;
   color: var(--text-main);
 }
@@ -245,20 +259,29 @@
 
 /* ---- Campo do código ----
 
-   O payload EMV tem centenas de caracteres. Ele aparece truncado numa linha só:
-   ninguém o digita, e o texto inteiro só tomaria a tela. O valor completo
-   continua no elemento — é dele que sai a cópia. */
+   O payload EMV tem centenas de caracteres. Na tela ele aparece cortado logo
+   depois do "BR" (quem corta é shortPixCode, em restaurant-page.js); o valor
+   inteiro fica no dataset do elemento e é dele que a cópia sai.
+
+   O código junto do ícone forma um grupo CENTRADO no campo — não é um texto
+   alinhado à esquerda com o botão empurrado para a direita. */
 
 .pix-code-field {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 17px;
   box-sizing: border-box;
   margin-top: 18px;
-  padding: 13px 12px 13px 16px;
-  border: 1px solid var(--border-strong);
+  padding: 16px 12px;
+  /* Contorno tracejado claro, como na referência. Uma `border: 1px dashed` do
+     browser sai com traços de ~2px, curtos demais; o SVG deixa cravar o traço
+     de 7px e o vão de 5.5px medidos na imagem. O rect tem stroke de 2 encostado
+     na borda, então metade é recortada e o traço final fica com 1px. */
+  border: 0;
   border-radius: 12px;
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23ededed' stroke-width='2' stroke-dasharray='7 5.5'/%3E%3C/svg%3E");
   text-align: left;
 }
 
@@ -266,13 +289,15 @@
   display: none;
 }
 
+/* O negrito da tela mora aqui: é o código que o cliente vem buscar. */
 .pix-code-value {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-main);
 }
 
@@ -388,7 +413,7 @@
 
 .pix-order-card {
   box-sizing: border-box;
-  margin-top: 58px;
+  margin-top: 42px;
   padding: 18px;
   /* Borda de 1px no lugar da sombra: na referência o cartão é recortado por um
      traço, não levantado do fundo. --border já é o #e8e8e8 da imagem. */
@@ -565,11 +590,19 @@
    Reaproveita .cart-footer/.cart-cta-btn: a ação principal desta tela tem que
    ser a mesma barra dos outros full-screen, não um botão próprio. */
 
-/* Único elemento da tela que SOBE: o rodapé ganha folga embaixo, o que
-   descola o botão da borda inferior do aparelho. O resto do conteúdo desceu
-   (ver .pix-ready), então os dois se afastam do meio em sentidos opostos. */
+/* Rodapé apertado nos dois lados: em cima para o botão não ficar longe do
+   texto de consequência, embaixo o suficiente para ele não encostar na borda
+   do aparelho. */
 #pixPaymentModal .pix-footer {
-  padding-bottom: calc(30px + var(--safe-bottom));
+  padding-top: 14px;
+  padding-bottom: calc(18px + var(--safe-bottom));
+}
+
+/* Menor e menos arredondado que o CTA padrão do app — a medida da referência.
+   Escopado ao Pix: .cart-cta-btn é o botão de todas as telas cheias. */
+#pixPaymentModal .pix-footer .cart-cta-btn {
+  height: 46px;
+  border-radius: 8px;
 }
 
 #pixPaymentModal .pix-footer[hidden] {

@@ -55,9 +55,11 @@ test('cria o pedido, gera a cobrança e mostra código, prazo, pedido e checkout
   await expect(page.getByRole('heading', { name: 'Pedido aguardando pagamento' })).toBeVisible();
   await expect(page.locator('#pixLede')).toContainText('Pix Copia e Cola');
 
-  // O código guardado é EXATAMENTE o payload do gateway — quem trunca é o CSS.
-  // Se o TEXTO divergir, o cliente paga outra coisa.
-  await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+  // O código guardado é EXATAMENTE o payload do gateway — o que a tela mostra é
+  // um resumo até o "BR". Se o VALOR guardado divergir, o cliente paga outra
+  // coisa; é dele que sai a cópia (ver o teste da área de transferência).
+  await expect(page.locator('#pixCopyCode')).toHaveAttribute('data-code', PIX_QR_CODE);
+  await expect(page.locator('#pixCopyCode')).toHaveText(/^000201.*BR\.\.\.$/);
   const field = page.locator('#pixCodeField');
   await expect(field).toBeVisible();
   // Truncado de verdade: uma linha, sem esticar a tela na horizontal.
@@ -169,7 +171,7 @@ test('"Como funciona" abre o passo a passo em três etapas', async ({ page }) =>
   // A folha é ajuda: fechá-la devolve a cobrança intacta.
   await page.getByRole('button', { name: 'Entendi' }).click();
   await expect(sheet).toBeHidden();
-  await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+  await expect(page.locator('#pixCopyCode')).toHaveAttribute('data-code', PIX_QR_CODE);
 });
 
 test('"Ver itens do pedido" expande a conferência do que foi pedido', async ({ page }) => {
@@ -267,7 +269,7 @@ test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nad
     await page.getByRole('button', { name: 'Voltar para PIX' }).click();
     await expect(confirm).toBeHidden();
     await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
-    await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+    await expect(page.locator('#pixCopyCode')).toHaveAttribute('data-code', PIX_QR_CODE);
   }
 
   expect(paymentRequests).toHaveLength(1);
@@ -645,7 +647,7 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
   // E leva de volta à cobrança, pelo tracking_token guardado.
   await page.locator('.pending-payment-main').click();
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
-  await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+  await expect(page.locator('#pixCopyCode')).toHaveAttribute('data-code', PIX_QR_CODE);
 
   // A conferência do pedido sobrevive ao reload: o carrinho já foi esvaziado e
   // nenhuma rota devolve os itens, então ela só existe porque foi guardada

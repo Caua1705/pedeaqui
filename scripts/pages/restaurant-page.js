@@ -3488,7 +3488,7 @@
     // checkout_url o botão não teria o que copiar (renderPixCharge esvazia o
     // campo nesse caso), e a saída é o link, não ele.
     const footer = $('pixFooter');
-    if (footer) footer.hidden = !(state === 'ready' && !!$('pixCopyCode')?.textContent?.trim());
+    if (footer) footer.hidden = !(state === 'ready' && !!$('pixCopyCode')?.dataset.code?.trim());
   }
 
   /**
@@ -3747,6 +3747,21 @@
   }
 
   /**
+   * Resumo do payload EMV para a tela: corta logo depois do "BR" do domínio
+   * (`...0014BR.GOV.BCB.PIX...`), que é onde a referência corta. O resto são
+   * centenas de caracteres que ninguém lê nem digita.
+   * @param {string} code payload completo
+   * @returns {string} trecho seguido de reticências
+   */
+  function shortPixCode(code) {
+    const full = String(code || '');
+    const cut = full.indexOf('BR');
+    // Sem "BR" o payload não é um Pix conhecido; ainda assim não deixamos a
+    // linha inteira na tela — o CSS trunca o que sobrar.
+    return cut < 0 ? full : `${full.slice(0, cut + 2)}...`;
+  }
+
+  /**
    * Preenche a tela com o que o gateway devolveu.
    * @returns {boolean} false quando não há como pagar (a tela já foi para erro)
    */
@@ -3765,9 +3780,13 @@
       return false;
     }
 
-    // O elemento guarda o payload INTEIRO — é dele que a cópia sai. Quem
-    // trunca é o CSS, não o texto: cortar aqui copiaria um código quebrado.
-    if ($('pixCopyCode')) $('pixCopyCode').textContent = code;
+    // O payload INTEIRO fica no dataset e é DELE que a cópia sai — o texto
+    // visível é só um resumo, e copiar um código cortado cobra errado.
+    const codeEl = $('pixCopyCode');
+    if (codeEl) {
+      codeEl.dataset.code = code || '';
+      codeEl.textContent = shortPixCode(code);
+    }
     if ($('pixCodeField')) $('pixCodeField').hidden = !code;
 
     // Sem código, a instrução de copiar não se aplica: a única saída é o link.
@@ -3819,7 +3838,8 @@
   }
 
   async function copyPixCode() {
-    const code = $('pixCopyCode')?.textContent?.trim();
+    // dataset, não textContent: o texto na tela é o resumo até o "BR".
+    const code = $('pixCopyCode')?.dataset.code?.trim();
     if (!code) return;
 
     let copied = false;

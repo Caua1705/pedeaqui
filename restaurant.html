@@ -982,8 +982,9 @@
         <p class="pix-lede" id="pixLede">Copie o código abaixo e utilize o Pix Copia e Cola no aplicativo do seu banco.</p>
 
         <!-- O payload EMV tem centenas de caracteres: mostrá-lo inteiro tomaria
-             a tela sem servir para nada, já que ninguém o digita. Fica truncado,
-             com o botão de copiar ao lado. -->
+             a tela sem servir para nada, já que ninguém o digita. Na tela fica
+             só o trecho até o "BR"; o payload inteiro mora em data-code, e é
+             dele que a cópia sai (shortPixCode/copyPixCode). -->
         <div class="pix-code-field" id="pixCodeField">
           <span class="pix-code-value" id="pixCopyCode"></span>
           <button class="pix-code-copy" type="button" id="pixCopyInlineBtn" data-act-click='copyPixCode' aria-label="Copiar código Pix">

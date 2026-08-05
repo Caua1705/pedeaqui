@@ -16,10 +16,10 @@ import {
 //   POST /orders/{token}/payment     -> qr_code + checkout_url
 //   GET  /orders/track/{token}       -> repetido até payment_status virar pago
 //
-// O que estes testes protegem, em ordem de custo se quebrar: o QR precisa
-// carregar o payload EXATO do gateway (um QR com outro conteúdo cobra errado),
-// o polling precisa PARAR (nem infinito, nem parado cedo demais) e o pedido
-// pago na entrega não pode encostar nesse caminho.
+// O que estes testes protegem, em ordem de custo se quebrar: o copia-e-cola
+// precisa carregar o payload EXATO do gateway (um código truncado de verdade
+// cobra errado ou nem cobra), o polling precisa PARAR (nem infinito, nem parado
+// cedo demais) e o pedido pago na entrega não pode encostar nesse caminho.
 
 // Cada teste aqui faz o boot completo do app, monta a sacola, cria o pedido e
 // só então chega na cobrança — e dois deles esperam de propósito (provar que o
@@ -37,7 +37,9 @@ test.beforeEach(async ({ page }) => {
   await seedPickupSession(page);
 });
 
-test('cria o pedido, gera a cobrança e mostra QR, copia-e-cola e checkout', async ({ page }) => {
+test('cria o pedido, gera a cobrança e mostra código, prazo, pedido e checkout', async ({
+  page
+}) => {
   const { orderRequests, paymentRequests } = await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
@@ -49,22 +51,135 @@ test('cria o pedido, gera a cobrança e mostra QR, copia-e-cola e checkout', asy
   expect(paymentRequests).toHaveLength(1);
   expect(paymentRequests[0].token).toBe(orderRequests.length ? pixOrder(1).tracking_token : '');
 
-  // QR desenhado no cliente, como SVG (sem imagem externa: a CSP proíbe).
-  const qr = page.locator('#pixQrCode svg');
-  await expect(qr).toBeVisible();
-  await expect(qr).toHaveAttribute('viewBox', /^0 0 \d+ \d+$/);
-  const box = await qr.boundingBox();
-  expect(box?.width).toBeGreaterThan(150);
+  // A tela na ordem da referência: título, instrução, código, prazo.
+  await expect(page.getByRole('heading', { name: 'Pedido aguardando pagamento' })).toBeVisible();
+  await expect(page.locator('#pixLede')).toContainText('Pix Copia e Cola');
 
-  // O copia-e-cola exibido é EXATAMENTE o payload do gateway. Se divergir, o
-  // cliente paga outra coisa.
+  // O código guardado é EXATAMENTE o payload do gateway — quem trunca é o CSS.
+  // Se o TEXTO divergir, o cliente paga outra coisa.
   await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+  const field = page.locator('#pixCodeField');
+  await expect(field).toBeVisible();
+  // Truncado de verdade: uma linha, sem esticar a tela na horizontal.
+  const fieldBox = await field.boundingBox();
+  expect(fieldBox?.height).toBeLessThan(70);
+  expect(fieldBox?.width).toBeLessThanOrEqual(
+    (await page.locator('.pix-ready').boundingBox())?.width ?? 0
+  );
+
+  await expect(page.locator('.pix-timer-label')).toHaveText('O tempo para você pagar acaba em:');
+  await expect(page.locator('#pixCountdown')).toHaveText(/^\d{2}:\d{2}$/);
+
+  // Cartão do pedido: loja, número e total em destaque.
+  await expect(page.locator('#pixOrderStore')).not.toBeEmpty();
+  await expect(page.locator('#pixOrderNumber')).toContainText(String(pixOrder(1).order_number));
+  await expect(page.locator('#pixOrderTotal')).toContainText('22,14');
+
+  // O aviso de que a tela confere sozinha continua sendo o único sinal de vida.
+  await expect(page.locator('#pixStatus')).toBeVisible();
 
   await expect(page.locator('#pixCheckoutLink')).toBeVisible();
   await expect(page.locator('#pixCheckoutLink')).toHaveAttribute('href', pixCharge().checkout_url);
   await expect(page.locator('#pixCheckoutLink')).toHaveAttribute('rel', /noopener/);
 
-  await expect(page.locator('#pixOrderTotal')).toContainText('22,14');
+  // O informativo "segue para a cozinha" saiu: ele não dizia nada acionável.
+  await expect(page.locator('#pixPaymentModal')).not.toContainText('segue para a cozinha');
+});
+
+test('o rodapé traz a ação principal, full-width e na cor da marca', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const cta = page.locator('#pixCopyBtn');
+  await expect(cta).toBeVisible();
+  await expect(cta).toHaveText('Copiar código');
+
+  // Full-width: ocupa a largura do rodapé, descontado o respiro dele.
+  const ctaBox = await cta.boundingBox();
+  const footerBox = await page.locator('#pixFooter').boundingBox();
+  expect(ctaBox.width).toBeGreaterThan(footerBox.width - 40);
+
+  // Cor da MARCA, não uma cor fixa. A prova é repintar o tenant e ver a tela
+  // inteira acompanhar: se algum destes tivesse cor chumbada, ficaria laranja
+  // numa loja azul. O poll existe por causa da transição de 0.2s do botão.
+  await page.evaluate(() => window.RapidexTheme.applyBrandTheme('#1652f0'));
+  await expect
+    .poll(() =>
+      page.evaluate(() => getComputedStyle(document.getElementById('pixCopyBtn')).backgroundColor)
+    )
+    .toBe('rgb(22, 82, 240)');
+
+  expect(
+    await page.evaluate(() => ({
+      barra: getComputedStyle(document.getElementById('pixCountdownBar')).backgroundColor,
+      comoFunciona: getComputedStyle(document.querySelector('.pix-howto-link')).color,
+      iconeCopiar: getComputedStyle(document.querySelector('.pix-code-copy')).color,
+      ilustracao: getComputedStyle(document.querySelector('.pix-art-solid')).fill
+    }))
+  ).toEqual({
+    barra: 'rgb(22, 82, 240)',
+    comoFunciona: 'rgb(22, 82, 240)',
+    iconeCopiar: 'rgb(22, 82, 240)',
+    ilustracao: 'rgb(22, 82, 240)'
+  });
+});
+
+test('"Como funciona" abre o passo a passo em três etapas', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const sheet = page.locator('#pixHowTo');
+  await expect(sheet).toBeHidden();
+
+  await page.getByRole('button', { name: 'Como funciona' }).click();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.pix-howto-steps li')).toHaveCount(3);
+
+  // A folha é ajuda: fechá-la devolve a cobrança intacta.
+  await page.getByRole('button', { name: 'Entendi' }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+});
+
+test('"Ver itens do pedido" expande a conferência do que foi pedido', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page); // 3 x Água 500ml, montados pelo helper
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const toggle = page.locator('#pixItemsToggle');
+  const items = page.locator('#pixOrderItems');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(items).toBeHidden();
+
+  await toggle.click();
+  await expect(items).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(items.locator('.pix-order-item')).toHaveCount(1);
+  await expect(items).toContainText('3x');
+  await expect(items).toContainText('21,15'); // 3 x R$ 7,05
+
+  await toggle.click();
+  await expect(items).toBeHidden();
+});
+
+test('o texto de consequência diz o prazo real, sem prometer cancelamento', async ({ page }) => {
+  // A janela de 10 min é NOSSA: o gateway não declara validade da cobrança
+  // (docs/order-contract.md, item 11). O que acaba com ela é a verificação
+  // automática — afirmar cancelamento seria inventar um comportamento.
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const text = page.locator('#pixConsequence');
+  await expect(text).toContainText('10 minutos');
+  await expect(text).not.toContainText(/cancelad/i);
 });
 
 test('o botão de copiar coloca o payload do Pix na área de transferência', async ({
@@ -85,13 +200,20 @@ test('o botão de copiar coloca o payload do Pix na área de transferência', as
   const toast = page.locator('#pixToast');
   await expect(toast).toBeVisible();
   await expect(toast).toHaveText('PIX copiado com sucesso!');
-  await expect(page.locator('#pixCopyBtnLabel')).toHaveText('Copiar código PIX');
+  await expect(page.locator('#pixCopyBtnLabel')).toHaveText('Copiar código');
 
   const clipboard = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboard).toBe(PIX_QR_CODE);
 
   // E some sozinho, sem deixar o cabeçalho coberto.
   await expect(toast).toBeHidden({ timeout: 6000 });
+
+  // O ícone ao lado do código copia o MESMO payload: o campo mostra um trecho,
+  // mas o que vai para a área de transferência é o código inteiro.
+  await page.evaluate(() => navigator.clipboard.writeText('sujeira'));
+  await page.locator('#pixCopyInlineBtn').click();
+  await expect(toast).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PIX_QR_CODE);
 });
 
 test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nada', async ({
@@ -137,25 +259,36 @@ test('"Cancelar pedido" sai da cobrança sem um segundo aviso', async ({ page })
   await expect(page.locator('#pixToast')).toBeHidden();
 });
 
-test('o contador regressivo anda para trás enquanto a cobrança espera', async ({ page }) => {
+test('o contador e a barra de progresso andam para trás juntos', async ({ page }) => {
   await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
 
   const countdown = page.locator('#pixCountdown');
-  await expect(countdown).toHaveText(/^\(\d{2}:\d{2}\)$/);
+  await expect(countdown).toHaveText(/^\d{2}:\d{2}$/);
 
   const toSeconds = async () => {
     const text = (await countdown.textContent()) || '';
-    const [, m, s] = text.match(/\((\d{2}):(\d{2})\)/) || [];
+    const [, m, s] = text.match(/(\d{2}):(\d{2})/) || [];
     return Number(m) * 60 + Number(s);
   };
+  // A largura em % é o que o JS escreve; medir o estilo inline evita depender
+  // da transição de CSS, que interpola a largura em pixels.
+  const toPercent = async () =>
+    Number((await page.locator('#pixCountdownBar').getAttribute('style'))?.match(/([\d.]+)%/)?.[1]);
 
-  const first = await toSeconds();
-  // A janela de espera é de 10 min — o contador nasce nela, não em zero.
-  expect(first).toBeGreaterThan(9 * 60);
-  await expect.poll(toSeconds, { timeout: 8000 }).toBeLessThan(first);
+  const firstSeconds = await toSeconds();
+  const firstPercent = await toPercent();
+  // A janela de espera é de 10 min — o contador nasce nela, não em zero, e a
+  // barra nasce cheia.
+  expect(firstSeconds).toBeGreaterThan(9 * 60);
+  expect(firstPercent).toBeGreaterThan(95);
+
+  await expect.poll(toSeconds, { timeout: 8000 }).toBeLessThan(firstSeconds);
+  // A barra mede a MESMA janela do número: se ela não anda junto, uma das duas
+  // está mentindo sobre o prazo.
+  expect(await toPercent()).toBeLessThan(firstPercent);
 });
 
 test('detecta o pagamento pelo polling e leva à tela de sucesso, parando de consultar', async ({
@@ -209,10 +342,7 @@ test('o pagamento confirmado apaga a pendência guardada para a loja', async ({ 
   await submitPixOrder(page);
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/, { timeout: 30000 });
 
-  const stored = await page.evaluate(
-    (slug) => window.RapidexOrderTracking.latest(slug),
-    SLUG
-  );
+  const stored = await page.evaluate((slug) => window.RapidexOrderTracking.latest(slug), SLUG);
   expect(stored.payment_status).toBe('paid');
   await expect(page.locator('#pendingPaymentBar')).toBeHidden();
 });
@@ -260,12 +390,14 @@ test('falha do gateway vira mensagem clara, sem sugerir refazer o pedido', async
 // ---------------------------------------------------------------------------
 
 /** Responde a criação da cobrança com um detail em objeto. */
-const paymentErrorRoute = (detail, status = 402) => (route) =>
-  route.fulfill({
-    status,
-    contentType: 'application/json',
-    body: JSON.stringify({ detail })
-  });
+const paymentErrorRoute =
+  (detail, status = 402) =>
+  (route) =>
+    route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail })
+    });
 
 test('erro RETENTÁVEL em objeto: mensagem em português e botão de tentar de novo', async ({
   page
@@ -332,10 +464,7 @@ test('erro DEFINITIVO em objeto: sem botão de retry, orienta outra forma de pag
 
   await page.getByRole('button', { name: 'Voltar para a loja' }).click();
   await expect(page.locator('#pendingPaymentBar')).toBeVisible();
-  const saved = await page.evaluate(
-    (slug) => window.RapidexOrderTracking.latest(slug),
-    SLUG
-  );
+  const saved = await page.evaluate((slug) => window.RapidexOrderTracking.latest(slug), SLUG);
   expect(saved?.tracking_token).toBe(pixOrder(1).tracking_token);
 });
 
@@ -394,7 +523,38 @@ test('cobrança sem QR e sem checkout é dita em voz alta, não vira tela vazia'
   await expect(page.locator('[data-pix-state=error]')).toBeVisible();
   await expect(page.locator('#pixErrorTitle')).toHaveText('Cobrança sem forma de pagamento');
   await expect(page.locator('#pixErrorMessage')).toContainText('não devolveu o QR Code nem o link');
-  await expect(page.locator('#pixQrCode svg')).toHaveCount(0);
+  // Nem campo de código, nem rodapé de copiar: não há o que copiar.
+  await expect(page.locator('#pixCodeField')).toBeHidden();
+  await expect(page.locator('#pixFooter')).toBeHidden();
+});
+
+test('cobrança só com checkout_url mantém a saída pelo link, sem botão de copiar', async ({
+  page
+}) => {
+  // qr_code e checkout_url são ALTERNATIVOS no contrato. Sem o link, esta
+  // cobrança deixaria a tela sem nenhuma saída.
+  await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(pixCharge({ qr_code: null }))
+      })
+  });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const link = page.locator('#pixCheckoutLink');
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', pixCharge().checkout_url);
+
+  // O rodapé "Copiar código" não aparece: não existe código para copiar.
+  await expect(page.locator('#pixFooter')).toBeHidden();
+  await expect(page.locator('#pixCodeField')).toBeHidden();
+  // E a instrução para de mandar copiar algo que não está na tela.
+  await expect(page.locator('#pixLede')).not.toContainText('Copia e Cola');
 });
 
 test('o polling desiste dentro da janela e oferece verificação manual', async ({ page }) => {
@@ -431,9 +591,7 @@ test('o polling desiste dentro da janela e oferece verificação manual', async 
 
   // "Verificar agora" faz UMA consulta sob demanda.
   await page.locator('[data-pix-state=expired] .cart-cta-btn').click();
-  await expect
-    .poll(() => trackRequests.length, { timeout: 10000 })
-    .toBeGreaterThan(afterExpiry);
+  await expect.poll(() => trackRequests.length, { timeout: 10000 }).toBeGreaterThan(afterExpiry);
 });
 
 test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ page }) => {
@@ -459,6 +617,12 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
   await page.locator('.pending-payment-main').click();
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
   await expect(page.locator('#pixCopyCode')).toHaveText(PIX_QR_CODE);
+
+  // A conferência do pedido sobrevive ao reload: o carrinho já foi esvaziado e
+  // nenhuma rota devolve os itens, então ela só existe porque foi guardada
+  // junto do token.
+  await page.locator('#pixItemsToggle').click();
+  await expect(page.locator('#pixOrderItems')).toContainText('3x');
 });
 
 test('o visitante acompanha o pedido pelo tracking_token, sem conta e sem telefone', async ({
@@ -472,7 +636,11 @@ test('o visitante acompanha o pedido pelo tracking_token, sem conta e sem telefo
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(
-          trackedOrder({ payment_flow: 'delivery', payment_status: 'not_required', status: 'preparing' })
+          trackedOrder({
+            payment_flow: 'delivery',
+            payment_status: 'not_required',
+            status: 'preparing'
+          })
         )
       })
   });

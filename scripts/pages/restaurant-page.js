@@ -3251,13 +3251,27 @@
     }
   }
 
+  /**
+   * Linhas do carrinho no formato que a tela de pagamento consome. Tirada
+   * enquanto o carrinho ainda existe: logo abaixo ele é esvaziado, e nenhuma
+   * rota do ciclo devolve os itens de volta.
+   */
+  function orderItemsSnapshot() {
+    return cart.map(item => ({
+      name: item.name,
+      qty: item.qty,
+      total: cartItemUnitPrice(item) * item.qty
+    }));
+  }
+
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
     submittedOrder = response || null;
+    const items = orderItemsSnapshot();
     // O tracking_token é gravado ANTES de qualquer renderização: ele é a única
     // porta do visitante para o próprio pedido, e uma exceção mais adiante não
     // pode ser o motivo de ele se perder.
-    rememberTrackingToken(response);
+    rememberTrackingToken(response, items);
     // Persistir/disparar evento não pode derrubar a confirmação: o pedido já
     // existe, e uma falha aqui é de cache, não do pedido.
     try { window.PedeAquiOrderState?.saveOrder?.(response); }
@@ -3273,18 +3287,18 @@
     setOrderSubmitting(false);
     hideCartOrderError();
     closeModalImmediately('cartModal');
-    routeCreatedOrder(response);
+    routeCreatedOrder(response, items);
   }
 
   // O backend decide o caminho, não a UI: `payment_flow` vem na resposta da
   // criação. Pagamento na entrega segue direto para a confirmação, exatamente
   // como sempre; pagamento online precisa da cobrança antes de o pedido valer.
-  function routeCreatedOrder(response) {
+  function routeCreatedOrder(response, items) {
     if (!isOnlinePaymentFlow(response)) {
       showOrderSuccess(response);
       return;
     }
-    openPixPayment(response);
+    openPixPayment(response, { items });
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -3418,9 +3432,13 @@
     return 'pending';
   }
 
-  function rememberTrackingToken(response) {
+  /**
+   * @param {Array} [items] foto das linhas do carrinho, tirada ANTES da limpeza
+   *   — é a única cópia que sobra delas depois que o pedido é criado.
+   */
+  function rememberTrackingToken(response, items) {
     try {
-      const saved = window.RapidexOrderTracking?.remember?.(getRestaurantSlug(), response);
+      const saved = window.RapidexOrderTracking?.remember?.(getRestaurantSlug(), response, { items });
       if (!saved && isOnlinePaymentFlow(response)) {
         // Sem token não há como iniciar a cobrança nem acompanhar o pedido.
         logAppError('Pedido online criado sem tracking_token', new Error('tracking_token ausente na resposta'));

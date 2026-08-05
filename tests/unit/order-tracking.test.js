@@ -90,6 +90,55 @@ describe('remember', () => {
     expect(tracking.latest(SLUG).status).toBe('confirmed');
   });
 
+  it('guarda a foto dos itens, que nenhuma rota do ciclo devolve de volta', () => {
+    // O carrinho é esvaziado no instante em que o pedido é criado. Esta cópia é
+    // a única fonte de "Ver itens do pedido" para quem recarrega a página
+    // durante a cobrança.
+    tracking.remember(SLUG, orderResponse(1), {
+      items: [{ name: 'Água 500ml', qty: 3, total: 21.15 }]
+    });
+
+    expect(tracking.latest(SLUG).items).toEqual([
+      { name: 'Água 500ml', qty: 3, total: 21.15 }
+    ]);
+  });
+
+  it('normaliza a foto dos itens e devolve null quando não sobra nada', () => {
+    tracking.remember(SLUG, orderResponse(1), {
+      items: [
+        { name: '  Coca 350ml  ', qty: '2', total: '11.00' },
+        { name: 'Sem quantidade', qty: 0, total: null },
+        { name: '', qty: 9, total: 3 } // sem nome não vira linha na tela
+      ]
+    });
+    expect(tracking.latest(SLUG).items).toEqual([
+      { name: 'Coca 350ml', qty: 2, total: 11 },
+      { name: 'Sem quantidade', qty: 1, total: null }
+    ]);
+
+    // Nada aproveitável => null, para a tela não abrir uma gaveta vazia.
+    tracking.remember(SLUG, orderResponse(2), { items: [{ name: '  ' }] });
+    expect(tracking.find(SLUG, 'trk_2').items).toBeNull();
+    tracking.remember(SLUG, orderResponse(3));
+    expect(tracking.find(SLUG, 'trk_3').items).toBeNull();
+  });
+
+  it('corta a foto dos itens no teto, para não estourar a cota do storage', () => {
+    const items = Array.from({ length: 25 }, (_, i) => ({ name: `Item ${i + 1}`, qty: 1, total: 1 }));
+    tracking.remember(SLUG, orderResponse(1), { items });
+
+    const saved = tracking.latest(SLUG).items;
+    expect(saved).toHaveLength(20);
+    expect(saved.at(-1).name).toBe('Item 20');
+  });
+
+  it('o update do polling não apaga a foto dos itens', () => {
+    tracking.remember(SLUG, orderResponse(1), { items: [{ name: 'Água 500ml', qty: 1, total: 7.05 }] });
+    tracking.update(SLUG, 'trk_1', { payment_status: 'paid' });
+
+    expect(tracking.latest(SLUG).items).toHaveLength(1);
+  });
+
   it('mantém no máximo 10 pedidos por loja, descartando os mais antigos', () => {
     for (let n = 1; n <= 13; n++) tracking.remember(SLUG, orderResponse(n));
     const tokens = tracking.list(SLUG).map(e => e.tracking_token);

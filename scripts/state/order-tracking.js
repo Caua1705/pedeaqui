@@ -29,6 +29,10 @@
   // Teto de pedidos por loja. Sem ele, um cliente frequente acumula tokens até
   // estourar a cota do localStorage e derrubar o carrinho junto.
   const MAX_ENTRIES = 10;
+  // Teto de linhas guardadas por pedido. O snapshot existe para ser LIDO numa
+  // gaveta de conferência, não para reconstituir o pedido — e a cota que ele
+  // divide com o carrinho é a mesma.
+  const MAX_ITEMS = 20;
 
   const keyFor = slug => PREFIX() + String(slug || '');
 
@@ -68,12 +72,44 @@
   }
 
   /**
+   * Foto enxuta das linhas do pedido: nome, quantidade e valor da linha.
+   *
+   * NENHUMA rota do ciclo devolve os itens de volta — `CreateOrderResponse` só
+   * traz totais e `GET .../track` não é fonte confiável deles (ver
+   * docs/order-contract.md). O carrinho, que os tinha, é esvaziado no instante
+   * em que o pedido é criado. Sem esta cópia, quem recarrega a página durante a
+   * cobrança perde a conferência do que pediu.
+   *
+   * @returns {Array|null} null quando não há nada aproveitável — a tela então
+   *   não oferece a gaveta em vez de abrir uma vazia.
+   */
+  function compactItems(items) {
+    if (!Array.isArray(items)) return null;
+    const compact = items.slice(0, MAX_ITEMS).map(item => {
+      const qty = Math.floor(Number(item?.qty));
+      // `Number(null)` é 0, não NaN: sem este desvio um item sem valor entraria
+      // na tela cobrando R$ 0,00.
+      const raw = item?.total;
+      const total = raw == null || raw === '' ? NaN : Number(raw);
+      return {
+        name: text(item?.name),
+        qty: Number.isFinite(qty) && qty > 0 ? qty : 1,
+        total: Number.isFinite(total) ? total : null
+      };
+    }).filter(item => item.name);
+    return compact.length ? compact : null;
+  }
+
+  /**
    * Grava o que a resposta de criação trouxe. Devolve a entrada gravada, ou
    * null quando a resposta veio sem tracking_token — que é o caso em que o
    * visitante ficaria sem nenhuma forma de alcançar o pedido, e por isso o
    * chamador precisa conseguir distinguir.
+   *
+   * @param {object} [extra]
+   * @param {Array}  [extra.items] linhas do carrinho no momento do pedido
    */
-  function remember(slug, order) {
+  function remember(slug, order, { items } = {}) {
     const trackingToken = text(order?.tracking_token);
     if (!trackingToken) return null;
 
@@ -86,6 +122,7 @@
       payment_status: text(order?.payment_status),
       payment_method: text(order?.payment_method),
       total: Number.isFinite(Number(order?.total)) ? Number(order.total) : null,
+      items: compactItems(items),
       saved_at: Date.now()
     };
 

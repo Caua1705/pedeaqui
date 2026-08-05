@@ -931,7 +931,8 @@
      O pedido JÁ EXISTE quando esta tela abre; ela só resolve o pagamento. -->
 <div class="overlay" id="pixPaymentModal">
   <div class="modal modal--fs" role="dialog" aria-modal="true" aria-labelledby="pixPaymentTitle">
-    <div class="sheet-drag"></div>
+    <!-- Sem .sheet-drag: a alça de arrastar é afordância de folha, e esta é uma
+         tela cheia (ver "Tela cheia" em styles/pix.css). -->
     <!-- Sair daqui não é um voltar comum: o pedido já existe e a saída é o
          cancelamento. Por isso os DOIS botões abrem a mesma confirmação. -->
     <div class="cart-hdr">
@@ -990,9 +991,9 @@
           </button>
         </div>
 
-        <!-- Alternativo ao código pelo contrato (qr_code XOR checkout_url): sem
-             este link, uma cobrança que venha só com checkout_url deixaria a
-             tela sem nenhuma saída. -->
+        <!-- SÓ aparece quando a cobrança veio sem código. qr_code e checkout_url
+             são alternativos no contrato: com código, o link seria ruído ao lado
+             da ação principal; sem código, ele é a única saída da tela. -->
         <a class="pix-checkout-link" id="pixCheckoutLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir a página de pagamento</a>
 
         <!-- Conta a MESMA janela em que a tela ainda verifica o pagamento
@@ -1029,17 +1030,11 @@
           <ul class="pix-order-items" id="pixOrderItems" hidden></ul>
         </div>
 
-        <!-- Diz só o que sabemos: a janela é NOSSA (o gateway não declara
-             validade — docs/order-contract.md, item 11), e o que acaba nela é a
-             verificação automática, não o pedido. -->
+        <!-- ⚠️ Afirma o CANCELAMENTO do pedido, que o contrato publicado não
+             garante: a cobrança não declara validade e a janela de 10 min é
+             nossa (docs/order-contract.md, item 11). Texto definido pelo
+             produto; a pendência de backend é publicar o prazo real. -->
         <p class="pix-consequence" id="pixConsequence"></p>
-
-        <!-- Único sinal de que a tela trabalha sozinha enquanto o cliente paga
-             no app do banco. -->
-        <div class="pix-status" id="pixStatus" role="status" aria-live="polite">
-          <span class="pix-status-dot" aria-hidden="true"></span>
-          <span id="pixStatusText">Conferindo o pagamento automaticamente...</span>
-        </div>
       </section>
 
       <!-- Falha do gateway / cobrança sem meio de pagamento -->

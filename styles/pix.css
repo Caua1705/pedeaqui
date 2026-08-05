@@ -14,6 +14,54 @@
    .cart-hdr + .cart-scroll), então cabeçalho, animação de entrada e rolagem
    já vêm prontos e idênticos aos do checkout. O que segue é só o miolo. */
 
+/* ---- Tela cheia ----
+
+   Esta NÃO é uma folha que sobe: é uma tela. O .modal do app nasce como
+   bottom-sheet (cantos arredondados no topo, 90vh, subindo de baixo), e é isso
+   que dava à cobrança cara de pop-up sobre a loja. As regras abaixo dão a ela o
+   mesmo tratamento de #operationModal — "Unidades e Operação", de onde o
+   cabeçalho também veio: altura inteira, sem canto e entrando pela lateral. */
+
+#pixPaymentModal .modal {
+  width: 100%;
+  max-width: 414px;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  /* Sem o recorte, o scrim das folhas internas passaria por fora da tela. */
+  overflow: hidden;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#pixPaymentModal.active .modal {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pixPaymentModal .modal {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* No telefone a tela ocupa tudo, então não sobra loja atrás para escurecer.
+   Tirar o scrim tem de tirar o blur junto: sem fundo, o backdrop-filter de
+   .overlay vira uma camada invisível que desfoca o app inteiro. Acima disso o
+   painel fica centrado e o scuro volta, como nas outras telas cheias. */
+@media (max-width: 767px) {
+  #pixPaymentModal {
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  #pixPaymentModal .modal {
+    max-width: 100%;
+  }
+}
+
 .pix-state {
   display: flex;
   flex-direction: column;
@@ -36,11 +84,6 @@
 .pix-ready > * {
   width: 100%;
   max-width: 374px;
-}
-
-/* O aviso do polling é uma pílula: mede o próprio texto, não a coluna. */
-.pix-ready > .pix-status {
-  width: auto;
 }
 
 .pix-state-title {
@@ -231,7 +274,9 @@
   display: block;
   margin-top: 4px;
   font-size: 1.35rem;
-  font-weight: 800;
+  /* Peso médio: o número já tem tamanho e a barra logo abaixo para chamar
+     atenção. Em 800 ele gritava mais que o próprio título da tela. */
+  font-weight: 600;
   /* Sem largura tabular o número dança a cada segundo. */
   font-variant-numeric: tabular-nums;
   color: var(--text-main);
@@ -262,6 +307,8 @@
   }
 }
 
+/* Cinza de texto corrido, não cor de marca: é ajuda opcional, e pintá-la de
+   marca a deixava competindo com a ação principal do rodapé. */
 .pix-howto-link {
   display: block;
   margin-top: 16px;
@@ -271,7 +318,7 @@
   font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--brand-primary);
+  color: var(--text-muted);
   text-align: left;
   cursor: pointer;
 }
@@ -419,56 +466,6 @@
   display: none;
 }
 
-.pix-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 22px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: var(--surface-3);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.pix-status-dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: 50%;
-  /* Pulso de "aguardando": cor da loja, não um âmbar fixo. Um tenant azul
-     precisa pintar azul aqui (tests/e2e/tenant-theme.spec.js). */
-  background: var(--brand-primary);
-  animation: pix-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes pix-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pix-status-dot {
-    animation: none;
-  }
-}
-
-.pix-status.is-paid {
-  background: rgba(47, 125, 73, 0.12);
-  color: var(--state-success);
-}
-
-.pix-status.is-paid .pix-status-dot {
-  background: var(--state-success);
-  animation: none;
-}
-
 /* ---- Aviso de "copiado" ----
 
    Cobre o título do cabeçalho enquanto aparece, entre os dois botões. Fica
@@ -531,12 +528,8 @@
    baixo para cima por cima da tela de Pix, como os outros sheets do app, e não
    encostam na pilha de modais — por isso vivem DENTRO do #pixPaymentModal. */
 
-/* A folha é absoluta dentro da tela; sem o recorte, o scrim passaria por cima
-   dos cantos arredondados do topo do modal. */
-#pixPaymentModal .modal {
-  overflow: hidden;
-}
-
+/* A folha é absoluta dentro da tela — o recorte que a segura está em
+   "Tela cheia", no topo deste arquivo. */
 .pix-sheet {
   position: absolute;
   inset: 0;

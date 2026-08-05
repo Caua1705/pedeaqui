@@ -3665,12 +3665,13 @@
     }
     if ($('pixOrderTotal')) $('pixOrderTotal').textContent = fmt(orderAmount(order?.total));
     renderPixOrderItems(items || order?.items);
-    // A janela é NOSSA (o gateway não declara validade — docs/order-contract.md,
-    // item 11), e o que termina com ela é a verificação automática. Prometer
-    // cancelamento seria afirmar um comportamento que o contrato não garante.
+    // O prazo sai de PIX_POLL_WINDOW_MS para não poder divergir do contador.
+    // ⚠️ O cancelamento é afirmação de PRODUTO, não do contrato: nem a cobrança
+    // declara validade nem existe rota que confirme o cancelamento do pedido
+    // não pago (docs/order-contract.md, item 11).
     if ($('pixConsequence')) {
       $('pixConsequence').textContent =
-        `Você tem ${PIX_WINDOW_MINUTES} minutos para fazer o pagamento. Depois desse tempo esta tela deixa de conferir sozinha, e a confirmação passa a ser com o restaurante.`;
+        `Você tem até ${PIX_WINDOW_MINUTES} minutos para fazer o pagamento. Após esse tempo, o pedido será cancelado.`;
     }
     hidePixToast();
     closePixSheets();
@@ -3764,7 +3765,11 @@
       // Só http(s): um checkout_url com esquema estranho viraria um vetor de
       // navegação que não controlamos.
       const safeUrl = /^https?:\/\//i.test(checkoutUrl) ? checkoutUrl : '';
-      link.hidden = !safeUrl;
+      // O link é a SAÍDA DE EMERGÊNCIA, não um segundo caminho: com código na
+      // tela ele só competia com o botão de copiar. Some quando há código e
+      // aparece quando não há — que é o único caso em que a tela ficaria sem
+      // nada para o cliente fazer.
+      link.hidden = !safeUrl || !!code;
       if (safeUrl) link.href = safeUrl;
       else link.removeAttribute('href');
     }

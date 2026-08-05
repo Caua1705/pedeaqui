@@ -124,9 +124,10 @@ desenhado na tela** (decisão de produto ao alinhar a tela com a referência de 
 `scripts/utils/qrcode.js` continua no bundle, mas sem chamador.
 
 `qr_code` e `checkout_url` são ambos anuláveis e **alternativos** — a tela renderiza o que
-vier e só falha se vierem os dois vazios. Quando vem só `checkout_url`, o campo do código e
-o rodapé "Copiar código" somem e a saída é o link, que é filtrado para `http(s)` antes de
-virar `href`.
+vier e só falha se vierem os dois vazios. Com `qr_code`, a tela mostra código + botão de
+copiar e **não** exibe o link. Quando vem **só** `checkout_url`, o campo do código e o rodapé
+"Copiar código" somem e o link aparece como única saída, filtrado para `http(s)` antes de
+virar `href`. Ou seja: o link é caminho de exceção, não um segundo botão.
 
 ## Acompanhamento — `GET /restaurants/{slug}/orders/track/{tracking_token}`
 
@@ -232,10 +233,14 @@ mensagem pode levar o cliente a refazê-lo.
    10 min de polling (`PIX_POLL_WINDOW_MS`) e, ao estourar, para de consultar e oferece
    verificação manual em vez de afirmar que expirou de verdade. Se o backend passar a
    expor a validade, é ela que deve mandar.
-   É por isso que o contador, a barra de progresso e o texto de consequência da tela
-   saem todos de `PIX_POLL_WINDOW_MS`, e que esse texto diz que **a verificação
-   automática** acaba no prazo — não que o pedido será cancelado. **Pendência de
-   backend:** se pedido não pago é cancelado, publicar o prazo; aí a tela pode avisar.
+   O contador, a barra de progresso e o texto de consequência saem todos de
+   `PIX_POLL_WINDOW_MS`, então não podem divergir entre si.
+   ⚠️ **A tela afirma que o pedido será cancelado depois do prazo. Isso é decisão de
+   produto, não do contrato:** nada no OpenAPI declara validade da cobrança nem
+   cancelamento automático de pedido não pago, e o que o front de fato faz ao estourar
+   a janela é **parar de consultar** e oferecer verificação manual. **Pendência de
+   backend:** confirmar que o cancelamento existe e publicar o prazo real — se ele for
+   diferente de 10 min, é `PIX_POLL_WINDOW_MS` que precisa mudar, e o texto acompanha.
 12. **Os itens do pedido não voltam.** `CreateOrderResponse` traz só totais, e o carrinho
    é esvaziado no instante da criação. Para que "Ver itens do pedido" exista na cobrança
    depois de um reload, uma foto enxuta das linhas (nome, quantidade, valor) é gravada

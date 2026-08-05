@@ -75,15 +75,38 @@ test('cria o pedido, gera a cobrança e mostra código, prazo, pedido e checkout
   await expect(page.locator('#pixOrderNumber')).toContainText(String(pixOrder(1).order_number));
   await expect(page.locator('#pixOrderTotal')).toContainText('22,14');
 
-  // O aviso de que a tela confere sozinha continua sendo o único sinal de vida.
-  await expect(page.locator('#pixStatus')).toBeVisible();
+  // Com código na tela, o link do checkout não aparece: ele é saída de
+  // emergência, e ao lado do botão de copiar só competia com a ação principal.
+  await expect(page.locator('#pixCheckoutLink')).toBeHidden();
 
-  await expect(page.locator('#pixCheckoutLink')).toBeVisible();
-  await expect(page.locator('#pixCheckoutLink')).toHaveAttribute('href', pixCharge().checkout_url);
-  await expect(page.locator('#pixCheckoutLink')).toHaveAttribute('rel', /noopener/);
-
-  // O informativo "segue para a cozinha" saiu: ele não dizia nada acionável.
+  // Textos que saíram de vez — nenhum dizia algo acionável.
   await expect(page.locator('#pixPaymentModal')).not.toContainText('segue para a cozinha');
+  await expect(page.locator('#pixPaymentModal')).not.toContainText('Conferindo o pagamento');
+});
+
+test('a cobrança ocupa a tela inteira, sem cara de pop-up sobre a loja', async ({ page }) => {
+  await mockApi(page, { orderResponse: pixOrder });
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const panel = page.locator('#pixPaymentModal .modal');
+  const viewport = page.viewportSize();
+
+  // Encosta nas quatro bordas: nada da loja aparece em volta. O poll é pela
+  // animação de entrada, que desliza o painel a partir da lateral — medir antes
+  // dela assentar leria a posição do meio do caminho.
+  await expect.poll(async () => (await panel.boundingBox()).x).toBe(0);
+  const box = await panel.boundingBox();
+  expect(box.y).toBe(0);
+  expect(box.width).toBe(viewport.width);
+  expect(box.height).toBeGreaterThanOrEqual(viewport.height);
+
+  // Sem canto arredondado e sem a alça de arrastar, que são de folha.
+  const radius = await panel.evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+  expect(radius).toBe('0px');
+  await expect(page.locator('#pixPaymentModal .sheet-drag')).toHaveCount(0);
 });
 
 test('o rodapé traz a ação principal, full-width e na cor da marca', async ({ page }) => {
@@ -114,16 +137,20 @@ test('o rodapé traz a ação principal, full-width e na cor da marca', async ({
   expect(
     await page.evaluate(() => ({
       barra: getComputedStyle(document.getElementById('pixCountdownBar')).backgroundColor,
-      comoFunciona: getComputedStyle(document.querySelector('.pix-howto-link')).color,
       iconeCopiar: getComputedStyle(document.querySelector('.pix-code-copy')).color,
       ilustracao: getComputedStyle(document.querySelector('.pix-art-solid')).fill
     }))
   ).toEqual({
     barra: 'rgb(22, 82, 240)',
-    comoFunciona: 'rgb(22, 82, 240)',
     iconeCopiar: 'rgb(22, 82, 240)',
     ilustracao: 'rgb(22, 82, 240)'
   });
+
+  // "Como funciona" é a exceção deliberada: cinza de texto corrido, para não
+  // competir com a ação principal. Não pode voltar a puxar a cor da marca.
+  expect(
+    await page.evaluate(() => getComputedStyle(document.querySelector('.pix-howto-link')).color)
+  ).toBe('rgb(102, 102, 102)');
 });
 
 test('"Como funciona" abre o passo a passo em três etapas', async ({ page }) => {
@@ -168,18 +195,17 @@ test('"Ver itens do pedido" expande a conferência do que foi pedido', async ({ 
   await expect(items).toBeHidden();
 });
 
-test('o texto de consequência diz o prazo real, sem prometer cancelamento', async ({ page }) => {
-  // A janela de 10 min é NOSSA: o gateway não declara validade da cobrança
-  // (docs/order-contract.md, item 11). O que acaba com ela é a verificação
-  // automática — afirmar cancelamento seria inventar um comportamento.
+test('o texto de consequência anuncia o prazo e o cancelamento', async ({ page }) => {
+  // O prazo sai de PIX_POLL_WINDOW_MS, a mesma janela do contador: se um dia
+  // alguém mudar a constante, este teste é que pega o texto ficando para trás.
   await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
 
-  const text = page.locator('#pixConsequence');
-  await expect(text).toContainText('10 minutos');
-  await expect(text).not.toContainText(/cancelad/i);
+  await expect(page.locator('#pixConsequence')).toHaveText(
+    'Você tem até 10 minutos para fazer o pagamento. Após esse tempo, o pedido será cancelado.'
+  );
 });
 
 test('o botão de copiar coloca o payload do Pix na área de transferência', async ({

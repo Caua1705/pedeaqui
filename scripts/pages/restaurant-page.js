@@ -3400,6 +3400,9 @@
   // pagar: ao estourar, o polling PARA e o cliente decide se verifica de novo.
   const PIX_POLL_INTERVAL_MS = 5000;
   const PIX_POLL_WINDOW_MS = 10 * 60 * 1000;
+  // O texto de consequência sai da MESMA constante que o contador e o polling:
+  // mudar a janela num lugar só não pode deixar a tela prometendo outro prazo.
+  const PIX_WINDOW_MINUTES = Math.round(PIX_POLL_WINDOW_MS / 60000);
   // Falhas de rede seguidas na consulta não são falha de pagamento — só
   // desistimos de consultar depois de algumas.
   const PIX_POLL_MAX_FAILURES = 5;
@@ -3414,7 +3417,9 @@
   // sumiço automático do aviso de "copiado".
   let pixCountdownTimer = null;
   let pixToastTimer = null;
-  let pixExitTimer = null;
+  // Um timer por folha (confirmação de saída, "Como funciona"): o [hidden] só
+  // volta quando a animação de descida termina.
+  const pixSheetTimers = new Map();
 
   const isOnlinePaymentFlow = order =>
     String(order?.payment_flow || '').trim().toLowerCase() === 'online';
@@ -3459,6 +3464,12 @@
     document.querySelectorAll('#pixPaymentModal [data-pix-state]').forEach(section => {
       section.hidden = section.dataset.pixState !== state;
     });
+    // O rodapé serve a UMA ação, copiar o código, e só existe onde ela faz
+    // sentido: cobrança pronta E com código. Numa cobrança que veio só com
+    // checkout_url o botão não teria o que copiar (renderPixCharge esvazia o
+    // campo nesse caso), e a saída é o link, não ele.
+    const footer = $('pixFooter');
+    if (footer) footer.hidden = !(state === 'ready' && !!$('pixCopyCode')?.textContent?.trim());
   }
 
   /**
@@ -3578,10 +3589,65 @@
   }
 
   /**
+   * Nome da loja no cartão do pedido: restaurante e, quando ela tem nome
+   * próprio, a unidade — é o que diferencia duas lojas da mesma marca. Repetir
+   * o nome do restaurante como unidade não informa nada, então esse caso cai
+   * para só o nome.
+   */
+  function pixStoreLabel() {
+    const name = String(restaurant.name || fallback().restaurantName || '').trim();
+    const branch = currentCartBranchLabel();
+    if (!branch || branch === name.toUpperCase()) return name || 'Seu pedido';
+    return name ? `${name} - ${branch}` : branch;
+  }
+
+  /**
+   * Gaveta de conferência. Os itens vêm da foto tirada quando o pedido foi
+   * criado (order-tracking.js): nenhuma rota do ciclo os devolve. Sem foto, o
+   * botão some — melhor não oferecer do que abrir uma gaveta vazia.
+   */
+  function renderPixOrderItems(items) {
+    const toggle = $('pixItemsToggle');
+    const list = $('pixOrderItems');
+    if (!toggle || !list) return;
+
+    const rows = (Array.isArray(items) ? items : []).filter(item => item?.name);
+    toggle.hidden = !rows.length;
+    // Toda abertura de tela começa com a gaveta fechada.
+    toggle.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    list.hidden = true;
+    list.innerHTML = rows.map(item => {
+      const total = Number(item.total);
+      const price = Number.isFinite(total) && item.total !== null
+        ? `<span class="pix-order-item-price">${esc(fmt(total))}</span>`
+        : '';
+      return `
+        <li class="pix-order-item">
+          <span class="pix-order-item-name"><span>${esc(String(item.qty || 1))}x</span> ${esc(item.name)}</span>
+          ${price}
+        </li>`;
+    }).join('');
+  }
+
+  function togglePixOrderItems() {
+    const toggle = $('pixItemsToggle');
+    const list = $('pixOrderItems');
+    if (!toggle || !list) return;
+    const open = list.hidden;
+    list.hidden = !open;
+    toggle.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
+  /**
    * Abre a tela e dispara a criação da cobrança.
    * @param {object} order resposta de POST /orders (ou entrada guardada com os mesmos campos)
+   * @param {object} [options]
+   * @param {Array}  [options.items] foto das linhas; sem ela vale a que ficou
+   *   guardada com o token (o caso de quem recarregou a página)
    */
-  function openPixPayment(order) {
+  function openPixPayment(order, { items } = {}) {
     const trackingToken = String(order?.tracking_token || '').trim();
     pixSession = {
       order,
@@ -3593,12 +3659,21 @@
       stopped: false
     };
 
+    if ($('pixOrderStore')) $('pixOrderStore').textContent = pixStoreLabel();
     if ($('pixOrderNumber')) {
-      $('pixOrderNumber').textContent = order?.order_number != null ? `Pedido #${order.order_number}` : 'Seu pedido';
+      $('pixOrderNumber').textContent = order?.order_number != null ? `Nº do pedido ${order.order_number}` : 'Seu pedido';
     }
     if ($('pixOrderTotal')) $('pixOrderTotal').textContent = fmt(orderAmount(order?.total));
+    renderPixOrderItems(items || order?.items);
+    // A janela é NOSSA (o gateway não declara validade — docs/order-contract.md,
+    // item 11), e o que termina com ela é a verificação automática. Prometer
+    // cancelamento seria afirmar um comportamento que o contrato não garante.
+    if ($('pixConsequence')) {
+      $('pixConsequence').textContent =
+        `Você tem ${PIX_WINDOW_MINUTES} minutos para fazer o pagamento. Depois desse tempo esta tela deixa de conferir sozinha, e a confirmação passa a ser com o restaurante.`;
+    }
     hidePixToast();
-    closePixExitConfirm({ animate: false });
+    closePixSheets();
     updatePixCountdown();
     setPixState('loading');
     openModal('pixPaymentModal');
@@ -3672,39 +3747,16 @@
       return false;
     }
 
-    const frame = $('pixQrFrame');
-    const codeBlock = $('pixCopyCode')?.closest('.pix-code-block');
-    const copyButton = $('pixCopyBtn');
+    // O elemento guarda o payload INTEIRO — é dele que a cópia sai. Quem
+    // trunca é o CSS, não o texto: cortar aqui copiaria um código quebrado.
     if ($('pixCopyCode')) $('pixCopyCode').textContent = code;
-    if (codeBlock) codeBlock.hidden = !code;
-    if (copyButton) copyButton.hidden = !code;
+    if ($('pixCodeField')) $('pixCodeField').hidden = !code;
 
-    let qrDrawn = false;
-    if (code && $('pixQrCode')) {
-      try {
-        // Nível M: o padrão do Pix e o equilíbrio certo entre tolerância a
-        // sujeira/reflexo na tela e densidade dos módulos.
-        $('pixQrCode').innerHTML = window.RapidexQrCode.toSvg(code, {
-          ecc: 'M',
-          border: 2,
-          title: 'QR Code para pagamento via Pix'
-        });
-        qrDrawn = true;
-      } catch (error) {
-        // Um payload que não cabe em nenhuma versão não pode custar a tela
-        // inteira: o copia-e-cola continua valendo.
-        logAppError('Falha ao desenhar o QR Code do Pix', error);
-        $('pixQrCode').innerHTML = '';
-      }
-    }
-    if (frame) frame.hidden = !qrDrawn;
-
-    // O último passo muda conforme o QR tenha sido desenhado ou não: mandar
-    // escanear um QR que não está na tela é pior do que não citá-lo.
-    if ($('pixStepLast')) {
-      $('pixStepLast').textContent = qrDrawn
-        ? 'Escaneie o QR Code ou cole o código abaixo'
-        : 'Cole o código abaixo';
+    // Sem código, a instrução de copiar não se aplica: a única saída é o link.
+    if ($('pixLede')) {
+      $('pixLede').textContent = code
+        ? 'Copie o código abaixo e utilize o Pix Copia e Cola no aplicativo do seu banco.'
+        : 'Abra a página de pagamento para concluir a cobrança no seu banco.';
     }
 
     const link = $('pixCheckoutLink');
@@ -3805,19 +3857,26 @@
   }
 
   /**
-   * Contador regressivo do cabeçalho do cartão. Conta a MESMA janela em que o
-   * polling ainda verifica sozinho — ao zerar, `pollPixStatus` leva a tela para
-   * o estado "expired". Um contador com prazo próprio mentiria numa das pontas.
+   * Contador regressivo e a barra que o acompanha. Contam a MESMA janela em que
+   * o polling ainda verifica sozinho — ao zerar, `pollPixStatus` leva a tela
+   * para o estado "expired". Um contador com prazo próprio mentiria numa das
+   * pontas, e uma barra alimentada por outra conta mentiria na outra: as duas
+   * saem daqui, do mesmo `remainingMs`.
    */
   function updatePixCountdown() {
     const node = $('pixCountdown');
-    if (!node) return;
+    const bar = $('pixCountdownBar');
+    if (!node && !bar) return;
     const session = pixSession;
     const remainingMs = session && !session.stopped ? Math.max(0, session.pollUntil - Date.now()) : 0;
     const totalSeconds = Math.ceil(remainingMs / 1000);
     const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
     const seconds = String(totalSeconds % 60).padStart(2, '0');
-    node.textContent = `(${minutes}:${seconds})`;
+    if (node) node.textContent = `${minutes}:${seconds}`;
+    if (bar) {
+      const ratio = Math.max(0, Math.min(1, remainingMs / PIX_POLL_WINDOW_MS));
+      bar.style.width = `${(ratio * 100).toFixed(2)}%`;
+    }
   }
 
   function startPixCountdown() {
@@ -3945,7 +4004,7 @@
     });
     renderPendingPaymentBar();
     hidePixToast();
-    closePixExitConfirm({ animate: false });
+    closePixSheets();
     closeModalImmediately('pixPaymentModal');
     showOrderSuccess(merged);
   }
@@ -3956,36 +4015,56 @@
     startPixCharge();
   }
 
-  /* ---------------- Confirmação de saída ---------------- */
+  /* ---------------- Folhas da tela ---------------- */
 
-  // Os dois botões do cabeçalho (voltar e X) caem aqui: uma vez que o pedido
-  // existe, sair da cobrança não é um "voltar" qualquer.
-  function openPixExitConfirm() {
-    const sheet = $('pixExitConfirm');
+  function openPixSheet(id) {
+    const sheet = $(id);
     if (!sheet) return;
-    clearTimeout(pixExitTimer);
+    clearTimeout(pixSheetTimers.get(id));
     sheet.hidden = false;
     // Mesmo motivo do toast: o elemento precisa estar no fluxo um quadro antes
     // da classe que anima, senão a folha aparece já no lugar.
     requestAnimationFrame(() => sheet.classList.add('is-open'));
   }
 
-  /** Só desce a folha — a cobrança continua exatamente como estava. */
-  function closePixExitConfirm({ animate = true } = {}) {
-    const sheet = $('pixExitConfirm');
+  /** Só desce a folha — nada do que está por baixo é tocado. */
+  function closePixSheet(id, { animate = true } = {}) {
+    const sheet = $(id);
     if (!sheet) return;
-    clearTimeout(pixExitTimer);
+    clearTimeout(pixSheetTimers.get(id));
     sheet.classList.remove('is-open');
     if (!animate) {
       sheet.hidden = true;
       return;
     }
-    pixExitTimer = setTimeout(() => { sheet.hidden = true; }, 300);
+    pixSheetTimers.set(id, setTimeout(() => { sheet.hidden = true; }, 300));
+  }
+
+  // Passo a passo do pagamento. Fica fora da tela principal porque é ajuda, não
+  // instrução obrigatória: quem já paga por Pix não precisa lê-la.
+  function openPixHowTo() { openPixSheet('pixHowTo'); }
+  function closePixHowTo(options) { closePixSheet('pixHowTo', options); }
+
+  // Os dois botões do cabeçalho (voltar e X) caem aqui: uma vez que o pedido
+  // existe, sair da cobrança não é um "voltar" qualquer.
+  function openPixExitConfirm() { openPixSheet('pixExitConfirm'); }
+
+  /** Só desce a folha — a cobrança continua exatamente como estava. */
+  function closePixExitConfirm(options) { closePixSheet('pixExitConfirm', options); }
+
+  /**
+   * Baixa TODAS as folhas de uma vez, sem animação. Usada ao entrar e ao sair
+   * da tela: uma folha esquecida aberta reapareceria por cima da próxima
+   * cobrança.
+   */
+  function closePixSheets() {
+    closePixExitConfirm({ animate: false });
+    closePixHowTo({ animate: false });
   }
 
   /** "Cancelar pedido": sai direto, sem um segundo aviso. */
   function confirmPixExit() {
-    closePixExitConfirm({ animate: false });
+    closePixSheets();
     closePixPayment();
   }
 
@@ -3993,7 +4072,7 @@
   function closePixPayment() {
     stopPixPolling();
     hidePixToast();
-    closePixExitConfirm({ animate: false });
+    closePixSheets();
     const session = pixSession;
     pixSession = null;
     closeModalId('pixPaymentModal');
@@ -8278,8 +8357,8 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     submitOrder, closeOrderSuccess, refreshTrackedOrder,
-    closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow,
-    openPixExitConfirm, closePixExitConfirm, confirmPixExit,
+    closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow, togglePixOrderItems,
+    openPixExitConfirm, closePixExitConfirm, confirmPixExit, openPixHowTo, closePixHowTo,
     resumePendingPayment, dismissPendingPayment,
     setPayment, confirmPaymentMethodSelection, openAddressScreen, openAddressChoice, openAddressChoiceDirect, backFromAddAddress, backFromAddrSearch, backFromAddrMap, selectAdcOption, adcConfirm,
     openAddrSearch, onAddrSearchInput, selectAddrSuggestion, adcUseGeoSearch, confirmAddrMap, editAddrDetailsLocation, toggleAddrNoNumber, maskCep, validateAddrDetails, saveAddressDetails,

@@ -246,3 +246,5 @@ mensagem pode levar o cliente a refazê-lo.
    depois de um reload, uma foto enxuta das linhas (nome, quantidade, valor) é gravada
    junto do `tracking_token` em `scripts/state/order-tracking.js`. Se o backend passar a
    devolver os itens em `GET .../track`, essa cópia local perde a razão de ser.
+   A gaveta mostra só quantidade e nome — o valor continua guardado, mas não vai à tela:
+   o número que tem de bater com a cobrança é o total, e é ele que fica visível.

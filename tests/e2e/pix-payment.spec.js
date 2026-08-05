@@ -188,8 +188,11 @@ test('"Ver itens do pedido" expande a conferência do que foi pedido', async ({ 
   await expect(items).toBeVisible();
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await expect(items.locator('.pix-order-item')).toHaveCount(1);
-  await expect(items).toContainText('3x');
-  await expect(items).toContainText('21,15'); // 3 x R$ 7,05
+  // Quantidade em chip e nome, no formato da referência. O preço por linha não
+  // aparece: o que vale conferir contra a cobrança é o total, logo acima.
+  await expect(items.locator('.pix-order-item-qty')).toHaveText('3');
+  await expect(items.locator('.pix-order-item-name')).toContainText('H2O');
+  await expect(page.locator('#pixOrderTotal')).toContainText('22,14');
 
   await toggle.click();
   await expect(items).toBeHidden();
@@ -648,7 +651,7 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
   // nenhuma rota devolve os itens, então ela só existe porque foi guardada
   // junto do token.
   await page.locator('#pixItemsToggle').click();
-  await expect(page.locator('#pixOrderItems')).toContainText('3x');
+  await expect(page.locator('#pixOrderItems .pix-order-item-qty')).toHaveText('3');
 });
 
 test('o visitante acompanha o pedido pelo tracking_token, sem conta e sem telefone', async ({

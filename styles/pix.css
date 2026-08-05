@@ -375,22 +375,43 @@
   cursor: pointer;
 }
 
-/* ---- Cartão do pedido ---- */
+/* ---- Cartão do pedido ----
+
+   Geometria tirada da referência (assets/testeimagensreferencias/
+   "Captura de tela 2026-08-05 191441.png"). A referência é um screenshot de
+   uma tela mais estreita, então o que foi copiado dela foram as PROPORÇÕES:
+   cada medida abaixo é a medida de lá multiplicada por 374/212 — 374 é a
+   largura da nossa coluna de conteúdo, 212 a largura do cartão na imagem.
+   Nessa escala a tipografia das duas bate quase exatamente, que é a prova de
+   que o fator está certo. Quem for mexer aqui deve medir de novo na imagem,
+   não chutar. */
 
 .pix-order-card {
   box-sizing: border-box;
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: 14px;
+  margin-top: 58px;
+  padding: 18px;
+  /* Borda de 1px no lugar da sombra: na referência o cartão é recortado por um
+     traço, não levantado do fundo. --border já é o #e8e8e8 da imagem. */
+  border: 1px solid var(--border);
+  border-radius: 6px;
   background: var(--surface);
-  box-shadow: 0 1px 3px var(--shadow-card);
   text-align: left;
 }
 
 .pix-order-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+}
+
+/* Redondo e grande — é a logo que define a altura do cabeçalho do cartão, e o
+   topo dela encosta no padding. Sobrescreve o quadrado de 32px que
+   .cart-rest-avatar usa no carrinho. */
+.pix-order-head .cart-rest-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  font-size: 0.72rem;
 }
 
 /* Quando a logo entra (ver renderRestaurantShell), ela preenche o quadrado
@@ -413,33 +434,38 @@
   min-width: 0;
 }
 
+/* Nome e número medem a MESMA altura de tinta na referência: são o mesmo corpo,
+   separados só por peso e cor. */
 .pix-order-id strong {
-  font-size: 0.88rem;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.35;
   color: var(--text-main);
 }
 
 .pix-order-id span {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
+/* Sem borda: na referência a ÚNICA linha do cartão é a que separa o total do
+   "Ver itens do pedido" (ela mora em .pix-order-toggle, logo abaixo). */
 .pix-order-total {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  margin-top: 16px;
   font-size: 0.85rem;
   color: var(--text-muted);
 }
 
+/* Mesmo corpo do rótulo "Total", só um peso acima — na referência o valor não
+   é o dobro do tamanho, é a mesma linha. */
 .pix-order-total strong {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-main);
 }
 
@@ -449,8 +475,8 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  margin-top: 4px;
-  padding: 14px 0 0;
+  margin-top: 24px;
+  padding: 16px 0 0;
   border: none;
   border-top: 1px solid var(--border);
   background: none;
@@ -481,9 +507,13 @@
   }
 }
 
+/* A lista aberta é recuada em relação ao resto do cartão e nasce bem abaixo do
+   botão que a abriu — os 45px de respiro são o que separa a gaveta do gatilho
+   na referência. O padding de baixo é a folga extra que a imagem mostra sob o
+   último item, além do padding do cartão. */
 .pix-order-items {
-  margin: 12px 0 0;
-  padding: 0;
+  margin: 48px 0 0;
+  padding: 0 0 7px 18px;
   list-style: none;
 }
 
@@ -491,32 +521,40 @@
   display: none;
 }
 
+/* Quantidade num chip cinza + nome, sem preço: é a linha da referência. */
 .pix-order-item {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
+  align-items: center;
+  gap: 6px;
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: var(--text-main);
+}
+
+.pix-order-item + .pix-order-item {
+  margin-top: 34px;
+}
+
+.pix-order-item-qty {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .pix-order-item-name {
   min-width: 0;
 }
 
-.pix-order-item-name span {
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.pix-order-item-price {
-  flex: none;
-  color: var(--text-main);
-}
-
 .pix-consequence {
-  margin: 18px 0 0;
+  margin: 36px 0 0;
   font-size: 0.78rem;
   line-height: 1.5;
   color: var(--text-faint);

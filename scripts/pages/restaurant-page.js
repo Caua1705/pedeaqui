@@ -3636,17 +3636,15 @@
     toggle.classList.remove('is-open');
     toggle.setAttribute('aria-expanded', 'false');
     list.hidden = true;
-    list.innerHTML = rows.map(item => {
-      const total = Number(item.total);
-      const price = Number.isFinite(total) && item.total !== null
-        ? `<span class="pix-order-item-price">${esc(fmt(total))}</span>`
-        : '';
-      return `
+    // Quantidade em chip + nome, sem preço por linha: é a linha da referência
+    // (assets/testeimagensreferencias/"Captura de tela 2026-08-05 191441.png").
+    // O que se paga continua na tela — é o "Total" logo acima, e é ele que tem
+    // que bater com a cobrança.
+    list.innerHTML = rows.map(item => `
         <li class="pix-order-item">
-          <span class="pix-order-item-name"><span>${esc(String(item.qty || 1))}x</span> ${esc(item.name)}</span>
-          ${price}
-        </li>`;
-    }).join('');
+          <span class="pix-order-item-qty">${esc(String(item.qty || 1))}</span>
+          <span class="pix-order-item-name">${esc(item.name)}</span>
+        </li>`).join('');
   }
 
   function togglePixOrderItems() {

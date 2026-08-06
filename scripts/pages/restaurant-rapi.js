@@ -665,18 +665,65 @@
       .join('');
   }
 
+  /* ── Header ──
+     Mesma estrutura das outras telas cheias do app (Pagamento PIX, Unidades e
+     Operação, Usar cupom): botão à esquerda, título ao centro, botão à direita.
+     A identidade da tela vem do CONTEÚDO — mascote junto do nome e estado da
+     conversa —, não de uma anatomia própria. */
+  function buildRapiHeader() {
+    return `
+      <header class="rapi-hdr">
+        <button class="rapi-hdr-btn" type="button" ${act('click', 'rapiGoBack')} aria-label="Voltar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        </button>
+
+        <div class="rapi-hdr-copy">
+          <h2 class="rapi-hdr-title">
+            <!-- Mesmo arquivo do orbe grande, com o mesmo srcset: na tela do
+                 Rapi ele já está baixado, então o mascote do cabeçalho não custa
+                 nenhum byte a mais. O avatar da barra de navegação seria mais
+                 justo de enquadramento, mas ele entra pelo HTML (URL hasheada) e
+                 aqui teria de ser copiado verbatim — dois downloads da mesma
+                 arte. Caixa de 36px: o master tem margem em volta, então o
+                 mascote desenha ~27px de altura ao lado do nome. -->
+            <img class="rapi-hdr-mascot" src="${RAPI_AVATAR_SRC}" srcset="${RAPI_AVATAR_SRCSET}"
+              alt="" width="36" height="36" decoding="async" data-act-error="$hide">
+            <span>Rapi</span>
+          </h2>
+          <p class="rapi-hdr-status" id="rapiHdrStatus" data-state="online" aria-live="polite">
+            <span class="rapi-hdr-dot" aria-hidden="true"></span><span id="rapiHdrStatusText">online</span>
+          </p>
+        </div>
+
+        <div class="rapi-hdr-actions">
+          <button class="rapi-hdr-btn rapi-cart-button" id="rapiCartButton" type="button" ${act('click', 'openModal', 'cartModal')} aria-label="Abrir sacola" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span class="rapi-cart-count" id="rapiCartCount">0</span>
+          </button>
+
+          <div class="rapi-hdr-menu-wrap">
+            <button class="rapi-hdr-btn" id="rapiHdrMenuBtn" type="button" ${act('click', 'rapiToggleHeaderMenu')}
+              aria-label="Mais ações" aria-haspopup="true" aria-expanded="false" aria-controls="rapiHdrMenu">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            </button>
+            <div class="rapi-hdr-menu" id="rapiHdrMenu" role="menu" aria-label="Ações da conversa" hidden>
+              <button class="rapi-hdr-menu-item" type="button" role="menuitem" ${act('click', 'rapiClearConversation')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="m6 7 .9 11.2A2 2 0 0 0 8.9 20h6.2a2 2 0 0 0 2-1.8L18 7"/><path d="M10 11v5M14 11v5"/></svg>
+                <span>Limpar conversa</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>`;
+  }
+
   /* ── Build the full view HTML ── */
   function buildRapiView() {
     const locationWidget = buildRapiLocationWidget();
 
     return `
     <div class="rapi-page" id="rapiPage">
-      <header class="rapi-utility-header" aria-label="Ações do Rapi">
-        <button class="rapi-cart-button" id="rapiCartButton" type="button" ${act('click', 'openModal', 'cartModal')} aria-label="Abrir sacola" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span class="rapi-cart-count" id="rapiCartCount">0</span>
-        </button>
-      </header>
+      ${buildRapiHeader()}
 
       ${locationWidget}
 
@@ -908,6 +955,7 @@
         products_count: Array.isArray(response?.products) ? response.products.length : 0
       });
       removeRapiTypingIndicator();
+      setRapiStatus('online');
       _rapiResponseTimer = setTimeout(() => {
         _rapiResponseTimer = null;
         if (!_rapiSending) return;
@@ -920,6 +968,9 @@
         finishRapiGeneration();
         return;
       }
+      // Parar aqui é a única prova que o cabeçalho tem de que o Rapi não está
+      // respondendo — abortar a pedido do cliente não conta.
+      setRapiStatus('offline');
       _rapiResponseTimer = setTimeout(() => {
         _rapiResponseTimer = null;
         if (!_rapiSending) return;
@@ -1265,6 +1316,7 @@
 
     ensureRapiCartSubscription();
     syncRapiCartButton();
+    setRapiHeaderMenuOpen(false);
     setupRapiSuggestionDrag();
     setupRapiKeyboardViewport();
 
@@ -1308,6 +1360,47 @@
     };
     requestAnimationFrame(waitForKeyboardLayout);
   };
+  /* ── Header: menu e estado da conversa ── */
+  function setRapiHeaderMenuOpen(open) {
+    const menu = document.getElementById('rapiHdrMenu');
+    const button = document.getElementById('rapiHdrMenuBtn');
+    if (!menu || !button) return;
+    menu.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    button.classList.toggle('is-active', open);
+    if (open) menu.querySelector('.rapi-hdr-menu-item')?.focus({ preventScroll: true });
+  }
+
+  // O ponto do cabeçalho só pode afirmar o que a última chamada provou. Fixo em
+  // verde ele seria enfeite — continuaria verde com a API fora do ar.
+  function setRapiStatus(state) {
+    const status = document.getElementById('rapiHdrStatus');
+    const text = document.getElementById('rapiHdrStatusText');
+    if (!status || !text) return;
+    status.dataset.state = state;
+    text.textContent = state === 'offline' ? 'offline' : 'online';
+  }
+
+  window.rapiToggleHeaderMenu = function () {
+    setRapiHeaderMenuOpen(Boolean(document.getElementById('rapiHdrMenu')?.hidden));
+  };
+
+  window.rapiClearConversation = function () {
+    setRapiHeaderMenuOpen(false);
+    stopRapiGeneration();
+    // Sessão nova, e não só a tela em branco: o backend guarda a conversa por
+    // session_id, então reaproveitar o id faria o Rapi responder com a memória
+    // do que o cliente acabou de apagar.
+    _rapiSessionId = null;
+    window.sessionStorage?.removeItem(RAPI_SESSION_STORAGE_KEY);
+    ensureRapiSessionId();
+    _rapiOptionCache = [];
+    window.rapiReset();
+    setRapiStatus('online');
+    startRapiIntroAnimation();
+    showRapiToast('Conversa limpa');
+  };
+
   window.rapiReset = function () {
     _allResults = [];
     _rapiProductDetailCache = [];
@@ -1339,10 +1432,25 @@
   };
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && document.body.classList.contains('rapi-product-detail-open')) {
+    if (event.key !== 'Escape') return;
+    if (document.body.classList.contains('rapi-product-detail-open')) {
       window.rapiCloseProductDetail();
+      return;
+    }
+    if (document.getElementById('rapiHdrMenu')?.hidden === false) {
+      setRapiHeaderMenuOpen(false);
+      document.getElementById('rapiHdrMenuBtn')?.focus({ preventScroll: true });
     }
   }, { signal: window.RapidexLifecycle?.signal });
+
+  // Clique fora fecha o menu do cabeçalho. Na captura: o menu precisa sumir
+  // mesmo quando o alvo do clique interrompe a propagação — o dispatcher de
+  // ações escuta na fase de borbulha, então o que estava embaixo ainda executa.
+  document.addEventListener('click', event => {
+    if (document.getElementById('rapiHdrMenu')?.hidden !== false) return;
+    if (event.target instanceof Element && event.target.closest('.rapi-hdr-menu-wrap')) return;
+    setRapiHeaderMenuOpen(false);
+  }, { capture: true, signal: window.RapidexLifecycle?.signal });
 
   // rapiImagePlaceholder é a única ação deste módulo que NÃO existe em window —
   // ela nasceu já como ação. As demais continuam globais porque restaurant-page.js

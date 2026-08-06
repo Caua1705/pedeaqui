@@ -195,45 +195,43 @@
 
 /* ---- Cobrança pronta ---- */
 
-/* Ilustração do topo. Toda a cor sai do tema — SVG inline no HTML não aceita
-   var() em atributo de apresentação, então quem pinta é daqui (mesma razão das
-   .brand-fill em styles/tokens.css). */
-/* Caixa fixa de 185.31x181.74. O viewBox é 128x112 (mais largo que alto), então
-   o preserveAspectRatio padrão escala o desenho até encostar na largura e o
-   centra na altura sobrando — a arte cresce sem distorcer, que é o que
-   aconteceria se a caixa esticasse o desenho para os dois lados. */
+/* Ilustração do topo — hoje um <img> (WebP com alfa), não mais SVG inline. As
+   antigas .pix-art-* pintavam o desenho a partir de --brand-primary e saíram
+   junto com ele; a arte atual tem cor fixa. Ver o aviso no markup.
+
+   Caixa mantida em 185.31x181.74. A arte é mais alta que larga (728x780), então
+   com object-fit:contain quem limita é a altura e ela desenha 169.6x181.74 —
+   exatamente o que o SVG anterior fazia com preserveAspectRatio. */
 .pix-art {
   display: block;
   width: 185.31px;
   max-width: 185.31px;
   height: 181.74px;
   margin: 6px auto 0;
+  object-fit: contain;
+  /* `both` segura o estado inicial: sem ele a arte pisca opaca antes do
+     primeiro quadro. A animação só dispara quando a seção "ready" perde o
+     [hidden] — dentro de display:none nada anima —, que é o instante em que a
+     cobrança aparece, e não o do carregamento da página. */
+  animation: pix-art-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.pix-art-bg {
-  fill: rgba(var(--brand-primary-rgb), 0.12);
+@keyframes pix-art-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.pix-art-surface {
-  fill: var(--surface);
-}
-
-.pix-art-soft {
-  fill: rgba(var(--brand-primary-rgb), 0.35);
-}
-
-.pix-art-line {
-  stroke: var(--brand-primary);
-}
-
-.pix-art-solid {
-  fill: var(--brand-primary);
-}
-
-/* --brand-on é calculado por luminosidade em brand-theme.js: numa marca clara
-   ele vira escuro. Fixar #fff aqui quebraria essas marcas. */
-.pix-art-on {
-  stroke: var(--brand-on);
+@media (prefers-reduced-motion: reduce) {
+  .pix-art {
+    animation-duration: 0.01ms;
+  }
 }
 
 /* Peso médio de propósito: o negrito desta tela é do CÓDIGO, que é o que o

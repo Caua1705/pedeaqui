@@ -51,6 +51,18 @@ const ASSETS = [
     src: 'assets/icons/cart/cart-location-guest.png',
     rendered: 62,
     formats: ['webp']
+  },
+  {
+    // Ilustração da cobrança Pix. O master já vem com o ícone do Pix composto
+    // na tela do aparelho e com alfa de verdade — a arte de origem chegou em
+    // JPEG, com o xadrez de transparência achatado dentro da imagem.
+    //
+    // 170 e não 185: a caixa do CSS é 185.31x181.74 com object-fit:contain e a
+    // arte é mais alta que larga (728x780), então quem limita é a ALTURA —
+    // 181.74 x (728/780) = 169.6 de largura desenhada.
+    src: 'assets/icons/payment/pix-awaiting-payment.png',
+    rendered: 170, // .pix-art — styles/pix.css:205
+    formats: ['webp']
   }
 ];
 

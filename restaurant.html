@@ -964,19 +964,19 @@
            instrução, código, prazo, como funciona, pedido, consequência) — o
            que muda é a pele, que é a do app. -->
       <section class="pix-state pix-ready" data-pix-state="ready" hidden>
-        <!-- Arte própria e neutra: um aparelho com o gesto de copiar e o
-             relógio do prazo. Sem logotipo e sem cor fixa — as classes
-             .pix-art-* pintam a partir do tema do tenant (styles/pix.css),
-             porque SVG inline não aceita var() em atributo de apresentação. -->
-        <svg class="pix-art" viewBox="0 0 128 112" fill="none" role="img" aria-label="Pagamento por Pix">
-          <circle class="pix-art-bg" cx="60" cy="54" r="44"/>
-          <rect class="pix-art-surface pix-art-line" x="40" y="14" width="44" height="78" rx="11" stroke-width="3"/>
-          <rect class="pix-art-soft" x="54" y="21" width="16" height="3" rx="1.5"/>
-          <rect class="pix-art-line" x="48" y="38" width="21" height="27" rx="5" stroke-width="2.6"/>
-          <rect class="pix-art-surface pix-art-line" x="56" y="46" width="21" height="27" rx="5" stroke-width="2.6"/>
-          <circle class="pix-art-solid" cx="97" cy="82" r="15"/>
-          <path class="pix-art-on" d="M97 74.5V82l5 3.5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <!-- ⚠️ Arte de COR FIXA. O SVG que estava aqui era pintado por
+             var(--brand-primary) e acompanhava o tema do lojista; esta é um
+             raster laranja, então numa loja azul a ilustração continua laranja.
+             Foi uma troca pedida pelo produto — se a cor por tenant voltar a
+             ser requisito, o caminho é revetorizar a arte, não recolorir o WebP.
+
+             O master (assets/icons/payment/pix-awaiting-payment.png) já traz o
+             ícone do Pix composto na tela do aparelho; as variantes saem de
+             tools/optimize-images.mjs. -->
+        <img class="pix-art"
+          src="assets/icons/payment/pix-awaiting-payment@1x.webp"
+          srcset="assets/icons/payment/pix-awaiting-payment@1x.webp 1x, assets/icons/payment/pix-awaiting-payment@2x.webp 2x, assets/icons/payment/pix-awaiting-payment@3x.webp 3x"
+          alt="Pagamento por Pix" width="170" height="182" decoding="async" data-act-error="$hide">
 
         <h3 class="pix-headline">Pedido aguardando pagamento</h3>
         <p class="pix-lede" id="pixLede">Copie o código abaixo e utilize o Pix Copia e Cola no aplicativo do seu banco.</p>

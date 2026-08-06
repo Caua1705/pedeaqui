@@ -136,16 +136,18 @@ test('o rodapé traz a ação principal, full-width e na cor da marca', async ({
     )
     .toBe('rgb(22, 82, 240)');
 
+  // ⚠️ A ILUSTRAÇÃO saiu desta lista. Ela era um SVG inline pintado por
+  // --brand-primary; virou um raster de cor fixa, então numa loja azul ela
+  // continua laranja. O resto do chrome da tela segue a marca, e é isso que
+  // continua travado aqui.
   expect(
     await page.evaluate(() => ({
       barra: getComputedStyle(document.getElementById('pixCountdownBar')).backgroundColor,
-      iconeCopiar: getComputedStyle(document.querySelector('.pix-code-copy')).color,
-      ilustracao: getComputedStyle(document.querySelector('.pix-art-solid')).fill
+      iconeCopiar: getComputedStyle(document.querySelector('.pix-code-copy')).color
     }))
   ).toEqual({
     barra: 'rgb(22, 82, 240)',
-    iconeCopiar: 'rgb(22, 82, 240)',
-    ilustracao: 'rgb(22, 82, 240)'
+    iconeCopiar: 'rgb(22, 82, 240)'
   });
 
   // "Como funciona" é a exceção deliberada: cinza claro de texto corrido, para
@@ -153,6 +155,41 @@ test('o rodapé traz a ação principal, full-width e na cor da marca', async ({
   expect(
     await page.evaluate(() => getComputedStyle(document.querySelector('.pix-howto-link')).color)
   ).toBe('rgb(153, 153, 153)');
+});
+
+test('a ilustração da cobrança realmente pinta — não some pelo handler de erro', async ({
+  page
+}) => {
+  await mockApi(page, { orderResponse: pixOrder });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
+
+  const art = page.locator('.pix-art');
+  await expect(art).toBeVisible();
+
+  // Mesmo contrato do mascote em assets.spec.js: o <img> carrega
+  // data-act-error="$hide", então um 404 o esconderia calado e a tela ficaria
+  // sem ilustração sem ninguém acusar. naturalWidth > 0 é a única prova de que
+  // o byte chegou e decodificou.
+  const state = await art.evaluate((img) => ({
+    naturalWidth: img.naturalWidth,
+    display: getComputedStyle(img).display,
+    currentSrc: img.currentSrc
+  }));
+
+  expect(state.naturalWidth, 'a ilustração do Pix não carregou').toBeGreaterThan(0);
+  expect(state.display).not.toBe('none');
+  // O hash no meio do nome é do Vite: esta arte é citada no HTML, então entra
+  // pelo module graph e sai com cache-busting — ao contrário do mascote, que é
+  // copiado verbatim pelo viteStaticCopy e mantém o nome limpo.
+  expect(state.currentSrc).toMatch(/pix-awaiting-payment@\dx[\w-]*\.webp$/);
+
+  // A caixa desenhada continua sendo a que o produto aprovou: 185.31x181.74
+  // com object-fit:contain, o que dá 169.6 de largura para uma arte 728x780.
+  const box = await art.boundingBox();
+  expect(box.width).toBeCloseTo(185.31, 1);
+  expect(box.height).toBeCloseTo(181.74, 1);
 });
 
 test('"Como funciona" abre o passo a passo em três etapas', async ({ page }) => {

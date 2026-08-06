@@ -26,11 +26,19 @@ import { readFile, writeFile, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 
 // rendered = lado em CSS px que o elemento realmente ocupa (maior caso).
+//
+// `cutout` recorta o fundo chapado do master (ver cutoutFlatBackground abaixo).
+// Só os dois masters do mascote precisam: ambos chegaram do render em RGB, sem
+// canal alfa, com o mascote achatado sobre branco + sombra.
 const ASSETS = [
   {
     src: 'assets/brand/rapi-mascot.png',
     rendered: 110, // .rapi-orb-img — styles/rapi.css:1220
-    formats: ['webp']
+    formats: ['webp'],
+    // step 1 num master de 1254px: a rampa do fundo é suave o bastante para o
+    // flood andar de 1 em 1, e é isso que impede o vazamento para dentro do
+    // gorro branco, que quase encosta no branco do fundo.
+    cutout: { step: 1, repair: 5 }
   },
   {
     src: 'assets/brand/pedeaqui-logo.png',
@@ -40,7 +48,10 @@ const ASSETS = [
   {
     src: 'assets/brand/rapi-nav-avatar.png',
     rendered: 52, // .menu-mobile-rapi-avatar — styles/rapi.css:1030
-    formats: ['webp']
+    formats: ['webp'],
+    // Mesma arte em 256px: o mesmo degradê de sombra cai em 5x menos pixels,
+    // então cada passo é mais íngreme e o flood precisa de mais tolerância.
+    cutout: { step: 3, repair: 3 }
   },
   {
     src: 'assets/icons/cart/cart-location-customer.png',
@@ -81,11 +92,98 @@ function kb(bytes) {
   return `${(bytes / 1024).toFixed(1)} kB`;
 }
 
+/**
+ * Devolve o master com alfa de verdade, recortando o fundo chapado.
+ *
+ * POR QUÊ: os PNGs do mascote são RGB puro (color type 2, sem canal alfa) — o
+ * render saiu achatado sobre branco, com sombra. Sobre a tela branca do Rapi
+ * isso aparece como um quadrado atrás do mascote: o fundo da arte é #FEFEFE e a
+ * sombra desce até ~#DC, nenhum dos dois é o #FFF da página.
+ *
+ * COMO: flood fill a partir da borda com tolerância POR PASSO, não absoluta. Um
+ * limiar absoluto ("tudo acima de #FA é fundo") não serve aqui, porque o gorro
+ * branco é tão claro quanto o fundo e a sombra é bem mais escura que ele — o
+ * mesmo número não consegue separar os dois casos. Já o passo separa: fundo e
+ * sombra variam ~1 nível por pixel, enquanto a silhueta do mascote é um degrau
+ * de 15+ níveis. Por isso a sombra sai junto e o gorro fica.
+ *
+ * As duas guardas de cor (neutro e não escuro demais) existem só para o flood
+ * nunca escorregar para dentro da arte por um corredor de pixels quase neutros.
+ */
+async function cutoutFlatBackground(input, { step, repair }) {
+  const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const isBackground = new Uint8Array(width * height);
+  const queue = new Int32Array(width * height);
+  let head = 0;
+  let tail = 0;
+
+  const MAX_CHROMA = 6; // fundo e sombra são neutros; a arte é quente ou colorida
+  const MIN_LEVEL = 60; // nada realmente escuro é fundo nestes masters
+
+  const neutral = (i) => {
+    const max = Math.max(data[i], data[i + 1], data[i + 2]);
+    const min = Math.min(data[i], data[i + 1], data[i + 2]);
+    return max - min <= MAX_CHROMA && max >= MIN_LEVEL;
+  };
+
+  const seed = (x, y) => {
+    const pixel = y * width + x;
+    if (isBackground[pixel] || !neutral(pixel * channels)) return;
+    isBackground[pixel] = 1;
+    queue[tail++] = pixel;
+  };
+
+  for (let x = 0; x < width; x += 1) { seed(x, 0); seed(x, height - 1); }
+  for (let y = 0; y < height; y += 1) { seed(0, y); seed(width - 1, y); }
+
+  while (head < tail) {
+    const pixel = queue[head++];
+    const x = pixel % width;
+    const y = (pixel - x) / width;
+    const i = pixel * channels;
+    const visit = (nx, ny) => {
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) return;
+      const next = ny * width + nx;
+      if (isBackground[next]) return;
+      const ni = next * channels;
+      if (Math.abs(data[ni] - data[i]) > step) return;
+      if (Math.abs(data[ni + 1] - data[i + 1]) > step) return;
+      if (Math.abs(data[ni + 2] - data[i + 2]) > step) return;
+      if (!neutral(ni)) return;
+      isBackground[next] = 1;
+      queue[tail++] = next;
+    };
+    visit(x - 1, y); visit(x + 1, y); visit(x, y - 1); visit(x, y + 1);
+  }
+
+  const mask = Buffer.alloc(width * height);
+  for (let pixel = 0; pixel < width * height; pixel += 1) mask[pixel] = isBackground[pixel] ? 0 : 255;
+
+  // A máscara sai dura e com falhas finas: mediana fecha fresta e cospe respingo,
+  // o desfoque devolve a borda macia e o ganho encolhe a silhueta ~1px, que é o
+  // que come a franja branca do antialias do master.
+  const alpha = await sharp(mask, { raw: { width, height, channels: 1 } })
+    .median(repair)
+    .blur(1.1)
+    .linear(1.9, -115)
+    .toColourspace('b-w')
+    .raw()
+    .toBuffer();
+
+  for (let pixel = 0; pixel < width * height; pixel += 1) data[pixel * channels + 3] = alpha[pixel];
+
+  return sharp(data, { raw: { width, height, channels } }).png().toBuffer();
+}
+
 async function main() {
   const rows = [];
 
   for (const asset of ASSETS) {
-    const input = await readFile(asset.src);
+    const original = await readFile(asset.src);
+    // O recorte roda UMA vez, no master, e alimenta as três DPRs: refazer o
+    // flood a cada variante custaria três varreduras de 1,5 M de pixels.
+    const input = asset.cutout ? await cutoutFlatBackground(original, asset.cutout) : original;
     const meta = await sharp(input).metadata();
     const before = (await stat(asset.src)).size;
     const stem = basename(asset.src, '.png');

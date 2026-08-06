@@ -273,7 +273,11 @@
   gap: 17px;
   box-sizing: border-box;
   margin-top: 18px;
-  padding: 16px 12px;
+  padding: 11px 12px;
+  /* Único bloco que passa da coluna de 374px: os 8px que sobram de cada lado
+     saem do padding de .pix-state, então nada estoura a tela. */
+  width: calc(100% + 16px);
+  max-width: 390px;
   /* Contorno tracejado claro, como na referência. Uma `border: 1px dashed` do
      browser sai com traços de ~2px, curtos demais; o SVG deixa cravar o traço
      de 7px e o vão de 5.5px medidos na imagem. O rect tem stroke de 2 encostado
@@ -289,16 +293,17 @@
   display: none;
 }
 
-/* O negrito da tela mora aqui: é o código que o cliente vem buscar. */
+/* Continua sendo o texto de mais peso da tela, mas em tom cinza e 600 — em
+   preto e 700 ele ficava duro perto do contorno tracejado, que é claro. */
 .pix-code-value {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--text-main);
+  color: var(--text-muted);
 }
 
 .pix-code-copy {
@@ -351,12 +356,12 @@
   display: block;
   margin-top: 4px;
   font-size: 1.35rem;
-  /* Peso médio: o número já tem tamanho e a barra logo abaixo para chamar
-     atenção. Em 800 ele gritava mais que o próprio título da tela. */
-  font-weight: 600;
+  /* Peso e cor contidos: o número já tem tamanho e a barra logo abaixo para
+     chamar atenção. Em preto e 600 ele gritava mais que o próprio código. */
+  font-weight: 500;
   /* Sem largura tabular o número dança a cada segundo. */
   font-variant-numeric: tabular-nums;
-  color: var(--text-main);
+  color: var(--text-muted);
 }
 
 .pix-timer-track {
@@ -384,8 +389,9 @@
   }
 }
 
-/* Cinza de texto corrido, não cor de marca: é ajuda opcional, e pintá-la de
-   marca a deixava competindo com a ação principal do rodapé. */
+/* Cinza claro de texto corrido, não cor de marca: é ajuda opcional, e pintá-la
+   de marca — ou deixá-la escura e em 600 — a punha competindo com o código e
+   com a ação principal do rodapé. */
 .pix-howto-link {
   display: block;
   margin-top: 16px;
@@ -394,8 +400,8 @@
   background: none;
   font-family: var(--font-sans);
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: var(--text-faint);
   text-align: left;
   cursor: pointer;
 }
@@ -420,6 +426,10 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
+  /* Sombra suave só nas laterais e embaixo — o deslocamento de 3px em Y come a
+     sombra de cima, e o spread negativo a mantém rente ao cartão. Com a página
+     branca, é ela que dá o mínimo de relevo que a borda sozinha não dá. */
+  box-shadow: 0 3px 8px -2px rgba(0, 0, 0, 0.1);
   text-align: left;
 }
 
@@ -599,10 +609,19 @@
 }
 
 /* Menor e menos arredondado que o CTA padrão do app — a medida da referência.
-   Escopado ao Pix: .cart-cta-btn é o botão de todas as telas cheias. */
+   Escopado ao Pix: .cart-cta-btn é o botão de todas as telas cheias.
+
+   O flex centra o rótulo nos dois eixos (o <span> interno não herda o
+   text-align do botão de forma confiável quando a altura é fixa), e o 600 vem
+   com !important porque styles/utilities.css crava 700 para todo .cart-cta-btn
+   do app. */
 #pixPaymentModal .pix-footer .cart-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 46px;
   border-radius: 8px;
+  font-weight: 600 !important;
 }
 
 #pixPaymentModal .pix-footer[hidden] {

@@ -148,11 +148,11 @@ test('o rodapé traz a ação principal, full-width e na cor da marca', async ({
     ilustracao: 'rgb(22, 82, 240)'
   });
 
-  // "Como funciona" é a exceção deliberada: cinza de texto corrido, para não
-  // competir com a ação principal. Não pode voltar a puxar a cor da marca.
+  // "Como funciona" é a exceção deliberada: cinza claro de texto corrido, para
+  // não competir com a ação principal. Não pode voltar a puxar a cor da marca.
   expect(
     await page.evaluate(() => getComputedStyle(document.querySelector('.pix-howto-link')).color)
-  ).toBe('rgb(102, 102, 102)');
+  ).toBe('rgb(153, 153, 153)');
 });
 
 test('"Como funciona" abre o passo a passo em três etapas', async ({ page }) => {

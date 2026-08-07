@@ -6,6 +6,7 @@ import {
   pixCharge,
   trackedOrder,
   selectPixAndReturnToCart,
+  confirmOrderSheet,
   PIX_QR_CODE,
   SLUG
 } from './helpers.js';
@@ -31,6 +32,7 @@ test.describe.configure({ timeout: 90_000 });
 async function submitPixOrder(page) {
   await selectPixAndReturnToCart(page);
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
 }
 
 test.beforeEach(async ({ page }) => {

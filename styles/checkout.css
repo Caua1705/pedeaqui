@@ -1,1 +1,242 @@
-/* O envio do pedido acontece diretamente na sacola; os estilos ficam em utilities.css. */
+/* O envio do pedido acontece dentro da sacola, e o resto dos estilos dela mora
+   em restaurant.css / utilities.css. O que vive aqui é só o último passo: a
+   folha de confirmação que sobe antes de o pedido existir.
+
+   A anatomia é a das outras confirmações do app (excluir item da sacola, sair
+   da cobrança): camada absoluta sobre a tela, fundo escurecendo e painel
+   subindo de baixo. Os valores de transição são os mesmos de
+   .addr-delete-confirm (styles/operation.css) — é a mesma família de folha, e
+   duas curvas diferentes para o mesmo gesto se notam.
+
+   As cores saem do contrato de styles/tokens.css. O verde do benefício e o
+   laranja do botão não aparecem aqui: os dois vêm das classes que a sacola já
+   estiliza (.cart-benefit-*, .cart-cta-btn), reaproveitadas pelo markup. */
+
+.order-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.14);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    visibility 0s linear 0.5s,
+    background 0.18s ease;
+}
+
+.order-confirm:not(.active) {
+  background: rgba(0, 0, 0, 0);
+}
+
+.order-confirm.active {
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    visibility 0s linear 0s,
+    background 0.18s ease;
+}
+
+.order-confirm-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 414px;
+  max-width: 100%;
+  padding: 18px 20px calc(18px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  background: var(--surface);
+  box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.08);
+  /* translate3d + backface-visibility: sem eles o Chrome do Android redesenha o
+     painel a cada quadro e o gesto engasga, que foi o motivo de a folha de
+     exclusão ter sido escrita assim. */
+  transform: translate3d(0, 110%, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.order-confirm.active .order-confirm-panel {
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-confirm,
+  .order-confirm-panel {
+    transition-duration: 0.01ms;
+  }
+}
+
+.order-confirm-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+}
+
+/* Linhas separadas por fio, como na referência: cada uma é um dado que o
+   cliente ainda pode conferir antes de o pedido existir. */
+.order-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.order-confirm-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-3);
+}
+
+.order-confirm-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.order-confirm-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.order-confirm-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.order-confirm-copy strong {
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.order-confirm-note {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+
+.order-confirm-note[hidden] {
+  display: none;
+}
+
+.order-confirm-benefit {
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.order-confirm-payment-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  color: var(--text-muted);
+}
+
+.order-confirm-payment-icon img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.order-confirm-payment-icon img[hidden],
+.order-confirm-payment-icon svg[hidden] {
+  display: none;
+}
+
+.order-confirm-total {
+  flex: 0 0 auto;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.order-confirm-cta {
+  margin-top: 4px;
+}
+
+/* Enquanto o pedido está sendo criado o botão não some nem troca de texto: ele
+   segura a bolinha, do mesmo jeito que os botões de cadastro e de entrar
+   (.reg-submit / .lgn-submit). É o que mantém o cliente parado na mesma tela em
+   vez de mandá-lo para uma tela de espera. */
+/* O id na frente é por causa de #cartModal .cart-cta-btn{color:...!important}
+   (styles/restaurant.css), a regra que dá ao botão a cor da marca: sem subir a
+   especificidade, o rótulo não some e o texto fica atrás da bolinha. */
+#cartModal .order-confirm-cta.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+#cartModal .order-confirm-cta.is-loading::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: order-confirm-spin 0.7s linear infinite;
+}
+
+@keyframes order-confirm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.order-confirm-back {
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.order-confirm-back:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.order-confirm-cta:focus-visible,
+.order-confirm-back:focus-visible,
+.order-confirm-panel .cart-benefit-action:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}

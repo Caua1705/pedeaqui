@@ -2425,18 +2425,28 @@
     return deliveryEstimateText();
   }
 
-  function cartAddressHtml(address) {
-    if (!address) return '';
+  // Rua/número/bairro e cidade-estado separados: o widget da sacola quebra os
+  // dois em linhas, a folha de confirmação os escreve seguidos.
+  function cartAddressParts(address) {
     const branch = branchById(operationContext?.branch_id) || branches[0] || {};
     const cityState = [address.city || branch.city, address.state || branch.state].filter(Boolean).join(' - ');
     const line1 = [
       [address.street, address.number].filter(Boolean).join(', '),
       address.neighborhood
     ].filter(Boolean).join(', ');
-    const fallback = address.summary || addressSummary(address);
-    return cityState
-      ? `${esc(line1 || fallback)}<span>${esc(cityState)}</span>`
-      : esc(fallback);
+    return { line1: line1 || address.summary || addressSummary(address), cityState };
+  }
+
+  function cartAddressHtml(address) {
+    if (!address) return '';
+    const { line1, cityState } = cartAddressParts(address);
+    return cityState ? `${esc(line1)}<span>${esc(cityState)}</span>` : esc(line1);
+  }
+
+  function cartAddressLine(address) {
+    if (!address) return '';
+    const { line1, cityState } = cartAddressParts(address);
+    return [line1, cityState].filter(Boolean).join(', ');
   }
 
   // Unidade onde o pedido é retirado. Em retirada é ELA que ocupa o lugar do
@@ -2492,10 +2502,126 @@
     if (minOrderValue > 0 && cartTotals().subtotal < minOrderValue) return;
     hideCartOrderError();
     if (paymentMethod) {
-      submitOrder();
+      openOrderConfirm();
       return;
     }
     openCheckout();
+  }
+
+  /* ---------------- Folha de confirmação do pedido ----------------
+
+     Último passo antes de POST /orders. Ela existe para o cliente conferir sem
+     sair da sacola PARA ONDE vai, COMO paga e QUANTO — os três dados que ele
+     não pode mais corrigir depois que o pedido nasce.
+
+     Nada aqui é fonte de dado: cada linha lê o que a sacola já mostra, para os
+     dois não poderem divergir. */
+
+  // "sem benefício" é uma AFIRMAÇÃO sobre o pedido, não um rótulo fixo: com
+  // cupom aplicado ela seria mentira escrita na tela do cliente.
+  function orderConfirmActionLabel() {
+    return selectedCoupon || couponDiscountAmount() > 0
+      ? 'Confirmar pedido'
+      : 'Confirmar sem benefício';
+  }
+
+  function orderConfirmAddressNote(address) {
+    return [address?.complement, address?.reference]
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  function syncOrderConfirmSheet() {
+    const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
+    const isPickup = deliveryType === 'pickup';
+    const address = currentCartAddress();
+    const label = orderConfirmActionLabel();
+    const summary = paymentMethod ? selectedPaymentSummary() : null;
+    const isPix = infoPaymentType(paymentMethod) === 'pix';
+
+    setText('orderConfirmTitle', label);
+    setText('orderConfirmCta', label);
+    setText('orderConfirmWhereLabel', isPickup ? 'Retirada' : 'Entrega');
+    setText('orderConfirmWhereText', isPickup ? pickupBranchText() : cartAddressLine(address));
+
+    const note = $('orderConfirmWhereNote');
+    if (note) {
+      note.textContent = isPickup ? '' : orderConfirmAddressNote(address);
+      note.hidden = !note.textContent;
+    }
+
+    // Mapa e texto do benefício são COPIADOS do que a sacola já renderizou. O
+    // mapa por economia (mesma URL, arquivo já baixado) e o benefício por
+    // verdade: o "3" é fixo no HTML hoje, e quando vier da API os dois lugares
+    // passam a mudar juntos sem ninguém precisar lembrar deste.
+    const map = $('orderConfirmMapImage');
+    const cartMap = $('cartLocationImage');
+    const mapSource = cartMap?.getAttribute('src');
+    if (map && mapSource && map.getAttribute('src') !== mapSource) {
+      map.srcset = cartMap.srcset;
+      map.src = mapSource;
+    }
+    const benefit = $('orderConfirmBenefitCopy');
+    const cartBenefit = document.querySelector('#cartModal .cart-benefit-card .cart-benefit-copy');
+    if (benefit && cartBenefit) benefit.textContent = cartBenefit.textContent;
+
+    // "Pagamento online/na entrega" e não o "Pagar online" do cartão da sacola:
+    // aqui o texto titula um dado que está sendo conferido, não um botão que
+    // leva a escolher.
+    setText('orderConfirmPaymentTitle', summary
+      ? (summary.scope === 'delivery' ? 'Pagamento na entrega' : 'Pagamento online')
+      : 'Forma de pagamento');
+    setText('orderConfirmPaymentDetail', summary?.detail || '');
+    // toggleAttribute, e não `.hidden =`: o ícone do cartão é um <svg>, e
+    // SVGElement não reflete a propriedade `hidden` — a atribuição viraria um
+    // campo solto no objeto e os dois ícones apareceriam sobrepostos.
+    $('orderConfirmPixIcon')?.toggleAttribute('hidden', !isPix);
+    $('orderConfirmCardIcon')?.toggleAttribute('hidden', isPix);
+    setText('orderConfirmTotal', fmt(cartTotals().total));
+  }
+
+  function openOrderConfirm() {
+    syncOrderConfirmSheet();
+    setAccessibleDialogState($('orderConfirmSheet'), true, '.order-confirm-cta');
+  }
+
+  /** "Alterar dados": a folha desce e a sacola continua exatamente como estava. */
+  function closeOrderConfirm() {
+    // Com o pedido em voo não há o que alterar: ele já saiu daqui.
+    if (orderSubmitInFlight) return;
+    setOrderConfirmLoading(false);
+    setAccessibleDialogState($('orderConfirmSheet'), false);
+  }
+
+  function setOrderConfirmLoading(loading) {
+    const cta = $('orderConfirmCta');
+    const back = $('orderConfirmBack');
+    if (cta) {
+      cta.classList.toggle('is-loading', Boolean(loading));
+      cta.disabled = Boolean(loading);
+    }
+    if (back) back.disabled = Boolean(loading);
+  }
+
+  // O benefício continua levando ao Clube, como na sacola — só que agora a
+  // folha desce antes, senão ela reapareceria por cima da próxima tela.
+  function openConfirmBenefits() {
+    setAccessibleDialogState($('orderConfirmSheet'), false);
+    openCartBenefits();
+  }
+
+  async function confirmOrderFromSheet() {
+    if (orderSubmitInFlight) return;
+    setOrderConfirmLoading(true);
+    try {
+      await submitOrder();
+    } finally {
+      // Em caso de sucesso a folha já desceu junto com a sacola; o que sobra
+      // aqui é devolver o botão quando a criação falhou e o cliente continua
+      // na mesma tela.
+      setOrderConfirmLoading(false);
+    }
   }
 
   function syncCartLocationState() {
@@ -3233,6 +3359,9 @@
     const orderPayload = buildCurrentOrderPayload();
     const problems = validateCurrentOrder(orderPayload);
     if (problems.length) {
+      // O aviso mora na sacola, atrás da folha: mostrá-lo com a folha em cima
+      // seria escrever para uma tela que o cliente não está vendo.
+      closeOrderConfirm();
       showCartOrderProblems(problems);
       return;
     }
@@ -3252,8 +3381,9 @@
       // preservada de propósito — a retentativa precisa ser reconhecida como a
       // mesma tentativa, não como um pedido novo.
       logAppError('Falha ao criar pedido', error);
-      showCartOrderError(orderErrorMessage(error));
       setOrderSubmitting(false); // reabilita para retry
+      closeOrderConfirm(); // o erro é da sacola, e ela está atrás da folha
+      showCartOrderError(orderErrorMessage(error));
       return;
     }
 
@@ -3261,11 +3391,14 @@
     // não pode virar mensagem de falha: o usuário tentaria de novo e criaria um
     // pedido duplicado. Na dúvida, seguimos para a tela de sucesso.
     try {
-      handleOrderCreated(response);
+      // O await não é decoração: quem chamou (o botão da folha) só devolve a
+      // bolinha quando a PRÓXIMA TELA está pronta. Sem ele, submitOrder
+      // resolvia assim que disparava o roteamento e o botão voltava ao normal
+      // no mesmo quadro, ainda com a cobrança em voo.
+      await handleOrderCreated(response);
     } catch (error) {
       logAppError('Pedido criado, mas falhou ao exibir a confirmação', error);
-      setOrderSubmitting(false);
-      closeModalImmediately('cartModal');
+      leaveCartAfterOrder();
       showOrderSuccess(response);
     }
   }
@@ -3283,6 +3416,30 @@
     }));
   }
 
+  /**
+   * Fecha a sacola e a folha e zera o carrinho — o carrinho só pode ser limpo
+   * aqui, depois de sucesso confirmado.
+   *
+   * Quem chama é sempre quem JÁ TEM a próxima tela pronta para abrir. Enquanto
+   * a cobrança está sendo criada a folha continua na frente, com a bolinha
+   * girando no botão: fechar a sacola antes deixaria a loja aparecendo por
+   * baixo no meio do caminho.
+   */
+  function leaveCartAfterOrder() {
+    cart = [];
+    selectedCoupon = null;
+    selectedCouponPreview = null;
+    couponPreviewKey = '';
+    paymentMethod = '';
+    paymentMethodKey = '';
+    resetOrderIdempotencyKey(); // próximo pedido = chave nova
+    updateCartUI();
+    setOrderSubmitting(false);
+    closeOrderConfirm();
+    hideCartOrderError();
+    closeModalImmediately('cartModal');
+  }
+
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
     submittedOrder = response || null;
@@ -3295,29 +3452,23 @@
     // existe, e uma falha aqui é de cache, não do pedido.
     try { window.PedeAquiOrderState?.saveOrder?.(response); }
     catch (error) { logAppError('Falha ao registrar o pedido localmente', error); }
-    cart = [];
-    selectedCoupon = null;
-    selectedCouponPreview = null;
-    couponPreviewKey = '';
-    paymentMethod = '';
-    paymentMethodKey = '';
-    resetOrderIdempotencyKey(); // próximo pedido = chave nova
-    updateCartUI();
-    setOrderSubmitting(false);
-    hideCartOrderError();
-    closeModalImmediately('cartModal');
-    routeCreatedOrder(response, items);
+    return routeCreatedOrder(response, items);
   }
 
   // O backend decide o caminho, não a UI: `payment_flow` vem na resposta da
   // criação. Pagamento na entrega segue direto para a confirmação, exatamente
   // como sempre; pagamento online precisa da cobrança antes de o pedido valer.
-  function routeCreatedOrder(response, items) {
+  async function routeCreatedOrder(response, items) {
     if (!isOnlinePaymentFlow(response)) {
+      leaveCartAfterOrder();
       showOrderSuccess(response);
       return;
     }
-    openPixPayment(response, { items });
+    // A cobrança é criada com a folha ainda na frente; a sacola só sai de cena
+    // no quadro em que a tela do Pix entra.
+    const session = await preparePixPayment(response, { items });
+    leaveCartAfterOrder();
+    presentPixPayment(session);
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -3658,13 +3809,24 @@
   }
 
   /**
-   * Abre a tela e dispara a criação da cobrança.
+   * Monta a sessão, cria a cobrança e deixa a tela no estado FINAL — pronta,
+   * paga ou em erro. Não abre nada.
+   *
+   * A tela de "Gerando o código de pagamento..." saiu daqui: era uma tela cheia
+   * inteira para anunciar a espera de uma requisição, no meio de um caminho em
+   * que o cliente já tinha um botão à sua frente. A espera passou para esse
+   * botão — o "Confirmar" da folha, o da barra de pagamento pendente e o
+   * "Tentar novamente" do erro —, e a tela do Pix entra pela lateral já com o
+   * código na mão.
+   *
    * @param {object} order resposta de POST /orders (ou entrada guardada com os mesmos campos)
    * @param {object} [options]
    * @param {Array}  [options.items] foto das linhas; sem ela vale a que ficou
    *   guardada com o token (o caso de quem recarregou a página)
+   * @returns {Promise<object>} a sessão preparada, para presentPixPayment()
+   *   conferir que ela ainda é a corrente
    */
-  function openPixPayment(order, { items } = {}) {
+  async function preparePixPayment(order, { items } = {}) {
     const trackingToken = String(order?.tracking_token || '').trim();
     pixSession = {
       order,
@@ -3693,9 +3855,8 @@
     hidePixToast();
     closePixSheets();
     updatePixCountdown();
-    setPixState('loading');
-    openModal('pixPaymentModal');
 
+    const session = pixSession;
     if (!trackingToken) {
       // Sem token não há rota: nem cobrança, nem acompanhamento. Retentar não
       // resolveria nada, então o botão de retry não aparece.
@@ -3703,17 +3864,32 @@
         'Seu pedido foi registrado, mas não recebemos o código de acompanhamento necessário para o pagamento online. Procure o restaurante informando o número do pedido.',
         { canRetry: false }
       );
-      return Promise.resolve();
+      return session;
     }
 
-    return startPixCharge();
+    await startPixCharge();
+    return session;
+  }
+
+  /**
+   * Abre a tela, já com o estado decidido por preparePixPayment().
+   * @param {object} [session] a sessão de quem preparou; se ela não for mais a
+   *   corrente, o cliente saiu no meio da espera e não há tela para abrir.
+   */
+  function presentPixPayment(session) {
+    if (session && pixSession !== session) return;
+    openModal('pixPaymentModal');
+  }
+
+  /** Prepara e abre — o caminho de quem não tem outra tela para fechar antes. */
+  async function openPixPayment(order, options) {
+    presentPixPayment(await preparePixPayment(order, options));
   }
 
   async function startPixCharge() {
     const session = pixSession;
     if (!session?.trackingToken) return;
 
-    setPixState('loading');
     let payment;
     try {
       payment = await window.PedeAquiOrderService.startOrderPayment(getRestaurantSlug(), session.trackingToken);
@@ -3997,12 +4173,16 @@
     if (!session?.trackingToken) return;
     session.stopped = false;
     session.pollFailures = 0;
-    setPixState('loading');
+    // A consulta espera no próprio botão, como as outras: trocar a tela por uma
+    // de carregamento tiraria da frente o aviso que explica por que ele está ali.
+    const button = $('pixCheckNowBtn');
+    button?.classList.add('is-loading');
 
     let detail;
     try {
       detail = await window.PedeAquiOrderService.trackOrder(getRestaurantSlug(), session.trackingToken);
     } catch (error) {
+      button?.classList.remove('is-loading');
       if (pixSession !== session) return;
       logAppError('Falha ao verificar o pagamento', error);
       showPixError(
@@ -4011,6 +4191,7 @@
       );
       return;
     }
+    button?.classList.remove('is-loading');
     if (pixSession !== session) return;
 
     updateTrackingEntry(session.trackingToken, {
@@ -4051,10 +4232,19 @@
     showOrderSuccess(merged);
   }
 
-  function retryPixPayment() {
+  async function retryPixPayment() {
     if (!pixSession) return;
     pixSession.stopped = false;
-    startPixCharge();
+    // A tela de erro continua na frente enquanto a tentativa acontece: a
+    // espera cabe no próprio botão, e trocar a tela por uma de carregamento
+    // faria o cliente perder de vista o que deu errado.
+    const button = $('pixRetryBtn');
+    button?.classList.add('is-loading');
+    try {
+      await startPixCharge();
+    } finally {
+      button?.classList.remove('is-loading');
+    }
   }
 
   /* ---------------- Folhas da tela ---------------- */
@@ -4156,16 +4346,26 @@
     }
   }
 
-  function resumePendingPayment() {
+  async function resumePendingPayment() {
     const pending = pendingOnlinePayment();
     if (!pending) {
       renderPendingPaymentBar();
       return;
     }
-    $('pendingPaymentBar')?.setAttribute('hidden', '');
-    // Chamar o endpoint de pagamento de novo é seguro: o backend devolve a
-    // cobrança corrente do pedido em vez de criar outra.
-    openPixPayment(pending);
+    // A barra fica no lugar, girando, até a tela estar pronta. Escondê-la no
+    // clique — como antes, quando havia uma tela de carregamento para receber
+    // o cliente — deixaria a loja sem nenhum sinal de que algo está vindo.
+    const bar = $('pendingPaymentBar');
+    const button = bar?.querySelector('.pending-payment-main');
+    button?.classList.add('is-loading');
+    try {
+      // Chamar o endpoint de pagamento de novo é seguro: o backend devolve a
+      // cobrança corrente do pedido em vez de criar outra.
+      await openPixPayment(pending);
+    } finally {
+      button?.classList.remove('is-loading');
+      bar?.setAttribute('hidden', '');
+    }
   }
 
   function dismissPendingPayment() {
@@ -8399,6 +8599,7 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     submitOrder, closeOrderSuccess, refreshTrackedOrder,
+    openOrderConfirm, closeOrderConfirm, confirmOrderFromSheet, openConfirmBenefits,
     closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow, togglePixOrderItems,
     openPixExitConfirm, closePixExitConfirm, confirmPixExit, openPixHowTo, closePixHowTo,
     resumePendingPayment, dismissPendingPayment,

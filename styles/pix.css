@@ -169,16 +169,55 @@
   max-width: 300px;
 }
 
-/* ---- Carregando ---- */
+/* ---- Espera ----
 
-.pix-spinner {
-  width: 34px;
-  height: 34px;
+   Não há mais um estado de carregamento nesta tela: ela só abre com a cobrança
+   resolvida. A espera fica no botão que trouxe o cliente até aqui — mesma
+   bolinha dos botões de cadastro e de entrar (.reg-submit / .lgn-submit), e a
+   mesma do "Confirmar" da folha da sacola (styles/checkout.css). */
+
+#pixRetryBtn.is-loading,
+#pixCheckNowBtn.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+#pixRetryBtn.is-loading::after,
+#pixCheckNowBtn.is-loading::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
   border-radius: 50%;
-  border: 3px solid var(--surface-3);
-  border-top-color: var(--brand-primary);
-  animation: pix-spin 0.9s linear infinite;
-  margin-top: 40px;
+  animation: pix-spin 0.7s linear infinite;
+}
+
+/* A barra de pagamento pendente é escura, então a bolinha dela é clara e fica
+   no lugar do ícone — o texto continua legível enquanto a tela é preparada. */
+.pending-payment-main.is-loading {
+  pointer-events: none;
+}
+
+.pending-payment-main.is-loading .pending-payment-icon {
+  visibility: hidden;
+}
+
+.pending-payment-main.is-loading::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: pix-spin 0.7s linear infinite;
 }
 
 @keyframes pix-spin {
@@ -188,7 +227,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pix-spinner {
+  #pixRetryBtn.is-loading::after,
+  #pixCheckNowBtn.is-loading::after,
+  .pending-payment-main.is-loading::after {
     animation-duration: 2.4s;
   }
 }
@@ -922,6 +963,7 @@
 }
 
 .pending-payment-main {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;

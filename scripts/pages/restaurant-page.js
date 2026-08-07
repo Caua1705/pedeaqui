@@ -2425,18 +2425,28 @@
     return deliveryEstimateText();
   }
 
-  function cartAddressHtml(address) {
-    if (!address) return '';
+  // Rua/número/bairro e cidade-estado separados: o widget da sacola quebra os
+  // dois em linhas, a folha de confirmação os escreve seguidos.
+  function cartAddressParts(address) {
     const branch = branchById(operationContext?.branch_id) || branches[0] || {};
     const cityState = [address.city || branch.city, address.state || branch.state].filter(Boolean).join(' - ');
     const line1 = [
       [address.street, address.number].filter(Boolean).join(', '),
       address.neighborhood
     ].filter(Boolean).join(', ');
-    const fallback = address.summary || addressSummary(address);
-    return cityState
-      ? `${esc(line1 || fallback)}<span>${esc(cityState)}</span>`
-      : esc(fallback);
+    return { line1: line1 || address.summary || addressSummary(address), cityState };
+  }
+
+  function cartAddressHtml(address) {
+    if (!address) return '';
+    const { line1, cityState } = cartAddressParts(address);
+    return cityState ? `${esc(line1)}<span>${esc(cityState)}</span>` : esc(line1);
+  }
+
+  function cartAddressLine(address) {
+    if (!address) return '';
+    const { line1, cityState } = cartAddressParts(address);
+    return [line1, cityState].filter(Boolean).join(', ');
   }
 
   // Unidade onde o pedido é retirado. Em retirada é ELA que ocupa o lugar do
@@ -2492,10 +2502,126 @@
     if (minOrderValue > 0 && cartTotals().subtotal < minOrderValue) return;
     hideCartOrderError();
     if (paymentMethod) {
-      submitOrder();
+      openOrderConfirm();
       return;
     }
     openCheckout();
+  }
+
+  /* ---------------- Folha de confirmação do pedido ----------------
+
+     Último passo antes de POST /orders. Ela existe para o cliente conferir sem
+     sair da sacola PARA ONDE vai, COMO paga e QUANTO — os três dados que ele
+     não pode mais corrigir depois que o pedido nasce.
+
+     Nada aqui é fonte de dado: cada linha lê o que a sacola já mostra, para os
+     dois não poderem divergir. */
+
+  // "sem benefício" é uma AFIRMAÇÃO sobre o pedido, não um rótulo fixo: com
+  // cupom aplicado ela seria mentira escrita na tela do cliente.
+  function orderConfirmActionLabel() {
+    return selectedCoupon || couponDiscountAmount() > 0
+      ? 'Confirmar pedido'
+      : 'Confirmar sem benefício';
+  }
+
+  function orderConfirmAddressNote(address) {
+    return [address?.complement, address?.reference]
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  function syncOrderConfirmSheet() {
+    const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
+    const isPickup = deliveryType === 'pickup';
+    const address = currentCartAddress();
+    const label = orderConfirmActionLabel();
+    const summary = paymentMethod ? selectedPaymentSummary() : null;
+    const isPix = infoPaymentType(paymentMethod) === 'pix';
+
+    setText('orderConfirmTitle', label);
+    setText('orderConfirmCta', label);
+    setText('orderConfirmWhereLabel', isPickup ? 'Retirada' : 'Entrega');
+    setText('orderConfirmWhereText', isPickup ? pickupBranchText() : cartAddressLine(address));
+
+    const note = $('orderConfirmWhereNote');
+    if (note) {
+      note.textContent = isPickup ? '' : orderConfirmAddressNote(address);
+      note.hidden = !note.textContent;
+    }
+
+    // Mapa e texto do benefício são COPIADOS do que a sacola já renderizou. O
+    // mapa por economia (mesma URL, arquivo já baixado) e o benefício por
+    // verdade: o "3" é fixo no HTML hoje, e quando vier da API os dois lugares
+    // passam a mudar juntos sem ninguém precisar lembrar deste.
+    const map = $('orderConfirmMapImage');
+    const cartMap = $('cartLocationImage');
+    const mapSource = cartMap?.getAttribute('src');
+    if (map && mapSource && map.getAttribute('src') !== mapSource) {
+      map.srcset = cartMap.srcset;
+      map.src = mapSource;
+    }
+    const benefit = $('orderConfirmBenefitCopy');
+    const cartBenefit = document.querySelector('#cartModal .cart-benefit-card .cart-benefit-copy');
+    if (benefit && cartBenefit) benefit.textContent = cartBenefit.textContent;
+
+    // "Pagamento online/na entrega" e não o "Pagar online" do cartão da sacola:
+    // aqui o texto titula um dado que está sendo conferido, não um botão que
+    // leva a escolher.
+    setText('orderConfirmPaymentTitle', summary
+      ? (summary.scope === 'delivery' ? 'Pagamento na entrega' : 'Pagamento online')
+      : 'Forma de pagamento');
+    setText('orderConfirmPaymentDetail', summary?.detail || '');
+    // toggleAttribute, e não `.hidden =`: o ícone do cartão é um <svg>, e
+    // SVGElement não reflete a propriedade `hidden` — a atribuição viraria um
+    // campo solto no objeto e os dois ícones apareceriam sobrepostos.
+    $('orderConfirmPixIcon')?.toggleAttribute('hidden', !isPix);
+    $('orderConfirmCardIcon')?.toggleAttribute('hidden', isPix);
+    setText('orderConfirmTotal', fmt(cartTotals().total));
+  }
+
+  function openOrderConfirm() {
+    syncOrderConfirmSheet();
+    setAccessibleDialogState($('orderConfirmSheet'), true, '.order-confirm-cta');
+  }
+
+  /** "Alterar dados": a folha desce e a sacola continua exatamente como estava. */
+  function closeOrderConfirm() {
+    // Com o pedido em voo não há o que alterar: ele já saiu daqui.
+    if (orderSubmitInFlight) return;
+    setOrderConfirmLoading(false);
+    setAccessibleDialogState($('orderConfirmSheet'), false);
+  }
+
+  function setOrderConfirmLoading(loading) {
+    const cta = $('orderConfirmCta');
+    const back = $('orderConfirmBack');
+    if (cta) {
+      cta.classList.toggle('is-loading', Boolean(loading));
+      cta.disabled = Boolean(loading);
+    }
+    if (back) back.disabled = Boolean(loading);
+  }
+
+  // O benefício continua levando ao Clube, como na sacola — só que agora a
+  // folha desce antes, senão ela reapareceria por cima da próxima tela.
+  function openConfirmBenefits() {
+    setAccessibleDialogState($('orderConfirmSheet'), false);
+    openCartBenefits();
+  }
+
+  async function confirmOrderFromSheet() {
+    if (orderSubmitInFlight) return;
+    setOrderConfirmLoading(true);
+    try {
+      await submitOrder();
+    } finally {
+      // Em caso de sucesso a folha já desceu junto com a sacola; o que sobra
+      // aqui é devolver o botão quando a criação falhou e o cliente continua
+      // na mesma tela.
+      setOrderConfirmLoading(false);
+    }
   }
 
   function syncCartLocationState() {
@@ -3233,6 +3359,9 @@
     const orderPayload = buildCurrentOrderPayload();
     const problems = validateCurrentOrder(orderPayload);
     if (problems.length) {
+      // O aviso mora na sacola, atrás da folha: mostrá-lo com a folha em cima
+      // seria escrever para uma tela que o cliente não está vendo.
+      closeOrderConfirm();
       showCartOrderProblems(problems);
       return;
     }
@@ -3252,8 +3381,9 @@
       // preservada de propósito — a retentativa precisa ser reconhecida como a
       // mesma tentativa, não como um pedido novo.
       logAppError('Falha ao criar pedido', error);
-      showCartOrderError(orderErrorMessage(error));
       setOrderSubmitting(false); // reabilita para retry
+      closeOrderConfirm(); // o erro é da sacola, e ela está atrás da folha
+      showCartOrderError(orderErrorMessage(error));
       return;
     }
 
@@ -3304,6 +3434,7 @@
     resetOrderIdempotencyKey(); // próximo pedido = chave nova
     updateCartUI();
     setOrderSubmitting(false);
+    closeOrderConfirm();
     hideCartOrderError();
     closeModalImmediately('cartModal');
     routeCreatedOrder(response, items);
@@ -8399,6 +8530,7 @@
     openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
     removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     submitOrder, closeOrderSuccess, refreshTrackedOrder,
+    openOrderConfirm, closeOrderConfirm, confirmOrderFromSheet, openConfirmBenefits,
     closePixPayment, copyPixCode, retryPixPayment, checkPixStatusNow, togglePixOrderItems,
     openPixExitConfirm, closePixExitConfirm, confirmPixExit, openPixHowTo, closePixHowTo,
     resumePendingPayment, dismissPendingPayment,

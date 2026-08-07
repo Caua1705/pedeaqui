@@ -3,6 +3,7 @@ import {
   mockApi,
   seedPickupSession,
   addH2OToCart,
+  confirmOrderSheet,
   RESTAURANT_URL
 } from './helpers.js';
 
@@ -163,6 +164,7 @@ test('bandeira volta para a sacola, monta o resumo e mantém o tipo aceito pela 
   await page.locator('.payment-method-option[data-payment-key=\'credit:mastercard\']').click();
   await expect(page.locator('#cartCtaBtn')).toHaveText('Efetuar pagamento');
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
   expect(orderRequests).toHaveLength(1);
   expect(orderRequests[0].body.payment_method).toBe('credit_card');

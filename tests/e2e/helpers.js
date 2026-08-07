@@ -187,6 +187,17 @@ export async function seedPickupSession(page) {
 }
 
 /**
+ * Confirma o pedido na folha que sobe sobre a sacola — o passo que fica ENTRE
+ * o botão da sacola e a criação do pedido. Toda rota que cria pedido passa por
+ * aqui; um spec que clique só no CTA da sacola nunca vê o POST /orders.
+ */
+export async function confirmOrderSheet(page) {
+  const sheet = page.locator('#orderConfirmSheet');
+  await expect(sheet).toHaveClass(/active/);
+  await sheet.locator('.order-confirm-cta').click();
+}
+
+/**
  * Leva o app de produto -> sacola -> Pix escolhido -> de volta na sacola, com a
  * sacola pronta para submeter. As esperas intermediárias não são decoração: a
  * sacola só recalcula o CTA depois que o método é confirmado, e clicar antes

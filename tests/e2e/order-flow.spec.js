@@ -4,6 +4,7 @@ import {
   seedPickupSession,
   addH2OToCart,
   successOrder,
+  confirmOrderSheet,
   pixOrder,
   PRODUCT_H2O,
   RESTAURANT_URL
@@ -49,6 +50,7 @@ test('product -> cart -> payment -> submit creates an order with the contract pa
   await expect(page.locator('#cartList')).toContainText('H2O');
   await expect(page.locator('#csTotal')).toContainText('22,14');
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
 
   // Pix é fluxo online: o pedido criado leva à cobrança, não à confirmação.
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
@@ -91,6 +93,7 @@ test('pedido pago na entrega vai direto para a tela de sucesso, sem passar pelo 
   await expect(page.locator('#cartCtaBtn')).toHaveText('Efetuar pagamento');
 
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
 
   await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
   await expect(page.locator('#ordSuccessNumber')).toHaveText(`#${successOrder(1).order_number}`);
@@ -104,7 +107,9 @@ test('pedido pago na entrega vai direto para a tela de sucesso, sem passar pelo 
   expect(paymentRequests, 'pagamento na entrega não cria cobrança').toHaveLength(0);
 });
 
-test('double-click on Efetuar pagamento creates only ONE order', async ({ page }) => {
+// A trava de duplo-clique acompanhou o botão: quem cria o pedido agora é o
+// "Confirmar" da folha, e é nele que os dois cliques têm de virar um pedido só.
+test('double-click on Confirmar creates only ONE order', async ({ page }) => {
   // Hold the response open briefly so both clicks land while the request is in flight.
   const { orderRequests } = await mockApi(page, {
     onCreateOrder: async (route) => {
@@ -119,7 +124,8 @@ test('double-click on Efetuar pagamento creates only ONE order', async ({ page }
   await seedPickupSession(page);
   await selectPixAndReturnToCart(page);
 
-  const submitButton = page.locator('#cartCtaBtn');
+  await page.locator('#cartCtaBtn').click();
+  const submitButton = page.locator('#orderConfirmSheet .order-confirm-cta');
   await submitButton.click();
   await submitButton.click({ force: true }).catch(() => {}); // second click while disabled/in-flight
 
@@ -143,12 +149,14 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
   await selectPixAndReturnToCart(page);
 
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
 
   // First attempt failed: error shown, cart intact, button re-enabled.
   await expect(page.locator('#cartOrderError')).toBeVisible();
   await expect(page.locator('#cartCtaBtn')).toBeEnabled();
 
   await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
 
   expect(orderRequests).toHaveLength(2);
@@ -181,6 +189,7 @@ for (const [nome, status, detail] of [
     await selectPixAndReturnToCart(page);
 
     await page.locator('#cartCtaBtn').click();
+    await confirmOrderSheet(page);
 
     const error = page.locator('#cartOrderError');
     await expect(error).toBeVisible();

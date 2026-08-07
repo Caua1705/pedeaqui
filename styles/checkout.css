@@ -243,8 +243,12 @@
 /* O id na frente é por causa de #cartModal .cart-cta-btn{color:...!important}
    (styles/restaurant.css), a regra que dá ao botão a cor da marca: sem subir a
    especificidade, o rótulo não some e o texto fica atrás da bolinha. */
-#cartModal .order-confirm-cta.is-loading {
+/* Quem clareia enquanto espera é ESTE botão — foi ele que o cliente apertou, e
+   é dele que a resposta está vindo. "Alterar dados" continua inteiro: apagá-lo
+   fazia o aviso aparecer no botão errado. */
+#cartModal .order-confirm-panel .order-confirm-cta.is-loading {
   position: relative;
+  background: var(--brand-light) !important;
   color: transparent !important;
   pointer-events: none;
 }
@@ -284,7 +288,6 @@
 }
 
 .order-confirm-back:disabled {
-  opacity: 0.5;
   cursor: default;
 }
 

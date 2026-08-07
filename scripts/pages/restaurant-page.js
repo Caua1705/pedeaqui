@@ -2551,15 +2551,18 @@
       note.hidden = !note.textContent;
     }
 
-    // Mapa e texto do benefício são COPIADOS do que a sacola já renderizou. O
-    // mapa por economia (mesma URL, arquivo já baixado) e o benefício por
-    // verdade: o "3" é fixo no HTML hoje, e quando vier da API os dois lugares
-    // passam a mudar juntos sem ninguém precisar lembrar deste.
+    // O mapa aqui é SEMPRE o do alfinete, e não o que a sacola está mostrando:
+    // o widget dela troca para o mapa do cliente logado (a pessoa andando), que
+    // fala de quem é o cliente. Nesta linha o dado que está sendo conferido é
+    // para ONDE o pedido vai — o alfinete é o desenho desse dado. Com visitante
+    // é o mesmo arquivo do widget, então o navegador já o tem.
     const map = $('orderConfirmMapImage');
-    const cartMap = $('cartLocationImage');
-    const mapSource = cartMap?.getAttribute('src');
-    if (map && mapSource && map.getAttribute('src') !== mapSource) {
-      map.srcset = cartMap.srcset;
+    const mapStem = 'assets/icons/cart/cart-location-guest';
+    const mapSource = `${mapStem}@1x.webp`;
+    if (map && map.getAttribute('src') !== mapSource) {
+      // srcset junto com src: com os dois presentes quem decide é o srcset, e
+      // um src novo sozinho seria ignorado.
+      map.srcset = `${mapStem}@1x.webp 1x, ${mapStem}@2x.webp 2x`;
       map.src = mapSource;
     }
     const benefit = $('orderConfirmBenefitCopy');

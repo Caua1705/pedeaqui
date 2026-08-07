@@ -3391,11 +3391,14 @@
     // não pode virar mensagem de falha: o usuário tentaria de novo e criaria um
     // pedido duplicado. Na dúvida, seguimos para a tela de sucesso.
     try {
-      handleOrderCreated(response);
+      // O await não é decoração: quem chamou (o botão da folha) só devolve a
+      // bolinha quando a PRÓXIMA TELA está pronta. Sem ele, submitOrder
+      // resolvia assim que disparava o roteamento e o botão voltava ao normal
+      // no mesmo quadro, ainda com a cobrança em voo.
+      await handleOrderCreated(response);
     } catch (error) {
       logAppError('Pedido criado, mas falhou ao exibir a confirmação', error);
-      setOrderSubmitting(false);
-      closeModalImmediately('cartModal');
+      leaveCartAfterOrder();
       showOrderSuccess(response);
     }
   }
@@ -3413,18 +3416,16 @@
     }));
   }
 
-  // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
-  function handleOrderCreated(response) {
-    submittedOrder = response || null;
-    const items = orderItemsSnapshot();
-    // O tracking_token é gravado ANTES de qualquer renderização: ele é a única
-    // porta do visitante para o próprio pedido, e uma exceção mais adiante não
-    // pode ser o motivo de ele se perder.
-    rememberTrackingToken(response, items);
-    // Persistir/disparar evento não pode derrubar a confirmação: o pedido já
-    // existe, e uma falha aqui é de cache, não do pedido.
-    try { window.PedeAquiOrderState?.saveOrder?.(response); }
-    catch (error) { logAppError('Falha ao registrar o pedido localmente', error); }
+  /**
+   * Fecha a sacola e a folha e zera o carrinho — o carrinho só pode ser limpo
+   * aqui, depois de sucesso confirmado.
+   *
+   * Quem chama é sempre quem JÁ TEM a próxima tela pronta para abrir. Enquanto
+   * a cobrança está sendo criada a folha continua na frente, com a bolinha
+   * girando no botão: fechar a sacola antes deixaria a loja aparecendo por
+   * baixo no meio do caminho.
+   */
+  function leaveCartAfterOrder() {
     cart = [];
     selectedCoupon = null;
     selectedCouponPreview = null;
@@ -3437,18 +3438,37 @@
     closeOrderConfirm();
     hideCartOrderError();
     closeModalImmediately('cartModal');
-    routeCreatedOrder(response, items);
+  }
+
+  // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
+  function handleOrderCreated(response) {
+    submittedOrder = response || null;
+    const items = orderItemsSnapshot();
+    // O tracking_token é gravado ANTES de qualquer renderização: ele é a única
+    // porta do visitante para o próprio pedido, e uma exceção mais adiante não
+    // pode ser o motivo de ele se perder.
+    rememberTrackingToken(response, items);
+    // Persistir/disparar evento não pode derrubar a confirmação: o pedido já
+    // existe, e uma falha aqui é de cache, não do pedido.
+    try { window.PedeAquiOrderState?.saveOrder?.(response); }
+    catch (error) { logAppError('Falha ao registrar o pedido localmente', error); }
+    return routeCreatedOrder(response, items);
   }
 
   // O backend decide o caminho, não a UI: `payment_flow` vem na resposta da
   // criação. Pagamento na entrega segue direto para a confirmação, exatamente
   // como sempre; pagamento online precisa da cobrança antes de o pedido valer.
-  function routeCreatedOrder(response, items) {
+  async function routeCreatedOrder(response, items) {
     if (!isOnlinePaymentFlow(response)) {
+      leaveCartAfterOrder();
       showOrderSuccess(response);
       return;
     }
-    openPixPayment(response, { items });
+    // A cobrança é criada com a folha ainda na frente; a sacola só sai de cena
+    // no quadro em que a tela do Pix entra.
+    const session = await preparePixPayment(response, { items });
+    leaveCartAfterOrder();
+    presentPixPayment(session);
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -3789,13 +3809,24 @@
   }
 
   /**
-   * Abre a tela e dispara a criação da cobrança.
+   * Monta a sessão, cria a cobrança e deixa a tela no estado FINAL — pronta,
+   * paga ou em erro. Não abre nada.
+   *
+   * A tela de "Gerando o código de pagamento..." saiu daqui: era uma tela cheia
+   * inteira para anunciar a espera de uma requisição, no meio de um caminho em
+   * que o cliente já tinha um botão à sua frente. A espera passou para esse
+   * botão — o "Confirmar" da folha, o da barra de pagamento pendente e o
+   * "Tentar novamente" do erro —, e a tela do Pix entra pela lateral já com o
+   * código na mão.
+   *
    * @param {object} order resposta de POST /orders (ou entrada guardada com os mesmos campos)
    * @param {object} [options]
    * @param {Array}  [options.items] foto das linhas; sem ela vale a que ficou
    *   guardada com o token (o caso de quem recarregou a página)
+   * @returns {Promise<object>} a sessão preparada, para presentPixPayment()
+   *   conferir que ela ainda é a corrente
    */
-  function openPixPayment(order, { items } = {}) {
+  async function preparePixPayment(order, { items } = {}) {
     const trackingToken = String(order?.tracking_token || '').trim();
     pixSession = {
       order,
@@ -3824,9 +3855,8 @@
     hidePixToast();
     closePixSheets();
     updatePixCountdown();
-    setPixState('loading');
-    openModal('pixPaymentModal');
 
+    const session = pixSession;
     if (!trackingToken) {
       // Sem token não há rota: nem cobrança, nem acompanhamento. Retentar não
       // resolveria nada, então o botão de retry não aparece.
@@ -3834,17 +3864,32 @@
         'Seu pedido foi registrado, mas não recebemos o código de acompanhamento necessário para o pagamento online. Procure o restaurante informando o número do pedido.',
         { canRetry: false }
       );
-      return Promise.resolve();
+      return session;
     }
 
-    return startPixCharge();
+    await startPixCharge();
+    return session;
+  }
+
+  /**
+   * Abre a tela, já com o estado decidido por preparePixPayment().
+   * @param {object} [session] a sessão de quem preparou; se ela não for mais a
+   *   corrente, o cliente saiu no meio da espera e não há tela para abrir.
+   */
+  function presentPixPayment(session) {
+    if (session && pixSession !== session) return;
+    openModal('pixPaymentModal');
+  }
+
+  /** Prepara e abre — o caminho de quem não tem outra tela para fechar antes. */
+  async function openPixPayment(order, options) {
+    presentPixPayment(await preparePixPayment(order, options));
   }
 
   async function startPixCharge() {
     const session = pixSession;
     if (!session?.trackingToken) return;
 
-    setPixState('loading');
     let payment;
     try {
       payment = await window.PedeAquiOrderService.startOrderPayment(getRestaurantSlug(), session.trackingToken);
@@ -4128,12 +4173,16 @@
     if (!session?.trackingToken) return;
     session.stopped = false;
     session.pollFailures = 0;
-    setPixState('loading');
+    // A consulta espera no próprio botão, como as outras: trocar a tela por uma
+    // de carregamento tiraria da frente o aviso que explica por que ele está ali.
+    const button = $('pixCheckNowBtn');
+    button?.classList.add('is-loading');
 
     let detail;
     try {
       detail = await window.PedeAquiOrderService.trackOrder(getRestaurantSlug(), session.trackingToken);
     } catch (error) {
+      button?.classList.remove('is-loading');
       if (pixSession !== session) return;
       logAppError('Falha ao verificar o pagamento', error);
       showPixError(
@@ -4142,6 +4191,7 @@
       );
       return;
     }
+    button?.classList.remove('is-loading');
     if (pixSession !== session) return;
 
     updateTrackingEntry(session.trackingToken, {
@@ -4182,10 +4232,19 @@
     showOrderSuccess(merged);
   }
 
-  function retryPixPayment() {
+  async function retryPixPayment() {
     if (!pixSession) return;
     pixSession.stopped = false;
-    startPixCharge();
+    // A tela de erro continua na frente enquanto a tentativa acontece: a
+    // espera cabe no próprio botão, e trocar a tela por uma de carregamento
+    // faria o cliente perder de vista o que deu errado.
+    const button = $('pixRetryBtn');
+    button?.classList.add('is-loading');
+    try {
+      await startPixCharge();
+    } finally {
+      button?.classList.remove('is-loading');
+    }
   }
 
   /* ---------------- Folhas da tela ---------------- */
@@ -4287,16 +4346,26 @@
     }
   }
 
-  function resumePendingPayment() {
+  async function resumePendingPayment() {
     const pending = pendingOnlinePayment();
     if (!pending) {
       renderPendingPaymentBar();
       return;
     }
-    $('pendingPaymentBar')?.setAttribute('hidden', '');
-    // Chamar o endpoint de pagamento de novo é seguro: o backend devolve a
-    // cobrança corrente do pedido em vez de criar outra.
-    openPixPayment(pending);
+    // A barra fica no lugar, girando, até a tela estar pronta. Escondê-la no
+    // clique — como antes, quando havia uma tela de carregamento para receber
+    // o cliente — deixaria a loja sem nenhum sinal de que algo está vindo.
+    const bar = $('pendingPaymentBar');
+    const button = bar?.querySelector('.pending-payment-main');
+    button?.classList.add('is-loading');
+    try {
+      // Chamar o endpoint de pagamento de novo é seguro: o backend devolve a
+      // cobrança corrente do pedido em vez de criar outra.
+      await openPixPayment(pending);
+    } finally {
+      button?.classList.remove('is-loading');
+      bar?.setAttribute('hidden', '');
+    }
   }
 
   function dismissPendingPayment() {

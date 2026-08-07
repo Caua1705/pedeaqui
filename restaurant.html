@@ -1003,12 +1003,10 @@
     </div>
 
     <div class="cart-scroll pix-body">
-      <!-- Gerando a cobrança no gateway -->
-      <section class="pix-state" data-pix-state="loading">
-        <div class="pix-spinner" aria-hidden="true"></div>
-        <p class="pix-state-title">Gerando o código de pagamento...</p>
-        <p class="pix-state-text">Seu pedido já foi registrado. Estamos criando a cobrança.</p>
-      </section>
+      <!-- Não existe estado "gerando o código" aqui: esta tela só abre depois
+           que a cobrança está resolvida. A espera acontece no botão que trouxe
+           o cliente até ela (confirmar o pedido, retomar o pagamento pendente
+           ou tentar novamente), e não numa tela cheia dedicada a esperar. -->
 
       <!-- Cobrança pronta: copia-e-cola, prazo e conferência do pedido.
            A ordem dos blocos é a da referência de mercado (ilustração, título,
@@ -1119,7 +1117,7 @@
         </div>
         <p class="pix-state-title">Ainda não recebemos o pagamento</p>
         <p class="pix-state-text">Paramos de verificar automaticamente. Se você já pagou, a confirmação pode levar alguns instantes — toque em Verificar agora.</p>
-        <button class="cart-cta-btn u-max-w-320" type="button" data-act-click='checkPixStatusNow'>Verificar agora</button>
+        <button class="cart-cta-btn u-max-w-320" type="button" id="pixCheckNowBtn" data-act-click='checkPixStatusNow'>Verificar agora</button>
         <button class="pix-secondary-btn" type="button" data-act-click='closePixPayment'>Voltar para a loja</button>
       </section>
     </div>

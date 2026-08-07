@@ -902,43 +902,49 @@
       <div class="order-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="orderConfirmTitle" data-act-click='["$stop"]'>
         <h3 class="order-confirm-title" id="orderConfirmTitle">Confirmar sem benefício</h3>
 
-        <div class="order-confirm-row">
-          <span class="order-confirm-map" aria-hidden="true">
-            <!-- src/srcset vêm do JS, com o mesmo caminho do mapa da sacola:
-                 mesma URL, então o navegador já tem o arquivo. -->
-            <img id="orderConfirmMapImage" alt="" width="56" height="56" decoding="async">
-          </span>
-          <span class="order-confirm-copy">
-            <span class="order-confirm-label" id="orderConfirmWhereLabel">Entrega</span>
-            <strong id="orderConfirmWhereText"></strong>
-            <span class="order-confirm-note" id="orderConfirmWhereNote" hidden></span>
-          </span>
-        </div>
-
-        <div class="order-confirm-benefit">
-          <button class="cart-benefit-action" type="button" data-act-click='openConfirmBenefits'>
-            <span class="cart-benefit-icon" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 4.6 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 4.6 12 7 12 7z"/></svg>
+        <!-- O título é uma faixa de 414x70 com o fio encostando nas bordas, como
+             o cabeçalho da tela de pagamento; o resto da folha (414x392) mora
+             neste corpo, que é quem tem as margens laterais. Sem os dois
+             separados o fio do título nasceria recuado junto com o conteúdo. -->
+        <div class="order-confirm-body">
+          <div class="order-confirm-row">
+            <span class="order-confirm-map" aria-hidden="true">
+              <!-- src/srcset vêm do JS, com o mesmo caminho do mapa da sacola:
+                   mesma URL, então o navegador já tem o arquivo. -->
+              <img id="orderConfirmMapImage" alt="" width="64" height="64" decoding="async">
             </span>
-            <span class="cart-benefit-copy" id="orderConfirmBenefitCopy">3 benef&iacute;cios para voc&ecirc;</span>
-            <span class="cart-benefit-add">Adicionar</span>
-          </button>
-        </div>
+            <span class="order-confirm-copy">
+              <span class="order-confirm-label" id="orderConfirmWhereLabel">Entrega</span>
+              <strong id="orderConfirmWhereText"></strong>
+              <span class="order-confirm-note" id="orderConfirmWhereNote" hidden></span>
+            </span>
+          </div>
 
-        <div class="order-confirm-row order-confirm-row--payment">
-          <span class="order-confirm-payment-icon" aria-hidden="true">
-            <img class="order-confirm-pix-icon" id="orderConfirmPixIcon" src="assets/icons/payment/pix.png" alt="" hidden>
-            <svg id="orderConfirmCardIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
-          </span>
-          <span class="order-confirm-copy">
-            <span class="order-confirm-label" id="orderConfirmPaymentTitle">Pagamento online</span>
-            <strong id="orderConfirmPaymentDetail">PIX</strong>
-          </span>
-          <strong class="order-confirm-total" id="orderConfirmTotal">R$ 0,00</strong>
-        </div>
+          <div class="order-confirm-benefit">
+            <button class="cart-benefit-action" type="button" data-act-click='openConfirmBenefits'>
+              <span class="cart-benefit-icon" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 4.6 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 4.6 12 7 12 7z"/></svg>
+              </span>
+              <span class="cart-benefit-copy" id="orderConfirmBenefitCopy">3 benef&iacute;cios para voc&ecirc;</span>
+              <span class="cart-benefit-add">Adicionar</span>
+            </button>
+          </div>
 
-        <button class="cart-cta-btn order-confirm-cta" type="button" id="orderConfirmCta" data-act-click='confirmOrderFromSheet'>Confirmar sem benefício</button>
-        <button class="order-confirm-back" type="button" id="orderConfirmBack" data-act-click='closeOrderConfirm'>Alterar dados</button>
+          <div class="order-confirm-row order-confirm-row--payment">
+            <span class="order-confirm-payment-icon" aria-hidden="true">
+              <img class="order-confirm-pix-icon" id="orderConfirmPixIcon" src="assets/icons/payment/pix.png" alt="" hidden>
+              <svg id="orderConfirmCardIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6.5 15h3"/><path d="M11.5 15h2"/></svg>
+            </span>
+            <span class="order-confirm-copy">
+              <span class="order-confirm-label" id="orderConfirmPaymentTitle">Pagamento online</span>
+              <strong id="orderConfirmPaymentDetail">PIX</strong>
+            </span>
+            <strong class="order-confirm-total" id="orderConfirmTotal">R$ 0,00</strong>
+          </div>
+
+          <button class="cart-cta-btn order-confirm-cta" type="button" id="orderConfirmCta" data-act-click='confirmOrderFromSheet'>Confirmar sem benefício</button>
+          <button class="order-confirm-back" type="button" id="orderConfirmBack" data-act-click='closeOrderConfirm'>Alterar dados</button>
+        </div>
       </div>
     </div>
 

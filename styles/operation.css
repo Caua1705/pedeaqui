@@ -1766,20 +1766,17 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   line-height:15px!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
-  color:#858585!important;
+  color:#787878!important;
 }
 .mob-bottom-nav .mob-nav-item .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
-  stroke-width:2!important;
+  stroke-width:1!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
 .mob-bottom-nav .mob-nav-item:not(.active) svg{
   color:#B0B0B0!important;
   stroke:#B0B0B0!important;
-}
-.mob-bottom-nav .mob-nav-icon--home{
-  stroke-width:.9!important;
 }
 .mob-bottom-nav .mob-nav-item.active,
 .mob-bottom-nav .mob-nav-item.active .nav-icon,

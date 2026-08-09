@@ -1762,7 +1762,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
 .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
   margin-top:9px!important;
   font-size:12px!important;
-  font-weight:600!important;
+  font-weight:500!important;
   line-height:15px!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){

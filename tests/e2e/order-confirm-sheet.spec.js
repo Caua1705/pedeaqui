@@ -100,7 +100,7 @@ test('a espera da cobrança acontece no botão, sem tela de carregamento no meio
   // Terminada a espera, a tela do Pix entra já com o código.
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/, { timeout: 15_000 });
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
-  await expect(page.locator('#cartModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
   await expect(page.locator('#orderConfirmSheet')).not.toHaveClass(/active/);
 });
 
@@ -110,7 +110,7 @@ test('a tela do Pix entra pela lateral, como as outras telas cheias', async ({ p
   await page.locator('#cartCtaBtn').click();
 
   // O contrato da entrada lateral, e não o flagrante da animação em curso:
-  // perseguir getAnimations() é uma corrida contra 300 ms de transição, e quem
+  // perseguir getAnimations() é uma corrida contra a transição, e quem
   // chega atrasado lê "não animou" numa tela que animou.
   const panel = page.locator('#pixPaymentModal .modal');
   const transform = () => panel.evaluate((element) => getComputedStyle(element).transform);
@@ -120,6 +120,12 @@ test('a tela do Pix entra pela lateral, como as outras telas cheias', async ({ p
   });
   expect(transition.property).toContain('transform');
   expect(transition.duration).not.toBe('0s');
+  expect(
+    await page.locator('#pixPaymentModal').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { opacity: style.opacity, duration: style.transitionDuration };
+    })
+  ).toEqual({ opacity: '1', duration: '0s' });
 
   // Fechada, a tela espera FORA da viewport, à direita: uma translação em x.
   const closed = await transform();
@@ -129,8 +135,14 @@ test('a tela do Pix entra pela lateral, como as outras telas cheias', async ({ p
 
   await page.locator('#orderConfirmSheet .order-confirm-cta').click();
   await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
+  // Enquanto o Pix ainda atravessa a viewport, a sacola continua atrás dele:
+  // assim a faixa ainda descoberta nunca mostra a página da loja.
+  expect(
+    await page.locator('#cartModal').evaluate((element) => element.classList.contains('active'))
+  ).toBe(true);
   // E termina no lugar — o deslocamento some ao fim da transição.
   await expect.poll(transform).toBe('matrix(1, 0, 0, 1, 0, 0)');
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
 });
 
 test('falha ao criar o pedido desce a folha e mostra o erro na sacola', async ({ page }) => {

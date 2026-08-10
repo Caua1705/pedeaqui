@@ -113,7 +113,7 @@ test('a cobrança ocupa a tela inteira, sem cara de pop-up sobre a loja', async 
   await expect(page.locator('#pixPaymentModal .sheet-drag')).toHaveCount(0);
 });
 
-test('o rodapé traz a ação principal, full-width e na cor da marca', async ({ page }) => {
+test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', async ({ page }) => {
   await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
@@ -123,10 +123,28 @@ test('o rodapé traz a ação principal, full-width e na cor da marca', async ({
   await expect(cta).toBeVisible();
   await expect(cta).toHaveText('Copiar código');
 
-  // Full-width: ocupa a largura do rodapé, descontado o respiro dele.
+  // Mesmo padrão dos CTAs da sacola e da confirmação do pedido.
   const ctaBox = await cta.boundingBox();
   const footerBox = await page.locator('#pixFooter').boundingBox();
-  expect(ctaBox.width).toBeGreaterThan(footerBox.width - 40);
+  expect(ctaBox.width).toBeCloseTo(374, 1);
+  expect(ctaBox.height).toBeCloseTo(45, 1);
+  expect(ctaBox.x - footerBox.x).toBeCloseTo(20, 1);
+  expect(
+    await cta.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        borderRadius: style.borderRadius,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        lineHeight: style.lineHeight
+      };
+    })
+  ).toEqual({
+    borderRadius: '10px',
+    fontSize: '12.25px',
+    fontWeight: '650',
+    lineHeight: '18px'
+  });
 
   // Cor da MARCA, não uma cor fixa. A prova é repintar o tenant e ver a tela
   // inteira acompanhar: se algum destes tivesse cor chumbada, ficaria laranja
@@ -303,6 +321,39 @@ test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nad
     await expect(confirm).toBeVisible();
     await expect(page.locator('#pixExitTitle')).toHaveText('Atenção');
 
+    if (label === 'Voltar') {
+      const panelBox = await confirm.locator('.pix-sheet-panel').boundingBox();
+      const primaryBox = await confirm.locator('.pix-sheet-primary').boundingBox();
+      const ghostBox = await confirm.locator('.pix-sheet-ghost').boundingBox();
+      expect(panelBox.width).toBeCloseTo(414, 1);
+      expect(panelBox.height).toBeCloseTo(241, 1);
+      expect(primaryBox.width).toBeCloseTo(374, 1);
+      expect(primaryBox.height).toBeCloseTo(45, 1);
+      expect(ghostBox.width).toBeCloseTo(374, 1);
+      expect(ghostBox.height).toBeCloseTo(45, 1);
+      expect(
+        await confirm.locator('.pix-sheet-panel').evaluate((element) => {
+          const style = getComputedStyle(element);
+          return { background: style.backgroundColor, radius: style.borderTopLeftRadius };
+        })
+      ).toEqual({ background: 'rgb(247, 245, 243)', radius: '12px' });
+
+      const words = await confirm.locator('.pix-sheet-text').evaluate((element) => {
+        const node = element.firstChild;
+        const text = node.textContent;
+        return Array.from(text.matchAll(/\S+/g), match => {
+          const range = document.createRange();
+          range.setStart(node, match.index);
+          range.setEnd(node, match.index + match[0].length);
+          return { word: match[0], top: Math.round(range.getBoundingClientRect().top) };
+        });
+      });
+      const lineTops = [...new Set(words.map(({ top }) => top))];
+      expect(lineTops).toHaveLength(2);
+      expect(words.find(({ word }) => word === 'cancelado').top).toBe(lineTops[0]);
+      expect(words.find(({ word }) => word === 'permanentemente').top).toBe(lineTops[1]);
+    }
+
     // "Voltar para PIX" só desce a folha: a tela continua na cobrança e
     // nenhuma requisição nova é feita.
     await page.getByRole('button', { name: 'Voltar para PIX' }).click();
@@ -314,8 +365,8 @@ test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nad
   expect(paymentRequests).toHaveLength(1);
 });
 
-test('"Cancelar pedido" sai da cobrança sem um segundo aviso', async ({ page }) => {
-  await mockApi(page, { orderResponse: pixOrder });
+test('"Cancelar pedido" volta lateralmente à sacola sem criar outro pedido', async ({ page }) => {
+  const { orderRequests, paymentRequests } = await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
@@ -325,8 +376,26 @@ test('"Cancelar pedido" sai da cobrança sem um segundo aviso', async ({ page })
 
   await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
   await expect(page.locator('#pixExitConfirm')).toBeHidden();
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#cartCtaBtn')).toHaveText('Efetuar pagamento');
+  await expect(page.locator('#cartList')).toContainText('H2O');
   // Nenhum aviso extra fica na tela depois da saída.
   await expect(page.locator('#pixToast')).toBeHidden();
+
+  // O CTA restaura a confirmação com o valor antes de retomar a cobrança.
+  await page.locator('#cartCtaBtn').click();
+  await expect(page.locator('#orderConfirmSheet')).toHaveClass(/active/);
+  await expect(page.locator('#orderConfirmTitle')).toHaveText('Confirmar sem benefício');
+  await expect(page.locator('#orderConfirmTotal')).toHaveText(
+    await page.locator('#csTotal').innerText()
+  );
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+
+  // Confirmar reutiliza o pedido e a cobrança já existentes — sem duplicar.
+  await page.locator('#orderConfirmSheet .order-confirm-cta').click();
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
+  expect(orderRequests).toHaveLength(1);
+  expect(paymentRequests).toHaveLength(1);
 });
 
 test('o contador e a barra de progresso andam para trás juntos', async ({ page }) => {

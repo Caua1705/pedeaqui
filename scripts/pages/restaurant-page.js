@@ -2486,6 +2486,13 @@
   }
 
   function handleCartCta() {
+    // O pedido Pix já existe, mas a confirmação continua fazendo parte do
+    // fluxo: ela volta a mostrar destino, benefício, pagamento e valor antes
+    // de reabrir a cobrança existente.
+    if (hasCreatedCartPixPayment()) {
+      openOrderConfirm();
+      return;
+    }
     const address = currentCartAddress();
     const hasAddress = Boolean(address?.summary || addressSummary(address));
     const needsAddress = deliveryType !== 'pickup' && !hasAddress;
@@ -2616,6 +2623,11 @@
 
   async function confirmOrderFromSheet() {
     if (orderSubmitInFlight) return;
+    if (hasCreatedCartPixPayment()) {
+      closeOrderConfirm();
+      resumeCreatedCartPixPayment();
+      return;
+    }
     setOrderConfirmLoading(true);
     try {
       await submitOrder();
@@ -3428,7 +3440,7 @@
    * girando no botão: fechar a sacola antes deixaria a loja aparecendo por
    * baixo no meio do caminho.
    */
-  function leaveCartAfterOrder() {
+  function leaveCartAfterOrder({ confirmationAlreadyClosed = false } = {}) {
     cart = [];
     selectedCoupon = null;
     selectedCouponPreview = null;
@@ -3438,7 +3450,7 @@
     resetOrderIdempotencyKey(); // próximo pedido = chave nova
     updateCartUI();
     setOrderSubmitting(false);
-    closeOrderConfirm();
+    if (!confirmationAlreadyClosed) closeOrderConfirm();
     hideCartOrderError();
     closeModalImmediately('cartModal');
   }
@@ -3469,8 +3481,11 @@
     }
     // A cobrança é criada com a folha ainda na frente; a sacola só sai de cena
     // no quadro em que a tela do Pix entra.
-    const session = await preparePixPayment(response, { items });
-    leaveCartAfterOrder();
+    const session = await preparePixPayment(response, { items, ownsCart: true });
+    // A confirmação deixa de ser interativa, mas a sacola permanece visível
+    // atrás enquanto a tela Pix desliza por cima dela.
+    setOrderSubmitting(false);
+    closeOrderConfirm();
     presentPixPayment(session);
   }
 
@@ -3593,6 +3608,7 @@
   // Um timer por folha (confirmação de saída, "Como funciona"): o [hidden] só
   // volta quando a animação de descida termina.
   const pixSheetTimers = new Map();
+  const PIX_EXIT_SHEET_TRANSITION_MS = 700;
 
   const isOnlinePaymentFlow = order =>
     String(order?.payment_flow || '').trim().toLowerCase() === 'online';
@@ -3829,10 +3845,11 @@
    * @returns {Promise<object>} a sessão preparada, para presentPixPayment()
    *   conferir que ela ainda é a corrente
    */
-  async function preparePixPayment(order, { items } = {}) {
+  async function preparePixPayment(order, { items, ownsCart = false } = {}) {
     const trackingToken = String(order?.tracking_token || '').trim();
     pixSession = {
       order,
+      ownsCart,
       trackingToken,
       payment: null,
       pollTimer: null,
@@ -3882,6 +3899,24 @@
   function presentPixPayment(session) {
     if (session && pixSession !== session) return;
     openModal('pixPaymentModal');
+  }
+
+  function hasCreatedCartPixPayment() {
+    const session = pixSession;
+    return Boolean(
+      session?.ownsCart
+      && session.payment
+      && paymentStatusKind(session.order?.payment_status) === 'pending'
+    );
+  }
+
+  function resumeCreatedCartPixPayment() {
+    if (!hasCreatedCartPixPayment()) return false;
+    const session = pixSession;
+    session.stopped = false;
+    startPixPolling();
+    presentPixPayment(session);
+    return true;
   }
 
   /** Prepara e abre — o caminho de quem não tem outra tela para fechar antes. */
@@ -4231,6 +4266,7 @@
     renderPendingPaymentBar();
     hidePixToast();
     closePixSheets();
+    if (pixSession?.ownsCart) leaveCartAfterOrder({ confirmationAlreadyClosed: true });
     closeModalImmediately('pixPaymentModal');
     showOrderSuccess(merged);
   }
@@ -4272,7 +4308,8 @@
       sheet.hidden = true;
       return;
     }
-    pixSheetTimers.set(id, setTimeout(() => { sheet.hidden = true; }, 300));
+    const hideDelay = id === 'pixExitConfirm' ? PIX_EXIT_SHEET_TRANSITION_MS + 20 : 300;
+    pixSheetTimers.set(id, setTimeout(() => { sheet.hidden = true; }, hideDelay));
   }
 
   // Passo a passo do pagamento. Fica fora da tela principal porque é ajuda, não
@@ -4297,14 +4334,42 @@
     closePixHowTo({ animate: false });
   }
 
-  /** "Cancelar pedido": sai direto, sem um segundo aviso. */
+  /** "Cancelar pedido": volta à sacola quando a cobrança nasceu dela. */
   function confirmPixExit() {
+    if (pixSession?.ownsCart && $('cartModal')?.classList.contains('active')) {
+      returnPixToCart();
+      return;
+    }
     closePixSheets();
     closePixPayment();
   }
 
+  function returnPixToCart() {
+    stopPixPolling();
+    hidePixToast();
+    const panel = document.querySelector('#pixPaymentModal .modal');
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      panel?.removeEventListener('transitionend', onTransitionEnd);
+      closePixSheets();
+      $('cartCtaBtn')?.focus({ preventScroll: true });
+    };
+    const onTransitionEnd = event => {
+      if (event.target === panel && event.propertyName === 'transform') finish();
+    };
+    panel?.addEventListener('transitionend', onTransitionEnd);
+    closeModalId('pixPaymentModal');
+    setTimeout(finish, 650);
+  }
+
   /** Sai da tela sem cancelar nada: o pedido e o token continuam guardados. */
   function closePixPayment() {
+    if (pixSession?.ownsCart && $('cartModal')?.classList.contains('active')) {
+      returnPixToCart();
+      return;
+    }
     stopPixPolling();
     hidePixToast();
     closePixSheets();

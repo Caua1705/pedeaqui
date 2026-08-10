@@ -4941,6 +4941,7 @@ body.menu-tab .search-cat{
   top:auto!important;
   z-index:auto!important;
   border:0!important;
+  border-top:1px solid #dedede!important;
   border-bottom:0!important;
   box-shadow:none!important;
 }

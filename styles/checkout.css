@@ -24,8 +24,8 @@
   visibility: hidden;
   pointer-events: none;
   transition:
-    visibility 0s linear 0.5s,
-    background 0.18s ease;
+    visibility 0s linear 0.9s,
+    background 0.45s ease;
 }
 
 .order-confirm:not(.active) {
@@ -37,7 +37,7 @@
   pointer-events: auto;
   transition:
     visibility 0s linear 0s,
-    background 0.18s ease;
+    background 0.45s ease;
 }
 
 .order-confirm-panel {
@@ -57,7 +57,7 @@
   transform: translate3d(0, 110%, 0);
   backface-visibility: hidden;
   will-change: transform;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .order-confirm.active .order-confirm-panel {
@@ -86,12 +86,12 @@
   margin: 0;
   /* Os 4px em cima descem o texto 2px dentro da faixa: é onde a referência põe
      a linha de base, e centrar sozinho a deixa alta demais. */
-  padding: 4px 20px 0;
+  padding: 2px 20px 0;
   border-bottom: 1px solid #e5e5e5;
   font-size: 16px;
   line-height: 21px;
-  font-weight: 600;
-  color: #404040;
+  font-weight: 550;
+  color: #383838;
   text-align: center;
 }
 
@@ -150,6 +150,15 @@
   color: var(--text-muted);
 }
 
+#orderConfirmWhereLabel {
+  font-weight: 500;
+  color: #858585;
+}
+
+.order-confirm-row:not(.order-confirm-row--payment) .order-confirm-copy {
+  transform: translateY(-2px);
+}
+
 .order-confirm-copy strong {
   font-size: 12px;
   line-height: 18px;
@@ -177,6 +186,17 @@
 
 .order-confirm-benefit {
   width: 100%;
+}
+
+#cartModal .order-confirm-panel .cart-benefit-action {
+  width: 374px !important;
+  max-width: 100% !important;
+  height: 46px !important;
+  min-height: 46px !important;
+}
+
+#cartModal .order-confirm-panel .cart-benefit-add {
+  font-weight: 700 !important;
 }
 
 /* O par "Pagamento online / PIX" anda junto — não é rótulo e endereço, é um
@@ -218,12 +238,18 @@
   color: #595959;
 }
 
+#orderConfirmPaymentTitle {
+  position: relative;
+  top: 1px;
+}
+
 .order-confirm-total {
   flex: 0 0 auto;
   font-size: 14px;
   line-height: 18px;
   font-weight: 700;
   color: #595959;
+  transform: translate(-5px, 8px);
 }
 
 /* O botão é o mesmo componente do rodapé da sacola, e lá ele vem com
@@ -234,6 +260,7 @@
 #cartModal .order-confirm-panel .order-confirm-cta {
   margin-top: 30px !important;
   transform: none !important;
+  font-size: 12.25px !important;
 }
 
 /* Enquanto o pedido está sendo criado o botão não some nem troca de texto: ele
@@ -285,6 +312,7 @@
   line-height: 16px;
   font-weight: 700;
   cursor: pointer;
+  transform: translateY(2px);
 }
 
 .order-confirm-back:disabled {

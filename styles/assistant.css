@@ -3325,21 +3325,43 @@ body:has(#mobViewAssistant.active) .assistant-toast{
    MENU INFERIOR — quatro abas com rótulo e um botão central sem rótulo.
 
    É o padrão da referência que o app copia. Os quatro rótulos ficam; o item do
-   meio é um botão circular destacado, sem texto, elevado acima da linha da
-   barra.
+   meio é um botão circular destacado, sem texto.
 
-   GEOMETRIA: o botão sai do fluxo (absoluto, centrado na barra, que é fixed) e
-   um slot vazio de 56px guarda o lugar dele na régua — sem o slot, as abas 2 e 3
-   se encostariam no centro e ficariam por baixo do círculo, engolindo o toque.
+   RÉGUA DE CINCO COLUNAS IGUAIS: as quatro abas e o slot central dividem a
+   barra em cinco fatias do mesmo tamanho, com 8px de respiro nas pontas. As
+   camadas anteriores abriam `gap:0 36px` entre irmãos e reservavam 56px fixos
+   no meio — o resultado era o oposto do pretendido: Início e Perfil colavam na
+   borda da tela e Cardápio/Clube ficavam jogados longe do círculo, com o vão
+   central medindo o dobro dos laterais. Com colunas iguais os cinco centros
+   ficam equidistantes, que é o que a referência mostra.
+
+   O botão sai do fluxo (absoluto, centrado na barra, que é fixed) e o slot
+   guarda o lugar dele na régua — sem o slot, as abas 2 e 3 se encostariam no
+   centro e ficariam por baixo do círculo, engolindo o toque.
 
    Os quatro rótulos continuam com transform zerado: os empurrõezinhos por item
-   (+10, +3, -14, -12px, espalhados por utilities.css e operation.css) foram
-   calibrados para uma régua de CINCO caixas de larguras diferentes. Com quatro
-   irmãos iguais mais um slot, eles voltariam a desalinhar — a compensação certa
-   agora é o slot, não o empurrão.
+   (+20, +14, -14, -20px, espalhados por utilities.css e operation.css) foram
+   calibrados para uma régua irregular. Sobre cinco colunas iguais eles só
+   voltariam a desalinhar — a compensação certa agora é a coluna, não o empurrão.
    ============================================================ */
+/* Pelo id: utilities.css declara `gap:0 36px` numa lista que inclui
+   `body.home-tab .mob-bottom-nav` (0,2,0), e uma `.mob-bottom-nav` solta
+   (0,1,0) perdia mesmo vindo depois. O id encerra a discussão. */
+#mobBottomNav,
+.mob-bottom-nav{
+  /* Zera o gap e devolve o espaço às colunas; o respiro vira padding da barra. */
+  gap:0!important;
+  justify-content:space-between!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+}
+/* `:not(.active)` entra na lista de propósito: utilities.css devolve
+   `flex:0 0 auto` por esse seletor (0,3,0) e ele passava por cima de um
+   `.mob-nav-item` solto (0,2,0), deixando as abas encolhidas no conteúdo. */
 .mob-bottom-nav .mob-nav-item,
 .mob-bottom-nav .mob-nav-item.active,
+.mob-bottom-nav .mob-nav-item:not(.active),
+.mob-bottom-nav .mob-nav-center-slot,
 .mob-bottom-nav #mobNavHome,
 .mob-bottom-nav #mobNavMenu,
 .mob-bottom-nav #mobNavOrders,
@@ -3354,30 +3376,28 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   margin-left:0!important;
   margin-right:0!important;
 }
-.mob-bottom-nav .mob-nav-center-slot{
-  flex:0 0 56px!important;
-  width:56px!important;
-  align-self:stretch!important;
-}
 .mob-bottom-nav .mob-nav-assistant-btn{
   position:absolute!important;
   left:50%!important;
-  /* O centro do círculo (48px) casa com o centro ÓPTICO do ícone+rótulo dos
-     quatro irmãos, não com o centro geométrico da barra: rótulo abaixo do
-     ícone puxa esse centro para cima, e -10px (calibrado só pela barra)
-     deixava o círculo boiando acima da régua em vez de sentado nela. */
-  top:6px!important;
+  /* Centrado no MIOLO da barra (top/bottom + margem automática), não numa
+     distância fixa do topo: a área útil é a altura menos o safe-area, e o
+     `bottom` a desconta sozinho em qualquer aparelho. Ancorar no centro óptico
+     dos ícones deixava o círculo boiando acima da régua; na referência ele
+     senta no centro do bloco ícone+rótulo, que é o centro da barra. */
+  top:0!important;
+  bottom:var(--safe-bottom)!important;
+  margin:auto 0!important;
   transform:translateX(-50%)!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  flex:0 0 48px!important;
-  width:48px!important;
-  min-width:48px!important;
-  max-width:48px!important;
-  height:48px!important;
-  min-height:48px!important;
-  max-height:48px!important;
+  flex:0 0 40px!important;
+  width:40px!important;
+  min-width:40px!important;
+  max-width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  max-height:40px!important;
   padding:0!important;
   border:0!important;
   border-radius:50%!important;
@@ -3396,8 +3416,9 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   background:rgba(var(--brand-primary-rgb), .20)!important;
 }
 .mob-bottom-nav .mob-nav-assistant-btn .mob-nav-icon--assistant{
-  width:22px!important;
-  height:22px!important;
+  /* 19 dentro de 40 guarda a mesma proporção que o ícone tinha em 48. */
+  width:19px!important;
+  height:19px!important;
   color:var(--brand-primary)!important;
   stroke:var(--brand-primary)!important;
 }

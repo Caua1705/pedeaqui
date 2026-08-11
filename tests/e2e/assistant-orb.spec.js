@@ -221,7 +221,11 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
     const rect = el.getBoundingClientRect();
     const style = getComputedStyle(el);
     const icon = el.querySelector('.mob-nav-icon').getBoundingClientRect();
+    const mean = list => list.reduce((a, b) => a + b, 0) / list.length;
     const iconCenters = [...document.querySelectorAll('#mobBottomNav .mob-nav-item .mob-nav-icon')]
+      .map(i => { const r = i.getBoundingClientRect(); return r.top + r.height / 2; });
+    // Centro do BLOCO ícone+rótulo de cada aba — é nele que o círculo senta.
+    const blockCenters = [...document.querySelectorAll('#mobBottomNav .mob-nav-item')]
       .map(i => { const r = i.getBoundingClientRect(); return r.top + r.height / 2; });
     return {
       tabs,
@@ -229,6 +233,7 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
         width: Math.round(rect.width),
         height: Math.round(rect.height),
         aboveBar: Math.round(bar.top - rect.top),
+        centerY: rect.top + rect.height / 2,
         iconCenterY: icon.top + icon.height / 2,
         radius: style.borderRadius,
         position: style.position,
@@ -236,7 +241,8 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
         iconColor: getComputedStyle(el.querySelector('.mob-nav-icon')).color,
         iconSide: Math.round(Math.max(icon.width, icon.height))
       },
-      sideIconCenterY: iconCenters.reduce((a, b) => a + b, 0) / iconCenters.length,
+      sideIconCenterY: mean(iconCenters),
+      sideBlockCenterY: mean(blockCenters),
       brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim()
     };
   });
@@ -247,43 +253,45 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
   expect(nav.tabs.map(tab => tab.label)).toEqual(['Início', 'Cardápio', 'Clube', 'Perfil']);
   expect(new Set(nav.tabs.map(tab => tab.labelSize)).size, 'rótulos com corpos diferentes').toBe(1);
 
-  // O botão é um círculo de ~48px, maior que os quatro ícones de linha —
-  // por ser maior, ele SEMPRE estoura um pouco acima e abaixo da régua deles
-  // mesmo centrado, e é essa sobra que lê como "elevado". O que importa é o
-  // CENTRO: alinhado ao centro óptico dos outros quatro ícones, não flutuando
-  // acima deles (era isso que ficava "muito pra cima" no mobile real).
-  expect(nav.button.width).toBe(48);
-  expect(nav.button.height).toBe(48);
+  // O botão é um círculo de 40px. Ele NÃO se alinha ao centro dos ícones: senta
+  // no centro do BLOCO ícone+rótulo das abas vizinhas, que é onde a referência o
+  // põe. Ancorado no centro dos ícones, o círculo ficava boiando na metade de
+  // cima da barra, com o rótulo das vizinhas descendo sozinho por baixo dele.
+  expect(nav.button.width).toBe(40);
+  expect(nav.button.height).toBe(40);
   expect(nav.button.position).toBe('absolute');
-  expect(nav.button.radius).toMatch(/50%|24px/);
-  expect(Math.abs(nav.button.iconCenterY - nav.sideIconCenterY),
-    `botão desalinhado dos outros ícones: ${nav.button.iconCenterY} vs ${nav.sideIconCenterY}`
-  ).toBeLessThanOrEqual(4);
+  expect(nav.button.radius).toMatch(/50%|20px/);
+  expect(Math.abs(nav.button.centerY - nav.sideBlockCenterY),
+    `botão fora do centro das abas: ${nav.button.centerY} vs ${nav.sideBlockCenterY}`
+  ).toBeLessThanOrEqual(2);
+  expect(nav.button.centerY, 'o círculo voltou a subir para a linha dos ícones')
+    .toBeGreaterThan(nav.sideIconCenterY);
   // Fundo na marca diluída, ícone na marca cheia — não o contrário.
   expect(nav.button.background).toMatch(/^rgba\(/);
   expect(nav.button.iconColor, 'o ícone não está na cor da marca').not.toBe(nav.button.background);
   expect(nav.button.iconSide).toBeGreaterThan(16);
 });
 
-test('os quatro rótulos ficam alinhados entre si', async ({ page }) => {
+test('as quatro abas e o botão central formam uma régua de passo igual', async ({ page }) => {
   await openAssistant(page);
 
-  // Os empurrõezinhos por item foram calibrados para uma régua de CINCO caixas
-  // de larguras diferentes; hoje são quatro irmãos iguais mais um slot vazio.
-  // O desalinho é invisível item a item — só aparece medindo os intervalos.
-  const centers = await page.evaluate(() =>
-    [...document.querySelectorAll('#mobBottomNav .mob-nav-item')].map(el => {
-      const rect = el.getBoundingClientRect();
-      return rect.left + rect.width / 2;
-    }));
+  // Cinco colunas iguais: quatro abas mais o slot do botão. O passo entre
+  // centros vizinhos é o mesmo dos dois lados do círculo — sem isso, Início e
+  // Perfil colavam na borda da tela e Cardápio/Clube ficavam jogados longe do
+  // meio. O desalinho é invisível item a item; só aparece nos intervalos.
+  const centers = await page.evaluate(() => {
+    const middle = el => { const rect = el.getBoundingClientRect(); return rect.left + rect.width / 2; };
+    const tabs = [...document.querySelectorAll('#mobBottomNav .mob-nav-item')].map(middle);
+    const button = middle(document.querySelector('#mobBottomNav .mob-nav-assistant-btn'));
+    return [...tabs.slice(0, 2), button, ...tabs.slice(2)];
+  });
 
-  expect(centers).toHaveLength(4);
-  // O intervalo do meio é maior de propósito: é o slot que guarda o lugar do
-  // botão. Os dois pares externos é que têm de ser iguais entre si.
+  expect(centers).toHaveLength(5);
   const gaps = centers.slice(1).map((center, index) => center - centers[index]);
-  expect(Math.abs(gaps[0] - gaps[2]), `pares externos irregulares: ${gaps.map(g => g.toFixed(1))}`)
-    .toBeLessThanOrEqual(1);
-  expect(gaps[1], 'o slot central não abriu espaço para o botão').toBeGreaterThan(gaps[0]);
+  for (const gap of gaps) {
+    expect(Math.abs(gap - gaps[0]), `régua irregular: ${gaps.map(g => g.toFixed(1))}`)
+      .toBeLessThanOrEqual(1);
+  }
 
   // E o botão fica no centro exato da barra, entre os dois pares.
   const buttonCenter = await page.evaluate(() => {

@@ -3590,15 +3590,14 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 
-/* A esfera perdeu o invólucro que dava este respiro. */
-#mobViewAssistant .assistant-intro-top .assistant-orb{
+/* A marca não tem invólucro; o respiro até o título vem daqui. */
+#mobViewAssistant .assistant-intro-top .assistant-mark{
   margin:0 0 20px!important;
 }
 
 /* Abertura adiada: quando a tela é aberta a partir de um campo com foco, o
    teclado ainda está subindo e o layout se mexe. A intro fica invisível até
-   assentar, senão ela pisca no lugar errado. (A regra vivia numa lista de
-   seletores encabeçada pelo antigo .assistant-orb-wrap e saiu junto com ele.) */
+   assentar, senão ela pisca no lugar errado. */
 #mobViewAssistant.assistant-intro-deferred .assistant-intro-top,
 #mobViewAssistant.assistant-intro-deferred #assistantStarter{
   opacity:0!important;
@@ -3607,11 +3606,11 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 
-/* Telas curtas (SE, 8, qualquer 16:9): a esfera encolhe. A régua de sugestões
+/* Telas curtas (SE, 8, qualquer 16:9): a marca encolhe. A régua de sugestões
    não precisa de nada — ela rola na horizontal e ocupa uma linha só.
-   70px é a redução proporcional sobre o padrão de 96. */
+   64px é a mesma proporção de antes (0,73) sobre o padrão de 88. */
 @media (max-height: 730px){
-  #mobViewAssistant .assistant-orb--intro{ --size:70px }
+  #mobViewAssistant .assistant-mark--intro{ --size:64px }
 }
 
 /* ============================================================
@@ -3682,114 +3681,74 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 
-/* ===== COMPONENTE: esfera do assistente =====
-   Nuvem de RUÍDO FRACTAL, não gradiente radial.
+/* ===== COMPONENTE: marca do assistente =====
+   Sparkle de quatro pontas — a convenção visual de "assistente de IA" — na cor
+   do restaurante, dentro de um círculo suave da mesma cor.
 
-   A geometria é o ponto. Gradiente radial + blur produz um disco borrado: a
-   simetria é concêntrica por construção e o olho lê bola, seja qual for a
-   paleta. Aqui as manchas nascem de feDisplacementMap empurrando as faixas de
-   um gradiente LINEAR pelo ruído de um feTurbulence — o resultado não tem
-   centro, então não tem volume nem forma reconhecível. A montagem do filtro
-   está em orbMarkup(), scripts/pages/restaurant-assistant.js.
+   VETOR NÍTIDO, SEM DESFOQUE NENHUM. Aqui morava uma nuvem de ruído fractal
+   (feTurbulence + feDisplacementMap + feGaussianBlur). Sete tentativas
+   mostraram que desfoque sobre fundo claro sempre degenera em mancha pixelada,
+   principalmente no celular, onde o filtro é rasterizado em resolução baixa.
+   Era a técnica, não o ajuste. Borda definida escala perfeito em qualquer
+   tamanho e nunca vira artefato — nenhuma regra deste bloco pode reintroduzir
+   blur, filter ou máscara.
 
-   Este arquivo cuida de três coisas: o tamanho, a paleta (tudo derivado de
-   --brand, nada de hex fixo) e o movimento.
-
-   MOVIMENTO: quem anda é o transform dos grupos — composto na GPU, sem
-   reavaliar o filtro. A `scale` do displacement oscila em SMIL, no markup.
-   `baseFrequency` NUNCA é animada: mudá-la obriga a regerar a turbulência a
-   cada quadro, e é aí que o celular derrete. A caixa da esfera (--size) é fixa
-   em todos os estados; o que se move mora inteiro dentro do recorte.
+   A cor sai de --brand-primary, como antes: nenhum hex fixo. A montagem está em
+   markMarkup(), scripts/pages/restaurant-assistant.js.
    ===== */
-.assistant-orb{
-  --size: 96px;
+.assistant-mark{
+  --size: 88px;
   --brand: var(--brand-primary, #F26B21);
-  --tempo: 1;
-  position: relative;
   width: var(--size);
   height: var(--size);
   flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
 }
 
-.assistant-orb__svg{
-  display: block;
-  width: 100%;
-  height: 100%;
+.assistant-mark__glyph{
+  width: 46%;
+  height: 46%;
+  overflow: visible;
+  fill: var(--brand);
 }
 
-/* Paleta, toda derivada de --brand — nenhum hex fixo. `pale` e `tint` ocupam
-   78% do período do gradiente, então a maior parte do campo fica clara; a marca
-   cheia é a fatia final, que a distorção espalha como REGIÃO e nunca como anel
-   centrado; `deep` é o acento, numa camada própria e pequena.
-
-   `pale` não é branco de propósito: a 96px sobre página branca, 5% de marca
-   sumia e só as regiões saturadas se liam — a nuvem parecia encolhida dentro
-   da caixa. 13% é o mínimo que dá corpo sem fechar o campo. */
-.assistant-orb__s--pale { stop-color: color-mix(in srgb, var(--brand) 13%, #fff); }
-.assistant-orb__s--tint { stop-color: color-mix(in srgb, var(--brand) 32%, #fff); }
-.assistant-orb__s--brand{ stop-color: var(--brand); }
-.assistant-orb__s--deep { stop-color: color-mix(in srgb, var(--brand) 50%, #000); }
-
-.assistant-orb__drift{
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-/* Períodos primos entre si (23s, 31s, 27s): o padrão composto demora muito a se
-   repetir. A escala junto do translate faz as manchas crescerem e encolherem —
-   é a mesma variação de estrutura que a `scale` do displacement dá, na camada
-   que sai de graça (transform é composto; refiltrar, não). */
-.assistant-orb__drift--a{
-  animation: orb-drift-a calc(23s * var(--tempo)) ease-in-out infinite;
-}
-.assistant-orb__drift--b{
-  animation: orb-drift-b calc(31s * var(--tempo)) ease-in-out infinite;
-}
-/* O acento anda pouco de propósito: ele tem que continuar deslocado do centro
-   e longe da borda em QUALQUER quadro da deriva. O multiply o integra à nuvem
-   em vez de deixá-lo boiando como um borrão cinza por cima. */
-.assistant-orb__drift--k{
-  opacity: .45;
-  mix-blend-mode: multiply;
-  animation: orb-drift-k calc(27s * var(--tempo)) ease-in-out infinite;
+/* a estrela pequena pisca devagar, deslocada da grande */
+.assistant-mark__spark{
+  opacity: .55;
+  transform-origin: 19px 6.5px;
+  animation: mark-twinkle 3.2s ease-in-out infinite alternate;
 }
 
-@keyframes orb-drift-a{
-  0%   { transform: translate(0px, 0px)     scale(1);    }
-  34%  { transform: translate(-9px, 6px)    scale(1.07); }
-  67%  { transform: translate(5px, 11px)    scale(.96);  }
-  100% { transform: translate(0px, 0px)     scale(1);    }
-}
-@keyframes orb-drift-b{
-  0%   { transform: translate(0px, 0px)     scale(1.03); }
-  30%  { transform: translate(10px, -7px)   scale(.95);  }
-  70%  { transform: translate(-6px, -12px)  scale(1.08); }
-  100% { transform: translate(0px, 0px)     scale(1.03); }
-}
-@keyframes orb-drift-k{
-  0%   { transform: translate(0px, 0px)     scale(1);    }
-  38%  { transform: translate(-4px, 3px)    scale(1.09); }
-  72%  { transform: translate(3px, -4px)    scale(.94);  }
-  100% { transform: translate(0px, 0px)     scale(1);    }
+@keyframes mark-twinkle{
+  from { opacity: .35; transform: scale(.82); }
+  to   { opacity: .95; transform: scale(1.06); }
 }
 
-/* Pensando: só o RITMO muda. --tempo encurta as três derivas na mesma
-   proporção, então a nuvem revolve mais depressa sem que nada mude de tamanho
-   ou de lugar. */
-.assistant-orb.is-thinking{ --tempo: .34; }
+/* pensando: o círculo respira e o brilho acelera */
+.assistant-mark.is-thinking{
+  animation: mark-breathe 1.4s ease-in-out infinite alternate;
+}
+.assistant-mark.is-thinking .assistant-mark__spark{
+  animation-duration: 1s;
+}
+
+@keyframes mark-breathe{
+  from { background: color-mix(in srgb, var(--brand) 8%, transparent);  }
+  to   { background: color-mix(in srgb, var(--brand) 20%, transparent); }
+}
 
 @media (prefers-reduced-motion: reduce){
-  /* Congela num quadro do MEIO da animação, não no primeiro: o atraso negativo
-     estaciona cada camada onde a composição já está formada. Pausar, e não
-     remover, mantém a esfera inteira na tela. (O <animate> da scale do
-     displacement é SMIL e nem chega a ser emitido — ver orbMarkup.) */
-  .assistant-orb .assistant-orb__drift{ animation-play-state: paused; }
-  .assistant-orb .assistant-orb__drift--a{ animation-delay: -8.4s; }
-  .assistant-orb .assistant-orb__drift--b{ animation-delay: -19.7s; }
-  .assistant-orb .assistant-orb__drift--k{ animation-delay: -12.3s; }
+  .assistant-mark,
+  .assistant-mark .assistant-mark__spark{
+    animation: none;
+  }
+  .assistant-mark .assistant-mark__spark{ opacity: .6; }
 }
 /* ===== FIM DO COMPONENTE ===== */
 
-/* Modificadores de tamanho. Só trocam --size: o desenho, o ritmo e a paleta
-   vêm do bloco acima intactos. */
-.assistant-orb--mini{ --size: 26px }
+/* Modificadores de tamanho. Só trocam --size: o desenho e o ritmo vêm do bloco
+   acima intactos. A mini acompanha o rótulo "Digitando..." no esqueleto. */
+.assistant-mark--mini{ --size: 26px }

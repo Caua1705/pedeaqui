@@ -50,157 +50,42 @@
     return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
   }
 
-  // Cada esfera instancia filtros/gradientes/máscara próprios. IDs de <defs> são
-  // GLOBAIS no documento: com um id fixo, a segunda esfera da tela (a mini do
-  // esqueleto de digitação) apontaria para os defs da primeira e as duas
-  // ficariam presas ao mesmo quadro de ruído.
-  let _orbSeq = 0;
-
   /**
-   * A esfera do assistente — RUÍDO FRACTAL em SVG.
+   * A marca do assistente: um sparkle de quatro pontas na cor do restaurante,
+   * dentro de um círculo suave da mesma cor.
    *
-   * POR QUE NÃO É GRADIENTE RADIAL COM BLUR. Um gradiente radial borrado é um
-   * disco borrado: a simetria é concêntrica por construção e o olho lê bola,
-   * seja qual for a paleta. Três tentativas morreram aí. O que quebra a
-   * simetria é deslocar pixel por ruído, não escolher outras cores.
+   * VETOR NÍTIDO, SEM DESFOQUE. O que existia aqui antes era uma nuvem de ruído
+   * fractal (feTurbulence + feDisplacementMap + feGaussianBlur). Sete tentativas
+   * mostraram que desfoque sobre fundo claro sempre degenera em mancha
+   * pixelada, principalmente na tela do celular, onde o filtro é rasterizado
+   * numa resolução baixa. O problema era a técnica, não a calibragem — daí a
+   * troca por geometria de borda definida, que escala em qualquer tamanho e
+   * nunca vira artefato. Nada aqui pode voltar a introduzir blur.
    *
-   * A CADEIA. Um <rect> maior que o recorte, pintado com um gradiente linear
-   * REFLETIDO (spreadMethod), passa por feTurbulence type="fractalNoise" +
-   * feDisplacementMap: o deslocamento dobra as faixas do gradiente em manchas
-   * sem centro. Um feGaussianBlur leve amacia a costura — o trabalho pesado já
-   * foi feito pela distorção. São duas camadas de campo com seed, direção e
-   * frequência diferentes: uma só repete o padrão visivelmente.
+   * A cor sai de --brand-primary, como antes: nenhum hex fixo, senão o
+   * componente chega na cor de outro restaurante.
    *
-   * DUAS REGRAS DE CALIBRAGEM, aprendidas quebrando a cara:
-   *
-   *  1. Faixa fina de gradiente vira VEIO, não mancha. Uma parada estreita é
-   *     uma linha, e o displacement só a dobra em zigue-zague — saía um
-   *     relâmpago atravessando a esfera. Por isso o acento escuro não é uma
-   *     parada do gradiente: é uma camada própria.
-   *
-   *  2. Para DISSOLVER uma forma o comprimento de onda do ruído tem que ser
-   *     MENOR que ela; maior, o displacement apenas translada a forma inteira e
-   *     ela continua legível. Com onda longa o acento virou uma seta e a
-   *     silhueta virou um trevo de lóbulos. Daí as frequências altas no acento
-   *     (0.09 sobre raio 12) e na máscara (0.065 sobre raio 48).
-   *
-   * A ORDEM DOS GRUPOS TAMBÉM É REGRA: no SVG o filtro roda ANTES da máscara no
-   * mesmo elemento. Para o displacement distorcer também a SILHUETA do acento,
-   * a máscara vai num grupo interno e o filtro no externo — senão sai um disco
-   * escuro de borda perfeita no meio da nuvem.
-   *
-   * MOVIMENTO. Anda a transformação dos grupos (composta na GPU) e a `scale` do
-   * displacement; `baseFrequency` nunca, porque mudá-la obriga a regerar a
-   * turbulência a cada quadro. A caixa da esfera não muda de tamanho nem de
-   * posição em nenhum estado — o que se move mora todo dentro do recorte.
+   * É decorativo (aria-hidden): quem diz o que a tela é, é o título logo abaixo.
    */
-  function orbMarkup({ size = '', id = '', thinking = false } = {}) {
-    const classes = ['assistant-orb'];
-    if (size) classes.push(`assistant-orb--${size}`);
+  function markMarkup({ size = '', id = '', thinking = false } = {}) {
+    const classes = ['assistant-mark'];
+    if (size) classes.push(`assistant-mark--${size}`);
     if (thinking) classes.push('is-thinking');
-    const u = `orb${++_orbSeq}`;
-
-    // Movimento reduzido: o <animate> da scale é SMIL, e SMIL não obedece a
-    // `animation-play-state`. Em vez de tentar pausar depois, não emitimos o
-    // elemento — o filtro nasce estático e a deriva o CSS congela sozinho.
-    const still = typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const breathe = (values, dur) => still
-      ? ''
-      : `<animate attributeName="scale" values="${values}" dur="${dur}" repeatCount="indefinite"/>`;
-
-    // O <rect> cobre a abertura (100) + a deriva (±10) + o deslocamento
-    // (±scale/2). A região do filtro cobre o <rect> + o deslocamento. Apertar
-    // qualquer um dos dois deixa a borda reta do retângulo entrar no recorte.
-    const CAMPO = 'x="-62" y="-62" width="224" height="224"';
-
-    const campo = (key, { x2, y2, seed, freq, scale, values, dur }) => `
-      <linearGradient id="${u}-g${key}" gradientUnits="userSpaceOnUse"
-                      x1="0" y1="0" x2="${x2}" y2="${y2}" spreadMethod="reflect">
-        <stop offset="0%"   class="assistant-orb__s assistant-orb__s--pale"/>
-        <stop offset="22%"  class="assistant-orb__s assistant-orb__s--pale"/>
-        <stop offset="52%"  class="assistant-orb__s assistant-orb__s--tint"/>
-        <stop offset="78%"  class="assistant-orb__s assistant-orb__s--brand"/>
-        <stop offset="100%" class="assistant-orb__s assistant-orb__s--brand"/>
-      </linearGradient>
-      <filter id="${u}-f${key}" x="-28%" y="-28%" width="156%" height="156%"
-              color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="5"
-                      seed="${seed}" result="n${key}"/>
-        <feDisplacementMap in="SourceGraphic" in2="n${key}" scale="${scale}"
-                           xChannelSelector="R" yChannelSelector="G">
-          ${breathe(values, dur)}
-        </feDisplacementMap>
-        <feGaussianBlur stdDeviation="1.4"/>
-      </filter>`;
-
     return `
       <div class="${classes.join(' ')}"${id ? ` id="${id}"` : ''} aria-hidden="true">
-        <svg class="assistant-orb__svg" viewBox="0 0 100 100" focusable="false"
+        <svg viewBox="0 0 24 24" class="assistant-mark__glyph" focusable="false"
              xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            ${campo('a', { x2: 48, y2: 28, seed: 3, freq: '0.022', scale: 95, values: '95;106;88;98;95', dur: '26s' })}
-            ${campo('b', { x2: -36, y2: 46, seed: 13, freq: '0.030', scale: 74, values: '74;66;81;70;74', dur: '19s' })}
-
-            <!-- Acento escuro: pequeno, fora do centro, com a mesma textura do
-                 resto (é a mesma nuvem em tom escuro, não um borrão colado). -->
-            <radialGradient id="${u}-gk" gradientUnits="userSpaceOnUse" cx="66" cy="38" r="12">
-              <stop offset="0%"   class="assistant-orb__s assistant-orb__s--deep"/>
-              <stop offset="34%"  class="assistant-orb__s assistant-orb__s--deep"/>
-              <stop offset="100%" class="assistant-orb__s assistant-orb__s--deep" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="${u}-fk" x="-90%" y="-90%" width="280%" height="280%"
-                    color-interpolation-filters="sRGB">
-              <feTurbulence type="fractalNoise" baseFrequency="0.090" numOctaves="4"
-                            seed="19" result="nk"/>
-              <feDisplacementMap in="SourceGraphic" in2="nk" scale="22"
-                                 xChannelSelector="R" yChannelSelector="G"/>
-              <feGaussianBlur stdDeviation="2.6"/>
-            </filter>
-
-            <!-- Recorte: claro no miolo, dissolvido na borda, e ele mesmo
-                 distorcido — um círculo de borda macia perfeita é justamente a
-                 leitura de "bola" que este componente existe para não ter. -->
-            <radialGradient id="${u}-fade">
-              <stop offset="0%"   stop-color="#fff"/>
-              <stop offset="58%"  stop-color="#fff"/>
-              <stop offset="82%"  stop-color="#fff" stop-opacity=".5"/>
-              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="${u}-fm" x="-40%" y="-40%" width="180%" height="180%"
-                    color-interpolation-filters="sRGB">
-              <feTurbulence type="fractalNoise" baseFrequency="0.065" numOctaves="3"
-                            seed="29" result="nm"/>
-              <feDisplacementMap in="SourceGraphic" in2="nm" scale="10"
-                                 xChannelSelector="R" yChannelSelector="G"/>
-              <feGaussianBlur stdDeviation="3"/>
-            </filter>
-            <mask id="${u}-mask" maskUnits="userSpaceOnUse" x="-40" y="-40" width="180" height="180">
-              <circle cx="50" cy="50" r="48" fill="url(#${u}-fade)" filter="url(#${u}-fm)"/>
-            </mask>
-          </defs>
-
-          <g mask="url(#${u}-mask)">
-            <g class="assistant-orb__drift assistant-orb__drift--a">
-              <rect ${CAMPO} fill="url(#${u}-ga)" filter="url(#${u}-fa)"/>
-            </g>
-            <g class="assistant-orb__drift assistant-orb__drift--b">
-              <rect ${CAMPO} fill="url(#${u}-gb)" filter="url(#${u}-fb)" opacity=".35"/>
-            </g>
-            <g class="assistant-orb__drift assistant-orb__drift--k">
-              <g filter="url(#${u}-fk)">
-                <rect x="0" y="0" width="100" height="100" fill="url(#${u}-gk)"/>
-              </g>
-            </g>
-          </g>
+          <path class="assistant-mark__star" d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z"/>
+          <path class="assistant-mark__spark" d="M19 3.2c.2 1.7 1.6 3.1 3.3 3.3-1.7.2-3.1 1.6-3.3 3.3-.2-1.7-1.6-3.1-3.3-3.3 1.7-.2 3.1-1.6 3.3-3.3Z"/>
         </svg>
       </div>`;
   }
+
   // Só existem dois ritmos: pensando e o resto. "Respondendo" é o ritmo calmo —
-  // a resposta já está entrando na tela e uma esfera agitada atrás dela
+  // a resposta já está entrando na tela e uma marca agitada atrás dela
   // competiria com o texto.
-  function setAssistantOrbState(state) {
-    document.getElementById('assistantIntroOrb')
+  function setAssistantMarkState(state) {
+    document.getElementById('assistantIntroMark')
       ?.classList.toggle('is-thinking', state === 'thinking');
   }
 
@@ -357,7 +242,7 @@
       title._assistantRevealTimer = null;
     }
     title?.closest('.assistant-chat-assistant-message')?.classList.remove('is-typing-response');
-    setAssistantOrbState('idle');
+    setAssistantMarkState('idle');
     finishAssistantGeneration();
   }
 
@@ -567,7 +452,7 @@
       <div class="assistant-result-card assistant-chat-assistant-message assistant-chat-typing" id="assistantTypingMessage" aria-live="polite">
         <div class="assistant-result-content">
           <div class="assistant-typing-row">
-            ${orbMarkup({ size: 'mini', thinking: true })}
+            ${markMarkup({ size: 'mini', thinking: true })}
             <span class="assistant-typing-label" data-text="${ASSISTANT_TYPING_STATUSES[statusIndex]}">${ASSISTANT_TYPING_STATUSES[statusIndex]}</span>
           </div>
           <div class="assistant-skeleton-lines" aria-hidden="true">
@@ -953,10 +838,10 @@
              logo acima do campo de digitação. Antes os três vinham empilhados a
              partir do topo e sobrava um vão morto de ~220px no meio da tela. -->
         <div class="assistant-intro-top">
-          <!-- Sem invólucro: o .assistant-orb-wrap que existia aqui carregava
-               oito camadas de margens do layout antigo e casava por nome com o
-               componente — foi ele que pintou a janela quadrada uma vez. -->
-          ${orbMarkup({ size: 'intro', id: 'assistantIntroOrb' })}
+          <!-- Sem invólucro: o wrapper que existia aqui carregava oito camadas
+               de margens do layout antigo e casava por nome com o componente —
+               foi ele que pintou a janela quadrada uma vez. -->
+          ${markMarkup({ size: 'intro', id: 'assistantIntroMark' })}
           <div class="assistant-ai-question" id="assistantIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
           <div class="assistant-ai-subtitle">Me diga o que procura e eu encontro as melhores op&ccedil;&otilde;es do card&aacute;pio.</div>
         </div>
@@ -1160,7 +1045,7 @@
     appendAssistantUserMessage(cleanMessage);
     setAssistantInputDisabled(true);
     setAssistantGenerating(true);
-    setAssistantOrbState('thinking');
+    setAssistantMarkState('thinking');
     appendAssistantTypingIndicator();
 
     try {
@@ -1170,7 +1055,7 @@
         products_count: Array.isArray(response?.products) ? response.products.length : 0
       });
       removeAssistantTypingIndicator();
-      setAssistantOrbState('answering');
+      setAssistantMarkState('answering');
       _assistantResponseTimer = setTimeout(() => {
         _assistantResponseTimer = null;
         if (!_assistantSending) return;
@@ -1183,7 +1068,7 @@
         finishAssistantGeneration();
         return;
       }
-      setAssistantOrbState('answering');
+      setAssistantMarkState('answering');
       _assistantResponseTimer = setTimeout(() => {
         _assistantResponseTimer = null;
         if (!_assistantSending) return;
@@ -1272,7 +1157,7 @@
     questionEl.textContent = '';
     questionEl.classList.add('is-typing');
     starterEl.classList.remove('is-ready');
-    setAssistantOrbState('idle');
+    setAssistantMarkState('idle');
 
     // Movimento reduzido: a abertura aparece pronta. Digitar letra a letra é
     // movimento como qualquer outro, e aqui ele ainda ATRASA as sugestões — que
@@ -1558,7 +1443,7 @@
     const showMoreBtn = document.getElementById('assistantShowMoreBtn');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
     document.getElementById('assistantStarter')?.classList.remove('is-ready');
-    setAssistantOrbState('idle');
+    setAssistantMarkState('idle');
     // Reset new AI layout elements
     const resultsWrap = document.getElementById('assistantAiResultsWrap');
     if (resultsWrap) resultsWrap.style.display = 'none';

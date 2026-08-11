@@ -88,7 +88,7 @@ test('nenhuma arte da plataforma é baixada pelo app do consumidor', async ({ pa
 
   expect(brandRequests, 'a arte da plataforma voltou ao app do cliente').toEqual([]);
   // E o lugar dela não ficou vazio: a janela desenhada em CSS ocupa a abertura.
-  await expect(page.locator('#assistantIntroOrb')).toBeVisible();
+  await expect(page.locator('#assistantIntroMark')).toBeVisible();
 });
 
 test('as fotos do cardápio pedem miniatura, não a foto inteira', async ({ page }) => {

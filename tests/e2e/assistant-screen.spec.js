@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O } from './helpers.js';
 
-// A esfera que substituiu o mascote no app do consumidor.
+// A tela do assistente no app do consumidor.
 //
-// O que estes testes travam é o CONTRATO, não o desenho: a esfera sai da cor
-// cadastrada pelo lojista (e só dela), tem os três estados que a tela usa, para
-// sem sumir sob prefers-reduced-motion, e a abertura não volta a ser uma tela
-// vazia. Nada aqui mede pixel de gradiente — o gradiente pode mudar.
+// O que estes testes travam é o CONTRATO, não o desenho: a marca sai da cor
+// cadastrada pelo lojista (e só dela), é vetor nítido, tem os três estados que
+// a tela usa, para sem sumir sob prefers-reduced-motion, e a abertura não volta
+// a ser uma tela vazia. Nada aqui mede pixel de cor — a paleta pode mudar.
 
 const CHAT_ANSWER = {
   response_type: 'products',
@@ -37,289 +37,148 @@ async function waitForIntro(page) {
   await expect(page.locator('#assistantStarter')).toHaveClass(/is-ready/);
 }
 
-/**
- * Lê as paradas do gradiente com as cores JÁ RESOLVIDAS. Elas são a paleta do
- * componente: `stop-color` sai de color-mix() sobre var(--brand), então é aqui
- * que se vê se a esfera seguiu o tema do lojista.
- *
- * color-mix() computa como `color(srgb 0.98 0.92 0.87)` — canais de 0 a 1 —, e
- * NÃO como `rgb(250, 235, 225)`. Um parser que só busca dígitos lê "0.982118"
- * como 0 e 982118, a luminância estoura e o teste passa achando que mediu
- * alguma coisa. Já aconteceu uma vez nesta suíte.
- */
-const CANAIS = (valor) => {
-  const moderno = valor.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
-  if (moderno) return [+moderno[1], +moderno[2], +moderno[3]];
-  return valor.match(/[\d.]+/g).slice(0, 3).map(n => Number(n) / 255);
-};
-const luminancia = (valor) => {
-  const [r, g, b] = CANAIS(valor);
-  const linear = s => (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
-  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-};
-
-const lerPaleta = (page) => page.locator('#assistantIntroOrb').evaluate(el => {
-  const cor = classe => getComputedStyle(el.querySelector('.assistant-orb__s--' + classe)).stopColor;
-  return {
-    brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
-    temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
-    pale: cor('pale'), tint: cor('tint'), marca: cor('brand'), deep: cor('deep')
-  };
-});
-
-test('a esfera é pintada com a cor do restaurante, sem cor fixa', async ({ page }) => {
+test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // A variável do componente tem que ser a do tema. O bloco de CSS traz
-  // #F26B21 como valor de ORIGEM, e ele não pode vencer o hex do lojista.
-  const laranja = await lerPaleta(page);
+  // A variável do componente tem que ser a do tema. O bloco de CSS traz #F26B21
+  // como valor de ORIGEM, e ele não pode vencer o hex do lojista.
+  const ler = () => page.locator('#assistantIntroMark').evaluate(el => ({
+    brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
+    temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
+    circulo: getComputedStyle(el).backgroundColor,
+    estrela: getComputedStyle(el.querySelector('.assistant-mark__star')).fill,
+    brilho: getComputedStyle(el.querySelector('.assistant-mark__spark')).fill
+  }));
+
+  const laranja = await ler();
   await page.evaluate(() => window.RapidexTheme.applyBrandTheme('#2A2D7C'));
-  const indigo = await lerPaleta(page);
+  const indigo = await ler();
 
   expect(laranja.brand.toUpperCase(), 'o componente não leu a cor do tema').toBe(laranja.temaBrand.toUpperCase());
   expect(indigo.brand.toUpperCase()).toBe('#2A2D7C');
 
-  // E o azul entra de fato na PINTURA, não só numa variável: as quatro paradas
-  // do gradiente mudam junto. Um hex fixo em qualquer uma delas trava aqui.
-  for (const parada of ['pale', 'tint', 'marca', 'deep']) {
-    expect(indigo[parada], `a parada "${parada}" não acompanhou o tenant`).not.toBe(laranja[parada]);
-  }
-  const [r, g, b] = CANAIS(indigo.marca).map(v => Math.round(v * 255));
-  expect([r, g, b], 'a marca cheia não é a cor do lojista').toEqual([0x2A, 0x2D, 0x7C]);
+  // E o azul entra de fato na PINTURA — glifo e círculo —, não só numa variável.
+  expect(indigo.estrela, 'a estrela não acompanhou o tenant').not.toBe(laranja.estrela);
+  expect(indigo.circulo, 'o círculo não acompanhou o tenant').not.toBe(laranja.circulo);
+  expect(indigo.estrela).toBe('rgb(42, 45, 124)');
+  expect(indigo.brilho, 'as duas pontas do sparkle saíram de cores diferentes').toBe(indigo.estrela);
 });
 
-test('a maior parte do campo é clara; a marca cheia é uma região', async ({ page }) => {
+test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // A regressão que este teste trava: preencher o recorte com a marca. Numa
-  // página branca, uma marca escura vira massa fechada e o desfoque funde tudo
-  // num borrão. `pale` e `tint` ocupam 78% do período do gradiente, então são
-  // eles que mandam na leitura geral — e os dois têm que ficar bem mais claros
-  // que a marca crua, em qualquer tenant.
-  for (const hex of ['#F26B21', '#FFD34D', '#2A2D7C']) {
-    await page.evaluate(c => window.RapidexTheme.applyBrandTheme(c), hex);
-    const paleta = await lerPaleta(page);
-
-    const lumMarca = luminancia(`rgb(${parseInt(hex.slice(1, 3), 16)}, `
-      + `${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`);
-
-    // Claro em termos absolutos — perto do branco da página, não da marca.
-    expect(luminancia(paleta.pale), `campo escuro demais em ${hex}`).toBeGreaterThan(0.7);
-    // E claro EM RELAÇÃO à marca: mesmo num amarelo já claro, o campo continua
-    // sendo o sopro da cor sobre branco, nunca a cor crua.
-    expect(luminancia(paleta.pale), `o campo virou a marca crua em ${hex}`).toBeGreaterThan(lumMarca);
-    expect(luminancia(paleta.tint), `o meio-tom virou a marca crua em ${hex}`).toBeGreaterThan(lumMarca);
-    // O acento é o oposto: tem que ser mais ESCURO que a marca, senão some.
-    expect(luminancia(paleta.deep), `o acento não escureceu em ${hex}`).toBeLessThan(lumMarca);
-  }
-});
-
-test('é ruído fractal em SVG — nem mídia, nem gradiente radial pintando o campo', async ({ page }) => {
-  await openAssistant(page);
-  await waitForIntro(page);
-
-  const desenho = await page.locator('#assistantIntroOrb').evaluate(el => ({
-    tags: [...new Set([...el.querySelectorAll('*')].map(n => n.tagName))],
-    turbulencias: el.querySelectorAll('feTurbulence').length,
-    deslocamentos: el.querySelectorAll('feDisplacementMap').length,
-    seeds: [...el.querySelectorAll('feTurbulence')].map(t => t.getAttribute('seed')),
-    frequenciaAnimada: [...el.querySelectorAll('animate')]
-      .map(a => a.getAttribute('attributeName')),
-    // O gradiente radial é legítimo no RECORTE e no acento; o que não pode é
-    // ele pintar o campo, que é justamente o disco borrado de sempre.
-    campos: [...el.querySelectorAll('.assistant-orb__drift--a rect, .assistant-orb__drift--b rect')]
-      .map(r => r.getAttribute('fill')),
-    linearesDefinidos: [...el.querySelectorAll('linearGradient')].map(gr => '#' + gr.id)
-  }));
-
-  expect(desenho.tags).not.toContain('IMG');
-  expect(desenho.tags).not.toContain('VIDEO');
-  expect(desenho.tags).not.toContain('CANVAS');
-
-  // A técnica: turbulência fractal + deslocamento. Sem os dois, é outra coisa.
-  expect(desenho.turbulencias, 'sumiu o feTurbulence').toBeGreaterThanOrEqual(2);
-  expect(desenho.deslocamentos, 'sumiu o feDisplacementMap').toBeGreaterThanOrEqual(2);
-  // Seeds distintos: com o mesmo ruído em todas as camadas o padrão se alinha e
-  // volta a parecer regular.
-  expect(new Set(desenho.seeds).size, 'as camadas repetem o mesmo ruído').toBe(desenho.seeds.length);
-
-  // baseFrequency NUNCA é animada: mudá-la obriga a regerar a turbulência a cada
-  // quadro. Só a scale do deslocamento oscila.
-  expect(desenho.frequenciaAnimada).not.toContain('baseFrequency');
-  expect(desenho.frequenciaAnimada.every(a => a === 'scale'),
-    `animação em atributo caro: ${desenho.frequenciaAnimada}`).toBe(true);
-
-  // As duas camadas de campo são pintadas por gradiente LINEAR (que a distorção
-  // dobra em manchas), não radial (que borrado vira disco).
-  expect(desenho.campos).toHaveLength(2);
-  for (const fill of desenho.campos) {
-    expect(desenho.linearesDefinidos, `o campo voltou a ser pintado por ${fill}`)
-      .toContain(fill.replace(/^url\(|\)$/g, ''));
-  }
-});
-
-test('não tem simetria concêntrica — é nuvem, não bola', async ({ page }) => {
-  await openAssistant(page);
-  await waitForIntro(page);
-
-  // O critério que matou três tentativas anteriores. Um disco (gradiente radial
-  // borrado) tem cor constante ao longo de cada anel em volta do centro: gire
-  // 360° num raio fixo e a luminância não muda. Aqui ela TEM que mudar muito.
-  //
-  // Mede-se num quadro grande, desenhado num canvas: a 96px o ruído fica menor
-  // que o pixel e o desvio se confunde com serrilhado.
-  const aneis = await page.locator('#assistantIntroOrb').evaluate(async el => {
-    const LADO = 300;
-    const svg = el.querySelector('svg').cloneNode(true);
-    // stop-color vem de folha externa; ao serializar ele se perde e tudo vira
-    // preto. Resolve para atributo antes, lendo do elemento vivo.
-    const vivos = el.querySelectorAll('stop');
-    svg.querySelectorAll('stop').forEach((s, i) => {
-      const cs = getComputedStyle(vivos[i]);
-      s.setAttribute('stop-color', cs.stopColor);
-      s.setAttribute('stop-opacity', cs.stopOpacity);
+  // A regressão que este teste existe para barrar. O que morava aqui era uma
+  // nuvem de ruído fractal, e sete tentativas mostraram que desfoque sobre fundo
+  // claro degenera em mancha pixelada no celular. A troca só vale enquanto
+  // ninguém reintroduzir blur — em CSS ou em primitiva de filtro SVG.
+  const desenho = await page.locator('#assistantIntroMark').evaluate(el => {
+    const estilos = [el, ...el.querySelectorAll('*')].map(n => {
+      const cs = getComputedStyle(n);
+      return { filter: cs.filter, backdrop: cs.backdropFilter, mask: cs.maskImage };
     });
-    svg.setAttribute('width', LADO);
-    svg.setAttribute('height', LADO);
-
-    const img = new Image();
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(
-      new XMLSerializer().serializeToString(svg))));
-    await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; });
-
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = LADO;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, LADO, LADO);
-    ctx.drawImage(img, 0, 0);
-    const px = ctx.getImageData(0, 0, LADO, LADO).data;
-    const lum = i => 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2];
-
-    let tinta = 0;
-    for (let i = 0; i < px.length; i += 4) if (lum(i) < 246) tinta++;
-
-    const meio = LADO / 2;
-    const desvios = [];
-    for (let raio = 30; raio <= 120; raio += 15) {
-      const valores = [];
-      for (let passo = 0; passo < 180; passo++) {
-        const t = passo * Math.PI / 90;
-        const x = Math.round(meio + raio * Math.cos(t));
-        const y = Math.round(meio + raio * Math.sin(t));
-        valores.push(lum((y * LADO + x) * 4));
-      }
-      const media = valores.reduce((s, v) => s + v, 0) / valores.length;
-      desvios.push(Math.sqrt(valores.reduce((s, v) => s + (v - media) ** 2, 0) / valores.length));
-    }
-    return { cobertura: tinta / (LADO * LADO), desvios };
+    return {
+      estilos,
+      tags: [...new Set([...el.querySelectorAll('*')].map(n => n.tagName))],
+      // O glifo é geometria: dois <path>, nada de <image> nem de primitiva.
+      paths: el.querySelectorAll('path').length,
+      viewBox: el.querySelector('svg').getAttribute('viewBox')
+    };
   });
 
-  // Preenche o recorte: uma nuvem que ocupasse só o miolo leria como bolinha.
-  expect(aneis.cobertura, `a esfera está oca: ${aneis.cobertura}`).toBeGreaterThan(0.4);
-
-  // TODO anel tem que variar. O limite é folgado de propósito — o que ele
-  // barra é o caso concêntrico, onde o desvio cai para perto de zero.
-  const menor = Math.min(...aneis.desvios);
-  expect(menor, `anel de cor quase constante (desvios: ${aneis.desvios.map(d => d.toFixed(1))})`)
-    .toBeGreaterThan(6);
+  for (const s of desenho.estilos) {
+    expect(s.filter, 'voltou filtro CSS na marca').toMatch(/^none$/);
+    expect(s.backdrop, 'voltou backdrop-filter na marca').toMatch(/^none$/);
+    expect(s.mask, 'voltou máscara na marca').toMatch(/^none$/);
+  }
+  for (const proibida of ['FILTER', 'FETURBULENCE', 'FEDISPLACEMENTMAP', 'FEGAUSSIANBLUR',
+    'FEFLOOD', 'FECOMPOSITE', 'MASK', 'IMG', 'VIDEO', 'CANVAS']) {
+    expect(desenho.tags, `a marca voltou a depender de <${proibida.toLowerCase()}>`).not.toContain(proibida);
+  }
+  expect(desenho.paths, 'o sparkle deixou de ser duas pontas').toBe(2);
+  expect(desenho.viewBox).toBe('0 0 24 24');
 });
 
+test('a marca é um círculo, e cresce sem perder proporção', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+
+  const medir = () => page.locator('#assistantIntroMark').evaluate(el => {
+    const r = el.getBoundingClientRect();
+    const g = el.querySelector('.assistant-mark__glyph').getBoundingClientRect();
+    return {
+      lado: [Math.round(r.width), Math.round(r.height)],
+      raio: getComputedStyle(el).borderRadius,
+      glifo: [Math.round(g.width), Math.round(g.height)],
+      // Centro do glifo x centro do círculo: o sparkle fica no meio.
+      desvio: [Math.abs((g.left + g.width / 2) - (r.left + r.width / 2)),
+        Math.abs((g.top + g.height / 2) - (r.top + r.height / 2))]
+    };
+  });
+
+  const padrao = await medir();
+  expect(padrao.lado, 'a marca não é quadrada (logo, não é círculo)').toEqual([88, 88]);
+  expect(padrao.raio).toMatch(/50%|44px/);
+  expect(padrao.glifo).toEqual([40, 40]); // 46% de 88
+  for (const d of padrao.desvio) expect(d, 'o sparkle saiu do centro').toBeLessThanOrEqual(1);
+
+  // Tela curta: encolhe mantendo a proporção glifo/círculo, sem virar oval.
+  await page.setViewportSize({ width: 390, height: 700 });
+  const curta = await medir();
+  expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([64, 64]);
+  expect(curta.glifo[0] / curta.lado[0]).toBeCloseTo(padrao.glifo[0] / padrao.lado[0], 2);
+  for (const d of curta.desvio) expect(d, 'o sparkle saiu do centro na tela curta').toBeLessThanOrEqual(1);
+});
 test('os três estados mudam o ritmo, e SÓ o ritmo', async ({ page }) => {
   await openAssistant(page, { chatDelay: 2500 });
   await waitForIntro(page);
 
-  const orb = page.locator('#assistantIntroOrb');
+  const marca = page.locator('#assistantIntroMark');
 
   // 1. A conversa move o estado: parada -> pensando -> respondendo.
-  await expect(orb).not.toHaveClass(/is-thinking/);
+  await expect(marca).not.toHaveClass(/is-thinking/);
   await page.locator('.assistant-starter-card').first().click();
-  await expect(orb).toHaveClass(/is-thinking/);
-  await expect(orb).not.toHaveClass(/is-thinking/, { timeout: 15000 });
+  await expect(marca).toHaveClass(/is-thinking/);
+  await expect(marca).not.toHaveClass(/is-thinking/, { timeout: 15000 });
 });
 
-test('trocar de estado não mexe no recorte, só no que corre dentro dele', async ({ page }) => {
-  await openAssistant(page);
-  await waitForIntro(page);
-
-  // Com a abertura na tela — durante a conversa ela some, e uma caixa oculta
-  // mede 0x0, o que faria este teste passar por acidente.
-  const measure = (state) => page.evaluate(name => {
-    const el = document.getElementById('assistantIntroOrb');
-    el.classList.toggle('is-thinking', name === 'thinking');
-    const rect = el.getBoundingClientRect();
-    const camada = getComputedStyle(el.querySelector('.assistant-orb__drift--a'));
-    return {
-      frame: [Math.round(rect.width), Math.round(rect.height), Math.round(rect.top), Math.round(rect.left)],
-      rhythm: parseFloat(camada.animationDuration)
-    };
-  }, state);
-
-  const idle = await measure('idle');
-  const thinking = await measure('thinking');
-  const answering = await measure('answering');
-
-  expect(idle.frame[0], 'a abertura não estava visível').toBeGreaterThan(40);
-
-  // Pensando acelera o movimento INTERNO — é só isso que o estado significa.
-  expect(thinking.rhythm, 'pensando não acelerou').toBeLessThan(idle.rhythm);
-  expect(answering.rhythm, 'respondendo não voltou ao ritmo calmo').toBe(idle.rhythm);
-
-  // E o círculo fica exatamente onde estava, do mesmo tamanho, nos três. Um
-  // orbe que incha ao pensar vira loader: pede atenção em vez de mostrar estado.
-  expect(thinking.frame, 'o recorte mudou ao pensar').toEqual(idle.frame);
-  expect(answering.frame, 'o recorte mudou ao responder').toEqual(idle.frame);
-});
-
-test('sob movimento reduzido ela congela, e não some', async ({ page }) => {
+test('sob movimento reduzido a marca aparece parada e inteira', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openAssistant(page);
   await waitForIntro(page);
 
-  const state = await page.locator('#assistantIntroOrb').evaluate(el => {
-    const rect = el.getBoundingClientRect();
-    const layer = name => {
-      const style = getComputedStyle(el.querySelector('.assistant-orb__drift--' + name));
-      return {
-        play: style.animationPlayState,
-        delay: parseFloat(style.animationDelay),
-        opacity: Number(style.opacity)
-      };
-    };
+  const estado = await page.locator('#assistantIntroMark').evaluate(el => {
+    const r = el.getBoundingClientRect();
+    const spark = el.querySelector('.assistant-mark__spark');
+    const cs = getComputedStyle(el), cspark = getComputedStyle(spark);
     return {
-      width: Math.round(rect.width),
-      visibility: getComputedStyle(el).visibility,
-      // SMIL não obedece a animation-play-state, então sob movimento reduzido o
-      // <animate> da scale nem chega a ser emitido — se voltar a aparecer, o
-      // filtro continua se mexendo por baixo de uma esfera "congelada".
-      animates: el.querySelectorAll('animate').length,
-      campoA: layer('a'), campoB: layer('b'), acento: layer('k')
+      largura: Math.round(r.width),
+      visibilidade: cs.visibility,
+      animacaoCirculo: cs.animationName,
+      animacaoBrilho: cspark.animationName,
+      opacidadeBrilho: Number(cspark.opacity),
+      opacidadeEstrela: Number(getComputedStyle(el.querySelector('.assistant-mark__star')).opacity)
     };
   });
 
-  // Congela PAUSANDO, não removendo: a animação continua declarada e o atraso
-  // negativo a estaciona num quadro do meio, então a esfera fica parada numa
-  // composição viva em vez de no primeiro quadro, que é o mais chapado.
-  for (const [nome, camada] of Object.entries(
-    { campoA: state.campoA, campoB: state.campoB, acento: state.acento })) {
-    expect(camada.play, `a camada ${nome} continuou se movendo`).toBe('paused');
-    expect(camada.delay, `a camada ${nome} congelou no primeiro quadro`).toBeLessThan(0);
-    expect(camada.opacity, `a camada ${nome} sumiu`).toBeGreaterThan(0);
-  }
-  expect(state.animates, 'o SMIL do displacement continuou correndo').toBe(0);
-  // Congelada, mas inteira: sumir seria trocar a animação por um buraco na tela.
-  expect(state.width).toBeGreaterThan(40);
-  expect(state.visibility).toBe('visible');
+  // Parada de verdade: sem animação declarada, não só pausada.
+  expect(estado.animacaoCirculo, 'o círculo continuou respirando').toBe('none');
+  expect(estado.animacaoBrilho, 'a ponta pequena continuou piscando').toBe('none');
+  // E inteira: a ponta pequena não pode ficar no quadro apagado da animação,
+  // senão o movimento reduzido entrega meia marca.
+  expect(estado.opacidadeBrilho, 'a ponta pequena ficou apagada').toBeGreaterThanOrEqual(0.5);
+  expect(estado.opacidadeEstrela).toBe(1);
+  expect(estado.largura).toBe(88);
+  expect(estado.visibilidade).toBe('visible');
 });
 
 test('o menu inferior tem quatro rótulos e um botão central destacado', async ({ page }) => {
   await openAssistant(page);
 
-  // A esfera vive só DENTRO da tela do assistente: aqui o que aparece é um
+  // A marca vive só DENTRO da tela do assistente: aqui o que aparece é um
   // ícone de balão, e o botão não tem texto — o nome dele é o aria-label.
-  await expect(page.locator('#mobBottomNav .assistant-orb')).toHaveCount(0);
+  await expect(page.locator('#mobBottomNav .assistant-mark')).toHaveCount(0);
   const button = page.locator('#mobBottomNav .mob-nav-assistant-btn');
   await expect(button).toHaveAttribute('aria-label', 'Assistente');
   await expect(button).toHaveText('');
@@ -494,7 +353,7 @@ test('carregando: esqueleto no lugar da resposta, não meia tela em branco', asy
 
   const skeleton = page.locator('#assistantTypingMessage');
   await expect(skeleton).toBeVisible();
-  await expect(skeleton.locator('.assistant-orb--mini')).toHaveClass(/is-thinking/);
+  await expect(skeleton.locator('.assistant-mark--mini')).toHaveClass(/is-thinking/);
   await expect(skeleton.locator('.assistant-skeleton-line')).toHaveCount(3);
   await expect(skeleton.locator('.assistant-skeleton-card')).toHaveCount(3);
 

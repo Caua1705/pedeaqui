@@ -6219,6 +6219,11 @@
   let _loginOrigin = 'profile';
 
   function openLoginScreen(origin = 'profile') {
+    // Clube/Perfil sem sessão abrem este gate SEM passar por closeMobViews() —
+    // se o Chat era a tela de origem, o corpo ficava com assistant-dark
+    // grudado atrás do login, escurecendo a barra inferior atrás de uma tela
+    // que devia estar clara.
+    document.body.classList.remove('assistant-dark');
     _loginOrigin = origin;
     loginReturnNavId = document.body.classList.contains('menu-tab') && ['profile', 'club'].includes(origin)
       ? 'mobNavMenu'
@@ -7717,7 +7722,7 @@
 
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
-    document.body.classList.remove('assistant-nav-keep');
+    document.body.classList.remove('assistant-nav-keep', 'assistant-dark');
     syncSecondaryViewCartSticky(false);
     releaseSecondaryNavGeometry();
     unlockBodyScrollIfClear();
@@ -7771,7 +7776,7 @@
     uiStore()?.set?.({ activeView: 'assistant', bottomNav: 'assistant' });
     setMobNavActive('mobNavAssistantTab');
     $('mobViewAssistant')?.classList.add('active');
-    document.body.classList.add('assistant-nav-keep');
+    document.body.classList.add('assistant-nav-keep', 'assistant-dark');
     lockBodyScroll();
     if (!products.length || !categories.length) {
       const view = $('mobViewAssistant');

@@ -3362,8 +3362,11 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 .mob-bottom-nav .mob-nav-assistant-btn{
   position:absolute!important;
   left:50%!important;
-  /* Negativo: o círculo sobe acima da linha da barra. */
-  top:-10px!important;
+  /* O centro do círculo (48px) casa com o centro ÓPTICO do ícone+rótulo dos
+     quatro irmãos, não com o centro geométrico da barra: rótulo abaixo do
+     ícone puxa esse centro para cima, e -10px (calibrado só pela barra)
+     deixava o círculo boiando acima da régua em vez de sentado nela. */
+  top:6px!important;
   transform:translateX(-50%)!important;
   display:flex!important;
   align-items:center!important;
@@ -3585,9 +3588,9 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 
 /* Telas curtas (SE, 8, qualquer 16:9): a esfera encolhe. A régua de sugestões
    não precisa de nada — ela rola na horizontal e ocupa uma linha só.
-   70px mantém a mesma proporção de antes (96/132) sobre o novo padrão de 96. */
+   88px mantém a mesma proporção de antes (70/96) sobre o novo padrão de 120. */
 @media (max-height: 730px){
-  #mobViewAssistant .assistant-orb--intro{ --size:70px }
+  #mobViewAssistant .assistant-orb--intro{ --size:88px }
 }
 
 /* ============================================================
@@ -3660,7 +3663,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 
 /* ===== COMPONENTE: esfera do assistente ===== */
 .assistant-orb{
-  --size: 96px;
+  --size: 120px;
   --brand: var(--brand-primary, #F26B21);
   --tempo: 1;
   position: relative;
@@ -3762,3 +3765,183 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 /* Modificadores de tamanho. Só trocam --size: o desenho, o ritmo e as
    proporções (o desfoque é calc(--size * .11)) vêm do bloco acima intactos. */
 .assistant-orb--mini{ --size: 26px }
+
+/* ============================================================
+   MODO ESCURO DO CHAT
+
+   A esfera é uma nuvem de luz — luz só lê como luz sobre fundo escuro.
+   Este bloco escurece SÓ a tela do assistente (corpo, cabeçalho e a barra
+   inferior enquanto a aba Chat está ativa), nunca as outras telas do app.
+
+   Ativação: JS alterna a classe `assistant-dark` no <body> no mesmo lugar
+   que abre/fecha #mobViewAssistant — mobNavAssistant() adiciona,
+   closeMobViews() remove (scripts/pages/restaurant-page.js). A classe
+   nunca sobrevive à troca de aba, então Início/Cardápio/Clube/Perfil
+   continuam claros por construção.
+
+   Especificidade: cada seletor aqui replica a cadeia da regra clara que
+   está sobrescrevendo (mesmas classes/pseudo-classes) com `body.assistant-
+   dark` na frente. Isso garante voltagem MAIOR que a regra original —
+   sem depender de vir depois dela no arquivo — mesmo quando essa regra
+   clara mora em utilities.css/restaurant.css e se repete em vários
+   breakpoints. Não há prefers-color-scheme aqui: o escuro é da tela, não
+   do sistema.
+   ============================================================ */
+body.assistant-dark{
+  --assistant-dark-surface: color-mix(in srgb, var(--brand-primary) 10%, #0B0D12);
+}
+
+/* ── Superfície: corpo e cabeçalho, sem costura entre os dois ── */
+body.assistant-dark #mobViewAssistant.mob-view--assistant,
+body.assistant-dark #mobViewAssistant.mob-view--assistant.active,
+body.assistant-dark #mobViewAssistant .assistant-page,
+body.assistant-dark #mobViewAssistant .assistant-ai-body,
+body.assistant-dark #mobViewAssistant .assistant-ai-body--searching,
+body.assistant-dark #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
+  background:var(--assistant-dark-surface)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr{
+  background:var(--assistant-dark-surface)!important;
+  border-bottom:0!important;
+}
+
+/* ── Cabeçalho: título e ícones a 92%, botões circulares a 8% ── */
+body.assistant-dark #mobViewAssistant .assistant-hdr-title,
+body.assistant-dark #mobViewAssistant .assistant-hdr-name{
+  color:rgba(255,255,255,.92)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-btn{
+  background:rgba(255,255,255,.08)!important;
+  color:rgba(255,255,255,.92)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-btn:active,
+body.assistant-dark #mobViewAssistant .assistant-hdr-btn.is-active{
+  background:rgba(255,255,255,.14)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-menu{
+  background:var(--assistant-dark-surface)!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item{
+  color:rgba(255,255,255,.88)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item svg{
+  color:rgba(255,255,255,.55)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item:hover,
+body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item:active{
+  background:rgba(255,255,255,.08)!important;
+}
+
+/* ── "Como posso ajudar hoje?" em branco; subtítulo em branco a 60% ── */
+body.assistant-dark #mobViewAssistant .assistant-ai-question,
+body.assistant-dark #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
+  color:#ffffff!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-ai-subtitle{
+  color:rgba(255,255,255,.6)!important;
+}
+
+/* ── Pílulas de sugestão: fundo branco a 8%, texto branco a 90%, sem borda ── */
+body.assistant-dark #mobViewAssistant .assistant-starter{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-starter-card{
+  background:rgba(255,255,255,.08)!important;
+  border-color:transparent!important;
+  color:rgba(255,255,255,.9)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-suggest-chip{
+  background:rgba(255,255,255,.08)!important;
+  border-color:transparent!important;
+  color:rgba(255,255,255,.9)!important;
+}
+
+/* ── Campo de digitação: fundo branco a 6%, placeholder branco a 45%,
+     texto branco; botão de enviar com a marca cheia e ícone escuro ── */
+body.assistant-dark #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar,
+body.assistant-dark #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
+  background:rgba(255,255,255,.06)!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-ai-input{
+  color:#ffffff!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-ai-input::placeholder{
+  color:rgba(255,255,255,.45)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-ai-send.is-ready{
+  background:var(--brand-primary)!important;
+  color:rgba(0,0,0,.82)!important;
+  border-color:var(--brand-primary)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-ai-send.is-inactive,
+body.assistant-dark #mobViewAssistant .assistant-ai-send:disabled{
+  background:rgba(255,255,255,.08)!important;
+  color:rgba(255,255,255,.35)!important;
+  border-color:transparent!important;
+}
+
+/* ── Balões: cliente na marca a 22% com texto branco; assistente com
+     fundo branco a 6% ── */
+body.assistant-dark #mobViewAssistant .assistant-chat-user-message .assistant-result-title{
+  background:rgba(var(--brand-primary-rgb), .22)!important;
+  border-color:transparent!important;
+  color:#ffffff!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
+  background:rgba(255,255,255,.06)!important;
+  border-radius:14px!important;
+  padding:12px 14px!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
+  color:rgba(255,255,255,.92)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
+  color:#ffffff!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
+  color:rgba(255,255,255,.92)!important;
+}
+body.assistant-dark #mobViewAssistant .assistant-feedback-btn{
+  color:rgba(255,255,255,.55)!important;
+}
+
+/* ── Barra inferior: mesma superfície escura enquanto a aba Chat está
+     ativa; rótulos em branco a 55%, o ativo em branco cheio. O botão
+     circular central (.mob-nav-assistant-btn) fica de fora — mantém a
+     cor primária cheia, como em qualquer outra aba. ── */
+body.assistant-dark .mob-bottom-nav,
+body.assistant-dark .mob-bottom-nav::before{
+  background:var(--assistant-dark-surface)!important;
+  box-shadow:none!important;
+  border-top-color:transparent!important;
+}
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active),
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon),
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) span{
+  color:rgba(255,255,255,.55)!important;
+}
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
+body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) svg{
+  color:rgba(255,255,255,.55)!important;
+  stroke:rgba(255,255,255,.55)!important;
+}
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active,
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active .nav-icon,
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon),
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active span{
+  color:#ffffff!important;
+}
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active svg{
+  color:#ffffff!important;
+  stroke:#ffffff!important;
+}
+body.assistant-dark .mob-bottom-nav .mob-nav-item.active .nav-icon{
+  background:rgba(255,255,255,.14)!important;
+}

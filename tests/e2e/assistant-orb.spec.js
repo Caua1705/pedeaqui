@@ -221,18 +221,22 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
     const rect = el.getBoundingClientRect();
     const style = getComputedStyle(el);
     const icon = el.querySelector('.mob-nav-icon').getBoundingClientRect();
+    const iconCenters = [...document.querySelectorAll('#mobBottomNav .mob-nav-item .mob-nav-icon')]
+      .map(i => { const r = i.getBoundingClientRect(); return r.top + r.height / 2; });
     return {
       tabs,
       button: {
         width: Math.round(rect.width),
         height: Math.round(rect.height),
         aboveBar: Math.round(bar.top - rect.top),
+        iconCenterY: icon.top + icon.height / 2,
         radius: style.borderRadius,
         position: style.position,
         background: style.backgroundColor,
         iconColor: getComputedStyle(el.querySelector('.mob-nav-icon')).color,
         iconSide: Math.round(Math.max(icon.width, icon.height))
       },
+      sideIconCenterY: iconCenters.reduce((a, b) => a + b, 0) / iconCenters.length,
       brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim()
     };
   });
@@ -243,12 +247,18 @@ test('o menu inferior tem quatro rótulos e um botão central destacado', async 
   expect(nav.tabs.map(tab => tab.label)).toEqual(['Início', 'Cardápio', 'Clube', 'Perfil']);
   expect(new Set(nav.tabs.map(tab => tab.labelSize)).size, 'rótulos com corpos diferentes').toBe(1);
 
-  // O botão é um círculo de ~48px, elevado acima da linha da barra.
+  // O botão é um círculo de ~48px, maior que os quatro ícones de linha —
+  // por ser maior, ele SEMPRE estoura um pouco acima e abaixo da régua deles
+  // mesmo centrado, e é essa sobra que lê como "elevado". O que importa é o
+  // CENTRO: alinhado ao centro óptico dos outros quatro ícones, não flutuando
+  // acima deles (era isso que ficava "muito pra cima" no mobile real).
   expect(nav.button.width).toBe(48);
   expect(nav.button.height).toBe(48);
   expect(nav.button.position).toBe('absolute');
   expect(nav.button.radius).toMatch(/50%|24px/);
-  expect(nav.button.aboveBar, 'o botão não subiu acima da barra').toBeGreaterThan(0);
+  expect(Math.abs(nav.button.iconCenterY - nav.sideIconCenterY),
+    `botão desalinhado dos outros ícones: ${nav.button.iconCenterY} vs ${nav.sideIconCenterY}`
+  ).toBeLessThanOrEqual(4);
   // Fundo na marca diluída, ícone na marca cheia — não o contrário.
   expect(nav.button.background).toMatch(/^rgba\(/);
   expect(nav.button.iconColor, 'o ícone não está na cor da marca').not.toBe(nav.button.background);

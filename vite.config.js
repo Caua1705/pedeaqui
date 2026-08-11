@@ -58,8 +58,10 @@ export default defineConfig({
       targets: [
         // dest é '.' porque o plugin NÃO corta o diretório-base do src: ele
         // anexa o caminho inteiro sob o dest. Era daí que vinha o /assets/assets.
-        // scripts/pages/restaurant-rapi.js — RAPI_AVATAR_SRC/SRCSET
-        { src: 'assets/brand/rapi-mascot@*.webp', dest: '.' },
+        // O mascote saiu daqui junto com a reformulação do assistente: no app do
+        // consumidor ele deu lugar à esfera em CSS (styles/rapi.css, seção
+        // ESFERA). Os arquivos continuam no repo para o produto do lojista —
+        // copiá-los para o bundle do consumidor é que não faz mais sentido.
         // scripts/pages/restaurant-page.js — troca o ícone conforme o login
         { src: 'assets/icons/cart/cart-location-*@*.webp', dest: '.' },
         // scripts/pages/restaurant-page.js — marca do Pix na lista de formas de

@@ -61,31 +61,28 @@ test('toda imagem que o JS pede por string existe no build', async ({ request })
   expect(notImages, `respondeu 200 mas não é imagem: ${JSON.stringify(notImages, null, 2)}`).toEqual([]);
 });
 
-test('o mascote do Rapi realmente pinta — não some pelo handler de erro', async ({ page }) => {
+// O app do consumidor NÃO baixa a marca da plataforma. O mascote continua no
+// repo para o produto do lojista; se ele voltar a ser pedido por esta tela, é
+// porque alguém reintroduziu a marca do Rapidex numa superfície white-label —
+// e o teste tem que falhar antes de o cliente do restaurante ver.
+test('nenhuma arte da plataforma é baixada pelo app do consumidor', async ({ page }) => {
+  const brandRequests = [];
+  page.on('request', request => {
+    if (/rapi-(mascot|nav-avatar)/.test(request.url())) brandRequests.push(request.url());
+  });
+
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
 
-  // O orbe só existe depois que a view do Rapi é montada pelo JS. Desde o B2
-  // da Fase 4 essas funções vivem no registro de ações, não em window.
   await page.waitForFunction(() => Boolean(window.RapidexActions?.registry?.mobNavRapi));
   await page.evaluate(() => window.RapidexActions.registry.mobNavRapi());
+  await expect(page.locator('#mobViewRapi .rapi-hdr')).toBeVisible();
 
-  const orb = page.locator('#mobViewRapi .rapi-orb-img').first();
-  await expect(orb).toBeVisible();
-
-  // naturalWidth > 0 é a única prova de que o byte chegou e decodificou.
-  // display != none prova que data-act-error="$hide" não disparou.
-  const state = await orb.evaluate(img => ({
-    naturalWidth: img.naturalWidth,
-    display: getComputedStyle(img).display,
-    currentSrc: img.currentSrc
-  }));
-
-  expect(state.naturalWidth, 'o mascote não carregou (era o 404 do /assets/assets)').toBeGreaterThan(0);
-  expect(state.display).not.toBe('none');
-  expect(state.currentSrc).toMatch(/rapi-mascot@\dx\.webp$/);
+  expect(brandRequests, 'a arte da plataforma voltou ao app do cliente').toEqual([]);
+  // E o lugar dela não ficou vazio: a esfera desenhada em CSS ocupa a abertura.
+  await expect(page.locator('#rapiIntroSphere')).toBeVisible();
 });
 
 test('as fotos do cardápio pedem miniatura, não a foto inteira', async ({ page }) => {

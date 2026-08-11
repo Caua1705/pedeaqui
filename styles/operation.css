@@ -1732,6 +1732,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   height:14px!important;
   min-height:14px!important;
   max-height:14px!important;
+  overflow:visible!important;
 }
 .mob-bottom-nav .mob-nav-icon--menu{
   width:16px!important;
@@ -1748,6 +1749,7 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
   height:14px!important;
   min-height:14px!important;
   max-height:14px!important;
+  overflow:visible!important;
 }
 .mob-bottom-nav .mob-nav-icon--profile{
   width:12px!important;

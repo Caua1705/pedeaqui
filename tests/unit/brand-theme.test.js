@@ -83,7 +83,7 @@ describe('A2 — a paleta inteira sai de UMA cor', () => {
       const hex = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
       const palette = deriveBrandPalette(hex);
       for (const [token, value] of Object.entries(palette)) {
-        if (token === '--brand-primary-rgb') {
+        if (token.endsWith('-rgb')) {
           expect(value, `${hex} ${token}`).toMatch(/^\d{1,3}, \d{1,3}, \d{1,3}$/);
         } else if (!value.startsWith('rgba(')) {
           expect(value, `${hex} ${token}`).toMatch(/^#[0-9A-F]{6}$/);
@@ -127,6 +127,33 @@ describe('A3 — guarda de contraste sobre a cor de marca', () => {
       const other = chosen === '#FFFFFF' ? '#1A1A1A' : '#FFFFFF';
       expect(contrastRatio(hex, chosen), hex).toBeGreaterThanOrEqual(contrastRatio(hex, other));
     }
+  });
+
+  it(`--brand-ink cruza ${ON_BRAND_MIN_CONTRAST}:1 no branco para qualquer hex`, () => {
+    // A guarda virada do avesso: a marca como TINTA sobre a superfície clara do
+    // app. Sem ela, a seta amarela do cartão de sugestão some no fundo branco.
+    let worst = { ratio: Infinity, hex: null };
+    for (let r = 0; r < 256; r += 15) {
+      for (let g = 0; g < 256; g += 15) {
+        for (let b = 0; b < 256; b += 15) {
+          const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+          const ratio = contrastRatio(deriveBrandPalette(hex)['--brand-ink'], '#FFFFFF');
+          if (ratio < worst.ratio) worst = { ratio, hex };
+        }
+      }
+    }
+    expect(worst.ratio, `pior caso em ${worst.hex}`).toBeGreaterThanOrEqual(ON_BRAND_MIN_CONTRAST);
+  });
+
+  it('a tinta guarda o matiz da marca e só escurece quem precisa', () => {
+    // Um azul escuro já passa: ele tem de sair daqui EXATAMENTE como entrou, ou
+    // a guarda estaria repintando marcas que nunca tiveram problema.
+    expect(deriveBrandPalette(BLUE)['--brand-ink']).toBe(BLUE);
+    // O amarelo não passa e escurece — mas continua amarelo.
+    const yellowInk = deriveBrandPalette(YELLOW)['--brand-ink'];
+    expect(yellowInk).not.toBe(YELLOW);
+    expect(Math.abs(hexToHsl(yellowInk).h - hexToHsl(YELLOW).h)).toBeLessThan(8);
+    expect(hexToHsl(yellowInk).l).toBeLessThan(hexToHsl(YELLOW).l);
   });
 
   it('a cor do piloto ficou MAIS legível do que o laranja chumbado de hoje', () => {

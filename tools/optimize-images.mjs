@@ -31,9 +31,14 @@ import { basename, dirname, join } from 'node:path';
 // Só os dois masters do mascote precisam: ambos chegaram do render em RGB, sem
 // canal alfa, com o mascote achatado sobre branco + sombra.
 const ASSETS = [
+  // Os dois masters do mascote continuam aqui porque a arte continua no repo
+  // para o produto do LOJISTA. O app do consumidor não os consome mais: lá o
+  // assistente virou uma esfera em CSS, pintada com a cor do restaurante (ver
+  // a seção ESFERA em styles/rapi.css). `rendered` é, portanto, o tamanho da
+  // última superfície que os usava — mantido como referência de escala.
   {
     src: 'assets/brand/rapi-mascot.png',
-    rendered: 110, // .rapi-orb-img — styles/rapi.css:1220
+    rendered: 110,
     formats: ['webp'],
     // step 1 num master de 1254px: a rampa do fundo é suave o bastante para o
     // flood andar de 1 em 1, e é isso que impede o vazamento para dentro do
@@ -47,7 +52,7 @@ const ASSETS = [
   },
   {
     src: 'assets/brand/rapi-nav-avatar.png',
-    rendered: 52, // .menu-mobile-rapi-avatar — styles/rapi.css:1030
+    rendered: 52,
     formats: ['webp'],
     // Mesma arte em 256px: o mesmo degradê de sombra cai em 5x menos pixels,
     // então cada passo é mais íngreme e o flood precisa de mais tolerância.

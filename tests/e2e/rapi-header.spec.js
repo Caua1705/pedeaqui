@@ -1,14 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O } from './helpers.js';
 
-// A tela do Rapi era a ÚNICA do app sem cabeçalho: não havia como voltar sem a
-// barra de navegação e não havia como reiniciar a conversa de jeito nenhum.
+// A tela do assistente era a ÚNICA do app sem cabeçalho: não havia como voltar
+// sem a barra de navegação e não havia como reiniciar a conversa de jeito nenhum.
 //
 // O que estes testes travam é o que a tela ganhou de contrato, não a estética:
 // a anatomia é a MESMA das outras telas cheias (medida contra elas, não contra
-// números mágicos), o menu abre e fecha como menu, e "limpar conversa" começa
-// uma sessão nova em vez de só apagar a tela — sem isso o backend continuaria
-// respondendo com a memória da conversa que o cliente acabou de apagar.
+// números mágicos), a identidade do cabeçalho é a do RESTAURANTE — o app é
+// white-label e o cliente não conhece a plataforma —, o menu abre e fecha como
+// menu, e "limpar conversa" começa uma sessão nova em vez de só apagar a tela,
+// sem o que o backend continuaria respondendo com a memória do que o cliente
+// acabou de apagar.
 
 const CHAT_ANSWER = {
   response_type: 'products',
@@ -21,9 +23,19 @@ const CHAT_ANSWER = {
   }]
 };
 
-async function openRapi(page, { chat } = {}) {
+// A logo do fixture aponta para um CDN de verdade. Sem este stub, o cabeçalho
+// depende da rede para pintar e o teste passa a falhar por motivo errado.
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64'
+);
+
+async function openRapi(page, { chat, logo = true } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
+  await page.route('**/*logo*', route => logo
+    ? route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG })
+    : route.abort());
   if (chat !== false) {
     await page.route('**/chat', route => route.fulfill({
       status: 200,
@@ -77,27 +89,47 @@ test('o cabeçalho do Rapi tem a mesma anatomia das outras telas cheias', async 
   expect(rapiTitle.fontWeight, 'peso do título').toBe(otherTitle.fontWeight);
 });
 
-test('o título traz o mascote e o status, e o mascote realmente pinta', async ({ page }) => {
+test('o título é a marca do RESTAURANTE, não a da plataforma', async ({ page }) => {
   await openRapi(page);
 
-  await expect(page.locator('#mobViewRapi .rapi-hdr-title')).toHaveText(/Rapi/);
-  await expect(page.locator('#rapiHdrStatus')).toHaveText(/online/);
+  await expect(page.locator('#rapiHdrName')).toHaveText('Júnior da Picanha');
 
-  const mascot = page.locator('#mobViewRapi .rapi-hdr-mascot');
-  await expect(mascot).toBeVisible();
-  // naturalWidth > 0 é a única prova de que o byte chegou e decodificou; sem
-  // ela, data-act-error="$hide" some com a imagem e ninguém percebe.
-  expect(await mascot.evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  // A logo vem do cadastro do lojista — a mesma URL que o resto do app usa,
+  // não uma cópia digitada aqui.
+  const logo = page.locator('#mobViewRapi .rapi-hdr-logo img');
+  await expect(logo).toBeVisible();
+  const expected = await page.evaluate(() =>
+    window.PedeAquiRestaurantStore.get().restaurant.logo_url);
+  expect(expected, 'o fixture perdeu a logo').toBeTruthy();
+  expect(await logo.getAttribute('src')).toBe(expected);
+});
 
-  // O ponto é semântico (--state-success), nunca a cor da marca: um tenant
-  // vermelho não pode ter "online" em vermelho.
-  const dot = await page.locator('#mobViewRapi .rapi-hdr-dot').evaluate(el => ({
-    background: getComputedStyle(el).backgroundColor,
-    success: getComputedStyle(document.documentElement).getPropertyValue('--state-success').trim(),
-    brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim()
-  }));
-  expect(dot.background).not.toBe(dot.brand);
-  expect(dot.success).toBeTruthy();
+test('sem logo carregável, o cabeçalho cai nas iniciais do restaurante', async ({ page }) => {
+  // A logo vive num CDN de terceiro: se ela não pintar, o título não pode ficar
+  // com um quadrado quebrado no lugar da marca da loja.
+  await openRapi(page, { logo: false });
+
+  await expect(page.locator('#mobViewRapi .rapi-hdr-logo')).toHaveText('JP');
+  await expect(page.locator('#rapiHdrName')).toHaveText('Júnior da Picanha');
+});
+
+test('o indicador "online" não existe mais', async ({ page }) => {
+  await openRapi(page, { chat: false });
+  // Ele imitava presença humana e prometia resposta imediata; com a API fora do
+  // ar o cliente lia "online" enquanto esperava um erro. Não pode voltar nem
+  // quando a chamada falha, que era exatamente quando ele mudava de cor.
+  await page.route('**/chat', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
+
+  await expect(page.locator('#rapiHdrStatus')).toHaveCount(0);
+  await expect(page.locator('#mobViewRapi .rapi-hdr-dot')).toHaveCount(0);
+
+  await page.locator('#rapiInput').fill('Oi');
+  await page.locator('.rapi-ai-send').click();
+
+  // A falha é dita onde ela acontece: dentro da conversa, e não por um ponto
+  // que muda de cor a 300px do erro.
+  await expect(page.locator('.rapi-chat-assistant-message').last()).not.toBeEmpty();
+  await expect(page.locator('#rapiHdrStatus')).toHaveCount(0);
 });
 
 test('o botão da esquerda sai da tela do Rapi', async ({ page }) => {
@@ -161,24 +193,6 @@ test('o menu fecha ao clicar fora e com Escape', async ({ page }) => {
   await expect(menu).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
-});
-
-test('o status vira offline quando o Rapi não responde', async ({ page }) => {
-  await openRapi(page, { chat: false });
-  await page.route('**/chat', route => route.fulfill({
-    status: 500,
-    contentType: 'application/json',
-    body: JSON.stringify({ detail: 'boom' })
-  }));
-
-  await expect(page.locator('#rapiHdrStatus')).toHaveText(/online/);
-
-  await page.locator('#rapiInput').fill('Oi');
-  await page.locator('.rapi-ai-send').click();
-
-  // O ponto verde fixo seria enfeite: ele precisa acompanhar a última chamada.
-  await expect(page.locator('#rapiHdrStatus')).toHaveText(/offline/);
-  await expect(page.locator('#rapiHdrStatus')).toHaveAttribute('data-state', 'offline');
 });
 
 test('a sacola vive no cabeçalho e não empurra o título do centro', async ({ page }) => {

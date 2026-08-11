@@ -1006,10 +1006,12 @@ body.app-error .app-loader-message {
   height: 40px;
 }
 
+/* A altura vive na seção "MENU INFERIOR" no fim deste arquivo, junto do resto
+   do slot central. Aqui ficou só o que não mudou — e um seletor com id, que
+   venceria aquela seção por especificidade se repetisse `top`. */
 .mob-bottom-nav #mobNavQr {
   position: absolute !important;
   left: 50% !important;
-  top: 22.5px !important;
   transform: translateX(-50%) !important;
 }
 
@@ -3499,4 +3501,496 @@ body:has(#mobViewRapi.active) .rapi-toast{
    sacola, que agora mora no cabeçalho. */
 #mobViewRapi .rapi-ai-body--searching{
   padding:14px 0 0!important;
+}
+
+/* ============================================================
+   ESFERA DO ASSISTENTE — substitui o mascote no app do consumidor.
+
+   O app é white-label: quem abre a tela é cliente do RESTAURANTE e nunca ouviu
+   falar na plataforma. Um mascote é um personagem — tem nome e dono — e o dono
+   não é o restaurante. A esfera não é personagem: é uma forma abstrata pintada
+   com o primary_color do tenant, então ela pertence ao restaurante por
+   construção. No Júnior sai laranja-avermelhada; num japonês de marca índigo
+   sai índigo, sem tocar em uma linha de código.
+
+   CSS, não vídeo nem GIF: a cor só existe em runtime, então um arquivo de mídia
+   chegaria sempre na cor de outro tenant — fora de custar uma requisição por
+   estado. Aqui são quatro elementos e cinco gradientes.
+
+   Como ela ganha volume em QUALQUER hex — inclusive num amarelo claro sobre
+   fundo branco, que é onde uma esfera chapada sumiria:
+     · corpo: rampa clara -> marca -> escura, com o foco de luz fora do centro;
+     · duas correntes cônicas girando em sentidos opostos, uma clara e uma
+       escura, que dão impressão de líquido em vez de disco;
+     · vinheta e sombra inferior em --brand-deep, que tem luminosidade FIXA em
+       13% — é ela que garante borda escura mesmo quando a marca é clara;
+     · brilho especular em branco translúcido. Branco aqui é LUZ, não tinta de
+       marca: é o reflexo, e ele se comporta igual sobre qualquer cor.
+
+   Estados (data-state), o contrato que o JS usa:
+     idle      — pulsação lenta, respirando;
+     thinking  — gira e pulsa mais rápido, com o brilho variando;
+     answering — volta ao ritmo calmo;
+     static    — não anima nunca (a do menu inferior, que não é estado nenhum).
+   ============================================================ */
+.rapi-sphere{
+  /* Um só conjunto de variáveis descreve o ritmo. Os estados abaixo trocam os
+     números — as animações e os keyframes são sempre os mesmos. */
+  --sphere-size:96px;
+  --sphere-breathe:5.2s;
+  --sphere-spin:26s;
+  --sphere-spin-back:38s;
+  --sphere-swell:1.035;
+  --sphere-halo-low:.46;
+  --sphere-halo-high:.76;
+  position:relative;
+  display:inline-flex;
+  flex:0 0 auto;
+  width:var(--sphere-size);
+  height:var(--sphere-size);
+  isolation:isolate;
+}
+
+.rapi-sphere-halo{
+  position:absolute;
+  inset:-22%;
+  z-index:0;
+  border-radius:50%;
+  opacity:var(--sphere-halo-high);
+  background:radial-gradient(circle at 50% 50%,
+    rgba(var(--brand-primary-rgb), .40) 0%,
+    rgba(var(--brand-primary-rgb), .15) 46%,
+    rgba(var(--brand-primary-rgb), 0) 72%);
+  animation:rapi-sphere-halo var(--sphere-breathe) ease-in-out infinite;
+}
+
+.rapi-sphere-body{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  border-radius:50%;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 118%, rgba(var(--brand-deep-rgb), .72) 0%, rgba(var(--brand-deep-rgb), 0) 58%),
+    radial-gradient(circle at 34% 28%, var(--brand-light) 0%, var(--brand-primary) 54%, var(--brand-active) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--brand-deep-rgb), .14),
+    0 10px 26px rgba(var(--brand-primary-rgb), .26);
+  animation:rapi-sphere-breathe var(--sphere-breathe) ease-in-out infinite;
+}
+
+.rapi-sphere-swirl{
+  position:absolute;
+  inset:-30%;
+  border-radius:50%;
+}
+.rapi-sphere-swirl--light{
+  background:conic-gradient(from 0deg,
+    rgba(var(--brand-light-rgb), 0) 0deg,
+    rgba(var(--brand-light-rgb), .88) 56deg,
+    rgba(var(--brand-light-rgb), 0) 130deg,
+    rgba(var(--brand-light-rgb), 0) 224deg,
+    rgba(var(--brand-light-rgb), .52) 288deg,
+    rgba(var(--brand-light-rgb), 0) 360deg);
+  filter:blur(6px);
+  animation:rapi-sphere-spin var(--sphere-spin) linear infinite;
+}
+.rapi-sphere-swirl--deep{
+  background:conic-gradient(from 140deg,
+    rgba(var(--brand-deep-rgb), 0) 0deg,
+    rgba(var(--brand-deep-rgb), .40) 72deg,
+    rgba(var(--brand-deep-rgb), 0) 166deg,
+    rgba(var(--brand-deep-rgb), 0) 248deg,
+    rgba(var(--brand-deep-rgb), .26) 310deg,
+    rgba(var(--brand-deep-rgb), 0) 360deg);
+  filter:blur(8px);
+  animation:rapi-sphere-spin-back var(--sphere-spin-back) linear infinite;
+}
+
+.rapi-sphere-gloss{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:
+    radial-gradient(ellipse 44% 34% at 32% 24%,
+      rgba(255,255,255,.80) 0%, rgba(255,255,255,.26) 44%, rgba(255,255,255,0) 74%),
+    radial-gradient(circle at 50% 50%,
+      rgba(var(--brand-deep-rgb), 0) 58%, rgba(var(--brand-deep-rgb), .20) 100%);
+}
+
+@keyframes rapi-sphere-breathe{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(var(--sphere-swell))}
+}
+@keyframes rapi-sphere-halo{
+  0%,100%{opacity:var(--sphere-halo-low);transform:scale(1)}
+  50%{opacity:var(--sphere-halo-high);transform:scale(1.07)}
+}
+@keyframes rapi-sphere-spin{
+  from{transform:rotate(0)}
+  to{transform:rotate(360deg)}
+}
+@keyframes rapi-sphere-spin-back{
+  from{transform:rotate(360deg)}
+  to{transform:rotate(0)}
+}
+
+/* Pensando: mais rápido em tudo e com o brilho indo de bem baixo a cheio — é a
+   variação do halo, não a velocidade, que lê como "processando". */
+.rapi-sphere[data-state="thinking"]{
+  --sphere-breathe:1.25s;
+  --sphere-spin:2.6s;
+  --sphere-spin-back:3.8s;
+  --sphere-swell:1.085;
+  --sphere-halo-low:.30;
+  --sphere-halo-high:1;
+}
+/* Respondendo é o ritmo calmo do parado: a resposta já está entrando na tela, e
+   uma esfera agitada atrás dela competiria com o texto. */
+.rapi-sphere[data-state="answering"]{
+  --sphere-breathe:5.2s;
+  --sphere-spin:26s;
+  --sphere-spin-back:38s;
+}
+.rapi-sphere[data-state="static"] .rapi-sphere-halo,
+.rapi-sphere[data-state="static"] .rapi-sphere-body,
+.rapi-sphere[data-state="static"] .rapi-sphere-swirl{
+  animation:none;
+}
+
+/* Movimento reduzido: ela PARA, não some. Sumir seria trocar uma animação
+   indesejada por um buraco no lugar do assistente — o desenho continua inteiro,
+   com o halo no valor cheio, e só o movimento sai. */
+@media (prefers-reduced-motion: reduce){
+  .rapi-sphere-halo,
+  .rapi-sphere-body,
+  .rapi-sphere-swirl{
+    animation:none !important;
+  }
+}
+
+.rapi-sphere--intro{ --sphere-size:clamp(84px, 24vw, 112px) }
+.rapi-sphere--mini{ --sphere-size:26px }
+.rapi-sphere--nav{ --sphere-size:30px }
+
+/* ============================================================
+   MENU INFERIOR — slot central.
+
+   Mesma esfera, pequena e parada, sobre um círculo preenchido: maior que os
+   outros itens e subindo um pouco acima da barra, como o slot central do Take a
+   Juice. O mascote que morava aqui era uma ilustração com transparência e
+   detalhe fino; a 20px de altura útil ele virava mancha. Um círculo cheio lê
+   nesse tamanho — é a forma mais legível que existe em corpo pequeno.
+
+   Precisa de !important e de especificidade alta porque styles/utilities.css
+   prende este botão em 40x40 com !important em width, height e flex.
+   ============================================================ */
+/* O slot só reserva o vão na régua de cinco itens; ele NÃO pode ser o bloco de
+   contenção do botão — posicionado contra o slot, o círculo desceria para
+   dentro da barra em vez de subir acima dela. Quem contém é a própria barra,
+   que é fixed. */
+.mob-bottom-nav .mob-nav-qr-slot{
+  flex:0 0 56px!important;
+  width:56px!important;
+  height:56px!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr.active,
+.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active){
+  position:absolute!important;
+  left:50%!important;
+  /* Negativo: o círculo sobe acima da linha da barra. */
+  top:-14px!important;
+  transform:translateX(-50%)!important;
+  flex:0 0 56px!important;
+  width:56px!important;
+  min-width:56px!important;
+  max-width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  max-height:56px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr .menu-mobile-center{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:56px!important;
+  height:56px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:var(--brand-tint)!important;
+  /* Anel branco por fora: sem ele o círculo levantado encosta no conteúdo que
+     passa atrás da barra. O anel interno é a marca, bem diluída. */
+  box-shadow:
+    0 0 0 4px var(--surface),
+    inset 0 0 0 1px rgba(var(--brand-primary-rgb), .22),
+    0 6px 16px rgba(var(--brand-deep-rgb), .16)!important;
+  transition:transform .16s ease!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr:active .menu-mobile-center{
+  transform:scale(.94)!important;
+}
+.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .menu-mobile-center{
+  background:var(--brand-tint-strong)!important;
+}
+@media (prefers-reduced-motion: reduce){
+  .mob-bottom-nav .mob-nav-item.mob-nav-qr .menu-mobile-center{
+    transition:none!important;
+  }
+}
+
+/* ============================================================
+   CABEÇALHO — logo e nome do restaurante.
+
+   O avatar era o mascote e o título era o nome da plataforma. O indicador
+   "online" saiu inteiro: ele imitava presença humana e prometia uma resposta
+   imediata que um bot atrás de um LLM não cumpre — com oito segundos de espera,
+   o ponto verde virava mentira. Falha continua sendo dita onde ela acontece:
+   dentro da conversa.
+   ============================================================ */
+#mobViewRapi .rapi-hdr-logo{
+  display:flex!important;
+  flex:0 0 30px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:30px!important;
+  height:30px!important;
+  overflow:hidden!important;
+  border:1px solid var(--border)!important;
+  border-radius:9px!important;
+  background:var(--surface-2)!important;
+  color:var(--text-muted)!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  letter-spacing:.02em!important;
+  line-height:1!important;
+}
+#mobViewRapi .rapi-hdr-logo img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+#mobViewRapi .rapi-hdr-name{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+/* Sem a segunda linha do status, o título fica sozinho e centraliza sozinho. */
+#mobViewRapi .rapi-hdr-copy{
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+
+/* ============================================================
+   ABERTURA — a tela não abre mais vazia.
+
+   Antes: esfera, uma pergunta e nada mais. Ninguém sabe de cabeça o que
+   perguntar a um chat de restaurante, e a régua de sugestões que existia vivia
+   escondida no rodapé, atrás do teclado, rolando na horizontal.
+
+   Agora as sugestões são cartões empilhados logo abaixo da pergunta, no caminho
+   do olho. Empilhados e não em régua horizontal porque a 390px uma régua mostra
+   duas e meia: a terceira e a quarta só existem para quem adivinha que aquilo
+   rola. O conteúdo delas sai do cardápio do próprio tenant (ver
+   rapiCategorySuggestions em scripts/pages/restaurant-rapi.js).
+   ============================================================ */
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
+  padding:0 20px 132px!important;
+}
+#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+  margin-top:clamp(20px, 6vh, 56px)!important;
+  margin-bottom:16px!important;
+}
+#mobViewRapi .rapi-ai-body--searching .rapi-starter{
+  display:none!important;
+}
+#mobViewRapi .rapi-starter{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:340px!important;
+  margin:20px auto 0!important;
+  /* Só clicável depois de revelado: um cartão invisível continua recebendo o
+     toque, e o cliente dispararia uma pergunta que ainda não leu. */
+  pointer-events:none!important;
+}
+#mobViewRapi .rapi-starter.is-ready{
+  pointer-events:auto!important;
+}
+/* A abertura é uma coluna flex, e sem isto o navegador resolve a falta de
+   espaço ESPREMENDO os cartões: numa tela de 667px o terceiro virava uma faixa
+   de 20px com o texto cortado ao meio. Eles não encolhem — quem se ajusta ao
+   espaço é a lista de sugestões, pela regra de altura logo abaixo. */
+#mobViewRapi .rapi-starter,
+#mobViewRapi .rapi-starter-card{
+  flex:0 0 auto!important;
+}
+#mobViewRapi .rapi-starter-card{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  width:100%!important;
+  min-height:46px!important;
+  padding:0 14px!important;
+  border:1px solid var(--border)!important;
+  border-radius:14px!important;
+  background:var(--surface)!important;
+  color:var(--text-main)!important;
+  font-family:inherit!important;
+  font-size:13.5px!important;
+  line-height:18px!important;
+  font-weight:550!important;
+  text-align:left!important;
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+  opacity:0;
+  transform:translateY(8px);
+  transition:opacity .3s ease, transform .3s cubic-bezier(.2,.8,.2,1),
+    background-color .16s ease, border-color .16s ease;
+}
+#mobViewRapi .rapi-starter.is-ready .rapi-starter-card{
+  opacity:1;
+  transform:none;
+}
+#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(1){transition-delay:.02s}
+#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(2){transition-delay:.08s}
+#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(3){transition-delay:.14s}
+#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(4){transition-delay:.20s}
+#mobViewRapi .rapi-starter-card-label{
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+/* --brand-ink, não --brand-primary: a seta é a marca sobre papel branco, e uma
+   marca clara (amarelo, lima) tem 1,4 de contraste ali — o traço sumiria. O
+   token já entra escurecido o suficiente para cruzar 3:1, e só quando precisa. */
+#mobViewRapi .rapi-starter-card-arrow{
+  flex:0 0 15px!important;
+  width:15px!important;
+  height:15px!important;
+  color:var(--brand-ink)!important;
+}
+#mobViewRapi .rapi-starter-card:active{
+  background:var(--brand-tint)!important;
+  border-color:rgba(var(--brand-primary-rgb), .30)!important;
+}
+#mobViewRapi .rapi-starter-card:focus-visible{
+  background:var(--brand-tint)!important;
+  border-color:rgba(var(--brand-primary-rgb), .30)!important;
+  outline:2px solid rgba(var(--brand-primary-rgb), .55)!important;
+  outline-offset:2px!important;
+}
+@media (hover:hover){
+  #mobViewRapi .rapi-starter-card:hover{
+    background:var(--brand-tint)!important;
+    border-color:rgba(var(--brand-primary-rgb), .30)!important;
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  #mobViewRapi .rapi-starter-card{
+    opacity:1;
+    transform:none;
+    transition:background-color .16s ease, border-color .16s ease;
+  }
+}
+
+/* Telas curtas (SE, 8, qualquer 16:9): a quarta sugestão sai e a esfera encolhe.
+   O corpo da abertura é overflow:hidden de propósito — o que não couber some,
+   então é melhor decidir aqui o que sai do que deixar cortar pela metade. */
+@media (max-height: 730px){
+  #mobViewRapi .rapi-sphere--intro{ --sphere-size:72px }
+  /* O vão de 132px reservava o lugar do dock; numa tela curta o corpo termina
+     bem acima dele e o vão vira só altura roubada da abertura. */
+  #mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
+    padding-bottom:84px!important;
+  }
+  #mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
+    margin-top:clamp(10px, 3vh, 26px)!important;
+    margin-bottom:10px!important;
+  }
+  #mobViewRapi .rapi-starter{ margin-top:14px!important; gap:7px!important }
+  #mobViewRapi .rapi-starter-card:nth-child(n+4){ display:none!important }
+}
+
+/* ============================================================
+   CARREGANDO — esqueleto no lugar exato da resposta.
+
+   Antes, "Preparando sugestões..." ficava sozinho no alto com meia tela em
+   branco embaixo, e o cliente não tinha como saber se vinha uma frase, uma
+   régua de cartões ou nada. Agora o vazio tem a FORMA do que está vindo: três
+   linhas na medida do texto e três cartões na medida exata dos cartões de
+   produto (258px de largura, 258 de foto mais 72 de rodapé). Quando a resposta
+   chega, ela troca blocos do mesmo tamanho em vez de empurrar a tela.
+   ============================================================ */
+#mobViewRapi .rapi-chat-typing .rapi-typing-row{
+  gap:10px!important;
+  min-height:0!important;
+  margin-bottom:14px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+#mobViewRapi .rapi-chat-typing .rapi-sphere--mini{
+  flex:0 0 26px!important;
+}
+#mobViewRapi .rapi-skeleton-lines{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:9px!important;
+  margin-bottom:16px!important;
+}
+#mobViewRapi .rapi-skeleton-line{
+  display:block!important;
+  height:13px!important;
+  border-radius:7px!important;
+}
+#mobViewRapi .rapi-skeleton-line:nth-child(2){ width:88%!important }
+#mobViewRapi .rapi-skeleton-line:nth-child(3){ width:54%!important }
+#mobViewRapi .rapi-skeleton-rail{
+  display:flex!important;
+  gap:12px!important;
+  /* Os cartões reais nascem numa régua que sangra 2px além da bolha da
+     mensagem; sem isto o esqueleto ficaria deslocado do que o substitui. */
+  margin:0 -2px!important;
+  overflow:hidden!important;
+}
+#mobViewRapi .rapi-skeleton-card{
+  flex:0 0 258px!important;
+  width:258px!important;
+  height:330px!important;
+  border:1px solid var(--border)!important;
+  border-radius:14px!important;
+}
+#mobViewRapi .rapi-skeleton-line,
+#mobViewRapi .rapi-skeleton-card{
+  background:linear-gradient(100deg,
+    var(--surface-3) 0%,
+    var(--surface-3) 38%,
+    rgba(var(--brand-primary-rgb), .10) 50%,
+    var(--surface-3) 62%,
+    var(--surface-3) 100%)!important;
+  background-size:280% 100%!important;
+  background-position:120% 0;
+  animation:rapi-skeleton-sweep 1.6s linear infinite!important;
+}
+@keyframes rapi-skeleton-sweep{
+  from{background-position:120% 0}
+  to{background-position:-120% 0}
+}
+@media (prefers-reduced-motion: reduce){
+  #mobViewRapi .rapi-skeleton-line,
+  #mobViewRapi .rapi-skeleton-card{
+    background:var(--surface-3)!important;
+    animation:none!important;
+  }
 }

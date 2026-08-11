@@ -120,6 +120,26 @@
     return contrastRatio(primaryHex, INK) > onPaper ? INK : PAPER;
   }
 
+  // A3b — a mesma guarda, virada do avesso: a marca como TINTA sobre a
+  // superfície clara do app (um ícone, uma seta, um rótulo em destaque).
+  //
+  // onBrandColor() resolve texto EM CIMA da marca; este resolve a marca em cima
+  // do papel, que é o caso oposto e falha nas marcas claras: um amarelo tem 1,4
+  // de contraste no branco e desaparece. A regra é escurecer pela luminosidade,
+  // mantendo matiz e saturação, só até cruzar o piso de 3:1 — um laranja médio
+  // já passa e sai daqui intacto, então nenhuma marca é escurecida à toa.
+  function brandInkColor(primaryHex) {
+    const hsl = hexToHsl(primaryHex);
+    const saturation = Math.min(hsl.s, 90);
+    let lightness = hsl.l;
+    let ink = hslToHex({ h: hsl.h, s: saturation, l: lightness });
+    while (contrastRatio(ink, PAPER) < ON_BRAND_MIN_CONTRAST && lightness > 4) {
+      lightness = Math.max(4, lightness - 3);
+      ink = hslToHex({ h: hsl.h, s: saturation, l: lightness });
+    }
+    return ink;
+  }
+
   // Escurecer é o gesto natural de hover/press, MAS uma marca já quase preta não
   // tem para onde escurecer — nesse caso o estado se marca clareando.
   function stateShift(hsl, amount) {
@@ -143,6 +163,12 @@
     // Saturação teto nos tons claros: um wash com 100% de saturação fica ácido.
     const softS = Math.min(hsl.s, 85);
     const on = onBrandColor(primary);
+    const deep = hslToHex({ h: hsl.h, s: Math.min(hsl.s, 88), l: 13 });
+    const light = hslToHex({ h: hsl.h + 6, s: softS, l: clamp(hsl.l + 11, 24, 92) });
+    const rgbTriplet = (hex) => {
+      const channels = parseHex(hex);
+      return `${Math.round(channels.r)}, ${Math.round(channels.g)}, ${Math.round(channels.b)}`;
+    };
 
     return {
       '--brand-primary': primary,
@@ -153,14 +179,23 @@
       '--brand-active': hslToHex({ ...hsl, l: stateShift(hsl, 16) }),
       // Base das rampas escuras (hero, capa sem foto). Luminosidade fixa: um
       // degradê "quase preto -> marca" precisa começar escuro em qualquer hex.
-      '--brand-deep': hslToHex({ h: hsl.h, s: Math.min(hsl.s, 88), l: 13 }),
+      '--brand-deep': deep,
       // Parceira de gradiente: um passo mais clara e levemente mais quente.
-      '--brand-light': hslToHex({ h: hsl.h + 6, s: softS, l: clamp(hsl.l + 11, 24, 92) }),
+      '--brand-light': light,
+      // Componentes cruas das duas pontas da rampa. Quem desenha volume — a
+      // esfera do assistente é o caso — precisa de sombra e brilho COM alpha,
+      // e um hex não aceita alpha. A ponta escura tem l fixo em 13 e a clara é
+      // derivada da marca, então a mesma sombra funciona para um hex claro
+      // (amarelo) e para um escuro (índigo) sem virar cinza chapado.
+      '--brand-deep-rgb': rgbTriplet(deep),
+      '--brand-light-rgb': rgbTriplet(light),
       '--brand-tint': hslToHex({ h: hsl.h, s: softS, l: 96 }),
       '--brand-surface': hslToHex({ h: hsl.h, s: softS, l: 93 }),
       '--brand-tint-strong': hslToHex({ h: hsl.h, s: softS, l: 90 }),
       '--brand-border': hslToHex({ h: hsl.h, s: Math.min(hsl.s, 70), l: 78 }),
       '--brand-on': on,
+      // A marca legível SOBRE a superfície clara do app. Ver brandInkColor().
+      '--brand-ink': brandInkColor(primary),
       // Texto secundário sobre a marca (subtítulo dentro de um bloco chapado).
       '--brand-on-soft': on === PAPER ? 'rgba(255,255,255,.78)' : 'rgba(26,26,26,.66)',
       '--brand-glow': `rgba(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}, .28)`,

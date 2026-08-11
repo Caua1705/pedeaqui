@@ -1,22 +1,25 @@
 /**
- * Rapi — Assistente inteligente de pedido — PREMIUM UI v3
+ * Assistente de pedido — a tela de chat do app do consumidor.
  *
- * O Rapi é TRANSPORTE, não motor de recomendação: manda mensagem +
+ * O assistente é TRANSPORTE, não motor de recomendação: manda mensagem +
  * restaurant_id para POST /chat (onde o backend faz o RAG sobre o cardápio
  * daquele restaurante) e renderiza a resposta. Nada aqui pode saber o que o
  * restaurante vende — qualquer heurística de segmento (nomes de pratos, faixas
  * de preço em reais) quebra no primeiro tenant de outro vertical.
+ *
+ * MARCA: o app é white-label e o consumidor final nunca ouviu falar em Rapi nem
+ * em Rapidex. Nada nesta superfície pode nomear a plataforma — nem o cabeçalho,
+ * nem uma mensagem de erro, nem o alt de uma imagem. O mascote continua no repo
+ * (assets/brand/rapi-*) para o produto do lojista; aqui ele deu lugar a uma
+ * esfera abstrata desenhada em CSS a partir do primary_color do restaurante,
+ * que por construção não pertence à plataforma. Os prefixos `rapi*` no código e
+ * nos ids ficam: são nomes INTERNOS, não aparecem para o cliente, e renomear
+ * 3,5 mil linhas de CSS por eles seria churn sem ganho.
  */
 (function () {
   'use strict';
 
   /* ── Constants ── */
-  // O master era um PNG 1254x1254 de 1,0 MB para desenhar um orbe de 110px —
-  // 130x mais pixels do que a maior tela consome. As variantes WebP por DPR
-  // custam 1,2 / 2,9 / 4,8 kB. Regeradas por tools/optimize-images.mjs.
-  const RAPI_AVATAR_SRC = 'assets/brand/rapi-mascot@1x.webp';
-  const RAPI_AVATAR_SRCSET =
-    'assets/brand/rapi-mascot@1x.webp 1x, assets/brand/rapi-mascot@2x.webp 2x, assets/brand/rapi-mascot@3x.webp 3x';
   const RAPI_SESSION_STORAGE_KEY = 'rapi.session_id';
 
   /* ── State ── */
@@ -43,6 +46,52 @@
   /* ── Helpers ── */
   function getRapiProducts() {
     return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
+  }
+
+  function getRapiRestaurant() {
+    return window.PedeAquiRestaurantStore?.get?.()?.restaurant || {};
+  }
+
+  function getRapiRestaurantName() {
+    return String(getRapiRestaurant().name || '').trim() || 'Restaurante';
+  }
+
+  function rapiInitials(name) {
+    const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return '?';
+    const first = words[0][0] || '';
+    const last = words.length > 1 ? words[words.length - 1][0] : '';
+    return (first + last).toLocaleUpperCase('pt-BR');
+  }
+
+  /**
+   * A esfera do assistente.
+   *
+   * É CSS puro — nem vídeo, nem GIF, nem sprite: as três camadas abaixo são
+   * pintadas com as variáveis de marca do tenant (ver styles/rapi.css, seção
+   * "ESFERA"). Um vídeo custaria uma requisição por estado e chegaria sempre na
+   * cor errada, porque a cor só existe em runtime.
+   *
+   * Estados (data-state): `idle` respira devagar, `thinking` gira e pulsa mais
+   * rápido com o brilho variando, `answering` volta ao ritmo calmo e `static`
+   * não anima nunca (é o da barra de navegação, que precisa ler a 20px).
+   */
+  function sphereMarkup(modifier, state = 'idle', id = '') {
+    return `
+      <span class="rapi-sphere${modifier ? ` rapi-sphere--${modifier}` : ''}"${id ? ` id="${id}"` : ''} data-state="${state}" aria-hidden="true">
+        <span class="rapi-sphere-halo"></span>
+        <span class="rapi-sphere-body">
+          <span class="rapi-sphere-swirl rapi-sphere-swirl--light"></span>
+          <span class="rapi-sphere-swirl rapi-sphere-swirl--deep"></span>
+          <span class="rapi-sphere-gloss"></span>
+        </span>
+      </span>`;
+  }
+
+  // A esfera grande espelha o estado da conversa. `static` nunca entra aqui: a
+  // única esfera parada do app é a do menu inferior, que não representa estado.
+  function setRapiSphereState(state) {
+    document.getElementById('rapiIntroSphere')?.setAttribute('data-state', state);
   }
 
   function fmtPrice(val) {
@@ -198,6 +247,7 @@
       title._rapiRevealTimer = null;
     }
     title?.closest('.rapi-chat-assistant-message')?.classList.remove('is-typing-response');
+    setRapiSphereState('idle');
     finishRapiGeneration();
   }
 
@@ -212,7 +262,7 @@
 
   function normalizeChatResponse(data) {
     const payload = data?.data && data.data.response_type ? data.data : data;
-    return payload || { response_type: 'error', message: 'Resposta vazia do Rapi.' };
+    return payload || { response_type: 'error', message: 'Não consegui responder agora. Tente novamente.' };
   }
 
   function responseMessage(data) {
@@ -389,26 +439,36 @@
     });
     scrollRapiToLatest();
   }
+  /**
+   * Esqueleto de carregamento.
+   *
+   * Antes, "Preparando sugestões..." ficava sozinho no alto com meia tela em
+   * branco embaixo — o cliente não tinha como saber se vinha texto, cartão ou
+   * nada. O esqueleto ocupa EXATAMENTE o lugar da resposta: as barras têm a
+   * medida das linhas do texto e a régua tem a medida dos cartões de produto,
+   * então quando a resposta chega ela substitui blocos do mesmo tamanho em vez
+   * de empurrar a tela. A esfera ao lado fica no estado "pensando".
+   */
   function appendRapiTypingIndicator() {
     const resultsEl = document.getElementById('rapiResults');
     if (!resultsEl || document.getElementById('rapiTypingMessage')) return;
     let statusIndex = Math.floor(Math.random() * RAPI_TYPING_STATUSES.length);
-    const typingDots = Array.from({ length: 49 }, (_, index) => {
-      const row = Math.floor(index / 7);
-      const column = index % 7;
-      const inset = Math.max(0, Math.abs(row - 3) - 1);
-      const hidden = column < inset || column > 6 - inset;
-      const ring = Math.max(Math.abs(row - 3), Math.abs(column - 3));
-      return `<span class="${hidden ? 'is-shape-cut' : `is-ring-${ring}`}"></span>`;
-    }).join('');
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="rapi-result-card rapi-chat-assistant-message rapi-chat-typing" id="rapiTypingMessage" aria-live="polite">
         <div class="rapi-result-content">
           <div class="rapi-typing-row">
-            <div class="rapi-thinking rapi-thinking--dark visible">
-              <div class="rapi-thinking-dots rapi-thinking-dots--dark">${typingDots}</div>
-            </div>
+            ${sphereMarkup('mini', 'thinking')}
             <span class="rapi-typing-label" data-text="${RAPI_TYPING_STATUSES[statusIndex]}">${RAPI_TYPING_STATUSES[statusIndex]}</span>
+          </div>
+          <div class="rapi-skeleton-lines" aria-hidden="true">
+            <span class="rapi-skeleton-line"></span>
+            <span class="rapi-skeleton-line"></span>
+            <span class="rapi-skeleton-line"></span>
+          </div>
+          <div class="rapi-skeleton-rail" aria-hidden="true">
+            <span class="rapi-skeleton-card"></span>
+            <span class="rapi-skeleton-card"></span>
+            <span class="rapi-skeleton-card"></span>
           </div>
         </div>
       </div>`);
@@ -640,12 +700,40 @@
   // deliberadamente neutro — sem nome de prato, sem segmento e sem valor em
   // reais, que era o caso de "Me recomenda um prato" / "Quero gastar até R$ 50"
   // (essas frases só fazem sentido num restaurante de comida com esse ticket).
-  const DEFAULT_RAPI_SUGGESTIONS = [
+  // As duas primeiras valem em qualquer vertical e são sempre estas.
+  const RAPI_SUGGESTION_HEAD = [
     'O que você recomenda?',
-    'Quais são os mais pedidos?',
+    'Quais são os mais pedidos?'
+  ];
+  // As duas últimas saem do cardápio do tenant; estas só entram quando o
+  // cardápio ainda não chegou, para a tela nunca abrir com duas sozinhas.
+  const RAPI_SUGGESTION_TAIL = [
     'Quero uma sugestão para duas pessoas',
     'Me surpreenda'
   ];
+
+  const RAPI_SUGGESTION_LIMIT = 4;
+
+  /**
+   * As duas últimas sugestões saem do CARDÁPIO do próprio tenant, não de uma
+   * lista chumbada: "Tem sobremesas?" no Júnior, "Tem temakis?" num japonês.
+   * Quem nomeia a categoria é o lojista, então a frase acompanha o vertical de
+   * graça — e um app sem cardápio carregado simplesmente fica com as duas
+   * perguntas neutras em vez de inventar uma terceira.
+   *
+   * O corte de 18 caracteres é de layout: acima disso o nome estoura a linha do
+   * cartão de sugestão a 390px e o texto quebra no meio de uma palavra.
+   */
+  function rapiCategorySuggestions(limit) {
+    if (limit <= 0) return [];
+    const categories = (window.PedeAquiRestaurantStore?.get?.()?.categories || [])
+      .map(category => String(category?.name || '').trim())
+      .filter(name => name && Array.from(name).length <= 18);
+    // De trás para a frente: o fim de um cardápio é onde o lojista põe o que
+    // complementa o pedido, e é sobre isso que o cliente costuma ter dúvida.
+    return categories.slice(-limit).reverse()
+      .map(name => `Tem ${name.toLocaleLowerCase('pt-BR')}?`);
+  }
 
   function rapiStarterSuggestions() {
     const store = window.PedeAquiRestaurantStore?.get?.() || {};
@@ -653,23 +741,42 @@
     const list = (Array.isArray(configured) ? configured : [])
       .map(item => String(item?.label ?? item ?? '').trim())
       .filter(Boolean);
-    return list.length ? list.slice(0, 6) : DEFAULT_RAPI_SUGGESTIONS;
+    if (list.length) return list.slice(0, RAPI_SUGGESTION_LIMIT);
+    const openSlots = RAPI_SUGGESTION_LIMIT - RAPI_SUGGESTION_HEAD.length;
+    const fromMenu = rapiCategorySuggestions(openSlots);
+    return RAPI_SUGGESTION_HEAD
+      .concat(fromMenu.length ? fromMenu : RAPI_SUGGESTION_TAIL.slice(0, openSlots))
+      .slice(0, RAPI_SUGGESTION_LIMIT);
   }
 
-  // O texto passou a vir da API, então ele NÃO pode ser interpolado dentro de um
-  // onclick="...('texto')": um apóstrofo no texto configurado quebraria o JS do
-  // atributo. Vai como data-attribute e o clique é tratado por delegação.
-  function starterChips() {
-    return rapiStarterSuggestions()
-      .map(suggestion => `<button class="rapi-suggest-chip" type="button" data-rapi-suggestion="${esc(suggestion)}">${esc(suggestion)}</button>`)
-      .join('');
+  // O texto vem da API ou do nome de uma categoria, então ele NÃO pode ser
+  // interpolado dentro de um onclick="...('texto')": um apóstrofo quebraria o JS
+  // do atributo. Vai como data-attribute e o clique é tratado por delegação.
+  function starterSuggestionCards() {
+    return rapiStarterSuggestions().map(suggestion => `
+      <button class="rapi-starter-card" type="button" data-rapi-suggestion="${esc(suggestion)}">
+        <span class="rapi-starter-card-label">${esc(suggestion)}</span>
+        <svg class="rapi-starter-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>`).join('');
+  }
+
+  function renderRapiStarterSuggestions() {
+    const container = document.getElementById('rapiStarter');
+    if (container) container.innerHTML = starterSuggestionCards();
   }
 
   /* ── Header ──
      Mesma estrutura das outras telas cheias do app (Pagamento PIX, Unidades e
      Operação, Usar cupom): botão à esquerda, título ao centro, botão à direita.
-     A identidade da tela vem do CONTEÚDO — mascote junto do nome e estado da
-     conversa —, não de uma anatomia própria. */
+
+     A identidade é a do RESTAURANTE: logo e nome. Antes eram o mascote e o nome
+     da plataforma, que o consumidor nunca viu na vida.
+
+     Sem indicador "online": ele imitava presença humana e prometia uma resposta
+     imediata que um bot atrás de um LLM não tem como cumprir — quando a resposta
+     demorava oito segundos, o ponto verde virava mentira. O que a tela ainda
+     precisa dizer sobre falha ela diz onde a falha acontece: na mensagem de erro
+     dentro da conversa. */
   function buildRapiHeader() {
     return `
       <header class="rapi-hdr">
@@ -679,20 +786,9 @@
 
         <div class="rapi-hdr-copy">
           <h2 class="rapi-hdr-title">
-            <!-- Mesmo arquivo do orbe grande, com o mesmo srcset: na tela do
-                 Rapi ele já está baixado, então o mascote do cabeçalho não custa
-                 nenhum byte a mais. O avatar da barra de navegação seria mais
-                 justo de enquadramento, mas ele entra pelo HTML (URL hasheada) e
-                 aqui teria de ser copiado verbatim — dois downloads da mesma
-                 arte. Caixa de 36px: o master tem margem em volta, então o
-                 mascote desenha ~27px de altura ao lado do nome. -->
-            <img class="rapi-hdr-mascot" src="${RAPI_AVATAR_SRC}" srcset="${RAPI_AVATAR_SRCSET}"
-              alt="" width="36" height="36" decoding="async" data-act-error="$hide">
-            <span>Rapi</span>
+            <span class="rapi-hdr-logo" id="rapiHdrLogo" aria-hidden="true"></span>
+            <span class="rapi-hdr-name" id="rapiHdrName"></span>
           </h2>
-          <p class="rapi-hdr-status" id="rapiHdrStatus" data-state="online" aria-live="polite">
-            <span class="rapi-hdr-dot" aria-hidden="true"></span><span id="rapiHdrStatusText">online</span>
-          </p>
         </div>
 
         <div class="rapi-hdr-actions">
@@ -727,20 +823,22 @@
 
       ${locationWidget}
 
-      <!-- Dark AI body -->
+      <!-- AI body -->
       <div class="rapi-ai-body" id="rapiAiBody">
 
-        <!-- Glowing orb -->
+        <!-- Abertura: esfera, pergunta e sugestões. A tela nunca abre vazia:
+             ninguém sabe de cabeça o que perguntar a um chat de restaurante. -->
         <div class="rapi-orb-wrap">
-          <div class="rapi-orb-glow"></div>
-          <div class="rapi-orb">
-            <img class="rapi-orb-img" src="${RAPI_AVATAR_SRC}" srcset="${RAPI_AVATAR_SRCSET}" alt="Rapi" width="110" height="110" decoding="async" data-act-error="$hide">
-          </div>
+          ${sphereMarkup('intro', 'idle', 'rapiIntroSphere')}
         </div>
 
         <!-- Question -->
         <div class="rapi-ai-question" id="rapiIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
         <div class="rapi-ai-subtitle">Me diga o que procura e eu encontro as melhores op&ccedil;&otilde;es do card&aacute;pio.</div>
+
+        <div class="rapi-starter" id="rapiStarter" aria-label="Sugest&otilde;es de pergunta">
+          ${starterSuggestionCards()}
+        </div>
 
         <!-- Results area (shown after search) -->
         <div class="rapi-ai-results-wrap" id="rapiAiResultsWrap" style="display:none">
@@ -758,14 +856,8 @@
 
       </div>
 
-      <!-- Bottom dock: chips + input -->
+      <!-- Bottom dock: input -->
       <div class="rapi-bottom-dock">
-
-        <!-- Suggestion chips (horizontal scroll) -->
-        <div class="rapi-suggest-rail rapi-suggest-rail--waiting" id="rapiStarter"
-          style="opacity:0!important;visibility:hidden!important;pointer-events:none!important">
-          ${starterChips()}
-        </div>
 
         <!-- Input bar -->
         <div class="rapi-ai-input-bar">
@@ -802,8 +894,10 @@
               <h3 class="rapi-product-detail-title" id="rapiProductDetailTitle"></h3>
               <div class="rapi-product-detail-price" id="rapiProductDetailPrice"></div>
               <p class="rapi-product-detail-description" id="rapiProductDetailDescription"></p>
+              <!-- Era "Escolha do Rapi": a plataforma assinando a sugestão numa
+                   tela onde ela não existe para o cliente. -->
               <div class="rapi-product-detail-recommendation">
-                <strong>Escolha do Rapi</strong>
+                <strong>Por que indicamos</strong>
                 <span id="rapiProductDetailRecommendation"></span>
               </div>
             </div>
@@ -914,7 +1008,6 @@
     const resultsEl = document.getElementById('rapiResults');
     const labelEl = document.getElementById('rapiResultsLabel');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
-    const starterEl = document.getElementById('rapiStarter');
     const aiBody = document.getElementById('rapiAiBody');
     const resultsWrap = document.getElementById('rapiAiResultsWrap');
     const inputEl = document.getElementById('rapiInput');
@@ -935,17 +1028,11 @@
     if (aiBody) aiBody.classList.add('rapi-ai-body--searching');
     if (labelEl) labelEl.classList.remove('visible');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
-    if (starterEl) {
-      starterEl.classList.add('hidden');
-      starterEl.style.setProperty('display', 'none', 'important');
-      starterEl.style.setProperty('opacity', '0', 'important');
-      starterEl.style.setProperty('visibility', 'hidden', 'important');
-      starterEl.style.setProperty('pointer-events', 'none', 'important');
-    }
 
     appendRapiUserMessage(cleanMessage);
     setRapiInputDisabled(true);
     setRapiGenerating(true);
+    setRapiSphereState('thinking');
     appendRapiTypingIndicator();
 
     try {
@@ -955,7 +1042,7 @@
         products_count: Array.isArray(response?.products) ? response.products.length : 0
       });
       removeRapiTypingIndicator();
-      setRapiStatus('online');
+      setRapiSphereState('answering');
       _rapiResponseTimer = setTimeout(() => {
         _rapiResponseTimer = null;
         if (!_rapiSending) return;
@@ -968,15 +1055,13 @@
         finishRapiGeneration();
         return;
       }
-      // Parar aqui é a única prova que o cabeçalho tem de que o Rapi não está
-      // respondendo — abortar a pedido do cliente não conta.
-      setRapiStatus('offline');
+      setRapiSphereState('answering');
       _rapiResponseTimer = setTimeout(() => {
         _rapiResponseTimer = null;
         if (!_rapiSending) return;
         renderRapiChatResponse({
           response_type: 'error',
-          message: error?.message || 'Nao consegui conectar ao Rapi agora. Tente novamente.'
+          message: error?.message || 'Não consegui responder agora. Tente novamente.'
         }, cleanMessage);
         if (!_rapiActiveReveal) finishRapiGeneration();
       }, 190);
@@ -1022,62 +1107,28 @@
     viewport?.addEventListener('scroll', updateKeyboardOffset, { signal });
     window.addEventListener('resize', updateKeyboardOffset, { signal });
   }
-  function setupRapiSuggestionDrag() {
-    const rail = document.getElementById('rapiStarter');
-    if (!rail || rail.dataset.dragReady === '1') return;
-    rail.dataset.dragReady = '1';
-
-    let pointerId = null;
-    let startX = 0;
-    let startScrollLeft = 0;
-    let dragged = false;
-
-    rail.addEventListener('pointerdown', event => {
-      if (event.button !== undefined && event.button !== 0) return;
-      pointerId = event.pointerId;
-      startX = event.clientX;
-      startScrollLeft = rail.scrollLeft;
-      dragged = false;
-      rail.classList.add('is-dragging');
-      try { rail.setPointerCapture(pointerId); } catch (_) {}
-    });
-
-    rail.addEventListener('pointermove', event => {
-      if (pointerId !== event.pointerId) return;
-      const dx = event.clientX - startX;
-      if (Math.abs(dx) > 4) dragged = true;
-      if (dragged) {
-        rail.scrollLeft = startScrollLeft - dx;
-        event.preventDefault();
-      }
-    }, { passive: false });
-
-    const endDrag = event => {
-      if (pointerId !== null && event.pointerId === pointerId) {
-        try { rail.releasePointerCapture(pointerId); } catch (_) {}
-        pointerId = null;
-      }
-      rail.classList.remove('is-dragging');
-    };
-
-    rail.addEventListener('pointerup', endDrag);
-    rail.addEventListener('pointercancel', endDrag);
-    rail.addEventListener('click', event => {
-      if (!dragged) return;
-      event.preventDefault();
-      event.stopPropagation();
-      dragged = false;
-    }, true);
-
-    // Delegação: o rótulo do chip vem da API, então ele viaja em data-attribute
-    // em vez de ser interpolado num onclick. O listener de captura acima já
-    // engole o clique quando o gesto foi arrasto, então este só vê cliques reais.
-    rail.addEventListener('click', event => {
-      const chip = event.target.closest?.('.rapi-suggest-chip');
-      const suggestion = chip?.dataset?.rapiSuggestion;
+  // Delegação: o rótulo da sugestão vem da API ou do nome de uma categoria,
+  // então ele viaja em data-attribute em vez de ser interpolado num onclick —
+  // um apóstrofo no nome quebraria o JS do atributo.
+  function setupRapiSuggestionClicks() {
+    const starter = document.getElementById('rapiStarter');
+    if (!starter || starter.dataset.clicksReady === '1') return;
+    starter.dataset.clicksReady = '1';
+    starter.addEventListener('click', event => {
+      const card = event.target.closest?.('[data-rapi-suggestion]');
+      const suggestion = card?.dataset?.rapiSuggestion;
       if (suggestion) window.rapiUseSuggestion(suggestion);
     });
   }
+
+  /**
+   * Abertura da tela: a pergunta é digitada e as sugestões entram atrás dela.
+   *
+   * As classes fazem todo o trabalho (ver "ABERTURA" em styles/rapi.css). A
+   * versão anterior escrevia doze propriedades inline com !important em cada
+   * chip a cada abertura, porque a régua de sugestões morava no dock e brigava
+   * com meia dúzia de regras antigas; fora do dock não há com quem brigar.
+   */
   function startRapiIntroAnimation() {
     const questionEl = document.getElementById('rapiIntroQuestion');
     const starterEl = document.getElementById('rapiStarter');
@@ -1092,48 +1143,25 @@
     const text = questionEl.getAttribute('data-text') || 'Como posso ajudar hoje?';
     questionEl.textContent = '';
     questionEl.classList.add('is-typing');
-    starterEl.classList.remove('hidden', 'rapi-suggest-rail--ready');
-    starterEl.classList.add('rapi-suggest-rail--waiting');
-    starterEl.style.setProperty('display', 'flex', 'important');
-    starterEl.style.setProperty('opacity', '0', 'important');
-    starterEl.style.setProperty('visibility', 'hidden', 'important');
-    starterEl.style.setProperty('pointer-events', 'none', 'important');
-    starterEl.style.setProperty('height', 'auto', 'important');
-    starterEl.style.setProperty('overflow-x', 'auto', 'important');
-    starterEl.style.setProperty('overflow-y', 'hidden', 'important');
+    starterEl.classList.remove('is-ready');
+    setRapiSphereState('idle');
 
-    const revealSuggestions = () => {
-      const currentBody = document.getElementById('rapiAiBody');
-      if (currentBody?.classList.contains('rapi-ai-body--searching')) return;
-      starterEl.classList.remove('hidden', 'rapi-suggest-rail--waiting');
-      starterEl.classList.add('rapi-suggest-rail--ready');
-      starterEl.style.setProperty('display', 'flex', 'important');
-      starterEl.style.setProperty('opacity', '1', 'important');
-      starterEl.style.setProperty('visibility', 'visible', 'important');
-      starterEl.style.setProperty('pointer-events', 'auto', 'important');
-      starterEl.style.setProperty('height', 'auto', 'important');
-      starterEl.style.setProperty('overflow-x', 'auto', 'important');
-      starterEl.style.setProperty('overflow-y', 'hidden', 'important');
-      starterEl.querySelectorAll('.rapi-suggest-chip').forEach((chip, index) => {
-        chip.style.setProperty('visibility', 'visible', 'important');
-        chip.style.setProperty('display', 'inline-flex', 'important');
-        chip.style.setProperty('animation', 'none', 'important');
-        chip.style.setProperty('opacity', '0', 'important');
-        chip.style.setProperty('transform', 'translateY(14px) scale(.98)', 'important');
-        window.requestAnimationFrame(() => {
-          chip.style.setProperty('transition', 'opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1)', 'important');
-          chip.style.setProperty('transition-delay', (index * 70) + 'ms', 'important');
-          chip.style.setProperty('opacity', '1', 'important');
-          chip.style.setProperty('transform', 'translateY(0) scale(1)', 'important');
-        });
-      });
-    };
+    // Movimento reduzido: a abertura aparece pronta. Digitar letra a letra é
+    // movimento como qualquer outro, e aqui ele ainda ATRASA as sugestões — que
+    // só entram quando a frase termina.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      questionEl.classList.remove('is-typing');
+      questionEl.textContent = text;
+      starterEl.classList.add('is-ready');
+      return;
+    }
 
     typeRapiText(questionEl, text, {
       onFrame: frame => { _introTypeTimer = frame; },
       onComplete: () => {
         _introTypeTimer = null;
-        revealSuggestions();
+        if (document.getElementById('rapiAiBody')?.classList.contains('rapi-ai-body--searching')) return;
+        starterEl.classList.add('is-ready');
       }
     });
   }
@@ -1316,11 +1344,14 @@
 
     ensureRapiCartSubscription();
     syncRapiCartButton();
+    syncRapiHeaderIdentity();
     setRapiHeaderMenuOpen(false);
-    setupRapiSuggestionDrag();
+    setupRapiSuggestionClicks();
     setupRapiKeyboardViewport();
 
-    // Reset inline ready styles before the browser paints a reused Rapi view.
+    // A view é reaproveitada entre visitas: a abertura precisa voltar ao ponto
+    // de partida antes do próximo quadro, ou a pergunta reaparece já escrita e
+    // as sugestões piscam prontas antes de serem reveladas de novo.
     const introBody = view.querySelector('#rapiAiBody');
     const introQuestion = view.querySelector('#rapiIntroQuestion');
     const introStarter = view.querySelector('#rapiStarter');
@@ -1329,17 +1360,10 @@
         introQuestion.textContent = '';
         introQuestion.classList.remove('is-typing');
       }
-      introStarter.classList.remove('hidden', 'rapi-suggest-rail--ready');
-      introStarter.classList.add('rapi-suggest-rail--waiting');
-      introStarter.style.setProperty('opacity', '0', 'important');
-      introStarter.style.setProperty('visibility', 'hidden', 'important');
-      introStarter.style.setProperty('pointer-events', 'none', 'important');
-      introStarter.querySelectorAll('.rapi-suggest-chip').forEach(chip => {
-        chip.style.setProperty('opacity', '0', 'important');
-        chip.style.setProperty('visibility', 'hidden', 'important');
-        chip.style.setProperty('transition', 'none', 'important');
-        chip.style.setProperty('transition-delay', '0ms', 'important');
-      });
+      // O cardápio pode ter chegado depois da primeira montagem — daí as
+      // sugestões de categoria só existirem a partir da segunda visita.
+      renderRapiStarterSuggestions();
+      introStarter.classList.remove('is-ready');
     }
     const beginIntro = () => {
       view.classList.remove('rapi-intro-deferred');
@@ -1360,7 +1384,39 @@
     };
     requestAnimationFrame(waitForKeyboardLayout);
   };
-  /* ── Header: menu e estado da conversa ── */
+  /* ── Header: identidade do restaurante e menu ── */
+
+  // Logo e nome saem do store a cada abertura, não da montagem: a view é
+  // construída uma vez só, e a primeira construção pode acontecer antes de o
+  // /info responder. O fallback são as iniciais, como nas outras telas.
+  function syncRapiHeaderIdentity() {
+    const logoBox = document.getElementById('rapiHdrLogo');
+    const nameEl = document.getElementById('rapiHdrName');
+    const name = getRapiRestaurantName();
+    if (nameEl) nameEl.textContent = name;
+    if (!logoBox) return;
+
+    const restaurant = getRapiRestaurant();
+    const logoUrl = restaurant.logo_url || restaurant.logo_path || '';
+    const initials = rapiInitials(name);
+    const showInitials = () => {
+      logoBox.classList.add('is-fallback');
+      logoBox.textContent = initials;
+    };
+
+    if (!logoUrl) {
+      showInitials();
+      return;
+    }
+    const image = document.createElement('img');
+    image.src = logoUrl;
+    image.alt = '';
+    image.decoding = 'async';
+    image.addEventListener('error', showInitials, { once: true });
+    logoBox.classList.remove('is-fallback');
+    logoBox.replaceChildren(image);
+  }
+
   function setRapiHeaderMenuOpen(open) {
     const menu = document.getElementById('rapiHdrMenu');
     const button = document.getElementById('rapiHdrMenuBtn');
@@ -1371,16 +1427,6 @@
     if (open) menu.querySelector('.rapi-hdr-menu-item')?.focus({ preventScroll: true });
   }
 
-  // O ponto do cabeçalho só pode afirmar o que a última chamada provou. Fixo em
-  // verde ele seria enfeite — continuaria verde com a API fora do ar.
-  function setRapiStatus(state) {
-    const status = document.getElementById('rapiHdrStatus');
-    const text = document.getElementById('rapiHdrStatusText');
-    if (!status || !text) return;
-    status.dataset.state = state;
-    text.textContent = state === 'offline' ? 'offline' : 'online';
-  }
-
   window.rapiToggleHeaderMenu = function () {
     setRapiHeaderMenuOpen(Boolean(document.getElementById('rapiHdrMenu')?.hidden));
   };
@@ -1389,14 +1435,13 @@
     setRapiHeaderMenuOpen(false);
     stopRapiGeneration();
     // Sessão nova, e não só a tela em branco: o backend guarda a conversa por
-    // session_id, então reaproveitar o id faria o Rapi responder com a memória
-    // do que o cliente acabou de apagar.
+    // session_id, então reaproveitar o id faria o assistente responder com a
+    // memória do que o cliente acabou de apagar.
     _rapiSessionId = null;
     window.sessionStorage?.removeItem(RAPI_SESSION_STORAGE_KEY);
     ensureRapiSessionId();
     _rapiOptionCache = [];
     window.rapiReset();
-    setRapiStatus('online');
     startRapiIntroAnimation();
     showRapiToast('Conversa limpa');
   };
@@ -1416,14 +1461,8 @@
     if (thinkingEl) thinkingEl.classList.remove('visible');
     const showMoreBtn = document.getElementById('rapiShowMoreBtn');
     if (showMoreBtn) showMoreBtn.classList.remove('visible');
-    const starterEl = document.getElementById('rapiStarter');
-    if (starterEl) {
-      starterEl.classList.remove('hidden');
-      starterEl.style.removeProperty('display');
-      starterEl.style.removeProperty('opacity');
-      starterEl.style.removeProperty('visibility');
-      starterEl.style.removeProperty('pointer-events');
-    }
+    document.getElementById('rapiStarter')?.classList.remove('is-ready');
+    setRapiSphereState('idle');
     // Reset new AI layout elements
     const resultsWrap = document.getElementById('rapiAiResultsWrap');
     if (resultsWrap) resultsWrap.style.display = 'none';

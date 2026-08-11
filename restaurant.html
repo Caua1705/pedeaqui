@@ -228,13 +228,22 @@
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h6a3 3 0 0 1 3 3V21a3 3 0 0 0-3-3H3z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3V21a3 3 0 0 1 3-3h6z"/></svg></span>
     <span>Cardápio</span>
   </button>
+  <!-- Slot central: a mesma esfera do assistente, pequena e parada, sobre um
+       círculo preenchido que sobe um pouco acima da barra. O mascote que morava
+       aqui era uma ilustração com transparência e detalhe fino: a 20px de altura
+       útil ele virava mancha, e ainda por cima anunciava a plataforma num app
+       que é do restaurante. Um círculo cheio na cor da marca lê nesse tamanho. -->
   <div class="mob-nav-qr-slot">
-    <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Rapi" type="button" data-act-click='mobNavRapi'>
+    <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Abrir assistente" type="button" data-act-click='mobNavRapi'>
     <div class="menu-mobile-center">
-      <img class="menu-mobile-rapi-avatar"
-        src="assets/brand/rapi-nav-avatar@1x.webp"
-        srcset="assets/brand/rapi-nav-avatar@1x.webp 1x, assets/brand/rapi-nav-avatar@2x.webp 2x, assets/brand/rapi-nav-avatar@3x.webp 3x"
-        alt="Rapi" width="52" height="52" decoding="async" data-act-error="$hide">
+      <span class="rapi-sphere rapi-sphere--nav" data-state="static" aria-hidden="true">
+        <span class="rapi-sphere-halo"></span>
+        <span class="rapi-sphere-body">
+          <span class="rapi-sphere-swirl rapi-sphere-swirl--light"></span>
+          <span class="rapi-sphere-swirl rapi-sphere-swirl--deep"></span>
+          <span class="rapi-sphere-gloss"></span>
+        </span>
+      </span>
     </div>
   </button>
   </div>

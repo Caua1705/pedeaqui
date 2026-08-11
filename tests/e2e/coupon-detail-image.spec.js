@@ -5,8 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
+// Um WebP pequeno qualquer, só para o teste ter bytes de imagem de verdade —
+// nada aqui depende de QUAL imagem é. Era o mascote, que saiu do repositório
+// junto com a marca da plataforma no app do consumidor.
 const LOCAL_WEBP = readFileSync(
-  resolve(here, '..', '..', 'assets', 'brand', 'rapi-mascot@1x.webp')
+  resolve(here, '..', '..', 'assets', 'brand', 'pedeaqui-logo@1x.webp')
 );
 const FIRST_COUPON_IMAGE = 'coupon-10-percent-off.webp';
 

@@ -59,7 +59,7 @@ export default defineConfig({
         // dest é '.' porque o plugin NÃO corta o diretório-base do src: ele
         // anexa o caminho inteiro sob o dest. Era daí que vinha o /assets/assets.
         // O mascote saiu daqui junto com a reformulação do assistente: no app do
-        // consumidor ele deu lugar à esfera em CSS (styles/rapi.css, seção
+        // consumidor ele deu lugar à esfera em CSS (styles/assistant.css, seção
         // ESFERA). Os arquivos continuam no repo para o produto do lojista —
         // copiá-los para o bundle do consumidor é que não faz mais sentido.
         // scripts/pages/restaurant-page.js — troca o ícone conforme o login

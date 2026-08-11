@@ -22,7 +22,7 @@ const repo = resolve(here, '..', '..');
 // config não. Assim, quem mover o asset sem ajustar o build vê o teste falhar.
 function runtimeAssetPaths() {
   const sources = [
-    'scripts/pages/restaurant-rapi.js',
+    'scripts/pages/restaurant-assistant.js',
     'scripts/pages/restaurant-page.js'
   ];
   const found = new Set();
@@ -61,14 +61,20 @@ test('toda imagem que o JS pede por string existe no build', async ({ request })
   expect(notImages, `respondeu 200 mas não é imagem: ${JSON.stringify(notImages, null, 2)}`).toEqual([]);
 });
 
-// O app do consumidor NÃO baixa a marca da plataforma. O mascote continua no
-// repo para o produto do lojista; se ele voltar a ser pedido por esta tela, é
-// porque alguém reintroduziu a marca do Rapidex numa superfície white-label —
-// e o teste tem que falhar antes de o cliente do restaurante ver.
+// O app do consumidor NÃO baixa arte da plataforma. Os arquivos do mascote
+// saíram do repositório; se alguma URL com nome de marca voltar a ser pedida por
+// esta tela, é porque alguém reintroduziu a plataforma numa superfície
+// white-label — e o teste tem que falhar antes de o cliente do restaurante ver.
 test('nenhuma arte da plataforma é baixada pelo app do consumidor', async ({ page }) => {
+  // Casa NOME DE ARQUIVO de arte da plataforma, não qualquer URL que contenha
+  // "rapidex": o host da API é api.pederapidex.com e os modelos de cupom moram
+  // num bucket chamado /rapidex/. Nenhum dos dois é arte, e nenhum dos dois é
+  // visível — incluí-los aqui só transformaria o teste em ruído.
   const brandRequests = [];
   page.on('request', request => {
-    if (/rapi-(mascot|nav-avatar)/.test(request.url())) brandRequests.push(request.url());
+    if (/\/[^/?]*(mascot|nav-avatar|rapidex-\d+|rapidex-maskable)[^/?]*\.(png|webp|svg|avif)/i.test(request.url())) {
+      brandRequests.push(request.url());
+    }
   });
 
   await mockApi(page);
@@ -76,13 +82,13 @@ test('nenhuma arte da plataforma é baixada pelo app do consumidor', async ({ pa
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
 
-  await page.waitForFunction(() => Boolean(window.RapidexActions?.registry?.mobNavRapi));
-  await page.evaluate(() => window.RapidexActions.registry.mobNavRapi());
-  await expect(page.locator('#mobViewRapi .rapi-hdr')).toBeVisible();
+  await page.waitForFunction(() => Boolean(window.RapidexActions?.registry?.mobNavAssistant));
+  await page.evaluate(() => window.RapidexActions.registry.mobNavAssistant());
+  await expect(page.locator('#mobViewAssistant .assistant-hdr')).toBeVisible();
 
   expect(brandRequests, 'a arte da plataforma voltou ao app do cliente').toEqual([]);
-  // E o lugar dela não ficou vazio: a esfera desenhada em CSS ocupa a abertura.
-  await expect(page.locator('#rapiIntroSphere')).toBeVisible();
+  // E o lugar dela não ficou vazio: a janela desenhada em CSS ocupa a abertura.
+  await expect(page.locator('#assistantIntroOrb')).toBeVisible();
 });
 
 test('as fotos do cardápio pedem miniatura, não a foto inteira', async ({ page }) => {

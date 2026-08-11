@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0">
-<title>Rapidex — Pedido Online</title>
+<!-- Neutro, não o nome da plataforma: este título vale só até o /info responder,
+     e a partir daí quem nomeia a aba é o restaurante (applyTheme, em
+     scripts/pages/restaurant-page.js). Um título estático não tem como saber de
+     qual loja é — ele serve todos os tenants ao mesmo tempo. -->
+<title>Pedido Online</title>
 <!-- PWA. O href do manifest é reescrito no boot para /<slug>/manifest.webmanifest
      e, quando a marca chega da API, para um blob com nome e logo do tenant.
      A âncora estática garante um manifest válido antes de o JS rodar.
@@ -13,7 +17,7 @@
 <meta name="theme-color" content="#F36F21">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="/assets/icons/pwa/rapidex-192.png">
+<link rel="apple-touch-icon" href="/assets/icons/pwa/app-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">
@@ -29,7 +33,7 @@
 <link rel="stylesheet" href="styles/login.css">
 <link rel="stylesheet" href="styles/verify.css">
 <link rel="stylesheet" href="styles/button-theme.css">
-<link rel="stylesheet" href="styles/rapi.css">
+<link rel="stylesheet" href="styles/assistant.css">
 <link rel="stylesheet" href="styles/coupons-api.css">
 <link rel="stylesheet" href="styles/pix.css">
 <link rel="stylesheet" href="styles/markup.css">
@@ -228,25 +232,14 @@
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h6a3 3 0 0 1 3 3V21a3 3 0 0 0-3-3H3z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3V21a3 3 0 0 1 3-3h6z"/></svg></span>
     <span>Cardápio</span>
   </button>
-  <!-- Slot central: a mesma esfera do assistente, pequena e parada, sobre um
-       círculo preenchido que sobe um pouco acima da barra. O mascote que morava
-       aqui era uma ilustração com transparência e detalhe fino: a 20px de altura
-       útil ele virava mancha, e ainda por cima anunciava a plataforma num app
-       que é do restaurante. Um círculo cheio na cor da marca lê nesse tamanho. -->
-  <div class="mob-nav-qr-slot">
-    <button class="mob-nav-item mob-nav-qr" id="mobNavQr" aria-label="Abrir assistente" type="button" data-act-click='mobNavRapi'>
-    <div class="menu-mobile-center">
-      <span class="rapi-sphere rapi-sphere--nav" data-state="static" aria-hidden="true">
-        <span class="rapi-sphere-halo"></span>
-        <span class="rapi-sphere-body">
-          <span class="rapi-sphere-swirl rapi-sphere-swirl--light"></span>
-          <span class="rapi-sphere-swirl rapi-sphere-swirl--deep"></span>
-          <span class="rapi-sphere-gloss"></span>
-        </span>
-      </span>
-    </div>
+  <!-- Botão central, sem rótulo: o slot vazio guarda o lugar na régua e o botão
+       flutua centrado sobre ele. Sem o slot, Cardápio e Clube se encostariam no
+       meio e ficariam POR BAIXO do círculo, comendo o toque das duas.
+       O aria-label existe porque não há texto visível. -->
+  <div class="mob-nav-center-slot" aria-hidden="true"></div>
+  <button class="mob-nav-assistant-btn" id="mobNavAssistantTab" type="button" aria-label="Assistente" data-act-click='mobNavAssistant'>
+    <svg class="mob-nav-icon mob-nav-icon--assistant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 15.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 3V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z"/></svg>
   </button>
-  </div>
   <button class="mob-nav-item" id="mobNavOrders" data-act-click='mobNavClub'>
     <span class="nav-icon"><svg class="mob-nav-icon mob-nav-icon--club" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M2 8h20v4H2zM12 8v13"/><path d="M12 8H7.5a2.5 2.5 0 1 1 2.1-3.85C10.7 5.6 12 8 12 8zM12 8h4.5a2.5 2.5 0 1 0-2.1-3.85C13.3 5.6 12 8 12 8z"/></svg></span>
     <span>Clube</span>
@@ -265,9 +258,9 @@
   </div>
 </div>
 
-<!-- MOBILE VIEW: RAPI -->
-<div class="mob-view mob-view--rapi" id="mobViewRapi" aria-label="Rapi - Assistente de pedido">
-  <!-- populated by renderRapiView() -->
+<!-- MOBILE VIEW: ASSISTENTE -->
+<div class="mob-view mob-view--assistant" id="mobViewAssistant" aria-label="Assistente">
+  <!-- populated by renderAssistantView() -->
 </div>
 
 <!-- MOBILE VIEW: PERFIL -->

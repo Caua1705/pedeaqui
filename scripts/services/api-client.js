@@ -49,7 +49,7 @@
       ? setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs)
       : null;
 
-    // A caller-supplied signal (e.g. the Rapi chat cancel button) still wins.
+    // A caller-supplied signal (e.g. the assistant chat cancel button) still wins.
     const onCallerAbort = () => controller.abort();
     if (callerSignal) {
       if (callerSignal.aborted) controller.abort();

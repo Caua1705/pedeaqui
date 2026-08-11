@@ -23,19 +23,13 @@ const CHAT_ANSWER = {
   }]
 };
 
-// A logo do fixture aponta para um CDN de verdade. Sem este stub, o cabeçalho
-// depende da rede para pintar e o teste passa a falhar por motivo errado.
-const PIXEL_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-  'base64'
-);
-
-async function openRapi(page, { chat, logo = true } = {}) {
+// A logo do fixture aponta para um CDN de verdade. Ela não aparece mais nesta
+// tela, mas aparece atrás dela (topo da loja), e deixar a requisição sair faz o
+// teste depender da rede para nada.
+async function openAssistant(page, { chat } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
-  await page.route('**/*logo*', route => logo
-    ? route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG })
-    : route.abort());
+  await page.route('**/*logo*', route => route.abort());
   if (chat !== false) {
     await page.route('**/chat', route => route.fulfill({
       status: 200,
@@ -46,8 +40,8 @@ async function openRapi(page, { chat, logo = true } = {}) {
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
-  await page.evaluate(() => window.RapidexActions.resolve('mobNavRapi')());
-  await expect(page.locator('#mobViewRapi .rapi-hdr')).toBeVisible();
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
+  await expect(page.locator('#mobViewAssistant .assistant-hdr')).toBeVisible();
 }
 
 /** Caixa e raio de um elemento, do jeito que o usuário vê. */
@@ -65,12 +59,12 @@ const boxOf = (page, selector) => page.evaluate((sel) => {
   };
 }, selector);
 
-test('o cabeçalho do Rapi tem a mesma anatomia das outras telas cheias', async ({ page }) => {
-  await openRapi(page);
+test('o cabeçalho tem a mesma anatomia das outras telas cheias', async ({ page }) => {
+  await openAssistant(page);
 
-  const rapiHeader = await boxOf(page, '#mobViewRapi .rapi-hdr');
-  const rapiButton = await boxOf(page, '#mobViewRapi .rapi-hdr-btn');
-  const rapiTitle = await boxOf(page, '#mobViewRapi .rapi-hdr-title');
+  const assistantHeader = await boxOf(page, '#mobViewAssistant .assistant-hdr');
+  const assistantButton = await boxOf(page, '#mobViewAssistant .assistant-hdr-btn');
+  const assistantTitle = await boxOf(page, '#mobViewAssistant .assistant-hdr-title');
 
   // A referência é a tela vizinha DE VERDADE, medida no mesmo navegador: um
   // número copiado para cá continuaria passando no dia em que as outras telas
@@ -81,68 +75,54 @@ test('o cabeçalho do Rapi tem a mesma anatomia das outras telas cheias', async 
   const otherButton = await boxOf(page, '#operationModal .cart-hdr-back');
   const otherTitle = await boxOf(page, '#operationModal .cart-hdr-title');
 
-  expect(rapiHeader.height, 'altura do cabeçalho').toBe(otherHeader.height);
-  expect(rapiButton.width, 'largura do botão').toBe(otherButton.width);
-  expect(rapiButton.height, 'altura do botão').toBe(otherButton.height);
-  expect(rapiButton.radius, 'raio do botão').toBe(otherButton.radius);
-  expect(rapiTitle.fontSize, 'corpo do título').toBe(otherTitle.fontSize);
-  expect(rapiTitle.fontWeight, 'peso do título').toBe(otherTitle.fontWeight);
+  expect(assistantHeader.height, 'altura do cabeçalho').toBe(otherHeader.height);
+  expect(assistantButton.width, 'largura do botão').toBe(otherButton.width);
+  expect(assistantButton.height, 'altura do botão').toBe(otherButton.height);
+  expect(assistantButton.radius, 'raio do botão').toBe(otherButton.radius);
+  expect(assistantTitle.fontSize, 'corpo do título').toBe(otherTitle.fontSize);
+  expect(assistantTitle.fontWeight, 'peso do título').toBe(otherTitle.fontWeight);
 });
 
-test('o título é a marca do RESTAURANTE, não a da plataforma', async ({ page }) => {
-  await openRapi(page);
+test('o título diz o que a tela É, sem nomear o assistente', async ({ page }) => {
+  await openAssistant(page);
 
-  await expect(page.locator('#rapiHdrName')).toHaveText('Júnior da Picanha');
-
-  // A logo vem do cadastro do lojista — a mesma URL que o resto do app usa,
-  // não uma cópia digitada aqui.
-  const logo = page.locator('#mobViewRapi .rapi-hdr-logo img');
-  await expect(logo).toBeVisible();
-  const expected = await page.evaluate(() =>
-    window.PedeAquiRestaurantStore.get().restaurant.logo_url);
-  expect(expected, 'o fixture perdeu a logo').toBeTruthy();
-  expect(await logo.getAttribute('src')).toBe(expected);
-});
-
-test('sem logo carregável, o cabeçalho cai nas iniciais do restaurante', async ({ page }) => {
-  // A logo vive num CDN de terceiro: se ela não pintar, o título não pode ficar
-  // com um quadrado quebrado no lugar da marca da loja.
-  await openRapi(page, { logo: false });
-
-  await expect(page.locator('#mobViewRapi .rapi-hdr-logo')).toHaveText('JP');
-  await expect(page.locator('#rapiHdrName')).toHaveText('Júnior da Picanha');
+  // "Chat" e nada mais: palavra curta, que qualquer cliente reconhece, e que
+  // não é nome de produto. Um nome próprio aqui teria dono, e o dono não seria
+  // o restaurante. E não sobrou avatar nenhum ao lado do título.
+  await expect(page.locator('#assistantHdrName')).toHaveText('Chat');
+  await expect(page.locator('#mobViewAssistant .assistant-hdr-title img')).toHaveCount(0);
 });
 
 test('o indicador "online" não existe mais', async ({ page }) => {
-  await openRapi(page, { chat: false });
+  await openAssistant(page, { chat: false });
   // Ele imitava presença humana e prometia resposta imediata; com a API fora do
   // ar o cliente lia "online" enquanto esperava um erro. Não pode voltar nem
   // quando a chamada falha, que era exatamente quando ele mudava de cor.
   await page.route('**/chat', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
 
-  await expect(page.locator('#rapiHdrStatus')).toHaveCount(0);
-  await expect(page.locator('#mobViewRapi .rapi-hdr-dot')).toHaveCount(0);
+  await expect(page.locator('#assistantHdrStatus')).toHaveCount(0);
+  await expect(page.locator('#mobViewAssistant .assistant-hdr-dot')).toHaveCount(0);
 
-  await page.locator('#rapiInput').fill('Oi');
-  await page.locator('.rapi-ai-send').click();
+  await page.locator('#assistantInput').fill('Oi');
+  await page.locator('.assistant-ai-send').click();
 
   // A falha é dita onde ela acontece: dentro da conversa, e não por um ponto
   // que muda de cor a 300px do erro.
-  await expect(page.locator('.rapi-chat-assistant-message').last()).not.toBeEmpty();
-  await expect(page.locator('#rapiHdrStatus')).toHaveCount(0);
+  await expect(page.locator('.assistant-chat-assistant-message').last()).not.toBeEmpty();
+  await expect(page.locator('#assistantHdrStatus')).toHaveCount(0);
 });
 
-test('o botão da esquerda sai da tela do Rapi', async ({ page }) => {
-  await openRapi(page);
+test('o botão da esquerda sai da tela do assistente', async ({ page }) => {
+  await openAssistant(page);
 
-  await page.locator('#mobViewRapi .rapi-hdr-btn[aria-label="Voltar"]').click();
+  await page.locator('#mobViewAssistant .assistant-hdr-btn[aria-label="Voltar"]').click();
 
-  await expect(page.locator('#mobViewRapi')).not.toHaveClass(/active/);
+  await expect(page.locator('#mobViewAssistant')).not.toHaveClass(/active/);
 });
 
 test('limpar conversa apaga a tela E começa uma sessão nova no backend', async ({ page }) => {
   const sessions = [];
-  await openRapi(page, { chat: false });
+  await openAssistant(page, { chat: false });
   await page.route('**/chat', route => {
     sessions.push(JSON.parse(route.request().postData() || '{}').session_id);
     return route.fulfill({
@@ -152,24 +132,24 @@ test('limpar conversa apaga a tela E começa uma sessão nova no backend', async
     });
   });
 
-  await page.locator('#rapiInput').fill('Quero algo gelado');
-  await page.locator('.rapi-ai-send').click();
-  await expect(page.locator('.rapi-product-card')).toBeVisible();
+  await page.locator('#assistantInput').fill('Quero algo gelado');
+  await page.locator('.assistant-ai-send').click();
+  await expect(page.locator('.assistant-product-card')).toBeVisible();
 
-  await page.locator('#rapiHdrMenuBtn').click();
-  await expect(page.locator('#rapiHdrMenu')).toBeVisible();
-  await page.locator('#rapiHdrMenu .rapi-hdr-menu-item').click();
+  await page.locator('#assistantHdrMenuBtn').click();
+  await expect(page.locator('#assistantHdrMenu')).toBeVisible();
+  await page.locator('#assistantHdrMenu .assistant-hdr-menu-item').click();
 
   // A tela volta à abertura: sem respostas e com a intro de novo.
-  await expect(page.locator('.rapi-product-card')).toHaveCount(0);
-  await expect(page.locator('#rapiAiResultsWrap')).toBeHidden();
-  await expect(page.locator('#mobViewRapi .rapi-ai-body')).not.toHaveClass(/rapi-ai-body--searching/);
-  await expect(page.locator('#rapiHdrMenu')).toBeHidden();
+  await expect(page.locator('.assistant-product-card')).toHaveCount(0);
+  await expect(page.locator('#assistantAiResultsWrap')).toBeHidden();
+  await expect(page.locator('#mobViewAssistant .assistant-ai-body')).not.toHaveClass(/assistant-ai-body--searching/);
+  await expect(page.locator('#assistantHdrMenu')).toBeHidden();
 
-  // E o backend recebe outro session_id: é isso que faz o Rapi esquecer.
-  await page.locator('#rapiInput').fill('E agora?');
-  await page.locator('.rapi-ai-send').click();
-  await expect(page.locator('.rapi-product-card')).toBeVisible();
+  // E o backend recebe outro session_id: é isso que faz o assistente esquecer.
+  await page.locator('#assistantInput').fill('E agora?');
+  await page.locator('.assistant-ai-send').click();
+  await expect(page.locator('.assistant-product-card')).toBeVisible();
 
   expect(sessions).toHaveLength(2);
   expect(sessions[0], 'session_id não foi enviado').toBeTruthy();
@@ -177,15 +157,15 @@ test('limpar conversa apaga a tela E começa uma sessão nova no backend', async
 });
 
 test('o menu fecha ao clicar fora e com Escape', async ({ page }) => {
-  await openRapi(page);
-  const menu = page.locator('#rapiHdrMenu');
-  const button = page.locator('#rapiHdrMenuBtn');
+  await openAssistant(page);
+  const menu = page.locator('#assistantHdrMenu');
+  const button = page.locator('#assistantHdrMenuBtn');
 
   await button.click();
   await expect(menu).toBeVisible();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
 
-  await page.locator('#rapiIntroQuestion').click();
+  await page.locator('#assistantIntroQuestion').click();
   await expect(menu).toBeHidden();
   await expect(button).toHaveAttribute('aria-expanded', 'false');
 
@@ -196,9 +176,9 @@ test('o menu fecha ao clicar fora e com Escape', async ({ page }) => {
 });
 
 test('a sacola vive no cabeçalho e não empurra o título do centro', async ({ page }) => {
-  await openRapi(page);
-  const cart = page.locator('#rapiCartButton');
-  const title = page.locator('#mobViewRapi .rapi-hdr-title');
+  await openAssistant(page);
+  const cart = page.locator('#assistantCartButton');
+  const title = page.locator('#mobViewAssistant .assistant-hdr-title');
 
   await expect(cart).toBeHidden();
   const centeredBefore = await title.evaluate(el => {
@@ -212,7 +192,7 @@ test('a sacola vive no cabeçalho e não empurra o título do centro', async ({ 
   }, PRODUCT_H2O);
 
   await expect(cart).toBeVisible();
-  await expect(page.locator('#rapiCartCount')).toHaveText('1');
+  await expect(page.locator('#assistantCartCount')).toHaveText('1');
 
   const centeredAfter = await title.evaluate(el => {
     const rect = el.getBoundingClientRect();

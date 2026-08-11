@@ -1,11 +1,11 @@
 /* ============================================================
-   RAPI — Assistente inteligente de pedido — PREMIUM UI
+   ASSISTENTE — tela de conversa do app do consumidor
    Todas as classes são exclusivas deste módulo.
    Não altera nem sobrescreve nenhuma classe existente.
    ============================================================ */
 
 /* ── View container ── */
-.mob-view--rapi {
+.mob-view--assistant {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -17,18 +17,18 @@
   overflow: hidden;
 }
 
-.mob-view--rapi.active {
+.mob-view--assistant.active {
   transform: translateX(0);
 }
 
-body.modal-open.rapi-nav-keep .mob-bottom-nav,
-body.rapi-nav-keep .mob-bottom-nav,
-body:has(#mobViewRapi.active) .mob-bottom-nav {
+body.modal-open.assistant-nav-keep .mob-bottom-nav,
+body.assistant-nav-keep .mob-bottom-nav,
+body:has(#mobViewAssistant.active) .mob-bottom-nav {
   display: flex !important;
 }
 
 /* ── Scrollable body ── */
-.rapi-page {
+.assistant-page {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -37,7 +37,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 }
 
 /* ── HERO SECTION ── */
-.rapi-hero {
+.assistant-hero {
   position: relative;
   background: linear-gradient(160deg, var(--brand-tint) 0%, var(--brand-tint) 60%, var(--brand-tint-strong) 100%);
   padding: 28px 20px 22px;
@@ -48,7 +48,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   text-align: center;
 }
 
-.rapi-hero::before {
+.assistant-hero::before {
   content: '';
   position: absolute;
   top: -40px;
@@ -59,7 +59,7 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
   pointer-events: none;
 }
 
-.rapi-hero::after {
+.assistant-hero::after {
   content: '';
   position: absolute;
   bottom: -30px;
@@ -71,34 +71,34 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 }
 
 /* ── Avatar wrap (hero) ── */
-.rapi-avatar-wrap {
+.assistant-avatar-wrap {
   position: relative;
   width: 96px;
   height: 96px;
   margin-bottom: 14px;
   z-index: 1;
-  animation: rapi-avatar-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: assistant-avatar-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-@keyframes rapi-avatar-in {
+@keyframes assistant-avatar-in {
   from { opacity: 0; transform: scale(0.7) translateY(10px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.rapi-avatar-glow {
+.assistant-avatar-glow {
   position: absolute;
   inset: -8px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.22) 0%, transparent 70%);
-  animation: rapi-glow-pulse 3s ease-in-out infinite;
+  animation: assistant-glow-pulse 3s ease-in-out infinite;
 }
 
-@keyframes rapi-glow-pulse {
+@keyframes assistant-glow-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50%       { opacity: 1;   transform: scale(1.08); }
 }
 
-.rapi-avatar-img {
+.assistant-avatar-img {
   width: 96px;
   height: 96px;
   object-fit: contain;
@@ -108,22 +108,22 @@ body:has(#mobViewRapi.active) .mob-bottom-nav {
 }
 
 /* ── Title block ── */
-.rapi-title-block {
+.assistant-title-block {
   z-index: 1;
-  animation: rapi-fade-up 0.4s 0.15s ease both;
+  animation: assistant-fade-up 0.4s 0.15s ease both;
 }
 
-@keyframes rapi-fade-up {
+@keyframes assistant-fade-up {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Global guard: never let the bottom nav peek through fullscreen flows. */
-body.modal-open:not(.rapi-nav-keep) .mob-bottom-nav,
-body.keep-bottom-nav:not(.rapi-nav-keep) .mob-bottom-nav,
-body.coupon-nav-keep:not(.rapi-nav-keep) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.overlay.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.modal-overlay.active) .mob-bottom-nav {
+body.modal-open:not(.assistant-nav-keep) .mob-bottom-nav,
+body.keep-bottom-nav:not(.assistant-nav-keep) .mob-bottom-nav,
+body.coupon-nav-keep:not(.assistant-nav-keep) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.overlay.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.modal-overlay.active) .mob-bottom-nav {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -131,39 +131,39 @@ body:not(.rapi-nav-keep):has(.modal-overlay.active) .mob-bottom-nav {
   pointer-events: none !important;
 }
 
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .mob-bottom-nav,
-body:not(.rapi-nav-keep):has(.mob-view.active) .mob-bottom-nav {
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.mob-view.active) .mob-bottom-nav {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-body.auth-screen-open:not(.rapi-nav-keep) .mob-bottom-nav {
+body.auth-screen-open:not(.assistant-nav-keep) .mob-bottom-nav {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
-body.rapi-nav-keep:has(#mobViewRapi.active) .mob-bottom-nav {
+body.assistant-nav-keep:has(#mobViewAssistant.active) .mob-bottom-nav {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
-body:not(.rapi-nav-keep):has(.lgn-screen.active),
-body:not(.rapi-nav-keep):has(.reg-screen.active),
-body:not(.rapi-nav-keep):has(.policy-screen.active),
-body:not(.rapi-nav-keep):has(.vfy-screen.active),
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active),
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) {
+body:not(.assistant-nav-keep):has(.lgn-screen.active),
+body:not(.assistant-nav-keep):has(.reg-screen.active),
+body:not(.assistant-nav-keep):has(.policy-screen.active),
+body:not(.assistant-nav-keep):has(.vfy-screen.active),
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active),
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) {
   background: #ffffff !important;
   overscroll-behavior: none !important;
 }
@@ -184,36 +184,36 @@ body.policy-open #loginModal {
   pointer-events: none !important;
 }
 
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .top-nav,
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .search-cat,
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .promos-section,
-body:not(.rapi-nav-keep):has(.lgn-screen.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .top-nav,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .search-cat,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .promos-section,
-body:not(.rapi-nav-keep):has(.reg-screen.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .top-nav,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .search-cat,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .promos-section,
-body:not(.rapi-nav-keep):has(.policy-screen.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .top-nav,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .search-cat,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .promos-section,
-body:not(.rapi-nav-keep):has(.vfy-screen.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .top-nav,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .search-cat,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .promos-section,
-body:not(.rapi-nav-keep):has(.vfy-alert-overlay.active) .cart-sticky {
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .top-nav,
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .search-cat,
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .promos-section,
+body:not(.assistant-nav-keep):has(.lgn-screen.active) .cart-sticky,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .top-nav,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .search-cat,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .promos-section,
+body:not(.assistant-nav-keep):has(.reg-screen.active) .cart-sticky,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .top-nav,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .search-cat,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .promos-section,
+body:not(.assistant-nav-keep):has(.policy-screen.active) .cart-sticky,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .top-nav,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .search-cat,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .promos-section,
+body:not(.assistant-nav-keep):has(.vfy-screen.active) .cart-sticky,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .top-nav,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .search-cat,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .promos-section,
+body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) .cart-sticky {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -317,20 +317,20 @@ body.home-tab .coupon-rail .coupon-use-btn {
 
 /* Coupon detail slides over the current page. Keep the app visible behind the
    dark overlay so tapping "Usar cupom" never flashes a white background. */
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) {
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) {
   background: transparent !important;
 }
 
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky {
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .top-nav,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .restaurant-app-shell,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .search-cat,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .promos-section,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .cart-sticky {
   visibility: visible !important;
   opacity: 1 !important;
 }
 
-body:not(.rapi-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
+body:not(.assistant-nav-keep):has(.coupon-detail-overlay.active) .mob-bottom-nav,
 body.coupon-nav-keep .mob-bottom-nav {
   display: flex !important;
   visibility: visible !important;
@@ -431,7 +431,7 @@ body.app-error .app-loader-message {
 }
 
 .tab-loader,
-.rapi-preparing-loader {
+.assistant-preparing-loader {
   width: 100% !important;
   min-height: 120px !important;
   display: flex !important;
@@ -445,7 +445,7 @@ body.app-error .app-loader-message {
 }
 
 .tab-loader--dots::after,
-.rapi-preparing-loader::after {
+.assistant-preparing-loader::after {
   content: "" !important;
   width: 34px !important;
   height: 8px !important;
@@ -462,7 +462,7 @@ body.app-error .app-loader-message {
   50% { opacity: 1; transform: translateY(-1px); }
 }
 
-.rapi-title-block h2 {
+.assistant-title-block h2 {
   font-size: 1.4rem;
   font-weight: 800;
   color: #1a1a1a;
@@ -471,14 +471,14 @@ body.app-error .app-loader-message {
   line-height: 1.2;
 }
 
-.rapi-title-block p {
+.assistant-title-block p {
   font-size: 0.82rem;
   color: #888;
   margin: 0 0 10px;
   font-weight: 500;
 }
 
-.rapi-status-pill {
+.assistant-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -492,37 +492,37 @@ body.app-error .app-loader-message {
   letter-spacing: 0.01em;
 }
 
-.rapi-status-dot {
+.assistant-status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #22c55e;
-  animation: rapi-pulse 2s ease-in-out infinite;
+  animation: assistant-pulse 2s ease-in-out infinite;
 }
 
-@keyframes rapi-pulse {
+@keyframes assistant-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.5; transform: scale(1.3); }
 }
 
 /* ── Prompt card ── */
-.rapi-prompt-card {
+.assistant-prompt-card {
   margin: -1px 16px 0;
   background: #fff;
   border-radius: 0 0 20px 20px;
   padding: 16px 16px 14px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  animation: rapi-fade-up 0.4s 0.25s ease both;
+  animation: assistant-fade-up 0.4s 0.25s ease both;
 }
 
-.rapi-prompt-headline {
+.assistant-prompt-headline {
   font-size: 0.9rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 3px;
 }
 
-.rapi-prompt-sub {
+.assistant-prompt-sub {
   font-size: 0.78rem;
   color: #999;
   margin: 0 0 12px;
@@ -530,7 +530,7 @@ body.app-error .app-loader-message {
 }
 
 /* ── Input card ── */
-.rapi-input-card {
+.assistant-input-card {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -541,13 +541,13 @@ body.app-error .app-loader-message {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.rapi-input-card:focus-within {
+.assistant-input-card:focus-within {
   border-color: var(--brand-primary);
   box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.10);
   background: #fff;
 }
 
-.rapi-input {
+.assistant-input {
   flex: 1;
   border: none;
   outline: none;
@@ -558,11 +558,11 @@ body.app-error .app-loader-message {
   min-height: 22px;
 }
 
-.rapi-input::placeholder {
+.assistant-input::placeholder {
   color: #bbb;
 }
 
-.rapi-send-btn {
+.assistant-send-btn {
   width: 38px;
   height: 38px;
   border-radius: 11px;
@@ -579,18 +579,18 @@ body.app-error .app-loader-message {
   -webkit-tap-highlight-color: transparent;
 }
 
-.rapi-send-btn:active {
+.assistant-send-btn:active {
   transform: scale(0.90);
   opacity: 0.85;
 }
 
 /* ── Content area ── */
-.rapi-content {
+.assistant-content {
   padding: 0 16px;
 }
 
 /* ── Section label ── */
-.rapi-section-label {
+.assistant-section-label {
   font-size: 0.70rem;
   font-weight: 700;
   color: #bbb;
@@ -600,14 +600,14 @@ body.app-error .app-loader-message {
 }
 
 /* ── Quick grid ── */
-.rapi-quick-grid {
+.assistant-quick-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 4px;
 }
 
-.rapi-chip {
+.assistant-chip {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -627,45 +627,45 @@ body.app-error .app-loader-message {
   line-height: 1.25;
 }
 
-.rapi-chip-icon {
+.assistant-chip-icon {
   font-size: 1.1rem;
   line-height: 1;
   flex-shrink: 0;
 }
 
-.rapi-chip:active,
-.rapi-chip--active {
+.assistant-chip:active,
+.assistant-chip--active {
   background: linear-gradient(135deg, var(--brand-tint), var(--brand-tint));
   border-color: var(--brand-primary);
   color: var(--brand-primary);
   box-shadow: 0 2px 10px rgba(var(--brand-primary-rgb), 0.15);
 }
 
-.rapi-chip--active {
+.assistant-chip--active {
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
   color: var(--brand-on);
   border-color: transparent;
   box-shadow: 0 4px 14px rgba(var(--brand-primary-rgb), 0.32);
 }
 
-.rapi-chip--active .rapi-chip-icon {
+.assistant-chip--active .assistant-chip-icon {
   filter: none;
 }
 
 /* ── More actions ── */
-.rapi-more-actions {
+.assistant-more-actions {
   display: none;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 8px;
 }
 
-.rapi-more-actions.open {
+.assistant-more-actions.open {
   display: grid;
-  animation: rapi-fade-up 0.25s ease both;
+  animation: assistant-fade-up 0.25s ease both;
 }
 
-.rapi-expand-btn {
+.assistant-expand-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -682,16 +682,16 @@ body.app-error .app-loader-message {
   font-family: inherit;
 }
 
-.rapi-expand-btn svg {
+.assistant-expand-btn svg {
   transition: transform 0.2s;
 }
 
-.rapi-expand-btn.expanded svg {
+.assistant-expand-btn.expanded svg {
   transform: rotate(180deg);
 }
 
 /* ── Thinking state ── */
-.rapi-thinking {
+.assistant-thinking {
   display: none;
   align-items: center;
   gap: 12px;
@@ -702,52 +702,52 @@ body.app-error .app-loader-message {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.rapi-thinking.visible {
+.assistant-thinking.visible {
   display: flex;
-  animation: rapi-fade-up 0.2s ease both;
+  animation: assistant-fade-up 0.2s ease both;
 }
 
-.rapi-thinking-avatar {
+.assistant-thinking-avatar {
   width: 34px;
   height: 34px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.rapi-thinking-content {
+.assistant-thinking-content {
   flex: 1;
 }
 
-.rapi-thinking-label {
+.assistant-thinking-label {
   font-size: 0.80rem;
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 5px;
 }
 
-.rapi-thinking-dots {
+.assistant-thinking-dots {
   display: flex;
   gap: 4px;
 }
 
-.rapi-thinking-dots span {
+.assistant-thinking-dots span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
-  animation: rapi-dot-bounce 0.9s ease-in-out infinite both;
+  animation: assistant-dot-bounce 0.9s ease-in-out infinite both;
 }
 
-.rapi-thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
-.rapi-thinking-dots span:nth-child(3) { animation-delay: 0.30s; }
+.assistant-thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+.assistant-thinking-dots span:nth-child(3) { animation-delay: 0.30s; }
 
-@keyframes rapi-dot-bounce {
+@keyframes assistant-dot-bounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
   40% { transform: translateY(-7px); opacity: 1; }
 }
 
 /* ── Results area ── */
-.rapi-results-label {
+.assistant-results-label {
   display: none;
   font-size: 0.70rem;
   font-weight: 700;
@@ -757,18 +757,18 @@ body.app-error .app-loader-message {
   padding: 16px 0 8px;
 }
 
-.rapi-results-label.visible {
+.assistant-results-label.visible {
   display: block;
 }
 
-.rapi-results {
+.assistant-results {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 /* ── Empty state ── */
-.rapi-empty {
+.assistant-empty {
   text-align: center;
   padding: 32px 16px;
   background: #fff;
@@ -776,20 +776,20 @@ body.app-error .app-loader-message {
   box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
-.rapi-empty-emoji {
+.assistant-empty-emoji {
   font-size: 2.5rem;
   margin-bottom: 10px;
   display: block;
 }
 
-.rapi-empty-title {
+.assistant-empty-title {
   font-size: 0.9rem;
   font-weight: 700;
   color: #333;
   margin: 0 0 6px;
 }
 
-.rapi-empty-sub {
+.assistant-empty-sub {
   font-size: 0.78rem;
   color: #aaa;
   margin: 0 0 16px;
@@ -797,41 +797,41 @@ body.app-error .app-loader-message {
 }
 
 /* ── Result card ── */
-.rapi-result-card {
+.assistant-result-card {
   background: #fff;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
   border: 1px solid #f0f0f0;
-  animation: rapi-card-in 0.30s ease both;
+  animation: assistant-card-in 0.30s ease both;
 }
 
-@keyframes rapi-card-in {
+@keyframes assistant-card-in {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.rapi-result-card:nth-child(1) { animation-delay: 0s; }
-.rapi-result-card:nth-child(2) { animation-delay: 0.06s; }
-.rapi-result-card:nth-child(3) { animation-delay: 0.12s; }
-.rapi-result-card:nth-child(4) { animation-delay: 0.18s; }
-.rapi-result-card:nth-child(5) { animation-delay: 0.24s; }
+.assistant-result-card:nth-child(1) { animation-delay: 0s; }
+.assistant-result-card:nth-child(2) { animation-delay: 0.06s; }
+.assistant-result-card:nth-child(3) { animation-delay: 0.12s; }
+.assistant-result-card:nth-child(4) { animation-delay: 0.18s; }
+.assistant-result-card:nth-child(5) { animation-delay: 0.24s; }
 
-.rapi-result-image-wrap {
+.assistant-result-image-wrap {
   width: 100%;
   height: 120px;
   overflow: hidden;
   background: linear-gradient(135deg, #f5f5f5, #ebebeb);
 }
 
-.rapi-result-image {
+.assistant-result-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.rapi-result-image-placeholder {
+.assistant-result-image-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
@@ -840,15 +840,15 @@ body.app-error .app-loader-message {
   background: linear-gradient(135deg, var(--brand-tint), var(--brand-tint-strong));
 }
 
-.rapi-result-image-placeholder svg {
+.assistant-result-image-placeholder svg {
   opacity: 0.18;
 }
 
-.rapi-result-content {
+.assistant-result-content {
   padding: 13px 15px 13px;
 }
 
-.rapi-result-category {
+.assistant-result-category {
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--brand-primary);
@@ -857,7 +857,7 @@ body.app-error .app-loader-message {
   margin-bottom: 4px;
 }
 
-.rapi-result-title {
+.assistant-result-title {
   font-size: 0.95rem;
   font-weight: 700;
   color: #1a1a1a;
@@ -865,7 +865,7 @@ body.app-error .app-loader-message {
   line-height: 1.3;
 }
 
-.rapi-result-description {
+.assistant-result-description {
   font-size: 0.77rem;
   color: #888;
   margin: 0 0 8px;
@@ -876,7 +876,7 @@ body.app-error .app-loader-message {
   overflow: hidden;
 }
 
-.rapi-result-reason {
+.assistant-result-reason {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -890,20 +890,20 @@ body.app-error .app-loader-message {
   margin-bottom: 11px;
 }
 
-.rapi-result-actions {
+.assistant-result-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.rapi-result-price {
+.assistant-result-price {
   font-size: 1.05rem;
   font-weight: 800;
   color: #1a1a1a;
   flex: 1;
 }
 
-.rapi-add-btn {
+.assistant-add-btn {
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
   color: var(--brand-on);
   border: none;
@@ -919,12 +919,12 @@ body.app-error .app-loader-message {
   white-space: nowrap;
 }
 
-.rapi-add-btn:active {
+.assistant-add-btn:active {
   transform: scale(0.93);
   opacity: 0.85;
 }
 
-.rapi-menu-btn {
+.assistant-menu-btn {
   background: #f3f3f3;
   color: #666;
   border: none;
@@ -939,13 +939,13 @@ body.app-error .app-loader-message {
   white-space: nowrap;
 }
 
-.rapi-menu-btn:active {
+.assistant-menu-btn:active {
   transform: scale(0.93);
   background: #e8e8e8;
 }
 
 /* ── Show more ── */
-.rapi-show-more-btn {
+.assistant-show-more-btn {
   display: none;
   width: 100%;
   background: #fff;
@@ -962,17 +962,17 @@ body.app-error .app-loader-message {
   -webkit-tap-highlight-color: transparent;
 }
 
-.rapi-show-more-btn.visible {
+.assistant-show-more-btn.visible {
   display: block;
 }
 
-.rapi-show-more-btn:active {
+.assistant-show-more-btn:active {
   background: var(--brand-tint);
   border-color: var(--brand-primary);
 }
 
 /* ── Toast feedback ── */
-.rapi-toast {
+.assistant-toast {
   position: fixed;
   bottom: 92px;
   left: 50%;
@@ -990,158 +990,111 @@ body.app-error .app-loader-message {
   white-space: nowrap;
 }
 
-.rapi-toast.rapi-toast--visible {
+.assistant-toast.assistant-toast--visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Navbar center button: Rapi ── */
-.mob-nav-qr {
-  position: relative;
-}
-
-.mob-nav-qr-slot {
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
-}
-
-/* A altura vive na seção "MENU INFERIOR" no fim deste arquivo, junto do resto
-   do slot central. Aqui ficou só o que não mudou — e um seletor com id, que
-   venceria aquela seção por especificidade se repetisse `top`. */
-.mob-bottom-nav #mobNavQr {
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-}
-
-.menu-mobile-center {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
-  transition: transform 0.18s;
-  margin-top: 0;
-  border: 0;
-}
-
-.mob-nav-item.mob-nav-qr:active .menu-mobile-center,
-.mob-nav-item.mob-nav-qr.active .menu-mobile-center {
-  box-shadow: none;
-  transform: none;
-}
-
-.menu-mobile-rapi-avatar {
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-  border-radius: 0;
-  transform: none;
-}
+/* O slot central destacado saiu daqui inteiro (posicionamento absoluto, círculo
+   preenchido, avatar de 52px). O assistente virou uma aba comum; o que ele
+   precisa de CSS é só o tamanho do ícone, junto dos irmãos, no fim deste
+   arquivo. */
 
 /* ── Animations ── */
-@keyframes rapi-fade-up {
+@keyframes assistant-fade-up {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Final Rapi-only overrides kept at the end to win over legacy Rapi styles. */
-.mob-view--rapi{display:none!important;transform:none!important;transition:none!important;background:#ffffff!important}
-.mob-view--rapi.active{display:flex!important;transform:none!important}
-.rapi-page{background:#ffffff!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
-.rapi-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
-.rapi-hero::before,.rapi-hero::after{display:none!important}
-.rapi-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
-.rapi-avatar-img{width:76px!important;height:76px!important;object-fit:cover!important;border-radius:50%!important;filter:none!important}
-.rapi-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
-.rapi-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:12px!important;line-height:16px!important}
-.rapi-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
-.rapi-prompt-card{margin:10px 14px 0!important;padding:15px!important;border:1px solid #eeeeee!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
-.rapi-prompt-headline{font-size:16px!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
-.rapi-prompt-sub{color:#6f747a!important;font-size:12px!important;line-height:17px!important;margin-bottom:12px!important}
-.rapi-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
-.rapi-input{font-size:13px!important;min-width:0!important}
-.rapi-send-btn{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important}
-.rapi-content{padding:0 14px!important}
-.rapi-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:10px!important;letter-spacing:.08em!important}
-.rapi-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:12px!important;font-weight:700!important}
-.rapi-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
-.rapi-chip-svg{width:15px!important;height:15px!important;display:block!important}
-.rapi-chip--active{background:var(--brand-tint)!important;color:var(--brand-primary)!important;border-color:rgba(var(--brand-primary-rgb), .34)!important;box-shadow:none!important}
-.rapi-starter.hidden{display:none!important}
-.rapi-result-image-wrap{height:104px!important}
-.rapi-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
+/* Final assistant-only overrides kept at the end to win over legacy assistant styles. */
+.mob-view--assistant{display:none!important;transform:none!important;transition:none!important;background:#ffffff!important}
+.mob-view--assistant.active{display:flex!important;transform:none!important}
+.assistant-page{background:#ffffff!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
+.assistant-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
+.assistant-hero::before,.assistant-hero::after{display:none!important}
+.assistant-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
+.assistant-avatar-img{width:76px!important;height:76px!important;object-fit:cover!important;border-radius:50%!important;filter:none!important}
+.assistant-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
+.assistant-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:12px!important;line-height:16px!important}
+.assistant-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
+.assistant-prompt-card{margin:10px 14px 0!important;padding:15px!important;border:1px solid #eeeeee!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
+.assistant-prompt-headline{font-size:16px!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
+.assistant-prompt-sub{color:#6f747a!important;font-size:12px!important;line-height:17px!important;margin-bottom:12px!important}
+.assistant-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
+.assistant-input{font-size:13px!important;min-width:0!important}
+.assistant-send-btn{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important}
+.assistant-content{padding:0 14px!important}
+.assistant-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:10px!important;letter-spacing:.08em!important}
+.assistant-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:12px!important;font-weight:700!important}
+.assistant-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.assistant-chip-svg{width:15px!important;height:15px!important;display:block!important}
+.assistant-chip--active{background:var(--brand-tint)!important;color:var(--brand-primary)!important;border-color:rgba(var(--brand-primary-rgb), .34)!important;box-shadow:none!important}
+.assistant-starter.hidden{display:none!important}
+.assistant-result-image-wrap{height:104px!important}
+.assistant-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
 
-.rapi-location-wrap{padding:0!important;background:#ffffff!important}
-.rapi-location-widget{margin:0 auto!important}
-.rapi-location-widget .address-card-copy strong{font-size:12px!important;line-height:17px!important;font-weight:300!important}
-.rapi-hero{margin-top:10px!important}
+.assistant-location-wrap{padding:0!important;background:#ffffff!important}
+.assistant-location-widget{margin:0 auto!important}
+.assistant-location-widget .address-card-copy strong{font-size:12px!important;line-height:17px!important;font-weight:300!important}
+.assistant-hero{margin-top:10px!important}
 
-/* Rapi tab final composition: same system rhythm as Home/Menu. */
-.mob-view--rapi{background:#ffffff!important}
-.rapi-page{background:#ffffff!important;max-width:430px!important;margin:0 auto!important;width:100%!important}
-.rapi-location-wrap{padding:0!important;background:#ffffff!important}
-.rapi-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
-.rapi-location-widget .delivery-widget-tabs{gap:5px!important}
-.rapi-location-widget .rapi-location-tab{flex:0 0 auto!important;min-width:0!important;padding:0 7px!important}
-.rapi-location-widget .rapi-location-tab--mode{max-width:82px!important}
-.rapi-location-widget .rapi-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important}
-.rapi-location-widget .rapi-location-tab--branch{max-width:74px!important}
-.rapi-top-separator{height:10px!important;margin-top:10px!important;background:#f4f4f4!important;border-top:1px solid #eeeeee!important;border-bottom:1px solid #eeeeee!important}
-.rapi-hero{margin:0!important;padding:18px 20px!important;min-height:108px!important;border:0!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #eeeeee!important}
-.rapi-avatar-wrap{width:72px!important;height:72px!important;flex-basis:72px!important}
-.rapi-avatar-img{width:72px!important;height:72px!important}
-.rapi-prompt-card{margin:14px 20px 0!important;border-radius:10px!important;border:1px solid #eeeeee!important;box-shadow:0 8px 22px rgba(0,0,0,.035)!important}
-.rapi-content{padding:0 20px!important}
-.rapi-section-label{padding:18px 0 9px!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:10px!important}
-.rapi-starter{display:block!important;margin:14px 0 0!important;padding:0!important;background:#ffffff!important;border:1px solid #eeeeee!important;border-radius:10px!important;box-shadow:0 8px 22px rgba(0,0,0,.025)!important;overflow:hidden!important}
-.rapi-starter.hidden{display:none!important}
-.rapi-starter-title{margin:0!important;padding:12px 14px!important;border-bottom:1px solid #f0f0f0!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important}
-.rapi-starter button{display:block!important;width:100%!important;margin:0!important;padding:12px 14px!important;border:0!important;border-bottom:1px solid #f0f0f0!important;background:#ffffff!important;color:#5f666f!important;font:500 12px/18px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;text-align:left!important}
-.rapi-starter button:last-child{border-bottom:0!important}
+/* Assistant tab final composition: same system rhythm as Home/Menu. */
+.mob-view--assistant{background:#ffffff!important}
+.assistant-page{background:#ffffff!important;max-width:430px!important;margin:0 auto!important;width:100%!important}
+.assistant-location-wrap{padding:0!important;background:#ffffff!important}
+.assistant-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
+.assistant-location-widget .delivery-widget-tabs{gap:5px!important}
+.assistant-location-widget .assistant-location-tab{flex:0 0 auto!important;min-width:0!important;padding:0 7px!important}
+.assistant-location-widget .assistant-location-tab--mode{max-width:82px!important}
+.assistant-location-widget .assistant-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important}
+.assistant-location-widget .assistant-location-tab--branch{max-width:74px!important}
+.assistant-top-separator{height:10px!important;margin-top:10px!important;background:#f4f4f4!important;border-top:1px solid #eeeeee!important;border-bottom:1px solid #eeeeee!important}
+.assistant-hero{margin:0!important;padding:18px 20px!important;min-height:108px!important;border:0!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #eeeeee!important}
+.assistant-avatar-wrap{width:72px!important;height:72px!important;flex-basis:72px!important}
+.assistant-avatar-img{width:72px!important;height:72px!important}
+.assistant-prompt-card{margin:14px 20px 0!important;border-radius:10px!important;border:1px solid #eeeeee!important;box-shadow:0 8px 22px rgba(0,0,0,.035)!important}
+.assistant-content{padding:0 20px!important}
+.assistant-section-label{padding:18px 0 9px!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:10px!important}
+.assistant-starter{display:block!important;margin:14px 0 0!important;padding:0!important;background:#ffffff!important;border:1px solid #eeeeee!important;border-radius:10px!important;box-shadow:0 8px 22px rgba(0,0,0,.025)!important;overflow:hidden!important}
+.assistant-starter.hidden{display:none!important}
+.assistant-starter-title{margin:0!important;padding:12px 14px!important;border-bottom:1px solid #f0f0f0!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important}
+.assistant-starter button{display:block!important;width:100%!important;margin:0!important;padding:12px 14px!important;border:0!important;border-bottom:1px solid #f0f0f0!important;background:#ffffff!important;color:#5f666f!important;font:500 12px/18px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;text-align:left!important}
+.assistant-starter button:last-child{border-bottom:0!important}
 
-/* Keep the Rapi location widget stable after returning from Home/Menu tabs. */
-body.home-tab .rapi-location-widget.delivery-widget,
-body.menu-tab .rapi-location-widget.delivery-widget,
-.rapi-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
-body.home-tab .rapi-location-widget .delivery-widget-tabs,
-body.menu-tab .rapi-location-widget .delivery-widget-tabs,
-.rapi-location-widget .delivery-widget-tabs{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;width:auto!important}
-body.home-tab .rapi-location-widget .rapi-location-tab,
-body.menu-tab .rapi-location-widget .rapi-location-tab,
-.rapi-location-widget .rapi-location-tab{flex:0 0 auto!important;min-width:0!important;width:auto!important;padding:0 7px!important;white-space:nowrap!important}
-body.home-tab .rapi-location-widget .rapi-location-tab--mode,
-body.menu-tab .rapi-location-widget .rapi-location-tab--mode,
-.rapi-location-widget .rapi-location-tab--mode{max-width:82px!important}
-body.home-tab .rapi-location-widget .rapi-location-tab--brand,
-body.menu-tab .rapi-location-widget .rapi-location-tab--brand,
-.rapi-location-widget .rapi-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important;overflow:hidden!important;text-overflow:ellipsis!important}
-body.home-tab .rapi-location-widget .rapi-location-tab--branch,
-body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
-.rapi-location-widget .rapi-location-tab--branch{max-width:74px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+/* Keep the assistant location widget stable after returning from Home/Menu tabs. */
+body.home-tab .assistant-location-widget.delivery-widget,
+body.menu-tab .assistant-location-widget.delivery-widget,
+.assistant-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
+body.home-tab .assistant-location-widget .delivery-widget-tabs,
+body.menu-tab .assistant-location-widget .delivery-widget-tabs,
+.assistant-location-widget .delivery-widget-tabs{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;width:auto!important}
+body.home-tab .assistant-location-widget .assistant-location-tab,
+body.menu-tab .assistant-location-widget .assistant-location-tab,
+.assistant-location-widget .assistant-location-tab{flex:0 0 auto!important;min-width:0!important;width:auto!important;padding:0 7px!important;white-space:nowrap!important}
+body.home-tab .assistant-location-widget .assistant-location-tab--mode,
+body.menu-tab .assistant-location-widget .assistant-location-tab--mode,
+.assistant-location-widget .assistant-location-tab--mode{max-width:82px!important}
+body.home-tab .assistant-location-widget .assistant-location-tab--brand,
+body.menu-tab .assistant-location-widget .assistant-location-tab--brand,
+.assistant-location-widget .assistant-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important;overflow:hidden!important;text-overflow:ellipsis!important}
+body.home-tab .assistant-location-widget .assistant-location-tab--branch,
+body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
+.assistant-location-widget .assistant-location-tab--branch{max-width:74px!important;overflow:hidden!important;text-overflow:ellipsis!important}
 
-/* Lower the whole Rapi composition slightly while keeping internal spacing intact. */
-.rapi-page{padding-top:12px!important}
+/* Lower the whole assistant composition slightly while keeping internal spacing intact. */
+.assistant-page{padding-top:12px!important}
 
 /* Fine tune only the location widget position. */
-.rapi-location-wrap{transform:translateY(-2px)!important}
+.assistant-location-wrap{transform:translateY(-2px)!important}
 
 /* ============================================================
-   RAPI — AI LAYOUT (WHITE BG)
+   ASSISTENTE — AI LAYOUT (WHITE BG)
    Below the location widget: white background,
    orb + question pushed lower, suggestion chips + input bar.
    ============================================================ */
 
 /* Page layout: flex column, fill remaining space */
-.rapi-page {
+.assistant-page {
   display: flex !important;
   flex-direction: column !important;
   min-height: 100% !important;
@@ -1150,7 +1103,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* AI body: logo + pergunta no topo, dock fica embaixo */
-.rapi-ai-body {
+.assistant-ai-body {
   flex: 1 !important;
   background: #ffffff !important;
   display: flex !important;
@@ -1164,106 +1117,25 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* When results are showing: compress the orb area */
-.rapi-ai-body--searching {
+.assistant-ai-body--searching {
   justify-content: flex-start !important;
   padding-top: 20px !important;
   padding-bottom: 16px !important;
   min-height: unset !important;
 }
 
-.rapi-ai-body--searching .rapi-orb-wrap {
-  width: 60px !important;
-  height: 60px !important;
-  margin-bottom: 10px !important;
-}
 
-.rapi-ai-body--searching .rapi-orb {
-  width: 60px !important;
-  height: 60px !important;
-}
-
-.rapi-ai-body--searching .rapi-orb-img {
-  width: 60px !important;
-  height: 60px !important;
-}
-
-.rapi-ai-body--searching .rapi-ai-question {
+.assistant-ai-body--searching .assistant-ai-question {
   font-size: 1rem !important;
   margin-bottom: 16px !important;
   margin-top: 10px !important;
   color: #1a1a1a !important;
 }
 
-/* ── Orb ── */
-.rapi-orb-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 180px !important;
-  margin-bottom: 24px;
-  transition: width 0.35s ease, height 0.35s ease, margin-bottom 0.35s ease;
-}
 
-/* Glow removido */
-.rapi-orb-glow {
-  display: none !important;
-}
-
-@keyframes rapi-orb-pulse {
-  0%, 100% { opacity: 0.7; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.1); }
-}
-
-.rapi-orb {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-  background: radial-gradient(circle at 38% 38%, var(--brand-tint-strong) 0%, var(--brand-light) 45%, var(--brand-hover) 100%);
-  box-shadow: none;
-  transition: width 0.35s ease, height 0.35s ease;
-}
-
-.rapi-orb-img {
-  width: 110px;
-  height: 110px;
-  object-fit: cover;
-  display: block;
-  transition: width 0.35s ease, height 0.35s ease;
-}
-
-#mobViewRapi .rapi-orb {
-  border-radius: 0 !important;
-  overflow: visible !important;
-  background: transparent !important;
-}
-
-#mobViewRapi .rapi-orb-img {
-  object-fit: contain !important;
-  border-radius: 0 !important;
-}
-
-/* ── AI question text ── */
-.rapi-ai-question {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  text-align: center;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  transition: font-size 0.3s ease;
-  position: absolute !important;
-  bottom: 300px !important;
-  left: 0 !important;
-  right: 0 !important;
-}
 
 /* ── Results wrap (inside dark body) ── */
-.rapi-ai-results-wrap {
+.assistant-ai-results-wrap {
   width: 100%;
   margin-top: 16px;
   overflow-y: auto;
@@ -1273,7 +1145,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* Dark thinking state */
-.rapi-thinking--dark {
+.assistant-thinking--dark {
   display: none;
   align-items: center;
   justify-content: center;
@@ -1281,29 +1153,29 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   gap: 0;
 }
 
-.rapi-thinking--dark.visible {
+.assistant-thinking--dark.visible {
   display: flex;
-  animation: rapi-fade-up 0.2s ease both;
+  animation: assistant-fade-up 0.2s ease both;
 }
 
-.rapi-thinking-dots--dark {
+.assistant-thinking-dots--dark {
   display: flex;
   gap: 5px;
 }
 
-.rapi-thinking-dots--dark span {
+.assistant-thinking-dots--dark span {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--brand-hover);
-  animation: rapi-dot-bounce 0.9s ease-in-out infinite both;
+  animation: assistant-dot-bounce 0.9s ease-in-out infinite both;
 }
 
-.rapi-thinking-dots--dark span:nth-child(2) { animation-delay: 0.15s; }
-.rapi-thinking-dots--dark span:nth-child(3) { animation-delay: 0.30s; }
+.assistant-thinking-dots--dark span:nth-child(2) { animation-delay: 0.15s; }
+.assistant-thinking-dots--dark span:nth-child(3) { animation-delay: 0.30s; }
 
 /* Dark results label */
-.rapi-results-label--dark {
+.assistant-results-label--dark {
   font-size: 0.70rem;
   font-weight: 700;
   color: #aaaaaa;
@@ -1314,7 +1186,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* Show more button (light variant) */
-.rapi-show-more-btn--dark {
+.assistant-show-more-btn--dark {
   background: #f4f4f4;
   border: 1.5px solid #e8e8e8;
   color: var(--brand-hover);
@@ -1330,21 +1202,21 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-tap-highlight-color: transparent;
 }
 
-.rapi-show-more-btn--dark:active {
+.assistant-show-more-btn--dark:active {
   background: #eaeaea;
 }
 
 /* Empty state (light) */
-.rapi-empty--dark {
+.assistant-empty--dark {
   background: #f8f8f8;
   color: #1a1a1a;
 }
 
-.rapi-empty--dark .rapi-empty-title { color: #1a1a1a; }
-.rapi-empty--dark .rapi-empty-sub { color: #888888; }
+.assistant-empty--dark .assistant-empty-title { color: #1a1a1a; }
+.assistant-empty--dark .assistant-empty-sub { color: #888888; }
 
 /* ── Bottom dock ── */
-.rapi-bottom-dock {
+.assistant-bottom-dock {
   background: #ffffff !important;
   border-top: none !important;
   padding: 0 16px env(safe-area-inset-bottom, 0px) !important;
@@ -1352,7 +1224,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* ── Suggestion chip rail (horizontal scroll) ── */
-.rapi-suggest-rail {
+.assistant-suggest-rail {
   display: flex !important;
   gap: 8px !important;
   overflow-x: auto !important;
@@ -1362,9 +1234,9 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   margin-bottom: 12px !important;
 }
 
-.rapi-suggest-rail::-webkit-scrollbar { display: none; }
+.assistant-suggest-rail::-webkit-scrollbar { display: none; }
 
-.rapi-suggest-chip {
+.assistant-suggest-chip {
   flex-shrink: 0 !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -1388,14 +1260,14 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-tap-highlight-color: transparent !important;
 }
 
-.rapi-suggest-chip:active {
+.assistant-suggest-chip:active {
   background: #eaeaea !important;
   border-color: #d0d0d0 !important;
   transform: scale(0.96) !important;
 }
 
 /* ── AI Input bar ── */
-.rapi-ai-input-bar {
+.assistant-ai-input-bar {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -1406,13 +1278,13 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transition: border-color 0.2s, box-shadow 0.2s !important;
 }
 
-.rapi-ai-input-bar:focus-within {
+.assistant-ai-input-bar:focus-within {
   border-color: var(--brand-primary) !important;
   box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.09) !important;
   background: #fff !important;
 }
 
-.rapi-ai-input {
+.assistant-ai-input {
   flex: 1 !important;
   border: none !important;
   outline: none !important;
@@ -1423,11 +1295,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   min-height: 22px !important;
 }
 
-.rapi-ai-input::placeholder {
+.assistant-ai-input::placeholder {
   color: #b0b4bb !important;
 }
 
-.rapi-ai-send {
+.assistant-ai-send {
   width: 40px !important;
   height: 40px !important;
   border-radius: 50% !important;
@@ -1443,25 +1315,25 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-tap-highlight-color: transparent !important;
 }
 
-.rapi-ai-send:active {
+.assistant-ai-send:active {
   transform: scale(0.88) !important;
   opacity: 0.8 !important;
 }
 
 /* Ensure the location wrap has no extra padding */
-.rapi-location-wrap {
+.assistant-location-wrap {
   transform: none !important;
   padding: 10px 0 0 0 !important;
   background: #fff !important;
 }
 
-/* Critical: make the rapi page fill the full screen view as a flex child */
-.mob-view--rapi.active {
+/* Critical: make the assistant page fill the full screen view as a flex child */
+.mob-view--assistant.active {
   display: flex !important;
   flex-direction: column !important;
 }
 
-.mob-view--rapi .rapi-page {
+.mob-view--assistant .assistant-page {
   flex: 1 1 auto !important;
   height: 100% !important;
   display: flex !important;
@@ -1475,7 +1347,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* The dark body takes available flex space */
-.mob-view--rapi .rapi-ai-body {
+.mob-view--assistant .assistant-ai-body {
   flex: 1 !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
@@ -1484,7 +1356,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
 }
 
 /* Força o dock a ficar exatamente 92px do fundo absoluto da tela (colado na navbar) */
-.mob-view--rapi .rapi-bottom-dock {
+.mob-view--assistant .assistant-bottom-dock {
   position: absolute !important;
   bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
   left: 0 !important;
@@ -1493,19 +1365,15 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   background: transparent !important;
 }
 
-/* Fine tune Rapi central icon position. */
-#mobViewRapi .rapi-orb-wrap{
-  transform:translateY(-8px)!important;
-}
 
-/* Rapi lower AI surface refinement: white premium assistant layout. */
-#mobViewRapi.mob-view--rapi,
-#mobViewRapi.mob-view--rapi.active,
-#mobViewRapi .rapi-page,
-#mobViewRapi .rapi-ai-body{
+/* assistant lower AI surface refinement: white premium assistant layout. */
+#mobViewAssistant.mob-view--assistant,
+#mobViewAssistant.mob-view--assistant.active,
+#mobViewAssistant .assistant-page,
+#mobViewAssistant .assistant-ai-body{
   background:#ffffff!important;
 }
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   left:0!important;
   right:0!important;
   bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
@@ -1514,7 +1382,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   border-top:0!important;
   box-shadow:none!important;
 }
-#mobViewRapi .rapi-bottom-dock::before{
+#mobViewAssistant .assistant-bottom-dock::before{
   content:""!important;
   position:absolute!important;
   left:0!important;
@@ -1524,7 +1392,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   pointer-events:none!important;
   background:linear-gradient(180deg,rgba(255,255,255,0),#ffffff)!important;
 }
-#mobViewRapi .rapi-suggest-rail{
+#mobViewAssistant .assistant-suggest-rail{
   gap:12px!important;
   margin:0 0 16px!important;
   padding:0 2px 2px!important;
@@ -1532,7 +1400,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transform:translateY(0)!important;
   transition:opacity .18s ease,transform .18s ease!important;
 }
-#mobViewRapi .rapi-suggest-rail.hidden{
+#mobViewAssistant .assistant-suggest-rail.hidden{
   display:flex!important;
   opacity:0!important;
   pointer-events:none!important;
@@ -1542,7 +1410,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   padding:0!important;
   overflow:hidden!important;
 }
-#mobViewRapi .rapi-suggest-chip{
+#mobViewAssistant .assistant-suggest-chip{
   min-width:auto!important;
   width:auto!important;
   height:38px!important;
@@ -1557,14 +1425,14 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   box-shadow:none!important;
   transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease!important;
 }
-#mobViewRapi .rapi-suggest-chip:hover,
-#mobViewRapi .rapi-suggest-chip:active{
+#mobViewAssistant .assistant-suggest-chip:hover,
+#mobViewAssistant .assistant-suggest-chip:active{
   background:var(--brand-tint)!important;
   border-color:rgba(var(--brand-primary-rgb), .22)!important;
   color:var(--brand-primary)!important;
   transform:translateY(-1px)!important;
 }
-#mobViewRapi .rapi-ai-input-bar{
+#mobViewAssistant .assistant-ai-input-bar{
   min-height:58px!important;
   padding:8px 9px 8px 18px!important;
   gap:10px!important;
@@ -1574,21 +1442,21 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   box-shadow:0 8px 24px rgba(21,28,36,.06)!important;
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
 }
-#mobViewRapi .rapi-ai-input-bar:focus-within{
+#mobViewAssistant .assistant-ai-input-bar:focus-within{
   border-color:rgba(var(--brand-primary-rgb), .36)!important;
   box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .08),0 10px 28px rgba(21,28,36,.07)!important;
   transform:translateY(-1px)!important;
 }
-#mobViewRapi .rapi-ai-input{
+#mobViewAssistant .assistant-ai-input{
   font-size:14px!important;
   line-height:22px!important;
   color:#20252c!important;
 }
-#mobViewRapi .rapi-ai-input::placeholder{
+#mobViewAssistant .assistant-ai-input::placeholder{
   color:#9aa1aa!important;
   font-weight:450!important;
 }
-#mobViewRapi .rapi-ai-send{
+#mobViewAssistant .assistant-ai-send{
   width:42px!important;
   height:42px!important;
   border-radius:14px!important;
@@ -1597,134 +1465,109 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   box-shadow:none!important;
   transition:transform .14s ease,opacity .14s ease,background .14s ease!important;
 }
-#mobViewRapi .rapi-ai-send:hover{
+#mobViewAssistant .assistant-ai-send:hover{
   background:var(--brand-primary)!important;
 }
-#mobViewRapi .rapi-ai-send:active{
+#mobViewAssistant .assistant-ai-send:active{
   transform:scale(.94)!important;
   opacity:.9!important;
 }
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   background:#ffffff!important;
   padding-top:18px!important;
   padding-bottom:148px!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-orb-wrap,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-question,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-subtitle{
-  display:none!important;
-}
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   display:block!important;
   width:100%!important;
   max-height:none!important;
   margin-top:0!important;
-  animation:rapi-chat-in .18s ease both!important;
+  animation:assistant-chat-in .18s ease both!important;
 }
-#mobViewRapi .rapi-results-label,
-#mobViewRapi .rapi-results-label--dark{
+#mobViewAssistant .assistant-results-label,
+#mobViewAssistant .assistant-results-label--dark{
   color:#2f343a!important;
 }
-@keyframes rapi-chat-in{
+@keyframes assistant-chat-in{
   from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
 }
 
-/* Preserve Rapi top/current identity while lower surface is refined. */
-#mobViewRapi .rapi-location-wrap{
+/* Preserve assistant top/current identity while lower surface is refined. */
+#mobViewAssistant .assistant-location-wrap{
   background:#ffffff!important;
 }
-#mobViewRapi .rapi-ai-question{
+#mobViewAssistant .assistant-ai-question{
   color:#1a1a1a!important;
 }
 
-/* Mobile Rapi bugfix: keep intro locked and place question below the avatar. */
-#mobViewRapi.mob-view--rapi,
-#mobViewRapi.mob-view--rapi.active,
-#mobViewRapi .rapi-page{
+/* Mobile assistant bugfix: keep intro locked and place question below the avatar. */
+#mobViewAssistant.mob-view--assistant,
+#mobViewAssistant.mob-view--assistant.active,
+#mobViewAssistant .assistant-page{
   height:100dvh!important;
   max-height:100dvh!important;
   overflow:hidden!important;
   overscroll-behavior:none!important;
   touch-action:none!important;
 }
-#mobViewRapi .rapi-ai-body{
+#mobViewAssistant .assistant-ai-body{
   overflow:hidden!important;
   overscroll-behavior:none!important;
   touch-action:none!important;
   padding:0 20px 150px!important;
 }
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching){
   justify-content:flex-start!important;
 }
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  position:relative!important;
-  margin-top:clamp(118px,22vh,176px)!important;
-  margin-bottom:18px!important;
-  transform:none!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   position:static!important;
   inset:auto!important;
   margin:0!important;
   transform:none!important;
   color:#1a1a1a!important;
 }
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   overflow:hidden!important;
   touch-action:auto!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   overflow-y:auto!important;
   overscroll-behavior:contain!important;
   -webkit-overflow-scrolling:touch!important;
 }
-#mobViewRapi .rapi-suggest-rail,
-#mobViewRapi .rapi-ai-input,
-#mobViewRapi .rapi-ai-input-bar{
+#mobViewAssistant .assistant-suggest-rail,
+#mobViewAssistant .assistant-ai-input,
+#mobViewAssistant .assistant-ai-input-bar{
   touch-action:auto!important;
 }
 
-/* Rapi intro vertical tune: move avatar, question and suggestions upward. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(66px,13vh,104px)!important;
-  margin-bottom:14px!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   transform:translateY(-4px)!important;
 }
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   bottom:calc(112px + env(safe-area-inset-bottom,0px))!important;
 }
 
-/* Rapi intro vertical tune: raise slightly more. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(48px,10vh,82px)!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   transform:translateY(-8px)!important;
 }
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   bottom:calc(124px + env(safe-area-inset-bottom,0px))!important;
 }
 
-/* Rapi: hide location widget on this screen only. */
-#mobViewRapi .rapi-location-wrap{
+/* Assistant: hide location widget on this screen only. */
+#mobViewAssistant .assistant-location-wrap{
   display:none!important;
 }
 
-/* Rapi intro after hiding location: lower logo, question and prompt dock. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(118px,22vh,176px)!important;
-  margin-bottom:20px!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   transform:none!important;
 }
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
 }
-#mobViewRapi .rapi-suggest-chip{
+#mobViewAssistant .assistant-suggest-chip{
   min-width:227.52px!important;
   width:227.52px!important;
   height:56px!important;
@@ -1732,8 +1575,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   border-radius:16px!important;
 }
 
-/* Rapi suggestions: match text scale to larger chips. */
-#mobViewRapi .rapi-suggest-chip{
+/* assistant suggestions: match text scale to larger chips. */
+#mobViewAssistant .assistant-suggest-chip{
   font-size:14px!important;
   line-height:18px!important;
   font-weight:600!important;
@@ -1741,19 +1584,15 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   text-align:center!important;
 }
 
-/* Rapi intro: raise logo, question and suggestions slightly. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(96px,18vh,148px)!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   transform:translateY(-4px)!important;
 }
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;
 }
 
-/* Rapi send button: circular arrow button. */
-#mobViewRapi .rapi-ai-send{
+/* assistant send button: circular arrow button. */
+#mobViewAssistant .assistant-ai-send{
   width:42px!important;
   height:42px!important;
   min-width:42px!important;
@@ -1762,89 +1601,89 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   padding:0!important;
 }
 
-/* Rapi suggestions: larger prompt text. */
-#mobViewRapi .rapi-suggest-chip{
+/* assistant suggestions: larger prompt text. */
+#mobViewAssistant .assistant-suggest-chip{
   font-size:15px!important;
   line-height:19px!important;
 }
 
-/* Rapi send button final size. */
-#mobViewRapi .rapi-ai-send{
+/* assistant send button final size. */
+#mobViewAssistant .assistant-ai-send{
   width:40px!important;
   height:40px!important;
   min-width:40px!important;
   min-height:40px!important;
 }
 
-/* Rapi send arrow final size. */
-#mobViewRapi .rapi-ai-send svg{
+/* assistant send arrow final size. */
+#mobViewAssistant .assistant-ai-send svg{
   width:13.13px!important;
   height:15.63px!important;
 }
 
-/* Rapi send arrow: slightly larger for better visibility. */
-#mobViewRapi .rapi-ai-send svg{
+/* assistant send arrow: slightly larger for better visibility. */
+#mobViewAssistant .assistant-ai-send svg{
   width:16px!important;
   height:18px!important;
 }
 
-/* Rapi send arrow: taller, closer to the reference. */
-#mobViewRapi .rapi-ai-send svg{
+/* assistant send arrow: taller, closer to the reference. */
+#mobViewAssistant .assistant-ai-send svg{
   width:17px!important;
   height:22px!important;
   stroke-width:2.35!important;
 }
 
-/* Rapi send arrow: larger final adjustment. */
-#mobViewRapi .rapi-ai-send svg{
+/* assistant send arrow: larger final adjustment. */
+#mobViewAssistant .assistant-ai-send svg{
   width:20px!important;
   height:25px!important;
   stroke-width:2.6!important;
 }
 
-/* Rapi send arrow: one more slight increase. */
-#mobViewRapi .rapi-ai-send svg{
+/* assistant send arrow: one more slight increase. */
+#mobViewAssistant .assistant-ai-send svg{
   width:22px!important;
   height:27px!important;
   stroke-width:2.7!important;
 }
 
-/* Rapi input dock: sit closer to the bottom nav without touching it. */
-#mobViewRapi .rapi-bottom-dock{
+/* assistente input dock: sit closer to the bottom nav without touching it. */
+#mobViewAssistant .assistant-bottom-dock{
   bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;
 }
 
-/* Rapi suggestions: raise chips without moving the input. */
-#mobViewRapi .rapi-suggest-rail{
+/* assistant suggestions: raise chips without moving the input. */
+#mobViewAssistant .assistant-suggest-rail{
   transform:translateY(-8px)!important;
   margin-bottom:8px!important;
 }
-#mobViewRapi .rapi-suggest-rail.hidden{
+#mobViewAssistant .assistant-suggest-rail.hidden{
   transform:translateY(0)!important;
 }
 
-/* Rapi suggestions: raise chips a bit more. */
-#mobViewRapi .rapi-suggest-rail{
+/* assistant suggestions: raise chips a bit more. */
+#mobViewAssistant .assistant-suggest-rail{
   transform:translateY(-16px)!important;
 }
 
-/* Rapi suggestions: physical upward spacing from input. */
-#mobViewRapi .rapi-suggest-rail{
+/* assistant suggestions: physical upward spacing from input. */
+#mobViewAssistant .assistant-suggest-rail{
   transform:none!important;
   margin-top:-28px!important;
   margin-bottom:24px!important;
 }
-#mobViewRapi .rapi-suggest-rail.hidden{
+#mobViewAssistant .assistant-suggest-rail.hidden{
   margin-top:0!important;
   margin-bottom:0!important;
 }
 
-/* Rapi suggestions: position chips above the input explicitly. */
-#mobViewRapi .rapi-bottom-dock{
+/* assistant suggestions: position chips above the input explicitly. */
+#mobViewAssistant .assistant-bottom-dock{
   position:absolute!important;
   overflow:visible!important;
 }
-#mobViewRapi .rapi-suggest-rail{
+#mobViewAssistant .assistant-suggest-rail{
   position:absolute!important;
   left:18px!important;
   right:18px!important;
@@ -1854,11 +1693,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transform:none!important;
   z-index:2!important;
 }
-#mobViewRapi .rapi-ai-input-bar{
+#mobViewAssistant .assistant-ai-input-bar{
   position:relative!important;
   z-index:3!important;
 }
-#mobViewRapi .rapi-suggest-rail.hidden{
+#mobViewAssistant .assistant-suggest-rail.hidden{
   position:absolute!important;
   bottom:86px!important;
   height:0!important;
@@ -1866,8 +1705,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   padding:0!important;
 }
 
-/* Rapi input bar final requested size. */
-#mobViewRapi .rapi-ai-input-bar{
+/* assistente input bar final requested size. */
+#mobViewAssistant .assistant-ai-input-bar{
   width:382px!important;
   max-width:calc(100vw - 32px)!important;
   height:58px!important;
@@ -1876,21 +1715,21 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   box-sizing:border-box!important;
 }
 
-/* Rapi suggestions: force chips higher above the input. */
-#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail{
+/* assistant suggestions: force chips higher above the input. */
+#mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail{
   bottom:124px!important;
 }
-#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail.hidden{
+#mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail.hidden{
   bottom:124px!important;
 }
 
-/* Rapi input bar: softer rounded corners. */
-#mobViewRapi .rapi-ai-input-bar{
+/* assistente input bar: softer rounded corners. */
+#mobViewAssistant .assistant-ai-input-bar{
   border-radius:26px!important;
 }
 
-/* Rapi intro: serif typewriter question and delayed suggestions. */
-#mobViewRapi .rapi-ai-question{
+/* assistant intro: serif typewriter question and delayed suggestions. */
+#mobViewAssistant .assistant-ai-question{
   min-height:34px!important;
   font-family:"Inter",sans-serif!important;
   font-size:24px!important;
@@ -1902,7 +1741,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-font-smoothing:antialiased!important;
   text-rendering:geometricPrecision!important;
 }
-#mobViewRapi .rapi-ai-subtitle{
+#mobViewAssistant .assistant-ai-subtitle{
   max-width:300px!important;
   margin:6px auto 0!important;
   font-size:14px!important;
@@ -1914,7 +1753,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-font-smoothing:antialiased!important;
   text-rendering:optimizeLegibility!important;
 }
-#mobViewRapi .rapi-ai-question.is-typing::after{
+#mobViewAssistant .assistant-ai-question.is-typing::after{
   content:""!important;
   display:inline-block!important;
   width:1px!important;
@@ -1923,72 +1762,63 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transform:translateY(2px)!important;
   background:currentColor!important;
   opacity:.55!important;
-  animation:rapi-type-caret 1.15s ease-in-out infinite!important;
+  animation:assistant-type-caret 1.15s ease-in-out infinite!important;
 }
-#mobViewRapi .rapi-chat-assistant-message.is-typing-response .rapi-feedback-actions{
+#mobViewAssistant .assistant-chat-assistant-message.is-typing-response .assistant-feedback-actions{
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--waiting{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--waiting{
   display:flex!important;
   opacity:0!important;
   pointer-events:none!important;
   visibility:hidden!important;
   transform:translateY(10px)!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready{
   display:flex!important;
   opacity:1!important;
   pointer-events:auto!important;
   visibility:visible!important;
-  animation:rapi-suggestions-fade-in .34s ease both!important;
+  animation:assistant-suggestions-fade-in .34s ease both!important;
 }
-#mobViewRapi .rapi-ai-body--searching #rapiStarter.rapi-suggest-rail--ready,
-#mobViewRapi #rapiStarter.hidden{
+#mobViewAssistant .assistant-ai-body--searching #assistantStarter.assistant-suggest-rail--ready,
+#mobViewAssistant #assistantStarter.hidden{
   opacity:0!important;
   pointer-events:none!important;
   visibility:hidden!important;
 }
-@keyframes rapi-type-caret{
+@keyframes assistant-type-caret{
   0%,100%{opacity:.55}
   50%{opacity:.12}
 }
-@keyframes rapi-suggestions-fade-in{
+@keyframes assistant-suggestions-fade-in{
   from{opacity:0;transform:translateY(10px)}
   to{opacity:1;transform:translateY(0)}
 }
 
-/* Rapi intro: visible emergence for avatar and suggestion chips. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  animation:rapi-orb-emerge .5s cubic-bezier(.2,.8,.2,1) both!important;
-  transform-origin:center!important;
-}
-#mobViewRapi #rapiStarter.rapi-suggest-rail--waiting .rapi-suggest-chip{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--waiting .assistant-suggest-chip{
   opacity:0!important;
   transform:translateY(14px) scale(.98)!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip{
   opacity:0!important;
   transform:translateY(14px) scale(.98)!important;
-  animation:rapi-chip-emerge .42s cubic-bezier(.2,.8,.2,1) forwards!important;
+  animation:assistant-chip-emerge .42s cubic-bezier(.2,.8,.2,1) forwards!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip:nth-child(1){animation-delay:.02s!important}
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip:nth-child(2){animation-delay:.09s!important}
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip:nth-child(3){animation-delay:.16s!important}
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip:nth-child(4){animation-delay:.23s!important}
-@keyframes rapi-orb-emerge{
-  from{opacity:0;transform:translateY(12px) scale(.92)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes rapi-chip-emerge{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip:nth-child(1){animation-delay:.02s!important}
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip:nth-child(2){animation-delay:.09s!important}
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip:nth-child(3){animation-delay:.16s!important}
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip:nth-child(4){animation-delay:.23s!important}
+@keyframes assistant-chip-emerge{
   from{opacity:0;transform:translateY(14px) scale(.98)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
 
-/* Rapi intro fix: ready state must always reveal suggestions. */
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready,
-#mobViewRapi #rapiStarter.rapi-suggest-rail--waiting.rapi-suggest-rail--ready{
+/* assistant intro fix: ready state must always reveal suggestions. */
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready,
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--waiting.assistant-suggest-rail--ready{
   display:flex!important;
   opacity:1!important;
   pointer-events:auto!important;
@@ -1997,18 +1827,18 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   overflow-x:auto!important;
   overflow-y:hidden!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--waiting.rapi-suggest-rail--ready .rapi-suggest-chip,
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--waiting.assistant-suggest-rail--ready .assistant-suggest-chip,
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip{
   visibility:visible!important;
 }
 
-/* Rapi intro emergency visibility guard. */
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready,
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready .rapi-suggest-chip{
+/* assistant intro emergency visibility guard. */
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready,
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready .assistant-suggest-chip{
   visibility:visible!important;
   pointer-events:auto!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail--ready{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail--ready{
   display:flex!important;
   opacity:1!important;
   height:auto!important;
@@ -2017,9 +1847,9 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   overflow-y:hidden!important;
 }
 
-/* Rapi title typography matched to reference. Typography only. */
-#mobViewRapi .rapi-ai-question,
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-ai-question{
+/* assistente title typography matched to reference. Typography only. */
+#mobViewAssistant .assistant-ai-question,
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   font-family:"Inter",sans-serif!important;
   font-weight:600!important;
   font-size:24px!important;
@@ -2032,38 +1862,38 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -moz-osx-font-smoothing:grayscale!important;
 }
 
-/* Rapi suggestions: allow horizontal swipe while keeping the intro screen locked vertically. */
-#mobViewRapi.mob-view--rapi,
-#mobViewRapi.mob-view--rapi.active,
-#mobViewRapi .rapi-page{
+/* assistant suggestions: allow horizontal swipe while keeping the intro screen locked vertically. */
+#mobViewAssistant.mob-view--assistant,
+#mobViewAssistant.mob-view--assistant.active,
+#mobViewAssistant .assistant-page{
   touch-action:pan-x!important;
 }
-#mobViewRapi .rapi-ai-body{
+#mobViewAssistant .assistant-ai-body{
   touch-action:none!important;
 }
-#mobViewRapi #rapiStarter.rapi-suggest-rail{
+#mobViewAssistant #assistantStarter.assistant-suggest-rail{
   touch-action:pan-x!important;
   overscroll-behavior-x:contain!important;
   scroll-snap-type:x proximity!important;
 }
-#mobViewRapi #rapiStarter .rapi-suggest-chip{
+#mobViewAssistant #assistantStarter .assistant-suggest-chip{
   scroll-snap-align:start!important;
 }
 
-/* Rapi suggestions: keep the swipe rail inside the dock hit area on mobile browsers. */
-#mobViewRapi .rapi-bottom-dock{
+/* assistant suggestions: keep the swipe rail inside the dock hit area on mobile browsers. */
+#mobViewAssistant .assistant-bottom-dock{
   height:214px!important;
   pointer-events:none!important;
 }
-#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail{
+#mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail{
   bottom:104px!important;
   pointer-events:auto!important;
   cursor:grab!important;
 }
-#mobViewRapi .rapi-bottom-dock #rapiStarter.rapi-suggest-rail.is-dragging{
+#mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail.is-dragging{
   cursor:grabbing!important;
 }
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
   position:absolute!important;
   left:50%!important;
   right:auto!important;
@@ -2071,30 +1901,30 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   transform:translateX(-50%)!important;
   pointer-events:auto!important;
 }
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
   transform:translateX(-50%) translateY(-1px)!important;
 }
-#mobViewRapi .rapi-bottom-dock #rapiStarter .rapi-suggest-chip{
+#mobViewAssistant .assistant-bottom-dock #assistantStarter .assistant-suggest-chip{
   user-select:none!important;
   -webkit-user-select:none!important;
 }
 
-/* Rapi chat message layout aligned to the reference chat surface. */
-#mobViewRapi .rapi-ai-body--searching{
+/* assistant chat message layout aligned to the reference chat surface. */
+#mobViewAssistant .assistant-ai-body--searching{
   padding:24px 16px 150px!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   padding:0!important;
   max-height:none!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-results{
+#mobViewAssistant .assistant-ai-body--searching .assistant-results{
   display:flex!important;
   flex-direction:column!important;
   align-items:stretch!important;
   gap:18px!important;
 }
-#mobViewRapi .rapi-chat-user-message,
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-user-message,
+#mobViewAssistant .assistant-chat-assistant-message{
   width:auto!important;
   max-width:88%!important;
   min-height:0!important;
@@ -2105,17 +1935,17 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   margin:0!important;
   animation:none!important;
 }
-#mobViewRapi .rapi-chat-user-message{
+#mobViewAssistant .assistant-chat-user-message{
   align-self:flex-end!important;
 }
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-assistant-message{
   align-self:flex-start!important;
 }
-#mobViewRapi .rapi-chat-user-message .rapi-result-content,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+#mobViewAssistant .assistant-chat-user-message .assistant-result-content,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
   padding:0!important;
 }
-#mobViewRapi .rapi-chat-user-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{
   display:block!important;
   width:max-content!important;
   max-width:100%!important;
@@ -2128,7 +1958,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   font-weight:450!important;
   text-align:left!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   display:block!important;
   background:transparent!important;
   padding:0!important;
@@ -2137,11 +1967,11 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   font-weight:650!important;
   text-align:left!important;
 }
-#mobViewRapi .rapi-chat-typing{
+#mobViewAssistant .assistant-chat-typing{
   width:max-content!important;
   max-width:100%!important;
 }
-#mobViewRapi .rapi-typing-row{
+#mobViewAssistant .assistant-typing-row{
   display:flex!important;
   align-items:center!important;
   justify-content:flex-start!important;
@@ -2156,7 +1986,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   line-height:20px!important;
   box-shadow:none!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -2170,95 +2000,95 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   background:#ffffff!important;
   box-shadow:none!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   align-items:center!important;
   justify-content:center!important;
   gap:2px!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
   width:3px!important;
   height:3px!important;
   background:#6f6f6f!important;
 }
-#mobViewRapi .rapi-typing-label{
+#mobViewAssistant .assistant-typing-label{
   color:#747474!important;
   font-size:15px!important;
   line-height:20px!important;
   font-weight:500!important;
 }
 
-/* Rapi send/input: remove orange focus halo when sending a message. */
-#mobViewRapi .rapi-ai-input-bar:focus-within{
+/* assistant send/input: remove orange focus halo when sending a message. */
+#mobViewAssistant .assistant-ai-input-bar:focus-within{
   border-color:#e7e9ee!important;
   box-shadow:0 8px 24px rgba(21,28,36,.06)!important;
   transform:none!important;
 }
-#mobViewRapi .rapi-ai-send,
-#mobViewRapi .rapi-ai-send:focus,
-#mobViewRapi .rapi-ai-send:focus-visible,
-#mobViewRapi .rapi-ai-send:active{
+#mobViewAssistant .assistant-ai-send,
+#mobViewAssistant .assistant-ai-send:focus,
+#mobViewAssistant .assistant-ai-send:focus-visible,
+#mobViewAssistant .assistant-ai-send:active{
   outline:none!important;
   box-shadow:none!important;
   -webkit-tap-highlight-color:transparent!important;
 }
 
-/* Rapi send button: no movement/press animation on tap. */
-#mobViewRapi .rapi-ai-send,
-#mobViewRapi .rapi-ai-send:hover,
-#mobViewRapi .rapi-ai-send:active,
-#mobViewRapi .rapi-ai-send:focus,
-#mobViewRapi .rapi-ai-send:focus-visible{
+/* assistant send button: no movement/press animation on tap. */
+#mobViewAssistant .assistant-ai-send,
+#mobViewAssistant .assistant-ai-send:hover,
+#mobViewAssistant .assistant-ai-send:active,
+#mobViewAssistant .assistant-ai-send:focus,
+#mobViewAssistant .assistant-ai-send:focus-visible{
   transform:none!important;
   opacity:1!important;
   transition:none!important;
 }
-#mobViewRapi .rapi-ai-send svg{
+#mobViewAssistant .assistant-ai-send svg{
   transform:none!important;
   transition:none!important;
 }
 
 /* Clear chat action states: inactive, ready and generating/cancel. */
-#mobViewRapi .rapi-ai-send,
-#mobViewRapi .rapi-ai-send:hover,
-#mobViewRapi .rapi-ai-send:active,
-#mobViewRapi .rapi-ai-send:focus,
-#mobViewRapi .rapi-ai-send:focus-visible{
+#mobViewAssistant .assistant-ai-send,
+#mobViewAssistant .assistant-ai-send:hover,
+#mobViewAssistant .assistant-ai-send:active,
+#mobViewAssistant .assistant-ai-send:focus,
+#mobViewAssistant .assistant-ai-send:focus-visible{
   transition:background-color .18s ease,color .18s ease,border-color .18s ease!important;
 }
-#mobViewRapi .rapi-ai-send.is-inactive,
-#mobViewRapi .rapi-ai-send:disabled{
+#mobViewAssistant .assistant-ai-send.is-inactive,
+#mobViewAssistant .assistant-ai-send:disabled{
   background:#e7e9ed!important;
   color:#8c929b!important;
   border-color:#e7e9ed!important;
   cursor:not-allowed!important;
   opacity:1!important;
 }
-#mobViewRapi .rapi-ai-send.is-ready{
+#mobViewAssistant .assistant-ai-send.is-ready{
   background:var(--brand-primary)!important;
   color:var(--brand-on)!important;
   border-color:var(--brand-primary)!important;
   cursor:pointer!important;
 }
-#mobViewRapi .rapi-ai-send.is-stopping{
+#mobViewAssistant .assistant-ai-send.is-stopping{
   background:rgba(var(--brand-primary-rgb), .16)!important;
   color:var(--brand-primary)!important;
   border-color:rgba(var(--brand-primary-rgb), .22)!important;
   cursor:pointer!important;
-}#mobViewRapi .rapi-ai-send .rapi-stop-icon{
+}#mobViewAssistant .assistant-ai-send .assistant-stop-icon{
   display:block;
   width:11px;
   height:11px;
   border-radius:2px;
   background:currentColor;
 }
-/* Rapi response feedback icons under each assistant answer. */
-#mobViewRapi .rapi-feedback-actions{
+/* assistente response feedback icons under each assistant answer. */
+#mobViewAssistant .assistant-feedback-actions{
   display:flex!important;
   align-items:center!important;
   gap:12px!important;
   margin-top:12px!important;
 }
-#mobViewRapi .rapi-feedback-btn{
+#mobViewAssistant .assistant-feedback-btn{
   width:20px!important;
   height:20px!important;
   min-width:20px!important;
@@ -2274,67 +2104,67 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   outline:none!important;
   -webkit-tap-highlight-color:transparent!important;
 }
-#mobViewRapi .rapi-feedback-btn svg{
+#mobViewAssistant .assistant-feedback-btn svg{
   width:20px!important;
   height:20px!important;
   display:block!important;
 }
-#mobViewRapi .rapi-copy-btn.is-copied svg,
-#mobViewRapi .rapi-copy-btn.is-restoring svg{
-  animation:rapi-copy-confirm .28s ease both!important;
+#mobViewAssistant .assistant-copy-btn.is-copied svg,
+#mobViewAssistant .assistant-copy-btn.is-restoring svg{
+  animation:assistant-copy-confirm .28s ease both!important;
 }
-#mobViewRapi .rapi-rating-btn{
+#mobViewAssistant .assistant-rating-btn{
   border-radius:4px!important;
   transition:background-color .18s ease!important;
 }
-#mobViewRapi .rapi-rating-btn.is-selected{
+#mobViewAssistant .assistant-rating-btn.is-selected{
   background:rgba(255,255,255,.08)!important;
 }
-#mobViewRapi .rapi-rating-btn.is-selected svg{
-  animation:rapi-rating-pop .28s ease both!important;
+#mobViewAssistant .assistant-rating-btn.is-selected svg{
+  animation:assistant-rating-pop .28s ease both!important;
 }
-#mobViewRapi .rapi-rating-btn.is-selected svg path:first-child{
+#mobViewAssistant .assistant-rating-btn.is-selected svg path:first-child{
   fill:none!important;
 }
-#mobViewRapi .rapi-rating-btn.is-selected svg path:last-child{
+#mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child{
   fill:#000!important;
 }
-#mobViewRapi .rapi-feedback-actions:has(.rapi-rating-btn.is-selected) .rapi-rating-btn:not(.is-selected){
+#mobViewAssistant .assistant-feedback-actions:has(.assistant-rating-btn.is-selected) .assistant-rating-btn:not(.is-selected){
   display:none!important;
 }
-#mobViewRapi .rapi-feedback-actions.is-restoring-ratings .rapi-rating-btn svg{
-  animation:rapi-rating-pop .28s ease both!important;
+#mobViewAssistant .assistant-feedback-actions.is-restoring-ratings .assistant-rating-btn svg{
+  animation:assistant-rating-pop .28s ease both!important;
 }
-@keyframes rapi-rating-pop{
+@keyframes assistant-rating-pop{
   0%{opacity:0;transform:scale(.65)}
   65%{transform:scale(1.12)}
   100%{opacity:1;transform:scale(1)}
 }
-@keyframes rapi-copy-confirm{
+@keyframes assistant-copy-confirm{
   0%{opacity:0;transform:scale(.65)}
   65%{transform:scale(1.12)}
   100%{opacity:1;transform:scale(1)}
 }
-#mobViewRapi .rapi-feedback-btn:active,
-#mobViewRapi .rapi-feedback-btn:focus,
-#mobViewRapi .rapi-feedback-btn:focus-visible{
+#mobViewAssistant .assistant-feedback-btn:active,
+#mobViewAssistant .assistant-feedback-btn:focus,
+#mobViewAssistant .assistant-feedback-btn:focus-visible{
   transform:none!important;
   opacity:1!important;
   box-shadow:none!important;
   outline:none!important;
 }
 
-/* Rapi surface: keep one continuous background and avoid the dock covering content. */
-#mobViewRapi .rapi-bottom-dock{
+/* assistente surface: keep one continuous background and avoid the dock covering content. */
+#mobViewAssistant .assistant-bottom-dock{
   background:transparent!important;
 }
-#mobViewRapi .rapi-bottom-dock::before{
+#mobViewAssistant .assistant-bottom-dock::before{
   content:none!important;
   display:none!important;
 }
 
 /* Product suggestions: image-and-title cards in a horizontal rail. */
-#mobViewRapi .rapi-product-rail{
+#mobViewAssistant .assistant-product-rail{
   display:flex!important;
   flex-direction:row!important;
   gap:10px!important;
@@ -2348,8 +2178,8 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   -webkit-overflow-scrolling:touch!important;
   touch-action:pan-x!important;
 }
-#mobViewRapi .rapi-product-rail::-webkit-scrollbar{display:none!important}
-#mobViewRapi .rapi-product-card{
+#mobViewAssistant .assistant-product-rail::-webkit-scrollbar{display:none!important}
+#mobViewAssistant .assistant-product-card{
   flex:0 0 78%!important;
   width:78%!important;
   max-width:280px!important;
@@ -2360,10 +2190,10 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   overflow:hidden!important;
   scroll-snap-align:start!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-image-wrap{width:100%!important;height:248px!important;background:#edf0f3!important}
-#mobViewRapi .rapi-product-card .rapi-result-image{width:100%!important;height:100%!important;object-fit:cover!important}
-#mobViewRapi .rapi-product-card .rapi-result-content{padding:12px!important}
-#mobViewRapi .rapi-product-card .rapi-result-title{
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap{width:100%!important;height:248px!important;background:#edf0f3!important}
+#mobViewAssistant .assistant-product-card .assistant-result-image{width:100%!important;height:100%!important;object-fit:cover!important}
+#mobViewAssistant .assistant-product-card .assistant-result-content{padding:12px!important}
+#mobViewAssistant .assistant-product-card .assistant-result-title{
   color:#ffffff!important;
   font-family:"Inter",sans-serif!important;
   font-size:15px!important;
@@ -2375,7 +2205,7 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   text-overflow:ellipsis!important;
 }
 /* The dock is only an anchor for its absolute controls; it must not paint over chat content. */
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-bottom-dock{
   height:0!important;
   min-height:0!important;
   padding:0!important;
@@ -2383,20 +2213,20 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   background:none!important;
   box-shadow:none!important;
 }
-#mobViewRapi .rapi-bottom-dock::before,
-#mobViewRapi .rapi-bottom-dock::after{
+#mobViewAssistant .assistant-bottom-dock::before,
+#mobViewAssistant .assistant-bottom-dock::after{
   content:none!important;
   display:none!important;
   background:none!important;
 }
 /* Chat must be one continuous scroll surface down to the fixed composer. */
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   align-items:stretch!important;
   min-height:0!important;
   padding:24px 16px 0!important;
   overflow:hidden!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   flex:1 1 auto!important;
   min-height:0!important;
   height:100%!important;
@@ -2409,63 +2239,63 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   background:#ffffff!important;
   touch-action:pan-y!important;
 }
-/* Keep Rapi scrollable without a visible scrollbar track on the right. */
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap,
-#mobViewRapi .rapi-ai-body,
-#mobViewRapi .rapi-page{
+/* Keep assistente scrollable without a visible scrollbar track on the right. */
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap,
+#mobViewAssistant .assistant-ai-body,
+#mobViewAssistant .assistant-page{
   scrollbar-width:none!important;
   -ms-overflow-style:none!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap::-webkit-scrollbar,
-#mobViewRapi .rapi-ai-body::-webkit-scrollbar,
-#mobViewRapi .rapi-page::-webkit-scrollbar{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap::-webkit-scrollbar,
+#mobViewAssistant .assistant-ai-body::-webkit-scrollbar,
+#mobViewAssistant .assistant-page::-webkit-scrollbar{
   display:none!important;
   width:0!important;
   height:0!important;
 }
-/* Rapi must fill the viewport without vertical side gutters. */
-#mobViewRapi.mob-view--rapi,
-#mobViewRapi.mob-view--rapi.active,
-#mobViewRapi .rapi-page{
+/* assistente must fill the viewport without vertical side gutters. */
+#mobViewAssistant.mob-view--assistant,
+#mobViewAssistant.mob-view--assistant.active,
+#mobViewAssistant .assistant-page{
   left:0!important;
   right:0!important;
   width:100vw!important;
   max-width:none!important;
   margin:0!important;
 }
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   padding-left:0!important;
   padding-right:0!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   width:100%!important;
   max-width:none!important;
 }
 /* Align chat bubbles without bringing the full-height side gutters back. */
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-assistant-message{
   margin-left:16px!important;
 }
-#mobViewRapi .rapi-chat-user-message{
+#mobViewAssistant .assistant-chat-user-message{
   margin-right:16px!important;
 }
-/* Exact Rapi product card dimensions. */
-#mobViewRapi .rapi-product-card{
+/* Exact assistente product card dimensions. */
+#mobViewAssistant .assistant-product-card{
   flex:0 0 258px!important;
   width:258px!important;
   max-width:258px!important;
   border-radius:10px!important;
   background:#484F5C!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-image-wrap{
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap{
   width:258px!important;
   height:258px!important;
   border-radius:0 0 10px 10px!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-image,
-#mobViewRapi .rapi-product-card .rapi-result-image-placeholder{
+#mobViewAssistant .assistant-product-card .assistant-result-image,
+#mobViewAssistant .assistant-product-card .assistant-result-image-placeholder{
   border-radius:0 0 10px 10px!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-content{
+#mobViewAssistant .assistant-product-card .assistant-result-content{
   width:258px!important;
   height:69.5px!important;
   min-height:69.5px!important;
@@ -2479,51 +2309,51 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   justify-content:center!important;
   gap:4px!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-title,
-#mobViewRapi .rapi-product-card .rapi-result-price{
+#mobViewAssistant .assistant-product-card .assistant-result-title,
+#mobViewAssistant .assistant-product-card .assistant-result-price{
   color:#ffffff!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-price{
+#mobViewAssistant .assistant-product-card .assistant-result-price{
   font-size:14px!important;
   line-height:17px!important;
   font-weight:700!important;
   color:#f3e8c8!important;
 }
 /* Assistant copy: readable body text with selective Markdown emphasis. */
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   font-size:15px!important;
   font-weight:400!important;
   line-height:1.55!important;
   letter-spacing:.002em!important;
   white-space:pre-wrap!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
   color:var(--brand-primary)!important;
   font-weight:600!important;
 }
 /* Keep assistant messages visually compact without changing their Markdown. */
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   margin:0!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title p,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title ul,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title ol,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title li{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title p,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title ul,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title ol,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title li{
   margin-top:0!important;
   margin-bottom:0!important;
 }
 /* Prevent the first glyph from being clipped by the legacy card overflow. */
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-assistant-message{
   overflow:visible!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   padding-left:2px!important;
 }
 /* Slight right alignment for response actions and product suggestions. */
-#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
   margin-left:10px!important;
 }
-#mobViewRapi .rapi-product-rail{
+#mobViewAssistant .assistant-product-rail{
   padding-left:18px!important;
   padding-right:18px!important;
   box-sizing:border-box!important;
@@ -2531,246 +2361,239 @@ body.menu-tab .rapi-location-widget .rapi-location-tab--branch,
   scroll-padding-right:18px!important;
 }
 /* Add a short, intentional gap only before the final question. */
-#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   display:block!important;
   margin-top:10px!important;
 }
 /* Lower the composer slightly to reduce the visible strip above the bottom nav. */
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
   bottom:14px!important;
 }
-/* Rapi typing indicator: neutral radial dot matrix and left-to-right text beam. */
-#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+/* assistente typing indicator: neutral radial dot matrix and left-to-right text beam. */
+#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
   width:42px!important;height:42px!important;flex:0 0 42px!important;padding:7px!important;
   border-radius:10px!important;background:#ededed!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   display:grid!important;grid-template-columns:repeat(5,3px)!important;grid-template-rows:repeat(5,3px)!important;
   align-content:center!important;justify-content:center!important;gap:3px!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
   width:3px!important;height:3px!important;border-radius:50%!important;background:#a8a8a8!important;
-  opacity:.28;transform:scale(.72);animation:rapi-dot-radial-wave 1.8s ease-in-out infinite!important;
+  opacity:.28;transform:scale(.72);animation:assistant-dot-radial-wave 1.8s ease-in-out infinite!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(13){animation-delay:0s!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(7),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(8),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(9),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(12),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(14),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(17),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(18),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(19){animation-delay:.12s!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(1),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(2),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(3),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(4),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(5),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(6),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(10),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(11),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(15),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(16),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(20),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(21),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(22),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(23),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(24),
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:nth-child(25){animation-delay:.24s!important}
-@keyframes rapi-dot-radial-wave{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(13){animation-delay:0s!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(7),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(8),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(9),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(12),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(14),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(17),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(18),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(19){animation-delay:.12s!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(1),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(2),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(3),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(4),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(5),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(6),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(10),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(11),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(15),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(16),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(20),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(21),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(22),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(23),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(24),
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(25){animation-delay:.24s!important}
+@keyframes assistant-dot-radial-wave{
   0%,62%,100%{opacity:.24;transform:scale(.68);background:#a8a8a8}
   25%{opacity:1;transform:scale(1.45);background:#4f4f4f}
   43%{opacity:.56;transform:scale(1);background:#777}
 }
-#mobViewRapi .rapi-typing-label{
+#mobViewAssistant .assistant-typing-label{
   color:transparent!important;
   background:linear-gradient(105deg,#777 0%,#777 36%,#f7f7f7 47%,#fff 50%,#f7f7f7 53%,#777 64%,#777 100%)!important;
   background-size:250% 100%!important;background-position:100% 0;
   -webkit-background-clip:text!important;background-clip:text!important;
-  animation:rapi-typing-text-beam 2.4s linear infinite!important;
+  animation:assistant-typing-text-beam 2.4s linear infinite!important;
 }
-@keyframes rapi-typing-text-beam{from{background-position:100% 0}to{background-position:-150% 0}}
+@keyframes assistant-typing-text-beam{from{background-position:100% 0}to{background-position:-150% 0}}
 /* Compact unboxed AI state; animated values must remain free of !important. */
-#mobViewRapi .rapi-chat-assistant-message,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-content,
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title,
-#mobViewRapi .rapi-chat-typing,
-#mobViewRapi .rapi-chat-typing .rapi-typing-row{
+#mobViewAssistant .assistant-chat-assistant-message,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-content,
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title,
+#mobViewAssistant .assistant-chat-typing,
+#mobViewAssistant .assistant-chat-typing .assistant-typing-row{
   border:0!important;background:transparent!important;box-shadow:none!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-typing-row{min-height:0!important;padding:0!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-typing-row{min-height:0!important;padding:0!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
   width:28px!important;height:28px!important;flex-basis:28px!important;padding:4px!important;
   border:0!important;border-radius:7px!important;background:#eee!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   grid-template-columns:repeat(5,2px)!important;grid-template-rows:repeat(5,2px)!important;gap:2px!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
   width:2px!important;height:2px!important;background:var(--brand-hover)!important;
-  opacity:.18;transform:scale(.55);animation:rapi-dot-radial-wave-visible 1.65s ease-in-out infinite!important;
+  opacity:.18;transform:scale(.55);animation:assistant-dot-radial-wave-visible 1.65s ease-in-out infinite!important;
 }
-@keyframes rapi-dot-radial-wave-visible{
+@keyframes assistant-dot-radial-wave-visible{
   0%,65%,100%{opacity:.16;transform:scale(.55);box-shadow:0 0 0 rgba(65,65,65,0)}
   24%{opacity:1;transform:scale(1.9);box-shadow:0 0 4px rgba(65,65,65,.8)}
   43%{opacity:.46;transform:scale(.9);box-shadow:0 0 1px rgba(65,65,65,.25)}
 }
-#mobViewRapi .rapi-typing-label{
-  background-position:100% 0;animation:rapi-typing-text-beam-visible 2.2s ease-in-out infinite!important;
+#mobViewAssistant .assistant-typing-label{
+  background-position:100% 0;animation:assistant-typing-text-beam-visible 2.2s ease-in-out infinite!important;
 }
-@keyframes rapi-typing-text-beam-visible{
+@keyframes assistant-typing-text-beam-visible{
   0%{background-position:100% 0}
   70%,100%{background-position:-150% 0}
 }
 /* Compact square geometry for the typing matrix. */
-#mobViewRapi .rapi-chat-typing .rapi-thinking--dark{border-radius:2px!important}
-#mobViewRapi .rapi-typing-label{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{border-radius:2px!important}
+#mobViewAssistant .assistant-typing-label{
   display:inline-block!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
   background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;
   background-repeat:no-repeat!important;background-size:240% 100%!important;background-position:140% 0;
-  animation:rapi-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
+  animation:assistant-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
 }
-@keyframes rapi-typing-light-sweep{
+@keyframes assistant-typing-light-sweep{
   0%{background-position:140% 0}
   100%{background-position:-140% 0}
 }
 /* 7x7 polygon mask from the visual reference: 3 / 5 / 7 / 7 / 7 / 5 / 3. */
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark{
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   grid-template-columns:repeat(7,2px)!important;grid-template-rows:repeat(7,2px)!important;gap:1px!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-shape-cut{visibility:hidden!important;animation:none!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-0{animation-name:rapi-polygon-ring-0!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-1{animation-name:rapi-polygon-ring-1!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-2,
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span.is-ring-3{animation-name:rapi-polygon-ring-2!important}
-#mobViewRapi .rapi-chat-typing .rapi-thinking-dots--dark span:not(.is-shape-cut){
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span.is-shape-cut{visibility:hidden!important;animation:none!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span.is-ring-0{animation-name:assistant-polygon-ring-0!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span.is-ring-1{animation-name:assistant-polygon-ring-1!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span.is-ring-2,
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span.is-ring-3{animation-name:assistant-polygon-ring-2!important}
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:not(.is-shape-cut){
   animation-duration:1.75s!important;animation-timing-function:ease-in-out!important;
   animation-iteration-count:infinite!important;animation-delay:0s!important;
 }
-@keyframes rapi-polygon-ring-0{
+@keyframes assistant-polygon-ring-0{
   0%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
   12%,88%{opacity:1;transform:scale(1.7);box-shadow:0 0 4px var(--brand-hover)}
 }
-@keyframes rapi-polygon-ring-1{
+@keyframes assistant-polygon-ring-1{
   0%,18%,82%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
   30%,70%{opacity:.88;transform:scale(1.5);box-shadow:0 0 3px var(--brand-hover)}
 }
-@keyframes rapi-polygon-ring-2{
+@keyframes assistant-polygon-ring-2{
   0%,36%,64%,100%{opacity:.16;transform:scale(.55);box-shadow:none}
   46%,54%{opacity:.8;transform:scale(1.35);box-shadow:0 0 3px var(--brand-hover)}
 }
 /* Single-layer traveling beam clipped inside the glyphs. */
-#mobViewRapi .rapi-typing-label{
+#mobViewAssistant .assistant-typing-label{
   position:relative!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
   background:linear-gradient(90deg,#747474 0%,#747474 42%,var(--brand-light) 47%,var(--brand-primary) 50%,var(--brand-light) 53%,#747474 58%,#747474 100%)!important;
   background-repeat:no-repeat!important;background-size:300% 100%!important;background-position:100% 0;
   -webkit-background-clip:text!important;background-clip:text!important;
-  animation:rapi-typing-beam-inside 1.8s linear infinite!important;
+  animation:assistant-typing-beam-inside 1.8s linear infinite!important;
 }
-#mobViewRapi .rapi-typing-label::after{content:none!important;display:none!important}
-@keyframes rapi-typing-beam-inside{
+#mobViewAssistant .assistant-typing-label::after{content:none!important;display:none!important}
+@keyframes assistant-typing-beam-inside{
   0%{background-position:100% 0}
   100%{background-position:0% 0}
 }
 
 /* Chat color refinement. Product cards intentionally remain unchanged. */
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{color:#2f2f2f!important}
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{color:var(--brand-hover)!important}
-#mobViewRapi .rapi-chat-user-message .rapi-result-title{background:#f4f4f5!important}
-#mobViewRapi .rapi-rating-btn{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{color:#2f2f2f!important}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{background:#f4f4f5!important}
+#mobViewAssistant .assistant-rating-btn{
   color:#737373!important;transition:color .18s ease,background-color .18s ease!important;
 }
-#mobViewRapi .rapi-rating-btn svg,
-#mobViewRapi .rapi-rating-btn svg path{
+#mobViewAssistant .assistant-rating-btn svg,
+#mobViewAssistant .assistant-rating-btn svg path{
   transition:color .18s ease,fill .18s ease,stroke .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-rating-btn:hover{color:var(--brand-hover)!important}
+  #mobViewAssistant .assistant-rating-btn:hover{color:var(--brand-hover)!important}
 }
-#mobViewRapi .rapi-rating-btn.is-selected,
-#mobViewRapi .rapi-rating-btn[aria-pressed="true"]{color:var(--brand-hover)!important}
-#mobViewRapi .rapi-rating-btn.is-selected svg path:last-child,
-#mobViewRapi .rapi-rating-btn[aria-pressed="true"] svg path:last-child{fill:var(--brand-hover)!important}
+#mobViewAssistant .assistant-rating-btn.is-selected,
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"]{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child,
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"] svg path:last-child{fill:var(--brand-hover)!important}
 /* Unified copy / like / dislike icon states. */
-#mobViewRapi .rapi-feedback-btn{color:#6b7280!important;transition:color .18s ease!important}
-#mobViewRapi .rapi-feedback-btn svg,
-#mobViewRapi .rapi-feedback-btn svg path,
-#mobViewRapi .rapi-feedback-btn svg circle,
-#mobViewRapi .rapi-feedback-btn svg rect{
+#mobViewAssistant .assistant-feedback-btn{color:#6b7280!important;transition:color .18s ease!important}
+#mobViewAssistant .assistant-feedback-btn svg,
+#mobViewAssistant .assistant-feedback-btn svg path,
+#mobViewAssistant .assistant-feedback-btn svg circle,
+#mobViewAssistant .assistant-feedback-btn svg rect{
   stroke:currentColor!important;transition:color .18s ease,stroke .18s ease,fill .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-feedback-btn:hover{color:var(--brand-hover)!important}
+  #mobViewAssistant .assistant-feedback-btn:hover{color:var(--brand-hover)!important}
 }
-#mobViewRapi .rapi-rating-btn.is-selected,
-#mobViewRapi .rapi-rating-btn[aria-pressed="true"],
-#mobViewRapi .rapi-copy-btn.is-copied,
-#mobViewRapi .rapi-copy-btn.is-restoring{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-rating-btn.is-selected,
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"],
+#mobViewAssistant .assistant-copy-btn.is-copied,
+#mobViewAssistant .assistant-copy-btn.is-restoring{color:var(--brand-hover)!important}
 /* Product names use application-wide Title Case presentation. */
 body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}
 
 /* Rapidex loading identity: orange loader, medium-gray status text. */
-#mobViewRapi .rapi-typing-label{
+#mobViewAssistant .assistant-typing-label{
   color:#6b7280!important;-webkit-text-fill-color:#6b7280!important;background:none!important;animation:none!important;
 }
 /* Rapidex quick suggestions: light, quiet interaction styling. */
-#mobViewRapi .rapi-suggest-chip{
+#mobViewAssistant .assistant-suggest-chip{
   flex:0 0 auto!important;width:max-content!important;min-width:0!important;max-width:none!important;
   background:#ffffff!important;border-color:#e5e7eb!important;color:#374151!important;border-radius:20px!important;
   transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-suggest-chip:hover{
+  #mobViewAssistant .assistant-suggest-chip:hover{
     background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
   }
 }
-#mobViewRapi .rapi-suggest-chip:active,
-#mobViewRapi .rapi-suggest-chip:focus-visible{
+#mobViewAssistant .assistant-suggest-chip:active,
+#mobViewAssistant .assistant-suggest-chip:focus-visible{
   background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
 }
 /* Native two-axis gestures inside chat results and product cards. */
-#mobViewRapi .rapi-ai-body--searching,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{touch-action:pan-y!important}
-#mobViewRapi .rapi-product-rail,
-#mobViewRapi .rapi-product-card,
-#mobViewRapi .rapi-product-card *{touch-action:auto!important}
+#mobViewAssistant .assistant-ai-body--searching,
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{touch-action:pan-y!important}
+#mobViewAssistant .assistant-product-rail,
+#mobViewAssistant .assistant-product-card,
+#mobViewAssistant .assistant-product-card *{touch-action:auto!important}
 /* Move the composer and full intro content above the mobile keyboard. */
-#mobViewRapi.rapi-keyboard-open .rapi-bottom-dock{
-  bottom:calc(var(--rapi-keyboard-height,0px) + 4px)!important;
+#mobViewAssistant.assistant-keyboard-open .assistant-bottom-dock{
+  bottom:calc(var(--assistant-keyboard-height,0px) + 4px)!important;
   transition:bottom .18s ease!important;
 }
-#mobViewRapi.rapi-keyboard-open .rapi-ai-body:not(.rapi-ai-body--searching){
-  transform:translateY(calc(0px - var(--rapi-intro-shift,110px)))!important;
+#mobViewAssistant.assistant-keyboard-open .assistant-ai-body:not(.assistant-ai-body--searching){
+  transform:translateY(calc(0px - var(--assistant-intro-shift,110px)))!important;
   transition:transform .22s ease!important;
 }
-#mobViewRapi.rapi-intro-deferred .rapi-orb-wrap,
-#mobViewRapi.rapi-intro-deferred .rapi-ai-question,
-#mobViewRapi.rapi-intro-deferred #rapiStarter{
-  opacity:0!important;
-  visibility:hidden!important;
-  animation:none!important;
-}
 
-/* Rapi chat readability: warm premium surfaces and stronger content hierarchy. */
-#mobViewRapi .rapi-ai-body--searching,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+/* assistant chat readability: warm premium surfaces and stronger content hierarchy. */
+#mobViewAssistant .assistant-ai-body--searching,
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   background:#fbfaf8!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-results{
+#mobViewAssistant .assistant-ai-body--searching .assistant-results{
   gap:20px!important;
 }
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-assistant-message{
   max-width:calc(100% - 32px)!important;
   margin-left:16px!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
   padding:15px 16px 12px!important;
   border:1px solid #e9e3da!important;
   border-radius:16px!important;
   background:#f7f4ef!important;
   box-shadow:0 3px 12px rgba(44,36,28,.045)!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   padding:0!important;
   color:#202124!important;
   font-size:15.5px!important;
@@ -2780,50 +2603,50 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   white-space:pre-wrap!important;
   text-wrap:pretty!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
   color:var(--brand-hover)!important;
   font-weight:650!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   margin-top:12px!important;
   color:#313131!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
   gap:11px!important;
   margin:11px 0 0!important;
   padding-top:10px!important;
   border-top:1px solid rgba(88,72,56,.09)!important;
 }
-#mobViewRapi .rapi-feedback-btn{
+#mobViewAssistant .assistant-feedback-btn{
   width:19px!important;
   height:19px!important;
   min-width:19px!important;
   min-height:19px!important;
   color:#77736e!important;
 }
-#mobViewRapi .rapi-feedback-btn svg{
+#mobViewAssistant .assistant-feedback-btn svg{
   width:18px!important;
   height:18px!important;
 }
 
 /* Recommended products: remove the blue-gray footer and use a warm neutral base. */
-#mobViewRapi .rapi-product-rail{
+#mobViewAssistant .assistant-product-rail{
   gap:12px!important;
   padding-top:3px!important;
   padding-bottom:10px!important;
 }
-#mobViewRapi .rapi-product-card{
+#mobViewAssistant .assistant-product-card{
   border:1px solid #e5ded4!important;
   border-radius:14px!important;
   background:#f7f4ef!important;
   box-shadow:0 5px 16px rgba(44,36,28,.055)!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-image-wrap,
-#mobViewRapi .rapi-product-card .rapi-result-image,
-#mobViewRapi .rapi-product-card .rapi-result-image-placeholder{
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap,
+#mobViewAssistant .assistant-product-card .assistant-result-image,
+#mobViewAssistant .assistant-product-card .assistant-result-image-placeholder{
   border-radius:0!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-content{
+#mobViewAssistant .assistant-product-card .assistant-result-content{
   height:72px!important;
   min-height:72px!important;
   padding:10px 13px!important;
@@ -2831,13 +2654,13 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   background:#f7f4ef!important;
   gap:5px!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-title{
+#mobViewAssistant .assistant-product-card .assistant-result-title{
   color:#24211f!important;
   font-size:15px!important;
   line-height:19px!important;
   font-weight:650!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-price{
+#mobViewAssistant .assistant-product-card .assistant-result-price{
   color:var(--brand-hover)!important;
   font-size:14px!important;
   line-height:18px!important;
@@ -2845,28 +2668,28 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 
 /* Composer uses the same warm-neutral surface language as messages and cards. */
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
   border-color:#e5ded4!important;
   background:#fffdfa!important;
   box-shadow:0 7px 22px rgba(44,36,28,.07)!important;
 }
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
   border-color:rgba(var(--brand-primary-rgb), .42)!important;
   box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .07),0 8px 24px rgba(44,36,28,.075)!important;
 }
-#mobViewRapi .rapi-ai-input{
+#mobViewAssistant .assistant-ai-input{
   color:#24211f!important;
 }
 
-/* Conversation hierarchy: keep the user as a bubble and let Rapi answer in open space. */
-#mobViewRapi .rapi-ai-body--searching,
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+/* Conversation hierarchy: keep the user as a bubble and let assistente answer in open space. */
+#mobViewAssistant .assistant-ai-body--searching,
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   background:#ffffff!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-results{
+#mobViewAssistant .assistant-ai-body--searching .assistant-results{
   gap:22px!important;
 }
-#mobViewRapi .rapi-chat-user-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{
   padding:12px 16px!important;
   border:1px solid #ebe8e3!important;
   border-radius:18px 18px 5px 18px!important;
@@ -2876,19 +2699,19 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   line-height:21px!important;
   font-weight:450!important;
 }
-#mobViewRapi .rapi-chat-assistant-message{
+#mobViewAssistant .assistant-chat-assistant-message{
   max-width:calc(100% - 40px)!important;
   margin-left:20px!important;
   margin-right:20px!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-content{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
   padding:0!important;
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
   box-shadow:none!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   padding:0!important;
   color:#292725!important;
   font-size:15.5px!important;
@@ -2897,45 +2720,45 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   letter-spacing:.001em!important;
   text-wrap:pretty!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-result-title strong{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
   color:var(--brand-hover)!important;
   font-weight:650!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-final-question{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   margin-top:14px!important;
   color:#292725!important;
 }
-#mobViewRapi .rapi-chat-assistant-message .rapi-feedback-actions{
+#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
   justify-content:flex-start!important;
   gap:14px!important;
   margin:12px 0 0!important;
   padding-top:0!important;
   border-top:0!important;
 }
-#mobViewRapi .rapi-feedback-btn{
+#mobViewAssistant .assistant-feedback-btn{
   width:20px!important;
   height:20px!important;
   min-width:20px!important;
   min-height:20px!important;
   color:#85817c!important;
 }
-#mobViewRapi .rapi-feedback-btn svg{
+#mobViewAssistant .assistant-feedback-btn svg{
   width:17px!important;
   height:17px!important;
 }
 
 /* Product recommendations: quiet neutral chrome with clear title/price hierarchy. */
-#mobViewRapi .rapi-product-rail{
+#mobViewAssistant .assistant-product-rail{
   gap:12px!important;
   padding-top:2px!important;
   padding-bottom:11px!important;
 }
-#mobViewRapi .rapi-product-card{
+#mobViewAssistant .assistant-product-card{
   border-color:#e7e2dc!important;
   background:#f8f6f3!important;
   box-shadow:0 4px 14px rgba(44,36,28,.045)!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-content{
+#mobViewAssistant .assistant-product-card .assistant-result-content{
   height:72px!important;
   min-height:72px!important;
   padding:10px 14px 11px!important;
@@ -2943,53 +2766,53 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   background:#f8f6f3!important;
   gap:4px!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-title{
+#mobViewAssistant .assistant-product-card .assistant-result-title{
   color:#292522!important;
   font-weight:650!important;
 }
-#mobViewRapi .rapi-product-card .rapi-result-price{
+#mobViewAssistant .assistant-product-card .assistant-result-price{
   color:var(--brand-hover)!important;
   font-weight:700!important;
 }
 
 /* Composer: visually related to the neutral cards, without another heavy box. */
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
   bottom:14px!important;
   border-color:#e7e2dc!important;
   background:#fffefa!important;
   box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
 }
-#mobViewRapi .rapi-bottom-dock .rapi-ai-input-bar:focus-within{
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
   border-color:#e7e2dc!important;
   box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
   transform:translateX(-50%)!important;
 }
 
 @media (max-width:360px){
-  #mobViewRapi .rapi-chat-assistant-message{
+  #mobViewAssistant .assistant-chat-assistant-message{
     max-width:calc(100% - 32px)!important;
     margin-left:16px!important;
     margin-right:16px!important;
   }
-  #mobViewRapi .rapi-chat-assistant-message .rapi-result-title{
+  #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
     font-size:15px!important;
     line-height:1.62!important;
   }
 }
 
-/* Rapi product detail: branded bottom sheet opened from AI suggestions. */
-#mobViewRapi .rapi-product-card{
+/* assistente product detail: branded bottom sheet opened from AI suggestions. */
+#mobViewAssistant .assistant-product-card{
   cursor:pointer!important;
   -webkit-tap-highlight-color:transparent!important;
 }
-#mobViewRapi .rapi-product-card:focus-visible{
+#mobViewAssistant .assistant-product-card:focus-visible{
   outline:2px solid rgba(var(--brand-primary-rgb), .65)!important;
   outline-offset:3px!important;
 }
-#mobViewRapi .rapi-product-detail[hidden]{
+#mobViewAssistant .assistant-product-detail[hidden]{
   display:none!important;
 }
-#mobViewRapi .rapi-product-detail{
+#mobViewAssistant .assistant-product-detail{
   position:absolute!important;
   inset:0!important;
   z-index:260!important;
@@ -3005,12 +2828,12 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   transition:opacity .38s ease,visibility .38s ease!important;
   overscroll-behavior:none!important;
 }
-#mobViewRapi .rapi-product-detail.is-open{
+#mobViewAssistant .assistant-product-detail.is-open{
   opacity:1!important;
   visibility:visible!important;
   pointer-events:auto!important;
 }
-#mobViewRapi .rapi-product-detail-panel{
+#mobViewAssistant .assistant-product-detail-panel{
   width:100%!important;
   max-width:430px!important;
   height:min(74dvh,680px)!important;
@@ -3025,10 +2848,10 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   transform:translateY(calc(100% + 18px))!important;
   transition:transform .52s cubic-bezier(.2,.82,.25,1)!important;
 }
-#mobViewRapi .rapi-product-detail.is-open .rapi-product-detail-panel{
+#mobViewAssistant .assistant-product-detail.is-open .assistant-product-detail-panel{
   transform:translateY(0)!important;
 }
-#mobViewRapi .rapi-product-detail-media{
+#mobViewAssistant .assistant-product-detail-media{
   position:relative!important;
   width:100%!important;
   height:clamp(240px,33dvh,310px)!important;
@@ -3037,7 +2860,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   overflow:hidden!important;
   background:#f0ece7!important;
 }
-#mobViewRapi .rapi-product-detail-image{
+#mobViewAssistant .assistant-product-detail-image{
   position:relative!important;
   z-index:1!important;
   display:block!important;
@@ -3046,7 +2869,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   object-fit:cover!important;
   object-position:center!important;
 }
-#mobViewRapi .rapi-product-detail-placeholder{
+#mobViewAssistant .assistant-product-detail-placeholder{
   position:absolute!important;
   inset:0!important;
   display:flex!important;
@@ -3055,17 +2878,17 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   color:#a39b94!important;
   background:linear-gradient(145deg,#f4f0eb,#e8e1da)!important;
 }
-#mobViewRapi .rapi-product-detail-placeholder svg{
+#mobViewAssistant .assistant-product-detail-placeholder svg{
   width:52px!important;
   height:52px!important;
 }
-#mobViewRapi .rapi-product-detail-media:not(.has-no-image) .rapi-product-detail-placeholder{
+#mobViewAssistant .assistant-product-detail-media:not(.has-no-image) .assistant-product-detail-placeholder{
   display:none!important;
 }
-#mobViewRapi .rapi-product-detail-media.has-no-image .rapi-product-detail-image{
+#mobViewAssistant .assistant-product-detail-media.has-no-image .assistant-product-detail-image{
   display:none!important;
 }
-#mobViewRapi .rapi-product-detail-handle{
+#mobViewAssistant .assistant-product-detail-handle{
   position:absolute!important;
   z-index:3!important;
   top:14px!important;
@@ -3077,7 +2900,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   transform:translateX(-50%)!important;
   pointer-events:none!important;
 }
-#mobViewRapi .rapi-product-detail-close{
+#mobViewAssistant .assistant-product-detail-close{
   position:absolute!important;
   z-index:4!important;
   top:16px!important;
@@ -3095,15 +2918,15 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   box-shadow:none!important;
   backdrop-filter:blur(8px)!important;
 }
-#mobViewRapi .rapi-product-detail-close svg{
+#mobViewAssistant .assistant-product-detail-close svg{
   width:24px!important;
   height:24px!important;
 }
-#mobViewRapi .rapi-product-detail-close:focus-visible{
+#mobViewAssistant .assistant-product-detail-close:focus-visible{
   outline:2px solid var(--brand-primary)!important;
   outline-offset:2px!important;
 }
-#mobViewRapi .rapi-product-detail-content{
+#mobViewAssistant .assistant-product-detail-content{
   flex:1 1 auto!important;
   min-height:0!important;
   display:flex!important;
@@ -3112,16 +2935,16 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   padding:24px 16px 20px!important;
   background:#ffffff!important;
 }
-#mobViewRapi .rapi-product-detail-copy{
+#mobViewAssistant .assistant-product-detail-copy{
   flex:1 1 auto!important;
   min-height:0!important;
   overflow-y:auto!important;
   scrollbar-width:none!important;
 }
-#mobViewRapi .rapi-product-detail-copy::-webkit-scrollbar{
+#mobViewAssistant .assistant-product-detail-copy::-webkit-scrollbar{
   display:none!important;
 }
-#mobViewRapi .rapi-product-detail-title{
+#mobViewAssistant .assistant-product-detail-title{
   margin:0 0 6px!important;
   color:#292522!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
@@ -3131,14 +2954,14 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   letter-spacing:-.01em!important;
   text-transform:none!important;
 }
-#mobViewRapi .rapi-product-detail-price{
+#mobViewAssistant .assistant-product-detail-price{
   margin:0 0 22px!important;
   color:var(--brand-primary)!important;
   font-size:16px!important;
   line-height:20px!important;
   font-weight:700!important;
 }
-#mobViewRapi .rapi-product-detail-description{
+#mobViewAssistant .assistant-product-detail-description{
   margin:0!important;
   color:#62676f!important;
   font-size:15.5px!important;
@@ -3147,7 +2970,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   letter-spacing:.001em!important;
   text-wrap:pretty!important;
 }
-#mobViewRapi .rapi-product-detail-recommendation{
+#mobViewAssistant .assistant-product-detail-recommendation{
   display:flex!important;
   flex-direction:column!important;
   gap:5px!important;
@@ -3155,20 +2978,20 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   padding:2px 0 2px 13px!important;
   border-left:3px solid var(--brand-primary)!important;
 }
-#mobViewRapi .rapi-product-detail-recommendation strong{
+#mobViewAssistant .assistant-product-detail-recommendation strong{
   color:#292522!important;
   font-size:14px!important;
   line-height:18px!important;
   font-weight:700!important;
 }
-#mobViewRapi .rapi-product-detail-recommendation span{
+#mobViewAssistant .assistant-product-detail-recommendation span{
   color:#6b7077!important;
   font-size:14px!important;
   line-height:21px!important;
   font-weight:400!important;
   text-wrap:pretty!important;
 }
-#mobViewRapi .rapi-product-detail-question{
+#mobViewAssistant .assistant-product-detail-question{
   width:100%!important;
   min-height:56px!important;
   flex:0 0 56px!important;
@@ -3187,42 +3010,42 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   box-shadow:none!important;
   -webkit-tap-highlight-color:transparent!important;
 }
-#mobViewRapi .rapi-product-detail-question:active{
+#mobViewAssistant .assistant-product-detail-question:active{
   background:var(--brand-primary)!important;
 }
-#mobViewRapi .rapi-product-detail-question:focus-visible{
+#mobViewAssistant .assistant-product-detail-question:focus-visible{
   outline:2px solid var(--brand-primary)!important;
   outline-offset:3px!important;
 }
-body.rapi-product-detail-open{
+body.assistant-product-detail-open{
   overflow:hidden!important;
 }
-body.rapi-product-detail-open:has(#mobViewRapi.active) .mob-bottom-nav,
-body.rapi-nav-keep.rapi-product-detail-open:has(#mobViewRapi.active) .mob-bottom-nav{
+body.assistant-product-detail-open:has(#mobViewAssistant.active) .mob-bottom-nav,
+body.assistant-nav-keep.assistant-product-detail-open:has(#mobViewAssistant.active) .mob-bottom-nav{
   display:none!important;
 }
 
 @media (max-height:700px){
-  #mobViewRapi .rapi-product-detail-media{
+  #mobViewAssistant .assistant-product-detail-media{
     height:220px!important;
     min-height:220px!important;
     flex-basis:220px!important;
   }
-  #mobViewRapi .rapi-product-detail-content{
+  #mobViewAssistant .assistant-product-detail-content{
     gap:16px!important;
     padding-top:20px!important;
     padding-bottom:16px!important;
   }
 }
-/* Rapi compact cart access and composer clearance. */
-body.rapi-nav-keep #cartSticky,
-body:has(#mobViewRapi.active) #cartSticky{
+/* assistente compact cart access and composer clearance. */
+body.assistant-nav-keep #cartSticky,
+body:has(#mobViewAssistant.active) #cartSticky{
   display:none!important;
   visibility:hidden!important;
   opacity:0!important;
   pointer-events:none!important;
-}body.rapi-nav-keep .mob-bottom-nav::before,
-body:has(#mobViewRapi.active) .mob-bottom-nav::before{
+}body.assistant-nav-keep .mob-bottom-nav::before,
+body:has(#mobViewAssistant.active) .mob-bottom-nav::before{
   content:none!important;
   display:none!important;
   height:0!important;
@@ -3232,11 +3055,11 @@ body:has(#mobViewRapi.active) .mob-bottom-nav::before{
    havia cabeçalho onde encostá-la. Agora ela é um botão do cabeçalho como os
    outros (ver "Cabeçalho" no fim deste arquivo) — só o contador continua sendo
    dela. */
-#mobViewRapi .rapi-cart-button{
+#mobViewAssistant .assistant-cart-button{
   position:relative!important;
 }
-#mobViewRapi .rapi-cart-button[hidden]{display:none!important}
-#mobViewRapi .rapi-cart-count{
+#mobViewAssistant .assistant-cart-button[hidden]{display:none!important}
+#mobViewAssistant .assistant-cart-count{
   position:absolute!important;
   top:-4px!important;
   right:-4px!important;
@@ -3255,57 +3078,57 @@ body:has(#mobViewRapi.active) .mob-bottom-nav::before{
   font-weight:800!important;
   box-sizing:border-box!important;
 }
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   padding-top:72px!important;
   padding-bottom:174px!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   padding-bottom:20px!important;
   scroll-padding-bottom:20px!important;
 }
-#mobViewRapi.rapi-keyboard-open .rapi-ai-body--searching{
-  padding-bottom:calc(var(--rapi-keyboard-height,0px) + 92px)!important;
+#mobViewAssistant.assistant-keyboard-open .assistant-ai-body--searching{
+  padding-bottom:calc(var(--assistant-keyboard-height,0px) + 92px)!important;
 }
-#mobViewRapi .rapi-page,
-#mobViewRapi .rapi-ai-body,
-#mobViewRapi .rapi-ai-results-wrap,
-#mobViewRapi .rapi-bottom-dock{
+#mobViewAssistant .assistant-page,
+#mobViewAssistant .assistant-ai-body,
+#mobViewAssistant .assistant-ai-results-wrap,
+#mobViewAssistant .assistant-bottom-dock{
   max-width:100%!important;
   box-sizing:border-box!important;
 }
-body:has(#mobViewRapi.active) .rapi-toast{
+body:has(#mobViewAssistant.active) .assistant-toast{
   bottom:calc(174px + env(safe-area-inset-bottom,0px))!important;
 }
 /* Keep the detail out of recommendation rendering only after its closing
    transition finishes and JS restores `hidden`. While it is merely missing
    `.is-open`, it must stay flex-rendered so transform can animate both ways. */
-#mobViewRapi .rapi-product-detail[hidden]{
+#mobViewAssistant .assistant-product-detail[hidden]{
   display:none!important;
   visibility:hidden!important;
   opacity:0!important;
   pointer-events:none!important;
 }
-#mobViewRapi .rapi-product-detail.is-open:not([hidden]){
+#mobViewAssistant .assistant-product-detail.is-open:not([hidden]){
   display:flex!important;
   visibility:visible!important;
   opacity:1!important;
   pointer-events:auto!important;
 }
-#mobViewRapi .rapi-product-rail,
-#mobViewRapi .rapi-product-card,
-#mobViewRapi .rapi-product-card .rapi-result-image-wrap,
-#mobViewRapi .rapi-product-card .rapi-result-content{
+#mobViewAssistant .assistant-product-rail,
+#mobViewAssistant .assistant-product-card,
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap,
+#mobViewAssistant .assistant-product-card .assistant-result-content{
   position:relative!important;
 }
-#mobViewRapi .rapi-product-rail,
-#mobViewRapi .rapi-product-card{
+#mobViewAssistant .assistant-product-rail,
+#mobViewAssistant .assistant-product-card{
   z-index:1!important;
 }
 /* Let chat content scroll to the composer instead of being clipped by a blank band. */
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   padding:72px 0 0!important;
 }
-#mobViewRapi .rapi-ai-body--searching .rapi-ai-results-wrap{
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   flex:1 1 auto!important;
   width:100%!important;
   height:auto!important;
@@ -3319,7 +3142,7 @@ body:has(#mobViewRapi.active) .rapi-toast{
 }
 
 /* ============================================================
-   CABEÇALHO — a tela do Rapi era a única sem um.
+   CABEÇALHO — a tela do assistente era a única sem um.
 
    Anatomia igual à das outras telas cheias (Pagamento PIX, Unidades e
    Operação, Usar cupom): 70px de altura, botões de 32px com raio 9 nas
@@ -3334,7 +3157,7 @@ body:has(#mobViewRapi.active) .rapi-toast{
    app (camada de ESTRUTURA de styles/tokens.css), o anel de foco é a marca do
    tenant e o ponto de status é semântico — as três camadas do contrato.
    ============================================================ */
-#mobViewRapi .rapi-hdr{
+#mobViewAssistant .assistant-hdr{
   position:relative!important;
   z-index:20!important;
   flex:0 0 70px!important;
@@ -3348,7 +3171,7 @@ body:has(#mobViewRapi.active) .rapi-toast{
   border-bottom:1px solid var(--border)!important;
   box-sizing:border-box!important;
 }
-#mobViewRapi .rapi-hdr-btn{
+#mobViewAssistant .assistant-hdr-btn{
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -3363,21 +3186,21 @@ body:has(#mobViewRapi.active) .rapi-toast{
   -webkit-tap-highlight-color:transparent!important;
   transition:background .16s ease!important;
 }
-#mobViewRapi .rapi-hdr-btn svg{
+#mobViewAssistant .assistant-hdr-btn svg{
   width:17px!important;
   height:17px!important;
 }
-#mobViewRapi .rapi-hdr-btn:active,
-#mobViewRapi .rapi-hdr-btn.is-active{
+#mobViewAssistant .assistant-hdr-btn:active,
+#mobViewAssistant .assistant-hdr-btn.is-active{
   background:var(--border)!important;
 }
-#mobViewRapi .rapi-hdr-btn:focus-visible{
+#mobViewAssistant .assistant-hdr-btn:focus-visible{
   outline:2px solid var(--brand-primary)!important;
   outline-offset:2px!important;
 }
 
 /* Identidade da tela: o mascote ao lado do nome e o estado da conversa. */
-#mobViewRapi .rapi-hdr-copy{
+#mobViewAssistant .assistant-hdr-copy{
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
@@ -3385,7 +3208,7 @@ body:has(#mobViewRapi.active) .rapi-toast{
   min-width:0!important;
   padding:0 10px!important;
 }
-#mobViewRapi .rapi-hdr-title{
+#mobViewAssistant .assistant-hdr-title{
   display:flex!important;
   align-items:center!important;
   gap:7px!important;
@@ -3398,14 +3221,14 @@ body:has(#mobViewRapi.active) .rapi-toast{
   font-synthesis:none!important;
   text-shadow:none!important;
 }
-#mobViewRapi .rapi-hdr-mascot{
+#mobViewAssistant .assistant-hdr-mascot{
   flex:0 0 36px!important;
   width:36px!important;
   height:36px!important;
   object-fit:contain!important;
   display:block!important;
 }
-#mobViewRapi .rapi-hdr-status{
+#mobViewAssistant .assistant-hdr-status{
   display:flex!important;
   align-items:center!important;
   gap:5px!important;
@@ -3415,31 +3238,31 @@ body:has(#mobViewRapi.active) .rapi-toast{
   font-weight:500!important;
   color:var(--text-muted)!important;
 }
-#mobViewRapi .rapi-hdr-dot{
+#mobViewAssistant .assistant-hdr-dot{
   flex:0 0 6px!important;
   width:6px!important;
   height:6px!important;
   border-radius:50%!important;
   background:var(--state-success)!important;
 }
-#mobViewRapi .rapi-hdr-status[data-state="offline"] .rapi-hdr-dot{
+#mobViewAssistant .assistant-hdr-status[data-state="offline"] .assistant-hdr-dot{
   background:var(--text-faint)!important;
 }
 
-#mobViewRapi .rapi-hdr-actions{
+#mobViewAssistant .assistant-hdr-actions{
   display:flex!important;
   align-items:center!important;
   justify-self:end!important;
   gap:8px!important;
 }
-#mobViewRapi .rapi-hdr-menu-wrap{
+#mobViewAssistant .assistant-hdr-menu-wrap{
   display:flex!important;
 }
 
 /* Menu de ações da conversa. Ancorado ao CABEÇALHO, não ao botão: preso ao
    botão de 32px ele nasceria no meio da barra e cruzaria a divisória. Assim
    desce do canto que o abriu, mas encostado na linha de baixo. */
-#mobViewRapi .rapi-hdr-menu{
+#mobViewAssistant .assistant-hdr-menu{
   position:absolute!important;
   top:calc(100% + 8px)!important;
   right:20px!important;
@@ -3451,14 +3274,14 @@ body:has(#mobViewRapi.active) .rapi-toast{
   background:var(--surface)!important;
   box-shadow:0 10px 28px rgba(0,0,0,.12)!important;
   transform-origin:top right!important;
-  animation:rapi-hdr-menu-in .16s cubic-bezier(.2,.8,.2,1) both!important;
+  animation:assistant-hdr-menu-in .16s cubic-bezier(.2,.8,.2,1) both!important;
 }
-#mobViewRapi .rapi-hdr-menu[hidden]{display:none!important}
-@keyframes rapi-hdr-menu-in{
+#mobViewAssistant .assistant-hdr-menu[hidden]{display:none!important}
+@keyframes assistant-hdr-menu-in{
   from{opacity:0;transform:translateY(-4px) scale(.97)}
   to{opacity:1;transform:none}
 }
-#mobViewRapi .rapi-hdr-menu-item{
+#mobViewAssistant .assistant-hdr-menu-item{
   display:flex!important;
   align-items:center!important;
   gap:10px!important;
@@ -3477,379 +3300,224 @@ body:has(#mobViewRapi.active) .rapi-toast{
   cursor:pointer!important;
   -webkit-tap-highlight-color:transparent!important;
 }
-#mobViewRapi .rapi-hdr-menu-item svg{
+#mobViewAssistant .assistant-hdr-menu-item svg{
   flex:0 0 17px!important;
   width:17px!important;
   height:17px!important;
   color:var(--text-muted)!important;
 }
-#mobViewRapi .rapi-hdr-menu-item:hover,
-#mobViewRapi .rapi-hdr-menu-item:active{
+#mobViewAssistant .assistant-hdr-menu-item:hover,
+#mobViewAssistant .assistant-hdr-menu-item:active{
   background:var(--surface-2)!important;
 }
-#mobViewRapi .rapi-hdr-menu-item:focus-visible{
+#mobViewAssistant .assistant-hdr-menu-item:focus-visible{
   outline:2px solid var(--brand-primary)!important;
   outline-offset:-2px!important;
 }
 
-/* O corpo perdeu 70px para o cabeçalho. A intro desce menos para manter o
-   mesmo respiro entre mascote, pergunta e sugestões. */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(38px,10vh,80px)!important;
-}
 /* No chat, aqueles 72px de topo eram o vão reservado para o botão flutuante da
    sacola, que agora mora no cabeçalho. */
-#mobViewRapi .rapi-ai-body--searching{
+#mobViewAssistant .assistant-ai-body--searching{
   padding:14px 0 0!important;
 }
 
 /* ============================================================
-   ESFERA DO ASSISTENTE — substitui o mascote no app do consumidor.
+   MENU INFERIOR — quatro abas com rótulo e um botão central sem rótulo.
 
-   O app é white-label: quem abre a tela é cliente do RESTAURANTE e nunca ouviu
-   falar na plataforma. Um mascote é um personagem — tem nome e dono — e o dono
-   não é o restaurante. A esfera não é personagem: é uma forma abstrata pintada
-   com o primary_color do tenant, então ela pertence ao restaurante por
-   construção. No Júnior sai laranja-avermelhada; num japonês de marca índigo
-   sai índigo, sem tocar em uma linha de código.
+   É o padrão da referência que o app copia. Os quatro rótulos ficam; o item do
+   meio é um botão circular destacado, sem texto, elevado acima da linha da
+   barra.
 
-   CSS, não vídeo nem GIF: a cor só existe em runtime, então um arquivo de mídia
-   chegaria sempre na cor de outro tenant — fora de custar uma requisição por
-   estado. Aqui são quatro elementos e cinco gradientes.
+   GEOMETRIA: o botão sai do fluxo (absoluto, centrado na barra, que é fixed) e
+   um slot vazio de 56px guarda o lugar dele na régua — sem o slot, as abas 2 e 3
+   se encostariam no centro e ficariam por baixo do círculo, engolindo o toque.
 
-   Como ela ganha volume em QUALQUER hex — inclusive num amarelo claro sobre
-   fundo branco, que é onde uma esfera chapada sumiria:
-     · corpo: rampa clara -> marca -> escura, com o foco de luz fora do centro;
-     · duas correntes cônicas girando em sentidos opostos, uma clara e uma
-       escura, que dão impressão de líquido em vez de disco;
-     · vinheta e sombra inferior em --brand-deep, que tem luminosidade FIXA em
-       13% — é ela que garante borda escura mesmo quando a marca é clara;
-     · brilho especular em branco translúcido. Branco aqui é LUZ, não tinta de
-       marca: é o reflexo, e ele se comporta igual sobre qualquer cor.
-
-   Estados (data-state), o contrato que o JS usa:
-     idle      — pulsação lenta, respirando;
-     thinking  — gira e pulsa mais rápido, com o brilho variando;
-     answering — volta ao ritmo calmo;
-     static    — não anima nunca (a do menu inferior, que não é estado nenhum).
+   Os quatro rótulos continuam com transform zerado: os empurrõezinhos por item
+   (+10, +3, -14, -12px, espalhados por utilities.css e operation.css) foram
+   calibrados para uma régua de CINCO caixas de larguras diferentes. Com quatro
+   irmãos iguais mais um slot, eles voltariam a desalinhar — a compensação certa
+   agora é o slot, não o empurrão.
    ============================================================ */
-.rapi-sphere{
-  /* Um só conjunto de variáveis descreve o ritmo. Os estados abaixo trocam os
-     números — as animações e os keyframes são sempre os mesmos. */
-  --sphere-size:96px;
-  --sphere-breathe:5.2s;
-  --sphere-spin:26s;
-  --sphere-spin-back:38s;
-  --sphere-swell:1.035;
-  --sphere-halo-low:.46;
-  --sphere-halo-high:.76;
-  position:relative;
-  display:inline-flex;
-  flex:0 0 auto;
-  width:var(--sphere-size);
-  height:var(--sphere-size);
-  isolation:isolate;
+.mob-bottom-nav .mob-nav-item,
+.mob-bottom-nav .mob-nav-item.active,
+.mob-bottom-nav #mobNavHome,
+.mob-bottom-nav #mobNavMenu,
+.mob-bottom-nav #mobNavOrders,
+.mob-bottom-nav #mobNavProfile{
+  position:static!important;
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  transform:none!important;
+  translate:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
 }
-
-.rapi-sphere-halo{
-  position:absolute;
-  inset:-22%;
-  z-index:0;
-  border-radius:50%;
-  opacity:var(--sphere-halo-high);
-  background:radial-gradient(circle at 50% 50%,
-    rgba(var(--brand-primary-rgb), .40) 0%,
-    rgba(var(--brand-primary-rgb), .15) 46%,
-    rgba(var(--brand-primary-rgb), 0) 72%);
-  animation:rapi-sphere-halo var(--sphere-breathe) ease-in-out infinite;
-}
-
-.rapi-sphere-body{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  border-radius:50%;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 50% 118%, rgba(var(--brand-deep-rgb), .72) 0%, rgba(var(--brand-deep-rgb), 0) 58%),
-    radial-gradient(circle at 34% 28%, var(--brand-light) 0%, var(--brand-primary) 54%, var(--brand-active) 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(var(--brand-deep-rgb), .14),
-    0 10px 26px rgba(var(--brand-primary-rgb), .26);
-  animation:rapi-sphere-breathe var(--sphere-breathe) ease-in-out infinite;
-}
-
-.rapi-sphere-swirl{
-  position:absolute;
-  inset:-30%;
-  border-radius:50%;
-}
-.rapi-sphere-swirl--light{
-  background:conic-gradient(from 0deg,
-    rgba(var(--brand-light-rgb), 0) 0deg,
-    rgba(var(--brand-light-rgb), .88) 56deg,
-    rgba(var(--brand-light-rgb), 0) 130deg,
-    rgba(var(--brand-light-rgb), 0) 224deg,
-    rgba(var(--brand-light-rgb), .52) 288deg,
-    rgba(var(--brand-light-rgb), 0) 360deg);
-  filter:blur(6px);
-  animation:rapi-sphere-spin var(--sphere-spin) linear infinite;
-}
-.rapi-sphere-swirl--deep{
-  background:conic-gradient(from 140deg,
-    rgba(var(--brand-deep-rgb), 0) 0deg,
-    rgba(var(--brand-deep-rgb), .40) 72deg,
-    rgba(var(--brand-deep-rgb), 0) 166deg,
-    rgba(var(--brand-deep-rgb), 0) 248deg,
-    rgba(var(--brand-deep-rgb), .26) 310deg,
-    rgba(var(--brand-deep-rgb), 0) 360deg);
-  filter:blur(8px);
-  animation:rapi-sphere-spin-back var(--sphere-spin-back) linear infinite;
-}
-
-.rapi-sphere-gloss{
-  position:absolute;
-  inset:0;
-  border-radius:50%;
-  background:
-    radial-gradient(ellipse 44% 34% at 32% 24%,
-      rgba(255,255,255,.80) 0%, rgba(255,255,255,.26) 44%, rgba(255,255,255,0) 74%),
-    radial-gradient(circle at 50% 50%,
-      rgba(var(--brand-deep-rgb), 0) 58%, rgba(var(--brand-deep-rgb), .20) 100%);
-}
-
-@keyframes rapi-sphere-breathe{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(var(--sphere-swell))}
-}
-@keyframes rapi-sphere-halo{
-  0%,100%{opacity:var(--sphere-halo-low);transform:scale(1)}
-  50%{opacity:var(--sphere-halo-high);transform:scale(1.07)}
-}
-@keyframes rapi-sphere-spin{
-  from{transform:rotate(0)}
-  to{transform:rotate(360deg)}
-}
-@keyframes rapi-sphere-spin-back{
-  from{transform:rotate(360deg)}
-  to{transform:rotate(0)}
-}
-
-/* Pensando: mais rápido em tudo e com o brilho indo de bem baixo a cheio — é a
-   variação do halo, não a velocidade, que lê como "processando". */
-.rapi-sphere[data-state="thinking"]{
-  --sphere-breathe:1.25s;
-  --sphere-spin:2.6s;
-  --sphere-spin-back:3.8s;
-  --sphere-swell:1.085;
-  --sphere-halo-low:.30;
-  --sphere-halo-high:1;
-}
-/* Respondendo é o ritmo calmo do parado: a resposta já está entrando na tela, e
-   uma esfera agitada atrás dela competiria com o texto. */
-.rapi-sphere[data-state="answering"]{
-  --sphere-breathe:5.2s;
-  --sphere-spin:26s;
-  --sphere-spin-back:38s;
-}
-.rapi-sphere[data-state="static"] .rapi-sphere-halo,
-.rapi-sphere[data-state="static"] .rapi-sphere-body,
-.rapi-sphere[data-state="static"] .rapi-sphere-swirl{
-  animation:none;
-}
-
-/* Movimento reduzido: ela PARA, não some. Sumir seria trocar uma animação
-   indesejada por um buraco no lugar do assistente — o desenho continua inteiro,
-   com o halo no valor cheio, e só o movimento sai. */
-@media (prefers-reduced-motion: reduce){
-  .rapi-sphere-halo,
-  .rapi-sphere-body,
-  .rapi-sphere-swirl{
-    animation:none !important;
-  }
-}
-
-.rapi-sphere--intro{ --sphere-size:clamp(84px, 24vw, 112px) }
-.rapi-sphere--mini{ --sphere-size:26px }
-.rapi-sphere--nav{ --sphere-size:30px }
-
-/* ============================================================
-   MENU INFERIOR — slot central.
-
-   Mesma esfera, pequena e parada, sobre um círculo preenchido: maior que os
-   outros itens e subindo um pouco acima da barra, como o slot central do Take a
-   Juice. O mascote que morava aqui era uma ilustração com transparência e
-   detalhe fino; a 20px de altura útil ele virava mancha. Um círculo cheio lê
-   nesse tamanho — é a forma mais legível que existe em corpo pequeno.
-
-   Precisa de !important e de especificidade alta porque styles/utilities.css
-   prende este botão em 40x40 com !important em width, height e flex.
-   ============================================================ */
-/* O slot só reserva o vão na régua de cinco itens; ele NÃO pode ser o bloco de
-   contenção do botão — posicionado contra o slot, o círculo desceria para
-   dentro da barra em vez de subir acima dela. Quem contém é a própria barra,
-   que é fixed. */
-.mob-bottom-nav .mob-nav-qr-slot{
+.mob-bottom-nav .mob-nav-center-slot{
   flex:0 0 56px!important;
   width:56px!important;
-  height:56px!important;
+  align-self:stretch!important;
 }
-.mob-bottom-nav .mob-nav-item.mob-nav-qr,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr.active,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active){
+.mob-bottom-nav .mob-nav-assistant-btn{
   position:absolute!important;
   left:50%!important;
   /* Negativo: o círculo sobe acima da linha da barra. */
-  top:-14px!important;
+  top:-10px!important;
   transform:translateX(-50%)!important;
-  flex:0 0 56px!important;
-  width:56px!important;
-  min-width:56px!important;
-  max-width:56px!important;
-  height:56px!important;
-  min-height:56px!important;
-  max-height:56px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 48px!important;
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  height:48px!important;
+  min-height:48px!important;
+  max-height:48px!important;
   padding:0!important;
   border:0!important;
   border-radius:50%!important;
-  background:transparent!important;
-  box-shadow:none!important;
+  /* 12% da marca: o círculo se destaca sem virar um bloco chapado ao lado de
+     quatro ícones de linha. O ícone leva a marca cheia. */
+  background:rgba(var(--brand-primary-rgb), .12)!important;
+  color:var(--brand-primary)!important;
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+  transition:background-color .16s ease, transform .16s ease!important;
 }
-.mob-bottom-nav .mob-nav-item.mob-nav-qr .menu-mobile-center{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:56px!important;
-  height:56px!important;
-  margin:0!important;
-  border:0!important;
-  border-radius:50%!important;
-  background:var(--brand-tint)!important;
-  /* Anel branco por fora: sem ele o círculo levantado encosta no conteúdo que
-     passa atrás da barra. O anel interno é a marca, bem diluída. */
-  box-shadow:
-    0 0 0 4px var(--surface),
-    inset 0 0 0 1px rgba(var(--brand-primary-rgb), .22),
-    0 6px 16px rgba(var(--brand-deep-rgb), .16)!important;
-  transition:transform .16s ease!important;
+.mob-bottom-nav .mob-nav-assistant-btn:active{
+  transform:translateX(-50%) scale(.94)!important;
 }
-.mob-bottom-nav .mob-nav-item.mob-nav-qr:active .menu-mobile-center{
-  transform:scale(.94)!important;
+.mob-bottom-nav .mob-nav-assistant-btn.active{
+  background:rgba(var(--brand-primary-rgb), .20)!important;
 }
-.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .menu-mobile-center{
-  background:var(--brand-tint-strong)!important;
+.mob-bottom-nav .mob-nav-assistant-btn .mob-nav-icon--assistant{
+  width:22px!important;
+  height:22px!important;
+  color:var(--brand-primary)!important;
+  stroke:var(--brand-primary)!important;
 }
 @media (prefers-reduced-motion: reduce){
-  .mob-bottom-nav .mob-nav-item.mob-nav-qr .menu-mobile-center{
-    transition:none!important;
-  }
+  .mob-bottom-nav .mob-nav-assistant-btn{ transition:none!important }
 }
 
 /* ============================================================
-   CABEÇALHO — logo e nome do restaurante.
+   CABEÇALHO
 
-   O avatar era o mascote e o título era o nome da plataforma. O indicador
-   "online" saiu inteiro: ele imitava presença humana e prometia uma resposta
-   imediata que um bot atrás de um LLM não cumpre — com oito segundos de espera,
-   o ponto verde virava mentira. Falha continua sendo dita onde ela acontece:
-   dentro da conversa.
+   Título "Assistente", sem nome de produto e sem indicador "online" — ele
+   imitava presença humana e prometia resposta imediata que um bot atrás de um
+   LLM não cumpre. Falha continua sendo dita onde acontece: dentro da conversa.
    ============================================================ */
-#mobViewRapi .rapi-hdr-logo{
-  display:flex!important;
-  flex:0 0 30px!important;
-  align-items:center!important;
+#mobViewAssistant .assistant-hdr-copy{
   justify-content:center!important;
-  width:30px!important;
-  height:30px!important;
   overflow:hidden!important;
-  border:1px solid var(--border)!important;
-  border-radius:9px!important;
-  background:var(--surface-2)!important;
-  color:var(--text-muted)!important;
-  font-size:11px!important;
-  font-weight:700!important;
-  letter-spacing:.02em!important;
-  line-height:1!important;
 }
-#mobViewRapi .rapi-hdr-logo img{
-  display:block!important;
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover!important;
-}
-#mobViewRapi .rapi-hdr-name{
+#mobViewAssistant .assistant-hdr-name{
   overflow:hidden!important;
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
 }
-/* Sem a segunda linha do status, o título fica sozinho e centraliza sozinho. */
-#mobViewRapi .rapi-hdr-copy{
-  justify-content:center!important;
-  overflow:hidden!important;
-}
 
 /* ============================================================
-   ABERTURA — a tela não abre mais vazia.
+   ABERTURA — o vão morto no meio da tela.
 
-   Antes: esfera, uma pergunta e nada mais. Ninguém sabe de cabeça o que
-   perguntar a um chat de restaurante, e a régua de sugestões que existia vivia
-   escondida no rodapé, atrás do teclado, rolando na horizontal.
+   Antes: esfera, título e sugestões empilhados a partir do topo, coladas umas
+   nas outras, e um bloco branco morto de ~220px entre a última sugestão e o
+   campo de digitação. O bloco de cima ficava empurrado para cima sem motivo e a
+   tela parecia inacabada.
 
-   Agora as sugestões são cartões empilhados logo abaixo da pergunta, no caminho
-   do olho. Empilhados e não em régua horizontal porque a 390px uma régua mostra
-   duas e meia: a terceira e a quarta só existem para quem adivinha que aquilo
-   rola. O conteúdo delas sai do cardápio do próprio tenant (ver
-   rapiCategorySuggestions em scripts/pages/restaurant-rapi.js).
+   Agora são duas âncoras. O bloco de cima (janela + título + subtítulo) leva
+   `margin-block:auto` e se centra no espaço que sobra, seja qual for a altura da
+   tela. As sugestões descem e ficam presas logo acima do campo, com o MESMO
+   respiro de 48px que o campo tem para a barra inferior — o mesmo intervalo
+   repetido duas vezes, em vez de um vão arbitrário.
    ============================================================ */
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
-  padding:0 20px 132px!important;
-}
-#mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-  margin-top:clamp(20px, 6vh, 56px)!important;
-  margin-bottom:16px!important;
-}
-#mobViewRapi .rapi-ai-body--searching .rapi-starter{
-  display:none!important;
-}
-#mobViewRapi .rapi-starter{
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching){
   display:flex!important;
   flex-direction:column!important;
-  gap:8px!important;
+  justify-content:flex-start!important;
+  /* O corpo termina colado no dock (a base dele fica 8px abaixo do topo do
+     campo), então este vão é só o respiro entre a última sugestão e o campo —
+     o mesmo intervalo que o campo tem para a barra inferior. */
+  padding:0 20px 28px!important;
+}
+#mobViewAssistant .assistant-intro-top{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  /* A centralização vertical inteira mora nesta linha. */
+  margin:auto 0!important;
   width:100%!important;
-  max-width:340px!important;
-  margin:20px auto 0!important;
-  /* Só clicável depois de revelado: um cartão invisível continua recebendo o
+}
+#mobViewAssistant .assistant-ai-body--searching .assistant-intro-top,
+#mobViewAssistant .assistant-ai-body--searching .assistant-starter{
+  display:none!important;
+}
+
+/* A régua horizontal.
+
+   A lista vertical mostrava três sugestões e ponto: uma quarta empurrava o
+   bloco de cima para fora do centro. Rolando, o número deixa de ser um limite
+   de layout — entram todas as que a API devolver.
+
+   Sangra até as duas margens da tela para que a última pílula fique cortada pela
+   borda: é esse corte que anuncia que há mais adiante. O corpo tem padding
+   lateral de 20px, então a régua se estende com margem negativa e devolve os
+   20px como padding interno — assim a PRIMEIRA pílula continua alinhada com o
+   texto acima dela e a última respira antes da borda. */
+#mobViewAssistant .assistant-starter{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  gap:8px!important;
+  /* `align-self:stretch` + `min-width:0` são o que fazem a régua ROLAR em vez
+     de transbordar: sem eles o item de flex assume a largura do conteúdo (750px
+     numa tela de 390) e o corpo, que centraliza, o joga metade para fora da
+     tela pela esquerda. */
+  align-self:stretch!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0 -20px!important;
+  padding:2px 20px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+  touch-action:pan-x!important;
+  /* Só clicável depois de revelado: uma pílula invisível continua recebendo o
      toque, e o cliente dispararia uma pergunta que ainda não leu. */
   pointer-events:none!important;
 }
-#mobViewRapi .rapi-starter.is-ready{
+#mobViewAssistant .assistant-starter::-webkit-scrollbar{ display:none!important }
+#mobViewAssistant .assistant-starter.is-ready{
   pointer-events:auto!important;
 }
-/* A abertura é uma coluna flex, e sem isto o navegador resolve a falta de
-   espaço ESPREMENDO os cartões: numa tela de 667px o terceiro virava uma faixa
-   de 20px com o texto cortado ao meio. Eles não encolhem — quem se ajusta ao
-   espaço é a lista de sugestões, pela regra de altura logo abaixo. */
-#mobViewRapi .rapi-starter,
-#mobViewRapi .rapi-starter-card{
+/* Sem isto o flex ESPREME as pílulas para caberem na largura da tela, que é
+   exatamente o oposto de uma régua rolável — e aí o texto quebra. */
+#mobViewAssistant .assistant-starter-card{
   flex:0 0 auto!important;
-}
-#mobViewRapi .rapi-starter-card{
-  display:flex!important;
+  scroll-snap-align:start!important;
+  display:inline-flex!important;
   align-items:center!important;
-  justify-content:space-between!important;
-  gap:10px!important;
-  width:100%!important;
-  min-height:46px!important;
-  padding:0 14px!important;
+  justify-content:flex-start!important;
+  text-align:left!important;
+  width:auto!important;
+  max-width:none!important;
+  min-height:38px!important;
+  padding:0 16px!important;
   border:1px solid var(--border)!important;
-  border-radius:14px!important;
+  border-radius:999px!important;
   background:var(--surface)!important;
   color:var(--text-main)!important;
   font-family:inherit!important;
   font-size:13.5px!important;
   line-height:18px!important;
   font-weight:550!important;
-  text-align:left!important;
   cursor:pointer!important;
   -webkit-tap-highlight-color:transparent!important;
   opacity:0;
@@ -3857,82 +3525,80 @@ body:has(#mobViewRapi.active) .rapi-toast{
   transition:opacity .3s ease, transform .3s cubic-bezier(.2,.8,.2,1),
     background-color .16s ease, border-color .16s ease;
 }
-#mobViewRapi .rapi-starter.is-ready .rapi-starter-card{
+#mobViewAssistant .assistant-starter.is-ready .assistant-starter-card{
   opacity:1;
   transform:none;
 }
-#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(1){transition-delay:.02s}
-#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(2){transition-delay:.08s}
-#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(3){transition-delay:.14s}
-#mobViewRapi .rapi-starter.is-ready .rapi-starter-card:nth-child(4){transition-delay:.20s}
-#mobViewRapi .rapi-starter-card-label{
+#mobViewAssistant .assistant-starter.is-ready .assistant-starter-card:nth-child(1){transition-delay:.02s}
+#mobViewAssistant .assistant-starter.is-ready .assistant-starter-card:nth-child(2){transition-delay:.09s}
+#mobViewAssistant .assistant-starter.is-ready .assistant-starter-card:nth-child(3){transition-delay:.16s}
+#mobViewAssistant .assistant-starter.is-ready .assistant-starter-card:nth-child(n+4){transition-delay:.22s}
+/* A frase inteira ou nada: nunca quebra e nunca corta com reticências. Uma
+   sugestão pela metade não é uma pergunta que alguém consiga tocar com
+   confiança. */
+#mobViewAssistant .assistant-starter-card-label{
   min-width:0!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
   white-space:nowrap!important;
 }
-/* --brand-ink, não --brand-primary: a seta é a marca sobre papel branco, e uma
-   marca clara (amarelo, lima) tem 1,4 de contraste ali — o traço sumiria. O
-   token já entra escurecido o suficiente para cruzar 3:1, e só quando precisa. */
-#mobViewRapi .rapi-starter-card-arrow{
-  flex:0 0 15px!important;
-  width:15px!important;
-  height:15px!important;
-  color:var(--brand-ink)!important;
-}
-#mobViewRapi .rapi-starter-card:active{
+#mobViewAssistant .assistant-starter-card:active{
   background:var(--brand-tint)!important;
   border-color:rgba(var(--brand-primary-rgb), .30)!important;
 }
-#mobViewRapi .rapi-starter-card:focus-visible{
+#mobViewAssistant .assistant-starter-card:focus-visible{
   background:var(--brand-tint)!important;
   border-color:rgba(var(--brand-primary-rgb), .30)!important;
   outline:2px solid rgba(var(--brand-primary-rgb), .55)!important;
   outline-offset:2px!important;
 }
 @media (hover:hover){
-  #mobViewRapi .rapi-starter-card:hover{
+  #mobViewAssistant .assistant-starter-card:hover{
     background:var(--brand-tint)!important;
     border-color:rgba(var(--brand-primary-rgb), .30)!important;
   }
 }
 @media (prefers-reduced-motion: reduce){
-  #mobViewRapi .rapi-starter-card{
+  #mobViewAssistant .assistant-starter-card{
     opacity:1;
     transform:none;
     transition:background-color .16s ease, border-color .16s ease;
   }
 }
 
-/* Telas curtas (SE, 8, qualquer 16:9): a quarta sugestão sai e a esfera encolhe.
-   O corpo da abertura é overflow:hidden de propósito — o que não couber some,
-   então é melhor decidir aqui o que sai do que deixar cortar pela metade. */
+/* A esfera perdeu o invólucro que dava este respiro. */
+#mobViewAssistant .assistant-intro-top .assistant-orb{
+  margin:0 0 20px!important;
+}
+
+/* Abertura adiada: quando a tela é aberta a partir de um campo com foco, o
+   teclado ainda está subindo e o layout se mexe. A intro fica invisível até
+   assentar, senão ela pisca no lugar errado. (A regra vivia numa lista de
+   seletores encabeçada pelo antigo .assistant-orb-wrap e saiu junto com ele.) */
+#mobViewAssistant.assistant-intro-deferred .assistant-intro-top,
+#mobViewAssistant.assistant-intro-deferred #assistantStarter{
+  opacity:0!important;
+  visibility:hidden!important;
+  animation:none!important;
+}
+
+
+/* Telas curtas (SE, 8, qualquer 16:9): a esfera encolhe. A régua de sugestões
+   não precisa de nada — ela rola na horizontal e ocupa uma linha só.
+   70px mantém a mesma proporção de antes (96/132) sobre o novo padrão de 96. */
 @media (max-height: 730px){
-  #mobViewRapi .rapi-sphere--intro{ --sphere-size:72px }
-  /* O vão de 132px reservava o lugar do dock; numa tela curta o corpo termina
-     bem acima dele e o vão vira só altura roubada da abertura. */
-  #mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching){
-    padding-bottom:84px!important;
-  }
-  #mobViewRapi .rapi-ai-body:not(.rapi-ai-body--searching) .rapi-orb-wrap{
-    margin-top:clamp(10px, 3vh, 26px)!important;
-    margin-bottom:10px!important;
-  }
-  #mobViewRapi .rapi-starter{ margin-top:14px!important; gap:7px!important }
-  #mobViewRapi .rapi-starter-card:nth-child(n+4){ display:none!important }
+  #mobViewAssistant .assistant-orb--intro{ --size:70px }
 }
 
 /* ============================================================
    CARREGANDO — esqueleto no lugar exato da resposta.
 
-   Antes, "Preparando sugestões..." ficava sozinho no alto com meia tela em
-   branco embaixo, e o cliente não tinha como saber se vinha uma frase, uma
-   régua de cartões ou nada. Agora o vazio tem a FORMA do que está vindo: três
-   linhas na medida do texto e três cartões na medida exata dos cartões de
-   produto (258px de largura, 258 de foto mais 72 de rodapé). Quando a resposta
-   chega, ela troca blocos do mesmo tamanho em vez de empurrar a tela.
+   O vazio tem a FORMA do que está vindo: três linhas na medida do texto e três
+   cartões na medida exata dos cartões de produto (258px de largura, 258 de foto
+   mais 72 de rodapé). Quando a resposta chega, ela troca blocos do mesmo
+   tamanho em vez de empurrar a tela.
    ============================================================ */
-#mobViewRapi .rapi-chat-typing .rapi-typing-row{
+#mobViewAssistant .assistant-chat-typing .assistant-typing-row{
   gap:10px!important;
   min-height:0!important;
   margin-bottom:14px!important;
@@ -3940,23 +3606,20 @@ body:has(#mobViewRapi.active) .rapi-toast{
   border:0!important;
   background:transparent!important;
 }
-#mobViewRapi .rapi-chat-typing .rapi-sphere--mini{
-  flex:0 0 26px!important;
-}
-#mobViewRapi .rapi-skeleton-lines{
+#mobViewAssistant .assistant-skeleton-lines{
   display:flex!important;
   flex-direction:column!important;
   gap:9px!important;
   margin-bottom:16px!important;
 }
-#mobViewRapi .rapi-skeleton-line{
+#mobViewAssistant .assistant-skeleton-line{
   display:block!important;
   height:13px!important;
   border-radius:7px!important;
 }
-#mobViewRapi .rapi-skeleton-line:nth-child(2){ width:88%!important }
-#mobViewRapi .rapi-skeleton-line:nth-child(3){ width:54%!important }
-#mobViewRapi .rapi-skeleton-rail{
+#mobViewAssistant .assistant-skeleton-line:nth-child(2){ width:88%!important }
+#mobViewAssistant .assistant-skeleton-line:nth-child(3){ width:54%!important }
+#mobViewAssistant .assistant-skeleton-rail{
   display:flex!important;
   gap:12px!important;
   /* Os cartões reais nascem numa régua que sangra 2px além da bolha da
@@ -3964,15 +3627,15 @@ body:has(#mobViewRapi.active) .rapi-toast{
   margin:0 -2px!important;
   overflow:hidden!important;
 }
-#mobViewRapi .rapi-skeleton-card{
+#mobViewAssistant .assistant-skeleton-card{
   flex:0 0 258px!important;
   width:258px!important;
   height:330px!important;
   border:1px solid var(--border)!important;
   border-radius:14px!important;
 }
-#mobViewRapi .rapi-skeleton-line,
-#mobViewRapi .rapi-skeleton-card{
+#mobViewAssistant .assistant-skeleton-line,
+#mobViewAssistant .assistant-skeleton-card{
   background:linear-gradient(100deg,
     var(--surface-3) 0%,
     var(--surface-3) 38%,
@@ -3981,16 +3644,121 @@ body:has(#mobViewRapi.active) .rapi-toast{
     var(--surface-3) 100%)!important;
   background-size:280% 100%!important;
   background-position:120% 0;
-  animation:rapi-skeleton-sweep 1.6s linear infinite!important;
+  animation:assistant-skeleton-sweep 1.6s linear infinite!important;
 }
-@keyframes rapi-skeleton-sweep{
+@keyframes assistant-skeleton-sweep{
   from{background-position:120% 0}
   to{background-position:-120% 0}
 }
 @media (prefers-reduced-motion: reduce){
-  #mobViewRapi .rapi-skeleton-line,
-  #mobViewRapi .rapi-skeleton-card{
+  #mobViewAssistant .assistant-skeleton-line,
+  #mobViewAssistant .assistant-skeleton-card{
     background:var(--surface-3)!important;
     animation:none!important;
   }
 }
+
+/* ===== COMPONENTE: esfera do assistente ===== */
+.assistant-orb{
+  --size: 96px;
+  --brand: var(--brand-primary, #F26B21);
+  --tempo: 1;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+}
+
+.assistant-orb__field{
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--brand) 12%, #fff);
+  -webkit-mask-image: radial-gradient(closest-side,
+      #000 60%, rgba(0,0,0,.5) 82%, transparent 100%);
+  mask-image: radial-gradient(closest-side,
+      #000 60%, rgba(0,0,0,.5) 82%, transparent 100%);
+  animation: orb-breath calc(9s * var(--tempo)) ease-in-out infinite alternate;
+}
+
+.assistant-orb__wisp{
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(calc(var(--size) * .11));
+  will-change: transform;
+}
+
+/* arco de cor: presença da marca, sem tomar o campo inteiro */
+.assistant-orb__wisp--tint{
+  width: 74%; height: 74%; left: -8%; top: 22%;
+  background: radial-gradient(circle at 50% 50%,
+      var(--brand) 0%,
+      color-mix(in srgb, var(--brand) 55%, transparent) 50%,
+      transparent 74%);
+  opacity: .85;
+  animation: orb-drift-b calc(19s * var(--tempo)) ease-in-out infinite alternate;
+}
+
+/* luz: mantém a maior parte do campo quase branca */
+.assistant-orb__wisp--halo{
+  width: 82%; height: 82%; left: 6%; top: -10%;
+  background: radial-gradient(circle at 50% 50%,
+      #fff 0%,
+      color-mix(in srgb, var(--brand) 14%, #fff) 48%,
+      transparent 76%);
+  animation: orb-drift-a calc(15s * var(--tempo)) ease-in-out infinite alternate;
+}
+
+/* mancha escura: pequena, contrastada, sempre no interior */
+.assistant-orb__wisp--blot{
+  width: 44%; height: 44%; left: 32%; top: 26%;
+  background: radial-gradient(circle at 50% 50%,
+      color-mix(in srgb, var(--brand) 14%, #000) 0%,
+      color-mix(in srgb, var(--brand) 20%, rgba(0,0,0,.45)) 46%,
+      transparent 72%);
+  animation: orb-drift-c calc(13s * var(--tempo)) ease-in-out infinite alternate;
+}
+
+@keyframes orb-breath{
+  from { filter: brightness(.98) saturate(1);    }
+  to   { filter: brightness(1.06) saturate(1.08);}
+}
+@keyframes orb-drift-a{
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(-10%, 12%, 0) scale(1.1); }
+  100% { transform: translate3d(-2%, 4%, 0) scale(.98); }
+}
+@keyframes orb-drift-b{
+  0%   { transform: translate3d(0,0,0) scale(1.02); }
+  50%  { transform: translate3d(16%, -14%, 0) scale(.94); }
+  100% { transform: translate3d(6%, -22%, 0) scale(1.12); }
+}
+@keyframes orb-drift-c{
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(-14%, 10%, 0) scale(1.12); }
+  100% { transform: translate3d(8%, -6%, 0) scale(.88); }
+}
+
+.assistant-orb.is-thinking{ --tempo: .34; }
+.assistant-orb.is-thinking .assistant-orb__field{ animation-name: orb-breath-strong; }
+@keyframes orb-breath-strong{
+  from { filter: brightness(.9) saturate(1);     }
+  to   { filter: brightness(1.18) saturate(1.16);}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .assistant-orb .assistant-orb__field,
+  .assistant-orb .assistant-orb__wisp{ animation-play-state: paused; }
+  .assistant-orb .assistant-orb__field      { animation-delay: -4.2s; }
+  .assistant-orb .assistant-orb__wisp--halo { animation-delay: -7.1s; }
+  .assistant-orb .assistant-orb__wisp--tint { animation-delay: -9.4s; }
+  .assistant-orb .assistant-orb__wisp--blot { animation-delay: -6.8s; }
+}
+/* ===== FIM DO COMPONENTE ===== */
+
+/* Modificadores de tamanho. Só trocam --size: o desenho, o ritmo e as
+   proporções (o desfoque é calc(--size * .11)) vêm do bloco acima intactos. */
+.assistant-orb--mini{ --size: 26px }

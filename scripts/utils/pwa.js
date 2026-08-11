@@ -42,16 +42,21 @@
 // Em subdomínio (<slug>.rapidex.com) nada disso é preciso: a origem já é do
 // tenant, então o escopo é a raiz.
 (function () {
-  const PLATFORM_NAME = 'Rapidex';
+  // Nome do app quando o tenant ainda não resolveu. Era "Rapidex": o nome da
+  // plataforma no ícone de um app que é do restaurante. Neutro é a única saída
+  // honesta aqui, porque este fallback serve TODOS os tenants ao mesmo tempo —
+  // ele não tem como saber de qual loja é. Assim que o slug resolve,
+  // applyTenantManifest() troca por nome, cor e logo da loja.
+  const FALLBACK_NAME = 'Pedido Online';
   const MANIFEST_FILE = 'manifest.webmanifest';
 
-  // Ícones da plataforma. Continuam na lista mesmo quando o tenant tem logo:
+  // Ícones genéricos do app. Continuam na lista mesmo quando o tenant tem logo:
   // são eles que garantem os 192/512 px exigidos para o app ser instalável, e
   // são o fallback quando o logo remoto não carrega.
   const PLATFORM_ICONS = [
-    { src: '/assets/icons/pwa/rapidex-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-    { src: '/assets/icons/pwa/rapidex-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-    { src: '/assets/icons/pwa/rapidex-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+    { src: '/assets/icons/pwa/app-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: '/assets/icons/pwa/app-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: '/assets/icons/pwa/app-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
   ];
 
   const PLATFORM_THEME = '#F36F21';
@@ -113,8 +118,8 @@
       // contra a origem, dá exatamente o mesmo id que o start_url do estático,
       // então trocar de uma camada para a outra não vira "outro app" no Chrome.
       id: scopeUrl,
-      name: restaurantName ? `${restaurantName} — Pedido Online` : `${PLATFORM_NAME} — Pedido Online`,
-      short_name: restaurantName || PLATFORM_NAME,
+      name: restaurantName ? `${restaurantName} — Pedido Online` : FALLBACK_NAME,
+      short_name: restaurantName || FALLBACK_NAME,
       description: restaurantName
         ? `Peça online no ${restaurantName}.`
         : 'Peça online no seu restaurante favorito.',

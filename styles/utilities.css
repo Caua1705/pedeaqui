@@ -5144,47 +5144,9 @@ body.home-tab .mob-bottom-nav,
   font-weight:400!important;
 }
 
-/* Botão central QRCode: círculo 40×40, exatamente centralizado. */
-.mob-bottom-nav .mob-nav-item.mob-nav-qr,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr.active,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active){
-  flex:0 0 40px!important;
-  width:40px!important;
-  min-width:40px!important;
-  max-width:40px!important;
-  height:40px!important;
-  min-height:40px!important;
-  max-height:40px!important;
-  border-radius:50%!important;
-  justify-content:center!important;
-  color:#2d2d2d!important;
-  stroke:#2d2d2d!important;
-}
-.mob-bottom-nav .mob-nav-item.mob-nav-qr .nav-icon,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .nav-icon,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active) .nav-icon{
-  width:40px!important;
-  height:40px!important;
-  min-width:40px!important;
-  min-height:40px!important;
-  max-width:40px!important;
-  max-height:40px!important;
-  border-radius:50%!important;
-  background:var(--brand-tint)!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  box-shadow:none!important;
-}
-.mob-bottom-nav .mob-nav-item.mob-nav-qr .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr.active .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item.mob-nav-qr:not(.active) .mob-nav-icon{
-  width:18px!important;
-  height:18px!important;
-  stroke-width:1.8!important;
-  color:var(--brand-primary)!important;
-  stroke:var(--brand-primary)!important;
-}
+/* O bloco do botão central (círculo 40x40 com fundo de marca) saiu: o item do
+   assistente virou uma aba comum, e as regras genéricas de .mob-nav-item logo
+   acima já dão a ele o mesmo peso dos outros quatro. */
 
 /* ════════════════════════════════════════════════════════════════
    DELIVERY WIDGET — estado confirmado (endereço escolhido).

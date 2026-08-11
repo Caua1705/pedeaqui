@@ -131,10 +131,14 @@ describe('manifest do tenant (camada 2)', () => {
       .toBe(window.RapidexPWA.PLATFORM_THEME);
   });
 
-  it('sem nome, não vaza nome de restaurante nenhum', () => {
+  it('sem nome, não vaza nome nenhum — nem de restaurante, nem da plataforma', () => {
+    // O fallback serve TODOS os tenants ao mesmo tempo, então ele não tem como
+    // saber de qual loja é. Era o nome da plataforma; num app white-label isso
+    // é o único nome que ele com certeza não pode usar.
     const manifest = build({ slug: 'fuji' });
-    expect(manifest.short_name).toBe('Rapidex');
-    expect(manifest.name).toBe('Rapidex — Pedido Online');
+    expect(manifest.short_name).toBe('Pedido Online');
+    expect(manifest.name).toBe('Pedido Online');
+    expect(`${manifest.name} ${manifest.short_name}`).not.toMatch(/rapi/i);
   });
 
   it('em subdomínio o escopo é a raiz da origem do tenant', () => {

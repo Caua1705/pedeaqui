@@ -63,7 +63,7 @@ async function bootUnderCsp(page) {
     () => window.openRestaurantInfo?.(),
     () => window.closeModalId?.('infoModal'),
     () => window.setMobNavActive?.('mobViewClub'),
-    () => window.setMobNavActive?.('mobViewRapi'),
+    () => window.setMobNavActive?.('mobViewAssistant'),
     () => window.setMobNavActive?.('mobViewProfile'),
     () => window.openModal?.('loginModal'),
     () => window.closeModalId?.('loginModal'),

@@ -1256,7 +1256,9 @@
       restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
       restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
     );
-    document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online | Rapidex`;
+    // Sem o sufixo da plataforma: a aba é da loja, e o cliente que abriu isto
+    // não sabe o que é Rapidex.
+    document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online`;
     // Mesma cor e mesmo nome que acabaram de entrar na tela vão para o manifest:
     // o app instalado tem que ter a cara do restaurante, não a da plataforma.
     window.RapidexPWA?.applyTenantManifest({
@@ -7659,7 +7661,7 @@
     scrollToMenu();
   }
 
-  const MOB_VIEWS = ['mobViewClub', 'mobViewRapi', 'mobViewProfile'];
+  const MOB_VIEWS = ['mobViewClub', 'mobViewAssistant', 'mobViewProfile'];
   let secondaryCartBottomOffset = null;
 
   function preserveSecondaryNavGeometry() {
@@ -7715,22 +7717,26 @@
 
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
-    document.body.classList.remove('rapi-nav-keep');
+    document.body.classList.remove('assistant-nav-keep');
     syncSecondaryViewCartSticky(false);
     releaseSecondaryNavGeometry();
     unlockBodyScrollIfClear();
   }
 
+  // O botão do assistente NÃO é .mob-nav-item: ele é o círculo central, que tem
+  // geometria própria. Sem incluí-lo aqui, ele ficava com .active para sempre —
+  // limpar só os irmãos deixava o destaque aceso em todas as outras abas.
   function setMobNavActive(id) {
-    document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mob-nav-item, .mob-nav-assistant-btn')
+      .forEach(b => b.classList.remove('active'));
     $(id)?.classList.add('active');
   }
 
   let _pendingMenuNav = false;
-  let _rapiReturnNav = 'home';
+  let _assistantReturnNav = 'home';
 
   function getCurrentBottomNav() {
-    if ($('mobNavQr')?.classList.contains('active')) return 'rapi';
+    if ($('mobNavAssistantTab')?.classList.contains('active')) return 'assistant';
     if ($('mobNavMenu')?.classList.contains('active')) return 'menu';
     if ($('mobNavOrders')?.classList.contains('active')) return 'club';
     if ($('mobNavProfile')?.classList.contains('active')) return 'profile';
@@ -7757,33 +7763,33 @@
     scrollToHome();
   }
 
-  async function mobNavRapi() {
+  async function mobNavAssistant() {
     const currentNav = getCurrentBottomNav();
-    const shouldFocusRapiInput = currentNav !== 'rapi';
-    if (currentNav !== 'rapi') _rapiReturnNav = currentNav;
+    const shouldFocusAssistantInput = currentNav !== 'assistant';
+    if (currentNav !== 'assistant') _assistantReturnNav = currentNav;
     closeMobViews();
-    uiStore()?.set?.({ activeView: 'rapi', bottomNav: 'rapi' });
-    setMobNavActive('mobNavQr');
-    $('mobViewRapi')?.classList.add('active');
-    document.body.classList.add('rapi-nav-keep');
+    uiStore()?.set?.({ activeView: 'assistant', bottomNav: 'assistant' });
+    setMobNavActive('mobNavAssistantTab');
+    $('mobViewAssistant')?.classList.add('active');
+    document.body.classList.add('assistant-nav-keep');
     lockBodyScroll();
     if (!products.length || !categories.length) {
-      const view = $('mobViewRapi');
-      if (view) view.innerHTML = '<div class="rapi-preparing-loader">Rapi está preparando sugestões...</div>';
+      const view = $('mobViewAssistant');
+      if (view) view.innerHTML = '<div class="assistant-preparing-loader">Preparando sugestões...</div>';
       await ensureMenuLoaded();
     }
-    if (window.renderRapiView) window.renderRapiView({ deferIntro: shouldFocusRapiInput });
-    if (shouldFocusRapiInput) {
+    if (window.renderAssistantView) window.renderAssistantView({ deferIntro: shouldFocusAssistantInput });
+    if (shouldFocusAssistantInput) {
       requestAnimationFrame(() => {
-        const input = $('rapiInput');
-        if ($('mobViewRapi')?.classList.contains('active')) {
+        const input = $('assistantInput');
+        if ($('mobViewAssistant')?.classList.contains('active')) {
           input?.focus?.({ preventScroll: true });
         }
       });
     }
   }
 
-  function rapiGoBack() {
+  function assistantGoBack() {
     mobNavHome();
   }
 
@@ -8689,7 +8695,7 @@
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
-    mobNavHome, mobNavMenu, mobNavClub, mobNavRapi, mobNavProfile, rapiGoBack, goToMenuTab: scrollToMenu,
+    mobNavHome, mobNavMenu, mobNavClub, mobNavAssistant, mobNavProfile, assistantGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
   };
@@ -8701,7 +8707,7 @@
   // porque outro módulo ou a suíte E2E os chama pelo nome global — cada um foi
   // conferido por grep (window.X e chamada bare), não por suposição.
   Object.assign(window, {
-    // scripts/pages/restaurant-rapi.js
+    // scripts/pages/restaurant-assistant.js
     openProduct, scrollToCategory, findCategoryButton, mobNavMenu,
     // scripts/pages/restaurant-club.js
     openCouponDetail, openCashbackStatement,

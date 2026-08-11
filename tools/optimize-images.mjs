@@ -1,10 +1,10 @@
 // Gera as versões WebP/AVIF dos assets de marca a partir dos PNGs originais.
 //
 // POR QUÊ: os PNGs foram commitados no tamanho em que saíram do design, não no
-// tamanho em que a tela usa. O mascote é 1254x1254 (1,0 MB) para ser desenhado
-// num quadrado de 110px — 130x mais pixels do que a maior tela precisa. O logo
-// mestre também é muito maior que os 34px usados na landing. Isso é banda paga
-// por pixel que o usuário nunca vê.
+// tamanho em que a tela usa. O logo mestre é muito maior que os 34px usados na
+// landing, e o caso extremo que deu origem a este script era um master de
+// 1254x1254 (1,0 MB) desenhado num quadrado de 110px — 130x mais pixels do que a
+// maior tela precisa. Isso é banda paga por pixel que o usuário nunca vê.
 //
 // COMO: cada entrada declara o tamanho de RENDERIZAÇÃO real (lido do CSS, com o
 // seletor anotado ao lado para que a conta continue auditável) e o script emite
@@ -27,36 +27,16 @@ import { basename, dirname, join } from 'node:path';
 
 // rendered = lado em CSS px que o elemento realmente ocupa (maior caso).
 //
-// `cutout` recorta o fundo chapado do master (ver cutoutFlatBackground abaixo).
-// Só os dois masters do mascote precisam: ambos chegaram do render em RGB, sem
-// canal alfa, com o mascote achatado sobre branco + sombra.
+// `cutout` recorta o fundo chapado de um master sem canal alfa. Nenhum asset
+// atual precisa: os dois que precisavam eram os masters do mascote, que saíram
+// do repositório junto com a marca da plataforma no app do consumidor. A função
+// continua abaixo porque ela é a única coisa aqui que é difícil de reescrever, e
+// o próximo PNG chapado que chegar vai querer exatamente isso.
 const ASSETS = [
-  // Os dois masters do mascote continuam aqui porque a arte continua no repo
-  // para o produto do LOJISTA. O app do consumidor não os consome mais: lá o
-  // assistente virou uma esfera em CSS, pintada com a cor do restaurante (ver
-  // a seção ESFERA em styles/rapi.css). `rendered` é, portanto, o tamanho da
-  // última superfície que os usava — mantido como referência de escala.
-  {
-    src: 'assets/brand/rapi-mascot.png',
-    rendered: 110,
-    formats: ['webp'],
-    // step 1 num master de 1254px: a rampa do fundo é suave o bastante para o
-    // flood andar de 1 em 1, e é isso que impede o vazamento para dentro do
-    // gorro branco, que quase encosta no branco do fundo.
-    cutout: { step: 1, repair: 5 }
-  },
   {
     src: 'assets/brand/pedeaqui-logo.png',
     rendered: 34, // .logo-img — styles/landing.css:27
     formats: ['webp']
-  },
-  {
-    src: 'assets/brand/rapi-nav-avatar.png',
-    rendered: 52,
-    formats: ['webp'],
-    // Mesma arte em 256px: o mesmo degradê de sombra cai em 5x menos pixels,
-    // então cada passo é mais íngreme e o flood precisa de mais tolerância.
-    cutout: { step: 3, repair: 3 }
   },
   {
     src: 'assets/icons/cart/cart-location-customer.png',

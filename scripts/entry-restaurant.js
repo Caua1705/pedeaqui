@@ -64,6 +64,6 @@ import './stores/cart-store.js';
 import './stores/ui-store.js';
 import './pages/restaurant-ui.js';
 import './pages/restaurant-club.js';
-import './pages/restaurant-rapi.js';
+import './pages/restaurant-assistant.js';
 import './pages/restaurant-page.js';
 import './pages/cashback-statement.js';

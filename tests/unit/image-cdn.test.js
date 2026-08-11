@@ -15,7 +15,7 @@ describe('image-cdn — reconhece o que é transformável', () => {
 
   it('recusa qualquer outra origem', () => {
     expect(isSupabaseObjectUrl('https://cdn.terceiro.com/foto.webp')).toBe(false);
-    expect(isSupabaseObjectUrl('assets/brand/rapi-mascot@1x.webp')).toBe(false);
+    expect(isSupabaseObjectUrl('assets/brand/assistant-mascot@1x.webp')).toBe(false);
     expect(isSupabaseObjectUrl('data:image/png;base64,iVBOR')).toBe(false);
   });
 

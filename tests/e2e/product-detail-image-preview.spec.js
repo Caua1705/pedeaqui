@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { MENU, mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
 
-const LOCAL_WEBP = readFileSync(new URL('../../assets/brand/rapi-nav-avatar@1x.webp', import.meta.url));
+// Um WebP pequeno qualquer, só para o teste ter bytes de imagem de verdade.
+const LOCAL_WEBP = readFileSync(new URL('../../assets/brand/pedeaqui-logo@1x.webp', import.meta.url));
 const FIRST_PRODUCT = MENU.products[0];
 
 test.use({ viewport: { width: 390, height: 844 } });

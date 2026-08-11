@@ -21,21 +21,21 @@ test('detalhe recomendado pelo Rapi anima ao abrir e ao voltar', async ({ page }
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
-  await page.evaluate(() => window.RapidexActions.resolve('mobNavRapi')());
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
 
-  await page.locator('#rapiInput').fill('Me recomenda um prato');
-  await page.locator('.rapi-ai-send').click();
-  await expect(page.locator('.rapi-product-card')).toBeVisible();
+  await page.locator('#assistantInput').fill('Me recomenda um prato');
+  await page.locator('.assistant-ai-send').click();
+  await expect(page.locator('.assistant-product-card')).toBeVisible();
 
-  const detail = page.locator('#rapiProductDetail');
-  const panel = detail.locator('.rapi-product-detail-panel');
-  await page.locator('.rapi-product-card').click();
+  const detail = page.locator('#assistantProductDetail');
+  const panel = detail.locator('.assistant-product-detail-panel');
+  await page.locator('.assistant-product-card').click();
   await expect(detail).toHaveClass(/is-open/);
   await expect.poll(() => panel.evaluate(element =>
     element.getAnimations().some(animation => animation.transitionProperty === 'transform')
   )).toBe(true);
 
-  await detail.locator('.rapi-product-detail-close').click();
+  await detail.locator('.assistant-product-detail-close').click();
   await expect(detail).not.toHaveClass(/is-open/);
   await expect(detail).not.toHaveAttribute('hidden', '');
   await expect.poll(() => panel.evaluate(element =>

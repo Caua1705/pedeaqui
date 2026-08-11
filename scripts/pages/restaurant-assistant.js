@@ -50,42 +50,152 @@
     return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
   }
 
+  // Cada esfera instancia filtros/gradientes/máscara próprios. IDs de <defs> são
+  // GLOBAIS no documento: com um id fixo, a segunda esfera da tela (a mini do
+  // esqueleto de digitação) apontaria para os defs da primeira e as duas
+  // ficariam presas ao mesmo quadro de ruído.
+  let _orbSeq = 0;
+
   /**
-   * A esfera do assistente.
+   * A esfera do assistente — RUÍDO FRACTAL em SVG.
    *
-   * CSS puro — nem vídeo, nem GIF, nem sprite (ver "COMPONENTE: esfera do
-   * assistente" em styles/assistant.css): a cor sai do tema do tenant e só
-   * existe em runtime, então um arquivo de mídia chegaria sempre na cor de outro
-   * restaurante, além de custar uma requisição por estado.
+   * POR QUE NÃO É GRADIENTE RADIAL COM BLUR. Um gradiente radial borrado é um
+   * disco borrado: a simetria é concêntrica por construção e o olho lê bola,
+   * seja qual for a paleta. Três tentativas morreram aí. O que quebra a
+   * simetria é deslocar pixel por ruído, não escolher outras cores.
    *
-   * O campo é quase branco com um sopro da marca; a cor cheia entra como um
-   * arco lateral e o escuro é uma mancha PEQUENA no interior. A referência é
-   * clara sobre fundo escuro; como aqui o fundo da página é branco, quem inverte
-   * a relação de luminância é a esfera. Preenchê-la com a cor da marca — como já
-   * se tentou — fecha o recorte numa massa só e o blur funde tudo num borrão.
-   * A mancha escura é o que dá definição e impede que ela suma no branco.
+   * A CADEIA. Um <rect> maior que o recorte, pintado com um gradiente linear
+   * REFLETIDO (spreadMethod), passa por feTurbulence type="fractalNoise" +
+   * feDisplacementMap: o deslocamento dobra as faixas do gradiente em manchas
+   * sem centro. Um feGaussianBlur leve amacia a costura — o trabalho pesado já
+   * foi feito pela distorção. São duas camadas de campo com seed, direção e
+   * frequência diferentes: uma só repete o padrão visivelmente.
    *
-   * A ORDEM das manchas importa: o arco de cor entra antes da luz, que passa por
-   * cima e mantém a maior parte do campo clara.
+   * DUAS REGRAS DE CALIBRAGEM, aprendidas quebrando a cara:
    *
-   * O recorte NUNCA muda de tamanho nem de posição. Quem se move são o campo e
-   * as três manchas, todos dentro dele. "Pensando" é uma classe (`is-thinking`)
-   * que só encurta `--tempo` e troca a curva de brilho.
+   *  1. Faixa fina de gradiente vira VEIO, não mancha. Uma parada estreita é
+   *     uma linha, e o displacement só a dobra em zigue-zague — saía um
+   *     relâmpago atravessando a esfera. Por isso o acento escuro não é uma
+   *     parada do gradiente: é uma camada própria.
+   *
+   *  2. Para DISSOLVER uma forma o comprimento de onda do ruído tem que ser
+   *     MENOR que ela; maior, o displacement apenas translada a forma inteira e
+   *     ela continua legível. Com onda longa o acento virou uma seta e a
+   *     silhueta virou um trevo de lóbulos. Daí as frequências altas no acento
+   *     (0.09 sobre raio 12) e na máscara (0.065 sobre raio 48).
+   *
+   * A ORDEM DOS GRUPOS TAMBÉM É REGRA: no SVG o filtro roda ANTES da máscara no
+   * mesmo elemento. Para o displacement distorcer também a SILHUETA do acento,
+   * a máscara vai num grupo interno e o filtro no externo — senão sai um disco
+   * escuro de borda perfeita no meio da nuvem.
+   *
+   * MOVIMENTO. Anda a transformação dos grupos (composta na GPU) e a `scale` do
+   * displacement; `baseFrequency` nunca, porque mudá-la obriga a regerar a
+   * turbulência a cada quadro. A caixa da esfera não muda de tamanho nem de
+   * posição em nenhum estado — o que se move mora todo dentro do recorte.
    */
   function orbMarkup({ size = '', id = '', thinking = false } = {}) {
     const classes = ['assistant-orb'];
     if (size) classes.push(`assistant-orb--${size}`);
     if (thinking) classes.push('is-thinking');
+    const u = `orb${++_orbSeq}`;
+
+    // Movimento reduzido: o <animate> da scale é SMIL, e SMIL não obedece a
+    // `animation-play-state`. Em vez de tentar pausar depois, não emitimos o
+    // elemento — o filtro nasce estático e a deriva o CSS congela sozinho.
+    const still = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const breathe = (values, dur) => still
+      ? ''
+      : `<animate attributeName="scale" values="${values}" dur="${dur}" repeatCount="indefinite"/>`;
+
+    // O <rect> cobre a abertura (100) + a deriva (±10) + o deslocamento
+    // (±scale/2). A região do filtro cobre o <rect> + o deslocamento. Apertar
+    // qualquer um dos dois deixa a borda reta do retângulo entrar no recorte.
+    const CAMPO = 'x="-62" y="-62" width="224" height="224"';
+
+    const campo = (key, { x2, y2, seed, freq, scale, values, dur }) => `
+      <linearGradient id="${u}-g${key}" gradientUnits="userSpaceOnUse"
+                      x1="0" y1="0" x2="${x2}" y2="${y2}" spreadMethod="reflect">
+        <stop offset="0%"   class="assistant-orb__s assistant-orb__s--pale"/>
+        <stop offset="22%"  class="assistant-orb__s assistant-orb__s--pale"/>
+        <stop offset="52%"  class="assistant-orb__s assistant-orb__s--tint"/>
+        <stop offset="78%"  class="assistant-orb__s assistant-orb__s--brand"/>
+        <stop offset="100%" class="assistant-orb__s assistant-orb__s--brand"/>
+      </linearGradient>
+      <filter id="${u}-f${key}" x="-28%" y="-28%" width="156%" height="156%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="5"
+                      seed="${seed}" result="n${key}"/>
+        <feDisplacementMap in="SourceGraphic" in2="n${key}" scale="${scale}"
+                           xChannelSelector="R" yChannelSelector="G">
+          ${breathe(values, dur)}
+        </feDisplacementMap>
+        <feGaussianBlur stdDeviation="1.4"/>
+      </filter>`;
+
     return `
       <div class="${classes.join(' ')}"${id ? ` id="${id}"` : ''} aria-hidden="true">
-        <span class="assistant-orb__field">
-          <i class="assistant-orb__wisp assistant-orb__wisp--tint"></i>
-          <i class="assistant-orb__wisp assistant-orb__wisp--halo"></i>
-          <i class="assistant-orb__wisp assistant-orb__wisp--blot"></i>
-        </span>
+        <svg class="assistant-orb__svg" viewBox="0 0 100 100" focusable="false"
+             xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            ${campo('a', { x2: 48, y2: 28, seed: 3, freq: '0.022', scale: 95, values: '95;106;88;98;95', dur: '26s' })}
+            ${campo('b', { x2: -36, y2: 46, seed: 13, freq: '0.030', scale: 74, values: '74;66;81;70;74', dur: '19s' })}
+
+            <!-- Acento escuro: pequeno, fora do centro, com a mesma textura do
+                 resto (é a mesma nuvem em tom escuro, não um borrão colado). -->
+            <radialGradient id="${u}-gk" gradientUnits="userSpaceOnUse" cx="66" cy="38" r="12">
+              <stop offset="0%"   class="assistant-orb__s assistant-orb__s--deep"/>
+              <stop offset="34%"  class="assistant-orb__s assistant-orb__s--deep"/>
+              <stop offset="100%" class="assistant-orb__s assistant-orb__s--deep" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="${u}-fk" x="-90%" y="-90%" width="280%" height="280%"
+                    color-interpolation-filters="sRGB">
+              <feTurbulence type="fractalNoise" baseFrequency="0.090" numOctaves="4"
+                            seed="19" result="nk"/>
+              <feDisplacementMap in="SourceGraphic" in2="nk" scale="22"
+                                 xChannelSelector="R" yChannelSelector="G"/>
+              <feGaussianBlur stdDeviation="2.6"/>
+            </filter>
+
+            <!-- Recorte: claro no miolo, dissolvido na borda, e ele mesmo
+                 distorcido — um círculo de borda macia perfeita é justamente a
+                 leitura de "bola" que este componente existe para não ter. -->
+            <radialGradient id="${u}-fade">
+              <stop offset="0%"   stop-color="#fff"/>
+              <stop offset="58%"  stop-color="#fff"/>
+              <stop offset="82%"  stop-color="#fff" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="${u}-fm" x="-40%" y="-40%" width="180%" height="180%"
+                    color-interpolation-filters="sRGB">
+              <feTurbulence type="fractalNoise" baseFrequency="0.065" numOctaves="3"
+                            seed="29" result="nm"/>
+              <feDisplacementMap in="SourceGraphic" in2="nm" scale="10"
+                                 xChannelSelector="R" yChannelSelector="G"/>
+              <feGaussianBlur stdDeviation="3"/>
+            </filter>
+            <mask id="${u}-mask" maskUnits="userSpaceOnUse" x="-40" y="-40" width="180" height="180">
+              <circle cx="50" cy="50" r="48" fill="url(#${u}-fade)" filter="url(#${u}-fm)"/>
+            </mask>
+          </defs>
+
+          <g mask="url(#${u}-mask)">
+            <g class="assistant-orb__drift assistant-orb__drift--a">
+              <rect ${CAMPO} fill="url(#${u}-ga)" filter="url(#${u}-fa)"/>
+            </g>
+            <g class="assistant-orb__drift assistant-orb__drift--b">
+              <rect ${CAMPO} fill="url(#${u}-gb)" filter="url(#${u}-fb)" opacity=".35"/>
+            </g>
+            <g class="assistant-orb__drift assistant-orb__drift--k">
+              <g filter="url(#${u}-fk)">
+                <rect x="0" y="0" width="100" height="100" fill="url(#${u}-gk)"/>
+              </g>
+            </g>
+          </g>
+        </svg>
       </div>`;
   }
-
   // Só existem dois ritmos: pensando e o resto. "Respondendo" é o ritmo calmo —
   // a resposta já está entrando na tela e uma esfera agitada atrás dela
   // competiria com o texto.

@@ -3609,9 +3609,9 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 
 /* Telas curtas (SE, 8, qualquer 16:9): a esfera encolhe. A régua de sugestões
    não precisa de nada — ela rola na horizontal e ocupa uma linha só.
-   88px mantém a mesma proporção de antes (70/96) sobre o novo padrão de 120. */
+   70px é a redução proporcional sobre o padrão de 96. */
 @media (max-height: 730px){
-  #mobViewAssistant .assistant-orb--intro{ --size:88px }
+  #mobViewAssistant .assistant-orb--intro{ --size:70px }
 }
 
 /* ============================================================
@@ -3682,9 +3682,27 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 
-/* ===== COMPONENTE: esfera do assistente ===== */
+/* ===== COMPONENTE: esfera do assistente =====
+   Nuvem de RUÍDO FRACTAL, não gradiente radial.
+
+   A geometria é o ponto. Gradiente radial + blur produz um disco borrado: a
+   simetria é concêntrica por construção e o olho lê bola, seja qual for a
+   paleta. Aqui as manchas nascem de feDisplacementMap empurrando as faixas de
+   um gradiente LINEAR pelo ruído de um feTurbulence — o resultado não tem
+   centro, então não tem volume nem forma reconhecível. A montagem do filtro
+   está em orbMarkup(), scripts/pages/restaurant-assistant.js.
+
+   Este arquivo cuida de três coisas: o tamanho, a paleta (tudo derivado de
+   --brand, nada de hex fixo) e o movimento.
+
+   MOVIMENTO: quem anda é o transform dos grupos — composto na GPU, sem
+   reavaliar o filtro. A `scale` do displacement oscila em SMIL, no markup.
+   `baseFrequency` NUNCA é animada: mudá-la obriga a regerar a turbulência a
+   cada quadro, e é aí que o celular derrete. A caixa da esfera (--size) é fixa
+   em todos os estados; o que se move mora inteiro dentro do recorte.
+   ===== */
 .assistant-orb{
-  --size: 120px;
+  --size: 96px;
   --brand: var(--brand-primary, #F26B21);
   --tempo: 1;
   position: relative;
@@ -3693,276 +3711,85 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   flex: none;
 }
 
-.assistant-orb__field{
-  position: absolute;
-  inset: 0;
+.assistant-orb__svg{
   display: block;
-  border-radius: 50%;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--brand) 12%, #fff);
-  -webkit-mask-image: radial-gradient(closest-side,
-      #000 60%, rgba(0,0,0,.5) 82%, transparent 100%);
-  mask-image: radial-gradient(closest-side,
-      #000 60%, rgba(0,0,0,.5) 82%, transparent 100%);
-  animation: orb-breath calc(9s * var(--tempo)) ease-in-out infinite alternate;
+  width: 100%;
+  height: 100%;
 }
 
-.assistant-orb__wisp{
-  position: absolute;
-  display: block;
-  border-radius: 50%;
-  filter: blur(calc(var(--size) * .11));
+/* Paleta, toda derivada de --brand — nenhum hex fixo. `pale` e `tint` ocupam
+   78% do período do gradiente, então a maior parte do campo fica clara; a marca
+   cheia é a fatia final, que a distorção espalha como REGIÃO e nunca como anel
+   centrado; `deep` é o acento, numa camada própria e pequena.
+
+   `pale` não é branco de propósito: a 96px sobre página branca, 5% de marca
+   sumia e só as regiões saturadas se liam — a nuvem parecia encolhida dentro
+   da caixa. 13% é o mínimo que dá corpo sem fechar o campo. */
+.assistant-orb__s--pale { stop-color: color-mix(in srgb, var(--brand) 13%, #fff); }
+.assistant-orb__s--tint { stop-color: color-mix(in srgb, var(--brand) 32%, #fff); }
+.assistant-orb__s--brand{ stop-color: var(--brand); }
+.assistant-orb__s--deep { stop-color: color-mix(in srgb, var(--brand) 50%, #000); }
+
+.assistant-orb__drift{
+  transform-box: view-box;
+  transform-origin: 50% 50%;
   will-change: transform;
 }
-
-/* arco de cor: presença da marca, sem tomar o campo inteiro */
-.assistant-orb__wisp--tint{
-  width: 74%; height: 74%; left: -8%; top: 22%;
-  background: radial-gradient(circle at 50% 50%,
-      var(--brand) 0%,
-      color-mix(in srgb, var(--brand) 55%, transparent) 50%,
-      transparent 74%);
-  opacity: .85;
-  animation: orb-drift-b calc(19s * var(--tempo)) ease-in-out infinite alternate;
+/* Períodos primos entre si (23s, 31s, 27s): o padrão composto demora muito a se
+   repetir. A escala junto do translate faz as manchas crescerem e encolherem —
+   é a mesma variação de estrutura que a `scale` do displacement dá, na camada
+   que sai de graça (transform é composto; refiltrar, não). */
+.assistant-orb__drift--a{
+  animation: orb-drift-a calc(23s * var(--tempo)) ease-in-out infinite;
+}
+.assistant-orb__drift--b{
+  animation: orb-drift-b calc(31s * var(--tempo)) ease-in-out infinite;
+}
+/* O acento anda pouco de propósito: ele tem que continuar deslocado do centro
+   e longe da borda em QUALQUER quadro da deriva. O multiply o integra à nuvem
+   em vez de deixá-lo boiando como um borrão cinza por cima. */
+.assistant-orb__drift--k{
+  opacity: .45;
+  mix-blend-mode: multiply;
+  animation: orb-drift-k calc(27s * var(--tempo)) ease-in-out infinite;
 }
 
-/* luz: mantém a maior parte do campo quase branca */
-.assistant-orb__wisp--halo{
-  width: 82%; height: 82%; left: 6%; top: -10%;
-  background: radial-gradient(circle at 50% 50%,
-      #fff 0%,
-      color-mix(in srgb, var(--brand) 14%, #fff) 48%,
-      transparent 76%);
-  animation: orb-drift-a calc(15s * var(--tempo)) ease-in-out infinite alternate;
-}
-
-/* mancha escura: pequena, contrastada, sempre no interior */
-.assistant-orb__wisp--blot{
-  width: 44%; height: 44%; left: 32%; top: 26%;
-  background: radial-gradient(circle at 50% 50%,
-      color-mix(in srgb, var(--brand) 14%, #000) 0%,
-      color-mix(in srgb, var(--brand) 20%, rgba(0,0,0,.45)) 46%,
-      transparent 72%);
-  animation: orb-drift-c calc(13s * var(--tempo)) ease-in-out infinite alternate;
-}
-
-@keyframes orb-breath{
-  from { filter: brightness(.98) saturate(1);    }
-  to   { filter: brightness(1.06) saturate(1.08);}
-}
 @keyframes orb-drift-a{
-  0%   { transform: translate3d(0,0,0) scale(1); }
-  50%  { transform: translate3d(-10%, 12%, 0) scale(1.1); }
-  100% { transform: translate3d(-2%, 4%, 0) scale(.98); }
+  0%   { transform: translate(0px, 0px)     scale(1);    }
+  34%  { transform: translate(-9px, 6px)    scale(1.07); }
+  67%  { transform: translate(5px, 11px)    scale(.96);  }
+  100% { transform: translate(0px, 0px)     scale(1);    }
 }
 @keyframes orb-drift-b{
-  0%   { transform: translate3d(0,0,0) scale(1.02); }
-  50%  { transform: translate3d(16%, -14%, 0) scale(.94); }
-  100% { transform: translate3d(6%, -22%, 0) scale(1.12); }
+  0%   { transform: translate(0px, 0px)     scale(1.03); }
+  30%  { transform: translate(10px, -7px)   scale(.95);  }
+  70%  { transform: translate(-6px, -12px)  scale(1.08); }
+  100% { transform: translate(0px, 0px)     scale(1.03); }
 }
-@keyframes orb-drift-c{
-  0%   { transform: translate3d(0,0,0) scale(1); }
-  50%  { transform: translate3d(-14%, 10%, 0) scale(1.12); }
-  100% { transform: translate3d(8%, -6%, 0) scale(.88); }
+@keyframes orb-drift-k{
+  0%   { transform: translate(0px, 0px)     scale(1);    }
+  38%  { transform: translate(-4px, 3px)    scale(1.09); }
+  72%  { transform: translate(3px, -4px)    scale(.94);  }
+  100% { transform: translate(0px, 0px)     scale(1);    }
 }
 
+/* Pensando: só o RITMO muda. --tempo encurta as três derivas na mesma
+   proporção, então a nuvem revolve mais depressa sem que nada mude de tamanho
+   ou de lugar. */
 .assistant-orb.is-thinking{ --tempo: .34; }
-.assistant-orb.is-thinking .assistant-orb__field{ animation-name: orb-breath-strong; }
-@keyframes orb-breath-strong{
-  from { filter: brightness(.9) saturate(1);     }
-  to   { filter: brightness(1.18) saturate(1.16);}
-}
 
 @media (prefers-reduced-motion: reduce){
-  .assistant-orb .assistant-orb__field,
-  .assistant-orb .assistant-orb__wisp{ animation-play-state: paused; }
-  .assistant-orb .assistant-orb__field      { animation-delay: -4.2s; }
-  .assistant-orb .assistant-orb__wisp--halo { animation-delay: -7.1s; }
-  .assistant-orb .assistant-orb__wisp--tint { animation-delay: -9.4s; }
-  .assistant-orb .assistant-orb__wisp--blot { animation-delay: -6.8s; }
+  /* Congela num quadro do MEIO da animação, não no primeiro: o atraso negativo
+     estaciona cada camada onde a composição já está formada. Pausar, e não
+     remover, mantém a esfera inteira na tela. (O <animate> da scale do
+     displacement é SMIL e nem chega a ser emitido — ver orbMarkup.) */
+  .assistant-orb .assistant-orb__drift{ animation-play-state: paused; }
+  .assistant-orb .assistant-orb__drift--a{ animation-delay: -8.4s; }
+  .assistant-orb .assistant-orb__drift--b{ animation-delay: -19.7s; }
+  .assistant-orb .assistant-orb__drift--k{ animation-delay: -12.3s; }
 }
 /* ===== FIM DO COMPONENTE ===== */
 
-/* Modificadores de tamanho. Só trocam --size: o desenho, o ritmo e as
-   proporções (o desfoque é calc(--size * .11)) vêm do bloco acima intactos. */
+/* Modificadores de tamanho. Só trocam --size: o desenho, o ritmo e a paleta
+   vêm do bloco acima intactos. */
 .assistant-orb--mini{ --size: 26px }
-
-/* ============================================================
-   MODO ESCURO DO CHAT
-
-   A esfera é uma nuvem de luz — luz só lê como luz sobre fundo escuro.
-   Este bloco escurece SÓ a tela do assistente (corpo, cabeçalho e a barra
-   inferior enquanto a aba Chat está ativa), nunca as outras telas do app.
-
-   Ativação: JS alterna a classe `assistant-dark` no <body> no mesmo lugar
-   que abre/fecha #mobViewAssistant — mobNavAssistant() adiciona,
-   closeMobViews() remove (scripts/pages/restaurant-page.js). A classe
-   nunca sobrevive à troca de aba, então Início/Cardápio/Clube/Perfil
-   continuam claros por construção.
-
-   Especificidade: cada seletor aqui replica a cadeia da regra clara que
-   está sobrescrevendo (mesmas classes/pseudo-classes) com `body.assistant-
-   dark` na frente. Isso garante voltagem MAIOR que a regra original —
-   sem depender de vir depois dela no arquivo — mesmo quando essa regra
-   clara mora em utilities.css/restaurant.css e se repete em vários
-   breakpoints. Não há prefers-color-scheme aqui: o escuro é da tela, não
-   do sistema.
-   ============================================================ */
-body.assistant-dark{
-  --assistant-dark-surface: color-mix(in srgb, var(--brand-primary) 10%, #0B0D12);
-}
-
-/* ── Superfície: corpo e cabeçalho, sem costura entre os dois ── */
-body.assistant-dark #mobViewAssistant.mob-view--assistant,
-body.assistant-dark #mobViewAssistant.mob-view--assistant.active,
-body.assistant-dark #mobViewAssistant .assistant-page,
-body.assistant-dark #mobViewAssistant .assistant-ai-body,
-body.assistant-dark #mobViewAssistant .assistant-ai-body--searching,
-body.assistant-dark #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  background:var(--assistant-dark-surface)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr{
-  background:var(--assistant-dark-surface)!important;
-  border-bottom:0!important;
-}
-
-/* ── Cabeçalho: título e ícones a 92%, botões circulares a 8% ── */
-body.assistant-dark #mobViewAssistant .assistant-hdr-title,
-body.assistant-dark #mobViewAssistant .assistant-hdr-name{
-  color:rgba(255,255,255,.92)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-btn{
-  background:rgba(255,255,255,.08)!important;
-  color:rgba(255,255,255,.92)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-btn:active,
-body.assistant-dark #mobViewAssistant .assistant-hdr-btn.is-active{
-  background:rgba(255,255,255,.14)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-menu{
-  background:var(--assistant-dark-surface)!important;
-  border-color:rgba(255,255,255,.12)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item{
-  color:rgba(255,255,255,.88)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item svg{
-  color:rgba(255,255,255,.55)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item:hover,
-body.assistant-dark #mobViewAssistant .assistant-hdr-menu-item:active{
-  background:rgba(255,255,255,.08)!important;
-}
-
-/* ── "Como posso ajudar hoje?" em branco; subtítulo em branco a 60% ── */
-body.assistant-dark #mobViewAssistant .assistant-ai-question,
-body.assistant-dark #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  color:#ffffff!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-ai-subtitle{
-  color:rgba(255,255,255,.6)!important;
-}
-
-/* ── Pílulas de sugestão: fundo branco a 8%, texto branco a 90%, sem borda ── */
-body.assistant-dark #mobViewAssistant .assistant-starter{
-  background:transparent!important;
-  border-color:transparent!important;
-  box-shadow:none!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-starter-card{
-  background:rgba(255,255,255,.08)!important;
-  border-color:transparent!important;
-  color:rgba(255,255,255,.9)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-suggest-chip{
-  background:rgba(255,255,255,.08)!important;
-  border-color:transparent!important;
-  color:rgba(255,255,255,.9)!important;
-}
-
-/* ── Campo de digitação: fundo branco a 6%, placeholder branco a 45%,
-     texto branco; botão de enviar com a marca cheia e ícone escuro ── */
-body.assistant-dark #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar,
-body.assistant-dark #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  background:rgba(255,255,255,.06)!important;
-  border-color:transparent!important;
-  box-shadow:none!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-ai-input{
-  color:#ffffff!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-ai-input::placeholder{
-  color:rgba(255,255,255,.45)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-ai-send.is-ready{
-  background:var(--brand-primary)!important;
-  color:rgba(0,0,0,.82)!important;
-  border-color:var(--brand-primary)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-ai-send.is-inactive,
-body.assistant-dark #mobViewAssistant .assistant-ai-send:disabled{
-  background:rgba(255,255,255,.08)!important;
-  color:rgba(255,255,255,.35)!important;
-  border-color:transparent!important;
-}
-
-/* ── Balões: cliente na marca a 22% com texto branco; assistente com
-     fundo branco a 6% ── */
-body.assistant-dark #mobViewAssistant .assistant-chat-user-message .assistant-result-title{
-  background:rgba(var(--brand-primary-rgb), .22)!important;
-  border-color:transparent!important;
-  color:#ffffff!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
-  background:rgba(255,255,255,.06)!important;
-  border-radius:14px!important;
-  padding:12px 14px!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
-  color:rgba(255,255,255,.92)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
-  color:#ffffff!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
-  color:rgba(255,255,255,.92)!important;
-}
-body.assistant-dark #mobViewAssistant .assistant-feedback-btn{
-  color:rgba(255,255,255,.55)!important;
-}
-
-/* ── Barra inferior: mesma superfície escura enquanto a aba Chat está
-     ativa; rótulos em branco a 55%, o ativo em branco cheio. O botão
-     circular central (.mob-nav-assistant-btn) fica de fora — mantém a
-     cor primária cheia, como em qualquer outra aba. ── */
-body.assistant-dark .mob-bottom-nav,
-body.assistant-dark .mob-bottom-nav::before{
-  background:var(--assistant-dark-surface)!important;
-  box-shadow:none!important;
-  border-top-color:transparent!important;
-}
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active),
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon),
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) span{
-  color:rgba(255,255,255,.55)!important;
-}
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
-body.assistant-dark .mob-bottom-nav .mob-nav-item:not(.active) svg{
-  color:rgba(255,255,255,.55)!important;
-  stroke:rgba(255,255,255,.55)!important;
-}
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active,
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active .nav-icon,
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon),
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active span{
-  color:#ffffff!important;
-}
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active svg{
-  color:#ffffff!important;
-  stroke:#ffffff!important;
-}
-body.assistant-dark .mob-bottom-nav .mob-nav-item.active .nav-icon{
-  background:rgba(255,255,255,.14)!important;
-}

@@ -135,6 +135,24 @@ test('a CSP está de fato ATIVA: script inline injetado é bloqueado', async ({ 
   expect(result.violacoes).toContain('script-src-elem');
 });
 
+test('nenhum handler inline sobrevive no markup gerado', async ({ page }) => {
+  // A migração para delegação (data-act-*) tirou 269 atributos on*= do app, mas
+  // dois voltaram por setAttribute('onclick', ...) em código que monta markup em
+  // runtime — invisíveis para um grep no HTML e para os testes acima, porque a
+  // violação só aparece na tela onde aquele markup é montado. Sob script-src
+  // 'self' o handler não roda: o controle fica morto e ainda emite relatório.
+  await bootUnderCsp(page);
+
+  const inline = await page.evaluate(() =>
+    [...document.querySelectorAll('*')]
+      .flatMap(el => [...el.attributes]
+        .filter(a => /^on/i.test(a.name))
+        .map(a => `${el.tagName.toLowerCase()}[${a.name}="${a.value}"]`))
+  );
+
+  expect(inline, `handlers inline (bloqueados pela CSP):\n${inline.join('\n')}`).toEqual([]);
+});
+
 test('os demais headers de segurança estão presentes', () => {
   expect(headerValue('X-Content-Type-Options')).toBe('nosniff');
   expect(headerValue('Referrer-Policy')).toBeTruthy();

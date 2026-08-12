@@ -141,7 +141,11 @@
       clone.classList.add('club-location-widget');
       clone.querySelector('#dwTabBrand')?.classList.add('club-location-brand');
       clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
-      clone.setAttribute('onclick', 'openOperationScreen()');
+      // Sem onclick inline: a CSP de produção roda script-src 'self' sem
+      // 'unsafe-inline', então um handler em atributo é bloqueado ao ser
+      // reparseado por innerHTML — o widget ficaria morto e ainda geraria
+      // relatório de violação. O clone já traz o data-act-click do original
+      // (restaurant.html), que o despachante por delegação resolve.
       clone.setAttribute('aria-label', 'Selecionar unidade e operacao');
       return `<div class="club-location-wrap">${clone.outerHTML}</div>`;
     }

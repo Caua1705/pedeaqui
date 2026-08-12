@@ -705,7 +705,11 @@
     if (image) {
       return `<img class="${className}" src="${esc(image)}"${responsiveImageAttrs(image, options)} alt="${esc(product.name)}" ${imageAttrs(options)}>`;
     }
-    return `<div class="${className} product-image--placeholder"><span>${initials(product.name)}</span></div>`;
+    // initials() recorta a 1ª letra de cada palavra do nome vindo da API — e um
+    // nome como "<img src=x>" faz esse recorte devolver "<I". Não dá para montar
+    // um payload com dois caracteres, mas o "<" cru abre uma tag no parser e
+    // corrompe o card. Aqui é innerHTML: passa pelo esc() como todo o resto.
+    return `<div class="${className} product-image--placeholder"><span>${esc(initials(product.name))}</span></div>`;
   }
 
   let detailImageRenderSequence = 0;
@@ -5459,29 +5463,11 @@
     _addrPickerSelected = id;
     const selectedConfirmBtn = $('addrPickerConfirmBtn');
     if (selectedConfirmBtn) selectedConfirmBtn.disabled = false;
+    // _renderAddrPickerList() remonta a lista inteira já com o item selecionado
+    // e com os data-act-* corretos. O remendo manual que existia aqui embaixo
+    // era inalcançável (ficava depois de um `return`) e reintroduzia um
+    // onclick="" em atributo — bloqueado pela CSP de produção.
     _renderAddrPickerList();
-    return;
-    document.querySelectorAll('#addrPickerList .addr-picker-item').forEach(el => {
-      const sel = el.dataset.addrId === id;
-      el.classList.toggle('selected', sel);
-      const pin = el.querySelector('.addr-picker-pin');
-      if (pin) pin.classList.toggle('active', sel);
-      const indicator = el.querySelector('.addr-picker-check, .addr-picker-dots');
-      if (!indicator) return;
-      if (sel) {
-        indicator.className = 'addr-picker-check';
-        indicator.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-      } else {
-        indicator.className = 'addr-picker-dots';
-        indicator.setAttribute('onclick', 'toggleAddrPickerActions(event,this)');
-        indicator.innerHTML = ADDR_PICKER_DOTS_VERTICAL;
-        if (!el.querySelector('.addr-picker-delete')) {
-          el.insertAdjacentHTML('beforeend', `<span class="addr-picker-delete" ${act('click', 'removeAddrPickerItem', '$event', '$this')} aria-label="Excluir endereço">${ADDR_PICKER_DELETE_ICON}</span>`);
-        }
-      }
-    });
-    const confirmBtn = $('addrPickerConfirmBtn');
-    if (confirmBtn) confirmBtn.disabled = false;
   }
 
   async function confirmAddrPicker() {

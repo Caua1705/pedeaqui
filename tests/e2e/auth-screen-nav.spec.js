@@ -208,3 +208,63 @@ for (const [label, navigateAndReturn] of AUTH_RETURN_PATHS) {
     await expect(page.locator('#homeLoginPrompt')).toHaveText('Entre ou cadastre-se');
   });
 }
+
+// A tela de UNIDADE E OPERAÇÃO abre por cima da Home e cai no mesmo contrato:
+// o cabeçalho não pode sumir no instante do toque.
+//
+// O modo de trava "fixed" põe `position:fixed` no <body> com `top:-scrollY`.
+// Isso zera o scroll do documento, e o #homeStickyHeader — que é
+// `position:sticky` — perde o deslocamento que o mantinha grudado: volta para a
+// posição de fluxo, que com o body deslocado cai FORA da tela. Era exatamente o
+// que acontecia ao tocar no widget de localização a partir da Home rolada.
+//
+// O #loginModal já usava trava "soft" por este motivo; o #operationModal ficava
+// no `else` e pegava "fixed". O teste cobre os DOIS caminhos de abertura, com
+// e sem animação de entrada.
+for (const [rotulo, abrir] of [
+  ['widget de localização', async (page) => {
+    await page.locator('#homeStickyHeader .delivery-widget').click();
+  }],
+  ['aba Cardápio sem operação confirmada', async (page) => {
+    await page.evaluate(() => window.act('mobNavMenu'));
+  }]
+]) {
+  test(`${rotulo}: abrir a tela de operação da Home rolada preserva o cabeçalho`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await boot(page);
+    await page.evaluate(() => window.act('closeOperationScreen'));
+
+    await expect.poll(() => page.evaluate(() => {
+      window.scrollTo({ top: 500, behavior: 'auto' });
+      return window.scrollY;
+    })).toBeGreaterThan(100);
+
+    const header = page.locator('#homeStickyHeader');
+    await expect(header).toBeVisible();
+    const antes = await header.boundingBox();
+    const scrollAntes = await page.evaluate(() => window.scrollY);
+    expect(antes?.y, 'o cabeçalho não estava pinado no topo antes do toque').toBe(0);
+
+    await abrir(page);
+    await expect(page.locator('#operationModal')).toHaveClass(/active/);
+
+    // O <body> não pode virar `position:fixed`: é isso que desgruda o sticky.
+    expect(await page.evaluate(() => document.body.style.position),
+      'a trava trocou o container de scroll do cabeçalho').toBe('');
+    // Tolerância de alguns pixels: abrir o modal muda a altura do conteúdo e o
+    // navegador reajusta o scroll no limite do documento. O que este expect
+    // barra é o ZERO — a trava "fixed" devolvia scrollY 0.
+    const scrollDepois = await page.evaluate(() => window.scrollY);
+    expect(Math.abs(scrollDepois - scrollAntes),
+      `o scroll da Home saltou ao abrir a tela: ${scrollAntes} -> ${scrollDepois}`)
+      .toBeLessThanOrEqual(8);
+
+    // E o cabeçalho continua onde estava, inteiro.
+    const depois = await header.boundingBox();
+    expect(Math.abs((depois?.y || 0) - (antes?.y || 0)),
+      'o cabeçalho saiu do lugar ao abrir a tela de operação').toBeLessThanOrEqual(1);
+    await expect(header.locator('.delivery-widget')).toBeVisible();
+    await expect(header.locator('#mobIdentity')).toBeVisible();
+    await expect(page.locator('#homeLoginPrompt')).toHaveText('Entre ou cadastre-se');
+  });
+}

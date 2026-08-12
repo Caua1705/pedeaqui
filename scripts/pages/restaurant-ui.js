@@ -152,13 +152,34 @@
     document.body.classList.toggle('keep-bottom-nav', keep);
   }
 
+  /**
+   * Telas que abrem POR CIMA da Home rolada travam o scroll no modo "soft".
+   *
+   * A trava "fixed" põe `position:fixed` no <body> com `top:-scrollY`. Isso zera
+   * o scroll do documento, e `.home-sticky-header` — que é `position:sticky` —
+   * perde o deslocamento que o mantinha grudado no topo: ele volta para a
+   * posição de fluxo, que com o body deslocado cai FORA da tela. O efeito é o
+   * header (widget de localização + "Entre ou cadastre-se") sumir no instante
+   * do toque, antes mesmo de a tela nova entrar.
+   *
+   * A trava "soft" preserva o container de scroll original e o sticky continua
+   * pinado. O #loginModal já vivia aqui pelo mesmo motivo — ver a regra
+   * `body.home-tab.soft-scroll-locked.modal-open` em utilities.css.
+   */
+  const SOFT_LOCK_MODALS = new Set(['loginModal', 'operationModal']);
+
+  function scrollLockMode(id) {
+    if (id === 'productModal') return 'product-soft';
+    return SOFT_LOCK_MODALS.has(id) ? 'soft' : 'fixed';
+  }
+
   function openModal(id) {
     const el = $(id);
     if (!el) return;
     const scrollY = currentScrollY();
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'productModal' ? 'product-soft' : (id === 'loginModal' ? 'soft' : 'fixed'));
+    lockBodyScroll(scrollY, scrollLockMode(id));
   }
 
   function openModalImmediately(id) {
@@ -168,7 +189,7 @@
     el.classList.add('no-motion');
     el.classList.add('active');
     syncBottomNavVisibility();
-    lockBodyScroll(scrollY, id === 'productModal' ? 'product-soft' : (id === 'loginModal' ? 'soft' : 'fixed'));
+    lockBodyScroll(scrollY, scrollLockMode(id));
     setTimeout(() => el.classList.remove('no-motion'), 50);
   }
 

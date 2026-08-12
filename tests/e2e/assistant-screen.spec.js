@@ -233,8 +233,44 @@ test('os três estados mudam o ritmo, e SÓ o ritmo', async ({ page }) => {
 
   const marca = page.locator('#assistantIntroMark');
 
-  // 1. A conversa move o estado: parada -> pensando -> respondendo.
+  // "O tamanho não muda" é medido no FATOR DE ESCALA da matriz de transform, não
+  // no getBoundingClientRect: a estrela gira, e a caixa alinhada aos eixos de uma
+  // forma girada muda de largura sozinha (~0,8px entre -8deg e 6deg) sem que nada
+  // tenha crescido. A matriz separa as duas coisas — rotação pura mantém escala 1.
+  //
+  // É por aqui que um scale escapava: mark-turn animava rotate + scale(1.06),
+  // então o estado de espera engordava a marca e empurrava o título e o subtítulo
+  // logo abaixo, no exato momento em que o cliente está esperando a resposta.
+  const escalaEstrela = () => marca.locator('.assistant-mark__star').evaluate(el => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    return { x: Math.hypot(m.a, m.b), y: Math.hypot(m.c, m.d) };
+  });
+
+  // 1. O contrato do CSS, isolado: ligar "pensando" muda o ritmo e SÓ ele.
+  //    A alternância é forçada na classe porque, numa conversa de verdade, a
+  //    abertura é escondida assim que a primeira mensagem sai — a marca da
+  //    abertura mediria zero e o teste passaria sem ter medido nada.
   await expect(marca).not.toHaveClass(/is-thinking/);
+  await expect(marca.locator('.assistant-mark__star')).toBeVisible();
+
+  await marca.evaluate(el => el.classList.add('is-thinking'));
+
+  const animacao = await marca.locator('.assistant-mark__star')
+    .evaluate(el => getComputedStyle(el).animationName);
+  expect(animacao, 'a estrela não entrou no ritmo de "pensando"').not.toBe('none');
+
+  // Amostra ao longo do ciclo: um scale no keyframe só aparece no meio da
+  // animação, então uma leitura única não pegaria.
+  for (let i = 0; i < 6; i++) {
+    const escala = await escalaEstrela();
+    expect(escala.x, 'a marca cresceu na horizontal ao pensar').toBeCloseTo(1, 2);
+    expect(escala.y, 'a marca cresceu na vertical ao pensar').toBeCloseTo(1, 2);
+    await page.waitForTimeout(220);
+  }
+
+  await marca.evaluate(el => el.classList.remove('is-thinking'));
+
+  // 2. E o app move esse estado sozinho: parada -> pensando -> respondendo.
   await page.locator('.assistant-starter-card').first().click();
   await expect(marca).toHaveClass(/is-thinking/);
   await expect(marca).not.toHaveClass(/is-thinking/, { timeout: 15000 });

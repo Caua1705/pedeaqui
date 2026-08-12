@@ -1090,7 +1090,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* ============================================================
    ASSISTENTE — AI LAYOUT (WHITE BG)
    Below the location widget: white background,
-   orb + question pushed lower, suggestion chips + input bar.
+   marca + pergunta empurradas para baixo, chips de sugestão e barra de input.
    ============================================================ */
 
 /* Page layout: flex column, fill remaining space */
@@ -1116,7 +1116,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   overflow: hidden !important;
 }
 
-/* When results are showing: compress the orb area */
+/* Com resultados na tela: comprime a área da marca */
 .assistant-ai-body--searching {
   justify-content: flex-start !important;
   padding-top: 20px !important;
@@ -3741,7 +3741,11 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   to   { opacity: .85; transform: scale(1.05); }
 }
 
-/* Pensando: a estrela gira de leve e o brilho acelera. */
+/* Pensando: muda só o RITMO. A estrela passa a girar e o brilho pisca mais
+   rápido — nenhum dos dois cresce. Um `scale` aqui faria a marca inchar quando
+   a resposta começa a ser processada, e o bloco inteiro (marca + título +
+   subtítulo) se mexeria junto: o estado de espera empurraria o texto que o
+   cliente está lendo. Por isso mark-turn é rotação pura. */
 .assistant-mark.is-thinking .assistant-mark__star{
   animation: mark-turn 2.6s ease-in-out infinite alternate;
 }
@@ -3750,8 +3754,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 @keyframes mark-turn{
-  from { transform: rotate(-8deg)  scale(1);    }
-  to   { transform: rotate(6deg)   scale(1.06); }
+  from { transform: rotate(-8deg); }
+  to   { transform: rotate(6deg);  }
 }
 
 @media (prefers-reduced-motion: reduce){

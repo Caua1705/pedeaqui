@@ -50,20 +50,33 @@
     return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
   }
 
+  // Um gradiente por instância. IDs de <defs> são GLOBAIS no documento: com um
+  // id fixo, a segunda marca da tela (a mini do esqueleto de digitação) definiria
+  // um <linearGradient> de mesmo nome, o segundo seria ignorado e as duas
+  // ficariam presas ao primeiro — que some junto com o elemento que o declarou.
+  let _markSeq = 0;
+
   /**
-   * A marca do assistente: um sparkle de quatro pontas na cor do restaurante,
-   * dentro de um círculo suave da mesma cor.
+   * A marca do assistente: um sparkle de quatro pontas, sozinho, preenchido com
+   * um gradiente da cor do restaurante.
    *
-   * VETOR NÍTIDO, SEM DESFOQUE. O que existia aqui antes era uma nuvem de ruído
-   * fractal (feTurbulence + feDisplacementMap + feGaussianBlur). Sete tentativas
-   * mostraram que desfoque sobre fundo claro sempre degenera em mancha
-   * pixelada, principalmente na tela do celular, onde o filtro é rasterizado
-   * numa resolução baixa. O problema era a técnica, não a calibragem — daí a
-   * troca por geometria de borda definida, que escala em qualquer tamanho e
-   * nunca vira artefato. Nada aqui pode voltar a introduzir blur.
+   * SEM DISCO ATRÁS. O círculo pastel que existia aqui fazia o conjunto ler como
+   * adesivo de tutorial — ícone chapado sobre disco claro é vocabulário de
+   * ilustração de onboarding, não de marca de produto. O glifo se sustenta
+   * sozinho. Nada de fundo, sombra ou contorno pode voltar.
    *
-   * A cor sai de --brand-primary, como antes: nenhum hex fixo, senão o
-   * componente chega na cor de outro restaurante.
+   * VETOR NÍTIDO, SEM DESFOQUE. Antes do sparkle houve uma nuvem de ruído
+   * fractal (feTurbulence + feDisplacementMap + feGaussianBlur); sete tentativas
+   * mostraram que desfoque sobre fundo claro degenera em mancha pixelada no
+   * celular, onde o filtro é rasterizado em resolução baixa. Era a técnica, não
+   * a calibragem.
+   *
+   * O `fill` do gradiente vai no ATRIBUTO, não no CSS: como o id muda por
+   * instância, uma regra `fill:url(#idFixo)` na folha venceria o atributo e
+   * apontaria todas as marcas para o mesmo <defs>.
+   *
+   * A cor sai de --brand-primary: nenhum hex fixo, senão o componente chega na
+   * cor de outro restaurante.
    *
    * É decorativo (aria-hidden): quem diz o que a tela é, é o título logo abaixo.
    */
@@ -71,12 +84,19 @@
     const classes = ['assistant-mark'];
     if (size) classes.push(`assistant-mark--${size}`);
     if (thinking) classes.push('is-thinking');
+    const grad = `assistantMarkGrad${++_markSeq}`;
     return `
       <div class="${classes.join(' ')}"${id ? ` id="${id}"` : ''} aria-hidden="true">
         <svg viewBox="0 0 24 24" class="assistant-mark__glyph" focusable="false"
              xmlns="http://www.w3.org/2000/svg">
-          <path class="assistant-mark__star" d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z"/>
-          <path class="assistant-mark__spark" d="M19 3.2c.2 1.7 1.6 3.1 3.3 3.3-1.7.2-3.1 1.6-3.3 3.3-.2-1.7-1.6-3.1-3.3-3.3 1.7-.2 3.1-1.6 3.3-3.3Z"/>
+          <defs>
+            <linearGradient id="${grad}" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="var(--mark-light)"/>
+              <stop offset="1" stop-color="var(--mark-deep)"/>
+            </linearGradient>
+          </defs>
+          <path class="assistant-mark__star" fill="url(#${grad})" d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z"/>
+          <path class="assistant-mark__spark" d="M19.6 2.4c.16 1.5 1.34 2.68 2.84 2.84-1.5.16-2.68 1.34-2.84 2.84-.16-1.5-1.34-2.68-2.84-2.84 1.5-.16 2.68-1.34 2.84-2.84Z"/>
         </svg>
       </div>`;
   }

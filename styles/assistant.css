@@ -3608,9 +3608,9 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 
 /* Telas curtas (SE, 8, qualquer 16:9): a marca encolhe. A régua de sugestões
    não precisa de nada — ela rola na horizontal e ocupa uma linha só.
-   64px é a mesma proporção de antes (0,73) sobre o padrão de 88. */
+   44px mantém a mesma proporção de antes (0,79) sobre o novo padrão de 56. */
 @media (max-height: 730px){
-  #mobViewAssistant .assistant-mark--intro{ --size:64px }
+  #mobViewAssistant .assistant-mark--intro{ --size:44px }
 }
 
 /* ============================================================
@@ -3682,73 +3682,85 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 /* ===== COMPONENTE: marca do assistente =====
-   Sparkle de quatro pontas — a convenção visual de "assistente de IA" — na cor
-   do restaurante, dentro de um círculo suave da mesma cor.
+   Sparkle de quatro pontas — a convenção visual de "assistente de IA" — sozinho,
+   preenchido com um gradiente da cor do restaurante.
 
-   VETOR NÍTIDO, SEM DESFOQUE NENHUM. Aqui morava uma nuvem de ruído fractal
-   (feTurbulence + feDisplacementMap + feGaussianBlur). Sete tentativas
-   mostraram que desfoque sobre fundo claro sempre degenera em mancha pixelada,
-   principalmente no celular, onde o filtro é rasterizado em resolução baixa.
-   Era a técnica, não o ajuste. Borda definida escala perfeito em qualquer
-   tamanho e nunca vira artefato — nenhuma regra deste bloco pode reintroduzir
-   blur, filter ou máscara.
+   SEM DISCO ATRÁS. Havia aqui um círculo em tom pastel da marca; ícone chapado
+   sobre disco claro é vocabulário de ilustração de onboarding, e o conjunto lia
+   como adesivo de tutorial. O glifo se sustenta sozinho. Nenhuma regra deste
+   bloco pode reintroduzir background, box-shadow, border ou ::before atrás dele.
 
-   A cor sai de --brand-primary, como antes: nenhum hex fixo. A montagem está em
-   markMarkup(), scripts/pages/restaurant-assistant.js.
+   O GRADIENTE é o que separa marca de clipart — mas ele é curto de propósito
+   (78% da marca sobre branco -> 88% sobre preto): passos largos fariam o glifo
+   ler como duas cores coladas em vez de uma peça só.
+
+   VETOR NÍTIDO, SEM DESFOQUE. Antes do sparkle houve uma nuvem de ruído fractal
+   (feTurbulence + feDisplacementMap + feGaussianBlur), e sete tentativas
+   mostraram que desfoque sobre fundo claro degenera em mancha pixelada no
+   celular. Nada aqui pode voltar a introduzir blur, filtro ou máscara.
+
+   A montagem está em markMarkup(), scripts/pages/restaurant-assistant.js — é lá
+   que o id do gradiente é gerado por instância.
    ===== */
 .assistant-mark{
-  --size: 88px;
+  --size: 56px;
   --brand: var(--brand-primary, #F26B21);
+  --mark-light: color-mix(in srgb, var(--brand) 78%, #fff);
+  --mark-deep:  color-mix(in srgb, var(--brand) 88%, #000);
   width: var(--size);
   height: var(--size);
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--brand) 10%, transparent);
 }
 
 .assistant-mark__glyph{
-  width: 46%;
-  height: 46%;
+  width: 100%;
+  height: 100%;
   overflow: visible;
-  fill: var(--brand);
 }
 
-/* a estrela pequena pisca devagar, deslocada da grande */
+/* O `fill` do gradiente mora no ATRIBUTO do <path>, não aqui: o id muda por
+   instância, e uma regra `fill:url(#idFixo)` nesta folha venceria o atributo e
+   grudaria todas as marcas no mesmo <defs>. */
+.assistant-mark__star{
+  transform: rotate(-8deg);
+  transform-origin: 12px 12px;
+}
+
+/* Assimetria: a ponta pequena é menor e deslocada, não um espelho da grande. */
 .assistant-mark__spark{
-  opacity: .55;
-  transform-origin: 19px 6.5px;
-  animation: mark-twinkle 3.2s ease-in-out infinite alternate;
+  fill: var(--brand);
+  opacity: .5;
+  transform-origin: 19.6px 5.2px;
+  animation: mark-twinkle 3.4s ease-in-out infinite alternate;
 }
 
 @keyframes mark-twinkle{
-  from { opacity: .35; transform: scale(.82); }
-  to   { opacity: .95; transform: scale(1.06); }
+  from { opacity: .3;  transform: scale(.8);  }
+  to   { opacity: .85; transform: scale(1.05); }
 }
 
-/* pensando: o círculo respira e o brilho acelera */
-.assistant-mark.is-thinking{
-  animation: mark-breathe 1.4s ease-in-out infinite alternate;
+/* Pensando: a estrela gira de leve e o brilho acelera. */
+.assistant-mark.is-thinking .assistant-mark__star{
+  animation: mark-turn 2.6s ease-in-out infinite alternate;
 }
 .assistant-mark.is-thinking .assistant-mark__spark{
   animation-duration: 1s;
 }
 
-@keyframes mark-breathe{
-  from { background: color-mix(in srgb, var(--brand) 8%, transparent);  }
-  to   { background: color-mix(in srgb, var(--brand) 20%, transparent); }
+@keyframes mark-turn{
+  from { transform: rotate(-8deg)  scale(1);    }
+  to   { transform: rotate(6deg)   scale(1.06); }
 }
 
 @media (prefers-reduced-motion: reduce){
-  .assistant-mark,
-  .assistant-mark .assistant-mark__spark{
-    animation: none;
-  }
-  .assistant-mark .assistant-mark__spark{ opacity: .6; }
+  .assistant-mark__star,
+  .assistant-mark__spark{ animation: none; }
+  .assistant-mark__spark{ opacity: .55; }
 }
 /* ===== FIM DO COMPONENTE ===== */
 
 /* Modificadores de tamanho. Só trocam --size: o desenho e o ritmo vêm do bloco
    acima intactos. A mini acompanha o rótulo "Digitando..." no esqueleto. */
-.assistant-mark--mini{ --size: 26px }
+.assistant-mark--mini{ --size: 22px }

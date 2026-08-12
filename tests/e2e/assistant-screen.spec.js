@@ -43,13 +43,18 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
 
   // A variável do componente tem que ser a do tema. O bloco de CSS traz #F26B21
   // como valor de ORIGEM, e ele não pode vencer o hex do lojista.
-  const ler = () => page.locator('#assistantIntroMark').evaluate(el => ({
-    brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
-    temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
-    circulo: getComputedStyle(el).backgroundColor,
-    estrela: getComputedStyle(el.querySelector('.assistant-mark__star')).fill,
-    brilho: getComputedStyle(el.querySelector('.assistant-mark__spark')).fill
-  }));
+  const ler = () => page.locator('#assistantIntroMark').evaluate(el => {
+    const paradas = [...el.querySelectorAll('linearGradient stop')]
+      .map(s => getComputedStyle(s).stopColor);
+    return {
+      brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
+      temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
+      claro: getComputedStyle(el).getPropertyValue('--mark-light').trim(),
+      escuro: getComputedStyle(el).getPropertyValue('--mark-deep').trim(),
+      paradas,
+      brilho: getComputedStyle(el.querySelector('.assistant-mark__spark')).fill
+    };
+  });
 
   const laranja = await ler();
   await page.evaluate(() => window.RapidexTheme.applyBrandTheme('#2A2D7C'));
@@ -58,11 +63,45 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
   expect(laranja.brand.toUpperCase(), 'o componente não leu a cor do tema').toBe(laranja.temaBrand.toUpperCase());
   expect(indigo.brand.toUpperCase()).toBe('#2A2D7C');
 
-  // E o azul entra de fato na PINTURA — glifo e círculo —, não só numa variável.
-  expect(indigo.estrela, 'a estrela não acompanhou o tenant').not.toBe(laranja.estrela);
-  expect(indigo.circulo, 'o círculo não acompanhou o tenant').not.toBe(laranja.circulo);
-  expect(indigo.estrela).toBe('rgb(42, 45, 124)');
-  expect(indigo.brilho, 'as duas pontas do sparkle saíram de cores diferentes').toBe(indigo.estrela);
+  // O azul entra de fato na PINTURA — as duas paradas do gradiente e a ponta
+  // pequena —, não só numa variável.
+  expect(indigo.paradas, 'o gradiente perdeu uma parada').toHaveLength(2);
+  for (let i = 0; i < 2; i++) {
+    expect(indigo.paradas[i], `a parada ${i} não acompanhou o tenant`).not.toBe(laranja.paradas[i]);
+  }
+  expect(indigo.brilho, 'a ponta pequena não é a cor do lojista').toBe('rgb(42, 45, 124)');
+
+  // E as duas pontas do gradiente são DIFERENTES entre si — um gradiente que
+  // colapsa em cor única devolve o glifo chapado que motivou a troca.
+  expect(indigo.paradas[0], 'o gradiente virou cor chapada').not.toBe(indigo.paradas[1]);
+});
+
+test('cada marca tem seu próprio gradiente', async ({ page }) => {
+  await openAssistant(page, { chatDelay: 3000 });
+  await waitForIntro(page);
+  await page.locator('.assistant-starter-card').first().click();
+  await expect(page.locator('#assistantTypingMessage .assistant-mark')).toBeVisible();
+
+  // IDs de <defs> são globais no documento. Com um id fixo, o segundo
+  // <linearGradient> de mesmo nome é ignorado e as duas marcas passam a apontar
+  // para o primeiro — que some junto com o elemento que o declarou, deixando o
+  // glifo preto. Aqui há DUAS marcas na tela ao mesmo tempo.
+  const marcas = await page.locator('#mobViewAssistant').evaluate(raiz => {
+    const nos = [...raiz.querySelectorAll('.assistant-mark')];
+    return nos.map(m => ({
+      idGradiente: m.querySelector('linearGradient')?.id,
+      fillEstrela: m.querySelector('.assistant-mark__star')?.getAttribute('fill')
+    }));
+  });
+
+  expect(marcas.length, 'o teste precisa de duas marcas na tela').toBeGreaterThanOrEqual(2);
+  const ids = marcas.map(m => m.idGradiente);
+  expect(new Set(ids).size, `ids de gradiente repetidos: ${ids}`).toBe(ids.length);
+  // E cada glifo aponta para o SEU gradiente, não para o do vizinho.
+  for (const m of marcas) {
+    expect(m.fillEstrela, `a estrela não usa o gradiente da própria instância (${m.idGradiente})`)
+      .toBe(`url(#${m.idGradiente})`);
+  }
 });
 
 test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) => {
@@ -100,7 +139,39 @@ test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) =
   expect(desenho.viewBox).toBe('0 0 24 24');
 });
 
-test('a marca é um círculo, e cresce sem perder proporção', async ({ page }) => {
+test('o glifo se sustenta sozinho: nada desenhado atrás dele', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+
+  // A regressão que este teste barra: o disco pastel que fazia o conjunto ler
+  // como adesivo de tutorial. Ícone chapado sobre fundo claro é vocabulário de
+  // ilustração de onboarding — a marca é só o glifo.
+  const fundo = await page.locator('#assistantIntroMark').evaluate(el => {
+    const invisivel = v => /^(rgba\(0, 0, 0, 0\)|transparent|none)$/.test(v);
+    const olhar = (n, quem) => {
+      const cs = getComputedStyle(n);
+      const antes = getComputedStyle(n, '::before').content;
+      const depois = getComputedStyle(n, '::after').content;
+      return {
+        quem,
+        fundo: cs.backgroundColor, imagem: cs.backgroundImage,
+        sombra: cs.boxShadow, borda: cs.borderStyle, raio: cs.borderRadius,
+        pseudo: [antes, depois].filter(c => c !== 'none').length,
+        limpo: invisivel(cs.backgroundColor) && invisivel(cs.backgroundImage)
+          && invisivel(cs.boxShadow)
+      };
+    };
+    return [olhar(el, 'raiz'), olhar(el.querySelector('.assistant-mark__glyph'), 'svg')];
+  });
+
+  for (const n of fundo) {
+    expect(n.limpo, `voltou fundo/sombra atrás do glifo (${n.quem}): ${JSON.stringify(n)}`).toBe(true);
+    expect(n.borda, `voltou contorno na marca (${n.quem})`).toMatch(/^none$/);
+    expect(n.pseudo, `voltou um pseudo-elemento desenhando atrás do glifo (${n.quem})`).toBe(0);
+  }
+});
+
+test('a marca é discreta e encolhe sem perder proporção', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
@@ -109,26 +180,52 @@ test('a marca é um círculo, e cresce sem perder proporção', async ({ page })
     const g = el.querySelector('.assistant-mark__glyph').getBoundingClientRect();
     return {
       lado: [Math.round(r.width), Math.round(r.height)],
-      raio: getComputedStyle(el).borderRadius,
       glifo: [Math.round(g.width), Math.round(g.height)],
-      // Centro do glifo x centro do círculo: o sparkle fica no meio.
       desvio: [Math.abs((g.left + g.width / 2) - (r.left + r.width / 2)),
         Math.abs((g.top + g.height / 2) - (r.top + r.height / 2))]
     };
   });
 
   const padrao = await medir();
-  expect(padrao.lado, 'a marca não é quadrada (logo, não é círculo)').toEqual([88, 88]);
-  expect(padrao.raio).toMatch(/50%|44px/);
-  expect(padrao.glifo).toEqual([40, 40]); // 46% de 88
+  // 56px: marca de assistente é discreta. Sem o disco, o glifo ocupa a caixa.
+  expect(padrao.lado, 'a marca saiu do tamanho discreto').toEqual([56, 56]);
+  expect(padrao.glifo).toEqual([56, 56]);
   for (const d of padrao.desvio) expect(d, 'o sparkle saiu do centro').toBeLessThanOrEqual(1);
 
-  // Tela curta: encolhe mantendo a proporção glifo/círculo, sem virar oval.
+  // Tela curta: encolhe proporcionalmente, sem virar oval.
   await page.setViewportSize({ width: 390, height: 700 });
   const curta = await medir();
-  expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([64, 64]);
+  expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([44, 44]);
+  expect(curta.lado[0]).toBe(curta.lado[1]);
   expect(curta.glifo[0] / curta.lado[0]).toBeCloseTo(padrao.glifo[0] / padrao.lado[0], 2);
-  for (const d of curta.desvio) expect(d, 'o sparkle saiu do centro na tela curta').toBeLessThanOrEqual(1);
+});
+
+test('a estrela é assimétrica, não um espelho da ponta pequena', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+
+  const forma = await page.locator('#assistantIntroMark').evaluate(el => {
+    const star = el.querySelector('.assistant-mark__star');
+    const spark = el.querySelector('.assistant-mark__spark');
+    const cs = getComputedStyle(star);
+    // getBBox() devolve um SVGRect, que não atravessa o evaluate — vira {}.
+    const caixa = n => { const b = n.getBBox(); return [b.width, b.height]; };
+    return {
+      rotacao: cs.transform,
+      caixaEstrela: caixa(star),
+      caixaBrilho: caixa(spark),
+      opacidadeBrilho: Number(getComputedStyle(spark).opacity)
+    };
+  });
+
+  // A principal chega rotacionada: `none` significaria que o eixo voltou a ser
+  // o do viewBox e as duas pontas ficariam alinhadas na mesma diagonal.
+  expect(forma.rotacao, 'a estrela perdeu a rotação').not.toBe('none');
+  // E a secundária é bem menor — não um espelho em escala 1:1.
+  const areaEstrela = forma.caixaEstrela[0] * forma.caixaEstrela[1];
+  const areaBrilho = forma.caixaBrilho[0] * forma.caixaBrilho[1];
+  expect(areaBrilho / areaEstrela, 'a ponta pequena deixou de ser secundária').toBeLessThan(0.15);
+  expect(forma.opacidadeBrilho, 'a ponta pequena compete com a principal').toBeLessThan(1);
 });
 test('os três estados mudam o ritmo, e SÓ o ritmo', async ({ page }) => {
   await openAssistant(page, { chatDelay: 2500 });
@@ -152,24 +249,25 @@ test('sob movimento reduzido a marca aparece parada e inteira', async ({ page })
     const r = el.getBoundingClientRect();
     const spark = el.querySelector('.assistant-mark__spark');
     const cs = getComputedStyle(el), cspark = getComputedStyle(spark);
+    const star = el.querySelector('.assistant-mark__star');
     return {
       largura: Math.round(r.width),
       visibilidade: cs.visibility,
-      animacaoCirculo: cs.animationName,
+      animacaoEstrela: getComputedStyle(star).animationName,
       animacaoBrilho: cspark.animationName,
       opacidadeBrilho: Number(cspark.opacity),
-      opacidadeEstrela: Number(getComputedStyle(el.querySelector('.assistant-mark__star')).opacity)
+      opacidadeEstrela: Number(getComputedStyle(star).opacity)
     };
   });
 
   // Parada de verdade: sem animação declarada, não só pausada.
-  expect(estado.animacaoCirculo, 'o círculo continuou respirando').toBe('none');
+  expect(estado.animacaoEstrela, 'a estrela continuou girando').toBe('none');
   expect(estado.animacaoBrilho, 'a ponta pequena continuou piscando').toBe('none');
   // E inteira: a ponta pequena não pode ficar no quadro apagado da animação,
   // senão o movimento reduzido entrega meia marca.
   expect(estado.opacidadeBrilho, 'a ponta pequena ficou apagada').toBeGreaterThanOrEqual(0.5);
   expect(estado.opacidadeEstrela).toBe(1);
-  expect(estado.largura).toBe(88);
+  expect(estado.largura).toBe(56);
   expect(estado.visibilidade).toBe('visible');
 });
 

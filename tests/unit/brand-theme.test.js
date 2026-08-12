@@ -6,10 +6,12 @@ import '../../scripts/utils/brand-theme.js';
 const {
   PLATFORM_PRIMARY,
   ON_BRAND_MIN_CONTRAST,
+  MARK_SPARK_MIN_ALPHA,
   parseHex,
   normalizeHex,
   hexToHsl,
   contrastRatio,
+  compositeOnPaper,
   onBrandColor,
   deriveBrandPalette,
   brandThemeVariables,
@@ -154,6 +156,82 @@ describe('A3 — guarda de contraste sobre a cor de marca', () => {
     expect(yellowInk).not.toBe(YELLOW);
     expect(Math.abs(hexToHsl(yellowInk).h - hexToHsl(YELLOW).h)).toBeLessThan(8);
     expect(hexToHsl(yellowInk).l).toBeLessThan(hexToHsl(YELLOW).l);
+  });
+
+  // ---- A marca do assistente sobre o branco da tela de chat ----------------
+  //
+  // A tela do chat é branca e a marca é o único grafismo dela. Antes, as tintas
+  // saíam de `color-mix(marca 78%, #fff)` — uma mistura fixa, cega ao contraste,
+  // que clareava a marca contra um fundo que já era branco.
+  const MARK_TINTS = ['--brand-mark-light', '--brand-mark-deep'];
+
+  it(`as paradas do gradiente cruzam ${ON_BRAND_MIN_CONTRAST}:1 no branco para qualquer hex`, () => {
+    let worst = { ratio: Infinity, hex: null, tint: null };
+    for (let r = 0; r < 256; r += 15) {
+      for (let g = 0; g < 256; g += 15) {
+        for (let b = 0; b < 256; b += 15) {
+          const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+          const palette = deriveBrandPalette(hex);
+          for (const tint of MARK_TINTS) {
+            const ratio = contrastRatio(palette[tint], '#FFFFFF');
+            if (ratio < worst.ratio) worst = { ratio, hex, tint };
+          }
+        }
+      }
+    }
+    expect(worst.ratio, `pior caso: ${worst.tint} em ${worst.hex}`)
+      .toBeGreaterThanOrEqual(ON_BRAND_MIN_CONTRAST);
+  });
+
+  it(`a ponta pequena cruza ${ON_BRAND_MIN_CONTRAST}:1 no quadro mais apagado do twinkle`, () => {
+    // Ela é TRANSLÚCIDA: o que precisa passar é o composto no papel, não a cor
+    // sólida. E o quadro que manda é o mais fraco da animação — se só a cor
+    // sólida fosse medida, a ponta sumiria durante metade do ciclo.
+    let worst = { ratio: Infinity, hex: null };
+    for (let r = 0; r < 256; r += 15) {
+      for (let g = 0; g < 256; g += 15) {
+        for (let b = 0; b < 256; b += 15) {
+          const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+          const spark = deriveBrandPalette(hex)['--brand-mark-spark'];
+          const visto = compositeOnPaper(spark, MARK_SPARK_MIN_ALPHA);
+          const ratio = contrastRatio(visto, '#FFFFFF');
+          if (ratio < worst.ratio) worst = { ratio, hex };
+        }
+      }
+    }
+    expect(worst.ratio, `pior caso em ${worst.hex}`).toBeGreaterThanOrEqual(ON_BRAND_MIN_CONTRAST);
+  });
+
+  it('as tintas da marca guardam o matiz do lojista', () => {
+    // O ponto da guarda é escurecer SEM trocar a cor: se o matiz derivasse, todo
+    // tenant claro terminaria no mesmo marrom e a marca deixaria de ser dele.
+    for (const hex of ['#FFD34D', '#2A2D7C', PILOT, YELLOW, BLUE, '#00A34A', '#E11D48']) {
+      const palette = deriveBrandPalette(hex);
+      const matizOriginal = hexToHsl(hex).h;
+      for (const tint of [...MARK_TINTS, '--brand-mark-spark']) {
+        const desvio = Math.abs(hexToHsl(palette[tint]).h - matizOriginal);
+        expect(Math.min(desvio, 360 - desvio), `${tint} derivou o matiz em ${hex}`)
+          .toBeLessThan(8);
+      }
+    }
+  });
+
+  it('quem já passa não é escurecido à toa', () => {
+    // #2A2D7C tem 6,2:1 sozinho: a guarda não pode repintar uma marca que nunca
+    // teve problema, senão ela vira uma correção que ninguém pediu.
+    expect(deriveBrandPalette('#2A2D7C')['--brand-mark-light']).toBe('#2A2D7C');
+    // O amarelo não passa e escurece — mas continua amarelo (matiz acima).
+    expect(deriveBrandPalette('#FFD34D')['--brand-mark-light']).not.toBe('#FFD34D');
+  });
+
+  it('o gradiente nunca colapsa em cor chapada', () => {
+    // Duas paradas iguais devolvem o glifo chapado que motivou o gradiente. O
+    // caso limite é a marca quase preta, que não tem degrau para escurecer.
+    for (const hex of ['#FFD34D', '#2A2D7C', PILOT, '#000000', '#050505', '#FFFFFF']) {
+      const palette = deriveBrandPalette(hex);
+      expect(palette['--brand-mark-light'], `gradiente chapado em ${hex}`)
+        .not.toBe(palette['--brand-mark-deep']);
+    }
   });
 
   it('a cor do piloto ficou MAIS legível do que o laranja chumbado de hoje', () => {

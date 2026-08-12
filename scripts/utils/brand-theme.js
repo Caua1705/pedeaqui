@@ -120,24 +120,101 @@
     return contrastRatio(primaryHex, INK) > onPaper ? INK : PAPER;
   }
 
+  // Escurece pela LUMINOSIDADE até `passa(hex)` virar verdade. O matiz fica
+  // onde está — é isso que mantém a cor reconhecível como a do lojista em vez de
+  // virar um marrom genérico.
+  //
+  // Quem JÁ passa sai por aqui intacta, byte por byte: uma marca que nunca teve
+  // problema não pode ser repintada por efeito colateral. O teto de saturação em
+  // 90 (uma cor muito saturada fica ácida ao escurecer) só se aplica a quem de
+  // fato precisa descer — aplicá-lo antes do teste mexeria na cor de tenants
+  // como o #D95C04 do piloto, que tem 96 de saturação e 3,83:1 de sobra.
+  //
+  // O piso de 4 evita laço infinito num hex que não passa nem quase preto; o
+  // passo de 3 é fino o bastante para não estourar o alvo.
+  function darkenUntil(primaryHex, passa) {
+    if (passa(primaryHex)) return primaryHex;
+    const hsl = hexToHsl(primaryHex);
+    const saturation = Math.min(hsl.s, 90);
+    let lightness = hsl.l;
+    let hex = hslToHex({ h: hsl.h, s: saturation, l: lightness });
+    while (!passa(hex) && lightness > 4) {
+      lightness = Math.max(4, lightness - 3);
+      hex = hslToHex({ h: hsl.h, s: saturation, l: lightness });
+    }
+    return hex;
+  }
+
   // A3b — a mesma guarda, virada do avesso: a marca como TINTA sobre a
   // superfície clara do app (um ícone, uma seta, um rótulo em destaque).
   //
   // onBrandColor() resolve texto EM CIMA da marca; este resolve a marca em cima
   // do papel, que é o caso oposto e falha nas marcas claras: um amarelo tem 1,4
   // de contraste no branco e desaparece. A regra é escurecer pela luminosidade,
-  // mantendo matiz e saturação, só até cruzar o piso de 3:1 — um laranja médio
-  // já passa e sai daqui intacto, então nenhuma marca é escurecida à toa.
+  // mantendo matiz, só até cruzar o piso de 3:1 — um laranja médio já passa e
+  // sai daqui intacto, então nenhuma marca é escurecida à toa.
   function brandInkColor(primaryHex) {
-    const hsl = hexToHsl(primaryHex);
-    const saturation = Math.min(hsl.s, 90);
-    let lightness = hsl.l;
-    let ink = hslToHex({ h: hsl.h, s: saturation, l: lightness });
-    while (contrastRatio(ink, PAPER) < ON_BRAND_MIN_CONTRAST && lightness > 4) {
-      lightness = Math.max(4, lightness - 3);
-      ink = hslToHex({ h: hsl.h, s: saturation, l: lightness });
+    return darkenUntil(primaryHex, (hex) =>
+      contrastRatio(hex, PAPER) >= ON_BRAND_MIN_CONTRAST);
+  }
+
+  // Composição de uma tinta translúcida sobre o papel branco. A mistura do
+  // navegador é feita em sRGB, canal a canal — é essa a conta que precisa ser
+  // reproduzida aqui, não uma média em luz linear.
+  function compositeOnPaper(hex, alpha) {
+    const c = parseHex(hex);
+    const blend = (value) => value * alpha + 255 * (1 - alpha);
+    return rgbToHex({ r: blend(c.r), g: blend(c.g), b: blend(c.b) });
+  }
+
+  // Quadro mais apagado do twinkle da ponta pequena. É ELE que manda no cálculo:
+  // a estrela secundária pisca, e de nada adianta a cor sólida passar se o
+  // quadro mais fraco da animação some no branco.
+  const MARK_SPARK_MIN_ALPHA = 0.62;
+  // Separação entre as duas paradas do gradiente, em pontos de luminosidade. O
+  // gradiente é curto de propósito: passos largos fazem o glifo ler como duas
+  // cores coladas em vez de uma peça só.
+  const MARK_GRADIENT_STEP = 14;
+
+  /**
+   * A3c — a marca do assistente como GRAFISMO sobre o branco da tela de chat.
+   *
+   * Mesma técnica de brandInkColor(), estendida às três tintas do sparkle. O que
+   * havia antes era `color-mix(marca 78%, #fff)` na parada clara: uma mistura
+   * fixa, cega ao contraste, que CLAREAVA a marca justamente onde o fundo já é
+   * branco. Medido: #FFD34D dava 1,33:1, e mesmo o laranja do piloto (#D95C04,
+   * 3,83:1 sozinho) caía para 2,86:1 depois de receber o branco da mistura.
+   *
+   * A ponta pequena é o caso especial: ela é TRANSLÚCIDA, então o que precisa
+   * cruzar 3:1 é o resultado composto no papel no quadro mais apagado — a cor
+   * sólida dela é só o insumo. Por isso ela costuma sair mais escura que a
+   * estrela principal: depois de composta a 0,62 o olho a vê mais clara, que é
+   * a hierarquia desejada (secundária, não concorrente).
+   */
+  function markInkColors(primaryHex) {
+    const passaSolido = (hex) => contrastRatio(hex, PAPER) >= ON_BRAND_MIN_CONTRAST;
+
+    let light = darkenUntil(primaryHex, passaSolido);
+    let hsl = hexToHsl(light);
+    let deepLightness = hsl.l - MARK_GRADIENT_STEP;
+
+    // Marca quase preta: não há degrau para baixo. Quem sobe é a parada clara —
+    // e ela volta a passar pela guarda, então o piso de 3:1 continua valendo.
+    if (deepLightness < 6) {
+      deepLightness = 6;
+      light = darkenUntil(
+        hslToHex({ ...hsl, l: deepLightness + MARK_GRADIENT_STEP }),
+        passaSolido
+      );
+      hsl = hexToHsl(light);
     }
-    return ink;
+
+    return {
+      light,
+      deep: hslToHex({ ...hsl, l: deepLightness }),
+      spark: darkenUntil(primaryHex, (hex) =>
+        contrastRatio(compositeOnPaper(hex, MARK_SPARK_MIN_ALPHA), PAPER) >= ON_BRAND_MIN_CONTRAST)
+    };
   }
 
   // Escurecer é o gesto natural de hover/press, MAS uma marca já quase preta não
@@ -163,6 +240,7 @@
     // Saturação teto nos tons claros: um wash com 100% de saturação fica ácido.
     const softS = Math.min(hsl.s, 85);
     const on = onBrandColor(primary);
+    const mark = markInkColors(primary);
     const deep = hslToHex({ h: hsl.h, s: Math.min(hsl.s, 88), l: 13 });
     const light = hslToHex({ h: hsl.h + 6, s: softS, l: clamp(hsl.l + 11, 24, 92) });
     const rgbTriplet = (hex) => {
@@ -196,6 +274,15 @@
       '--brand-on': on,
       // A marca legível SOBRE a superfície clara do app. Ver brandInkColor().
       '--brand-ink': brandInkColor(primary),
+      // As três tintas do sparkle do assistente, cada uma já acima de 3:1 no
+      // branco. Ver markInkColors() — a da ponta pequena conta a translucidez.
+      '--brand-mark-light': mark.light,
+      '--brand-mark-deep': mark.deep,
+      // O piso de opacidade do twinkle NÃO entra na paleta: ele é o mesmo para
+      // todo tenant, e um token que não é cor quebraria o contrato dos demais.
+      // Ele vive em MARK_SPARK_MIN_ALPHA e o CSS repete o valor — quem trava os
+      // dois juntos é tests/unit/mark-contrast.test.js.
+      '--brand-mark-spark': mark.spark,
       // Texto secundário sobre a marca (subtítulo dentro de um bloco chapado).
       '--brand-on-soft': on === PAPER ? 'rgba(255,255,255,.78)' : 'rgba(26,26,26,.66)',
       '--brand-glow': `rgba(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}, .28)`,
@@ -244,6 +331,7 @@
     PLATFORM_PRIMARY,
     PLATFORM_SECONDARY,
     ON_BRAND_MIN_CONTRAST,
+    MARK_SPARK_MIN_ALPHA,
     parseHex,
     normalizeHex,
     rgbToHex,
@@ -251,7 +339,10 @@
     hslToHex,
     relativeLuminance,
     contrastRatio,
+    compositeOnPaper,
     onBrandColor,
+    brandInkColor,
+    markInkColors,
     deriveBrandPalette,
     brandThemeVariables,
     applyBrandTheme

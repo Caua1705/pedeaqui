@@ -3702,11 +3702,17 @@ body:has(#mobViewAssistant.active) .assistant-toast{
    A montagem está em markMarkup(), scripts/pages/restaurant-assistant.js — é lá
    que o id do gradiente é gerado por instância.
    ===== */
+/* As três tintas vêm PRONTAS do tema (scripts/utils/brand-theme.js,
+   markInkColors) — não são derivadas aqui. O que existia neste lugar era
+   `color-mix(in srgb, var(--brand) 78%, #fff)`: uma mistura fixa, cega ao
+   contraste, que CLAREAVA a marca justamente contra o fundo branco da tela.
+   Medido, dava 1,33:1 no amarelo #FFD34D e 2,86:1 até no laranja do piloto.
+   color-mix() não sabe medir luminância; a guarda tem que morar no JS. */
 .assistant-mark{
   --size: 56px;
-  --brand: var(--brand-primary, #F26B21);
-  --mark-light: color-mix(in srgb, var(--brand) 78%, #fff);
-  --mark-deep:  color-mix(in srgb, var(--brand) 88%, #000);
+  --mark-light: var(--brand-mark-light, #C4551A);
+  --mark-deep:  var(--brand-mark-deep, #96400F);
+  --mark-spark: var(--brand-mark-spark, #A94711);
   width: var(--size);
   height: var(--size);
   flex: none;
@@ -3728,17 +3734,21 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   transform-origin: 12px 12px;
 }
 
-/* Assimetria: a ponta pequena é menor e deslocada, não um espelho da grande. */
+/* Assimetria: a ponta pequena é menor e deslocada, não um espelho da grande.
+   Ela mantém opacidade própria — é o que a faz ler como secundária —, mas o
+   PISO dessa opacidade é parte do contraste calculado: --brand-mark-spark foi
+   escurecida para cruzar 3:1 já COMPOSTA a .62 no branco. Baixar daqui invalida
+   a conta e a ponta some no fundo (a .3, nem preto puro chega a 3:1). */
 .assistant-mark__spark{
-  fill: var(--brand);
-  opacity: .5;
+  fill: var(--mark-spark);
+  opacity: .62;
   transform-origin: 19.6px 5.2px;
   animation: mark-twinkle 3.4s ease-in-out infinite alternate;
 }
 
 @keyframes mark-twinkle{
-  from { opacity: .3;  transform: scale(.8);  }
-  to   { opacity: .85; transform: scale(1.05); }
+  from { opacity: .62; transform: scale(.8);  }
+  to   { opacity: 1;   transform: scale(1.05); }
 }
 
 /* Pensando: muda só o RITMO. A estrela passa a girar e o brilho pisca mais
@@ -3761,7 +3771,9 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 @media (prefers-reduced-motion: reduce){
   .assistant-mark__star,
   .assistant-mark__spark{ animation: none; }
-  .assistant-mark__spark{ opacity: .55; }
+  /* Parada, mas nunca abaixo do piso do twinkle: quem desliga animação recebe a
+     marca inteira e legível, não o quadro mais fraco dela congelado. */
+  .assistant-mark__spark{ opacity: .72; }
 }
 /* ===== FIM DO COMPONENTE ===== */
 

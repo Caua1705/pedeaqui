@@ -386,7 +386,7 @@
   <!-- -- SUB: Pedidos -- -->
   <div class="prof-sub" id="profSubpedidos">
     <div class="prof-manage-header">
-      <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
+      <button class="cart-hdr-back prof-manage-back profile-orders-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h1>Pedidos</h1>
@@ -397,10 +397,10 @@
     </div>
     <section class="prof-order-detail" id="profOrderDetail" aria-hidden="true" aria-label="Detalhes do pedido">
       <div class="prof-manage-header">
-        <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfOrderDetails' aria-label="Voltar">
+        <button class="cart-hdr-back prof-manage-back profile-orders-back" type="button" data-act-click='closeProfOrderDetails' aria-label="Voltar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </button>
-        <h1>Detalhes do pedido</h1>
+        <h1 id="profOrderDetailTitle">Detalhes do pedido</h1>
         <span class="prof-manage-header-spacer" aria-hidden="true"></span>
       </div>
       <div class="prof-order-detail-body" id="profOrderDetailBody"></div>
@@ -453,28 +453,23 @@
   </div><!-- /profSubcupons -->
 
   <!-- -- SUB: Ajuda -- -->
-  <div class="prof-sub" id="profSubajuda">
-    <div class="prof-sub-header">
-      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+  <div class="prof-sub prof-help" id="profSubajuda">
+    <div class="prof-manage-header prof-help-header">
+      <button class="cart-hdr-back prof-manage-back profile-orders-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
-      <span class="prof-sub-title">Ajuda</span>
+      <h1>Ajuda</h1>
+      <span class="prof-manage-header-spacer" aria-hidden="true"></span>
     </div>
-    <div class="prof-sub-body">
-      <div class="prof-placeholder-card">
-        <div class="prof-placeholder-title">Fale com o restaurante</div>
-        <div class="prof-placeholder-text">Para dúvidas, sugestões ou reclamações, entre em contato diretamente com o restaurante pelos canais abaixo.</div>
-      </div>
-      <!-- Uma linha por unidade da API (renderProfileHelpContacts). Estava fixo
-           com "WhatsApp — Matriz" / "Telefone — Matriz" e links href="#". -->
-      <div class="prof-info-card" id="profHelpContacts"></div>
+    <div class="prof-sub-body prof-help-body">
+      <section class="help-store-info" id="profHelpContacts" aria-label="Contatos do restaurante"></section>
     </div>
   </div><!-- /profSubajuda -->
 
   <!-- -- SUB: Gerenciar perfil -- -->
   <div class="prof-sub prof-manage" id="profSubmeusdados">
     <div class="prof-manage-header">
-      <button class="cart-hdr-back prof-manage-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
+      <button class="cart-hdr-back prof-manage-back profile-orders-back" type="button" data-act-click='closeProfSub' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h1>Gerenciar perfil</h1>
@@ -1394,7 +1389,7 @@
 <div class="overlay" id="addrPickerModal">
   <div class="modal modal--fs">
     <div class="cart-hdr">
-      <button class="cart-hdr-back" data-act-click='["closeModalId","addrPickerModal"]' aria-label="Voltar">
+      <button class="cart-hdr-back profile-orders-back" data-act-click='["closeModalId","addrPickerModal"]' aria-label="Voltar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <h2 class="cart-hdr-title">Endereço</h2>
@@ -1558,7 +1553,7 @@
 
 <section id="privacyPolicyScreen" class="policy-screen privacy-policy-screen" aria-label="Política de Privacidade">
   <header class="policy-header">
-    <button id="privacyPolicyBack" class="policy-back" type="button" data-act-click='["closePolicyScreen","privacy"]' aria-label="Voltar">
+    <button id="privacyPolicyBack" class="policy-back profile-orders-back" type="button" data-act-click='["closePolicyScreen","privacy"]' aria-label="Voltar">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
     <h1 class="policy-title">Política de Privacidade</h1>

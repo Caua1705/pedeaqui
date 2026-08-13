@@ -52,6 +52,43 @@
 .prof-footer-credit { font-size: .68rem; color: #ccc; font-weight: 600; letter-spacing: .04em; }
 .mob-view-header--sticky { font-size: 1.05rem; position: sticky; top: 0; z-index: 2; }
 
+/* Botão de retorno autoritativo das telas internas do Perfil: Pedidos é a referência. */
+@media (max-width: 767px) {
+  #profSubpedidos .profile-orders-back,
+  #profSubmeusdados > .prof-manage-header .profile-orders-back,
+  #profSubajuda .profile-orders-back,
+  #addrPickerModal.from-profile .profile-orders-back,
+  body.policy-from-profile .profile-orders-back {
+    box-sizing: border-box !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: #ececec !important;
+    color: #3f454b !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  #profSubpedidos .profile-orders-back svg,
+  #profSubmeusdados > .prof-manage-header .profile-orders-back svg,
+  #profSubajuda .profile-orders-back svg,
+  #addrPickerModal.from-profile .profile-orders-back svg,
+  body.policy-from-profile .profile-orders-back svg {
+    width: 17px !important;
+    height: 17px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.5 !important;
+  }
+}
+
 /* ---- modal de produto ---- */
 .pm-warning {
   background: rgba(var(--brand-primary-rgb), .1);

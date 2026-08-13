@@ -7393,8 +7393,14 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     overflow:hidden!important;
   }
   body.policy-from-profile .policy-header{position:relative!important;top:auto!important;flex:0 0 82px!important}
-  body.policy-from-profile .policy-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;padding-bottom:44px!important;background:#fff!important}
-  body.policy-from-profile:has(.policy-screen.active) .mob-bottom-nav{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+  body.policy-from-profile .policy-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;padding-bottom:calc(109px + var(--safe-bottom, 0px))!important;background:#fff!important}
+  body.policy-from-profile:has(.policy-screen.active):has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) #mobBottomNav{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    z-index:300!important;
+  }
   body:has(#mobViewProfile.active):not(:has(.policy-screen.active)) .mob-bottom-nav{
     display:flex!important;
     visibility:visible!important;
@@ -8289,6 +8295,186 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 
+/* Profile help: proportions and spacing from the mobile reference. */
+@media (max-width:767px){
+  #mobViewProfile #profSubajuda{
+    box-sizing:border-box!important;
+    position:fixed!important;
+    inset:auto!important;
+    top:0!important;
+    bottom:0!important;
+    left:50%!important;
+    right:auto!important;
+    width:414px!important;
+    max-width:100vw!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    padding:0!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    background:#f7f5f3!important;
+    transform:translateX(50%)!important;
+    transition:transform .28s cubic-bezier(.4,0,.2,1)!important;
+  }
+  #mobViewProfile #profSubajuda.active{
+    transform:translateX(-50%)!important;
+  }
+  body:has(#mobViewProfile.active):has(#profSubajuda.active) .mob-bottom-nav{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+  #profSubajuda .prof-help-header{
+    box-sizing:border-box!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:5!important;
+    width:414px!important;
+    max-width:100vw!important;
+    height:70px!important;
+    display:grid!important;
+    grid-template-columns:32px 1fr 32px!important;
+    align-items:center!important;
+    gap:0!important;
+    padding:0 20px!important;
+    border-bottom:1px solid #eeeeee!important;
+    background:#ffffff!important;
+  }
+  #profSubajuda .prof-help-header h1{
+    margin:0!important;
+    color:#262626!important;
+    font-size:16px!important;
+    line-height:20px!important;
+    font-weight:600!important;
+    letter-spacing:0!important;
+    text-align:center!important;
+  }
+  #profSubajuda .prof-help-body{
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-height:calc(100dvh - 70px)!important;
+    padding:20px!important;
+    background:#f7f5f3!important;
+  }
+  #profSubajuda .help-store-info{
+    box-sizing:border-box!important;
+    width:374px!important;
+    max-width:100%!important;
+    height:362px!important;
+    min-height:362px!important;
+    margin:0 auto!important;
+    padding:25px 18px 18px!important;
+    overflow:hidden!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#ffffff!important;
+    color:#555d67!important;
+  }
+  #profSubajuda .help-store-logo{
+    box-sizing:border-box!important;
+    width:95px!important;
+    height:95px!important;
+    margin:0 auto 16px!important;
+    overflow:hidden!important;
+    border-radius:50%!important;
+    background:var(--brand-primary)!important;
+    color:var(--brand-on)!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    font-size:24px!important;
+    line-height:1!important;
+    font-weight:800!important;
+  }
+  #profSubajuda .help-store-logo img{
+    width:95px!important;
+    height:95px!important;
+    display:block!important;
+    border-radius:50%!important;
+    object-fit:contain!important;
+  }
+  #profSubajuda .help-store-name{
+    margin:0!important;
+    color:#26313d!important;
+    font-size:14px!important;
+    line-height:18px!important;
+    font-weight:700!important;
+    text-align:center!important;
+  }
+  #profSubajuda .help-store-branch{
+    min-height:15px!important;
+    margin:0!important;
+    color:var(--brand-primary)!important;
+    font-size:12px!important;
+    line-height:15px!important;
+    font-weight:400!important;
+    text-align:center!important;
+  }
+  #profSubajuda .help-store-intro{
+    margin:10px auto 13px!important;
+    color:#58616b!important;
+    font-size:12px!important;
+    line-height:20px!important;
+    font-weight:400!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+  }
+  #profSubajuda .help-store-divider{
+    width:324px!important;
+    max-width:100%!important;
+    height:1px!important;
+    margin:0 auto 13px!important;
+    background:#e9e9e9!important;
+  }
+  #profSubajuda .help-store-contacts{
+    width:324px!important;
+    max-width:100%!important;
+    margin:0 auto!important;
+  }
+  #profSubajuda .help-store-contact{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:32px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:12px!important;
+    margin:0!important;
+    padding:0!important;
+    color:#64707c!important;
+    font-size:12px!important;
+    line-height:16px!important;
+    font-weight:500!important;
+    text-decoration:none!important;
+  }
+  #profSubajuda .help-store-contact-icon{
+    width:18px!important;
+    min-width:18px!important;
+    height:18px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    color:#9a9a9a!important;
+  }
+  #profSubajuda .help-store-contact-icon svg{
+    width:18px!important;
+    height:18px!important;
+    display:block!important;
+  }
+  #profSubajuda .help-store-contact-at{
+    border:1.5px solid currentColor!important;
+    border-radius:50%!important;
+    font-size:12px!important;
+    line-height:15px!important;
+    font-weight:700!important;
+  }
+  #profSubajuda .help-store-contact--whatsapp,
+  #profSubajuda .help-store-contact--whatsapp .help-store-contact-icon{
+    color:var(--brand-primary)!important;
+    font-weight:600!important;
+  }
+}
+
 /* Orders from Profile: use the same independent overlay motion as Address picker. */
 @media (max-width:767px){
   .prof-orders-backdrop{
@@ -8611,69 +8797,319 @@ body.menu-tab .product-card.is-pressing{
   }
   #profSubpedidos .prof-order-detail{
     display:none;
-    position:absolute;
-    inset:0;
-    z-index:8;
-    width:100%;
-    min-height:100%;
+    box-sizing:border-box;
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:50%;
+    z-index:300;
+    width:414px;
+    max-width:100vw;
+    height:100dvh;
+    min-height:100dvh;
     overflow-y:auto;
     overflow-x:hidden;
-    background:#fff;
+    background:#f7f5f3;
     pointer-events:none;
+    transform:translateX(-50%);
+    overscroll-behavior:contain;
   }
   #profSubpedidos .prof-order-detail.active{
     display:block;
     pointer-events:auto;
   }
-  #profSubpedidos .prof-order-detail-body{
-    padding:20px;
+  #profSubpedidos .prof-order-detail > .prof-manage-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:4!important;
+    width:414px!important;
+    max-width:100vw!important;
+    height:70px!important;
   }
-  #profSubpedidos .prof-order-detail-summary{
+  #profSubpedidos .prof-order-detail-body{
+    box-sizing:border-box;
+    width:100%;
+    min-height:calc(100dvh - 70px);
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    padding:20px 20px 40px;
+    background:#f7f5f3;
+  }
+  #profSubpedidos .order-details__waitingPayment,
+  #profSubpedidos .order-details__card,
+  #profSubpedidos .order-details__help{
+    box-sizing:border-box;
+    width:374px;
+    max-width:100%;
     margin:0;
+  }
+  #profSubpedidos .order-details__waitingPayment{
+    height:92px;
+    min-height:92px;
+    display:grid;
+    grid-template-columns:43px 1fr;
+    align-items:center;
+    padding:0 15px 0 0;
     overflow:hidden;
-    border:1px solid #e5e5e5;
+    border:0;
+    border-radius:10px;
+    background:#f9be55;
+    box-shadow:0 7px 16px rgba(100,72,22,.12);
+  }
+  #profSubpedidos .order-details__waiting-spinner{
+    box-sizing:border-box;
+    width:16px;
+    height:16px;
+    margin:0 auto;
+    border:1.6px solid rgba(70,52,14,.26);
+    border-top-color:#7a5912;
+    border-radius:50%;
+    animation:prof-order-waiting-spin 1s linear infinite;
+  }
+  @keyframes prof-order-waiting-spin{to{transform:rotate(360deg)}}
+  #profSubpedidos .order-details__waiting-copy{
+    min-width:0;
+    min-height:62px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-left:13px;
+    border-left:1px solid rgba(95,65,8,.16);
+  }
+  #profSubpedidos .order-details__waiting-copy > strong{
+    color:#111;
+    font-size:14px;
+    line-height:18px;
+    font-weight:700;
+  }
+  #profSubpedidos .order-details__waiting-copy p{
+    margin:7px 0 0;
+    color:#28220f;
+    font-size:12px;
+    line-height:19px;
+    font-weight:400;
+  }
+  #profSubpedidos .order-details__waiting-copy p strong{font-weight:700}
+  #profSubpedidos .order-details__card{
+    padding:20px;
+    border:0;
     border-radius:10px;
     background:#fff;
+    box-shadow:0 7px 18px rgba(57,48,38,.075);
   }
-  #profSubpedidos .prof-order-detail-summary > div{
+  #profSubpedidos .order-details__card h2{
+    margin:0;
+    color:#535353;
+    font-size:14px;
+    line-height:20px;
+    font-weight:700;
+  }
+  #profSubpedidos .order-details__divider{
+    width:100%;
+    height:1px;
+    margin:14px 0 15px;
+    background:#eeeeee;
+  }
+  #profSubpedidos .order-details__address{
+    height:172px;
+    min-height:172px;
+  }
+  #profSubpedidos .order-details__address-row{
     display:flex;
-    justify-content:space-between;
-    gap:20px;
-    padding:13px 15px;
-    border-bottom:1px solid #eee;
+    align-items:center;
+    gap:15px;
   }
-  #profSubpedidos .prof-order-detail-summary > div:last-child{
-    border-bottom:0;
+  #profSubpedidos .order-details__address-map{
+    width:75px;
+    height:75px;
+    flex:0 0 75px;
+    border-radius:9px;
+    object-fit:cover;
+    transform:translateY(4px);
   }
-  #profSubpedidos .prof-order-detail-summary dt,
-  #profSubpedidos .prof-order-detail-summary dd{
+  #profSubpedidos .order-details__address-copy{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  #profSubpedidos .order-details__address-copy span{
+    margin-bottom:10px;
+    color:#727272;
     margin:0;
     font-size:13px;
     line-height:18px;
+    font-weight:400;
   }
-  #profSubpedidos .prof-order-detail-summary dt{
-    color:#8c8c8c;
+  #profSubpedidos .order-details__address-copy span + strong{margin-top:10px}
+  #profSubpedidos .order-details__address-copy strong{
+    color:#5f5f5f;
+    font-size:12px;
+    line-height:18px;
+    font-weight:700;
   }
-  #profSubpedidos .prof-order-detail-summary dd{
-    color:#404040;
-    font-weight:600;
-    text-align:right;
+  #profSubpedidos .order-details__order-card{
+    height:auto;
+    min-height:0;
   }
-  #profSubpedidos .prof-order-detail-items{
-    margin-top:22px;
+  #profSubpedidos .order-details__restaurant{
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    gap:15px;
   }
-  #profSubpedidos .prof-order-detail-items h2{
-    margin:0 0 12px;
-    color:#404040;
-    font-size:16px;
+  #profSubpedidos .order-details__restaurant-logo{
+    box-sizing:border-box;
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    border-radius:50%;
+    object-fit:contain;
+    background:var(--brand-primary);
   }
-  #profSubpedidos .prof-order-detail-items div,
-  #profSubpedidos .prof-order-detail-items p{
-    margin:0;
-    padding:12px 0;
-    border-bottom:1px solid #eee;
+  #profSubpedidos .order-details__restaurant-logo--fallback{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--brand-on);
+    font-size:11px;
+    font-weight:800;
+  }
+  #profSubpedidos .order-details__restaurant > div:last-child{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  #profSubpedidos .order-details__restaurant strong{
     color:#666;
+    font-size:15px;
+    line-height:19px;
+    font-weight:700;
+  }
+  #profSubpedidos .order-details__restaurant span{
+    color:#a0a0a0;
+    font-size:14px;
+    line-height:18px;
+    font-weight:400;
+  }
+  #profSubpedidos .order-details__restaurant + .order-details__divider{
+    margin-top:14px;
+    margin-bottom:15px;
+  }
+  #profSubpedidos .order-details__items{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  #profSubpedidos .order-details__item{
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr);
+    align-items:start;
+    gap:19px;
+  }
+  #profSubpedidos .order-details__item + .order-details__item{
+    padding-top:18px;
+    border-top:1px solid #eee;
+  }
+  #profSubpedidos .order-details__item-image{
+    box-sizing:border-box;
+    width:40px;
+    height:40px;
+    border-radius:10px;
+    object-fit:cover;
+    background:var(--brand-primary);
+  }
+  #profSubpedidos .order-details__item-image--fallback{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--brand-on);
+    font-size:10px;
+    font-weight:800;
+  }
+  #profSubpedidos .order-details__item-copy{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  #profSubpedidos .order-details__item-title{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    color:#656565;
+    font-size:12px;
+    line-height:18px;
+  }
+  #profSubpedidos .order-details__item-title strong{font-size:10px;font-weight:700}
+  #profSubpedidos .order-details__item-title span{font-weight:400}
+  #profSubpedidos .order-details__item-option{
+    display:flex;
+    flex-direction:column;
+    margin-top:7px;
+    font-size:12px;
+    line-height:18px;
+  }
+  #profSubpedidos .order-details__item-option strong{color:#5f5f5f;font-weight:700}
+  #profSubpedidos .order-details__item-option span{color:#999;font-weight:400}
+  #profSubpedidos .order-details__item-price{
+    margin-top:18px;
+    color:#5f5f5f;
+    font-size:12px;
+    line-height:18px;
+    font-weight:700;
+  }
+  #profSubpedidos .order-details__items-empty{
+    margin:0;
+    color:#999;
     font-size:13px;
+    line-height:18px;
+  }
+  #profSubpedidos .order-details__totalContainer{
+    height:173px;
+    min-height:173px;
+  }
+  #profSubpedidos .order-details__totalContainer .order-details__divider{
+    margin-bottom:16px;
+  }
+  #profSubpedidos .order-details__totalContainer dl{
+    margin:0;
+  }
+  #profSubpedidos .order-details__totalContainer dl > div{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-height:24px;
+  }
+  #profSubpedidos .order-details__totalContainer dt,
+  #profSubpedidos .order-details__totalContainer dd{
+    margin:0;
+    color:#a0a0a0;
+    font-size:14px;
+    line-height:20px;
+    font-weight:400;
+  }
+  #profSubpedidos .order-details__totalContainer .order-details__total dt,
+  #profSubpedidos .order-details__totalContainer .order-details__total dd{
+    color:#555;
+    font-weight:700;
+  }
+  #profSubpedidos .order-details__help{
+    height:60px;
+    min-height:60px;
+    padding:0;
+    border:0;
+    border-bottom:1px solid #d8d8d8;
+    background:transparent;
+    color:#777;
+    font-family:inherit;
+    font-size:12px;
+    line-height:18px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  @media (prefers-reduced-motion:reduce){
+    #profSubpedidos .order-details__waiting-spinner{animation-duration:2.4s}
   }
   #profSubmeusdados .prof-password-screen{
     box-sizing:border-box;

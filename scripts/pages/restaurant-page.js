@@ -1100,6 +1100,7 @@
     renderRestaurantInfoPayment(data);
     renderProfileRestaurantInfo(data);
     renderProfilePaymentScreen(data);
+    renderProfileHelpContacts(data);
     renderCheckoutPaymentMethods(data);
   }
 
@@ -1389,47 +1390,62 @@
     renderDeliveryMeta();
   }
 
-  const WHATSAPP_ICON = '<svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
-  const PHONE_ICON = '<svg class="prof-info-row-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.86a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.29 6.29l1.28-1.29a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>';
+  const HELP_WHATSAPP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M9 8.7c.6 2.7 2.6 4.7 5.3 5.3"/></svg>';
+  const HELP_PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>';
 
-  // Contatos da tela de Ajuda: uma linha por unidade que a API trouxe. O HTML
-  // trazia duas unidades fixas do piloto ("— Matriz") e links href="#" mortos.
-  function renderProfileHelpContacts() {
+  function helpWhatsAppDigits(value) {
+    const digits = onlyDigits(value);
+    return digits && digits.length <= 11 ? `55${digits}` : digits;
+  }
+
+  // A tela exibe apenas a unidade escolhida pelo cliente. A resposta de /info
+  // complementa o cardápio porque é nela que normalmente vêm e-mail e contato.
+  function renderProfileHelpContacts(infoData = null) {
     const card = $('profHelpContacts');
     if (!card) return;
-    // Só faz sentido nomear a unidade quando existe mais de uma.
-    const suffix = branch => (branches.length > 1 && branch.name ? ` — ${esc(branch.name)}` : '');
-    const rows = branches.flatMap(branch => {
-      const entries = [];
-      const whatsapp = onlyDigits(branch.whatsapp);
-      if (whatsapp) {
-        entries.push(`
-          <div class="prof-info-row">${WHATSAPP_ICON}
-            <div>
-              <div class="prof-info-row-label">WhatsApp${suffix(branch)}</div>
-              <a class="prof-info-row-link" href="https://wa.me/${esc(whatsapp)}" target="_blank" rel="noopener">Falar no WhatsApp →</a>
-            </div>
-          </div>`);
-      }
-      if (branch.phone) {
-        entries.push(`
-          <div class="prof-info-row">${PHONE_ICON}
-            <div>
-              <div class="prof-info-row-label">Telefone${suffix(branch)}</div>
-              <div class="prof-info-row-val">${esc(branch.phone)}</div>
-            </div>
-          </div>`);
-      }
-      return entries;
-    });
-    const header = `
-      <div class="prof-info-card-header">
-        <div class="prof-info-card-icon">${WHATSAPP_ICON}</div>
-        <span class="prof-info-card-title">Contato</span>
+    const selectedMenuBranch = branches.find(unit => String(unit.id) === String(operationContext?.branch_id)) || branches[0] || {};
+    const infoBranch = infoData?.branch || {};
+    const branch = { ...selectedMenuBranch, ...infoBranch };
+    const infoRestaurant = infoData?.restaurant || {};
+    const name = infoRestaurant.name || restaurant.name || fallback().restaurantName || 'Restaurante';
+    const branchName = branch.display_name || branch.name || '';
+    const logoUrl = infoRestaurant.logo_url || infoRestaurant.logo_path || restaurant.logo_url || restaurant.logo_path || '';
+    const phone = branch.phone || branch.whatsapp || '';
+    const whatsapp = branch.whatsapp || branch.phone || '';
+    const email = branch.email || infoRestaurant.email || restaurant.email || settings.email || '';
+    const whatsappDigits = helpWhatsAppDigits(whatsapp);
+    const phoneHref = onlyDigits(phone);
+    const emailLabel = email ? String(email).toUpperCase() : 'E-MAIL NÃO INFORMADO';
+
+    card.innerHTML = `
+      <div class="help-store-logo" aria-hidden="true">
+        ${logoUrl ? `<img src="${esc(logoUrl)}" alt="">` : `<span>${esc(initials(name))}</span>`}
+      </div>
+      <div class="help-store-name">${esc(name)}</div>
+      <div class="help-store-branch">${esc(branchName)}</div>
+      <p class="help-store-intro">Se precisar de ajuda, entre em contato conosco pelos<br> seguintes meios:</p>
+      <div class="help-store-divider"></div>
+      <div class="help-store-contacts">
+        <a class="help-store-contact" href="${phoneHref ? `tel:${esc(phoneHref)}` : '#'}">
+          <span class="help-store-contact-icon">${HELP_PHONE_ICON}</span>
+          <span>${esc(phone || 'Telefone não informado')}</span>
+        </a>
+        <a class="help-store-contact" href="${email ? `mailto:${esc(email)}` : '#'}">
+          <span class="help-store-contact-icon help-store-contact-at" aria-hidden="true">@</span>
+          <span>${esc(emailLabel)}</span>
+        </a>
+        <a class="help-store-contact help-store-contact--whatsapp" href="${whatsappDigits ? `https://wa.me/${esc(whatsappDigits)}` : '#'}" ${whatsappDigits ? 'target="_blank" rel="noopener"' : ''}>
+          <span class="help-store-contact-icon">${HELP_WHATSAPP_ICON}</span>
+          <span>${esc(whatsapp || 'WhatsApp não informado')}</span>
+        </a>
       </div>`;
-    card.innerHTML = rows.length
-      ? header + rows.join('')
-      : header + '<div class="prof-info-row"><div><div class="prof-info-row-val">Contato não informado pelo restaurante.</div></div></div>';
+
+    const logo = card.querySelector('.help-store-logo');
+    logo?.querySelector('img')?.addEventListener('error', () => {
+      const fallbackElement = document.createElement('span');
+      fallbackElement.textContent = initials(name);
+      logo.replaceChildren(fallbackElement);
+    }, { once: true });
   }
 
   // Coluna "Informações" do rodapé. Era markup fixo com o horário e o couvert de
@@ -7481,6 +7497,11 @@
     unlockBodyScrollIfClear();
   }
 
+  function closeProfilePolicyBeforeNavigation() {
+    if (_policyReturn !== 'profile' || !$('privacyPolicyScreen')?.classList.contains('active')) return;
+    closePolicyScreen('privacy');
+  }
+
   function showCouponNotice(message) {
     let notice = $('couponNotice');
     if (!notice) {
@@ -7730,6 +7751,7 @@
   }
 
   async function mobNavMenu() {
+    closeProfilePolicyBeforeNavigation();
     if (!operationConfirmed) {
       _pendingMenuNav = true;
       openOperationScreen(true); // immediate = sem animacao de entrada
@@ -7746,10 +7768,12 @@
   }
 
   function mobNavHome() {
+    closeProfilePolicyBeforeNavigation();
     scrollToHome();
   }
 
   async function mobNavAssistant() {
+    closeProfilePolicyBeforeNavigation();
     const currentNav = getCurrentBottomNav();
     const shouldFocusAssistantInput = currentNav !== 'assistant';
     if (currentNav !== 'assistant') _assistantReturnNav = currentNav;
@@ -7780,6 +7804,7 @@
   }
 
   async function mobNavClub() {
+    closeProfilePolicyBeforeNavigation();
     if (!isLogged()) {
       openLoginScreen('club');
       return;
@@ -7864,6 +7889,7 @@
   }
 
   async function mobNavProfile() {
+    closeProfilePolicyBeforeNavigation();
     if (!isLogged()) {
       openLoginScreen('profile');
       return;
@@ -7917,7 +7943,7 @@
       receipt: '<path d="M7 3h10v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2Z"/><path d="M9.5 8h5"/><path d="M9.5 12h5"/><path d="M9.5 16h3"/>',
       pin: '<path d="M18 10c0 4.5-6 10-6 10s-6-5.5-6-10a6 6 0 1 1 12 0Z"/><circle cx="12" cy="10" r="2"/>',
       doc: '<path d="M7 3h7l4 4v14H7Z"/><path d="M14 3v5h5"/><path d="M9.5 12h5"/><path d="M9.5 16h5"/>',
-      help: '<circle cx="12" cy="12" r="8"/><path d="M9.8 9.5a2.3 2.3 0 0 1 4.4 1c0 1.8-2.2 1.9-2.2 3.5"/><path d="M12 17h.01"/>',
+      help: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m6.4 6.4 3.5 3.5M14.1 14.1l3.5 3.5M17.6 6.4l-3.5 3.5M9.9 14.1l-3.5 3.5"/>',
       exit: '<path d="M9 5H5v14h4"/><path d="M13 16l4-4-4-4"/><path d="M17 12H8"/>'
     };
     return `<svg class="prof-account-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.doc}</svg>`;
@@ -7948,6 +7974,7 @@
           ${row('receipt', 'Meus pedidos', ['openProfSub', 'pedidos'])}
           ${row('pin', 'Meus endere&ccedil;os', ['openAddrPicker', 'profile'])}
           ${row('doc', 'Pol&iacute;tica de privacidade', ['openPolicyScreen', 'privacy'])}
+          ${row('help', 'Ajuda', ['openProfSub', 'ajuda'])}
           ${row('exit', 'Sair', ['logout'], 'prof-account-row--logout')}
         </nav>
       </section>
@@ -8334,6 +8361,7 @@
   const PROF_ORDER_SUCCESS_STATUSES = new Set(['completed', 'delivered', 'finished']);
   const PROF_ORDER_DANGER_STATUSES = new Set(['cancelled', 'canceled', 'refused', 'rejected']);
   let profOrdersView = [];
+  let profOrderDetailRequest = 0;
 
   function profOrderStatus(order) {
     return String(order?.status || '').trim().toLowerCase();
@@ -8361,6 +8389,7 @@
 
   function renderProfOrderCard(order, index) {
     const status = profOrderStatusInfo(order);
+    const isActive = PROF_ORDER_ACTIVE_STATUSES.has(status.status);
     const icon = status.tone === 'danger'
       ? '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5"/><path d="m4.2 4.2 3.6 3.6m0-3.6-3.6 3.6"/></svg>'
       : '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5"/><path d="m3.5 6.2 1.7 1.7 3.4-3.8"/></svg>';
@@ -8376,7 +8405,7 @@
               : `${esc(status.label)} ${esc(profOrderDate(order.created_at))}`}</span>
           </div>
         </div>
-        <button class="prof-order-details-button" type="button" ${act('click', 'openProfOrderDetails', index)}>Ver detalhes</button>
+        <button class="prof-order-details-button" type="button" ${act('click', 'openProfOrderDetails', index)}>${isActive ? 'Acompanhar pedido' : 'Ver detalhes'}</button>
       </article>
     `;
   }
@@ -8446,40 +8475,211 @@
     }
   }
 
-  function openProfOrderDetails(index) {
-    const order = profOrdersView[index];
-    const detail = $('profOrderDetail');
-    const body = $('profOrderDetailBody');
-    if (!order || !detail || !body) return;
-    const status = profOrderStatusInfo(order);
-    const items = Array.isArray(order.items) ? order.items : [];
-    body.innerHTML = `
-      <dl class="prof-order-detail-summary">
-        <div><dt>Pedido</dt><dd>#${esc(order.order_number ?? '')}</dd></div>
-        <div><dt>Status</dt><dd>${esc(status.label)}</dd></div>
-        <div><dt>Data</dt><dd>${esc(profOrderDate(order.created_at))}</dd></div>
-        <div><dt>Restaurante</dt><dd>${esc(order.restaurant_name || 'Não informado')}</dd></div>
-        <div><dt>Unidade</dt><dd>${esc(order.branch_name || 'Não informada')}</dd></div>
-        <div><dt>Total</dt><dd>${fmt(Number(order.total) || 0)}</dd></div>
-      </dl>
-      <section class="prof-order-detail-items">
-        <h2>Itens do pedido</h2>
-        ${items.length ? items.map(item => {
-          const quantity = Number(item.quantity ?? item.qty ?? 1) || 1;
-          const name = item.name || item.product_name || 'Item';
-          return `<div><span>${quantity}x ${esc(name)}</span></div>`;
-        }).join('') : '<p>Nenhum item informado.</p>'}
+  function profOrderRelativeDate(value) {
+    const created = new Date(value);
+    if (!value || Number.isNaN(created.getTime())) return 'Pedido realizado';
+    const elapsedMinutes = Math.max(0, Math.floor((Date.now() - created.getTime()) / 60000));
+    if (elapsedMinutes < 1) return 'Realizado agora';
+    if (elapsedMinutes < 60) return `Realizado há ${elapsedMinutes} minuto${elapsedMinutes === 1 ? '' : 's'}`;
+    const elapsedHours = Math.floor(elapsedMinutes / 60);
+    if (elapsedHours < 24) return `Realizado há ${elapsedHours} hora${elapsedHours === 1 ? '' : 's'}`;
+    return `Realizado em ${profOrderDate(value)}`;
+  }
+
+  function profOrderAddress(order) {
+    const addressId = order.customer_address_id || order.delivery_address_id || order.address_id || '';
+    const savedAddress = (appState.customerAddresses || []).find(address =>
+      String(address.id || address.address_id || '') === String(addressId)
+    );
+    const candidates = [
+      order.delivery_address_snapshot,
+      order.customer_address_snapshot,
+      order.address_snapshot,
+      order.delivery_address,
+      order.customer_address,
+      order.shipping_address,
+      order.address,
+      order.delivery?.address,
+      savedAddress
+    ];
+    const hasAddressContent = candidate => {
+      if (typeof candidate === 'string') return Boolean(candidate.trim());
+      if (!candidate || typeof candidate !== 'object') return false;
+      const nested = candidate.address && typeof candidate.address === 'object' ? candidate.address : candidate;
+      return ['street', 'street_name', 'logradouro', 'address_line', 'line1', 'formatted_address', 'full_address']
+        .some(key => Boolean(nested[key]));
+    };
+    let source = candidates.find(hasAddressContent) || {};
+    if (typeof source === 'string') {
+      try {
+        source = JSON.parse(source);
+      } catch {
+        return { firstLine: source.trim(), secondLine: '' };
+      }
+    }
+    source = source.address && typeof source.address === 'object' ? source.address : source;
+    const street = source.street || source.street_name || source.logradouro || source.address_line || source.line1 || order.delivery_street || '';
+    const number = source.number || source.street_number || source.numero || order.delivery_number || '';
+    const neighborhood = source.neighborhood || source.district || source.bairro || order.delivery_neighborhood || '';
+    const city = source.city || source.cidade || order.delivery_city || '';
+    const state = source.state || source.uf || order.delivery_state || '';
+    const formatted = source.formatted_address || source.full_address || '';
+    const firstLine = [street, number].filter(Boolean).join(', ');
+    const cityState = [city, state].filter(Boolean).join(' / ');
+    const secondLine = [neighborhood, cityState].filter(Boolean).join(' - ');
+    return { firstLine: firstLine || formatted, secondLine };
+  }
+
+  function profOrderSelectedOptions(item) {
+    const options = Array.isArray(item.selected_options_snapshot)
+      ? item.selected_options_snapshot
+      : (Array.isArray(item.selected_options) ? item.selected_options : []);
+    return options.map(option => {
+      const group = option.group_name || option.option_group_name || option.group?.name || option.option_group?.name || '';
+      const name = option.option_name || option.name || option.label || option.option?.name || '';
+      const quantity = Number(option.quantity ?? option.qty ?? 1) || 1;
+      return { group, name, quantity };
+    }).filter(option => option.group || option.name);
+  }
+
+  function profOrderItemTotal(item, quantity) {
+    const direct = item.total ?? item.line_total ?? item.subtotal ?? item.total_price;
+    if (direct != null && direct !== '' && Number.isFinite(Number(direct))) return Number(direct);
+    const unit = item.unit_price ?? item.price ?? item.product_price;
+    return Number.isFinite(Number(unit)) ? Number(unit) * quantity : null;
+  }
+
+  function profOrderItemMarkup(item) {
+    const quantity = Number(item.quantity ?? item.qty ?? 1) || 1;
+    const menuProduct = products.find(product => String(product.id) === String(item.product_id || item.product?.id || ''));
+    const name = item.name || item.product_name || item.product?.name || menuProduct?.name || 'Item';
+    const imageUrl = item.image_url || item.image_path || item.product_image_url || item.product?.image_url || item.product?.image_path || menuProduct?.image_url || menuProduct?.image_path || '';
+    const total = profOrderItemTotal(item, quantity);
+    const options = profOrderSelectedOptions(item);
+    return `
+      <div class="order-details__item">
+        ${imageUrl
+          ? `<img class="order-details__item-image" src="${esc(imageUrl)}" alt="${esc(name)}">`
+          : `<div class="order-details__item-image order-details__item-image--fallback"><span>${esc(initials(name))}</span></div>`}
+        <div class="order-details__item-copy">
+          <div class="order-details__item-title"><strong>${quantity}x</strong><span>${esc(name)}</span></div>
+          ${options.map(option => `
+            <div class="order-details__item-option">
+              ${option.group ? `<strong>${esc(option.group)}</strong>` : ''}
+              ${option.name ? `<span>${option.quantity}x ${esc(option.name)}</span>` : ''}
+            </div>
+          `).join('')}
+          ${total == null ? '' : `<strong class="order-details__item-price">${fmt(total)}</strong>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function profOrderWaitingMarkup(status) {
+    if (!PROF_ORDER_ACTIVE_STATUSES.has(status.status)) return '';
+    return `
+      <section class="order-details__waitingPayment" aria-live="polite">
+        <span class="order-details__waiting-spinner" aria-hidden="true"></span>
+        <div class="order-details__waiting-copy">
+          <strong>Aguardando confirmação</strong>
+          <p>Aguarde alguns segundos enquanto revisamos o pagamento. <strong>Não saia desta tela</strong> até a confirmação.</p>
+        </div>
       </section>
     `;
+  }
+
+  function renderProfOrderDetails(order) {
+    const body = $('profOrderDetailBody');
+    if (!body) return;
+    const status = profOrderStatusInfo(order);
+    const items = Array.isArray(order.items) ? order.items : [];
+    const address = profOrderAddress(order);
+    const orderNumber = order.order_number ?? '';
+    const restaurantName = order.restaurant_name || restaurant.name || fallback().restaurantName || 'Restaurante';
+    const restaurantLogo = order.restaurant_logo_url || order.restaurant_logo || restaurant.logo_url || restaurant.logo_path || '';
+    const subtotal = Number(order.subtotal) || 0;
+    const deliveryFee = Number(order.delivery_fee) || 0;
+    const total = Number(order.total) || 0;
+    const isPickup = String(order.order_type || '').toLowerCase() === 'pickup';
+    const addressTitle = isPickup ? 'Local de retirada' : 'Endereço de entrega';
+    const firstAddressLine = address.firstLine || (isPickup ? order.branch_name : '') || 'Endereço não informado';
+    const secondAddressLine = address.secondLine || '';
+    const title = $('profOrderDetailTitle');
+    if (title) title.textContent = `Pedido #${orderNumber}`;
+    body.innerHTML = `
+      ${profOrderWaitingMarkup(status)}
+      <section class="order-details__card order-details__address">
+        <h2>${addressTitle}</h2>
+        <div class="order-details__divider"></div>
+        <div class="order-details__address-row">
+          <img class="order-details__address-map" src="/assets/icons/cart/cart-location-guest@2x.webp" alt="">
+          <div class="order-details__address-copy">
+            <span>${isPickup ? 'Retirar em' : 'Receber em'}</span>
+            <strong>${esc(firstAddressLine)}</strong>
+            ${secondAddressLine ? `<strong>${esc(secondAddressLine)}</strong>` : ''}
+          </div>
+        </div>
+      </section>
+      <section class="order-details__card order-details__order-card">
+        <h2>Seu pedido</h2>
+        <div class="order-details__divider"></div>
+        <div class="order-details__restaurant">
+          ${restaurantLogo
+            ? `<img class="order-details__restaurant-logo" src="${esc(restaurantLogo)}" alt="">`
+            : `<div class="order-details__restaurant-logo order-details__restaurant-logo--fallback">${esc(initials(restaurantName))}</div>`}
+          <div><strong>${esc(restaurantName)}</strong><span>${esc(profOrderRelativeDate(order.created_at))}</span></div>
+        </div>
+        <div class="order-details__divider"></div>
+        <div class="order-details__items">
+          ${items.length ? items.map(profOrderItemMarkup).join('') : '<p class="order-details__items-empty">Nenhum item informado.</p>'}
+        </div>
+      </section>
+      <section class="order-details__card order-details__totalContainer">
+        <h2>Valores</h2>
+        <div class="order-details__divider"></div>
+        <dl>
+          <div><dt>Subtotal</dt><dd>${fmt(subtotal)}</dd></div>
+          <div><dt>Taxa de entrega</dt><dd>${fmt(deliveryFee)}</dd></div>
+          <div class="order-details__total"><dt>Total</dt><dd>${fmt(total)}</dd></div>
+        </dl>
+      </section>
+      <button class="order-details__help" type="button" ${act('click', 'openProfOrderHelp')}>Ajuda</button>
+    `;
+  }
+
+  async function openProfOrderDetails(index) {
+    const order = profOrdersView[index];
+    const detail = $('profOrderDetail');
+    if (!order || !detail) return;
+    const requestId = ++profOrderDetailRequest;
+    detail.dataset.orderId = String(order.id || index);
+    renderProfOrderDetails(order);
+    detail.scrollTop = 0;
     detail.classList.add('active');
     detail.setAttribute('aria-hidden', 'false');
+    if (!order.id || !window.PedeAquiOrderService?.getCustomerOrder) return;
+    try {
+      const fullOrder = await window.PedeAquiOrderService.getCustomerOrder(order.id);
+      if (requestId !== profOrderDetailRequest || !detail.classList.contains('active') || !fullOrder) return;
+      renderProfOrderDetails({ ...order, ...fullOrder });
+    } catch (error) {
+      if (error?.status === 401) await syncCustomerSession();
+      else logAppError('Falha ao atualizar detalhes do pedido', error);
+    }
   }
 
   function closeProfOrderDetails() {
     const detail = $('profOrderDetail');
+    profOrderDetailRequest += 1;
     releaseFocusFrom(detail);
     detail?.classList.remove('active');
     detail?.setAttribute('aria-hidden', 'true');
+  }
+
+  function openProfOrderHelp() {
+    closeProfOrderDetails();
+    $('profOrdersBackdrop')?.classList.remove('active');
+    openProfSub('ajuda');
   }
 
   async function openProfSub(subId) {
@@ -8493,6 +8693,11 @@
     if (subId === 'pedidos') $('profOrdersBackdrop')?.classList.add('active');
     sub.classList.add('active');
     if (subId === 'pedidos') await loadProfPedidos();
+    if (subId === 'ajuda') {
+      renderProfileHelpContacts(restaurantInfoState.status === 'success' ? restaurantInfoState.data : null);
+      const info = await ensureRestaurantInfo();
+      if (info) renderProfileHelpContacts(info);
+    }
     if (subId === 'pagamento') {
       const body = document.querySelector('#profSubpagamento .prof-sub-body');
       if (body && restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando formas de pagamento...</div></div>';
@@ -8682,7 +8887,7 @@
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
     mobNavHome, mobNavMenu, mobNavClub, mobNavAssistant, mobNavProfile, assistantGoBack, goToMenuTab: scrollToMenu,
-    openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, openProfOrderHelp, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
   };
 

@@ -151,6 +151,15 @@ body.auth-screen-open:not(.assistant-nav-keep) .mob-bottom-nav {
   pointer-events: none !important;
 }
 
+/* Privacy opened from the logged-in Profile remains part of the main app flow. */
+body.policy-from-profile:has(.policy-screen.active):has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) #mobBottomNav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 300 !important;
+}
+
 body.assistant-nav-keep:has(#mobViewAssistant.active) .mob-bottom-nav {
   display: flex !important;
   visibility: visible !important;

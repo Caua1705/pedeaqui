@@ -237,6 +237,13 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await expect(page.locator('#cartList .cart-item-row')).toHaveCount(1);
   await expect(page.locator('#cartItemCountLabel')).toHaveText('1 item');
 
+  const stickyCart = page.locator('#cartSticky');
+  await expect(stickyCart).not.toBeVisible();
+  await expect(page.locator('#mobBottomNav')).toBeVisible();
+  await page.evaluate(() => window.RapidexActions.resolve('goToMenuTab')());
+  await expect(page.locator('body')).toHaveClass(/menu-tab/);
+  await expect(stickyCart).toBeVisible();
+
   const stickyCartButton = page.locator('#cartStickyBtn');
   await stickyCartButton.click();
   await expect(page.locator('#cartModal')).toHaveClass(/active/);

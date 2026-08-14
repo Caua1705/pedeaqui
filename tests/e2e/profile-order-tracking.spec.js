@@ -151,6 +151,11 @@ test('cabeçalho fica fixo durante a rolagem e Ajuda abre o suporte', async ({ p
   await expect(page.locator('#profOrderDetail')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubpedidos')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+  await expect(page.locator('body')).toHaveClass(/prof-order-help-instant/);
+  await expect(page.locator('#profSubajuda')).toHaveCSS('transition-duration', '0s');
+  for (const selector of ['#profSubpedidos', '#profOrderDetail', '#profOrdersBackdrop']) {
+    await expect(page.locator(selector)).toHaveCSS('transition-duration', '0s');
+  }
   await expect(page.locator('#profSubajuda .prof-help-header h1')).toHaveText('Ajuda');
 });
 
@@ -211,6 +216,11 @@ test('pedido cancelado segue a composição da referência e oferece Ajuda no av
   await expect(page.locator('#profOrderDetail')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubpedidos')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+  await expect(page.locator('body')).toHaveClass(/prof-order-help-instant/);
+  await expect(page.locator('#profSubajuda')).toHaveCSS('transition-duration', '0s');
+  for (const selector of ['#profSubpedidos', '#profOrderDetail', '#profOrdersBackdrop']) {
+    await expect(page.locator(selector)).toHaveCSS('transition-duration', '0s');
+  }
   await expect(page.locator('#profSubajuda .prof-help-header h1')).toHaveText('Ajuda');
 });
 
@@ -276,15 +286,18 @@ test('telas internas do Perfil reutilizam exatamente o botão de voltar de Pedid
 
   await page.locator(ordersBack).click();
   const stickyCart = page.locator('#cartSticky');
-  await stickyCart.evaluate(element => element.classList.add('show'));
-  await expect(stickyCart).toBeVisible();
+  await page.evaluate(() => {
+    document.querySelector('#cartCountSticky').dataset.count = '1';
+    return window.RapidexActions.resolve('mobNavProfile')();
+  });
+  await expect(stickyCart).not.toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Gerenciar perfil' }).click();
   await expect(page.locator('#profSubmeusdados')).toHaveClass(/active/);
   await expect(stickyCart).not.toBeVisible();
   expect(await signature('#profSubmeusdados > .prof-manage-header .profile-orders-back')).toEqual(reference);
 
   await page.locator('#profSubmeusdados > .prof-manage-header .profile-orders-back').click();
-  await expect(stickyCart).toBeVisible();
+  await expect(stickyCart).not.toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus endereços' }).click();
   await expect(page.locator('#addrPickerModal')).toHaveClass(/active/);
   await expect(page.locator('#addrPickerModal')).toHaveClass(/from-profile/);
@@ -292,7 +305,7 @@ test('telas internas do Perfil reutilizam exatamente o botão de voltar de Pedid
   expect(await signature('#addrPickerModal .profile-orders-back')).toEqual(reference);
 
   await page.locator('#addrPickerModal .profile-orders-back').click();
-  await expect(stickyCart).toBeVisible();
+  await expect(stickyCart).not.toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Política de privacidade' }).click();
   await expect(page.locator('#privacyPolicyScreen')).toHaveClass(/active/);
   await expect(stickyCart).not.toBeVisible();
@@ -306,8 +319,7 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
   await page.locator('#profSubpedidos > .prof-manage-header .profile-orders-back').click();
 
   const stickyCart = page.locator('#cartSticky');
-  await stickyCart.evaluate(element => element.classList.add('show'));
-  await expect(stickyCart).toBeVisible();
+  await expect(stickyCart).not.toBeVisible();
 
   const labels = page.locator('#mobViewProfile .prof-account-row-label');
   await expect(labels).toHaveText([
@@ -361,7 +373,7 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
 
   await page.locator('#profSubajuda .profile-orders-back').click();
   await expect(page.locator('#profSubajuda')).not.toHaveClass(/active/);
-  await expect(stickyCart).toBeVisible();
+  await expect(stickyCart).not.toBeVisible();
   await expect(page.locator('#mobBottomNav')).toBeVisible();
 });
 

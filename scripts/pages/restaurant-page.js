@@ -1243,6 +1243,7 @@
 
   function closeModalId(id) {
     const keepMenuCatsStable = id === 'loginModal' && document.body.classList.contains('menu-tab');
+    const returnsToProfile = id === 'addrPickerModal' && $('addrPickerModal')?.classList.contains('from-profile');
     const menuScrollY = keepMenuCatsStable ? currentScrollY() : 0;
     if (keepMenuCatsStable) document.body.classList.add('menu-login-closing');
     closeUiModalId(id);
@@ -1251,6 +1252,7 @@
       if (keepMenuCatsStable) holdMenuScrollPosition(menuScrollY);
       setTimeout(() => document.body.classList.remove('menu-login-closing'), 760);
     }
+    if (returnsToProfile) syncCartStickyForActiveView();
   }
 
   // O tema inteiro sai de UMA cor cadastrada pelo lojista. A derivação (hover,
@@ -1952,6 +1954,7 @@
     document.body.classList.add('home-tab');
     uiStore()?.set?.({ activeView: 'home', bottomNav: 'home' });
     setMobNavActive('mobNavHome');
+    syncCartStickyForActiveView();
   }
 
   function showMenuTab() {
@@ -1959,6 +1962,7 @@
     document.body.classList.add('menu-tab');
     uiStore()?.set?.({ activeView: 'menu', bottomNav: 'menu' });
     setMobNavActive('mobNavMenu');
+    syncCartStickyForActiveView();
     setFirstCategoryActive();
     initCatStuckObserver();
   }
@@ -2785,7 +2789,7 @@
       $('cartCountSticky').dataset.count = qty;
     }
     if ($('cartTotalSticky')) $('cartTotalSticky').textContent = fmt(totals.total);
-    syncSecondaryViewCartSticky();
+    syncCartStickyForActiveView();
     renderSharedCashbackState();
 
     if ($('cartContent')) $('cartContent').style.display = 'block';
@@ -5271,6 +5275,7 @@
     _addrPickerOrigin = origin || ($('mobViewProfile')?.classList.contains('active') && !$('operationModal')?.classList.contains('active') ? 'profile' : 'operation');
     $('addrPickerModal')?.classList.toggle('no-motion', _addrPickerOrigin !== 'profile');
     $('addrPickerModal')?.classList.toggle('from-profile', _addrPickerOrigin === 'profile');
+    if (_addrPickerOrigin === 'profile') syncCartStickyForActiveView();
     _addrPickerSelected = null;
     _addrPickerItems = [];
     _addrPickerDeleteId = null;
@@ -5513,6 +5518,7 @@
       $('mobViewProfile')?.classList.add('active');
       setMobNavActive('mobNavProfile');
       renderProfileView();
+      syncCartStickyForActiveView();
     }
     _addrPickerOrigin = 'operation';
   }
@@ -7479,6 +7485,7 @@
     document.body.classList.add('policy-open');
     document.body.classList.toggle('policy-from-profile', _policyReturn === 'profile');
     screen.classList.add('active');
+    if (_policyReturn === 'profile') syncCartStickyForActiveView();
     attachPolicyScrollGuard();
     lockAuthScreenScroll();
     body.scrollTop = 0;
@@ -7497,6 +7504,7 @@
       $('mobViewProfile')?.classList.add('active');
       setMobNavActive('mobNavProfile');
       setBottomNavSuppressedForAuth(false);
+      syncCartStickyForActiveView();
     }
     unlockBodyScrollIfClear();
   }
@@ -7700,36 +7708,24 @@
     secondaryCartBottomOffset = null;
   }
 
-  function syncSecondaryViewCartSticky(forceActive) {
+  function syncCartStickyForActiveView() {
     const sticky = $('cartSticky');
     if (!sticky) return;
-    const secondaryViewActive = forceActive ?? Boolean(
-      $('mobViewClub')?.classList.contains('active') || $('mobViewProfile')?.classList.contains('active')
-    );
     const cartCount = cart.reduce((total, item) => total + Number(item.qty || 0), 0);
     const renderedCartCount = Number($('cartCountSticky')?.dataset.count || $('cartCountSticky')?.textContent || 0);
     const hasCartItems = cartCount > 0 || renderedCartCount > 0;
-    const shouldFloat = secondaryViewActive && hasCartItems;
-    document.body.classList.toggle('secondary-view-cart-visible', shouldFloat);
+    const otherAppViewActive = MOB_VIEWS.some(id => $(id)?.classList.contains('active'));
+    const shouldShow = document.body.classList.contains('menu-tab') && !otherAppViewActive && hasCartItems;
+    document.body.classList.remove('secondary-view-cart-visible');
     const properties = ['display', 'visibility', 'opacity', 'z-index', 'bottom'];
-    if (!shouldFloat) {
-      properties.forEach(property => sticky.style.removeProperty(property));
-      return;
-    }
-    sticky.classList.add('show');
-    sticky.style.setProperty('display', 'flex', 'important');
-    sticky.style.setProperty('visibility', 'visible', 'important');
-    sticky.style.setProperty('opacity', '1', 'important');
-    sticky.style.removeProperty('z-index');
-    const navHeight = $('mobBottomNav')?.getBoundingClientRect().height;
-    const bottomOffset = secondaryCartBottomOffset ?? navHeight;
-    if (bottomOffset) sticky.style.setProperty('bottom', `${bottomOffset}px`, 'important');
+    properties.forEach(property => sticky.style.removeProperty(property));
+    sticky.classList.toggle('show', shouldShow);
   }
 
   function closeMobViews() {
     MOB_VIEWS.forEach(id => $(id)?.classList.remove('active'));
     document.body.classList.remove('assistant-nav-keep');
-    syncSecondaryViewCartSticky(false);
+    syncCartStickyForActiveView();
     releaseSecondaryNavGeometry();
     unlockBodyScrollIfClear();
   }
@@ -7785,6 +7781,7 @@
     uiStore()?.set?.({ activeView: 'assistant', bottomNav: 'assistant' });
     setMobNavActive('mobNavAssistantTab');
     $('mobViewAssistant')?.classList.add('active');
+    syncCartStickyForActiveView();
     document.body.classList.add('assistant-nav-keep');
     lockBodyScroll();
     if (!products.length || !categories.length) {
@@ -7818,7 +7815,7 @@
     preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     $('mobViewClub')?.classList.add('active');
-    syncSecondaryViewCartSticky(true);
+    syncCartStickyForActiveView();
     await clubController.renderClubView();
   }
 
@@ -7903,7 +7900,7 @@
     preserveSecondaryNavGeometry();
     uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
     $('mobViewProfile')?.classList.add('active');
-    syncSecondaryViewCartSticky(true);
+    syncCartStickyForActiveView();
     if (!appState.profileLoaded) renderProfileLoading();
     await loadProfileData();
     renderProfileView();
@@ -8718,9 +8715,12 @@
   }
 
   function openProfOrderHelp() {
+    // Pedido, detalhe, backdrop e Ajuda mudam no mesmo quadro: esta troca não
+    // representa "voltar" e por isso não deve executar nenhuma transição.
+    document.body.classList.add('prof-order-help-instant');
     // Ativa o destino primeiro: assim a tela de Pedidos não reaparece nem por
     // um quadro entre o detalhe lateral e a página completa de Ajuda.
-    const helpPromise = openProfSub('ajuda');
+    const helpPromise = openProfSub('ajuda', { instant: true });
     // Pedidos é montado diretamente no body para sustentar a transição
     // lateral; portanto ele fica fora da limpeza de `.prof-sub` do Perfil.
     $('profSubpedidos')?.classList.remove('active');
@@ -8729,7 +8729,7 @@
     return helpPromise;
   }
 
-  async function openProfSub(subId) {
+  async function openProfSub(subId, { instant = false } = {}) {
     if (!isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos'].includes(subId)) {
       openLoginScreen();
       return;
@@ -8737,8 +8737,13 @@
     document.querySelectorAll('#mobViewProfile .prof-sub').forEach(el => el.classList.remove('active'));
     const sub = $('profSub' + subId);
     if (!sub) return;
+    if (!instant) document.body.classList.remove('prof-order-help-instant');
+    sub.classList.toggle('prof-sub--instant', subId === 'ajuda' && instant);
     if (subId === 'pedidos') $('profOrdersBackdrop')?.classList.add('active');
     sub.classList.add('active');
+    // O Perfil principal aplica estilos `!important` inline para flutuar a
+    // sacola. Remova-os ao entrar numa subpágina; CSS sozinho não os vence.
+    syncCartStickyForActiveView();
     if (subId === 'pedidos') await loadProfPedidos();
     if (subId === 'ajuda') {
       renderProfileHelpContacts(restaurantInfoState.status === 'success' ? restaurantInfoState.data : null);
@@ -8757,9 +8762,16 @@
     }
   }
   function closeProfSub() {
+    const wasInstantOrderHelp = document.body.classList.contains('prof-order-help-instant');
     closeProfOrderDetails();
     $('profOrdersBackdrop')?.classList.remove('active');
     document.querySelectorAll('#mobViewProfile .prof-sub, #profSubpedidos').forEach(el => el.classList.remove('active'));
+    syncCartStickyForActiveView();
+    if (wasInstantOrderHelp) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.body.classList.remove('prof-order-help-instant');
+      }));
+    }
   }
 
   function mobFocusSearch() {

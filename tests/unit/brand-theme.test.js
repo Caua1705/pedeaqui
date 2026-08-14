@@ -6,6 +6,7 @@ import '../../scripts/utils/brand-theme.js';
 const {
   PLATFORM_PRIMARY,
   ON_BRAND_MIN_CONTRAST,
+  TEXT_MIN_CONTRAST,
   MARK_SPARK_MIN_ALPHA,
   parseHex,
   normalizeHex,
@@ -156,6 +157,35 @@ describe('A3 — guarda de contraste sobre a cor de marca', () => {
     expect(yellowInk).not.toBe(YELLOW);
     expect(Math.abs(hexToHsl(yellowInk).h - hexToHsl(YELLOW).h)).toBeLessThan(8);
     expect(hexToHsl(yellowInk).l).toBeLessThan(hexToHsl(YELLOW).l);
+  });
+
+  it(`--brand-ink-strong cruza ${TEXT_MIN_CONTRAST}:1 no branco para qualquer hex`, () => {
+    // A mesma guarda com o piso de TEXTO. 3:1 vale para ícone e borda; preço e
+    // nome de produto são texto normal e pedem 4,5:1 — o laranja do piloto
+    // (3,83:1) passa como ícone e reprova como preço.
+    let worst = { ratio: Infinity, hex: null };
+    for (let r = 0; r < 256; r += 15) {
+      for (let g = 0; g < 256; g += 15) {
+        for (let b = 0; b < 256; b += 15) {
+          const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+          const ratio = contrastRatio(deriveBrandPalette(hex)['--brand-ink-strong'], '#FFFFFF');
+          if (ratio < worst.ratio) worst = { ratio, hex };
+        }
+      }
+    }
+    expect(worst.ratio, `pior caso em ${worst.hex}`).toBeGreaterThanOrEqual(TEXT_MIN_CONTRAST);
+  });
+
+  it('a tinta de texto também é o fundo do balão do cliente', () => {
+    // O balão é a cor com texto BRANCO em cima. Como --brand-ink-strong já
+    // cruza 4,5:1 contra o branco, o branco em cima dela cruza os mesmos 4,5:1
+    // — é a mesma medida lida do outro lado.
+    for (const hex of [PILOT, BLUE, YELLOW, '#FFFFFF', '#111111']) {
+      const bubble = deriveBrandPalette(hex)['--brand-ink-strong'];
+      expect(contrastRatio(bubble, '#FFFFFF'), hex).toBeGreaterThanOrEqual(TEXT_MIN_CONTRAST);
+    }
+    // E quem já era escuro o bastante não é repintado.
+    expect(deriveBrandPalette(BLUE)['--brand-ink-strong']).toBe(BLUE);
   });
 
   // ---- A marca do assistente sobre o branco da tela de chat ----------------

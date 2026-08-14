@@ -14,7 +14,7 @@ const CHAT_ANSWER = {
   products: [{ id: PRODUCT_H2O, name: 'Água H2O', price: 7.05 }]
 };
 
-async function openAssistant(page, { chatDelay = 0, viewport } = {}) {
+async function openAssistant(page, { chatDelay = 0, viewport, answer = CHAT_ANSWER } = {}) {
   await page.setViewportSize(viewport || { width: 390, height: 844 });
   await mockApi(page);
   await page.route('**/chat', async route => {
@@ -22,7 +22,7 @@ async function openAssistant(page, { chatDelay = 0, viewport } = {}) {
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(CHAT_ANSWER)
+      body: JSON.stringify(answer)
     });
   });
   await seedPickupSession(page);
@@ -392,11 +392,16 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   const count = await cards.count();
   expect(count, 'a tela voltou a abrir sem sugestões').toBeGreaterThanOrEqual(3);
 
-  // Grade compacta: quatro ideias visiveis sem depender de descobrir uma rolagem.
+  // Régua horizontal: todas na MESMA linha, cada uma à direita da anterior.
+  // offsetTop/offsetLeft e não getBoundingClientRect: a revelação escalonada
+  // ainda está correndo um translateY, e o rect mediria a animação, não o
+  // layout — que é o que este teste quer travar.
   const geometry = await cards.evaluateAll(items => items.map(el =>
     ({ left: el.offsetLeft, top: el.offsetTop })));
-  expect(new Set(geometry.map(item => item.top)).size, 'a grade nao formou duas linhas').toBe(2);
-  expect(new Set(geometry.map(item => item.left)).size, 'a grade nao formou duas colunas').toBe(2);
+  expect(new Set(geometry.map(item => item.top)).size, 'as sugestões não estão numa linha só').toBe(1);
+  for (let i = 1; i < geometry.length; i++) {
+    expect(geometry[i].left, 'as sugestões não estão em sequência').toBeGreaterThan(geometry[i - 1].left);
+  }
 
   const firstCardSize = await cards.first().evaluate(el => {
     const rect = el.getBoundingClientRect();
@@ -410,11 +415,31 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
       lineHeight: style.lineHeight
     };
   });
-  expect(firstCardSize.height).toBe(62);
+  expect(firstCardSize.height).toBe(56);
   expect(firstCardSize.minWidth).toBe('0px');
   expect(firstCardSize.radius).toBe('16px');
   expect(firstCardSize.fontSize).toBe('16px');
   expect(firstCardSize.lineHeight).toBe('24px');
+
+  // Nenhuma preenchida: a primeira pergunta não vale mais que a última, e uma
+  // pílula chapada na marca inventava uma hierarquia que não existe.
+  const fills = await cards.evaluateAll(items => items.map(el => {
+    const style = getComputedStyle(el);
+    return { background: style.backgroundColor, image: style.backgroundImage, color: style.color };
+  }));
+  expect(new Set(fills.map(fill => fill.background)).size, 'as pílulas não têm o mesmo fundo').toBe(1);
+  expect(new Set(fills.map(fill => fill.color)).size, 'as pílulas não têm a mesma cor de texto').toBe(1);
+  for (const fill of fills) {
+    expect(fill.background, 'voltou pílula preenchida').toBe('rgb(255, 255, 255)');
+    expect(fill.image, 'voltou degradê na pílula').toBe('none');
+  }
+  // E sem a seta: nem no markup, nem como pseudo-elemento.
+  await expect(page.locator('.assistant-starter-card-arrow')).toHaveCount(0);
+  const arrows = await cards.evaluateAll(items => items.map(el =>
+    getComputedStyle(el, '::after').content));
+  for (const arrow of arrows) {
+    expect(arrow, 'voltou a seta no cartão de sugestão').toBe('none');
+  }
 
   const leftSpacing = await page.evaluate(() => {
     const view = document.getElementById('mobViewAssistant').getBoundingClientRect();
@@ -424,29 +449,36 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   expect(leftSpacing).toBeCloseTo(20, 0);
 
   const rail = await page.locator('#assistantStarter').evaluate(el => ({
+    scroll: el.scrollWidth,
+    client: el.clientWidth,
     overflowX: getComputedStyle(el).overflowX,
-    columns: getComputedStyle(el).gridTemplateColumns,
+    snap: getComputedStyle(el).scrollSnapType,
     background: getComputedStyle(el).backgroundColor,
     borderWidth: getComputedStyle(el).borderTopWidth,
     shadow: getComputedStyle(el).boxShadow
   }));
-  expect(rail.overflowX).toBe('visible');
-  expect(rail.columns.split(' ')).toHaveLength(2);
+  expect(rail.scroll, 'a régua não transborda, então não rola').toBeGreaterThan(rail.client);
+  expect(rail.overflowX).toBe('auto');
+  // O navegador serializa `x proximity` como só `x`: proximity é o valor
+  // inicial da força e some da forma computada.
+  expect(rail.snap).toMatch(/^x( proximity)?$/);
   expect(rail.background).toBe('rgba(0, 0, 0, 0)');
   expect(rail.borderWidth).toBe('0px');
   expect(rail.shadow).toBe('none');
 
-  // Frases podem ocupar duas linhas, mas nunca sao cortadas com reticencias.
+  // A frase nunca quebra nem é cortada com reticências: inteira, ou não entra.
   const label = await page.locator('.assistant-starter-card-label').first().evaluate(el => {
     const style = getComputedStyle(el);
     return { wrap: style.whiteSpace, ellipsis: style.textOverflow, lines: el.getClientRects().length };
   });
-  expect(label.wrap).toBe('normal');
+  expect(label.wrap).toBe('nowrap');
   expect(label.ellipsis).not.toBe('ellipsis');
   expect(label.lines, 'a frase quebrou em duas linhas').toBe(1);
 
-  // E sem a seta à direita: a pílula inteira já é clicável.
-  await expect(page.locator('.assistant-starter-card-arrow')).toHaveCount(0);
+  // E não sobrou rótulo nem frase de rodapé em volta da régua: as próprias
+  // sugestões já ensinam o que dá para perguntar.
+  await expect(page.locator('.assistant-starter-heading')).toHaveCount(0);
+  await expect(page.locator('.assistant-starter-hint')).toHaveCount(0);
 
   // Pelo menos uma pergunta nasce do cardápio DESTE restaurante: uma lista
   // 100% fixa não sobreviveria ao primeiro tenant de outro vertical.
@@ -469,7 +501,7 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   await expect(page.locator('.assistant-chat-user-message')).toContainText(chosen);
 });
 
-test('carregando: esqueleto no lugar da resposta, não meia tela em branco', async ({ page }) => {
+test('carregando: só o que toda resposta traz — texto, nunca cartão fantasma', async ({ page }) => {
   await openAssistant(page, { chatDelay: 3000 });
   await waitForIntro(page);
   await page.locator('.assistant-starter-card').first().click();
@@ -477,21 +509,35 @@ test('carregando: esqueleto no lugar da resposta, não meia tela em branco', asy
   const skeleton = page.locator('#assistantTypingMessage');
   await expect(skeleton).toBeVisible();
   await expect(skeleton.locator('.assistant-mark--mini')).toHaveClass(/is-thinking/);
+  await expect(skeleton.locator('.assistant-typing-label')).not.toBeEmpty();
+  // As três barras têm a medida das linhas do texto, que TODA resposta traz.
   await expect(skeleton.locator('.assistant-skeleton-line')).toHaveCount(3);
-  await expect(skeleton.locator('.assistant-skeleton-card')).toHaveCount(3);
 
-  // O esqueleto ocupa o lugar EXATO do que está vindo: o cartão fantasma tem a
-  // largura do cartão de produto real que vai substituí-lo.
-  const ghostWidth = await skeleton.locator('.assistant-skeleton-card').first()
-    .evaluate(el => Math.round(el.getBoundingClientRect().width));
+  // Os cartões fantasma saíram: eles prometiam produtos antes de saber se viria
+  // algum e, numa resposta só de texto, viravam retângulos que apareciam e
+  // sumiam. Cartão só entra quando o produto chega de verdade.
+  await expect(skeleton.locator('.assistant-skeleton-card')).toHaveCount(0);
+  await expect(page.locator('.assistant-product-card')).toHaveCount(0);
 
   await expect(page.locator('.assistant-product-card').first()).toBeVisible({ timeout: 15000 });
-  const realWidth = await page.locator('.assistant-product-card').first()
-    .evaluate(el => Math.round(el.getBoundingClientRect().width));
-
-  expect(Math.abs(ghostWidth - realWidth), 'o esqueleto não tem a medida do cartão real')
-    .toBeLessThanOrEqual(2);
   await expect(skeleton).toHaveCount(0);
+});
+
+test('carregando sem produto: nada de retângulo que aparece e some', async ({ page }) => {
+  // A regressão que este teste barra: uma resposta só de texto não pode deixar
+  // rastro de cartão nenhum na tela durante a espera.
+  await openAssistant(page, {
+    chatDelay: 1500,
+    answer: { response_type: 'text', message: 'Servimos das 18h às 23h.' }
+  });
+  await waitForIntro(page);
+  await page.locator('.assistant-starter-card').first().click();
+
+  await expect(page.locator('#assistantTypingMessage')).toBeVisible();
+  await expect(page.locator('#mobViewAssistant .assistant-skeleton-card')).toHaveCount(0);
+  await expect(page.locator('.assistant-chat-assistant-message:not(.assistant-chat-typing)'))
+    .toBeVisible({ timeout: 15000 });
+  await expect(page.locator('.assistant-product-card')).toHaveCount(0);
 });
 
 test('nada nesta tela nomeia a plataforma', async ({ page }) => {
@@ -517,7 +563,7 @@ test('nada nesta tela nomeia a plataforma', async ({ page }) => {
   expect(leaked, 'a marca da plataforma voltou ao app do consumidor').toEqual([]);
 });
 
-test('a abertura ocupa a tela com conteudo util, sem vao morto', async ({ page }) => {
+test('a abertura: marca e título centrados, sugestões ancoradas no campo', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
@@ -528,7 +574,7 @@ test('a abertura ocupa a tela com conteudo util, sem vao morto', async ({ page }
     };
     const body = box('#assistantAiBody');
     const top = box('.assistant-intro-top');
-    const starter = box('.assistant-starter-zone');
+    const starter = box('#assistantStarter');
     const input = box('.assistant-ai-input-bar');
     return {
       acimaDoBloco: top.top - body.top,
@@ -537,10 +583,179 @@ test('a abertura ocupa a tela com conteudo util, sem vao morto', async ({ page }
     };
   });
 
-  expect(layout.acimaDoBloco, 'o cartao de abertura descolou do topo').toBeLessThanOrEqual(24);
-  expect(layout.entreBlocoESugestoes, 'as sugestoes descolaram do cartao').toBeLessThanOrEqual(32);
-  expect(layout.entreSugestoesEcampo, 'voltou o grande vazio antes do campo').toBeLessThanOrEqual(120);
+  // O bloco de cima se centra no espaço livre: o vão acima dele e o vão até as
+  // sugestões são o mesmo, seja qual for a altura da tela.
+  expect(
+    Math.abs(layout.acimaDoBloco - layout.entreBlocoESugestoes),
+    `bloco fora do centro: ${JSON.stringify(layout)}`
+  ).toBeLessThanOrEqual(2);
+
+  // E as sugestões ficam ancoradas junto do campo, não boiando no meio.
+  expect(layout.entreSugestoesEcampo, 'as sugestões descolaram do campo').toBeLessThanOrEqual(40);
   expect(layout.entreSugestoesEcampo).toBeGreaterThan(0);
+});
+
+test('a abertura não tem moldura: nem cartão, nem crachá, nem ícone em caixa', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+
+  await expect(page.locator('.assistant-ai-eyebrow')).toHaveCount(0);
+  await expect(page.locator('.assistant-starter-zone')).toHaveCount(0);
+
+  const intro = await page.locator('.assistant-intro-top').evaluate(el => {
+    const style = getComputedStyle(el);
+    return {
+      background: style.backgroundColor,
+      image: style.backgroundImage,
+      border: style.borderTopWidth,
+      radius: style.borderTopLeftRadius,
+      shadow: style.boxShadow,
+      pseudos: [getComputedStyle(el, '::before').content, getComputedStyle(el, '::after').content]
+        .filter(content => content !== 'none').length
+    };
+  });
+  expect(intro.background, 'voltou fundo no bloco de abertura').toBe('rgba(0, 0, 0, 0)');
+  expect(intro.image, 'voltou degradê no bloco de abertura').toBe('none');
+  expect(intro.border, 'voltou contorno no bloco de abertura').toBe('0px');
+  expect(intro.radius).toBe('0px');
+  expect(intro.shadow, 'voltou sombra no bloco de abertura').toBe('none');
+  expect(intro.pseudos, 'voltaram os círculos decorativos').toBe(0);
+});
+
+test('a resposta é texto na página, sem cartão e sem avatar ao lado', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+  await page.locator('.assistant-starter-card').first().click();
+
+  const answer = page.locator('.assistant-chat-assistant-message:not(.assistant-chat-typing)');
+  await expect(answer).toBeVisible({ timeout: 15000 });
+
+  // O avatar quadrado ao lado de cada resposta não existe mais: a marca só
+  // aparece na abertura e no indicador de carregamento.
+  await expect(page.locator('.assistant-response-mark')).toHaveCount(0);
+  await expect(answer.locator('.assistant-mark')).toHaveCount(0);
+
+  const surfaces = await answer.locator('.assistant-result-content').evaluate(el => {
+    const style = getComputedStyle(el);
+    return {
+      background: style.backgroundColor,
+      image: style.backgroundImage,
+      border: style.borderTopWidth,
+      shadow: style.boxShadow
+    };
+  });
+  expect(surfaces.background, 'a resposta voltou a ter fundo').toBe('rgba(0, 0, 0, 0)');
+  expect(surfaces.image, 'a resposta voltou a ter degradê').toBe('none');
+  expect(surfaces.border, 'a resposta voltou a ter borda').toBe('0px');
+  expect(surfaces.shadow, 'a resposta voltou a ter sombra').toBe('none');
+
+  // Só o cliente tem balão — é esse contraste que diz quem fala.
+  const bubble = await page.locator('.assistant-chat-user-message .assistant-result-title')
+    .evaluate(el => getComputedStyle(el).backgroundColor);
+  expect(bubble).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+test('a cor do restaurante aparece em três lugares, e o texto passa em AA', async ({ page }) => {
+  // A resposta cita um produto em negrito de propósito: é a citação dentro do
+  // texto que carrega a cor da marca, e ela precisa ser medida.
+  await openAssistant(page, {
+    answer: { ...CHAT_ANSWER, message: 'Boa! A **Água H2O** é a mais pedida gelada.' }
+  });
+  await waitForIntro(page);
+  await page.locator('.assistant-starter-card').first().click();
+  await expect(page.locator('.assistant-product-card').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#assistantInput').fill('e mais alguma coisa?');
+
+  // Rodado em três marcas de comportamento oposto: a do piloto, uma clara (que
+  // some no branco) e uma escura (que some no preto).
+  for (const brand of ['#D95C04', '#FFD34D', '#2A2D7C']) {
+    await page.evaluate(hex => window.RapidexTheme.applyBrandTheme(hex), brand);
+    // O botão de enviar tem transição de cor: medido no mesmo quadro, o valor
+    // computado é uma cor intermediária da animação, não a do tema.
+    await page.waitForTimeout(400);
+
+    const audit = await page.evaluate(() => {
+      const parse = value => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+      const luminance = rgb => {
+        const [r, g, b] = rgb.map(channel => {
+          const v = channel / 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const ratio = (a, b) => {
+        const [light, dark] = [luminance(parse(a)), luminance(parse(b))].sort((x, y) => y - x);
+        return (light + 0.05) / (dark + 0.05);
+      };
+      const root = getComputedStyle(document.documentElement);
+      const tints = ['--brand-primary-rgb', '--brand-tint', '--brand-surface', '--brand-tint-strong']
+        .map(token => `rgb(${parse(root.getPropertyValue(token)).join(', ')})`);
+
+      // Toda superfície VISÍVEL pintada com a marca ou com um wash dela.
+      const stained = [];
+      for (const el of document.querySelectorAll('#mobViewAssistant *')) {
+        if (!el.getClientRects().length) continue;
+        const style = getComputedStyle(el);
+        const paint = `${style.backgroundColor} ${style.backgroundImage}`;
+        if (!tints.some(tint => paint.includes(tint))) continue;
+        stained.push(el.closest('.assistant-chat-user-message')
+          ? 'assistant-chat-user-message'
+          : (el.className?.baseVal ?? String(el.className || el.tagName)));
+      }
+
+      const measure = (selector, background) => {
+        const el = document.querySelector(selector);
+        if (!el) return null;
+        const style = getComputedStyle(el);
+        return {
+          ratio: ratio(style.color, background || style.backgroundColor),
+          size: parseFloat(style.fontSize),
+          weight: style.fontWeight
+        };
+      };
+
+      const PAPER = 'rgb(255, 255, 255)';
+      return {
+        stained,
+        text: {
+          resposta: measure('.assistant-chat-assistant-message .assistant-result-title', PAPER),
+          citacao: measure('.assistant-chat-assistant-message .assistant-result-title strong', PAPER),
+          preco: measure('.assistant-product-card .assistant-result-price', PAPER),
+          nomeDoProduto: measure('.assistant-product-card .assistant-result-title', PAPER),
+          balao: measure('.assistant-chat-user-message .assistant-result-title'),
+          titulo: measure('.assistant-ai-question', PAPER),
+          subtitulo: measure('.assistant-ai-subtitle', PAPER),
+          sugestao: measure('.assistant-starter-card', PAPER),
+          cabecalho: measure('#assistantHdrName', PAPER),
+          // O texto de exemplo do campo também é texto que a pessoa lê.
+          exemploDoCampo: (() => {
+            const el = document.querySelector('.assistant-ai-input');
+            if (!el) return null;
+            const style = getComputedStyle(el, '::placeholder');
+            return { ratio: ratio(style.color, PAPER), size: parseFloat(style.fontSize), weight: style.fontWeight };
+          })()
+        }
+      };
+    });
+
+    // Só duas superfícies da tela são pintadas com a marca: o balão do cliente
+    // e o botão de enviar. (O balão usa a tinta guardada --brand-ink-strong,
+    // que coincide com a primária quando a marca já é escura o bastante — é o
+    // caso do índigo.) Nenhum wash, nenhum degradê, em lugar nenhum.
+    for (const klass of audit.stained) {
+      expect(klass, `sobrou superfície na cor da marca em ${brand}: ${klass}`)
+        .toMatch(/assistant-ai-send|assistant-chat-user-message/);
+    }
+    expect(audit.stained.some(klass => /assistant-ai-send/.test(klass)),
+      'o botão de enviar perdeu a cor da marca').toBe(true);
+
+    // E todo texto da tela passa no AA de texto normal (4,5:1).
+    for (const [nome, medida] of Object.entries(audit.text)) {
+      expect(medida, `${nome} sumiu da tela`).not.toBeNull();
+      expect(medida.ratio, `${nome} em ${brand}: ${medida.ratio?.toFixed(2)}:1`)
+        .toBeGreaterThanOrEqual(4.5);
+    }
+  }
 });
 
 test('as sugestões somem na primeira mensagem e não voltam na mesma conversa', async ({ page }) => {

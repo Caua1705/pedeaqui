@@ -158,6 +158,22 @@
       contrastRatio(hex, PAPER) >= ON_BRAND_MIN_CONTRAST);
   }
 
+  // Piso de TEXTO. 3:1 é o mínimo de componente de interface (um ícone, uma
+  // borda, um rótulo grande em negrito); texto corrido e preço são texto normal
+  // e o AA deles é 4,5:1. A diferença não é acadêmica: o laranja do piloto tem
+  // 3,83:1 no branco — passa como ícone e reprova como preço.
+  const TEXT_MIN_CONTRAST = 4.5;
+
+  // A3d — a marca como TINTA DE TEXTO sobre a superfície clara do app: o preço
+  // no cartão, o nome do produto citado dentro da resposta, o balão do cliente
+  // (aí virada do avesso — texto branco sobre esta cor recebe os mesmos 4,5:1).
+  // Mesma técnica de brandInkColor(), só que com o piso de texto: quem já passa
+  // sai daqui byte por byte, e só marca clara escurece.
+  function brandInkStrongColor(primaryHex) {
+    return darkenUntil(primaryHex, (hex) =>
+      contrastRatio(hex, PAPER) >= TEXT_MIN_CONTRAST);
+  }
+
   // Composição de uma tinta translúcida sobre o papel branco. A mistura do
   // navegador é feita em sRGB, canal a canal — é essa a conta que precisa ser
   // reproduzida aqui, não uma média em luz linear.
@@ -274,6 +290,9 @@
       '--brand-on': on,
       // A marca legível SOBRE a superfície clara do app. Ver brandInkColor().
       '--brand-ink': brandInkColor(primary),
+      // A mesma marca quando ela é TEXTO, e não componente: 4,5:1. Ver
+      // brandInkStrongColor().
+      '--brand-ink-strong': brandInkStrongColor(primary),
       // As três tintas do sparkle do assistente, cada uma já acima de 3:1 no
       // branco. Ver markInkColors() — a da ponta pequena conta a translucidez.
       '--brand-mark-light': mark.light,
@@ -331,6 +350,7 @@
     PLATFORM_PRIMARY,
     PLATFORM_SECONDARY,
     ON_BRAND_MIN_CONTRAST,
+    TEXT_MIN_CONTRAST,
     MARK_SPARK_MIN_ALPHA,
     parseHex,
     normalizeHex,
@@ -342,6 +362,7 @@
     compositeOnPaper,
     onBrandColor,
     brandInkColor,
+    brandInkStrongColor,
     markInkColors,
     deriveBrandPalette,
     brandThemeVariables,

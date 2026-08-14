@@ -65,6 +65,11 @@
    * instancia ganha seu proprio gradiente porque ids de <defs> sao globais no
    * documento. E decorativo: o texto ao lado comunica o estado para leitores de
    * tela.
+   *
+   * As duas paradas do gradiente sao --brand-mark-*, nao a primaria crua: a
+   * tela e branca, e markInkColors() ja entrega essas duas tintas escurecidas
+   * ate 3:1 contra o branco mantendo o matiz do lojista. Com --brand-primary o
+   * glifo de um restaurante claro sumia no fundo (#FFD34D da 1,4:1).
    */
   function markMarkup({ size = '', id = '', thinking = false, responding = false } = {}) {
     const classes = ['assistant-mark'];
@@ -78,8 +83,8 @@
              xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="${grad}" x1="5" y1="3" x2="27" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stop-color="var(--brand-light)"/>
-              <stop offset="1" stop-color="var(--brand-primary)"/>
+              <stop offset="0" stop-color="var(--brand-mark-light)"/>
+              <stop offset="1" stop-color="var(--brand-mark-deep)"/>
             </linearGradient>
           </defs>
           <path class="assistant-mark__bubble" fill="url(#${grad})" d="M7.2 3h17.6A4.2 4.2 0 0 1 29 7.2v12.1a4.2 4.2 0 0 1-4.2 4.2H15l-7.3 5.1v-5.1h-.5A4.2 4.2 0 0 1 3 19.3V7.2A4.2 4.2 0 0 1 7.2 3Z"/>
@@ -423,9 +428,12 @@
     const preview = document.createElement('div');
     preview.innerHTML = renderAssistantMarkdown(text);
     const plainText = preview.textContent || text;
+    // Sem avatar ao lado. O quadradinho com uma carinha que morava aqui não
+    // existia em nenhuma outra tela do app, e não precisava existir: a mensagem
+    // do cliente tem balão e a do assistente não tem — é esse contraste, e não
+    // um personagem, que diz quem está falando.
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="assistant-result-card assistant-chat-assistant-message is-typing-response">
-        <div class="assistant-response-mark">${markMarkup({ size: 'mini', responding: true })}</div>
         <div class="assistant-result-content">
           <div class="assistant-result-title" aria-label="${esc(plainText)}"></div>
           ${renderAssistantFeedbackActions()}
@@ -440,7 +448,6 @@
       renderFinal: () => {
         title.innerHTML = renderAssistantMarkdown(text);
         messageElement.classList.remove('is-typing-response');
-        messageElement.querySelector('.assistant-mark')?.classList.remove('is-responding');
         scrollAssistantToLatest();
       },
       onComplete
@@ -451,11 +458,14 @@
    * Esqueleto de carregamento.
    *
    * Antes, "Preparando sugestões..." ficava sozinho no alto com meia tela em
-   * branco embaixo — o cliente não tinha como saber se vinha texto, cartão ou
-   * nada. O esqueleto ocupa EXATAMENTE o lugar da resposta: as barras têm a
-   * medida das linhas do texto e a régua tem a medida dos cartões de produto,
-   * então quando a resposta chega ela substitui blocos do mesmo tamanho em vez
-   * de empurrar a tela. A esfera ao lado fica no estado "pensando".
+   * branco embaixo — o cliente não tinha como saber se vinha alguma coisa. O
+   * esqueleto ocupa o lugar da resposta com as três barras na medida das linhas
+   * do texto, que é o que TODA resposta traz.
+   *
+   * Os cartões fantasma de produto saíram: eles prometiam três produtos antes de
+   * saber se viria algum, e numa resposta só de texto viravam três retângulos
+   * que apareciam e sumiam — parecia defeito. Cartão só entra quando o produto
+   * chega de verdade.
    */
   function appendAssistantTypingIndicator() {
     const resultsEl = document.getElementById('assistantResults');
@@ -472,11 +482,6 @@
             <span class="assistant-skeleton-line"></span>
             <span class="assistant-skeleton-line"></span>
             <span class="assistant-skeleton-line"></span>
-          </div>
-          <div class="assistant-skeleton-rail" aria-hidden="true">
-            <span class="assistant-skeleton-card"></span>
-            <span class="assistant-skeleton-card"></span>
-            <span class="assistant-skeleton-card"></span>
           </div>
         </div>
       </div>`);
@@ -853,25 +858,23 @@
              livre (margin-block:auto no CSS); as sugestões abaixo ficam presas
              logo acima do campo de digitação. Antes os três vinham empilhados a
              partir do topo e sobrava um vão morto de ~220px no meio da tela. -->
+        <!-- Sem invólucro e sem crachá: o cartão com degradê que existia aqui
+             era uma moldura em volta do conteúdo principal da tela, e o selo
+             "SEU GUIA DO CARDÁPIO" era decoração dentro de uma área já
+             decorada. Sobram a marca, o título e o subtítulo. -->
         <div class="assistant-intro-top">
-          <!-- Sem invólucro: o wrapper que existia aqui carregava oito camadas
-               de margens do layout antigo e casava por nome com o componente —
-               foi ele que pintou a janela quadrada uma vez. -->
           ${markMarkup({ size: 'intro', id: 'assistantIntroMark' })}
-          <div class="assistant-ai-eyebrow">Seu guia do card&aacute;pio</div>
           <div class="assistant-ai-question" id="assistantIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
           <div class="assistant-ai-subtitle">Me diga o que procura e eu encontro as melhores op&ccedil;&otilde;es do card&aacute;pio.</div>
         </div>
 
         <!-- A tela não abre vazia: ninguém sabe de cabeça o que perguntar a um
              chat de restaurante. Some na primeira mensagem e só volta quando a
-             conversa é limpa — ou seja, numa sessão nova. -->
-        <div class="assistant-starter-zone">
-          <div class="assistant-starter-heading">Experimente perguntar</div>
-          <div class="assistant-starter" id="assistantStarter" aria-label="Sugest&otilde;es de pergunta">
-            ${starterSuggestionCards()}
-          </div>
-          <div class="assistant-starter-hint">Voc&ecirc; tamb&eacute;m pode falar de pre&ccedil;o, ingredientes ou prefer&ecirc;ncias.</div>
+             conversa é limpa — ou seja, numa sessão nova.
+             As próprias sugestões ensinam o que dá para perguntar, então não há
+             rótulo em cima nem frase explicando embaixo. -->
+        <div class="assistant-starter" id="assistantStarter" aria-label="Sugest&otilde;es de pergunta">
+          ${starterSuggestionCards()}
         </div>
 
         <!-- Results area (shown after search) -->

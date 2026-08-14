@@ -55,10 +55,23 @@
   /* Contorno de cartão/chip com cara de marca (cupom, seleção). */
   --brand-border: #f4b389;
 
+  /* A marca quando ela é TEXTO sobre o branco do app (preço, nome citado numa
+     resposta) — e, virada do avesso, o fundo que sustenta texto branco. Já vem
+     escurecida até 4,5:1: a primária sozinha reprova em AA (o laranja da
+     plataforma dá 2,96:1, um amarelo dá 1,4:1). Derivada em runtime por
+     brandInkStrongColor(), scripts/utils/brand-theme.js. */
+  --brand-ink-strong: #bd4d0a;
+
   /* Texto e ícone SOBRE a cor de marca. Calculado por luminosidade, nunca
      fixo em #fff: uma marca amarela receberia texto ilegível. */
   --brand-on: #ffffff;
   --brand-on-soft: rgba(255, 255, 255, 0.78);
+
+  /* As duas paradas do gradiente da marca do assistente, sobre a tela branca do
+     chat. Já vêm acima de 3:1 no branco — a primária crua não está. Derivadas
+     em runtime por markInkColors(), scripts/utils/brand-theme.js. */
+  --brand-mark-light: #f26613;
+  --brand-mark-deep: #b4490a;
 
   /* Sombra/halo colorido da marca. */
   --brand-glow: rgba(243, 111, 33, 0.28);

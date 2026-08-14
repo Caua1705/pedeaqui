@@ -12,8 +12,13 @@ describe('marca conversacional white-label', () => {
     const markup = JS.match(/function markMarkup[\s\S]*?\n {2}\}/)?.[0] ?? '';
 
     expect(markup).toContain('class="assistant-mark__bubble"');
-    expect(markup).toContain('stop-color="var(--brand-light)"');
-    expect(markup).toContain('stop-color="var(--brand-primary)"');
+    // As paradas são as tintas JÁ medidas contra o branco (markInkColors), não a
+    // primária crua: a tela do chat é branca e um restaurante de marca clara
+    // ficava com o glifo invisível (#FFD34D dá 1,4:1 no branco).
+    expect(markup).toContain('stop-color="var(--brand-mark-light)"');
+    expect(markup).toContain('stop-color="var(--brand-mark-deep)"');
+    expect(markup, 'a marca voltou à primária crua, sem guarda de contraste')
+      .not.toMatch(/stop-color="var\(--brand-(primary|light)\)"/);
     expect(markup).toContain('stroke="var(--brand-on)"');
     expect(markup, 'o icone ganhou uma cor fixa').not.toMatch(/#[0-9a-f]{3,8}/i);
   });

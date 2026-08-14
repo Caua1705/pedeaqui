@@ -2810,7 +2810,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   -webkit-tap-highlight-color:transparent!important;
 }
 #mobViewAssistant .assistant-product-card:focus-visible{
-  outline:2px solid rgba(var(--brand-primary-rgb), .65)!important;
+  outline:2px solid var(--brand-ink-strong)!important;
   outline-offset:3px!important;
 }
 #mobViewAssistant .assistant-product-detail[hidden]{
@@ -2927,7 +2927,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   height:24px!important;
 }
 #mobViewAssistant .assistant-product-detail-close:focus-visible{
-  outline:2px solid var(--brand-primary)!important;
+  outline:2px solid var(--brand-ink-strong)!important;
   outline-offset:2px!important;
 }
 #mobViewAssistant .assistant-product-detail-content{
@@ -2960,7 +2960,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-detail-price{
   margin:0 0 22px!important;
-  color:var(--brand-primary)!important;
+  color:var(--brand-ink-strong)!important;
   font-size:16px!important;
   line-height:20px!important;
   font-weight:700!important;
@@ -2980,7 +2980,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   gap:5px!important;
   margin-top:24px!important;
   padding:2px 0 2px 13px!important;
-  border-left:3px solid var(--brand-primary)!important;
+  border-left:3px solid var(--brand-ink-strong)!important;
 }
 #mobViewAssistant .assistant-product-detail-recommendation strong{
   color:#292522!important;
@@ -3005,8 +3005,12 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   padding:0 20px!important;
   border:0!important;
   border-radius:999px!important;
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
+  /* Rótulo de 16px em 650 é texto NORMAL para a WCAG (o piso de "texto grande"
+     é 18,66px em negrito), então ele pede 4,5:1 — e --brand-on só garante 3:1.
+     A tinta forte é a marca já escurecida até esse piso; sobre ela o branco
+     passa por construção. */
+  background:var(--brand-ink-strong)!important;
+  color:var(--surface)!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
   font-size:16px!important;
   line-height:20px!important;
@@ -3015,10 +3019,10 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   -webkit-tap-highlight-color:transparent!important;
 }
 #mobViewAssistant .assistant-product-detail-question:active{
-  background:var(--brand-primary)!important;
+  background:var(--brand-ink-strong)!important;
 }
 #mobViewAssistant .assistant-product-detail-question:focus-visible{
-  outline:2px solid var(--brand-primary)!important;
+  outline:2px solid var(--brand-ink-strong)!important;
   outline-offset:3px!important;
 }
 body.assistant-product-detail-open{
@@ -3198,8 +3202,10 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 #mobViewAssistant .assistant-hdr-btn.is-active{
   background:var(--border)!important;
 }
+/* O anel de foco usa a marca já garantida contra o branco: em --brand-primary
+   cru, uma marca clara (#FFD34D dá 1,4:1) desenharia um anel invisível. */
 #mobViewAssistant .assistant-hdr-btn:focus-visible{
-  outline:2px solid var(--brand-primary)!important;
+  outline:2px solid var(--brand-ink-strong)!important;
   outline-offset:2px!important;
 }
 
@@ -3315,7 +3321,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   background:var(--surface-2)!important;
 }
 #mobViewAssistant .assistant-hdr-menu-item:focus-visible{
-  outline:2px solid var(--brand-primary)!important;
+  outline:2px solid var(--brand-ink-strong)!important;
   outline-offset:-2px!important;
 }
 
@@ -3625,19 +3631,21 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 
 
 /* Telas curtas (SE, 8, qualquer 16:9): a marca encolhe. A régua de sugestões
-   não precisa de nada — ela rola na horizontal e ocupa uma linha só.
-   44px mantém a mesma proporção de antes (0,79) sobre o novo padrão de 56. */
+   não precisa de nada — ela rola na horizontal e ocupa uma linha só. */
 @media (max-height: 730px){
-  #mobViewAssistant .assistant-mark--intro{ --size:44px }
+  #mobViewAssistant .assistant-mark--intro{ --size:54px }
 }
 
 /* ============================================================
    CARREGANDO — esqueleto no lugar exato da resposta.
 
-   O vazio tem a FORMA do que está vindo: três linhas na medida do texto e três
-   cartões na medida exata dos cartões de produto (258px de largura, 258 de foto
-   mais 72 de rodapé). Quando a resposta chega, ela troca blocos do mesmo
+   O vazio tem a FORMA do que está vindo: três linhas na medida do texto, que é
+   o que toda resposta traz. Quando a resposta chega, ela troca blocos do mesmo
    tamanho em vez de empurrar a tela.
+
+   Os cartões fantasma de produto saíram junto com o markup deles: prometiam
+   três cartões antes de saber se viria algum, e numa resposta só de texto
+   viravam retângulos que apareciam e sumiam.
    ============================================================ */
 #mobViewAssistant .assistant-chat-typing .assistant-typing-row{
   gap:10px!important;
@@ -3660,27 +3668,13 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 #mobViewAssistant .assistant-skeleton-line:nth-child(2){ width:88%!important }
 #mobViewAssistant .assistant-skeleton-line:nth-child(3){ width:54%!important }
-#mobViewAssistant .assistant-skeleton-rail{
-  display:flex!important;
-  gap:12px!important;
-  /* Os cartões reais nascem numa régua que sangra 2px além da bolha da
-     mensagem; sem isto o esqueleto ficaria deslocado do que o substitui. */
-  margin:0 -2px!important;
-  overflow:hidden!important;
-}
-#mobViewAssistant .assistant-skeleton-card{
-  flex:0 0 258px!important;
-  width:258px!important;
-  height:330px!important;
-  border:1px solid var(--border)!important;
-  border-radius:14px!important;
-}
-#mobViewAssistant .assistant-skeleton-line,
-#mobViewAssistant .assistant-skeleton-card{
+/* Cinza sobre cinza: o esqueleto é ausência de conteúdo, não um lugar para a
+   marca aparecer. */
+#mobViewAssistant .assistant-skeleton-line{
   background:linear-gradient(100deg,
     var(--surface-3) 0%,
     var(--surface-3) 38%,
-    rgba(var(--brand-primary-rgb), .10) 50%,
+    var(--surface-2) 50%,
     var(--surface-3) 62%,
     var(--surface-3) 100%)!important;
   background-size:280% 100%!important;
@@ -3692,8 +3686,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   to{background-position:-120% 0}
 }
 @media (prefers-reduced-motion: reduce){
-  #mobViewAssistant .assistant-skeleton-line,
-  #mobViewAssistant .assistant-skeleton-card{
+  #mobViewAssistant .assistant-skeleton-line{
     background:var(--surface-3)!important;
     animation:none!important;
   }
@@ -3760,287 +3753,260 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 /* ============================================================
-   WHITE-LABEL CONVERSATIONAL AGENT — visual refresh
+   AGENTE CONVERSACIONAL WHITE-LABEL — o desenho da tela
 
-   A tela usa a mesma paleta derivada do restaurante que o restante do app.
-   A marca aparece em superficies, estados e hierarquia, nao apenas em um
-   pequeno icone solto no centro. O novo simbolo combina conversa + cardapio.
+   Esta tela tinha inventado um vocabulário que não existia em nenhuma outra do
+   app: cabeçalho chapado na cor da marca, cartão com degradê em volta da
+   abertura, crachá em pílula, grade 2×2 com setas, avatar ao lado de cada
+   resposta, cartões de esqueleto antes de saber se viriam cartões. Nada disso
+   aparece no cardápio, no carrinho ou no perfil — e era por isso que a tela
+   lia como se fosse de outro produto. Saiu tudo.
+
+   O que sobra são os tokens de ESTRUTURA que o resto do app já usa
+   (styles/tokens.css): superfície branca, divisória de 1px na cor de linha,
+   texto em --text-main / --text-muted, cinzas em --surface-2 / --surface-3.
+
+   DISCIPLINA DE COR — a cor do restaurante aparece em TRÊS lugares:
+     1. o balão da mensagem do CLIENTE;
+     2. o nome do produto citado dentro da resposta, e o preço no cartão;
+     3. o botão de enviar.
+   Fora deles a marca só existe na MARCA do assistente (o glifo da abertura e o
+   do indicador de carregamento), que é a identidade da tela, não um enfeite.
+
+   Onde a marca vira TEXTO — ou o fundo que sustenta um texto — ela entra como
+   --brand-ink-strong, nunca --brand-primary: a primária crua não garante o AA
+   de 4,5:1 no branco (o laranja da plataforma dá 2,96:1 e um amarelo dá 1,4:1).
+   O token é a mesma cor do lojista escurecida até esse piso, com o matiz no
+   lugar — ver brandInkStrongColor() em scripts/utils/brand-theme.js.
    ============================================================ */
-#mobViewAssistant .assistant-page{
-  background:
-    radial-gradient(circle at 88% 16%, rgba(var(--brand-primary-rgb),.12), transparent 30%),
-    linear-gradient(180deg,var(--brand-tint) 0,rgba(var(--brand-primary-rgb),.035) 42%,var(--surface) 72%)!important;
-}
-#mobViewAssistant .assistant-hdr{
-  background:linear-gradient(135deg,var(--brand-primary),var(--brand-hover))!important;
-  border-bottom:0!important;
-  box-shadow:0 8px 24px rgba(var(--brand-primary-rgb),.18)!important;
-}
-#mobViewAssistant .assistant-hdr-title,
-#mobViewAssistant .assistant-hdr-name{
-  color:var(--brand-on)!important;
-}
-#mobViewAssistant .assistant-hdr-btn{
-  background:rgba(255,255,255,.18)!important;
-  color:var(--brand-on)!important;
-  border:1px solid rgba(255,255,255,.22)!important;
-}
-#mobViewAssistant .assistant-hdr-btn:active,
-#mobViewAssistant .assistant-hdr-btn.is-active{
-  background:rgba(255,255,255,.3)!important;
-}
-#mobViewAssistant .assistant-hdr-btn:focus-visible{
-  outline:2px solid var(--brand-on)!important;
-  outline-offset:2px!important;
-}
-#mobViewAssistant .assistant-cart-count{
-  background:var(--brand-on)!important;
-  color:var(--brand-primary)!important;
-  border-color:var(--brand-primary)!important;
-}
-#mobViewAssistant .assistant-hdr-menu{
-  border-color:var(--brand-border)!important;
-  box-shadow:0 14px 34px rgba(var(--brand-primary-rgb),.16)!important;
+
+/* ── Superfície: uma só, do cabeçalho ao campo de digitação ── */
+#mobViewAssistant .assistant-page,
+#mobViewAssistant .assistant-ai-body,
+#mobViewAssistant .assistant-ai-body--searching,
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
+  background:var(--surface)!important;
 }
 
-#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching){
-  padding:18px 20px 28px!important;
+/* ── Cabeçalho ──
+   A barra chapada na marca era o elemento mais pesado da página. O cabeçalho
+   volta a ser o das outras telas cheias (ver "CABEÇALHO" acima): mesma
+   superfície do resto da tela, um filete de 1px embaixo, título e botões na cor
+   de texto normal. O contador da sacola é neutro pelo mesmo motivo — ele não
+   está na lista dos três lugares. */
+#mobViewAssistant .assistant-cart-count{
+  border-color:var(--surface)!important;
+  background:var(--text-main)!important;
+  color:var(--surface)!important;
 }
-#mobViewAssistant .assistant-intro-top{
-  position:relative!important;
-  isolation:isolate!important;
-  width:100%!important;
-  max-width:354px!important;
-  min-height:272px!important;
-  margin:0 auto 18px!important;
-  padding:27px 24px 25px!important;
-  justify-content:center!important;
-  border:1px solid var(--brand-border)!important;
-  border-radius:28px!important;
-  background:linear-gradient(145deg,var(--surface) 3%,var(--brand-tint) 56%,var(--brand-surface) 135%)!important;
-  box-shadow:0 18px 44px rgba(var(--brand-primary-rgb),.13)!important;
-  overflow:hidden!important;
-  box-sizing:border-box!important;
-}
-#mobViewAssistant .assistant-intro-top::before,
-#mobViewAssistant .assistant-intro-top::after{
-  content:""!important;
-  position:absolute!important;
-  z-index:-1!important;
-  border-radius:50%!important;
-  pointer-events:none!important;
-}
-#mobViewAssistant .assistant-intro-top::before{
-  width:150px!important;
-  height:150px!important;
-  top:-78px!important;
-  right:-55px!important;
-  background:rgba(var(--brand-primary-rgb),.1)!important;
-}
-#mobViewAssistant .assistant-intro-top::after{
-  width:92px!important;
-  height:92px!important;
-  left:-48px!important;
-  bottom:-45px!important;
-  border:18px solid rgba(var(--brand-primary-rgb),.07)!important;
-}
-#mobViewAssistant .assistant-intro-top .assistant-mark{
-  margin:0 0 13px!important;
-}
-#mobViewAssistant .assistant-ai-eyebrow{
-  display:inline-flex!important;
-  align-items:center!important;
-  min-height:26px!important;
-  margin:0 0 9px!important;
-  padding:0 11px!important;
-  border:1px solid var(--brand-border)!important;
-  border-radius:999px!important;
-  background:rgba(var(--brand-primary-rgb),.08)!important;
-  color:var(--brand-hover)!important;
-  font-size:12px!important;
-  line-height:16px!important;
-  font-weight:750!important;
-  letter-spacing:.035em!important;
-  text-transform:uppercase!important;
-}
+
+/* ── Abertura ──
+   A marca, o título e o subtítulo centrados no espaço livre (o margin:auto do
+   bloco "ABERTURA" acima), e nada em volta deles. */
 #mobViewAssistant .assistant-ai-question,
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   color:var(--text-main)!important;
-  font-size:25px!important;
+  font-size:24px!important;
   line-height:31px!important;
-  letter-spacing:-.025em!important;
+  letter-spacing:-.02em!important;
   text-align:center!important;
 }
 #mobViewAssistant .assistant-ai-subtitle{
-  max-width:290px!important;
-  margin-top:9px!important;
+  max-width:300px!important;
+  margin-top:8px!important;
   color:var(--text-muted)!important;
   font-size:14px!important;
   line-height:20px!important;
 }
 
-#mobViewAssistant .assistant-starter-zone{
-  align-self:stretch!important;
-  min-width:0!important;
-  margin-top:10px!important;
+/* ── Sugestões ──
+   Régua horizontal presa acima do campo; a geometria está no bloco "ABERTURA".
+   O estado de toque é cinza: uma pílula preenchida na cor da marca criava
+   hierarquia falsa entre perguntas que valem exatamente o mesmo. */
+#mobViewAssistant .assistant-starter-card:active,
+#mobViewAssistant .assistant-starter-card:focus-visible{
+  background:var(--surface-2)!important;
+  border-color:var(--border-strong)!important;
 }
-#mobViewAssistant .assistant-starter-heading{
-  margin:0 0 10px!important;
-  color:var(--brand-hover)!important;
-  font-size:13px!important;
-  line-height:18px!important;
-  font-weight:750!important;
-  letter-spacing:.01em!important;
-}
-#mobViewAssistant .assistant-ai-body--searching .assistant-starter-zone{
-  display:none!important;
-}
-#mobViewAssistant .assistant-starter{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  align-items:stretch!important;
-  gap:9px!important;
-  width:100%!important;
-  margin:0!important;
-  padding:0!important;
-  overflow:visible!important;
-  scroll-snap-type:none!important;
-}
-#mobViewAssistant .assistant-starter-card{
-  width:100%!important;
-  height:62px!important;
-  min-height:62px!important;
-  max-height:none!important;
-  margin:0!important;
-  padding:9px 12px!important;
-  justify-content:space-between!important;
-  border-color:var(--brand-border)!important;
-  background:var(--brand-tint)!important;
-  color:var(--text-main)!important;
-  box-shadow:0 5px 14px rgba(var(--brand-primary-rgb),.07)!important;
-}
-#mobViewAssistant .assistant-starter-card:first-child,
-#mobViewAssistant .assistant-starter-card:last-child{
-  margin:0!important;
-}
-#mobViewAssistant .assistant-starter-card::after{
-  content:"→"!important;
-  margin-left:8px!important;
-  color:var(--brand-hover)!important;
-  font-size:18px!important;
-  line-height:1!important;
-  font-weight:700!important;
-}
-#mobViewAssistant .assistant-starter-card:first-child{
-  background:var(--brand-primary)!important;
-  border-color:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  box-shadow:0 8px 20px rgba(var(--brand-primary-rgb),.2)!important;
-}
-#mobViewAssistant .assistant-starter-card:first-child::after{
-  color:var(--brand-on)!important;
-}
-#mobViewAssistant .assistant-starter-card-label{
-  overflow:visible!important;
-  text-overflow:clip!important;
-  white-space:normal!important;
-  font-size:14px!important;
-  line-height:18px!important;
-  text-wrap:balance!important;
-}
-#mobViewAssistant .assistant-starter-hint{
-  max-width:300px!important;
-  margin:13px auto 0!important;
-  color:var(--text-muted)!important;
-  font-size:12.5px!important;
-  line-height:18px!important;
-  text-align:center!important;
+@media (hover:hover){
+  #mobViewAssistant .assistant-starter-card:hover{
+    background:var(--surface-2)!important;
+    border-color:var(--border-strong)!important;
+  }
 }
 
+/* As opções que a API devolve DENTRO da conversa usam a mesma pílula. */
+#mobViewAssistant .assistant-suggest-chip{
+  border-color:var(--border)!important;
+  background:var(--surface)!important;
+  color:var(--text-main)!important;
+}
+#mobViewAssistant .assistant-suggest-chip:active,
+#mobViewAssistant .assistant-suggest-chip:focus-visible{
+  background:var(--surface-2)!important;
+  border-color:var(--border-strong)!important;
+  color:var(--text-main)!important;
+}
+@media (hover:hover){
+  #mobViewAssistant .assistant-suggest-chip:hover{
+    background:var(--surface-2)!important;
+    border-color:var(--border-strong)!important;
+    color:var(--text-main)!important;
+  }
+}
+
+/* ── Campo de digitação ── */
 #mobViewAssistant .assistant-bottom-dock{
-  background:linear-gradient(0deg,var(--brand-tint) 0,rgba(255,255,255,.94) 72%,transparent 100%)!important;
+  background:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar,
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  border-color:var(--brand-border)!important;
+  border:1px solid var(--border)!important;
   background:var(--surface)!important;
-  box-shadow:0 8px 26px rgba(var(--brand-primary-rgb),.13)!important;
+  box-shadow:0 4px 16px var(--shadow-card)!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb),.1),0 10px 28px rgba(var(--brand-primary-rgb),.16)!important;
+  border-color:var(--border-strong)!important;
 }
+#mobViewAssistant .assistant-ai-input{
+  color:var(--text-main)!important;
+}
+/* O texto de exemplo do campo é texto que a pessoa lê, então ele segue o piso de
+   4,5:1 como o resto: --text-faint (#999) dá 2,85:1 no branco e reprova. */
+#mobViewAssistant .assistant-ai-input::placeholder{
+  color:var(--text-muted)!important;
+}
+
+/* LUGAR 3 da cor: o botão de enviar. */
 #mobViewAssistant .assistant-ai-send,
 #mobViewAssistant .assistant-ai-send:hover,
 #mobViewAssistant .assistant-ai-send:active,
 #mobViewAssistant .assistant-ai-send:focus,
-#mobViewAssistant .assistant-ai-send:focus-visible{
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  box-shadow:0 6px 16px rgba(var(--brand-primary-rgb),.24)!important;
-}
-#mobViewAssistant .assistant-ai-send.is-inactive,
-#mobViewAssistant .assistant-ai-send:disabled{
-  background:var(--brand-surface)!important;
-  color:var(--brand-hover)!important;
-  box-shadow:none!important;
-  opacity:.58!important;
-}
-
-/* Conversation surfaces keep the tenant visible after the intro disappears. */
-#mobViewAssistant .assistant-ai-body--searching,
-#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  background:linear-gradient(180deg,rgba(var(--brand-primary-rgb),.045),var(--surface) 180px)!important;
-}
-#mobViewAssistant .assistant-chat-user-message .assistant-result-title{
+#mobViewAssistant .assistant-ai-send:focus-visible,
+#mobViewAssistant .assistant-ai-send.is-ready,
+#mobViewAssistant .assistant-ai-send.is-stopping{
   border-color:var(--brand-primary)!important;
   background:var(--brand-primary)!important;
   color:var(--brand-on)!important;
-  box-shadow:0 7px 18px rgba(var(--brand-primary-rgb),.18)!important;
+  box-shadow:none!important;
 }
-#mobViewAssistant .assistant-chat-assistant-message:not(.assistant-chat-typing){
-  display:grid!important;
-  grid-template-columns:26px minmax(0,1fr)!important;
-  align-items:start!important;
-  gap:9px!important;
-  max-width:calc(100% - 28px)!important;
-  margin-left:14px!important;
-  margin-right:14px!important;
-}
-#mobViewAssistant .assistant-response-mark{
-  padding-top:2px!important;
-}
-#mobViewAssistant .assistant-chat-assistant-message:not(.assistant-chat-typing) .assistant-result-content{
-  padding:14px 15px 11px!important;
-  border:1px solid var(--brand-border)!important;
-  border-radius:6px 18px 18px 18px!important;
-  background:linear-gradient(145deg,var(--surface),var(--brand-tint))!important;
-  box-shadow:0 8px 22px rgba(var(--brand-primary-rgb),.08)!important;
-}
-#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
-  margin-left:0!important;
-  padding-top:9px!important;
-  border-top:1px solid rgba(var(--brand-primary-rgb),.1)!important;
-}
-#mobViewAssistant .assistant-feedback-btn{
-  color:var(--brand-hover)!important;
-}
-#mobViewAssistant .assistant-product-card{
-  border-color:var(--brand-border)!important;
-  background:var(--surface)!important;
-  box-shadow:0 8px 22px rgba(var(--brand-primary-rgb),.1)!important;
-}
-#mobViewAssistant .assistant-product-card .assistant-result-content{
-  border-top-color:var(--brand-border)!important;
-  background:linear-gradient(145deg,var(--surface),var(--brand-tint))!important;
-}
-#mobViewAssistant .assistant-skeleton-line,
-#mobViewAssistant .assistant-skeleton-card{
-  border-color:var(--brand-border)!important;
-  background:linear-gradient(100deg,var(--brand-tint) 0%,var(--brand-tint) 38%,var(--brand-surface) 50%,var(--brand-tint) 62%,var(--brand-tint) 100%)!important;
-  background-size:280% 100%!important;
+#mobViewAssistant .assistant-ai-send.is-inactive,
+#mobViewAssistant .assistant-ai-send:disabled{
+  border-color:var(--surface-3)!important;
+  background:var(--surface-3)!important;
+  color:var(--text-faint)!important;
+  box-shadow:none!important;
+  opacity:1!important;
 }
 
-/* Conversation + cloche mark. */
+/* ── Conversa ──
+   LUGAR 1 da cor: o balão do cliente. É ele que distingue quem fala, e por isso
+   a resposta do assistente é texto direto sobre o fundo da página — sem cartão,
+   sem borda, sem fundo tingido e sem avatar ao lado. */
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{
+  border-color:var(--brand-ink-strong)!important;
+  background:var(--brand-ink-strong)!important;
+  color:var(--surface)!important;
+  box-shadow:none!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message:not(.assistant-chat-typing){
+  display:block!important;
+  max-width:calc(100% - 40px)!important;
+  margin:0 20px!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+/* É o conteúdo que a pessoa veio ler: um degrau maior e com mais entrelinha. */
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
+  color:var(--text-main)!important;
+  font-size:16.5px!important;
+  line-height:1.72!important;
+  font-weight:400!important;
+}
+/* LUGAR 2 da cor, primeira metade: o produto citado dentro do texto. */
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
+  color:var(--brand-ink-strong)!important;
+  font-weight:650!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
+  color:var(--text-main)!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
+  margin:12px 0 0!important;
+  padding-top:0!important;
+  border-top:0!important;
+}
+#mobViewAssistant .assistant-feedback-btn{
+  color:var(--text-muted)!important;
+}
+#mobViewAssistant .assistant-rating-btn.is-selected,
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"],
+#mobViewAssistant .assistant-copy-btn.is-copied,
+#mobViewAssistant .assistant-copy-btn.is-restoring{
+  color:var(--text-main)!important;
+}
+#mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child,
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"] svg path:last-child{
+  fill:var(--text-main)!important;
+}
+@media (hover:hover){
+  #mobViewAssistant .assistant-feedback-btn:hover,
+  #mobViewAssistant .assistant-rating-btn:hover{
+    color:var(--text-main)!important;
+  }
+}
+#mobViewAssistant .assistant-typing-label{
+  color:var(--text-muted)!important;
+  -webkit-text-fill-color:var(--text-muted)!important;
+}
+
+/* ── Cartões de produto ──
+   A fotografia é o que vende: ela recebe a altura que o rodapé perdeu. O
+   contorno é a linha neutra do sistema e o resto do cartão é branco. */
+#mobViewAssistant .assistant-product-card{
+  border:1px solid var(--border)!important;
+  background:var(--surface)!important;
+  box-shadow:none!important;
+}
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap{
+  height:288px!important;
+  background:var(--surface-3)!important;
+}
+#mobViewAssistant .assistant-result-image-placeholder{
+  background:var(--surface-3)!important;
+}
+#mobViewAssistant .assistant-product-card .assistant-result-content{
+  height:auto!important;
+  min-height:0!important;
+  padding:10px 13px 11px!important;
+  gap:3px!important;
+  border-top:1px solid var(--border)!important;
+  background:var(--surface)!important;
+}
+#mobViewAssistant .assistant-product-card .assistant-result-title{
+  color:var(--text-main)!important;
+  font-size:15px!important;
+  line-height:19px!important;
+  font-weight:600!important;
+}
+/* LUGAR 2 da cor, segunda metade: o preço. */
+#mobViewAssistant .assistant-product-card .assistant-result-price{
+  color:var(--brand-ink-strong)!important;
+  font-size:14px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+}
+
+/* ── Marca do assistente: balão de conversa + cloche ──
+   As duas paradas do gradiente vêm PRONTAS do tema, já garantidas acima de 3:1
+   contra o branco desta tela (markInkColors, scripts/utils/brand-theme.js).
+   Pintar o glifo com --brand-primary cru fazia a marca de um restaurante claro
+   sumir no fundo: #FFD34D tem 1,4:1 no branco. */
 .assistant-mark__bubble{
   transform-origin:16px 16px;
 }
@@ -4080,20 +4046,10 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 @media (max-height:730px){
-  #mobViewAssistant .assistant-intro-top{
-    min-height:226px!important;
-    padding:18px 20px!important;
-  }
-  #mobViewAssistant .assistant-mark--intro{
-    --size:54px!important;
-  }
   #mobViewAssistant .assistant-ai-question,
   #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
     font-size:22px!important;
     line-height:27px!important;
-  }
-  #mobViewAssistant .assistant-starter-hint{
-    display:none!important;
   }
 }
 @media (prefers-reduced-motion:reduce){

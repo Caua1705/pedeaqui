@@ -435,17 +435,64 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
 
   // E rola de verdade: o conteúdo é mais largo que a régua. É esse transbordo
   // que permite mais de três — em pilha, a quarta empurrava o resto da tela.
+  const firstCardSize = await cards.first().evaluate(el => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return {
+      width: rect.width,
+      height: rect.height,
+      minWidth: style.minWidth,
+      radius: style.borderRadius,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight
+    };
+  });
+  expect(firstCardSize.height).toBe(56);
+  expect(firstCardSize.minWidth).toBe('0px');
+  expect(firstCardSize.radius).toBe('16px');
+  expect(firstCardSize.fontSize).toBe('16px');
+  expect(firstCardSize.lineHeight).toBe('24px');
+
+  const proportionalWidths = await cards.evaluateAll(items => items.map(el => {
+    const label = el.querySelector('.assistant-starter-card-label');
+    const style = getComputedStyle(el);
+    return {
+      button: el.getBoundingClientRect().width,
+      content: label.getBoundingClientRect().width,
+      extras: parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+        + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth)
+    };
+  }));
+  for (const size of proportionalWidths) {
+    expect(size.button).toBeCloseTo(size.content + size.extras, 1);
+  }
+  expect(new Set(proportionalWidths.map(size => Math.round(size.button))).size)
+    .toBeGreaterThan(1);
+
+  const leftSpacing = await page.evaluate(() => {
+    const view = document.getElementById('mobViewAssistant').getBoundingClientRect();
+    const first = document.querySelector('.assistant-starter-card').getBoundingClientRect();
+    return first.left - view.left;
+  });
+  expect(leftSpacing).toBeCloseTo(20, 0);
+
   const rail = await page.locator('#assistantStarter').evaluate(el => ({
     scroll: el.scrollWidth,
     client: el.clientWidth,
     overflowX: getComputedStyle(el).overflowX,
-    snap: getComputedStyle(el).scrollSnapType
+    snap: getComputedStyle(el).scrollSnapType,
+    background: getComputedStyle(el).backgroundColor,
+    borderWidth: getComputedStyle(el).borderTopWidth,
+    shadow: getComputedStyle(el).boxShadow
   }));
   expect(rail.scroll, 'a régua não transborda, então não rola').toBeGreaterThan(rail.client);
   expect(rail.overflowX).toBe('auto');
   // O navegador serializa `x proximity` como só `x`: proximity é o valor
   // inicial da força e some da forma computada.
   expect(rail.snap).toMatch(/^x( proximity)?$/);
+  expect(rail.background).toBe('rgba(0, 0, 0, 0)');
+  expect(rail.borderWidth).toBe('0px');
+  expect(rail.shadow).toBe('none');
 
   // A frase nunca quebra nem é cortada com reticências: inteira, ou não entra.
   const label = await page.locator('.assistant-starter-card-label').first().evaluate(el => {

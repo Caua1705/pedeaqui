@@ -3509,7 +3509,12 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   min-width:0!important;
   max-width:none!important;
   margin:0 -20px!important;
-  padding:2px 20px!important;
+  padding:2px 0!important;
+  scroll-padding-inline:20px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
   overflow-x:auto!important;
   overflow-y:hidden!important;
   scroll-snap-type:x proximity!important;
@@ -3525,6 +3530,12 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 #mobViewAssistant .assistant-starter.is-ready{
   pointer-events:auto!important;
 }
+#mobViewAssistant .assistant-starter-card:first-child{
+  margin-left:20px!important;
+}
+#mobViewAssistant .assistant-starter-card:last-child{
+  margin-right:20px!important;
+}
 /* Sem isto o flex ESPREME as pílulas para caberem na largura da tela, que é
    exatamente o oposto de uma régua rolável — e aí o texto quebra. */
 #mobViewAssistant .assistant-starter-card{
@@ -3536,16 +3547,19 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   text-align:left!important;
   width:auto!important;
   max-width:none!important;
-  min-height:38px!important;
+  min-width:0!important;
+  height:56px!important;
+  min-height:56px!important;
+  max-height:56px!important;
   padding:0 16px!important;
   border:1px solid var(--border)!important;
-  border-radius:999px!important;
+  border-radius:16px!important;
   background:var(--surface)!important;
   color:var(--text-main)!important;
   font-family:inherit!important;
-  font-size:13.5px!important;
-  line-height:18px!important;
-  font-weight:550!important;
+  font-size:16px!important;
+  line-height:24px!important;
+  font-weight:600!important;
   cursor:pointer!important;
   -webkit-tap-highlight-color:transparent!important;
   opacity:0;

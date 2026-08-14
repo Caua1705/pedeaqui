@@ -788,7 +788,10 @@
 
   function renderAssistantStarterSuggestions() {
     const container = document.getElementById('assistantStarter');
-    if (container) container.innerHTML = starterSuggestionCards();
+    if (container) {
+      container.innerHTML = starterSuggestionCards();
+      container.scrollLeft = 0;
+    }
   }
 
   /* ── Header ──

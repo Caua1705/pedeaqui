@@ -57,46 +57,37 @@
   let _markSeq = 0;
 
   /**
-   * A marca do assistente: um sparkle de quatro pontas, sozinho, preenchido com
-   * um gradiente da cor do restaurante.
+   * Marca do assistente: um balao de conversa com uma cloche dentro. O balao
+   * diz "conversa" e a cloche diz "cardapio" sem depender da convencao generica
+   * de estrelinha de IA. O vapor vira o indicador de atividade.
    *
-   * SEM DISCO ATRÁS. O círculo pastel que existia aqui fazia o conjunto ler como
-   * adesivo de tutorial — ícone chapado sobre disco claro é vocabulário de
-   * ilustração de onboarding, não de marca de produto. O glifo se sustenta
-   * sozinho. Nada de fundo, sombra ou contorno pode voltar.
-   *
-   * VETOR NÍTIDO, SEM DESFOQUE. Antes do sparkle houve uma nuvem de ruído
-   * fractal (feTurbulence + feDisplacementMap + feGaussianBlur); sete tentativas
-   * mostraram que desfoque sobre fundo claro degenera em mancha pixelada no
-   * celular, onde o filtro é rasterizado em resolução baixa. Era a técnica, não
-   * a calibragem.
-   *
-   * O `fill` do gradiente vai no ATRIBUTO, não no CSS: como o id muda por
-   * instância, uma regra `fill:url(#idFixo)` na folha venceria o atributo e
-   * apontaria todas as marcas para o mesmo <defs>.
-   *
-   * A cor sai de --brand-primary: nenhum hex fixo, senão o componente chega na
-   * cor de outro restaurante.
-   *
-   * É decorativo (aria-hidden): quem diz o que a tela é, é o título logo abaixo.
+   * Continua sendo SVG puro e recebe a paleta white-label do restaurante. Cada
+   * instancia ganha seu proprio gradiente porque ids de <defs> sao globais no
+   * documento. E decorativo: o texto ao lado comunica o estado para leitores de
+   * tela.
    */
-  function markMarkup({ size = '', id = '', thinking = false } = {}) {
+  function markMarkup({ size = '', id = '', thinking = false, responding = false } = {}) {
     const classes = ['assistant-mark'];
     if (size) classes.push(`assistant-mark--${size}`);
     if (thinking) classes.push('is-thinking');
+    if (responding) classes.push('is-responding');
     const grad = `assistantMarkGrad${++_markSeq}`;
     return `
       <div class="${classes.join(' ')}"${id ? ` id="${id}"` : ''} aria-hidden="true">
-        <svg viewBox="0 0 24 24" class="assistant-mark__glyph" focusable="false"
+        <svg viewBox="0 0 32 32" class="assistant-mark__glyph" focusable="false"
              xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="${grad}" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stop-color="var(--mark-light)"/>
-              <stop offset="1" stop-color="var(--mark-deep)"/>
+            <linearGradient id="${grad}" x1="5" y1="3" x2="27" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="var(--brand-light)"/>
+              <stop offset="1" stop-color="var(--brand-primary)"/>
             </linearGradient>
           </defs>
-          <path class="assistant-mark__star" fill="url(#${grad})" d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z"/>
-          <path class="assistant-mark__spark" d="M19.6 2.4c.16 1.5 1.34 2.68 2.84 2.84-1.5.16-2.68 1.34-2.84 2.84-.16-1.5-1.34-2.68-2.84-2.84 1.5-.16 2.68-1.34 2.84-2.84Z"/>
+          <path class="assistant-mark__bubble" fill="url(#${grad})" d="M7.2 3h17.6A4.2 4.2 0 0 1 29 7.2v12.1a4.2 4.2 0 0 1-4.2 4.2H15l-7.3 5.1v-5.1h-.5A4.2 4.2 0 0 1 3 19.3V7.2A4.2 4.2 0 0 1 7.2 3Z"/>
+          <g class="assistant-mark__service" fill="none" stroke="var(--brand-on)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path class="assistant-mark__steam assistant-mark__steam--one" d="M13.2 11.8c-1.25-1.25 1.1-2 0-3.45"/>
+            <path class="assistant-mark__steam assistant-mark__steam--two" d="M18.5 11.4c-1.2-1.15 1.05-1.9 0-3.2"/>
+            <path class="assistant-mark__cloche" d="M9.8 20h12.4M11.2 18.4c.35-3.2 2.05-4.8 4.8-4.8s4.45 1.6 4.8 4.8H11.2Z"/>
+          </g>
         </svg>
       </div>`;
   }
@@ -434,6 +425,7 @@
     const plainText = preview.textContent || text;
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="assistant-result-card assistant-chat-assistant-message is-typing-response">
+        <div class="assistant-response-mark">${markMarkup({ size: 'mini', responding: true })}</div>
         <div class="assistant-result-content">
           <div class="assistant-result-title" aria-label="${esc(plainText)}"></div>
           ${renderAssistantFeedbackActions()}
@@ -448,6 +440,7 @@
       renderFinal: () => {
         title.innerHTML = renderAssistantMarkdown(text);
         messageElement.classList.remove('is-typing-response');
+        messageElement.querySelector('.assistant-mark')?.classList.remove('is-responding');
         scrollAssistantToLatest();
       },
       onComplete
@@ -865,6 +858,7 @@
                de margens do layout antigo e casava por nome com o componente —
                foi ele que pintou a janela quadrada uma vez. -->
           ${markMarkup({ size: 'intro', id: 'assistantIntroMark' })}
+          <div class="assistant-ai-eyebrow">Seu guia do card&aacute;pio</div>
           <div class="assistant-ai-question" id="assistantIntroQuestion" data-text="Como posso ajudar hoje?" aria-label="Como posso ajudar hoje?"></div>
           <div class="assistant-ai-subtitle">Me diga o que procura e eu encontro as melhores op&ccedil;&otilde;es do card&aacute;pio.</div>
         </div>
@@ -872,8 +866,12 @@
         <!-- A tela não abre vazia: ninguém sabe de cabeça o que perguntar a um
              chat de restaurante. Some na primeira mensagem e só volta quando a
              conversa é limpa — ou seja, numa sessão nova. -->
-        <div class="assistant-starter" id="assistantStarter" aria-label="Sugest&otilde;es de pergunta">
-          ${starterSuggestionCards()}
+        <div class="assistant-starter-zone">
+          <div class="assistant-starter-heading">Experimente perguntar</div>
+          <div class="assistant-starter" id="assistantStarter" aria-label="Sugest&otilde;es de pergunta">
+            ${starterSuggestionCards()}
+          </div>
+          <div class="assistant-starter-hint">Voc&ecirc; tamb&eacute;m pode falar de pre&ccedil;o, ingredientes ou prefer&ecirc;ncias.</div>
         </div>
 
         <!-- Results area (shown after search) -->

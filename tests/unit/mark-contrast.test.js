@@ -3,70 +3,49 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import '../../scripts/utils/brand-theme.js';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const CSS = readFileSync(resolve(root, 'styles', 'assistant.css'), 'utf8');
+const JS = readFileSync(resolve(root, 'scripts', 'pages', 'restaurant-assistant.js'), 'utf8');
 
-const { MARK_SPARK_MIN_ALPHA } = window.RapidexTheme;
+describe('marca conversacional white-label', () => {
+  it('usa somente tokens do restaurante no balao e no desenho interno', () => {
+    const markup = JS.match(/function markMarkup[\s\S]*?\n {2}\}/)?.[0] ?? '';
 
-const CSS = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'styles', 'assistant.css'),
-  'utf8'
-);
-
-// O contraste da ponta pequena é calculado no JS para um piso de opacidade
-// específico (MARK_SPARK_MIN_ALPHA) e o CSS repete esse número em dois lugares:
-// a opacidade de repouso e o quadro `from` do twinkle. São dois arquivos que
-// precisam concordar e que nada obriga a andar juntos — baixar o piso no CSS
-// invalidaria em silêncio a cor que o JS escolheu, e a marca voltaria a sumir no
-// branco sem que nenhum teste de cor percebesse (eles medem a cor SÓLIDA).
-describe('o piso de opacidade da ponta pequena', () => {
-  // Fecha na chave em coluna 0: um `?\}` simples pararia no fim do primeiro
-  // quadro (`from { ... }`) e o teste leria uma opacidade só.
-  const blocoTwinkle = CSS.match(/@keyframes mark-twinkle\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
-
-  it('o quadro `from` do twinkle é exatamente o piso calculado no JS', () => {
-    const from = blocoTwinkle.match(/from\s*\{[^}]*opacity:\s*([\d.]+)/)?.[1];
-    expect(from, 'não achei a opacidade do quadro `from` em mark-twinkle').toBeTruthy();
-    expect(Number(from)).toBe(MARK_SPARK_MIN_ALPHA);
+    expect(markup).toContain('class="assistant-mark__bubble"');
+    expect(markup).toContain('stop-color="var(--brand-light)"');
+    expect(markup).toContain('stop-color="var(--brand-primary)"');
+    expect(markup).toContain('stroke="var(--brand-on)"');
+    expect(markup, 'o icone ganhou uma cor fixa').not.toMatch(/#[0-9a-f]{3,8}/i);
   });
 
-  it('nenhum quadro do twinkle desce abaixo do piso', () => {
-    const opacidades = [...blocoTwinkle.matchAll(/opacity:\s*([\d.]+)/g)].map((m) => Number(m[1]));
-    expect(opacidades.length).toBeGreaterThan(1);
-    for (const valor of opacidades) {
-      expect(valor, `quadro com opacity ${valor} fura o piso`).toBeGreaterThanOrEqual(
-        MARK_SPARK_MIN_ALPHA
-      );
-    }
+  it('combina conversa, cloche e vapor em SVG puro', () => {
+    const markup = JS.match(/function markMarkup[\s\S]*?\n {2}\}/)?.[0] ?? '';
+
+    expect(markup).toContain('viewBox="0 0 32 32"');
+    expect(markup).toContain('assistant-mark__bubble');
+    expect(markup).toContain('assistant-mark__cloche');
+    expect(markup.match(/assistant-mark__steam/g)).toHaveLength(4);
+    expect(markup).not.toContain('assistant-mark__star');
+    expect(markup).not.toMatch(/<img|<canvas|<filter/i);
   });
 
-  it('a opacidade de repouso e a de movimento reduzido também respeitam o piso', () => {
-    const semKeyframes = CSS.replace(/@keyframes[\s\S]*?\n\}/g, '');
-    const regras = [...semKeyframes.matchAll(/\.assistant-mark__spark\s*\{[^}]*\}/g)].map(
-      (m) => m[0]
-    );
-    expect(regras.length, 'não achei as regras da ponta pequena').toBeGreaterThan(0);
+  it('pensando e respondendo possuem ritmos proprios sem alterar escala', () => {
+    const thinking = CSS.match(/@keyframes assistant-mark-thinking\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
+    const responding = CSS.match(/@keyframes assistant-mark-responding\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
 
-    const opacidades = regras
-      .flatMap((r) => [...r.matchAll(/opacity:\s*([\d.]+)/g)])
-      .map((m) => Number(m[1]));
-    expect(opacidades.length, 'a ponta pequena perdeu a opacidade própria').toBeGreaterThan(0);
-    for (const valor of opacidades) {
-      expect(valor, `opacity ${valor} fura o piso`).toBeGreaterThanOrEqual(MARK_SPARK_MIN_ALPHA);
-    }
+    expect(CSS).toMatch(/\.assistant-mark\.is-thinking \.assistant-mark__bubble/);
+    expect(CSS).toMatch(/\.assistant-mark\.is-responding \.assistant-mark__bubble/);
+    expect(thinking).toContain('translateY');
+    expect(responding).toContain('translateY');
+    expect(`${thinking}${responding}`, 'a animacao redimensiona o layout').not.toMatch(/scale\s*\(/);
   });
 
-  it('a marca não voltou a derivar cor no CSS', () => {
-    // color-mix() não sabe medir luminância: foi exatamente por isso que a
-    // derivação saiu da folha e foi para markInkColors().
-    // Ancorado no início da linha: `.assistant-mark{` sozinho é o bloco do
-    // COMPONENTE. Sem a âncora, o match cai na primeira regra descendente
-    // (`#mobViewAssistant .assistant-intro-top .assistant-mark`), que só tem
-    // margem e passaria no teste sem provar nada.
-    const bloco = CSS.match(/^\.assistant-mark\s*\{[^}]*\}/m)?.[0] ?? '';
-    expect(bloco).toBeTruthy();
-    expect(bloco, 'a marca voltou a derivar cor no CSS').not.toMatch(/color-mix/);
-    for (const tinta of ['--brand-mark-light', '--brand-mark-deep', '--brand-mark-spark']) {
-      expect(bloco, `a marca deixou de consumir ${tinta}`).toContain(tinta);
-    }
+  it('movimento reduzido desliga balao e vapor sem esconder o simbolo', () => {
+    const reduced = CSS.match(/@media \(prefers-reduced-motion:reduce\)\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
+
+    expect(reduced).toContain('.assistant-mark__bubble');
+    expect(reduced).toContain('.assistant-mark__steam');
+    expect(reduced).toContain('animation:none!important');
+    expect(reduced).toMatch(/opacity:\.82!important/);
   });
 });

@@ -41,18 +41,15 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
   await openAssistant(page);
   await waitForIntro(page);
 
-  // A variável do componente tem que ser a do tema. O bloco de CSS traz #F26B21
-  // como valor de ORIGEM, e ele não pode vencer o hex do lojista.
+  // O balao recebe o gradiente do tenant, nao uma cor fixa da plataforma.
   const ler = () => page.locator('#assistantIntroMark').evaluate(el => {
     const paradas = [...el.querySelectorAll('linearGradient stop')]
       .map(s => getComputedStyle(s).stopColor);
     return {
       brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
       temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
-      claro: getComputedStyle(el).getPropertyValue('--mark-light').trim(),
-      escuro: getComputedStyle(el).getPropertyValue('--mark-deep').trim(),
       paradas,
-      brilho: getComputedStyle(el.querySelector('.assistant-mark__spark')).fill
+      fill: el.querySelector('.assistant-mark__bubble').getAttribute('fill')
     };
   });
 
@@ -63,16 +60,12 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
   expect(laranja.brand.toUpperCase(), 'o componente não leu a cor do tema').toBe(laranja.temaBrand.toUpperCase());
   expect(indigo.brand.toUpperCase()).toBe('#2A2D7C');
 
-  // O azul entra de fato na PINTURA — as duas paradas do gradiente e a ponta
-  // pequena —, não só numa variável.
+  // O azul entra de fato nas duas paradas do desenho.
   expect(indigo.paradas, 'o gradiente perdeu uma parada').toHaveLength(2);
   for (let i = 0; i < 2; i++) {
     expect(indigo.paradas[i], `a parada ${i} não acompanhou o tenant`).not.toBe(laranja.paradas[i]);
   }
-  expect(indigo.brilho, 'a ponta pequena não é a cor do lojista').toBe('rgb(42, 45, 124)');
-
-  // E as duas pontas do gradiente são DIFERENTES entre si — um gradiente que
-  // colapsa em cor única devolve o glifo chapado que motivou a troca.
+  expect(indigo.fill).toMatch(/^url\(#assistantMarkGrad\d+\)$/);
   expect(indigo.paradas[0], 'o gradiente virou cor chapada').not.toBe(indigo.paradas[1]);
 });
 
@@ -90,7 +83,7 @@ test('cada marca tem seu próprio gradiente', async ({ page }) => {
     const nos = [...raiz.querySelectorAll('.assistant-mark')];
     return nos.map(m => ({
       idGradiente: m.querySelector('linearGradient')?.id,
-      fillEstrela: m.querySelector('.assistant-mark__star')?.getAttribute('fill')
+      fillBalao: m.querySelector('.assistant-mark__bubble')?.getAttribute('fill')
     }));
   });
 
@@ -99,7 +92,7 @@ test('cada marca tem seu próprio gradiente', async ({ page }) => {
   expect(new Set(ids).size, `ids de gradiente repetidos: ${ids}`).toBe(ids.length);
   // E cada glifo aponta para o SEU gradiente, não para o do vizinho.
   for (const m of marcas) {
-    expect(m.fillEstrela, `a estrela não usa o gradiente da própria instância (${m.idGradiente})`)
+    expect(m.fillBalao, `o balao nao usa o gradiente da propria instancia (${m.idGradiente})`)
       .toBe(`url(#${m.idGradiente})`);
   }
 });
@@ -120,7 +113,7 @@ test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) =
     return {
       estilos,
       tags: [...new Set([...el.querySelectorAll('*')].map(n => n.tagName))],
-      // O glifo é geometria: dois <path>, nada de <image> nem de primitiva.
+      // O glifo e geometria: balao, vapor e cloche; nada rasterizado.
       paths: el.querySelectorAll('path').length,
       viewBox: el.querySelector('svg').getAttribute('viewBox')
     };
@@ -135,17 +128,15 @@ test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) =
     'FEFLOOD', 'FECOMPOSITE', 'MASK', 'IMG', 'VIDEO', 'CANVAS']) {
     expect(desenho.tags, `a marca voltou a depender de <${proibida.toLowerCase()}>`).not.toContain(proibida);
   }
-  expect(desenho.paths, 'o sparkle deixou de ser duas pontas').toBe(2);
-  expect(desenho.viewBox).toBe('0 0 24 24');
+  expect(desenho.paths, 'o simbolo perdeu parte da sua geometria').toBe(4);
+  expect(desenho.viewBox).toBe('0 0 32 32');
 });
 
-test('o glifo se sustenta sozinho: nada desenhado atrás dele', async ({ page }) => {
+test('o simbolo nao depende de fundo ou sombra CSS', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // A regressão que este teste barra: o disco pastel que fazia o conjunto ler
-  // como adesivo de tutorial. Ícone chapado sobre fundo claro é vocabulário de
-  // ilustração de onboarding — a marca é só o glifo.
+  // Toda a forma vive no SVG; raiz e glyph nao desenham uma segunda placa.
   const fundo = await page.locator('#assistantIntroMark').evaluate(el => {
     const invisivel = v => /^(rgba\(0, 0, 0, 0\)|transparent|none)$/.test(v);
     const olhar = (n, quem) => {
@@ -165,13 +156,13 @@ test('o glifo se sustenta sozinho: nada desenhado atrás dele', async ({ page })
   });
 
   for (const n of fundo) {
-    expect(n.limpo, `voltou fundo/sombra atrás do glifo (${n.quem}): ${JSON.stringify(n)}`).toBe(true);
+    expect(n.limpo, `voltou fundo/sombra CSS atras do glifo (${n.quem}): ${JSON.stringify(n)}`).toBe(true);
     expect(n.borda, `voltou contorno na marca (${n.quem})`).toMatch(/^none$/);
     expect(n.pseudo, `voltou um pseudo-elemento desenhando atrás do glifo (${n.quem})`).toBe(0);
   }
 });
 
-test('a marca é discreta e encolhe sem perder proporção', async ({ page }) => {
+test('a marca encolhe em telas curtas sem perder proporcao', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
@@ -187,61 +178,36 @@ test('a marca é discreta e encolhe sem perder proporção', async ({ page }) =>
   });
 
   const padrao = await medir();
-  // 56px: marca de assistente é discreta. Sem o disco, o glifo ocupa a caixa.
-  expect(padrao.lado, 'a marca saiu do tamanho discreto').toEqual([56, 56]);
-  expect(padrao.glifo).toEqual([56, 56]);
-  for (const d of padrao.desvio) expect(d, 'o sparkle saiu do centro').toBeLessThanOrEqual(1);
+  expect(padrao.lado, 'a marca saiu do tamanho de abertura').toEqual([68, 68]);
+  expect(padrao.glifo).toEqual([68, 68]);
+  for (const d of padrao.desvio) expect(d, 'o simbolo saiu do centro').toBeLessThanOrEqual(1);
 
   // Tela curta: encolhe proporcionalmente, sem virar oval.
   await page.setViewportSize({ width: 390, height: 700 });
   const curta = await medir();
-  expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([44, 44]);
+  expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([54, 54]);
   expect(curta.lado[0]).toBe(curta.lado[1]);
   expect(curta.glifo[0] / curta.lado[0]).toBeCloseTo(padrao.glifo[0] / padrao.lado[0], 2);
 });
 
-test('a estrela é assimétrica, não um espelho da ponta pequena', async ({ page }) => {
+test('o simbolo combina conversa, cardapio e atividade', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  const forma = await page.locator('#assistantIntroMark').evaluate(el => {
-    const star = el.querySelector('.assistant-mark__star');
-    const spark = el.querySelector('.assistant-mark__spark');
-    const cs = getComputedStyle(star);
-    // getBBox() devolve um SVGRect, que não atravessa o evaluate — vira {}.
-    const caixa = n => { const b = n.getBBox(); return [b.width, b.height]; };
-    return {
-      rotacao: cs.transform,
-      caixaEstrela: caixa(star),
-      caixaBrilho: caixa(spark),
-      opacidadeBrilho: Number(getComputedStyle(spark).opacity)
-    };
-  });
-
-  // A principal chega rotacionada: `none` significaria que o eixo voltou a ser
-  // o do viewBox e as duas pontas ficariam alinhadas na mesma diagonal.
-  expect(forma.rotacao, 'a estrela perdeu a rotação').not.toBe('none');
-  // E a secundária é bem menor — não um espelho em escala 1:1.
-  const areaEstrela = forma.caixaEstrela[0] * forma.caixaEstrela[1];
-  const areaBrilho = forma.caixaBrilho[0] * forma.caixaBrilho[1];
-  expect(areaBrilho / areaEstrela, 'a ponta pequena deixou de ser secundária').toBeLessThan(0.15);
-  expect(forma.opacidadeBrilho, 'a ponta pequena compete com a principal').toBeLessThan(1);
+  const mark = page.locator('#assistantIntroMark');
+  await expect(mark.locator('.assistant-mark__bubble')).toHaveCount(1);
+  await expect(mark.locator('.assistant-mark__cloche')).toHaveCount(1);
+  await expect(mark.locator('.assistant-mark__steam')).toHaveCount(2);
 });
-test('os três estados mudam o ritmo, e SÓ o ritmo', async ({ page }) => {
+test('pensando e respondendo usam ritmos diferentes sem redimensionar a marca', async ({ page }) => {
   await openAssistant(page, { chatDelay: 2500 });
   await waitForIntro(page);
 
   const marca = page.locator('#assistantIntroMark');
 
-  // "O tamanho não muda" é medido no FATOR DE ESCALA da matriz de transform, não
-  // no getBoundingClientRect: a estrela gira, e a caixa alinhada aos eixos de uma
-  // forma girada muda de largura sozinha (~0,8px entre -8deg e 6deg) sem que nada
-  // tenha crescido. A matriz separa as duas coisas — rotação pura mantém escala 1.
-  //
-  // É por aqui que um scale escapava: mark-turn animava rotate + scale(1.06),
-  // então o estado de espera engordava a marca e empurrava o título e o subtítulo
-  // logo abaixo, no exato momento em que o cliente está esperando a resposta.
-  const escalaEstrela = () => marca.locator('.assistant-mark__star').evaluate(el => {
+  // O tamanho e medido pelo fator de escala da matriz, nao pela caixa visual:
+  // translacao e rotacao podem mudar o rect sem redimensionar o desenho.
+  const escalaBalao = () => marca.locator('.assistant-mark__bubble').evaluate(el => {
     const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
     return { x: Math.hypot(m.a, m.b), y: Math.hypot(m.c, m.d) };
   });
@@ -251,24 +217,30 @@ test('os três estados mudam o ritmo, e SÓ o ritmo', async ({ page }) => {
   //    abertura é escondida assim que a primeira mensagem sai — a marca da
   //    abertura mediria zero e o teste passaria sem ter medido nada.
   await expect(marca).not.toHaveClass(/is-thinking/);
-  await expect(marca.locator('.assistant-mark__star')).toBeVisible();
+  await expect(marca.locator('.assistant-mark__bubble')).toBeVisible();
 
   await marca.evaluate(el => el.classList.add('is-thinking'));
 
-  const animacao = await marca.locator('.assistant-mark__star')
+  const animacao = await marca.locator('.assistant-mark__bubble')
     .evaluate(el => getComputedStyle(el).animationName);
-  expect(animacao, 'a estrela não entrou no ritmo de "pensando"').not.toBe('none');
+  expect(animacao, 'o balao nao entrou no ritmo de pensando').toContain('assistant-mark-thinking');
 
   // Amostra ao longo do ciclo: um scale no keyframe só aparece no meio da
   // animação, então uma leitura única não pegaria.
   for (let i = 0; i < 6; i++) {
-    const escala = await escalaEstrela();
+    const escala = await escalaBalao();
     expect(escala.x, 'a marca cresceu na horizontal ao pensar').toBeCloseTo(1, 2);
     expect(escala.y, 'a marca cresceu na vertical ao pensar').toBeCloseTo(1, 2);
     await page.waitForTimeout(220);
   }
 
   await marca.evaluate(el => el.classList.remove('is-thinking'));
+
+  await marca.evaluate(el => el.classList.add('is-responding'));
+  const respondingAnimation = await marca.locator('.assistant-mark__bubble')
+    .evaluate(el => getComputedStyle(el).animationName);
+  expect(respondingAnimation).toContain('assistant-mark-responding');
+  await marca.evaluate(el => el.classList.remove('is-responding'));
 
   // 2. E o app move esse estado sozinho: parada -> pensando -> respondendo.
   await page.locator('.assistant-starter-card').first().click();
@@ -283,27 +255,25 @@ test('sob movimento reduzido a marca aparece parada e inteira', async ({ page })
 
   const estado = await page.locator('#assistantIntroMark').evaluate(el => {
     const r = el.getBoundingClientRect();
-    const spark = el.querySelector('.assistant-mark__spark');
-    const cs = getComputedStyle(el), cspark = getComputedStyle(spark);
-    const star = el.querySelector('.assistant-mark__star');
+    const steam = el.querySelector('.assistant-mark__steam');
+    const bubble = el.querySelector('.assistant-mark__bubble');
+    const cs = getComputedStyle(el), csteam = getComputedStyle(steam);
     return {
       largura: Math.round(r.width),
       visibilidade: cs.visibility,
-      animacaoEstrela: getComputedStyle(star).animationName,
-      animacaoBrilho: cspark.animationName,
-      opacidadeBrilho: Number(cspark.opacity),
-      opacidadeEstrela: Number(getComputedStyle(star).opacity)
+      animacaoBalao: getComputedStyle(bubble).animationName,
+      animacaoVapor: csteam.animationName,
+      opacidadeVapor: Number(csteam.opacity),
+      opacidadeBalao: Number(getComputedStyle(bubble).opacity)
     };
   });
 
   // Parada de verdade: sem animação declarada, não só pausada.
-  expect(estado.animacaoEstrela, 'a estrela continuou girando').toBe('none');
-  expect(estado.animacaoBrilho, 'a ponta pequena continuou piscando').toBe('none');
-  // E inteira: a ponta pequena não pode ficar no quadro apagado da animação,
-  // senão o movimento reduzido entrega meia marca.
-  expect(estado.opacidadeBrilho, 'a ponta pequena ficou apagada').toBeGreaterThanOrEqual(0.5);
-  expect(estado.opacidadeEstrela).toBe(1);
-  expect(estado.largura).toBe(56);
+  expect(estado.animacaoBalao, 'o balao continuou se movendo').toBe('none');
+  expect(estado.animacaoVapor, 'o vapor continuou se movendo').toBe('none');
+  expect(estado.opacidadeVapor, 'o vapor ficou apagado').toBeGreaterThanOrEqual(0.5);
+  expect(estado.opacidadeBalao).toBe(1);
+  expect(estado.largura).toBe(68);
   expect(estado.visibilidade).toBe('visible');
 });
 
@@ -422,19 +392,12 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   const count = await cards.count();
   expect(count, 'a tela voltou a abrir sem sugestões').toBeGreaterThanOrEqual(3);
 
-  // Régua horizontal: todas na MESMA linha, cada uma à direita da anterior.
-  // offsetTop/offsetLeft e não getBoundingClientRect: a revelação escalonada
-  // ainda está correndo um translateY, e o rect mediria a animação, não o
-  // layout — que é o que este teste quer travar.
+  // Grade compacta: quatro ideias visiveis sem depender de descobrir uma rolagem.
   const geometry = await cards.evaluateAll(items => items.map(el =>
     ({ left: el.offsetLeft, top: el.offsetTop })));
-  expect(new Set(geometry.map(item => item.top)).size, 'as sugestões não estão numa linha só').toBe(1);
-  for (let i = 1; i < geometry.length; i++) {
-    expect(geometry[i].left, 'as sugestões não estão em sequência').toBeGreaterThan(geometry[i - 1].left);
-  }
+  expect(new Set(geometry.map(item => item.top)).size, 'a grade nao formou duas linhas').toBe(2);
+  expect(new Set(geometry.map(item => item.left)).size, 'a grade nao formou duas colunas').toBe(2);
 
-  // E rola de verdade: o conteúdo é mais largo que a régua. É esse transbordo
-  // que permite mais de três — em pilha, a quarta empurrava o resto da tela.
   const firstCardSize = await cards.first().evaluate(el => {
     const rect = el.getBoundingClientRect();
     const style = getComputedStyle(el);
@@ -447,27 +410,11 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
       lineHeight: style.lineHeight
     };
   });
-  expect(firstCardSize.height).toBe(56);
+  expect(firstCardSize.height).toBe(62);
   expect(firstCardSize.minWidth).toBe('0px');
   expect(firstCardSize.radius).toBe('16px');
   expect(firstCardSize.fontSize).toBe('16px');
   expect(firstCardSize.lineHeight).toBe('24px');
-
-  const proportionalWidths = await cards.evaluateAll(items => items.map(el => {
-    const label = el.querySelector('.assistant-starter-card-label');
-    const style = getComputedStyle(el);
-    return {
-      button: el.getBoundingClientRect().width,
-      content: label.getBoundingClientRect().width,
-      extras: parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
-        + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth)
-    };
-  }));
-  for (const size of proportionalWidths) {
-    expect(size.button).toBeCloseTo(size.content + size.extras, 1);
-  }
-  expect(new Set(proportionalWidths.map(size => Math.round(size.button))).size)
-    .toBeGreaterThan(1);
 
   const leftSpacing = await page.evaluate(() => {
     const view = document.getElementById('mobViewAssistant').getBoundingClientRect();
@@ -477,29 +424,24 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   expect(leftSpacing).toBeCloseTo(20, 0);
 
   const rail = await page.locator('#assistantStarter').evaluate(el => ({
-    scroll: el.scrollWidth,
-    client: el.clientWidth,
     overflowX: getComputedStyle(el).overflowX,
-    snap: getComputedStyle(el).scrollSnapType,
+    columns: getComputedStyle(el).gridTemplateColumns,
     background: getComputedStyle(el).backgroundColor,
     borderWidth: getComputedStyle(el).borderTopWidth,
     shadow: getComputedStyle(el).boxShadow
   }));
-  expect(rail.scroll, 'a régua não transborda, então não rola').toBeGreaterThan(rail.client);
-  expect(rail.overflowX).toBe('auto');
-  // O navegador serializa `x proximity` como só `x`: proximity é o valor
-  // inicial da força e some da forma computada.
-  expect(rail.snap).toMatch(/^x( proximity)?$/);
+  expect(rail.overflowX).toBe('visible');
+  expect(rail.columns.split(' ')).toHaveLength(2);
   expect(rail.background).toBe('rgba(0, 0, 0, 0)');
   expect(rail.borderWidth).toBe('0px');
   expect(rail.shadow).toBe('none');
 
-  // A frase nunca quebra nem é cortada com reticências: inteira, ou não entra.
+  // Frases podem ocupar duas linhas, mas nunca sao cortadas com reticencias.
   const label = await page.locator('.assistant-starter-card-label').first().evaluate(el => {
     const style = getComputedStyle(el);
     return { wrap: style.whiteSpace, ellipsis: style.textOverflow, lines: el.getClientRects().length };
   });
-  expect(label.wrap).toBe('nowrap');
+  expect(label.wrap).toBe('normal');
   expect(label.ellipsis).not.toBe('ellipsis');
   expect(label.lines, 'a frase quebrou em duas linhas').toBe(1);
 
@@ -575,7 +517,7 @@ test('nada nesta tela nomeia a plataforma', async ({ page }) => {
   expect(leaked, 'a marca da plataforma voltou ao app do consumidor').toEqual([]);
 });
 
-test('a abertura não tem mais o vão morto no meio da tela', async ({ page }) => {
+test('a abertura ocupa a tela com conteudo util, sem vao morto', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
@@ -586,7 +528,7 @@ test('a abertura não tem mais o vão morto no meio da tela', async ({ page }) =
     };
     const body = box('#assistantAiBody');
     const top = box('.assistant-intro-top');
-    const starter = box('#assistantStarter');
+    const starter = box('.assistant-starter-zone');
     const input = box('.assistant-ai-input-bar');
     return {
       acimaDoBloco: top.top - body.top,
@@ -595,16 +537,9 @@ test('a abertura não tem mais o vão morto no meio da tela', async ({ page }) =
     };
   });
 
-  // O bloco de cima se centra: o espaço acima dele e o espaço até as sugestões
-  // são o mesmo, seja qual for a altura da tela. Antes ele ficava colado no topo
-  // e todo o resto do vão caía embaixo das sugestões, em branco.
-  expect(
-    Math.abs(layout.acimaDoBloco - layout.entreBlocoESugestoes),
-    `bloco fora do centro: ${JSON.stringify(layout)}`
-  ).toBeLessThanOrEqual(2);
-
-  // E as sugestões ficam ancoradas junto do campo, não boiando no meio.
-  expect(layout.entreSugestoesEcampo, 'as sugestões descolaram do campo').toBeLessThanOrEqual(40);
+  expect(layout.acimaDoBloco, 'o cartao de abertura descolou do topo').toBeLessThanOrEqual(24);
+  expect(layout.entreBlocoESugestoes, 'as sugestoes descolaram do cartao').toBeLessThanOrEqual(32);
+  expect(layout.entreSugestoesEcampo, 'voltou o grande vazio antes do campo').toBeLessThanOrEqual(120);
   expect(layout.entreSugestoesEcampo).toBeGreaterThan(0);
 });
 

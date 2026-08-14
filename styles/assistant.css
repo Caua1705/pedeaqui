@@ -3699,38 +3699,10 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 
-/* ===== COMPONENTE: marca do assistente =====
-   Sparkle de quatro pontas — a convenção visual de "assistente de IA" — sozinho,
-   preenchido com um gradiente da cor do restaurante.
-
-   SEM DISCO ATRÁS. Havia aqui um círculo em tom pastel da marca; ícone chapado
-   sobre disco claro é vocabulário de ilustração de onboarding, e o conjunto lia
-   como adesivo de tutorial. O glifo se sustenta sozinho. Nenhuma regra deste
-   bloco pode reintroduzir background, box-shadow, border ou ::before atrás dele.
-
-   O GRADIENTE é o que separa marca de clipart — mas ele é curto de propósito
-   (78% da marca sobre branco -> 88% sobre preto): passos largos fariam o glifo
-   ler como duas cores coladas em vez de uma peça só.
-
-   VETOR NÍTIDO, SEM DESFOQUE. Antes do sparkle houve uma nuvem de ruído fractal
-   (feTurbulence + feDisplacementMap + feGaussianBlur), e sete tentativas
-   mostraram que desfoque sobre fundo claro degenera em mancha pixelada no
-   celular. Nada aqui pode voltar a introduzir blur, filtro ou máscara.
-
-   A montagem está em markMarkup(), scripts/pages/restaurant-assistant.js — é lá
-   que o id do gradiente é gerado por instância.
-   ===== */
-/* As três tintas vêm PRONTAS do tema (scripts/utils/brand-theme.js,
-   markInkColors) — não são derivadas aqui. O que existia neste lugar era
-   `color-mix(in srgb, var(--brand) 78%, #fff)`: uma mistura fixa, cega ao
-   contraste, que CLAREAVA a marca justamente contra o fundo branco da tela.
-   Medido, dava 1,33:1 no amarelo #FFD34D e 2,86:1 até no laranja do piloto.
-   color-mix() não sabe medir luminância; a guarda tem que morar no JS. */
+/* Base geometrica da marca do assistente. O desenho (conversa + cloche), as
+   cores white-label e os ritmos de atividade ficam no bloco de refresh abaixo. */
 .assistant-mark{
-  --size: 56px;
-  --mark-light: var(--brand-mark-light, #C4551A);
-  --mark-deep:  var(--brand-mark-deep, #96400F);
-  --mark-spark: var(--brand-mark-spark, #A94711);
+  --size: 68px;
   width: var(--size);
   height: var(--size);
   flex: none;
@@ -3744,60 +3716,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   overflow: visible;
 }
 
-/* O `fill` do gradiente mora no ATRIBUTO do <path>, não aqui: o id muda por
-   instância, e uma regra `fill:url(#idFixo)` nesta folha venceria o atributo e
-   grudaria todas as marcas no mesmo <defs>. */
-.assistant-mark__star{
-  transform: rotate(-8deg);
-  transform-origin: 12px 12px;
-}
-
-/* Assimetria: a ponta pequena é menor e deslocada, não um espelho da grande.
-   Ela mantém opacidade própria — é o que a faz ler como secundária —, mas o
-   PISO dessa opacidade é parte do contraste calculado: --brand-mark-spark foi
-   escurecida para cruzar 3:1 já COMPOSTA a .62 no branco. Baixar daqui invalida
-   a conta e a ponta some no fundo (a .3, nem preto puro chega a 3:1). */
-.assistant-mark__spark{
-  fill: var(--mark-spark);
-  opacity: .62;
-  transform-origin: 19.6px 5.2px;
-  animation: mark-twinkle 3.4s ease-in-out infinite alternate;
-}
-
-@keyframes mark-twinkle{
-  from { opacity: .62; transform: scale(.8);  }
-  to   { opacity: 1;   transform: scale(1.05); }
-}
-
-/* Pensando: muda só o RITMO. A estrela passa a girar e o brilho pisca mais
-   rápido — nenhum dos dois cresce. Um `scale` aqui faria a marca inchar quando
-   a resposta começa a ser processada, e o bloco inteiro (marca + título +
-   subtítulo) se mexeria junto: o estado de espera empurraria o texto que o
-   cliente está lendo. Por isso mark-turn é rotação pura. */
-.assistant-mark.is-thinking .assistant-mark__star{
-  animation: mark-turn 2.6s ease-in-out infinite alternate;
-}
-.assistant-mark.is-thinking .assistant-mark__spark{
-  animation-duration: 1s;
-}
-
-@keyframes mark-turn{
-  from { transform: rotate(-8deg); }
-  to   { transform: rotate(6deg);  }
-}
-
-@media (prefers-reduced-motion: reduce){
-  .assistant-mark__star,
-  .assistant-mark__spark{ animation: none; }
-  /* Parada, mas nunca abaixo do piso do twinkle: quem desliga animação recebe a
-     marca inteira e legível, não o quadro mais fraco dela congelado. */
-  .assistant-mark__spark{ opacity: .72; }
-}
-/* ===== FIM DO COMPONENTE ===== */
-
-/* Modificadores de tamanho. Só trocam --size: o desenho e o ritmo vêm do bloco
-   acima intactos. A mini acompanha o rótulo "Digitando..." no esqueleto. */
-.assistant-mark--mini{ --size: 22px }
+/* A mini acompanha o status de busca e identifica as respostas do assistente. */
+.assistant-mark--mini{ --size: 26px }
 
 /* The bottom-nav ruler is invariant between the main screens. Club/Profile
    used to override the shared flex items with content-sized widths and
@@ -3836,5 +3756,353 @@ body:has(#mobViewAssistant.active) .assistant-toast{
     margin-right:0!important;
     transform:none!important;
     translate:none!important;
+  }
+}
+
+/* ============================================================
+   WHITE-LABEL CONVERSATIONAL AGENT — visual refresh
+
+   A tela usa a mesma paleta derivada do restaurante que o restante do app.
+   A marca aparece em superficies, estados e hierarquia, nao apenas em um
+   pequeno icone solto no centro. O novo simbolo combina conversa + cardapio.
+   ============================================================ */
+#mobViewAssistant .assistant-page{
+  background:
+    radial-gradient(circle at 88% 16%, rgba(var(--brand-primary-rgb),.12), transparent 30%),
+    linear-gradient(180deg,var(--brand-tint) 0,rgba(var(--brand-primary-rgb),.035) 42%,var(--surface) 72%)!important;
+}
+#mobViewAssistant .assistant-hdr{
+  background:linear-gradient(135deg,var(--brand-primary),var(--brand-hover))!important;
+  border-bottom:0!important;
+  box-shadow:0 8px 24px rgba(var(--brand-primary-rgb),.18)!important;
+}
+#mobViewAssistant .assistant-hdr-title,
+#mobViewAssistant .assistant-hdr-name{
+  color:var(--brand-on)!important;
+}
+#mobViewAssistant .assistant-hdr-btn{
+  background:rgba(255,255,255,.18)!important;
+  color:var(--brand-on)!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+}
+#mobViewAssistant .assistant-hdr-btn:active,
+#mobViewAssistant .assistant-hdr-btn.is-active{
+  background:rgba(255,255,255,.3)!important;
+}
+#mobViewAssistant .assistant-hdr-btn:focus-visible{
+  outline:2px solid var(--brand-on)!important;
+  outline-offset:2px!important;
+}
+#mobViewAssistant .assistant-cart-count{
+  background:var(--brand-on)!important;
+  color:var(--brand-primary)!important;
+  border-color:var(--brand-primary)!important;
+}
+#mobViewAssistant .assistant-hdr-menu{
+  border-color:var(--brand-border)!important;
+  box-shadow:0 14px 34px rgba(var(--brand-primary-rgb),.16)!important;
+}
+
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching){
+  padding:18px 20px 28px!important;
+}
+#mobViewAssistant .assistant-intro-top{
+  position:relative!important;
+  isolation:isolate!important;
+  width:100%!important;
+  max-width:354px!important;
+  min-height:272px!important;
+  margin:0 auto 18px!important;
+  padding:27px 24px 25px!important;
+  justify-content:center!important;
+  border:1px solid var(--brand-border)!important;
+  border-radius:28px!important;
+  background:linear-gradient(145deg,var(--surface) 3%,var(--brand-tint) 56%,var(--brand-surface) 135%)!important;
+  box-shadow:0 18px 44px rgba(var(--brand-primary-rgb),.13)!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#mobViewAssistant .assistant-intro-top::before,
+#mobViewAssistant .assistant-intro-top::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:-1!important;
+  border-radius:50%!important;
+  pointer-events:none!important;
+}
+#mobViewAssistant .assistant-intro-top::before{
+  width:150px!important;
+  height:150px!important;
+  top:-78px!important;
+  right:-55px!important;
+  background:rgba(var(--brand-primary-rgb),.1)!important;
+}
+#mobViewAssistant .assistant-intro-top::after{
+  width:92px!important;
+  height:92px!important;
+  left:-48px!important;
+  bottom:-45px!important;
+  border:18px solid rgba(var(--brand-primary-rgb),.07)!important;
+}
+#mobViewAssistant .assistant-intro-top .assistant-mark{
+  margin:0 0 13px!important;
+}
+#mobViewAssistant .assistant-ai-eyebrow{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:26px!important;
+  margin:0 0 9px!important;
+  padding:0 11px!important;
+  border:1px solid var(--brand-border)!important;
+  border-radius:999px!important;
+  background:rgba(var(--brand-primary-rgb),.08)!important;
+  color:var(--brand-hover)!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:750!important;
+  letter-spacing:.035em!important;
+  text-transform:uppercase!important;
+}
+#mobViewAssistant .assistant-ai-question,
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
+  color:var(--text-main)!important;
+  font-size:25px!important;
+  line-height:31px!important;
+  letter-spacing:-.025em!important;
+  text-align:center!important;
+}
+#mobViewAssistant .assistant-ai-subtitle{
+  max-width:290px!important;
+  margin-top:9px!important;
+  color:var(--text-muted)!important;
+  font-size:14px!important;
+  line-height:20px!important;
+}
+
+#mobViewAssistant .assistant-starter-zone{
+  align-self:stretch!important;
+  min-width:0!important;
+  margin-top:10px!important;
+}
+#mobViewAssistant .assistant-starter-heading{
+  margin:0 0 10px!important;
+  color:var(--brand-hover)!important;
+  font-size:13px!important;
+  line-height:18px!important;
+  font-weight:750!important;
+  letter-spacing:.01em!important;
+}
+#mobViewAssistant .assistant-ai-body--searching .assistant-starter-zone{
+  display:none!important;
+}
+#mobViewAssistant .assistant-starter{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:stretch!important;
+  gap:9px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  scroll-snap-type:none!important;
+}
+#mobViewAssistant .assistant-starter-card{
+  width:100%!important;
+  height:62px!important;
+  min-height:62px!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:9px 12px!important;
+  justify-content:space-between!important;
+  border-color:var(--brand-border)!important;
+  background:var(--brand-tint)!important;
+  color:var(--text-main)!important;
+  box-shadow:0 5px 14px rgba(var(--brand-primary-rgb),.07)!important;
+}
+#mobViewAssistant .assistant-starter-card:first-child,
+#mobViewAssistant .assistant-starter-card:last-child{
+  margin:0!important;
+}
+#mobViewAssistant .assistant-starter-card::after{
+  content:"→"!important;
+  margin-left:8px!important;
+  color:var(--brand-hover)!important;
+  font-size:18px!important;
+  line-height:1!important;
+  font-weight:700!important;
+}
+#mobViewAssistant .assistant-starter-card:first-child{
+  background:var(--brand-primary)!important;
+  border-color:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+  box-shadow:0 8px 20px rgba(var(--brand-primary-rgb),.2)!important;
+}
+#mobViewAssistant .assistant-starter-card:first-child::after{
+  color:var(--brand-on)!important;
+}
+#mobViewAssistant .assistant-starter-card-label{
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:normal!important;
+  font-size:14px!important;
+  line-height:18px!important;
+  text-wrap:balance!important;
+}
+#mobViewAssistant .assistant-starter-hint{
+  max-width:300px!important;
+  margin:13px auto 0!important;
+  color:var(--text-muted)!important;
+  font-size:12.5px!important;
+  line-height:18px!important;
+  text-align:center!important;
+}
+
+#mobViewAssistant .assistant-bottom-dock{
+  background:linear-gradient(0deg,var(--brand-tint) 0,rgba(255,255,255,.94) 72%,transparent 100%)!important;
+}
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar,
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
+  border-color:var(--brand-border)!important;
+  background:var(--surface)!important;
+  box-shadow:0 8px 26px rgba(var(--brand-primary-rgb),.13)!important;
+}
+#mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
+  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb),.1),0 10px 28px rgba(var(--brand-primary-rgb),.16)!important;
+}
+#mobViewAssistant .assistant-ai-send,
+#mobViewAssistant .assistant-ai-send:hover,
+#mobViewAssistant .assistant-ai-send:active,
+#mobViewAssistant .assistant-ai-send:focus,
+#mobViewAssistant .assistant-ai-send:focus-visible{
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+  box-shadow:0 6px 16px rgba(var(--brand-primary-rgb),.24)!important;
+}
+#mobViewAssistant .assistant-ai-send.is-inactive,
+#mobViewAssistant .assistant-ai-send:disabled{
+  background:var(--brand-surface)!important;
+  color:var(--brand-hover)!important;
+  box-shadow:none!important;
+  opacity:.58!important;
+}
+
+/* Conversation surfaces keep the tenant visible after the intro disappears. */
+#mobViewAssistant .assistant-ai-body--searching,
+#mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
+  background:linear-gradient(180deg,rgba(var(--brand-primary-rgb),.045),var(--surface) 180px)!important;
+}
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{
+  border-color:var(--brand-primary)!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+  box-shadow:0 7px 18px rgba(var(--brand-primary-rgb),.18)!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message:not(.assistant-chat-typing){
+  display:grid!important;
+  grid-template-columns:26px minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:9px!important;
+  max-width:calc(100% - 28px)!important;
+  margin-left:14px!important;
+  margin-right:14px!important;
+}
+#mobViewAssistant .assistant-response-mark{
+  padding-top:2px!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message:not(.assistant-chat-typing) .assistant-result-content{
+  padding:14px 15px 11px!important;
+  border:1px solid var(--brand-border)!important;
+  border-radius:6px 18px 18px 18px!important;
+  background:linear-gradient(145deg,var(--surface),var(--brand-tint))!important;
+  box-shadow:0 8px 22px rgba(var(--brand-primary-rgb),.08)!important;
+}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
+  margin-left:0!important;
+  padding-top:9px!important;
+  border-top:1px solid rgba(var(--brand-primary-rgb),.1)!important;
+}
+#mobViewAssistant .assistant-feedback-btn{
+  color:var(--brand-hover)!important;
+}
+#mobViewAssistant .assistant-product-card{
+  border-color:var(--brand-border)!important;
+  background:var(--surface)!important;
+  box-shadow:0 8px 22px rgba(var(--brand-primary-rgb),.1)!important;
+}
+#mobViewAssistant .assistant-product-card .assistant-result-content{
+  border-top-color:var(--brand-border)!important;
+  background:linear-gradient(145deg,var(--surface),var(--brand-tint))!important;
+}
+#mobViewAssistant .assistant-skeleton-line,
+#mobViewAssistant .assistant-skeleton-card{
+  border-color:var(--brand-border)!important;
+  background:linear-gradient(100deg,var(--brand-tint) 0%,var(--brand-tint) 38%,var(--brand-surface) 50%,var(--brand-tint) 62%,var(--brand-tint) 100%)!important;
+  background-size:280% 100%!important;
+}
+
+/* Conversation + cloche mark. */
+.assistant-mark__bubble{
+  transform-origin:16px 16px;
+}
+.assistant-mark__service{
+  stroke:var(--brand-on)!important;
+}
+.assistant-mark__steam{
+  transform-origin:center;
+  animation:assistant-steam-idle 2.8s ease-in-out infinite;
+}
+.assistant-mark__steam--two{
+  animation-delay:.55s;
+}
+.assistant-mark.is-thinking .assistant-mark__bubble{
+  animation:assistant-mark-thinking 1.15s ease-in-out infinite;
+}
+.assistant-mark.is-thinking .assistant-mark__steam{
+  animation-duration:.85s;
+}
+.assistant-mark.is-responding .assistant-mark__bubble{
+  animation:assistant-mark-responding .72s ease-in-out infinite alternate;
+}
+.assistant-mark.is-responding .assistant-mark__steam{
+  animation-duration:.7s;
+}
+@keyframes assistant-steam-idle{
+  0%,100%{opacity:.42;transform:translateY(1px)}
+  50%{opacity:1;transform:translateY(-1px)}
+}
+@keyframes assistant-mark-thinking{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(-1.5px) rotate(-2deg)}
+}
+@keyframes assistant-mark-responding{
+  from{transform:translateY(0)}
+  to{transform:translateY(-1px)}
+}
+
+@media (max-height:730px){
+  #mobViewAssistant .assistant-intro-top{
+    min-height:226px!important;
+    padding:18px 20px!important;
+  }
+  #mobViewAssistant .assistant-mark--intro{
+    --size:54px!important;
+  }
+  #mobViewAssistant .assistant-ai-question,
+  #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
+    font-size:22px!important;
+    line-height:27px!important;
+  }
+  #mobViewAssistant .assistant-starter-hint{
+    display:none!important;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .assistant-mark__bubble,
+  .assistant-mark__steam{
+    animation:none!important;
+  }
+  .assistant-mark__steam{
+    opacity:.82!important;
+    transform:none!important;
   }
 }

@@ -3791,3 +3791,43 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 /* Modificadores de tamanho. Só trocam --size: o desenho e o ritmo vêm do bloco
    acima intactos. A mini acompanha o rótulo "Digitando..." no esqueleto. */
 .assistant-mark--mini{ --size: 22px }
+
+/* The bottom-nav ruler is invariant between the main screens. Club/Profile
+   used to override the shared flex items with content-sized widths and
+   per-item translations, so changing the active screen moved every icon. */
+@media (max-width: 767px){
+  body:has(#mobViewClub.active) #mobBottomNav,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) #mobBottomNav{
+    box-sizing:border-box!important;
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    width:min(100vw,414px)!important;
+    max-width:414px!important;
+    height:calc(85px + var(--safe-bottom))!important;
+    padding:0 8px var(--safe-bottom)!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:0!important;
+    transform:translateX(-50%)!important;
+    translate:none!important;
+  }
+
+  body:has(#mobViewClub.active) #mobBottomNav .mob-nav-item,
+  body:has(#mobViewClub.active) #mobBottomNav .mob-nav-center-slot,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) #mobBottomNav .mob-nav-item,
+  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) #mobBottomNav .mob-nav-center-slot{
+    position:static!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    transform:none!important;
+    translate:none!important;
+  }
+}

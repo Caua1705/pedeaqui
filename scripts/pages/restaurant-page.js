@@ -939,6 +939,7 @@
     // seguem o contrato em lista plana e informam o grupo em payment_flow.
     // Aceitar somente a primeira forma fazia o PIX desaparecer ao trocar de
     // unidade, apesar de ele continuar habilitado no payload daquela filial.
+    let groups;
     if (Array.isArray(methods)) {
       const online = [];
       const delivery = [];
@@ -954,15 +955,35 @@
         if (isOnline) online.push(method);
         if (isDelivery) delivery.push(method);
       });
-      return {
+      groups = {
         online: normalizeInfoPaymentMethods(online),
         delivery: normalizeInfoPaymentMethods(delivery)
       };
+    } else {
+      groups = {
+        online: normalizeInfoPaymentMethods(methods.online),
+        delivery: normalizeInfoPaymentMethods(methods.delivery)
+      };
     }
-    return {
-      online: normalizeInfoPaymentMethods(methods.online),
-      delivery: normalizeInfoPaymentMethods(methods.delivery)
-    };
+
+    // Algumas filiais ainda respondem /info com os dois grupos vazios, mesmo
+    // quando o cadastro geral do restaurante (GET /menu -> settings) declara
+    // PIX. Nesse caso a ausencia e um payload incompleto da filial, nao uma
+    // desativacao explicita. PIX e o unico fallback seguro aqui: seu fluxo e
+    // inequivocamente online; cartoes/dinheiro exigem dados por filial (fluxo,
+    // bandeiras e adquirente) que nao podemos inventar no cliente.
+    if (!groups.online.length && !groups.delivery.length) {
+      const configuredPix = normalizeInfoPaymentMethods(settings?.payment_methods)
+        .find(entry => entry.method_type === 'pix');
+      if (configuredPix) {
+        groups.online.push({
+          ...configuredPix,
+          api_method_type: configuredPix.api_method_type || 'pix',
+          name: configuredPix.name || 'PIX'
+        });
+      }
+    }
+    return groups;
   }
 
   function infoPaymentLabel(entry) {

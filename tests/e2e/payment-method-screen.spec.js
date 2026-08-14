@@ -1,12 +1,58 @@
 import { test, expect } from '@playwright/test';
 import {
   mockApi,
+  MENU,
   INFO,
   seedPickupSession,
   addH2OToCart,
   confirmOrderSheet,
   RESTAURANT_URL
 } from './helpers.js';
+
+test('pix global continua disponivel ao trocar para filial com payment_methods vazio', async ({ page }) => {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await mockApi(page);
+  await seedPickupSession(page);
+  const varjotaId = MENU.branches.find(branch => branch.name === 'Varjota').id;
+  const requestedBranches = [];
+
+  await page.route('**/api.pederapidex.com/**/info*', route => {
+    const branchId = new URL(route.request().url()).searchParams.get('branch_id');
+    requestedBranches.push(branchId);
+    const info = branchId === varjotaId
+      ? { ...INFO, branch: { ...INFO.branch, id: varjotaId, name: 'Varjota' }, payment_methods: { online: [], delivery: [] } }
+      : INFO;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(info)
+    });
+  });
+
+  await page.goto(RESTAURANT_URL);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+
+  // Confirma primeiro o comportamento da Matriz, depois repete o mesmo fluxo
+  // na Varjota sem recarregar a pagina: e exatamente a troca que causava o bug.
+  await page.evaluate(() => window.RapidexActions.resolve('openCheckout')());
+  const pix = page.locator('.payment-method-option[data-payment-scope=online][data-payment-key=pix]');
+  await expect(pix).toBeVisible();
+  await expect(pix).toBeEnabled();
+  await page.evaluate(() => window.RapidexActions.resolve('closePaymentMethodScreen')());
+
+  await page.evaluate(branchId => {
+    window.RapidexActions.resolve('openOperationScreen')();
+    window.RapidexActions.resolve('selectBranch')(branchId);
+    window.RapidexActions.resolve('confirmOperation')();
+  }, varjotaId);
+  await page.evaluate(() => window.RapidexActions.resolve('openCheckout')());
+
+  expect(requestedBranches).toEqual([INFO.branch.id, varjotaId]);
+  await expect(pix).toBeVisible();
+  await expect(pix).toBeEnabled();
+  await pix.click();
+  await expect(page.locator('#paymentMethodFooter')).toBeVisible();
+});
 
 test('pix continua disponivel quando a filial retorna payment_methods em lista', async ({ page }) => {
   await page.setViewportSize({ width: 414, height: 896 });

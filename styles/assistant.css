@@ -259,21 +259,14 @@ body.menu-tab.menu-login-open:has(#loginModal.active) .cats{
   }
 }
 
-/* Selected delivery address: keep location widget text and arrow black. */
+/* Selected delivery address: keep its copy black. The pin intentionally stays
+   in the white-label color, with the light shape defined by utilities.css. */
 body.home-tab .delivery-widget:has(.address-strip.has-address) #homeAddressTitle,
 body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy strong,
 body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy small,
-body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon,
-body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg,
-body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg path,
-body.home-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg circle,
 body.menu-tab .delivery-widget:has(.address-strip.has-address) #homeAddressTitle,
 body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy strong,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy small,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg path,
-body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-icon svg circle {
+body.menu-tab .delivery-widget:has(.address-strip.has-address) .address-card-copy small {
   color: #111111 !important;
   stroke: #111111 !important;
 }

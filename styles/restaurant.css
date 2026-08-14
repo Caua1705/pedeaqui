@@ -2908,9 +2908,12 @@ a{text-decoration:none;color:inherit}
 @media(max-width:767px){
   #cartModal{
     background:transparent!important;
+    backdrop-filter:none!important;
   }
   #cartModal.active{
-    background:rgba(0,0,0,.42)!important;
+    /* A sacola é uma página lateral. Um backdrop escuro aqui aparecia ao
+       redor do CTA enquanto o painel ainda deslizava e parecia uma borda preta. */
+    background:transparent!important;
   }
   #cartModal .modal--cart{
     bottom:0!important;

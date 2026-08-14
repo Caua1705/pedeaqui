@@ -114,6 +114,63 @@ test('trocar a cor do tenant repinta a interface inteira', async ({ page }) => {
   }
 });
 
+test('loader de três pontos usa a cor sólida e as medidas do white label', async ({ page }) => {
+  await bootWithPrimary(page, BLUE);
+  await page.evaluate(() => document.body.classList.add('app-booting'));
+
+  const loader = page.locator('.app-loader-dots');
+  await expect(loader).toBeVisible();
+
+  const appearance = await loader.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    return {
+      width: Math.round(rect.width * 10) / 10,
+      height: Math.round(rect.height * 10) / 10,
+      dots: [...element.children].map(dot => {
+        const style = getComputedStyle(dot);
+        return {
+          width: Math.round(parseFloat(style.width) * 10) / 10,
+          height: Math.round(parseFloat(style.height) * 10) / 10,
+          color: style.backgroundColor,
+          image: style.backgroundImage,
+          opacity: style.opacity,
+          animation: style.animationName
+        };
+      })
+    };
+  });
+
+  expect(appearance).toEqual({
+    width: 60,
+    height: 13.3,
+    dots: Array.from({ length: 3 }, () => ({
+      width: 13.3,
+      height: 13.3,
+      color: 'rgb(27, 79, 216)',
+      image: 'none',
+      opacity: '1',
+      animation: 'appLoaderDotPulse'
+    }))
+  });
+});
+
+test('loader conclui ao menos uma animação antes de revelar o aplicativo', async ({ page }) => {
+  await mockApi(page);
+  await page.addInitScript(() => {
+    window.__appLoaderIterations = 0;
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.app-loader-dots span')?.addEventListener('animationiteration', () => {
+        window.__appLoaderIterations += 1;
+      });
+    }, { once: true });
+  });
+
+  await page.goto(`/restaurant.html?slug=${SLUG}`);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+
+  expect(await page.evaluate(() => window.__appLoaderIterations)).toBeGreaterThanOrEqual(1);
+});
+
 test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {
   await bootWithPrimary(page, BLUE);
 

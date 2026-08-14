@@ -7624,11 +7624,23 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 /* Sticky cart CTA: match the coupon button tap behavior, without side-shift/dark delay. */
 #cartStickyBtn,
 #cartStickyBtn:active,
-#cartStickyBtn:hover{
+#cartStickyBtn:hover,
+#cartStickyBtn:focus,
+#cartStickyBtn:focus-visible{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  border:0!important;
   background:var(--brand-primary)!important;
+  outline:0!important;
+  outline-offset:0!important;
+  box-shadow:none!important;
   transform:none!important;
   transition:none!important;
+  -webkit-tap-highlight-color:transparent!important;
   touch-action:manipulation!important;
+}
+#cartStickyBtn:focus-visible{
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--brand-on) 70%,transparent)!important;
 }
 
 /* Logged Club/Profile: reserve room for the persistent bag CTA above the nav. */
@@ -8796,11 +8808,11 @@ body.menu-tab .product-card.is-pressing{
     font-weight:600;
   }
   #profSubpedidos .prof-order-detail{
-    display:none;
+    display:block;
     box-sizing:border-box;
     position:fixed;
-    top:0;
-    bottom:0;
+    top:var(--prof-order-detail-top,0px);
+    bottom:auto;
     left:50%;
     z-index:300;
     width:414px;
@@ -8810,13 +8822,18 @@ body.menu-tab .product-card.is-pressing{
     overflow-y:auto;
     overflow-x:hidden;
     background:#f7f5f3;
+    visibility:hidden;
     pointer-events:none;
-    transform:translateX(-50%);
+    transform:translateX(50%);
+    transition:transform .6s ease,visibility 0s linear .6s;
+    will-change:transform;
     overscroll-behavior:contain;
   }
   #profSubpedidos .prof-order-detail.active{
-    display:block;
+    visibility:visible;
     pointer-events:auto;
+    transform:translateX(-50%);
+    transition:transform .53s ease,visibility 0s linear 0s;
   }
   #profSubpedidos .prof-order-detail > .prof-manage-header{
     position:sticky!important;
@@ -8836,6 +8853,7 @@ body.menu-tab .product-card.is-pressing{
     padding:20px 20px 40px;
     background:#f7f5f3;
   }
+  #profSubpedidos .order-details__finishedOrder,
   #profSubpedidos .order-details__waitingPayment,
   #profSubpedidos .order-details__card,
   #profSubpedidos .order-details__help{
@@ -8843,6 +8861,82 @@ body.menu-tab .product-card.is-pressing{
     width:374px;
     max-width:100%;
     margin:0;
+  }
+  #profSubpedidos .order-details__finishedOrder{
+    height:180px;
+    min-height:180px;
+    overflow:hidden;
+    border:0;
+    border-radius:10px;
+    background:#fff;
+    box-shadow:0 7px 18px rgba(57,48,38,.075);
+  }
+  #profSubpedidos .order-details__finished-header{
+    box-sizing:border-box;
+    height:72px;
+    display:grid;
+    grid-template-columns:14px minmax(0,1fr) auto;
+    align-items:center;
+    column-gap:14px;
+    padding:0 20px;
+    border-bottom:1px solid #e8e8e8;
+  }
+  #profSubpedidos .order-details__finished-status-icon,
+  #profSubpedidos .order-details__finished-status-icon svg{
+    width:14px;
+    height:14px;
+    display:block;
+  }
+  #profSubpedidos .order-details__finished-status-icon circle{fill:#e98585}
+  #profSubpedidos .order-details__finished-status-icon path{
+    fill:none;
+    stroke:#fff;
+    stroke-width:1.35;
+    stroke-linecap:round;
+  }
+  #profSubpedidos .order-details__finished-header > strong{
+    min-width:0;
+    color:#858585;
+    font-size:14px;
+    line-height:18px;
+    font-weight:600;
+  }
+  #profSubpedidos .order-details__finished-help{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    padding:8px 0;
+    border:0;
+    background:transparent;
+    color:var(--brand-primary);
+    font-family:inherit;
+    font-size:14px;
+    line-height:18px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #profSubpedidos .order-details__finished-help > span{
+    box-sizing:border-box;
+    width:12px;
+    height:12px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid currentColor;
+    border-radius:50%;
+    font-size:9px;
+    line-height:10px;
+    font-weight:800;
+  }
+  #profSubpedidos .order-details__finishedOrder > p{
+    box-sizing:border-box;
+    height:108px;
+    margin:0;
+    padding:21px 20px 20px;
+    color:#999;
+    font-size:14px;
+    line-height:20px;
+    font-weight:400;
   }
   #profSubpedidos .order-details__waitingPayment{
     height:92px;
@@ -9099,6 +9193,7 @@ body.menu-tab .product-card.is-pressing{
     min-height:60px;
     padding:0;
     border:0;
+    border-top:1px solid #d8d8d8;
     border-bottom:1px solid #d8d8d8;
     background:transparent;
     color:#777;
@@ -9109,6 +9204,8 @@ body.menu-tab .product-card.is-pressing{
     cursor:pointer;
   }
   @media (prefers-reduced-motion:reduce){
+    #profSubpedidos .prof-order-detail,
+    #profSubpedidos .prof-order-detail.active{transition-duration:.01ms}
     #profSubpedidos .order-details__waiting-spinner{animation-duration:2.4s}
   }
   #profSubmeusdados .prof-password-screen{
@@ -10235,4 +10332,19 @@ body.menu-tab .product-card.is-pressing{
   #checkoutModal .checkout-payment-selector-icon{display:flex!important;align-items:center!important;justify-content:center!important;width:24px!important;height:24px!important;color:#888!important}#checkoutModal .checkout-payment-selector-icon svg{width:22px!important;height:22px!important}
   #checkoutModal #checkoutPaymentLabel{flex:1!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
   #checkoutModal .checkout-payment-selector-chevron{flex:0 0 16px!important;width:16px!important;height:16px!important;color:#999!important}
+}
+
+/* A sacola pertence à navegação principal. Nas páginas internas do
+   Perfil ela não pode flutuar sobre Ajuda, Pedidos ou Gerenciar perfil. Esta
+   trava fica no fim da cascata porque regras anteriores exibem o CTA no Perfil. */
+@media(max-width:767px){
+  body:has(#mobViewProfile.active):has(#mobViewProfile .prof-sub.active) #cartSticky.show,
+  body:has(#mobViewProfile.active):has(#profSubpedidos.active) #cartSticky.show,
+  body:has(#addrPickerModal.from-profile.active) #cartSticky.show,
+  body:has(#mobViewProfile.active):has(.policy-screen.active) #cartSticky.show{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
 }

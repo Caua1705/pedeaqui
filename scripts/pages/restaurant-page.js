@@ -92,6 +92,10 @@
   let couponsRenderSignature = '';
   let highlightsRenderSignature = '';
   const HERO_BANNER_INTERVAL_MS = 5000;
+  // Os três pontos levam .9s para completar uma volta no CSS. Mesmo quando a
+  // API responde instantaneamente, deixamos essa primeira volta terminar para o
+  // loader não parecer um flash ou uma falha visual.
+  const APP_LOADER_MIN_MS = 900;
   const TAB_LOADER_MIN_MS = 500;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
@@ -8405,7 +8409,7 @@
               : `${esc(status.label)} ${esc(profOrderDate(order.created_at))}`}</span>
           </div>
         </div>
-        <button class="prof-order-details-button" type="button" ${act('click', 'openProfOrderDetails', index)}>${isActive ? 'Acompanhar pedido' : 'Ver detalhes'}</button>
+        <button class="prof-order-details-button" type="button" ${act('click', 'openProfOrderDetails', index)}>${isActive ? 'Acompanhar' : 'Ver detalhes'}</button>
       </article>
     `;
   }
@@ -8484,6 +8488,17 @@
     const elapsedHours = Math.floor(elapsedMinutes / 60);
     if (elapsedHours < 24) return `Realizado há ${elapsedHours} hora${elapsedHours === 1 ? '' : 's'}`;
     return `Realizado em ${profOrderDate(value)}`;
+  }
+
+  function profOrderDateTime(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(date);
+    const part = type => parts.find(entry => entry.type === type)?.value || '';
+    return `${part('day')}/${part('month')}/${part('year')} - ${part('hour')}:${part('minute')}`;
   }
 
   function profOrderAddress(order) {
@@ -8588,6 +8603,27 @@
     `;
   }
 
+  function profOrderCancelledMarkup(order, status) {
+    if (!PROF_ORDER_DANGER_STATUSES.has(status.status)) return '';
+    const cancelledAt = order.cancelled_at || order.canceled_at || order.refused_at || order.rejected_at
+      || order.status_updated_at || order.updated_at || order.created_at;
+    const dateTime = profOrderDateTime(cancelledAt);
+    return `
+      <section class="order-details__finishedOrder" aria-label="Pedido recusado">
+        <div class="order-details__finished-header">
+          <span class="order-details__finished-status-icon" aria-hidden="true">
+            <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="7"/><path d="m5.2 5.2 3.6 3.6m0-3.6-3.6 3.6"/></svg>
+          </span>
+          <strong>Pedido recusado${dateTime ? ` em ${esc(dateTime)}` : ''}</strong>
+          <button class="order-details__finished-help" type="button" ${act('click', 'openProfOrderHelp')} aria-label="Abrir Ajuda">
+            <span aria-hidden="true">?</span> Ajuda
+          </button>
+        </div>
+        <p>Sentimos muito por isso. O estabelecimento teve que recusar o seu pedido. Tente em outro momento!</p>
+      </section>
+    `;
+  }
+
   function renderProfOrderDetails(order) {
     const body = $('profOrderDetailBody');
     if (!body) return;
@@ -8607,6 +8643,7 @@
     const title = $('profOrderDetailTitle');
     if (title) title.textContent = `Pedido #${orderNumber}`;
     body.innerHTML = `
+      ${profOrderCancelledMarkup(order, status)}
       ${profOrderWaitingMarkup(status)}
       <section class="order-details__card order-details__address">
         <h2>${addressTitle}</h2>
@@ -8643,7 +8680,9 @@
           <div class="order-details__total"><dt>Total</dt><dd>${fmt(total)}</dd></div>
         </dl>
       </section>
-      <button class="order-details__help" type="button" ${act('click', 'openProfOrderHelp')}>Ajuda</button>
+      ${PROF_ORDER_DANGER_STATUSES.has(status.status)
+        ? ''
+        : `<button class="order-details__help" type="button" ${act('click', 'openProfOrderHelp')}>Ajuda</button>`}
     `;
   }
 
@@ -8651,10 +8690,12 @@
     const order = profOrdersView[index];
     const detail = $('profOrderDetail');
     if (!order || !detail) return;
+    const ordersScreen = $('profSubpedidos');
     const requestId = ++profOrderDetailRequest;
     detail.dataset.orderId = String(order.id || index);
     renderProfOrderDetails(order);
     detail.scrollTop = 0;
+    detail.style.setProperty('--prof-order-detail-top', `${ordersScreen?.scrollTop || 0}px`);
     detail.classList.add('active');
     detail.setAttribute('aria-hidden', 'false');
     if (!order.id || !window.PedeAquiOrderService?.getCustomerOrder) return;
@@ -8677,9 +8718,15 @@
   }
 
   function openProfOrderHelp() {
+    // Ativa o destino primeiro: assim a tela de Pedidos não reaparece nem por
+    // um quadro entre o detalhe lateral e a página completa de Ajuda.
+    const helpPromise = openProfSub('ajuda');
+    // Pedidos é montado diretamente no body para sustentar a transição
+    // lateral; portanto ele fica fora da limpeza de `.prof-sub` do Perfil.
+    $('profSubpedidos')?.classList.remove('active');
     closeProfOrderDetails();
     $('profOrdersBackdrop')?.classList.remove('active');
-    openProfSub('ajuda');
+    return helpPromise;
   }
 
   async function openProfSub(subId) {
@@ -8741,6 +8788,7 @@
     if (bootPromise) return bootPromise;
     resetRuntimeStateForPageLoad();
     setAppBooting(true);
+    const minimumLoaderCycle = wait(APP_LOADER_MIN_MS);
     renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
     const loadInitialData = async () => {
     const restaurantSlug = getRestaurantSlug();
@@ -8804,7 +8852,10 @@
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
     initPageRubberBand();
     initMenuHeaderHide();
-    await waitForHomeCriticalMedia();
+    await Promise.all([
+      waitForHomeCriticalMedia(),
+      minimumLoaderCycle
+    ]);
     setAppBooting(false);
     // Best-effort: refresh the logged customer against the backend (clears
     // the session on 401). Runs after first paint so it never blocks the page.

@@ -381,8 +381,8 @@ body.coupon-nav-keep .mob-bottom-nav {
 .app-loader-box {
   width: 60px !important;
   min-width: 60px !important;
-  height: 13px !important;
-  min-height: 13px !important;
+  height: 13.333px !important;
+  min-height: 13.333px !important;
   gap: 0 !important;
   justify-content: center !important;
 }
@@ -395,18 +395,20 @@ body.coupon-nav-keep .mob-bottom-nav {
 
 .app-loader-dots {
   width: 60px !important;
-  height: 13px !important;
+  height: 13.333px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 6.667px !important;
 }
 
 .app-loader-dots span {
-  width: 13px !important;
-  height: 13px !important;
+  width: 13.333px !important;
+  height: 13.333px !important;
+  flex: 0 0 13.333px !important;
   border-radius: 50% !important;
-  background: var(--brand-primary) !important;
+  background-color: var(--brand-primary) !important;
+  background-image: none !important;
   display: block !important;
   animation: appLoaderDotPulse 0.9s ease-in-out infinite both !important;
 }
@@ -430,8 +432,8 @@ body.app-error .app-loader-message {
 
 @keyframes appLoaderDotPulse {
   0%, 80%, 100% {
-    transform: scale(0.75);
-    opacity: 0.45;
+    transform: scale(0.375);
+    opacity: 1;
   }
   40% {
     transform: scale(1);

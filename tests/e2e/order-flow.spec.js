@@ -204,6 +204,7 @@ for (const [nome, status, detail] of [
 }
 
 test('guest adds one item, sees the bag, and is gated only by the cart CTA', async ({ page }) => {
+  await page.setViewportSize({ width: 430, height: 900 });
   await mockApi(page);
   await page.route('**/coupons/preview', (route) =>
     route.fulfill({
@@ -236,9 +237,18 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   await expect(page.locator('#cartList .cart-item-row')).toHaveCount(1);
   await expect(page.locator('#cartItemCountLabel')).toHaveText('1 item');
 
-  await page.locator('#cartStickyBtn').evaluate((button) => button.click());
+  const stickyCartButton = page.locator('#cartStickyBtn');
+  await stickyCartButton.click();
   await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(page.locator('#cartModal')).toHaveCSS('backdrop-filter', 'none');
+  await expect(stickyCartButton).toHaveCSS('outline-style', 'none');
+  await expect(stickyCartButton).toHaveCSS('border-top-width', '0px');
+  const focusShadow = await stickyCartButton.evaluate(button => getComputedStyle(button).boxShadow);
+  expect(focusShadow === 'none' || focusShadow.includes('inset')).toBeTruthy();
 
+  // A continuação deste cenário cobre as abas legadas, ocultas no layout mobile.
+  await page.setViewportSize({ width: 1280, height: 720 });
   const cta = page.locator('#cartCtaBtn');
   await expect(cta).toHaveText('Informe seu endereço');
   await page.locator('#cartTabRetirada').click();

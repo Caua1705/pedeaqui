@@ -88,7 +88,10 @@ async function openTrackedOrder(page, orderOverrides = {}) {
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
   await page.locator('#mobNavProfile').click();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus pedidos' }).click();
-  await page.getByRole('button', { name: 'Acompanhar pedido' }).click();
+  const detailsButton = page.locator('.prof-order-details-button');
+  const activeStatuses = new Set(['pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery']);
+  await expect(detailsButton).toHaveText(activeStatuses.has(orderOverrides.status || 'pending') ? 'Acompanhar' : 'Ver detalhes');
+  await detailsButton.click();
   await expect(page.locator('#profOrderDetail')).toHaveClass(/active/);
 }
 
@@ -141,9 +144,96 @@ test('cabeçalho fica fixo durante a rolagem e Ajuda abre o suporte', async ({ p
   await expect.poll(() => page.locator('#profOrderDetail > .prof-manage-header').evaluate(header =>
     Math.round(header.getBoundingClientRect().top)
   )).toBe(0);
-  await page.locator('.order-details__help').click();
+  const helpButton = page.locator('.order-details__help');
+  await expect(helpButton).toHaveCSS('border-top', '1px solid rgb(216, 216, 216)');
+  await expect(helpButton).toHaveCSS('border-bottom', '1px solid rgb(216, 216, 216)');
+  await helpButton.click();
   await expect(page.locator('#profOrderDetail')).not.toHaveClass(/active/);
+  await expect(page.locator('#profSubpedidos')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+  await expect(page.locator('#profSubajuda .prof-help-header h1')).toHaveText('Ajuda');
+});
+
+for (const orderCase of [
+  { status: 'confirmed', label: 'confirmado' },
+  { status: 'preparing', label: 'em andamento' },
+  { status: 'cancelled', label: 'cancelado' }
+]) {
+  test(`detalhes do pedido ${orderCase.label} entram e voltam com efeito lateral`, async ({ page }) => {
+    await openTrackedOrder(page, { status: orderCase.status });
+
+    const detail = page.locator('#profOrderDetail');
+    await expect(detail).toHaveCSS('transition-property', 'transform, visibility');
+    await expect(detail).toHaveCSS('transition-duration', '0.53s, 0s');
+    await expect.poll(() => detail.evaluate(element => Math.round(element.getBoundingClientRect().left))).toBe(0);
+
+    await detail.locator('.profile-orders-back').click();
+
+    await expect(detail).not.toHaveClass(/active/);
+    await expect(detail).toHaveCSS('transition-duration', '0.6s, 0s');
+    await expect.poll(() => detail.evaluate(element => Math.round(element.getBoundingClientRect().left))).toBe(414);
+    await expect(detail).toHaveCSS('visibility', 'hidden');
+    await expect(page.locator('#profSubpedidos > .prof-manage-header h1')).toHaveText('Pedidos');
+  });
+}
+
+test('pedido cancelado segue a composição da referência e oferece Ajuda no aviso', async ({ page }) => {
+  await openTrackedOrder(page, {
+    status: 'cancelled',
+    cancelled_at: '2026-08-13T18:03:00'
+  });
+
+  const finishedOrder = page.locator('.order-details__finishedOrder');
+  await expect(finishedOrder).toContainText('Pedido recusado em 13/08/2026 - 18:03');
+  await expect(finishedOrder).toContainText('Sentimos muito por isso. O estabelecimento teve que recusar o seu pedido. Tente em outro momento!');
+  await expect(page.locator('.order-details__waitingPayment')).toHaveCount(0);
+
+  const dimensions = await page.evaluate(() => {
+    const size = selector => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { width: Math.round(rect.width), height: Math.round(rect.height) };
+    };
+    return {
+      finishedOrder: size('.order-details__finishedOrder'),
+      address: size('.order-details__address'),
+      total: size('.order-details__totalContainer')
+    };
+  });
+
+  expect(dimensions).toEqual({
+    finishedOrder: { width: 374, height: 180 },
+    address: { width: 374, height: 172 },
+    total: { width: 374, height: 173 }
+  });
+  await expect(page.locator('.order-details__help')).toHaveCount(0);
+
+  await page.locator('.order-details__finished-help').click();
+  await expect(page.locator('#profOrderDetail')).not.toHaveClass(/active/);
+  await expect(page.locator('#profSubpedidos')).not.toHaveClass(/active/);
+  await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+  await expect(page.locator('#profSubajuda .prof-help-header h1')).toHaveText('Ajuda');
+});
+
+test('pedido recusado abre lateralmente no topo visível mesmo com o histórico rolado', async ({ page }) => {
+  await openTrackedOrder(page, { status: 'cancelled' });
+
+  const detail = page.locator('#profOrderDetail');
+  await detail.locator('.profile-orders-back').click();
+  await expect(detail).toHaveCSS('visibility', 'hidden');
+
+  const ordersScreen = page.locator('#profSubpedidos');
+  await ordersScreen.evaluate(element => {
+    const body = element.querySelector('#profSubPedidosBody');
+    body.style.setProperty('padding-top', '600px', 'important');
+    element.scrollTop = 350;
+  });
+  await expect.poll(() => ordersScreen.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+
+  await page.locator('.prof-order-details-button').evaluate(button => button.click());
+  await expect(detail).toHaveClass(/active/);
+  await expect.poll(() => detail.evaluate(element => Math.round(element.getBoundingClientRect().top))).toBe(0);
+  await expect.poll(() => detail.evaluate(element => Math.round(element.getBoundingClientRect().left))).toBe(0);
+  await expect(detail).toHaveCSS('transition-duration', '0.53s, 0s');
 });
 
 test('telas internas do Perfil reutilizam exatamente o botão de voltar de Pedidos', async ({ page }) => {
@@ -185,19 +275,27 @@ test('telas internas do Perfil reutilizam exatamente o botão de voltar de Pedid
   });
 
   await page.locator(ordersBack).click();
+  const stickyCart = page.locator('#cartSticky');
+  await stickyCart.evaluate(element => element.classList.add('show'));
+  await expect(stickyCart).toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Gerenciar perfil' }).click();
   await expect(page.locator('#profSubmeusdados')).toHaveClass(/active/);
+  await expect(stickyCart).not.toBeVisible();
   expect(await signature('#profSubmeusdados > .prof-manage-header .profile-orders-back')).toEqual(reference);
 
   await page.locator('#profSubmeusdados > .prof-manage-header .profile-orders-back').click();
+  await expect(stickyCart).toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus endereços' }).click();
   await expect(page.locator('#addrPickerModal')).toHaveClass(/active/);
   await expect(page.locator('#addrPickerModal')).toHaveClass(/from-profile/);
+  await expect(stickyCart).not.toBeVisible();
   expect(await signature('#addrPickerModal .profile-orders-back')).toEqual(reference);
 
   await page.locator('#addrPickerModal .profile-orders-back').click();
+  await expect(stickyCart).toBeVisible();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Política de privacidade' }).click();
   await expect(page.locator('#privacyPolicyScreen')).toHaveClass(/active/);
+  await expect(stickyCart).not.toBeVisible();
   expect(await signature('#privacyPolicyBack')).toEqual(reference);
 });
 
@@ -206,6 +304,10 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
 
   await page.locator('#profOrderDetail .profile-orders-back').click();
   await page.locator('#profSubpedidos > .prof-manage-header .profile-orders-back').click();
+
+  const stickyCart = page.locator('#cartSticky');
+  await stickyCart.evaluate(element => element.classList.add('show'));
+  await expect(stickyCart).toBeVisible();
 
   const labels = page.locator('#mobViewProfile .prof-account-row-label');
   await expect(labels).toHaveText([
@@ -224,6 +326,7 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
   await helpRow.click();
 
   await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+  await expect(stickyCart).not.toBeVisible();
   await expect(page.locator('#profSubajuda .prof-help-header h1')).toHaveText('Ajuda');
   await expect(page.locator('.help-store-name')).toHaveText(MENU.restaurant.name);
   await expect(page.locator('.help-store-branch')).toHaveText('Matriz');
@@ -258,6 +361,7 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
 
   await page.locator('#profSubajuda .profile-orders-back').click();
   await expect(page.locator('#profSubajuda')).not.toHaveClass(/active/);
+  await expect(stickyCart).toBeVisible();
   await expect(page.locator('#mobBottomNav')).toBeVisible();
 });
 

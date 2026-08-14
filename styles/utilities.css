@@ -10366,7 +10366,7 @@ body.menu-tab .product-card.is-pressing{
 @media(max-width:767px){
   body:not(.menu-tab) #cartSticky.show,
   body.menu-tab:has(.mob-view.active) #cartSticky.show,
-  body.menu-tab:has(.overlay.active) #cartSticky.show,
+  body.menu-tab:has(.overlay.active):not(:has(#cartModal.active)):not(:has(#operationModal.active)) #cartSticky.show,
   body.menu-tab:has(.policy-screen.active) #cartSticky.show,
   body.menu-tab:has(.lgn-screen.active) #cartSticky.show,
   body.menu-tab:has(.reg-screen.active) #cartSticky.show,

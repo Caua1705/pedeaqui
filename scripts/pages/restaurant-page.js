@@ -934,6 +934,31 @@
 
   function infoPaymentData(data = restaurantInfoState.data) {
     const methods = data?.payment_methods || {};
+    // /info existe em duas versoes no ambiente real: algumas filiais ainda
+    // devolvem os metodos agrupados em { online, delivery }, enquanto outras
+    // seguem o contrato em lista plana e informam o grupo em payment_flow.
+    // Aceitar somente a primeira forma fazia o PIX desaparecer ao trocar de
+    // unidade, apesar de ele continuar habilitado no payload daquela filial.
+    if (Array.isArray(methods)) {
+      const online = [];
+      const delivery = [];
+      methods.forEach(method => {
+        const rawFlow = method?.payment_flow || method?.flow || method?.scope || '';
+        const flow = normalizeAddressPart(rawFlow).replace(/[^a-z0-9]+/g, '_');
+        const isBoth = flow === 'both' || flow === 'all' || flow === 'todos';
+        const isOnline = isBoth || flow.includes('online') || flow.includes('gateway')
+          || (!flow && method?.requires_gateway === true);
+        const isDelivery = isBoth || flow.includes('delivery') || flow.includes('entrega')
+          || flow.includes('offline') || flow.includes('presencial')
+          || (!flow && method?.requires_gateway === false);
+        if (isOnline) online.push(method);
+        if (isDelivery) delivery.push(method);
+      });
+      return {
+        online: normalizeInfoPaymentMethods(online),
+        delivery: normalizeInfoPaymentMethods(delivery)
+      };
+    }
     return {
       online: normalizeInfoPaymentMethods(methods.online),
       delivery: normalizeInfoPaymentMethods(methods.delivery)

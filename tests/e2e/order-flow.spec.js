@@ -39,6 +39,27 @@ async function selectPixAndReturnToCart(page) {
   await expect(cta).toHaveText('Efetuar pagamento');
 }
 
+test('sacola nao pisca ao abrir unidades pelo widget do cardapio', async ({ page }) => {
+  await page.setViewportSize({ width: 430, height: 900 });
+  await mockApi(page);
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 1);
+  await page.evaluate(() => window.RapidexActions.resolve('goToMenuTab')());
+
+  const stickyCart = page.locator('#cartSticky');
+  await expect(stickyCart).toBeVisible();
+  await page.locator('.delivery-widget').click();
+  await expect(page.locator('#operationModal')).toHaveClass(/active/);
+  await expect(stickyCart).toHaveClass(/show/);
+  await expect(stickyCart).toHaveCSS('display', 'flex');
+  await expect(stickyCart).toHaveCSS('visibility', 'visible');
+
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
+  await expect(page.locator('#operationModal')).not.toHaveClass(/active/);
+  await expect(stickyCart).toBeVisible();
+});
+
 test('product -> cart -> payment -> submit creates an order with the contract payload', async ({
   page
 }) => {
@@ -247,6 +268,8 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   const stickyCartButton = page.locator('#cartStickyBtn');
   await stickyCartButton.click();
   await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(stickyCart).toHaveCSS('display', 'flex');
+  await expect(stickyCart).toHaveCSS('visibility', 'visible');
   await expect(page.locator('#cartModal')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(page.locator('#cartModal')).toHaveCSS('backdrop-filter', 'none');
   await expect(stickyCartButton).toHaveCSS('outline-style', 'none');

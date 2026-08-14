@@ -1,11 +1,45 @@
 import { test, expect } from '@playwright/test';
 import {
   mockApi,
+  INFO,
   seedPickupSession,
   addH2OToCart,
   confirmOrderSheet,
   RESTAURANT_URL
 } from './helpers.js';
+
+test('pix continua disponivel quando a filial retorna payment_methods em lista', async ({ page }) => {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await mockApi(page);
+  const flatPaymentMethods = [
+    ...INFO.payment_methods.online,
+    ...INFO.payment_methods.delivery
+  ];
+  await page.route('**/api.pederapidex.com/**/info*', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ...INFO, payment_methods: flatPaymentMethods })
+  }));
+
+  await page.goto(RESTAURANT_URL);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await page.evaluate(() => {
+    window.act = (name, ...args) => window.RapidexActions.resolve(name)(...args);
+    window.act('closeOperationScreen');
+    window.act('openRestaurantInfo');
+  });
+  await expect(page.locator('#storeInfoPayment .store-payment-grid span')).toHaveCount(10);
+
+  await page.evaluate(() => {
+    window.act('closeModalId', 'infoModal');
+    window.act('openPaymentMethodScreen');
+  });
+  const pix = page.locator('.payment-method-option[data-payment-scope=online][data-payment-key=pix]');
+  await expect(pix).toBeVisible();
+  await expect(pix).toBeEnabled();
+  await pix.click();
+  await expect(page.locator('#paymentMethodFooter')).toBeVisible();
+});
 
 test('pagamento na entrega replica os cartões e medidas da referência', async ({ page }) => {
   await page.setViewportSize({ width: 414, height: 896 });

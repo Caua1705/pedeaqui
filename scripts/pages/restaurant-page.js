@@ -2113,10 +2113,17 @@
     if (searchReady) return;
     searchReady = true;
     let searchFrame = null;
+    const normalizeSearch = value => String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
     $('searchInput')?.addEventListener('input', (e) => {
       const input = e.target;
-      const q = input.value.toLowerCase();
-      input.closest('.search-bar')?.classList.toggle('has-value', Boolean(q));
+      const q = normalizeSearch(input.value);
+      const isSearching = Boolean(q);
+      input.closest('.search-bar')?.classList.toggle('has-value', isSearching);
+      document.body.classList.toggle('menu-search-active', isSearching);
       if (searchFrame) cancelAnimationFrame(searchFrame);
       searchFrame = requestAnimationFrame(() => {
         let foundAny = false;
@@ -2124,8 +2131,9 @@
         sections.forEach(sec => {
           let secFound = false;
           sec.querySelectorAll('.product-card').forEach(card => {
-            const match = card.textContent.toLowerCase().includes(q);
-            card.style.display = match ? 'flex' : 'none';
+            const productName = card.querySelector('.product-name')?.textContent || '';
+            const match = !isSearching || normalizeSearch(productName).includes(q);
+            card.classList.toggle('is-search-hidden', !match);
             secFound = secFound || match;
             foundAny = foundAny || match;
           });

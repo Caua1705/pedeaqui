@@ -10377,3 +10377,13 @@ body.menu-tab .product-card.is-pressing{
     pointer-events:none!important;
   }
 }
+
+/* Busca do cardapio: enquanto houver texto, a navegacao por categorias sai da
+   frente e os cards encontrados formam uma lista unica. */
+body.menu-tab.menu-search-active #catNav,
+body.menu-tab.menu-search-active .menu-section-title{
+  display:none!important;
+}
+body.menu-tab.menu-search-active .product-card.is-search-hidden{
+  display:none!important;
+}

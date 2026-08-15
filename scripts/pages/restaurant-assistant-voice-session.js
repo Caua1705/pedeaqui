@@ -64,6 +64,10 @@
   let avisoTimer = null;
   let ouvintes = null;
 
+  // Uso de tokens acumulado na sessão, e quando o áudio abriu.
+  let uso = null;
+  let audioAbertoEm = 0;
+
   // Medidor de nível para a esfera.
   let audioCtx = null;
   let entrada = null;
@@ -152,6 +156,129 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
+     Medição de uso
+
+     SÓ MEDIÇÃO. Nada nesta seção muda o rumo da conversa: ela lê o `usage` que
+     vem de carona em cada `response.done`, soma, e o total sai UMA vez, no corpo
+     do /ended. Uma leitura que estoure não pode derrubar o tratamento do evento
+     — é por isso que acumularUso() engole o próprio erro.
+
+     AUSENTE ≠ ZERO. Cada contador nasce `null` e só vira número quando a OpenAI
+     manda o primeiro valor daquele campo. Preencher com 0 o que não veio diria
+     "houve zero token de áudio", que é uma afirmação — e errada. Campo que
+     ninguém reportou simplesmente não entra no corpo.
+     ══════════════════════════════════════════════════════════════ */
+
+  function zerarUso() {
+    uso = {
+      input_audio_tokens: null,
+      input_text_tokens: null,
+      output_audio_tokens: null,
+      output_text_tokens: null,
+      cached_tokens: null
+    };
+    audioAbertoEm = 0;
+  }
+  zerarUso();
+
+  function somarUso(campo, valor) {
+    const numero = Number(valor);
+    if (!Number.isFinite(numero)) return;
+    // Inteiros, e nunca negativos: o campo é contagem.
+    uso[campo] = (uso[campo] ?? 0) + Math.max(0, Math.round(numero));
+  }
+
+  function acumularUso(resposta) {
+    try {
+      const usage = resposta?.usage;
+      if (!usage) return;
+      const entrada = usage.input_token_details || {};
+      const emitidos = usage.output_token_details || {};
+      somarUso('input_audio_tokens', entrada.audio_tokens);
+      somarUso('input_text_tokens', entrada.text_tokens);
+      // Subconjunto da ENTRADA: vai separado, sem somar em nada e sem descontar
+      // de nada. Quem decide o que fazer com ele é a cobrança, não o app.
+      somarUso('cached_tokens', entrada.cached_tokens);
+      somarUso('output_audio_tokens', emitidos.audio_tokens);
+      somarUso('output_text_tokens', emitidos.text_tokens);
+    } catch (erro) {
+      console.warn('[Voz] Não consegui ler o uso de tokens desta resposta:', erro);
+    }
+  }
+
+  /**
+   * O corpo do /ended: `motivo` obrigatório, e os contadores no MESMO nível,
+   * todos opcionais. `duration_seconds` conta da abertura do áudio (o mesmo
+   * instante em que o teto de duração começa a correr) até aqui.
+   */
+  function corpoDoFim(motivo) {
+    const corpo = {
+      motivo: String(motivo || 'encerrado sem motivo declarado').slice(0, MOTIVO_MAX)
+    };
+    for (const [campo, valor] of Object.entries(uso || {})) {
+      if (valor !== null) corpo[campo] = valor;
+    }
+    if (audioAbertoEm) {
+      corpo.duration_seconds = Math.max(0, Math.round((Date.now() - audioAbertoEm) / 1000));
+    }
+    return corpo;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Transcrição — SÓ console
+
+     Espelha a bancada do backend: dá para acompanhar a conversa de olho
+     enquanto ela acontece.
+
+     NADA DAQUI SAI DA MÁQUINA. Não vai para o nosso backend, não entra no corpo
+     do /ended, não é gravado e não aparece na tela — é console.log e mais nada.
+     A fala do cliente é o dado mais sensível que este app toca, então o caminho
+     dela termina aqui.
+
+     As transcrições chegam de carona em eventos que o canal já entrega; nenhum
+     evento é PEDIDO por causa delas, e nenhuma linha desta seção decide nada.
+
+     E SÓ EM DESENVOLVIMENTO. No domínio publicado a fala do cliente não aparece
+     em console nenhum — nem no dele, nem numa sessão de suporte por
+     compartilhamento de tela.
+     ══════════════════════════════════════════════════════════════ */
+
+  // Duas condições, porque "desenvolvimento" tem duas caras: `import.meta.env.DEV`
+  // pega o servidor de desenvolvimento, e o host local pega o `vite preview` e o
+  // e2e, que rodam o bundle de produção na sua máquina. Nenhuma das duas é
+  // verdade no domínio publicado, que é o que importa aqui.
+  const DEV = (() => {
+    try {
+      if (import.meta.env && import.meta.env.DEV) return true;
+    } catch {
+      // Fora do bundler (um <script> solto): decide só o host.
+    }
+    return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+  })();
+
+  const VOZES = {
+    cliente: { etiqueta: 'cliente', cor: '#1d4ed8' },
+    assistente: { etiqueta: 'assistente', cor: '#b4490a' },
+    busca: { etiqueta: 'busca', cor: '#15803d' }
+  };
+
+  // Etiqueta colorida para distinguir de olho quem falou, sem precisar ler o
+  // texto. O prefixo continua sendo "voz ·" para dar um filtro fácil no console.
+  function transcrever(quem, ...partes) {
+    if (!DEV) return;
+    const voz = VOZES[quem];
+    console.log(
+      `%c voz · ${voz.etiqueta} `,
+      `background:${voz.cor};color:#fff;border-radius:3px;font-weight:600`,
+      ...partes
+    );
+  }
+
+  function textoDaTranscricao(valor) {
+    return String(valor ?? '').trim() || null;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      As quatro rotas do backend
      ══════════════════════════════════════════════════════════════ */
 
@@ -193,14 +320,17 @@
    * instante, e NÃO é aguardado: parar o microfone vem primeiro, sempre.
    * `timeout: 0` desliga o AbortController do cliente — um abort agendado numa
    * página que está morrendo cancelaria justamente o aviso que precisa sair.
+   *
+   * O corpo cresceu com os contadores, mas continua com poucas centenas de
+   * bytes: bem abaixo do teto de 64 kB que os navegadores impõem a um corpo com
+   * keepalive, que é o que faria a entrega ser recusada em silêncio.
    */
-  function reportarFim(sessaoId, motivo) {
+  function reportarFim(sessaoId, corpo) {
     if (!sessaoId) return;
-    const texto = String(motivo || 'encerrado sem motivo declarado').slice(0, MOTIVO_MAX);
     try {
       cliente().request(rotas().voiceSessionEnded(sessaoId), {
         method: 'POST',
-        body: JSON.stringify({ motivo: texto }),
+        body: JSON.stringify(corpo),
         keepalive: true,
         timeout: 0
       }).then(resposta => {
@@ -309,9 +439,14 @@
     const precoMaximo = Number.isFinite(preco) && preco > 0 ? preco : null;
 
     if (!consulta) {
+      transcrever('busca', '→', '(o modelo pediu uma busca sem consulta)');
       responderToolCall(callId, 'A busca falhou.');
       return;
     }
+
+    transcrever('busca', '→', precoMaximo === null
+      ? consulta
+      : `${consulta} (até R$ ${precoMaximo})`);
 
     try {
       const resultado = await buscarNoCardapio(consulta, precoMaximo);
@@ -319,10 +454,13 @@
       // Os cartões saem de `produtos`, do banco. O `resumo` é o que volta para o
       // modelo. São as duas metades da mesma leitura, e é essa separação que
       // impede o assistente de falar um preço e a tela mostrar outro.
+      const resumo = String(resultado?.resumo ?? 'Nenhum produto encontrado.');
       tela?.showProducts(resultado?.produtos || []);
-      responderToolCall(callId, String(resultado?.resumo ?? 'Nenhum produto encontrado.'));
+      transcrever('busca', '←', resumo);
+      responderToolCall(callId, resumo);
     } catch (erro) {
       console.error('[Voz] A busca no cardápio falhou:', erro);
+      transcrever('busca', '←', '(a busca falhou)');
       // Nunca deixar a chamada sem resposta: o modelo trava esperando, calado.
       responderToolCall(callId, 'A busca falhou.');
     }
@@ -353,6 +491,9 @@
         break;
 
       case 'response.done':
+        // A medição vem antes só porque este é o evento que a carrega; ela não
+        // decide nada do que vem abaixo.
+        acumularUso(dados.response);
         respostaAtiva = false;
         pedidoEmVoo = null;
         tela?.setState('listening');
@@ -364,6 +505,22 @@
       case 'input_audio_buffer.speech_started':
         reiniciarInatividade();
         break;
+
+      // As duas transcrições. Elas NÃO movem estado: não zeram temporizador, não
+      // abrem nem fecham resposta e não vão para lugar nenhum além do console.
+      // A de entrada em particular não pode zerar a inatividade — ela chega
+      // depois da fala, e quem marca "tem gente aí" é o speech_started acima.
+      case 'conversation.item.input_audio_transcription.completed': {
+        const dito = textoDaTranscricao(dados.transcript);
+        if (dito) transcrever('cliente', dito);
+        break;
+      }
+
+      case 'response.output_audio_transcript.done': {
+        const respondido = textoDaTranscricao(dados.transcript);
+        if (respondido) transcrever('assistente', respondido);
+        break;
+      }
 
       case 'response.function_call_arguments.done':
         receberToolCall(dados.call_id, dados.name, dados.arguments);
@@ -625,6 +782,8 @@
     atendidas.clear();
     nivelSuave = 0;
     sessao = null;
+    // Contadores nunca atravessam sessões: cada conversa reporta só a si.
+    zerarUso();
 
     try {
       const restauranteId = idDoRestaurante();
@@ -672,6 +831,9 @@
       if (encerrado) return;
 
       // Passo 5: a conversa começou. Só agora os temporizadores.
+      // O relógio da duração parte daqui — o mesmo instante em que o teto começa
+      // a correr, para os dois números falarem da mesma coisa.
+      audioAbertoEm = Date.now();
       ligarMedidor();
       ligarTemporizadores();
       tela?.setState('listening');
@@ -756,8 +918,11 @@
     fila = [];
     pedidoEmVoo = null;
     atendidas.clear();
-    reportarFim(sessao?.id, motivo);
+    const corpo = corpoDoFim(motivo);
+    console.log('[Voz] Uso acumulado da sessão:', corpo);
+    reportarFim(sessao?.id, corpo);
     sessao = null;
+    zerarUso();
   }
 
   function setMuted(mudo) {

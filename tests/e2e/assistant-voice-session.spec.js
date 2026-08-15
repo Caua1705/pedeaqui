@@ -388,29 +388,32 @@ test('busca que falha ainda responde ao modelo, em vez de deixá-lo esperando', 
 
 test('o silêncio avisa por FALA antes de cortar, e falar cancela o corte', async ({ page, context }) => {
   // Limites curtos vindos do servidor — que é de onde eles vêm de verdade.
+  // Curtos, mas com folga: aviso 3s depois da última fala, corte aos 8s. Um
+  // orçamento apertado aqui vira teste instável quando a suíte roda em paralelo,
+  // e um teste instável não protege nada.
   const chamadas = await montar(page, context, {
-    emissao: emissaoOk({ duracao_maxima_s: 300, inatividade_s: 3, aviso_antes_s: 2 })
+    emissao: emissaoOk({ duracao_maxima_s: 300, inatividade_s: 8, aviso_antes_s: 5 })
   });
   await conversar(page);
   await page.evaluate(() => { window.__recebidos.length = 0; });
 
-  // 1 s depois do início, o cliente fala: zera o contador e cancela o aviso.
-  await page.waitForTimeout(800);
-  await emitir(page, { type: 'input_audio_buffer.speech_started' });
-  await page.waitForTimeout(700);
-  const cedoDemais = (await recebidos(page)).filter(m => m.type === 'response.create');
-  expect(cedoDemais, 'avisou mesmo depois de o cliente falar').toHaveLength(0);
-  await expect(page.locator('#assistantVoice')).toHaveClass(/is-open/);
+  const avisou = async () => (await recebidos(page))
+    .some(m => m.type === 'response.create' && /inatividade/i.test(m.response?.instructions || ''));
+
+  // Falar zera o contador. Duas vezes seguidas, para provar que cada fala
+  // adia o aviso em vez de só a primeira.
+  for (let vez = 0; vez < 2; vez++) {
+    await emitir(page, { type: 'input_audio_buffer.speech_started' });
+    await page.waitForTimeout(1200);
+    expect(await avisou(), `avisou mesmo com o cliente falando (volta ${vez + 1})`).toBe(false);
+    await expect(page.locator('#assistantVoice')).toHaveClass(/is-open/);
+  }
 
   // Agora o silêncio corre inteiro: primeiro a frase falada, depois o corte.
-  await expect.poll(async () => {
-    const pedidos = (await recebidos(page)).filter(m => m.type === 'response.create');
-    return pedidos.some(p => /inatividade/i.test(p.response?.instructions || ''));
-  }, { timeout: 6000 }).toBe(true);
-
-  await expect(page.locator('#assistantVoice')).not.toHaveClass(/is-open/, { timeout: 6000 });
+  await expect.poll(avisou, { timeout: 9000 }).toBe(true);
+  await expect(page.locator('#assistantVoice')).not.toHaveClass(/is-open/, { timeout: 9000 });
   await expect.poll(() => chamadas.ended.length).toBe(1);
-  expect(chamadas.ended[0].motivo).toMatch(/silencio por 3s/);
+  expect(chamadas.ended[0].motivo).toBe('silencio por 8s');
 });
 
 test('o teto de duração vem do servidor e encerra sozinho', async ({ page, context }) => {
@@ -490,6 +493,202 @@ test('sai um /ended só, mesmo com o cliente insistindo no botão', async ({ pag
   });
   await page.waitForTimeout(400);
   expect(chamadas.ended, 'saiu mais de um /ended para a mesma sessão').toHaveLength(1);
+});
+
+/** O `usage` como a OpenAI o manda dentro do response.done. */
+const respostaComUso = (entrada, emitidos) => ({
+  type: 'response.done',
+  response: {
+    usage: {
+      input_token_details: entrada,
+      output_token_details: emitidos
+    }
+  }
+});
+
+test('o uso de tokens é somado na sessão e sai UMA vez, no /ended', async ({ page, context }) => {
+  const chamadas = await montar(page, context);
+  // O acumulado também é logado no encerramento, para conferir na hora sem
+  // precisar abrir a aba de rede.
+  const logs = [];
+  page.on('console', m => { if (m.type() === 'log') logs.push(m.text()); });
+  await conversar(page);
+
+  // Duas respostas com uso, para provar que ele ACUMULA em vez de sobrescrever.
+  await emitir(page, { type: 'response.created' });
+  await emitir(page, respostaComUso(
+    { audio_tokens: 120, text_tokens: 30, cached_tokens: 64 },
+    { audio_tokens: 200, text_tokens: 15 }
+  ));
+  await emitir(page, { type: 'response.created' });
+  await emitir(page, respostaComUso(
+    { audio_tokens: 80, text_tokens: 10, cached_tokens: 32 },
+    { audio_tokens: 50, text_tokens: 5 }
+  ));
+  await page.waitForTimeout(300);
+
+  await page.locator('#assistantVoiceEnd').click();
+  await expect.poll(() => chamadas.ended.length).toBe(1);
+
+  const corpo = chamadas.ended[0];
+  expect(corpo.motivo).toBe('o cliente clicou em Parar');
+  expect(corpo.input_audio_tokens).toBe(200);
+  expect(corpo.input_text_tokens).toBe(40);
+  expect(corpo.output_audio_tokens).toBe(250);
+  expect(corpo.output_text_tokens).toBe(20);
+  // Subconjunto da entrada: soma com os próprios pares, e não entra nem sai do
+  // input_audio_tokens.
+  expect(corpo.cached_tokens).toBe(96);
+  expect(corpo.input_audio_tokens, 'o cached foi descontado da entrada').toBe(200);
+
+  // Duração medida da abertura do áudio até aqui — inteiro, e plausível.
+  expect(Number.isInteger(corpo.duration_seconds)).toBe(true);
+  expect(corpo.duration_seconds).toBeGreaterThanOrEqual(0);
+  expect(corpo.duration_seconds).toBeLessThan(120);
+
+  // Todos os inteiros, nada de fracionário chegando na cobrança.
+  for (const campo of ['input_audio_tokens', 'input_text_tokens', 'output_audio_tokens',
+    'output_text_tokens', 'cached_tokens']) {
+    expect(Number.isInteger(corpo[campo]), `${campo} não é inteiro`).toBe(true);
+  }
+
+  const acumulado = logs.find(linha => /\[Voz\] Uso acumulado/.test(linha));
+  expect(acumulado, `nada foi logado no encerramento:\n${logs.join('\n')}`).toBeTruthy();
+});
+
+test('campo que ninguém reportou fica AUSENTE, e não vira zero', async ({ page, context }) => {
+  const chamadas = await montar(page, context);
+  await conversar(page);
+
+  // Só áudio de entrada. Texto e cache nunca foram mencionados por ninguém.
+  await emitir(page, { type: 'response.created' });
+  await emitir(page, respostaComUso({ audio_tokens: 45 }, {}));
+  await page.waitForTimeout(300);
+
+  await page.locator('#assistantVoiceEnd').click();
+  await expect.poll(() => chamadas.ended.length).toBe(1);
+
+  const corpo = chamadas.ended[0];
+  expect(corpo.input_audio_tokens).toBe(45);
+  // Ausente significa "não reportado", que é diferente de "foi zero". Mandar 0
+  // aqui seria uma afirmação — e uma afirmação errada.
+  expect(Object.keys(corpo)).not.toContain('input_text_tokens');
+  expect(Object.keys(corpo)).not.toContain('output_audio_tokens');
+  expect(Object.keys(corpo)).not.toContain('output_text_tokens');
+  expect(Object.keys(corpo)).not.toContain('cached_tokens');
+});
+
+test('sessão sem nenhum uso reportado manda só motivo e duração', async ({ page, context }) => {
+  const chamadas = await montar(page, context);
+  await conversar(page);
+  await page.locator('#assistantVoiceEnd').click();
+  await expect.poll(() => chamadas.ended.length).toBe(1);
+
+  // A saudação de abertura fecha sem `usage` no dublê — então não há o que
+  // reportar, e o corpo não inventa contadores.
+  expect(Object.keys(chamadas.ended[0]).sort()).toEqual(['duration_seconds', 'motivo']);
+});
+
+test('a medição não muda o rumo da conversa', async ({ page, context }) => {
+  const chamadas = await montar(page, context, {
+    busca: { produtos: [], resumo: 'Nenhum produto encontrado.' }
+  });
+  await conversar(page);
+  await page.evaluate(() => { window.__recebidos.length = 0; });
+
+  // Um response.done com usage malformado não pode engolir o escoamento da fila:
+  // é o mesmo evento que fecha a resposta ativa.
+  await emitir(page, { type: 'response.created' });
+  await emitir(page, {
+    type: 'response.function_call_arguments.done',
+    call_id: 'call_medicao', name: 'buscar_no_cardapio',
+    arguments: JSON.stringify({ consulta: 'algo' })
+  });
+  await expect.poll(() => chamadas.busca.length, { timeout: 10000 }).toBe(1);
+
+  await emitir(page, { type: 'response.done', response: { usage: 'lixo' } });
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
+    .toContain('response.create');
+  await expect(page.locator('#assistantVoice')).toHaveClass(/is-listening/);
+});
+
+test('a conversa é transcrita no console — e SÓ no console', async ({ page, context }) => {
+  const DITO = 'quero uma sobremesa de chocolate';
+  const RESPONDIDO = 'Temos pudim e brownie. Qual você prefere?';
+  const RESUMO = 'Produtos encontrados: Pudim - R$ 12,50';
+
+  const chamadas = await montar(page, context, {
+    busca: { produtos: [{ id: 'p1', name: 'Pudim', price: 12.5 }], resumo: RESUMO }
+  });
+  const linhas = [];
+  page.on('console', m => { if (m.type() === 'log') linhas.push(m.text()); });
+  await conversar(page);
+
+  await emitir(page, {
+    type: 'conversation.item.input_audio_transcription.completed',
+    transcript: DITO
+  });
+  await emitir(page, {
+    type: 'response.output_audio_transcript.done',
+    transcript: RESPONDIDO
+  });
+  await emitir(page, {
+    type: 'response.function_call_arguments.done',
+    call_id: 'call_transcricao', name: 'buscar_no_cardapio',
+    arguments: JSON.stringify({ consulta: 'sobremesa', preco_maximo: 40 })
+  });
+  await expect.poll(() => chamadas.busca.length, { timeout: 10000 }).toBe(1);
+  await page.waitForTimeout(300);
+
+  const achar = termo => linhas.find(linha => linha.includes(termo));
+
+  // As três origens, cada uma com sua etiqueta.
+  expect(achar(DITO), `a fala do cliente não foi transcrita:\n${linhas.join('\n')}`)
+    .toMatch(/cliente/);
+  expect(achar(RESPONDIDO), 'a fala do assistente não foi transcrita').toMatch(/assistente/);
+  // A tool call sai dos dois lados: a consulta enviada e o resumo recebido.
+  expect(achar('sobremesa (até R$ 40)'), 'a consulta enviada não foi transcrita').toMatch(/busca/);
+  expect(achar(RESUMO), 'o resumo recebido não foi transcrito').toMatch(/busca/);
+
+  // E agora o que importa: NADA disso viajou. A fala do cliente é o dado mais
+  // sensível que este app toca, e o caminho dela termina no console.
+  await page.locator('#assistantVoiceEnd').click();
+  await expect.poll(() => chamadas.ended.length).toBe(1);
+
+  const tudoQueSaiu = JSON.stringify({
+    sessao: chamadas.sessao,
+    connected: chamadas.connected,
+    ended: chamadas.ended,
+    busca: chamadas.busca
+  });
+  expect(tudoQueSaiu, 'a fala do cliente vazou para o backend').not.toContain(DITO);
+  expect(tudoQueSaiu, 'a fala do assistente vazou para o backend').not.toContain(RESPONDIDO);
+  // O /ended continua sendo só motivo + contadores.
+  expect(Object.keys(chamadas.ended[0])).not.toContain('transcript');
+  expect(Object.keys(chamadas.ended[0])).not.toContain('transcricao');
+
+  // E nada foi gravado no aparelho.
+  const guardado = await page.evaluate(() =>
+    JSON.stringify({ local: { ...localStorage }, sessao: { ...sessionStorage } }));
+  expect(guardado, 'a transcrição foi gravada no aparelho').not.toContain(DITO);
+  expect(guardado).not.toContain(RESPONDIDO);
+});
+
+test('transcrição vazia não vira linha em branco no console', async ({ page, context }) => {
+  await montar(page, context);
+  const linhas = [];
+  page.on('console', m => { if (m.type() === 'log') linhas.push(m.text()); });
+  await conversar(page);
+  const antes = linhas.filter(l => /voz · /.test(l)).length;
+
+  // A API manda transcrição vazia quando não entendeu nada. Uma etiqueta
+  // colorida sem texto ao lado só suja o console.
+  await emitir(page, { type: 'conversation.item.input_audio_transcription.completed', transcript: '   ' });
+  await emitir(page, { type: 'response.output_audio_transcript.done', transcript: '' });
+  await emitir(page, { type: 'conversation.item.input_audio_transcription.completed' });
+  await page.waitForTimeout(300);
+
+  expect(linhas.filter(l => /voz · /.test(l)).length).toBe(antes);
 });
 
 test('cota estourada: a mensagem aparece e nenhum microfone é aberto', async ({ page, context }) => {

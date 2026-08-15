@@ -97,6 +97,14 @@
   // loader não parecer um flash ou uma falha visual.
   const APP_LOADER_MIN_MS = 900;
   const TAB_LOADER_MIN_MS = 500;
+  // A troca para o cardápio continua instantânea quando as miniaturas vieram
+  // do cache. Em rede lenta, esperamos um pouco antes de cobrir a tela para que
+  // o loader não pisque; depois de exibido, ele fica tempo suficiente para ser
+  // percebido como uma transição intencional.
+  const MENU_MEDIA_LOADER_DELAY_MS = 220;
+  const MENU_MEDIA_LOADER_MIN_VISIBLE_MS = 360;
+  const MENU_MEDIA_TIMEOUT_MS = 6500;
+  let menuMediaLoadSequence = 0;
 
   const $ = window.PedeAquiDom?.byId || ((id) => document.getElementById(id));
 
@@ -618,6 +626,110 @@
       img.addEventListener('load', done, { once: true });
       img.addEventListener('error', done, { once: true });
     });
+  }
+
+  function replaceFailedProductImage(img) {
+    if (!img?.isConnected) return;
+    const placeholder = document.createElement('div');
+    placeholder.className = `${img.className} product-image--placeholder`;
+    const label = document.createElement('span');
+    label.textContent = initials(img.alt || 'Produto');
+    placeholder.appendChild(label);
+    img.replaceWith(placeholder);
+  }
+
+  // O srcset usa a variante redimensionada do Storage. Se essa variante falhar,
+  // tentamos a URL original antes de assumir que a foto está indisponível.
+  // Assim uma falha pontual do transformador não deixa o quadrado cinza.
+  function waitForProductImageReady(img) {
+    if (!img?.src) return Promise.resolve();
+    img.loading = 'eager';
+
+    return new Promise(resolve => {
+      const originalSrc = img.getAttribute('src') || img.src;
+      let retriedOriginal = false;
+      let settled = false;
+
+      const cleanup = () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
+      };
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+      const handleLoad = () => {
+        const decoded = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+        decoded.finally(finish);
+      };
+      const handleError = () => {
+        if (!retriedOriginal && img.hasAttribute('srcset')) {
+          retriedOriginal = true;
+          img.removeAttribute('srcset');
+          img.removeAttribute('sizes');
+          img.src = originalSrc;
+          return;
+        }
+        replaceFailedProductImage(img);
+        finish();
+      };
+
+      img.addEventListener('load', handleLoad);
+      img.addEventListener('error', handleError);
+      if (img.complete) {
+        if (img.naturalWidth > 0) handleLoad();
+        else handleError();
+      }
+    });
+  }
+
+  function menuImagesNearViewport() {
+    const images = Array.from(document.querySelectorAll('#menuContainer img.product-image'));
+    if (!images.length) return [];
+    const viewportLimit = window.innerHeight + 220;
+    const visibleSoon = images.filter(img => {
+      const rect = img.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < viewportLimit;
+    });
+    // O fallback cobre ambientes sem layout real (e também os testes DOM).
+    return (visibleSoon.length ? visibleSoon : images.slice(0, 6)).slice(0, 8);
+  }
+
+  function setMenuMediaLoading(active) {
+    if (active) {
+      if (document.body.classList.contains('app-booting') || document.body.classList.contains('app-error')) return;
+      if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Carregando cardápio';
+      if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando as imagens dos produtos.';
+      document.body.classList.add('menu-media-loading');
+      return;
+    }
+    document.body.classList.remove('menu-media-loading');
+    if ($('appLoaderTitle')) $('appLoaderTitle').textContent = 'Carregando restaurante';
+    if ($('appLoaderMessage')) $('appLoaderMessage').textContent = 'Preparando sua experiência.';
+  }
+
+  async function waitForMenuCriticalMedia() {
+    if (!document.body.classList.contains('menu-tab')) return;
+    const images = menuImagesNearViewport();
+    if (!images.length) return;
+
+    const sequence = ++menuMediaLoadSequence;
+    images.slice(0, 3).forEach(img => { img.fetchPriority = 'high'; });
+    const ready = Promise.allSettled(images.map(waitForProductImageReady));
+    const first = await Promise.race([
+      ready.then(() => 'ready'),
+      wait(MENU_MEDIA_LOADER_DELAY_MS).then(() => 'delayed')
+    ]);
+    if (first === 'ready' || sequence !== menuMediaLoadSequence || !document.body.classList.contains('menu-tab')) return;
+
+    const shownAt = performance.now();
+    setMenuMediaLoading(true);
+    await Promise.race([ready, wait(MENU_MEDIA_TIMEOUT_MS)]);
+    const remaining = MENU_MEDIA_LOADER_MIN_VISIBLE_MS - (performance.now() - shownAt);
+    if (remaining > 0) await wait(remaining);
+    if (sequence === menuMediaLoadSequence) setMenuMediaLoading(false);
   }
 
   async function waitForHomeCriticalMedia(timeoutMs = 1400) {
@@ -1940,9 +2052,13 @@
   }
 
   async function ensureMenuLoaded() {
-    if (appState.menuLoaded && $('menuContainer')?.querySelector('.menu-section')) return;
+    if (appState.menuLoaded && $('menuContainer')?.querySelector('.menu-section')) {
+      await waitForMenuCriticalMedia();
+      return;
+    }
     if (appState.menuLoaded) {
       renderMenu();
+      await waitForMenuCriticalMedia();
       return;
     }
     if (products.length && categories.length) {
@@ -1950,6 +2066,7 @@
       initScrollSpy();
       initProductPressFeedback();
       setFirstCategoryActive();
+      await waitForMenuCriticalMedia();
       return;
     }
     if (menuLoadPromise) return menuLoadPromise;
@@ -1975,6 +2092,7 @@
         initScrollSpy();
         initProductPressFeedback();
         setFirstCategoryActive();
+        await waitForMenuCriticalMedia();
       } catch (error) {
         appState.menuLoaded = false;
         logAppError('Falha ao carregar cardápio', error);

@@ -211,28 +211,63 @@
     if (inputEl) inputEl.disabled = Boolean(disabled);
   }
 
+  /* ── O botão que troca com o campo ──
+     Campo vazio → ondas de áudio (entra no modo voz). Campo com texto → seta de
+     enviar. Volta a ondas quando o campo esvazia.
+
+     ONDAS, NÃO MICROFONE: microfone é o símbolo de DITADO — falar e virar texto
+     no campo. O que este botão abre é uma conversa em tempo real, que não devolve
+     nada para o campo. O ícone errado promete a coisa errada.
+
+     A troca é IMEDIATA e sem animação, e é por isso que o innerHTML só é
+     reescrito quando o MODO muda (ver _assistantSendMode): reescrever o conteúdo
+     a cada tecla faz o ícone piscar, e é no piscar que o dedo acerta o botão
+     errado — abrindo por engano uma sessão de voz, que é faturada por minuto. */
+  const ASSISTANT_SEND_ICON =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+  const ASSISTANT_VOICE_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 10.5v3"/><path d="M8.5 6.5v11"/><path d="M13 3.5v17"/><path d="M17.5 7.5v9"/><path d="M22 11v2"/></svg>';
+  const ASSISTANT_STOP_ICON = '<span class="assistant-stop-icon" aria-hidden="true"></span>';
+
+  // 'send' | 'voice' | 'stop'. Guardado só para evitar o rewrite por tecla.
+  let _assistantSendMode = null;
+
+  function paintAssistantSendButton(sendBtn, mode, label) {
+    if (_assistantSendMode === mode) return;
+    _assistantSendMode = mode;
+    sendBtn.innerHTML = mode === 'stop' ? ASSISTANT_STOP_ICON
+      : mode === 'send' ? ASSISTANT_SEND_ICON
+        : ASSISTANT_VOICE_ICON;
+    sendBtn.setAttribute('aria-label', label);
+    sendBtn.setAttribute('title', label);
+  }
+
   function updateAssistantSendButton() {
     const inputEl = document.getElementById('assistantInput');
     const sendBtn = document.querySelector('.assistant-ai-send');
     if (!sendBtn || _assistantSending) return;
     const hasText = Boolean(inputEl?.value?.trim());
-    sendBtn.disabled = !hasText;
+    // Nunca desabilitado: campo vazio deixou de ser "nada a fazer" e passou a
+    // ser o modo voz.
+    sendBtn.disabled = false;
     sendBtn.classList.toggle('is-ready', hasText);
-    sendBtn.classList.toggle('is-inactive', !hasText);
+    sendBtn.classList.toggle('is-voice', !hasText);
+    sendBtn.classList.remove('is-inactive');
+    paintAssistantSendButton(sendBtn, hasText ? 'send' : 'voice',
+      hasText ? 'Enviar' : 'Conversar por voz');
   }
 
   function setAssistantGenerating(generating) {
     const sendBtn = document.querySelector('.assistant-ai-send');
     if (!sendBtn) return;
     sendBtn.classList.toggle('is-stopping', Boolean(generating));
-    sendBtn.classList.remove('is-ready', 'is-inactive');
+    sendBtn.classList.remove('is-ready', 'is-inactive', 'is-voice');
     sendBtn.disabled = false;
-    sendBtn.setAttribute('aria-label', generating ? 'Parar resposta' : 'Enviar');
-    sendBtn.setAttribute('title', generating ? 'Parar resposta' : 'Enviar');
-    sendBtn.innerHTML = generating
-      ? '<span class="assistant-stop-icon" aria-hidden="true"></span>'
-      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
-    if (!generating) updateAssistantSendButton();
+    if (generating) {
+      paintAssistantSendButton(sendBtn, 'stop', 'Parar resposta');
+      return;
+    }
+    updateAssistantSendButton();
   }
 
   function finishAssistantGeneration() {
@@ -902,9 +937,12 @@
             placeholder="Pergunte qualquer coisa..."
             ${act('input', 'assistantUpdateSendButton')}
             ${act('keydown', 'assistantInputKeydown', '$event')}>
-          <button class="assistant-ai-send is-inactive" ${act('click', 'assistantSendMessage')} type="button" aria-label="Enviar" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+          <!-- Nasce em ondas porque nasce com o campo vazio. O conteúdo aqui e o
+               de ASSISTANT_VOICE_ICON precisam continuar iguais: é este markup
+               que a tela mostra no primeiro quadro, antes de qualquer digitação. -->
+          <button class="assistant-ai-send is-voice" ${act('click', 'assistantSendMessage')} type="button" aria-label="Conversar por voz" title="Conversar por voz">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 10.5v3"/><path d="M8.5 6.5v11"/><path d="M13 3.5v17"/><path d="M17.5 7.5v9"/><path d="M22 11v2"/>
             </svg>
           </button>
         </div>
@@ -1212,7 +1250,13 @@
     }
     const inputEl = document.getElementById('assistantInput');
     const msg = (inputEl?.value || '').trim();
-    if (!msg) return;
+    // Quem decide o que este toque faz é o CAMPO, não a classe do botão. Se o
+    // ícone atrasar um quadro, o comportamento continua certo — ninguém abre uma
+    // sessão de voz (paga) por ter apertado no meio da troca.
+    if (!msg) {
+      window.RapidexAssistantVoice?.request();
+      return;
+    }
     if (inputEl) inputEl.value = '';
     assistantSearch(msg);
   };
@@ -1366,6 +1410,9 @@
 
     if (!_assistantLoaded || !view.querySelector('.assistant-page')) {
       view.innerHTML = buildAssistantView();
+      // O markup do botão nasce em ondas; o estado guardado tem de nascer junto,
+      // ou o primeiro update reescreveria o mesmo ícone à toa.
+      _assistantSendMode = 'voice';
       _assistantLoaded = true;
       ensureAssistantSessionId();
     } else {
@@ -1495,6 +1542,23 @@
     if (event.target instanceof Element && event.target.closest('.assistant-hdr-menu-wrap')) return;
     setAssistantHeaderMenuOpen(false);
   }, { capture: true, signal: window.RapidexLifecycle?.signal });
+
+  /* ── Ponte para o modo voz ──
+     O modo voz mora em restaurant-assistant-voice.js, mas os cartões que ele
+     mostra são OS MESMOS do chat: mesma marcação, mesmo cache de detalhe, mesma
+     folha que abre no toque. Um segundo cartão de produto escrito lá dentro
+     sairia de sincronia com este no primeiro ajuste de layout — e o cache do
+     detalhe é estado PRIVADO deste módulo, então quem monta o cartão tem de ser
+     quem guarda o produto.
+
+     A superfície é estreita de propósito: só o que a voz precisa, nada além. */
+  window.RapidexAssistantChat = {
+    productRailMarkup: products =>
+      (Array.isArray(products) ? products : []).map((p, i) => renderResultCard(p, i)).join(''),
+    restaurantId: getAssistantRestaurantId,
+    toast: showAssistantToast,
+    stopGeneration: stopAssistantGeneration
+  };
 
   // assistantImagePlaceholder é a única ação deste módulo que NÃO existe em window —
   // ela nasceu já como ação. As demais continuam globais porque restaurant-page.js

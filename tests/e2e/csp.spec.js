@@ -94,6 +94,29 @@ test('a política existe e é restritiva onde importa', () => {
   expect(CSP).toContain("base-uri 'none'");
 });
 
+test('a produção deixa o modo voz existir', () => {
+  // Estes dois headers matam a voz SÓ EM PRODUÇÃO: em dev o Vite não os aplica,
+  // então a conversa funciona na máquina de quem programou e responde com um
+  // NotAllowedError na Vercel. Foi por isso que viraram teste.
+  const connect = CSP.split(';').map(s => s.trim()).find(s => s.startsWith('connect-src'));
+  expect(connect, 'a chamada de SDP à OpenAI seria bloqueada pela CSP')
+    .toContain('https://api.openai.com');
+  expect(connect, 'connect-src continua sem curinga').not.toMatch(/\s\*/);
+
+  // O áudio remoto entra por srcObject (MediaStream), que não é uma busca e não
+  // passa por diretiva nenhuma — mas o elemento existe, e default-src 'self'
+  // seria o fallback se algum dia ele virar URL.
+  expect(CSP).toContain('media-src');
+
+  const permissoes = headerValue('Permissions-Policy');
+  // `microphone=()` desliga getUserMedia no documento inteiro, antes de qualquer
+  // diálogo de permissão aparecer.
+  expect(permissoes, 'o microfone está desligado por Permissions-Policy')
+    .toContain('microphone=(self)');
+  // E a câmera continua desligada: a voz não é desculpa para abrir o resto.
+  expect(permissoes).toContain('camera=()');
+});
+
 test('o app boota sob a CSP sem nenhuma violação', async ({ page }) => {
   const { violations } = await bootUnderCsp(page);
 

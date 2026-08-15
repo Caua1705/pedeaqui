@@ -67,5 +67,7 @@ import './pages/restaurant-club.js';
 import './pages/restaurant-assistant.js';
 // Depende da ponte publicada por restaurant-assistant.js (RapidexAssistantChat).
 import './pages/restaurant-assistant-voice.js';
+// O transporte se registra na tela por setDriver(), então vem DEPOIS dela.
+import './pages/restaurant-assistant-voice-session.js';
 import './pages/restaurant-page.js';
 import './pages/cashback-statement.js';

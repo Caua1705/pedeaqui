@@ -4131,7 +4131,21 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 #mobViewAssistant .assistant-voice.is-open{ opacity:1 }
 
-/* A esfera fica EM CIMA, não no centro: o meio da tela pertence aos cartões. */
+/* Onde a esfera senta.
+   Sem cartões ela fica no MEIO: os dois vãos elásticos crescem igual. Quando os
+   cartões chegam, o vão de cima encolhe a zero e a esfera sobe, abrindo a faixa
+   embaixo dela — o meio da tela passa a pertencer aos produtos.
+   `flex-grow` é interpolável, então o que se vê é a esfera subindo, e não um
+   corte. Antes, com a esfera presa no alto e sem cartões, sobrava uma faixa de
+   branco parada no meio que lia como tela quebrada. */
+#mobViewAssistant .assistant-voice-gap{
+  flex:1 1 0;
+  min-height:0;
+  transition:flex-grow .34s cubic-bezier(.2,.8,.2,1);
+}
+#mobViewAssistant .assistant-voice:has(#assistantVoiceRail:not([hidden])) .assistant-voice-gap--top{
+  flex-grow:0;
+}
 #mobViewAssistant .assistant-voice-stage{
   flex:0 0 auto;
   display:flex;
@@ -4274,8 +4288,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 #mobViewAssistant .assistant-voice-rail[hidden]{ display:none!important }
 #mobViewAssistant .assistant-voice-rail{
   /* Logo abaixo do que está sendo dito, e não boiando no meio da tela: é essa
-     vizinhança que liga "o que eu pedi" ao "o que apareceu". A folga acumula
-     embaixo, entre a faixa e os controles. */
+     vizinhança que liga "o que eu pedi" ao "o que apareceu". A folga acumula no
+     vão de baixo, entre a faixa e os controles. */
   flex:0 0 auto;
   align-items:flex-start;
   margin-top:30px;
@@ -4317,12 +4331,14 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 
 /* ── Os controles ── */
+/* Sem `margin-top:auto`: uma margem automática engoliria TODA a folga e os dois
+   vãos elásticos acima ficariam com zero para dividir — a esfera nunca se
+   centraria. Quem distribui o espaço aqui são os vãos. */
 #mobViewAssistant .assistant-voice-controls{
   flex:0 0 auto;
   display:flex;
   align-items:center;
   gap:12px;
-  margin-top:auto;
   padding:20px 20px 0;
 }
 

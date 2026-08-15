@@ -38,6 +38,16 @@
     startOrderPayment: (restaurantSlug, trackingToken) =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(trackingToken)}/payment`,
 
+    // ---- Atendimento por voz ----
+    // Só a emissão exige Bearer; as outras três são abertas. Quando a voz está
+    // desligada na plataforma, TODAS respondem 404 — a rota deixa de existir.
+    voiceSession: () => '/voice/session',
+    voiceSessionConnected: sessionId =>
+      `/voice/session/${routeSlug(sessionId)}/connected`,
+    voiceSessionEnded: sessionId =>
+      `/voice/session/${routeSlug(sessionId)}/ended`,
+    voiceSearch: () => '/voice/search',
+
     // ---- Customer authentication ----
     authRegister: () => '/auth/register',
     authVerifyEmailCode: () => '/auth/verify-email-code',

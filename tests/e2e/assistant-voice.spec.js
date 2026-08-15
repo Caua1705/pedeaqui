@@ -30,6 +30,19 @@ async function abrirChat(page, { logado = true } = {}) {
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+
+  // Estes testes são sobre a TELA. O transporte de verdade é trocado por um
+  // dublê pelo mesmo `setDriver` que ele usa — o que também deixa cada teste
+  // conferir o que a tela pediu a ele, e com que motivo.
+  await page.evaluate(() => {
+    window.__voz = { inicios: 0, paradas: [], mudo: [] };
+    window.RapidexAssistantVoice.setDriver({
+      start: () => { window.__voz.inicios += 1; },
+      stop: motivo => { window.__voz.paradas.push(motivo); },
+      setMuted: valor => { window.__voz.mudo.push(valor); }
+    });
+  });
+
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
   await expect(page.locator('#assistantStarter')).toHaveClass(/is-ready/);
 }
@@ -142,7 +155,10 @@ test('a tela de voz não tem campo de texto, nem dock, nem barra inferior', asyn
       larguraDoSair: sair.width / tela.width
     };
   });
-  expect(geometria.centroDaEsfera, 'a esfera desceu para o meio da tela').toBeLessThan(0.28);
+  // Onde ela senta depende de haver cartões — isso é assunto do teste da
+  // centralização. Aqui só importa que ela não desça para a metade de baixo,
+  // que é onde ficam os controles.
+  expect(geometria.centroDaEsfera, 'a esfera caiu na metade de baixo').toBeLessThan(0.5);
   expect(geometria.redonda, 'a esfera virou oval').toBe(true);
   expect(geometria.ladoDaEsfera, 'a esfera ficou gigante').toBeLessThanOrEqual(200);
   // Grande e claro: o botão de encerrar é o maior alvo da tela.
@@ -265,6 +281,47 @@ test('a saída é uma só, e devolve o chat inteiro', async ({ page }) => {
   await expect(page.locator('body')).not.toHaveClass(/assistant-voice-open/);
   await expect(page.locator('#mobViewAssistant .assistant-ai-input')).toBeVisible();
   await expect(page.locator('#mobBottomNav')).toBeVisible();
+
+  // E o transporte foi desligado UMA vez, com um motivo legível — é ele que vai
+  // parar as faixas do microfone e avisar o backend.
+  expect(await page.evaluate(() => window.__voz.paradas))
+    .toEqual(['o cliente clicou em Parar']);
+});
+
+test('a esfera se centra sem cartões e sobe quando eles chegam', async ({ page }) => {
+  await abrirChat(page);
+  await abrirVoz(page);
+
+  const medir = () => page.evaluate(() => {
+    const tela = document.getElementById('assistantVoice').getBoundingClientRect();
+    const orb = document.getElementById('assistantVoiceOrb').getBoundingClientRect();
+    return (orb.top + orb.height / 2 - tela.top) / tela.height;
+  });
+
+  // Sem cartões a esfera fica no meio: a faixa de branco parada no centro lia
+  // como tela quebrada.
+  const sozinha = await medir();
+  expect(sozinha, `esfera fora do centro: ${sozinha}`).toBeGreaterThan(0.32);
+  expect(sozinha).toBeLessThan(0.5);
+
+  await page.evaluate(() => {
+    const produtos = (window.PedeAquiRestaurantStore.get().products || []).slice(0, 3);
+    window.RapidexAssistantVoice.showProducts(produtos);
+  });
+  // A subida é uma transição de flex-grow; esperar o fim dela.
+  await page.waitForTimeout(600);
+
+  const comCartoes = await medir();
+  expect(comCartoes, 'a esfera não subiu quando os produtos chegaram').toBeLessThan(sozinha - 0.06);
+  expect(comCartoes).toBeLessThan(0.28);
+
+  // E os cartões ficam abaixo dela, não em cima.
+  const abaixo = await page.evaluate(() => {
+    const orb = document.getElementById('assistantVoiceOrb').getBoundingClientRect();
+    const faixa = document.getElementById('assistantVoiceRail').getBoundingClientRect();
+    return faixa.top >= orb.bottom;
+  });
+  expect(abaixo).toBe(true);
 });
 
 test('Escape também encerra', async ({ page }) => {
@@ -293,15 +350,8 @@ test('cota estourada e restaurante sem voz são LIDOS, não engolidos', async ({
   await expect(painel(page)).not.toHaveClass(/is-open/);
 });
 
-test('o transporte ainda não existe, e a tela não mente sobre isso', async ({ page }) => {
+test('a tela expõe ao transporte exatamente a superfície combinada', async ({ page }) => {
   await abrirChat(page);
-  await abrirVoz(page);
-
-  // Sem driver registrado a tela para em "Conectando…". Quando a camada de
-  // transporte entrar, é ela que move o estado daqui em diante — e este teste
-  // passa a ser o contrato do seu ponto de entrada.
-  await expect(painel(page)).toHaveClass(/is-connecting/);
-  await expect(page.locator('#assistantVoiceTitle')).toHaveText('Conectando…');
 
   const superficie = await page.evaluate(() =>
     Object.keys(window.RapidexAssistantVoice).sort());

@@ -58,6 +58,13 @@
       <section class="assistant-voice" id="assistantVoice" tabindex="-1" hidden
         aria-label="Atendimento por voz">
 
+        <!-- Os dois vãos elásticos. Sem cartões os dois crescem igual e a esfera
+             fica no meio da tela; quando os cartões chegam o de cima encolhe a
+             zero e a esfera SOBE, abrindo a faixa embaixo dela. É um flex-grow
+             que transita, então o movimento é o da esfera subindo — e não uma
+             faixa de branco parada no meio, que lia como tela quebrada. -->
+        <div class="assistant-voice-gap assistant-voice-gap--top" aria-hidden="true"></div>
+
         <div class="assistant-voice-stage">
           <!-- A esfera é decorativa: quem comunica o estado para leitor de tela é
                o texto abaixo dela, que está num aria-live. -->
@@ -77,6 +84,8 @@
              restaurant-assistant.js, para o toque cair no mesmo cache de detalhe. -->
         <div class="assistant-voice-rail assistant-product-rail" id="assistantVoiceRail"
           aria-label="Produtos encontrados" hidden></div>
+
+        <div class="assistant-voice-gap assistant-voice-gap--bottom" aria-hidden="true"></div>
 
         <div class="assistant-voice-controls">
           <button class="assistant-voice-mute" id="assistantVoiceMute" type="button"

@@ -6,10 +6,13 @@ import { dirname, resolve } from 'node:path';
 // Publica window.RapidexTheme — buildTenantManifest usa normalizeHex para não
 // deixar um hex inválido do lojista virar theme_color.
 import '../../scripts/utils/brand-theme.js';
+// Publica window.RapidexTenantIdentity, de onde saem os ícones do manifest.
+// Precisa vir antes de pwa.js, igual à ordem de scripts/entry-restaurant.js.
+import '../../scripts/utils/tenant-identity.js';
 // Publica window.RapidexPWA.
 import '../../scripts/utils/pwa.js';
 
-const { tenantScope, staticManifestUrl, remoteIcon, buildTenantManifest } = window.RapidexPWA;
+const { tenantScope, staticManifestUrl, buildTenantManifest } = window.RapidexPWA;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..', '..');
@@ -62,16 +65,18 @@ describe('manifest estático (camada 1)', () => {
     expect(manifest.id).toBeUndefined();
   });
 
-  it('usa ícones ABSOLUTOS: relativos virariam /<slug>/assets/... e dariam 404', () => {
-    expect(manifest.icons.length).toBeGreaterThan(0);
-    for (const icon of manifest.icons) expect(icon.src.startsWith('/assets/')).toBe(true);
+  // ESTE arquivo é servido a todos os tenants ao mesmo tempo, então um ícone
+  // aqui é, por definição, o de nenhum restaurante — e na prática era o nosso:
+  // /assets/icons/pwa/ é o mark do Rapidex. Quem instalasse o app antes de a
+  // API responder, ou com a logo do lojista fora do ar, ficava com o nosso pin
+  // na tela inicial. O preço de não declarar ícone é o browser só oferecer a
+  // instalação depois que o manifest do tenant entra, que é o que se quer.
+  it('NÃO declara ícone: um arquivo só não tem como ter a marca de N lojas', () => {
+    expect(manifest.icons).toBeUndefined();
   });
 
-  it('tem os tamanhos que o browser exige para oferecer a instalação', () => {
-    const sizes = manifest.icons.map(icon => icon.sizes);
-    expect(sizes).toContain('192x192');
-    expect(sizes).toContain('512x512');
-    expect(manifest.icons.some(icon => icon.purpose === 'maskable')).toBe(true);
+  it('não cita nenhum asset da plataforma', () => {
+    expect(JSON.stringify(manifest)).not.toContain('/assets/');
   });
 });
 
@@ -90,6 +95,11 @@ describe('manifest do tenant (camada 2)', () => {
     expect(manifest.icons[0].src).toBe('https://xyz.supabase.co/storage/logo.png');
   });
 
+  it('declara o type do logo pela EXTENSÃO — declarar png num .webp descarta o ícone', () => {
+    const icons = build({ slug: 'fuji', name: 'Fuji', logoUrl: 'https://xyz.supabase.co/logo.webp' }).icons;
+    expect(icons[0].type).toBe('image/webp');
+  });
+
   it('escopo, start_url e id são o diretório do tenant', () => {
     const manifest = build({ slug: 'fuji', name: 'Fuji' });
 
@@ -105,8 +115,11 @@ describe('manifest do tenant (camada 2)', () => {
     const manifest = build({ slug: 'fuji', name: 'Fuji' });
     const urls = [manifest.id, manifest.start_url, manifest.scope, ...manifest.icons.map(i => i.src)];
 
+    // A propriedade é "não precisa de base para resolver", não "começa com
+    // http": os ícones da marca gerada são data:, que já carrega o desenho
+    // inteiro dentro de si e por isso é imune à base opaca do blob.
     for (const url of urls) expect(() => new URL(url)).not.toThrow();
-    for (const url of urls) expect(url.startsWith('http')).toBe(true);
+    for (const url of urls) expect(url).toMatch(/^(https?|data):/);
   });
 
   it('o id bate com o start_url do manifest estático — trocar de camada não vira outro app', () => {
@@ -114,16 +127,36 @@ describe('manifest do tenant (camada 2)', () => {
     expect(build({ slug: 'fuji', name: 'Fuji' }).id).toBe(staticId);
   });
 
-  it('mantém os ícones da plataforma mesmo com logo do tenant: são eles os 192/512', () => {
-    const manifest = build({
-      slug: 'fuji',
-      name: 'Fuji',
-      logoUrl: 'https://xyz.supabase.co/storage/logo.png'
-    });
+  // Este teste afirmava o CONTRÁRIO — que os ícones da plataforma ficavam na
+  // lista mesmo com logo do tenant, porque eram eles os 192/512 exigidos para a
+  // instalação. Era verdade, e era o vazamento: o app instalado de uma loja cuja
+  // logo não carregasse nascia com o pin do Rapidex. Quem cumpre o papel agora é
+  // a marca gerada com as iniciais da loja.
+  it('NENHUM ícone da plataforma entra no manifest do tenant', () => {
+    for (const logoUrl of ['https://xyz.supabase.co/storage/logo.png', '', undefined]) {
+      const manifest = build({ slug: 'fuji', name: 'Fuji', logoUrl });
+      expect(JSON.stringify(manifest.icons)).not.toContain('/assets/');
+      expect(JSON.stringify(manifest.icons)).not.toMatch(/rapidex|pedeaqui/i);
+    }
+  });
+
+  it('continua entregando os tamanhos que o browser exige, agora com a marca da loja', () => {
+    const manifest = build({ slug: 'fuji', name: 'Fuji' });
     const sizes = manifest.icons.map(icon => icon.sizes);
 
     expect(sizes).toContain('192x192');
     expect(sizes).toContain('512x512');
+    expect(manifest.icons.some(icon => icon.purpose === 'maskable')).toBe(true);
+  });
+
+  // Sem logo cadastrada, a reserva é a loja — iniciais na cor dela.
+  it('sem logo, o ícone é a marca gerada do tenant, não a nossa', () => {
+    const icons = build({ slug: 'fuji', name: 'Fuji Sushi', themeColor: '#0F6E4F' }).icons;
+
+    expect(icons.every(icon => icon.src.startsWith('data:image/svg+xml,'))).toBe(true);
+    const svg = decodeURIComponent(icons[0].src.replace('data:image/svg+xml,', ''));
+    expect(svg).toContain('>FS<');
+    expect(svg).toContain('#0F6E4F');
   });
 
   it('cor inválida do lojista cai na cor da PLATAFORMA, nunca em cor de outro tenant', () => {
@@ -149,18 +182,6 @@ describe('manifest do tenant (camada 2)', () => {
       name: 'Fuji'
     });
     expect(manifest.scope).toBe('https://fuji.rapidex.com/');
-  });
-});
-
-describe('ícone remoto do lojista', () => {
-  it('aceita http(s) absoluto', () => {
-    expect(remoteIcon('https://xyz.supabase.co/logo.png').src).toBe('https://xyz.supabase.co/logo.png');
-  });
-
-  it('descarta o que não é URL utilizável', () => {
-    for (const value of ['', null, undefined, 'logo.png', '/assets/logo.png', 'javascript:alert(1)']) {
-      expect(remoteIcon(value)).toBeNull();
-    }
   });
 });
 

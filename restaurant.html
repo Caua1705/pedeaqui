@@ -14,10 +14,32 @@
      Ver scripts/utils/pwa.js. A landing (index.html) NÃO tem manifest: ela teria
      escopo "/" e o app da plataforma engoliria a URL de todo restaurante. -->
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#F36F21">
+<!-- Cor NEUTRA da barra do browser, não a da plataforma. Vale só até o /menu
+     responder; a partir daí quem pinta é applyTenantManifest(). Um HTML servido
+     a todos os tenants não tem como saber a cor de nenhum deles. -->
+<meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="/assets/icons/pwa/app-192.png">
+<!-- NÃO declare ícone aqui.
+     Havia um <link rel="apple-touch-icon"> apontando para /assets/icons/pwa/,
+     que é o mark do Rapidex. No iOS é ESSE link — e não o manifest — que vira o
+     ícone da tela inicial, e é ele que o WhatsApp usa de miniatura quando não há
+     og:image. Resultado: o app do restaurante nascia com a nossa marca nos dois
+     lugares em que o cliente mais olha.
+     Este arquivo é servido a TODOS os tenants, então qualquer ícone fixo aqui é
+     necessariamente o de nenhum restaurante. Quem escreve rel="icon" e
+     rel="apple-touch-icon" é scripts/utils/tenant-identity.js, com a logo da
+     loja ou com as iniciais dela na cor dela. Sem ícone declarado, o intervalo
+     antes do JS mostra o ícone padrão do browser — genérico, mas não o nosso. -->
+<!-- Open Graph neutro. O crawler do WhatsApp NÃO executa JavaScript: ele lê o
+     HTML servido. Como o app é estático, é isto que ele vê, e por isso não pode
+     ter nem a nossa marca nem a de um tenant escolhido a esmo. As tags com a
+     cara da loja são escritas em runtime (applyTenantMeta) e valem para quem
+     roda JS. Preview de link com a marca do restaurante exige render no
+     servidor — decisão em aberto, ver docs/white-label-identidade.md. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pedido Online">
+<meta property="og:description" content="Peça online no seu restaurante favorito.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">

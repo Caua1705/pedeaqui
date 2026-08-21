@@ -176,7 +176,14 @@
     return asFiniteNumber(deliveryEstimate.data?.delivery_fee);
   };
   const deliveryFee = () => deliveryType === 'delivery' ? (currentDeliveryEstimateFee() ?? 0) : 0;
-  const initials = (name) => (name || 'Rapidex').split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+  // Iniciais de um nome. O fallback era a string 'Rapidex' — ou seja, todo
+  // placeholder de logo, avatar de sacola e foto de produto sem nome nascia
+  // escrito "RA", a marca da PLATAFORMA, dentro do app de um restaurante.
+  // Sem nome não há iniciais: um quadrado liso na cor da loja diz menos, e
+  // dizer menos é melhor do que dizer o nome errado. Mesma função que a marca
+  // gerada do favicon usa (scripts/utils/tenant-identity.js), para que a aba e
+  // a tela concordem letra por letra.
+  const initials = (name) => window.RapidexTenantIdentity.initialsFor(name);
   const slug = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const esc = window.PedeAquiDom?.escapeHtml || ((text) => String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])));
 
@@ -1439,12 +1446,19 @@
     // Sem o sufixo da plataforma: a aba é da loja, e o cliente que abriu isto
     // não sabe o que é Rapidex.
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online`;
-    // Mesma cor e mesmo nome que acabaram de entrar na tela vão para o manifest:
-    // o app instalado tem que ter a cara do restaurante, não a da plataforma.
+    // Mesma cor e mesmo nome que acabaram de entrar na tela vão para o manifest,
+    // para o favicon, para o ícone da tela inicial e para as meta de
+    // compartilhamento: a aba, o app instalado e o link compartilhado precisam
+    // ser do restaurante, não da plataforma.
+    //
+    // logo_path é caminho relativo do bucket, não URL — ele só é aceito aqui
+    // porque remoteLogo() descarta o que não for http(s) absoluto e cai na
+    // marca gerada, que é a resposta certa para "não tem logo utilizável".
     window.RapidexPWA?.applyTenantManifest({
       name: restaurant.name || fallback().restaurantName || '',
       themeColor: restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
-      logoUrl: restaurant.logo_url || restaurant.logo_path
+      logoUrl: restaurant.logo_url || restaurant.logo_path,
+      description: restaurant.description || ''
     });
   }
 

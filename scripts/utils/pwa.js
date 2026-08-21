@@ -20,15 +20,21 @@
 //    modo que um "./" ali colapsaria todos os tenants no mesmo id. Omitido, o id
 //    cai no default — o próprio start_url, que já é por tenant.
 //
-//    Os ícones, ao contrário, são ABSOLUTOS (/assets/icons/pwa/...): relativos,
-//    eles virariam /junior-da-picanha/assets/... e dariam 404.
+//    Esta camada NÃO declara ícone. Ela serve todos os tenants ao mesmo tempo,
+//    então qualquer ícone nela seria, por definição, o de nenhum restaurante —
+//    e na prática o nosso. O preço é que o browser só oferece a instalação
+//    depois que a camada 2 entra, o que é o comportamento desejado: instalar
+//    antes de a marca chegar é exatamente o vazamento que se quer evitar.
 //
 // 2. MARCA (camada de runtime).
 //    Nome, cor e logo do restaurante só existem depois que a API responde.
 //    Quando respondem, o manifest é remontado em memória e servido por um
-//    blob: URL. Exige `manifest-src 'self' blob:` na CSP — sem isso o browser
-//    recusa o blob e o `<link>` fica quebrado. Se o blob falhar por qualquer
-//    motivo, o href volta para a camada 1, que continua correta.
+//    blob: URL — e junto com ele vão o favicon, o apple-touch-icon e as meta de
+//    compartilhamento (scripts/utils/tenant-identity.js). Exige
+//    `manifest-src 'self' blob:` na CSP — sem isso o browser recusa o blob e o
+//    `<link>` fica quebrado. Se o blob falhar por qualquer motivo, o href volta
+//    para a camada 1, que continua correta; o favicon e o ícone da tela inicial
+//    não dependem dele e já estão aplicados.
 //
 // POR QUE O ESCOPO PRECISA DA BARRA FINAL. O escopo é comparado como PREFIXO DE
 // STRING no path. Com scope "/junior-da-picanha" (sem barra), a URL
@@ -50,15 +56,18 @@
   const FALLBACK_NAME = 'Pedido Online';
   const MANIFEST_FILE = 'manifest.webmanifest';
 
-  // Ícones genéricos do app. Continuam na lista mesmo quando o tenant tem logo:
-  // são eles que garantem os 192/512 px exigidos para o app ser instalável, e
-  // são o fallback quando o logo remoto não carrega.
-  const PLATFORM_ICONS = [
-    { src: '/assets/icons/pwa/app-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-    { src: '/assets/icons/pwa/app-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-    { src: '/assets/icons/pwa/app-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
-  ];
-
+  // NÃO EXISTE MAIS uma lista de ícones da plataforma aqui.
+  //
+  // Existia: os PNGs de /assets/icons/pwa/ entravam no manifest de TODO tenant,
+  // com a justificativa de garantirem os 192/512 px exigidos para a instalação e
+  // de servirem de reserva quando a logo remota não carregasse. As duas coisas
+  // eram verdade — e o efeito era o pin do Rapidex na tela inicial de quem
+  // instalasse o app de uma loja sem logo, ou com logo fora do ar.
+  //
+  // Quem cumpre os dois papéis agora é a marca gerada com as INICIAIS do
+  // restaurante sobre a COR dele (scripts/utils/tenant-identity.js): tem os
+  // tamanhos explícitos que o browser pede e é a reserva da logo. A cadeia
+  // inteira passa a ser do lojista, do primeiro ao último degrau.
   const PLATFORM_THEME = '#F36F21';
   const BACKGROUND = '#FFFFFF';
 
@@ -78,21 +87,11 @@
     return tenant.slugFromHostname(host, domains) ? 'subdomain' : 'path';
   }
 
-  // Só http(s) absoluto entra como ícone. Um logo_url vazio, relativo ou com
-  // esquema exótico é descartado em silêncio — o manifest cai nos ícones da
-  // plataforma em vez de carregar uma entrada inválida.
-  function remoteIcon(logoUrl) {
-    let parsed;
-    try {
-      parsed = new URL(String(logoUrl || ''));
-    } catch {
-      return null;
-    }
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
-    // `sizes: 'any'` porque o tamanho do logo do lojista é desconhecido: ele vem
-    // do upload dele, não de uma grade nossa.
-    return { src: parsed.href, sizes: 'any', type: 'image/png', purpose: 'any' };
-  }
+  // A resolução do ícone do lojista (o que é URL utilizável, que `type`
+  // declarar, o que fazer sem logo) NÃO mora mais aqui: mora em
+  // scripts/utils/tenant-identity.js, que é o mesmo lugar de onde saem o favicon
+  // e o apple-touch-icon. Manifest e aba precisam concordar sobre qual é o ícone
+  // do restaurante, e a única forma de garantir isso é ter uma fonte só.
 
   function absolute(origin, path) {
     return new URL(path, origin).href;
@@ -111,7 +110,6 @@
     const scopeUrl = absolute(origin, scope);
     const restaurantName = String(name || '').trim();
     const theme = window.RapidexTheme?.normalizeHex(themeColor, PLATFORM_THEME) || PLATFORM_THEME;
-    const icon = remoteIcon(logoUrl);
 
     return {
       // Explícito e absoluto aqui (ao contrário do arquivo estático): resolvido
@@ -132,10 +130,15 @@
       background_color: BACKGROUND,
       theme_color: theme,
       categories: ['food', 'shopping'],
-      icons: [
-        ...(icon ? [icon] : []),
-        ...PLATFORM_ICONS.map(entry => ({ ...entry, src: absolute(origin, entry.src) }))
-      ]
+      // A logo do lojista primeiro; a marca gerada com as iniciais dele logo
+      // atrás, cobrindo os tamanhos exigidos e o caso da logo fora do ar. Todas
+      // as entradas são data: ou https: absolutos, então nenhuma depende da base
+      // opaca do blob. Ver tenantIcons() em scripts/utils/tenant-identity.js.
+      icons: window.RapidexTenantIdentity.tenantIcons({
+        name: restaurantName,
+        logoUrl,
+        primaryColor: theme
+      })
     };
   }
 
@@ -178,10 +181,18 @@
   /**
    * Camada 2. Roda quando a marca do restaurante chega da API.
    * Devolve o manifest aplicado, ou null se não deu para aplicar.
+   *
+   * Favicon, apple-touch-icon e as meta de compartilhamento são aplicados ANTES
+   * do manifest e FORA do try: eles não dependem de blob nem de CSP, e não podem
+   * ficar reféns de um passo que pode falhar. Se o blob for barrado, a aba e a
+   * tela inicial já estão com a cara da loja.
    */
-  function applyTenantManifest({ name, themeColor, logoUrl } = {}) {
+  function applyTenantManifest({ name, themeColor, logoUrl, description } = {}) {
     const slug = window.RapidexTenant?.resolveSlug?.() || '';
-    if (!slug || !manifestLink()) return null;
+    if (!slug) return null;
+    window.RapidexTenantIdentity.applyTenantIcons({ name, logoUrl, primaryColor: themeColor });
+    window.RapidexTenantIdentity.applyTenantMeta({ name, description, logoUrl, primaryColor: themeColor });
+    if (!manifestLink()) return null;
     const manifest = buildTenantManifest({
       origin: window.location.origin,
       slug,
@@ -220,11 +231,9 @@
   }
 
   window.RapidexPWA = {
-    PLATFORM_ICONS,
     PLATFORM_THEME,
     tenantScope,
     detectTopology,
-    remoteIcon,
     buildTenantManifest,
     staticManifestUrl,
     applyStaticTenantManifest,

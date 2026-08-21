@@ -20,6 +20,10 @@ import './utils/storage-keys.js';
 import './services/api-routes.js';
 import './utils/restaurant-slug.js';
 import './utils/brand-theme.js';
+// Favicon, ícone de tela inicial e meta de compartilhamento do tenant. Depende
+// de brand-theme (cor da marca e guarda de contraste da letra) e precisa vir
+// ANTES de pwa.js, que consome tenantIcons() para montar o manifest.
+import './utils/tenant-identity.js';
 // Depende de restaurant-slug (topologia do tenant) e de brand-theme (cor).
 import './utils/pwa.js';
 import './utils/actions.js';

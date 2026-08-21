@@ -3,8 +3,8 @@
     return window.PedeAquiApiClient.get(window.PedeAquiApiRoutes.restaurant(slug));
   }
 
-  async function getRestaurantMenu(slug) {
-    return window.PedeAquiMenuService.getRestaurantMenu(slug);
+  async function getRestaurantMenu(slug, branchId) {
+    return window.PedeAquiMenuService.getRestaurantMenu(slug, branchId);
   }
 
   window.PedeAquiRestaurantService = { getRestaurant, getRestaurantMenu };

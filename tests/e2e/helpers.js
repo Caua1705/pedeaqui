@@ -12,8 +12,23 @@ export const INFO = readFixture('info.json');
 
 export const SLUG = 'junior-da-picanha';
 export const BRANCH_MATRIZ = '4b054122-ee72-424c-817c-110f02c6b994';
+export const BRANCH_VARJOTA = '81b11c6b-8f9c-4a45-9a7f-fc25e781dfc6';
 export const PRODUCT_H2O = '80f16645-1d6b-4fca-b9e4-dd838e4134d2';
 export const RESTAURANT_URL = `/restaurant.html?slug=${SLUG}`;
+
+/**
+ * O `/menu` de UMA filial.
+ *
+ * Desde 20/08/2026 o `branch_id` da raiz diz de qual loja é a resposta inteira
+ * — produtos, categorias e `settings`. O fixture tem um cardápio só, então aqui
+ * a diferença entre as filiais é o carimbo: é ele que o app compara para saber
+ * se a tela está mostrando a loja escolhida. Quem precisa de produtos
+ * diferentes por loja sobrescreve a rota no próprio spec.
+ */
+export function menuForBranch(branchId) {
+  const id = branchId || MENU.branch_id;
+  return { ...MENU, branch_id: id, settings_branch_id: id };
+}
 
 function json(body, status = 200) {
   return { status, contentType: 'application/json', body: JSON.stringify(body) };
@@ -77,7 +92,16 @@ export async function mockApi(page, { onCreateOrder, onStartPayment, onTrackOrde
       return route.fulfill(json({ detail: 'rota removida' }, 410));
     }
 
-    if (/\/menu(\?|$)/.test(url)) return route.fulfill(json(MENU));
+    // O cardápio é da FILIAL. Filial que não é deste restaurante responde 404
+    // — e o app precisa distinguir esse 404 do "restaurante não existe", senão
+    // um branch_id velho no localStorage vira tela de erro permanente.
+    if (/\/menu(\?|$)/.test(url)) {
+      const branchId = new URL(url).searchParams.get('branch_id');
+      if (branchId && !MENU.branches.some(branch => branch.id === branchId)) {
+        return route.fulfill(json({ detail: 'Filial não encontrada para este restaurante' }, 404));
+      }
+      return route.fulfill(json(menuForBranch(branchId)));
+    }
     if (/\/info(\?|$)/.test(url)) return route.fulfill(json(INFO));
     if (/\/delivery\/estimate/.test(url)) {
       return route.fulfill(json({ serviceable: true, delivery_fee: 5, eta_min: 30, eta_max: 60 }));

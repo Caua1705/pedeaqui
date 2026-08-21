@@ -1915,6 +1915,9 @@
     <button class="addr-delete-yes" type="button" data-act-click='confirmLogout'>Sair</button>
   </div>
 </div>
+<!-- Aviso curto do app: troca de unidade, e o que mais precisar ser visto sem
+     interromper. role="status" + aria-live anunciam sem roubar o foco. -->
+<div class="app-toast" id="appToast" role="status" aria-live="polite" hidden></div>
 <!-- All app scripts are bundled by Vite via this single module entry, which
      imports them in their original dependency order (see scripts/entry-restaurant.js).
      Vite handles minification and hashing; the old ?v=N cache-busting is gone. -->

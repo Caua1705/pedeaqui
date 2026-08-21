@@ -1,1 +1,46 @@
 .is-hidden { display: none !important; }
+
+/* ── Aviso curto do app ──
+
+   Fica acima da barra de navegação e abaixo dos modais: ele acompanha uma ação
+   que acabou de acontecer na tela, não pede resposta e não pode cobrir o que o
+   cliente está tocando. O texto some sozinho — quem precisa de decisão usa
+   diálogo, não isto. */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + var(--safe-bottom, 0px));
+  z-index: 240;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: var(--text-main);
+  color: var(--surface);
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  /* Aviso não se toca: um toque aqui tem de alcançar a tela atrás. */
+  pointer-events: none;
+}
+
+.app-toast[hidden] {
+  display: none;
+}
+
+.app-toast.is-open {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast {
+    transition-duration: 0.01ms;
+  }
+}

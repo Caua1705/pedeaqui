@@ -2,8 +2,45 @@
   const slugify = text => window.PedeAquiSlugify?.slugify(text) || String(text || '').toLowerCase().replace(/\s+/g, '-');
   const fallback = () => window.PedeAquiFallbackConfig || {};
 
-  async function getRestaurantMenu(slug) {
-    return normalizeMenuPayload(await window.PedeAquiApi.getRestaurantMenu(slug));
+  async function getRestaurantMenu(slug, branchId) {
+    return normalizeMenuPayload(await window.PedeAquiApi.getRestaurantMenu(slug, branchId));
+  }
+
+  /**
+   * De qual filial esta resposta está falando — a resposta INTEIRA, não só o
+   * bloco `settings`.
+   *
+   * Leio `branch_id` e ignoro de propósito o `settings_branch_id`, que traz o
+   * mesmo valor e está obsoleto: o nome descreve o passo anterior, quando só a
+   * operação era da filial. Quem lê "settings_branch_id" não imagina que os
+   * PRODUTOS também são dela.
+   *
+   * Nulo é resposta legítima: restaurante sem nenhuma filial ativa responde 200
+   * com as listas vazias.
+   */
+  function menuBranchId(raw = {}) {
+    const value = raw.branch_id;
+    return value === undefined || value === null || value === '' ? null : String(value);
+  }
+
+  /**
+   * A conferência que o backend pediu que a tela fizesse (§3.1 de
+   * `cardapio-por-filial.md`): cada produto e cada categoria repetem a filial
+   * da raiz. Divergir significa que a resposta misturou DUAS lojas numa lista
+   * só — o modo de falha do rollback de imagem sem descer o banco, que responde
+   * 200, com JSON válido, e sem uma linha de log dizendo por quê.
+   *
+   * Só avisa. Adivinhar qual metade é a certa aqui seria inventar cardápio.
+   */
+  function warnOnMixedBranches(raw, branchId, products, categories) {
+    if (!branchId) return;
+    const alheio = item => item?.branch_id && String(item.branch_id) !== String(branchId);
+    if (!products.some(alheio) && !categories.some(alheio)) return;
+    console.error(
+      '[PedeAqui] O /menu voltou com produtos ou categorias de MAIS DE UMA filial. '
+      + 'A resposta está misturando duas lojas — não confie nos preços desta tela.',
+      { branch_id: branchId, restaurant: raw?.restaurant?.slug || '' }
+    );
   }
 
   function normalizeBranches(raw = {}) {
@@ -113,8 +150,14 @@
       };
     }).sort((a, b) => a.sort_order - b.sort_order);
 
+    const branchId = menuBranchId(raw);
+    warnOnMixedBranches(raw, branchId, sourceProducts, sourceCategories);
+
     return {
       restaurant: raw.restaurant || {},
+      // De qual filial é TUDO o que vem abaixo. Quem carrega o cardápio guarda
+      // este valor: é ele, e não o que foi pedido, que diz o que está na tela.
+      branch_id: branchId,
       settings: raw.settings || {},
       branches: normalizeBranches(raw),
       banners: sourceBanners

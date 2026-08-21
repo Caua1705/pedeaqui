@@ -20,6 +20,11 @@
   let payload = {};
   let restaurant = {};
   let settings = {};
+  // De qual filial é o cardápio que está carregado AGORA — o `branch_id` que a
+  // resposta declarou, não o que foi pedido. É a régua que diz se a tela está
+  // mostrando a loja escolhida: `products`, `categories` e `settings` são todos
+  // dela, e os ids de produto NÃO se repetem entre filiais.
+  let menuBranchId = null;
   let branches = [];
   let categories = [];
   let products = [];
@@ -279,6 +284,7 @@
     payload = {};
     restaurant = {};
     settings = {};
+    menuBranchId = null;
     branches = [];
     categories = [];
     products = [];
@@ -1078,23 +1084,28 @@
       };
     }
 
-    // Algumas filiais ainda respondem /info com os dois grupos vazios, mesmo
-    // quando o cadastro geral do restaurante (GET /menu -> settings) declara
-    // PIX. Nesse caso a ausencia e um payload incompleto da filial, nao uma
-    // desativacao explicita. PIX e o unico fallback seguro aqui: seu fluxo e
-    // inequivocamente online; cartoes/dinheiro exigem dados por filial (fluxo,
-    // bandeiras e adquirente) que nao podemos inventar no cliente.
-    if (!groups.online.length && !groups.delivery.length) {
-      const configuredPix = normalizeInfoPaymentMethods(settings?.payment_methods)
-        .find(entry => entry.method_type === 'pix');
-      if (configuredPix) {
-        groups.online.push({
-          ...configuredPix,
-          api_method_type: configuredPix.api_method_type || 'pix',
-          name: configuredPix.name || 'PIX'
-        });
-      }
-    }
+    // AQUI HAVIA UM FALLBACK DE PIX, e ele foi removido em 20/08/2026 junto
+    // com o campo que o alimentava. Nao restaure sem ler isto.
+    //
+    // Quando /info devolvia os dois grupos vazios, a tela recuperava o PIX de
+    // `GET /menu -> settings.payment_methods`, tratando a ausencia como
+    // payload incompleto da filial em vez de desativacao explicita.
+    //
+    // O raciocinio estava errado por um motivo que so se ve do lado do
+    // servidor: os dois grupos vazios significam que aquela filial nao tem
+    // NENHUMA linha habilitada em `branch_payment_methods` — e e essa tabela,
+    // e so ela, que `POST /orders` consulta. O PIX que este bloco devolvia
+    // aparecia na tela e morria no checkout com 400 "Esta filial nao aceita
+    // esta forma de pagamento". Ou seja: o fallback nao salvava a venda, ele
+    // adiava a recusa para depois de o cliente ter escolhido.
+    //
+    // `settings.payment_methods` era o jsonb do RESTAURANTE, sem relacao com
+    // o que cada loja habilitou. Ele saiu da resposta e da tabela na revisao
+    // 20260820_0027 do backend; ler daqui hoje devolve `undefined`.
+    //
+    // O conserto de verdade e de cadastro: a filial sem forma de pagamento
+    // precisa ganhar as linhas dela no painel. Ver
+    // `docs/cardapio-por-filial.md` no backend.
     return groups;
   }
 
@@ -2051,7 +2062,70 @@
     restaurantStore()?.setMenu?.({ categories, products });
   }
 
+  /**
+   * Busca o cardápio DAQUELA filial. `branchId` nulo é a vitrine: vale a filial
+   * padrão do backend, e é o que o primeiro acesso vê enquanto o cliente não
+   * escolheu a loja.
+   */
+  function fetchMenuPayload(branchId) {
+    return window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug(), branchId || null);
+  }
+
+  /**
+   * Assume a carga como a verdade da tela — inclusive DE QUAL FILIAL ela é.
+   *
+   * `menuBranchId` sai da resposta, nunca do que foi pedido: é a resposta que
+   * sabe em qual loja o backend acabou caindo, e é esse valor que as telas
+   * comparam para descobrir que estão mostrando o cardápio de outra.
+   *
+   * Listas ausentes viram VAZIAS, e não "o que já estava aí": manter os
+   * produtos da filial anterior é exatamente o defeito que esta carga existe
+   * para desfazer.
+   */
+  function applyMenuPayload(fresh) {
+    payload = fresh || {};
+    restaurant = payload.restaurant || restaurant || {};
+    settings = payload.settings || {};
+    menuBranchId = payload.branch_id || null;
+    branches = Array.isArray(payload.branches) ? payload.branches : [];
+    categories = Array.isArray(payload.categories) ? payload.categories : [];
+    products = Array.isArray(payload.products) ? payload.products : [];
+    banners = Array.isArray(payload.banners) ? payload.banners : [];
+    highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
+    // Home coupons come from the public /menu payload. They are intentionally
+    // independent from the customer-specific /coupons/available Club feed.
+    coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
+    restaurantStore()?.set?.({
+      restaurant,
+      settings,
+      branches,
+      categories,
+      products,
+      banners,
+      highlightBanners,
+      coupons
+    });
+    return payload;
+  }
+
+  /** O cardápio carregado é de outra loja que não a escolhida. */
+  function menuBranchIsStale() {
+    // Antes de o contexto de operação existir não há escolha contra a qual
+    // comparar — e a carga do boot é, por construção, a que acabou de chegar.
+    if (!operationContext) return false;
+    return String(menuBranchId || '') !== String(operationContext.branch_id || '');
+  }
+
   async function ensureMenuLoaded() {
+    // Cardápio de outra filial não é "já carregado": os ids são de outra loja,
+    // e servir isto é mostrar preço da Matriz na tela de quem escolheu a
+    // Varjota. Cai no caminho de busca, com a filial certa.
+    if (menuBranchIsStale()) {
+      appState.menuLoaded = false;
+      menuRenderSignature = null;
+      categories = [];
+      products = [];
+    }
     if (appState.menuLoaded && $('menuContainer')?.querySelector('.menu-section')) {
       await waitForMenuCriticalMedia();
       return;
@@ -2076,16 +2150,7 @@
     menuLoadPromise = (async () => {
       try {
         if (!products.length || !categories.length) {
-          const fresh = await window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug());
-          payload = fresh || {};
-          restaurant = payload.restaurant || restaurant || {};
-          settings = payload.settings || settings || {};
-          branches = Array.isArray(payload.branches) ? payload.branches : branches;
-          categories = Array.isArray(payload.categories) ? payload.categories : categories;
-          products = Array.isArray(payload.products) ? payload.products : products;
-          banners = Array.isArray(payload.banners) ? payload.banners : banners;
-          highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : highlightBanners;
-          coupons = Array.isArray(payload.coupons) ? payload.coupons : coupons;
+          applyMenuPayload(await fetchMenuPayload(operationContext?.branch_id));
         }
         await wait(TAB_LOADER_MIN_MS);
         renderMenu();
@@ -2311,7 +2376,15 @@
 
   function openProduct(id, source) {
     currentProd = products.find(p => String(p.id) === String(id));
-    if (!currentProd) return;
+    // Id que não está no cardápio DESTA filial. O caminho que traz isso é um
+    // cartão do assistente montado sobre outra loja; o toque não podia
+    // simplesmente não fazer nada — falha muda é o que fez esse defeito
+    // demorar a aparecer.
+    if (!currentProd) {
+      console.warn('[PedeAqui] Produto fora do cardápio carregado.', { id, branch_id: menuBranchId });
+      window.RapidexAssistantChat?.toast?.('Esse item não está no cardápio desta unidade.');
+      return;
+    }
     editingCartItemUid = null;
     pmQty = 1;
     pmSelectedOptions = {};
@@ -3436,8 +3509,21 @@
   //  reconstruir a linha — os valores continuam vindo do backend.
   // ============================================================
   const CART_TTL_MS = 24 * 60 * 60 * 1000;
-  const cartStorageKey = () =>
-    (storageKeys()?.PREFIXES.cart || 'rapidex.cart.') + getRestaurantSlug();
+
+  /**
+   * A sacola é DA LOJA, não do restaurante.
+   *
+   * Os ids de produto não se repetem entre filiais desde 20/08/2026: um item da
+   * Matriz enviado no pedido da Varjota volta 400 "Produto inválido ou
+   * indisponível", sem dizer qual. Com a filial na chave, trocar de loja não
+   * perde nada — a sacola de cada uma fica onde estava, e voltar a encontra.
+   *
+   * Sem filial (restaurante sem nenhuma ativa) a chave é a antiga, que é também
+   * o que a migração em readStoredCart() procura.
+   */
+  const cartStorageKey = (branchId = operationContext?.branch_id) =>
+    (storageKeys()?.PREFIXES.cart || 'rapidex.cart.') + getRestaurantSlug()
+    + (branchId ? `::${branchId}` : '');
 
   // `cart` começa vazio no load. Se qualquer updateCartUI() rodasse antes da
   // restauração, persistCart() apagaria o carrinho salvo. Só gravamos depois
@@ -3460,10 +3546,35 @@
     }
   }
 
+  /**
+   * A sacola desta filial, adotando a que ficou na chave antiga.
+   *
+   * Até 20/08/2026 a chave era só o slug. Aquela sacola foi montada no cardápio
+   * da filial padrão, que é a mesma que o cliente vê no primeiro acesso — então
+   * ela é adotada pela loja atual UMA vez, e o filtro de restoreCart() descarta
+   * o que não existir nela. Sem isto, quem tinha sacola aberta a veria sumir no
+   * primeiro carregamento depois do deploy.
+   */
+  function readStoredCart() {
+    try {
+      const key = cartStorageKey();
+      const legacyKey = cartStorageKey(null);
+      let raw = localStorage.getItem(key);
+      if (raw === null && key !== legacyKey) {
+        raw = localStorage.getItem(legacyKey);
+        if (raw !== null) {
+          localStorage.setItem(key, raw);
+          localStorage.removeItem(legacyKey);
+        }
+      }
+      return JSON.parse(raw || 'null');
+    } catch {
+      return null;
+    }
+  }
+
   function restoreCart() {
-    let stored = null;
-    try { stored = JSON.parse(localStorage.getItem(cartStorageKey()) || 'null'); }
-    catch { stored = null; }
+    const stored = readStoredCart();
     cartRestored = true; // a partir daqui persistCart() pode gravar
     if (!stored || !Array.isArray(stored.items) || !stored.items.length) return;
 
@@ -4230,6 +4341,30 @@
   }
 
   /**
+   * Aviso curto no rodapé, que não interrompe nada.
+   *
+   * É para o que o cliente precisa VER mas não precisa responder. O caso que o
+   * trouxe: ao trocar de loja, dizer que a sacola da anterior ficou guardada —
+   * senão a sacola parece ter sumido, que é a leitura errada.
+   *
+   * Mesma dança do toast do Pix: o [hidden] sai um quadro antes da classe que
+   * anima, senão a transição não acontece.
+   */
+  let appToastTimer = null;
+  function showAppToast(message) {
+    const toast = $('appToast');
+    if (!toast || !message) return;
+    clearTimeout(appToastTimer);
+    toast.textContent = message;
+    toast.hidden = false;
+    requestAnimationFrame(() => toast.classList.add('is-open'));
+    appToastTimer = setTimeout(() => {
+      toast.classList.remove('is-open');
+      appToastTimer = setTimeout(() => { toast.hidden = true; }, 220);
+    }, 3600);
+  }
+
+  /**
    * Aviso curto sobre o cabeçalho. O [hidden] sai antes da classe que anima
    * para o elemento já estar no fluxo quando a transição começa — trocar os
    * dois no mesmo quadro faria o toast surgir sem animação.
@@ -4700,11 +4835,54 @@
     catch { return null; }
   }
 
+  /**
+   * A filial guardada, lida ANTES de existir cardápio.
+   *
+   * É ela que decide com qual loja o primeiro `GET /menu` vai falar — e por
+   * isso a leitura não pode depender do `operationContext`, que só é montado
+   * depois de a lista de filiais chegar. A chave precisa só do slug, e o slug
+   * está na URL.
+   */
+  function storedOperationBranchId() {
+    return loadOperationContext()?.branch_id || null;
+  }
+
+  /**
+   * Esquece a filial guardada que o backend não reconhece mais (desativada, ou
+   * de outro restaurante). O endereço fica — continua válido —, mas o
+   * "confirmado" cai, e o seletor volta a ser obrigatório antes do cardápio.
+   */
+  function forgetStoredBranch() {
+    const stored = loadOperationContext();
+    if (!stored) return;
+    delete stored.branch_id;
+    delete stored.branch_label;
+    delete stored.branch_name;
+    delete stored.branch_address;
+    stored.confirmed = false;
+    try { localStorage.setItem(opStorageKey(), JSON.stringify(stored)); }
+    catch { /* modo privativo: o boot seguinte tenta de novo */ }
+  }
+
   function persistOperationContext() {
     if (operationContext) {
       localStorage.setItem(opStorageKey(), JSON.stringify({ ...operationContext, confirmed: operationConfirmed }));
     }
   }
+
+  /* ── A filial escolhida, para quem está fora deste arquivo ──
+     Desde 20/08/2026 o cardápio é da FILIAL, e `/chat`, `/voice/session` e
+     `/voice/search` exigem `branch_id` (backend `docs/cardapio-por-filial.md`,
+     §3.5). O assistente mora em outro arquivo e precisa mandar a MESMA filial
+     que monta o cardápio, o carrinho e o pedido — não uma cópia dela.
+
+     Só leitura, e SEM queda para `branches[0]`: um default aqui devolveria o
+     cardápio da loja errada com preço e sem erro, que é justamente o que o
+     backend fechou ao tornar o campo obrigatório. Sem filial escolhida isto
+     devolve null, e quem chama tem de parar. */
+  window.RapidexOperationContext = {
+    branchId: () => operationContext?.branch_id || null
+  };
 
   function addressSummary(a) {
     return a ? `${a.street}, ${a.number} - ${a.neighborhood}` : '';
@@ -5103,6 +5281,11 @@
     operationConfirmed = stored?.confirmed === true;
     const orderType = stored?.order_type === 'pickup' ? 'pickup' : 'delivery';
     let branch = stored?.branch_id ? branchById(stored.branch_id) : null;
+    // Sem escolha guardada, a filial é a que o /menu ACABOU de responder: é o
+    // cardápio que está na tela. Adivinhar outra aqui faria o seletor nomear
+    // uma loja enquanto a lista de produtos é de outra — e ainda custaria uma
+    // segunda busca no boot para desfazer o próprio palpite.
+    if (!branch) branch = branchById(menuBranchId);
     if (!branch || !branchAccepts(branch, orderType)) branch = defaultBranchFor(orderType);
     let address = stored?.address || null;
     if (!address && customerAddress) address = { ...customerAddress };
@@ -5122,6 +5305,66 @@
     if (!ctx || !ctx.branch_id) return false;
     if (ctx.order_type === 'delivery' && !ctx.address) return false;
     return true;
+  }
+
+  /**
+   * O cardápio carregado tem de ser o da filial escolhida.
+   *
+   * No boot isto quase sempre não faz nada: a busca já saiu com a filial
+   * guardada. O caso que sobra é a filial guardada não servir para o tipo de
+   * pedido (uma loja que deixou de aceitar retirada, por exemplo), quando
+   * initOperationContext() escolhe outra — e aí a carga que veio é da loja
+   * errada.
+   */
+  async function ensureMenuMatchesSelectedBranch() {
+    if (!menuBranchIsStale() || !operationContext?.branch_id) return;
+    try {
+      applyMenuPayload(await fetchMenuPayload(operationContext.branch_id));
+    } catch (error) {
+      // Fica com o que veio e segue: a aba Cardápio detecta o desencontro e
+      // tenta de novo, com tela de erro própria.
+      logAppError('Falha ao carregar o cardápio da unidade', error);
+    }
+  }
+
+  /**
+   * A troca de loja: cardápio, sacola e tela passam a ser da filial nova.
+   *
+   * A sacola da loja anterior JÁ está gravada na chave dela — persistCart() roda
+   * a cada mudança —, então aqui ela só sai da memória. `cartRestored` volta a
+   * false pelo mesmo motivo do boot: um updateCartUI() no meio do caminho
+   * gravaria uma sacola vazia por cima da que a filial nova tem guardada.
+   */
+  async function handleMenuBranchChange(previousBranchId) {
+    const nextBranchId = operationContext?.branch_id || null;
+    if (String(previousBranchId || '') === String(nextBranchId || '')) return;
+
+    const previousLabel = branchById(previousBranchId)?.name || '';
+    const hadItems = cart.length > 0;
+    cart = [];
+    cartRestored = false;
+    appState.menuLoaded = false;
+    menuRenderSignature = null;
+
+    try {
+      applyMenuPayload(await fetchMenuPayload(nextBranchId));
+    } catch (error) {
+      logAppError('Falha ao carregar o cardápio da unidade', error);
+    }
+
+    // Depois do cardápio novo: é contra ELE que os itens são conferidos, e é
+    // dele que sai o preço — a mesma picanha custa o que a loja nova cobra.
+    restoreCart();
+    renderBanners();
+    renderCoupons();
+    renderHighlights();
+    updateCartUI();
+    if (document.body.classList.contains('menu-tab')) ensureMenuLoaded();
+    if (hadItems) {
+      showAppToast(previousLabel
+        ? `Sua sacola da ${previousLabel} ficou guardada.`
+        : 'Sua sacola da unidade anterior ficou guardada.');
+    }
   }
 
   // ---- Home location widget ----
@@ -5248,8 +5491,16 @@
     // resultados" (renderWidget) e só é exigido no checkout.
     const previousEstimateKey = deliveryEstimateKey();
     const previousInfoKey = restaurantInfoKey();
+    const previousBranchId = operationContext?.branch_id || null;
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
+    // ANTES de qualquer updateCartUI(): a sacola em memória ainda é da loja
+    // anterior, e um persistCart() a partir daqui a gravaria na chave da loja
+    // NOVA — os itens da Matriz reapareceriam como se fossem da Varjota. A
+    // troca solta a memória de forma SÍNCRONA (só o cardápio é assíncrono), e
+    // enquanto ela não é restaurada persistCart() não grava.
+    // Não é aguardada: a tela fecha na hora e a carga se resolve por trás.
+    handleMenuBranchChange(previousBranchId);
     persistOperationContext();
     applyOperationToLegacy();
     renderWidget();
@@ -5273,11 +5524,16 @@
     if (!operationContext || !operationConfirmed || operationContext.order_type === type) return;
     const previousEstimateKey = deliveryEstimateKey();
     const previousInfoKey = restaurantInfoKey();
+    const previousBranchId = operationContext.branch_id || null;
     operationContext.order_type = type;
     const current = branchById(operationContext.branch_id);
     if (!current || !branchAccepts(current, type)) {
       Object.assign(operationContext, branchSnapshot(defaultBranchFor(type)));
     }
+    // Trocar entrega/retirada pode trocar a FILIAL junto (quando a atual não
+    // serve para o novo tipo), e aí o cardápio na tela vira o de outra loja.
+    // Vem antes de tudo pelo mesmo motivo de confirmOperation().
+    handleMenuBranchChange(previousBranchId);
     persistOperationContext();
     renderWidget();
     if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
@@ -8978,45 +9234,51 @@
     const restaurantSlug = getRestaurantSlug();
     // URL que não identifica um restaurante: nem chega a bater na API.
     if (!restaurantSlug) throw restaurantNotFoundError('');
+    // A filial da visita anterior, lida do storage antes de existir cardápio:
+    // é ela que faz a PRIMEIRA carga já ser a da loja certa, em vez de mostrar
+    // a filial padrão do backend e trocar depois.
+    const storedBranchId = uuidOrNull(storedOperationBranchId());
+    let fresh = null;
     try {
-      payload = await window.PedeAquiRestaurantService.getRestaurantMenu(restaurantSlug);
+      fresh = await fetchMenuPayload(storedBranchId);
     } catch (error) {
-      // 404 = slug inexistente; 410 = desativado. Ambos são "não encontrado";
-      // qualquer outro status continua sendo falha de carregamento (com retry).
-      if (error?.status === 404 || error?.status === 410) throw restaurantNotFoundError(restaurantSlug);
-      throw error;
+      // 404 COM filial pedida não é slug inexistente: é a filial guardada que
+      // saiu do ar (desativada, ou de outro restaurante). Sem este ramo um
+      // branch_id velho no localStorage prende o cliente numa tela de
+      // "restaurante indisponível" que recarregar não conserta.
+      if (error?.status === 404 && storedBranchId) {
+        console.warn('[PedeAqui] A filial guardada não existe mais; recarregando sem filial.', storedBranchId);
+        forgetStoredBranch();
+        fresh = await fetchMenuPayload(null).catch(retryError => {
+          if (retryError?.status === 404 || retryError?.status === 410) throw restaurantNotFoundError(restaurantSlug);
+          throw retryError;
+        });
+      } else if (error?.status === 404 || error?.status === 410) {
+        // 404 = slug inexistente; 410 = desativado. Ambos são "não encontrado";
+        // qualquer outro status continua sendo falha de carregamento (com retry).
+        throw restaurantNotFoundError(restaurantSlug);
+      } else {
+        throw error;
+      }
     }
-    restaurant = payload.restaurant || {};
+    restaurant = fresh?.restaurant || {};
     // Backend que responde 200 com corpo vazio, ou com o restaurante inativo,
     // também não pode virar tela em branco nem cair em outro tenant.
     if (!restaurant.id && !restaurant.slug && !restaurant.name) throw restaurantNotFoundError(restaurantSlug);
     if (restaurant.is_active === false) throw restaurantNotFoundError(restaurantSlug);
+    applyMenuPayload(fresh);
     appState.restaurant = restaurant;
-    settings = payload.settings || {};
-    branches = Array.isArray(payload.branches) ? payload.branches : [];
-    categories = Array.isArray(payload.categories) ? payload.categories : [];
-    products = Array.isArray(payload.products) ? payload.products : [];
-    banners = Array.isArray(payload.banners) ? payload.banners : [];
-    highlightBanners = Array.isArray(payload.highlight_banners) ? payload.highlight_banners : [];
-    // Home coupons come from the public /menu payload. They are intentionally
-    // independent from the customer-specific /coupons/available Club feed.
-    coupons = Array.isArray(payload.coupons) ? payload.coupons : [];
-    restaurantStore()?.set?.({
-      restaurant,
-      settings,
-      branches,
-      categories,
-      products,
-      banners,
-      highlightBanners,
-      coupons
-    });
     };
     bootPromise = (async () => {
     await loadInitialData();
     submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
-    restoreCart(); // depois do menu carregar: precisa de `products` para validar
+    // A ORDEM IMPORTA: a chave da sacola tem a filial, então o contexto de
+    // operação precisa estar montado antes de restaurá-la — e o cardápio
+    // precisa ser o daquela filial, porque é contra ele que os itens são
+    // conferidos e é dele que sai o preço.
     initOperationContext();
+    await ensureMenuMatchesSelectedBranch();
+    restoreCart();
     applyTheme();
     initStoreInfoModal();
     initCashbackState();

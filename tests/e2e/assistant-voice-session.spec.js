@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, MENU, BRANCH_MATRIZ } from './helpers.js';
 
 // O modo voz — o transporte.
 //
@@ -51,13 +51,23 @@ async function montar(page, context, {
   statusEmissao = 200,
   busca = { produtos: [], resumo: 'Nenhum produto encontrado.' },
   comLocation = true,
-  conectado = { registrado: true }
+  conectado = { registrado: true },
+  // Restaurante sem NENHUMA filial ativa — o único jeito de o app chegar à voz
+  // sem loja escolhida, e o caso que o backend descreve em §3.1.
+  semFilial = false
 } = {}) {
   const chamadas = { sessao: [], connected: [], ended: [], busca: [], openai: [] };
 
   await context.grantPermissions(['microphone']);
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
+
+  // Depois do mockApi de propósito: a rota registrada por último é a que vale.
+  if (semFilial) {
+    await page.route('**/restaurants/*/menu*', route => route.fulfill(json({
+      ...MENU, branches: [], products: [], categories: [], settings: null
+    })));
+  }
 
   await page.addInitScript(() =>
     localStorage.setItem('rapidex.customer.token', 'e2e.voice.token'));
@@ -212,10 +222,16 @@ test('o caminho feliz: emite, conecta, registra o call_id e o assistente fala pr
   const chamadas = await montar(page, context);
   await conversar(page);
 
-  // 1. A emissão levou o token do CLIENTE e o restaurante certo.
+  // 1. A emissão levou o token do CLIENTE, o restaurante certo e a FILIAL que
+  //    o cliente escolheu — a mesma que o carrinho e o pedido usam. Sem ela a
+  //    rota responde 422, e com uma filial padrão o modelo falaria o preço da
+  //    loja errada em áudio.
   expect(chamadas.sessao).toHaveLength(1);
   expect(chamadas.sessao[0].autorizacao).toBe('Bearer e2e.voice.token');
-  expect(chamadas.sessao[0].corpo).toEqual({ restaurant_id: RESTAURANTE });
+  expect(chamadas.sessao[0].corpo).toEqual({
+    restaurant_id: RESTAURANTE,
+    branch_id: BRANCH_MATRIZ
+  });
 
   // 2. A OpenAI recebeu o SEGREDO EFÊMERO, e não o token do cliente. Os dois
   //    segredos têm destinos diferentes, e trocá-los vaza a sessão do cliente.
@@ -232,6 +248,24 @@ test('o caminho feliz: emite, conecta, registra o call_id e o assistente fala pr
   // 4. O assistente fala primeiro: um response.create sai assim que o canal abre.
   await expect.poll(async () => (await recebidos(page)).map(m => m.type))
     .toContain('response.create');
+});
+
+test('sem filial escolhida a voz para antes de emitir, e diz por quê', async ({ page, context }) => {
+  // O cardápio é da FILIAL. Sem loja escolhida não há preço a falar, e o
+  // caminho errado aqui não é o erro — é escolher uma loja por conta própria e
+  // o modelo dizer, em áudio e com preço, o nome de um prato que aquela loja
+  // não vende.
+  const chamadas = await montar(page, context, { semFilial: true });
+
+  await page.evaluate(() => window.RapidexAssistantVoice.request());
+
+  await expect(page.locator('#assistantVoiceAlert')).toBeVisible();
+  await expect(page.locator('#assistantVoiceAlertText')).toContainText(/escolha a unidade/i);
+
+  // E a parte que vale dinheiro: a credencial NÃO foi emitida. Uma emissão é
+  // faturada e conta na cota de cinco conversas por cliente em 24h.
+  await page.waitForTimeout(400);
+  expect(chamadas.sessao, 'emitiu credencial sem saber de qual loja falar').toEqual([]);
 });
 
 test('sem o cabeçalho Location a conversa continua, e nada de call_id inventado', async ({ page, context }) => {
@@ -275,8 +309,11 @@ test('a mesma tool call chega por dois eventos e a busca acontece uma vez só', 
   }, argumentos);
 
   await expect.poll(() => chamadas.busca.length, { timeout: 10000 }).toBe(1);
+  // A busca fala da MESMA filial da sessão: o backend só procura no cardápio
+  // daquela loja, e um "não encontrei" aqui é dela, não do restaurante.
   expect(chamadas.busca[0]).toEqual({
     restaurant_id: RESTAURANTE,
+    branch_id: BRANCH_MATRIZ,
     consulta: 'sobremesa de chocolate',
     preco_maximo: 50
   });

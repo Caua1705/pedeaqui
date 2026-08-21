@@ -14,9 +14,9 @@
     return window.PedeAquiApiClient.get(routes().health);
   }
 
-  async function getRestaurantMenu(slug) {
+  async function getRestaurantMenu(slug, branchId) {
     if (!useMockData()) {
-      return window.PedeAquiApiClient.get(routes().menu(slug));
+      return window.PedeAquiApiClient.get(routes().menu(slug, branchId));
     }
 
     const base = cfg().MOCK_DATA_BASE_PATH || 'data/restaurants';

@@ -10,8 +10,12 @@
     restaurantInfo: (restaurantSlug, branchId) =>
       `/restaurants/${routeSlug(restaurantSlug)}/info${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
 
-    menu: restaurantSlug =>
-      `/restaurants/${routeSlug(restaurantSlug)}/menu`,
+    // O cardápio é DA FILIAL desde 20/08/2026: produtos, categorias, preços e
+    // `settings` saem todos da filial pedida, e cada loja tem os próprios ids.
+    // Sem `branch_id` vale a filial padrão do backend — que é a resposta certa
+    // só enquanto o cliente ainda não escolheu a loja.
+    menu: (restaurantSlug, branchId) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/menu${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
     availableCoupons: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/coupons/available`,
     previewCoupon: restaurantSlug =>

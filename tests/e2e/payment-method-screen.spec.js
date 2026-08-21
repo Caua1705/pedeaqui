@@ -9,7 +9,20 @@ import {
   RESTAURANT_URL
 } from './helpers.js';
 
-test('pix global continua disponivel ao trocar para filial com payment_methods vazio', async ({ page }) => {
+// A tela de pagamento fala da FILIAL escolhida, e de mais nada.
+//
+// Este teste media o contrario ate 20/08/2026: ele exigia que o PIX
+// SOBREVIVESSE numa filial que devolve os dois grupos vazios, recuperado do
+// `settings.payment_methods` do /menu. Aquele campo era o jsonb do
+// RESTAURANTE, saiu da API na revisao 20260820_0027 do backend, e o PIX que
+// ele devolvia morria no checkout com 400 — `POST /orders` so consulta
+// `branch_payment_methods`.
+//
+// O que o teste guarda agora e a metade do bug original que continua valendo,
+// e que e a que de fato quebrou uma vez: **trocar de filial refaz o /info e a
+// tela passa a refletir a loja nova**, em vez de manter o que a anterior
+// mostrava.
+test('a tela de pagamento segue a filial escolhida, sem herdar a anterior', async ({ page }) => {
   await page.setViewportSize({ width: 414, height: 896 });
   await mockApi(page);
   await seedPickupSession(page);
@@ -32,14 +45,15 @@ test('pix global continua disponivel ao trocar para filial com payment_methods v
   await page.goto(RESTAURANT_URL);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
 
-  // Confirma primeiro o comportamento da Matriz, depois repete o mesmo fluxo
-  // na Varjota sem recarregar a pagina: e exatamente a troca que causava o bug.
+  // A Matriz tem PIX habilitado e o mostra.
   await page.evaluate(() => window.RapidexActions.resolve('openCheckout')());
   const pix = page.locator('.payment-method-option[data-payment-scope=online][data-payment-key=pix]');
   await expect(pix).toBeVisible();
   await expect(pix).toBeEnabled();
   await page.evaluate(() => window.RapidexActions.resolve('closePaymentMethodScreen')());
 
+  // Troca para a Varjota sem recarregar a pagina: e exatamente a troca que
+  // causava o bug original.
   await page.evaluate(branchId => {
     window.RapidexActions.resolve('openOperationScreen')();
     window.RapidexActions.resolve('selectBranch')(branchId);
@@ -47,11 +61,21 @@ test('pix global continua disponivel ao trocar para filial com payment_methods v
   }, varjotaId);
   await page.evaluate(() => window.RapidexActions.resolve('openCheckout')());
 
+  // O /info foi refeito PARA A FILIAL NOVA. E a asercao que pega a regressao
+  // de verdade: sem ela, a tela poderia continuar mostrando o payload da
+  // Matriz e o teste passaria pelo motivo errado.
   expect(requestedBranches).toEqual([INFO.branch.id, varjotaId]);
-  await expect(pix).toBeVisible();
-  await expect(pix).toBeEnabled();
-  await pix.click();
-  await expect(page.locator('#paymentMethodFooter')).toBeVisible();
+
+  // E a Varjota nao tem forma de pagamento nenhuma, entao a tela nao inventa
+  // uma. O cliente ve a loja como ela esta cadastrada — que e melhor que ver
+  // um PIX que o `POST /orders` recusaria com 400.
+  //
+  // `toBeDisabled` e nao `toHaveCount(0)`: os botoes ONLINE sao markup
+  // estatico do restaurant.html, e `renderCheckoutPaymentMethods` os
+  // DESABILITA em vez de remover (o CSS de 414px os esconde por cima disso).
+  // Quem some do DOM e so o painel de entrega, que e montado por innerHTML.
+  await expect(pix).toBeDisabled();
+  await expect(page.locator('[data-payment-screen-panel=delivery] .payment-method-option')).toHaveCount(0);
 });
 
 test('pix continua disponivel quando a filial retorna payment_methods em lista', async ({ page }) => {

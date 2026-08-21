@@ -25,6 +25,10 @@
  * OS LIMITES VÊM DO SERVIDOR. duracao_maxima_s, inatividade_s e aviso_antes_s
  * chegam no corpo da emissão e podem mudar sem deploy do app. Nada aqui os
  * chuta, e nada aqui os guarda entre sessões.
+ *
+ * A CONVERSA É DE UMA FILIAL. O cardápio passou a ser da loja em 20/08/2026:
+ * `branch_id` é obrigatório na emissão e na busca, é a MESMA filial nas duas, e
+ * não existe queda para a filial padrão. Sem loja escolhida não se emite nada.
  */
 (function () {
   'use strict';
@@ -43,7 +47,7 @@
      Tudo aqui nasce e morre com uma conversa. `encerrado` começa true porque não
      há sessão: é ele que torna stop() idempotente. */
   let tela = null;
-  let sessao = null;          // { id, limites, restauranteId }
+  let sessao = null;          // { id, limites, restauranteId, filialId }
   let conexao = null;
   let canal = null;
   let microfone = null;
@@ -126,8 +130,15 @@
 
     if (status === 401) return 'Sua sessão expirou. Entre de novo para conversar por voz.';
     if (status === 404) {
-      // Dois 404 diferentes: o restaurante não existe, ou a rota inteira não
-      // existe — que é como a plataforma diz que a voz está desligada.
+      // Três 404 diferentes agora. A filial vem PRIMEIRO porque o texto dela
+      // ("Filial não encontrada para este restaurante") contém a palavra
+      // restaurante e cairia no caso de baixo, dizendo que a loja inteira
+      // sumiu quando o que não bate é a unidade escolhida.
+      if (/filial/i.test(detalhe)) {
+        return 'Esta unidade não está mais disponível. Escolha outra e tente de novo.';
+      }
+      // Os outros dois: o restaurante não existe, ou a rota inteira não existe
+      // — que é como a plataforma diz que a voz está desligada.
       return /restaurante/i.test(detalhe)
         ? 'Não encontrei este restaurante.'
         : 'O atendimento por voz não está disponível no momento.';
@@ -282,10 +293,10 @@
      As quatro rotas do backend
      ══════════════════════════════════════════════════════════════ */
 
-  function emitirCredencial(restauranteId) {
+  function emitirCredencial(restauranteId, filialId) {
     return cliente().request(rotas().voiceSession(), {
       method: 'POST',
-      body: JSON.stringify({ restaurant_id: restauranteId }),
+      body: JSON.stringify({ restaurant_id: restauranteId, branch_id: filialId }),
       // A ÚNICA rota /voice que leva o token do cliente.
       headers: window.PedeAquiCustomerAuth.authHeaders(),
       // A emissão passa pela OpenAI antes de responder: os 8s padrão do cliente
@@ -348,6 +359,10 @@
       method: 'POST',
       body: JSON.stringify({
         restaurant_id: sessao?.restauranteId,
+        // A MESMA filial da sessão, e não uma leitura nova da tela: o cliente
+        // pode ter trocado de loja com a conversa aberta, e a busca tem de
+        // falar do cardápio sobre o qual o modelo está falando.
+        branch_id: sessao?.filialId,
         consulta,
         preco_maximo: precoMaximo
       }),
@@ -771,6 +786,17 @@
     return UUID.test(bruto) ? bruto : '';
   }
 
+  /**
+   * A filial escolhida pelo cliente. Obrigatória nos passos 1 e 6 desde
+   * 20/08/2026, e sem queda para a filial padrão — na voz o modelo FALA o nome
+   * e o preço, e não há tela em que o cliente pudesse notar que aquele prato é
+   * de outra loja.
+   */
+  function idDaFilial() {
+    const bruto = String(window.RapidexAssistantChat?.branchId?.() || '').trim();
+    return UUID.test(bruto) ? bruto : '';
+  }
+
   async function start(api) {
     tela = api;
     if (montando || !encerrado) return;
@@ -792,6 +818,15 @@
           { semEmissao: true });
       }
 
+      // Sem filial não se emite: a credencial custa por minuto e a rota
+      // responderia 422 de qualquer jeito. Escolher uma loja daqui seria pior
+      // que o erro — ver idDaFilial().
+      const filialId = idDaFilial();
+      if (!filialId) {
+        throw Object.assign(new Error('Escolha a unidade primeiro — o cardápio é o daquela loja.'),
+          { semEmissao: true });
+      }
+
       // Antes de gastar uma emissão: se o microfone JÁ está negado, o pedido
       // falharia depois de a cota do dia ter sido consumida. A cota é de cinco
       // conversas por cliente em 24h — não dá para queimar uma num diálogo que
@@ -801,12 +836,13 @@
           { name: 'NotAllowedError', semEmissao: true, doMicrofone: true });
       }
 
-      const emissao = await emitirCredencial(restauranteId);
+      const emissao = await emitirCredencial(restauranteId, filialId);
       if (encerrado) return;
       sessao = {
         id: emissao?.sessao_id || '',
         limites: emissao?.limites || {},
-        restauranteId
+        restauranteId,
+        filialId
       };
 
       microfone = await pedirMicrofone().catch(erro => {

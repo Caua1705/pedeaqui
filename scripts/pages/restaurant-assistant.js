@@ -2,10 +2,14 @@
  * Assistente de pedido — a tela de chat do app do consumidor.
  *
  * O assistente é TRANSPORTE, não motor de recomendação: manda mensagem +
- * restaurant_id para POST /chat (onde o backend faz o RAG sobre o cardápio
- * daquele restaurante) e renderiza a resposta. Nada aqui pode saber o que o
+ * restaurant_id + branch_id para POST /chat (onde o backend faz o RAG sobre o
+ * cardápio daquela FILIAL) e renderiza a resposta. Nada aqui pode saber o que o
  * restaurante vende — qualquer heurística de segmento (nomes de pratos, faixas
  * de preço em reais) quebra no primeiro tenant de outro vertical.
+ *
+ * FILIAL: o cardápio passou a ser da loja em 20/08/2026, e as duas lojas do
+ * mesmo restaurante têm produtos, preços e disponibilidade próprios. Sem
+ * `branch_id` a rota responde 422, de propósito — ver getAssistantBranchId().
  *
  * MARCA: o app é white-label e o consumidor final nunca ouviu falar na
  * plataforma nem no mascote dela. Nada nesta superfície pode nomear nenhum dos
@@ -186,6 +190,20 @@
       || store.restaurant?.slug
       || window.RapidexTenant?.resolveSlug?.()
       || '';
+  }
+
+  /**
+   * A filial escolhida na tela — a mesma do carrinho e do pedido.
+   *
+   * O cardápio é por filial desde 20/08/2026: `/chat` responde 422 sem
+   * `branch_id` e NÃO cai para a filial padrão. Aqui também não há queda: sem
+   * filial escolhida isto devolve '' e a mensagem nem sai, porque a única
+   * alternativa seria escolher uma loja por conta própria — e aí a resposta
+   * viria com o preço e a foto de um produto que a loja do cliente não vende,
+   * sem erro nenhum para ninguém notar.
+   */
+  function getAssistantBranchId() {
+    return String(window.RapidexOperationContext?.branchId?.() || '').trim();
   }
 
   function ensureAssistantSessionId() {
@@ -622,8 +640,17 @@
   }
 
   async function postAssistantChatMessage(message, signal) {
+    const branchId = getAssistantBranchId();
+    // Sem filial não se chama: o 422 do backend viraria "não consegui
+    // responder agora", que é uma mentira — o que falta é a loja, e só o
+    // cliente pode dizer qual é.
+    if (!branchId) {
+      console.warn('[Assistente] Sem filial escolhida: /chat não foi chamado.');
+      throw new Error('Escolha a unidade primeiro — o cardápio é o daquela loja.');
+    }
     const payload = {
       restaurant_id: getAssistantRestaurantId(),
+      branch_id: branchId,
       session_id: ensureAssistantSessionId(),
       message
     };
@@ -1556,6 +1583,7 @@
     productRailMarkup: products =>
       (Array.isArray(products) ? products : []).map((p, i) => renderResultCard(p, i)).join(''),
     restaurantId: getAssistantRestaurantId,
+    branchId: getAssistantBranchId,
     toast: showAssistantToast,
     stopGeneration: stopAssistantGeneration
   };

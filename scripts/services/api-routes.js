@@ -16,6 +16,8 @@
     // só enquanto o cliente ainda não escolheu a loja.
     menu: (restaurantSlug, branchId) =>
       `/restaurants/${routeSlug(restaurantSlug)}/menu${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
+    branchAvailability: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/branches/availability`,
     availableCoupons: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/coupons/available`,
     previewCoupon: restaurantSlug =>

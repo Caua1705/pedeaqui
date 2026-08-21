@@ -92,6 +92,34 @@ export async function mockApi(page, { onCreateOrder, onStartPayment, onTrackOrde
       return route.fulfill(json({ detail: 'rota removida' }, 410));
     }
 
+    if (method === 'POST' && /\/branches\/availability(\?|$)/.test(url)) {
+      const requestBody = JSON.parse(request.postData() || '{}');
+      const addressProvided = Boolean(requestBody.address || requestBody.address_id);
+      return route.fulfill(json({
+        restaurant_slug: SLUG,
+        address_provided: addressProvided,
+        default_branch_id: MENU.branch_id,
+        branches: MENU.branches.map(branch => ({
+          ...branch,
+          display_name: null,
+          address: {
+            street: branch.address,
+            number: null,
+            neighborhood: branch.neighborhood,
+            city: branch.city,
+            state: branch.state,
+            zipcode: branch.zipcode,
+            full_address: branch.full_address
+              || [branch.address, branch.neighborhood, branch.city, branch.state].filter(Boolean).join(' - ')
+          },
+          is_open_now: branch.is_open !== false,
+          delivery: addressProvided
+            ? { delivers_to_address: true, reason: null, message: null, distance_km: 3, delivery_fee: 5 }
+            : null
+        }))
+      }));
+    }
+
     // O cardápio é da FILIAL. Filial que não é deste restaurante responde 404
     // — e o app precisa distinguir esse 404 do "restaurante não existe", senão
     // um branch_id velho no localStorage vira tela de erro permanente.

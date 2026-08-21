@@ -41,6 +41,7 @@ import './utils/api-error.js';
 import './services/api-client.js';
 import './services/api.js';
 import './services/customer-auth-service.js';
+import './services/branch-availability-service.js';
 import './services/restaurant-service.js';
 import './services/restaurant-info-service.js';
 import './services/menu-service.js';

@@ -4827,6 +4827,10 @@
   let opDraft = null; // working copy edited while the operation modal is open
   let operationConfirmed = false;
   let _opOpenedImmediately = false; // true quando aberta sem animação (acesso forçado sem endereço)
+  let branchAvailability = { status: 'idle', key: null, data: null, error: null };
+  let branchAvailabilityRequestSequence = 0;
+  let operationScreenOpenPromise = null;
+  let operationScreenOpenSequence = 0;
 
   const opStorageKey = () => OP_STORAGE_PREFIX + getRestaurantSlug();
 
@@ -5128,6 +5132,12 @@
     };
   }
 
+  function operationScreenIsForeground() {
+    if (!$('operationModal')?.classList.contains('active')) return false;
+    return !['addAddressModal', 'addrPickerModal', 'addrSearchModal', 'addrMapModal', 'addrDetailsModal']
+      .some(id => $(id)?.classList.contains('active'));
+  }
+
   function setSelectedOperationAddress(address, options = {}) {
     const previousEstimateKey = deliveryEstimateKey();
     const normalized = normalizeAddressValue(address);
@@ -5136,6 +5146,7 @@
       operationContext = { order_type: 'delivery', ...branchSnapshot(branch), address: null };
     }
     operationContext.address = normalized;
+    if (opDraft) opDraft.address = normalized;
     if (normalized && options.forceDelivery !== false) operationContext.order_type = 'delivery';
     customerAddress = normalized ? { ...normalized, summary: addressSummary(normalized) } : null;
     customerStore()?.setSelectedAddress?.(customerAddress);
@@ -5148,6 +5159,10 @@
     updateCartUI();
     if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
     requestDeliveryEstimate();
+    if (operationScreenIsForeground()) {
+      renderOperationScreen();
+      requestBranchAvailability(normalized);
+    }
     return customerAddress;
   }
 
@@ -5247,6 +5262,140 @@
   }
   function compatibleBranches(orderType) {
     return branches.filter(b => orderType === 'pickup' ? b.accepts_pickup : b.accepts_delivery);
+  }
+
+  function availabilityKey(address) {
+    if (!validAddressForApi(address)) return 'no-address';
+    return addressFingerprint(address) || remoteAddressId(address) || 'address';
+  }
+
+  function currentAvailabilityAddress() {
+    return opDraft ? opDraft.address : operationContext?.address;
+  }
+
+  function availabilityPayload(address) {
+    if (!validAddressForApi(address)) return {};
+    const addressId = remoteAddressId(address);
+    if (addressId) return { address_id: addressId };
+    const normalized = deliveryAddressPayload(address);
+    if (normalized.latitude === null || normalized.longitude === null) {
+      delete normalized.latitude;
+      delete normalized.longitude;
+    }
+    return { address: normalized };
+  }
+
+  function mergeAvailabilityBranch(availableBranch) {
+    const menuBranch = branchById(availableBranch?.id) || {};
+    return {
+      ...menuBranch,
+      ...availableBranch,
+      label: availableBranch?.label || menuBranch.label || availableBranch?.name || menuBranch.name || '',
+      full_address: availableBranch?.full_address || menuBranch.full_address || '',
+      accepts_delivery: menuBranch.accepts_delivery !== false,
+      accepts_pickup: menuBranch.accepts_pickup !== false
+    };
+  }
+
+  function operationBranches(orderType) {
+    if (branchAvailability.status !== 'success') {
+      return compatibleBranches(orderType);
+    }
+    const available = (branchAvailability.data?.branches || []).map(mergeAvailabilityBranch);
+    if (orderType === 'pickup') return available.filter(branch => branch.accepts_pickup !== false);
+    if (branchAvailability.data?.address_provided !== true) {
+      return available.filter(branch => branch.accepts_delivery !== false);
+    }
+    return available;
+  }
+
+  function operationBranchById(id, orderType = opDraft?.order_type) {
+    const available = operationBranches(orderType).find(branch => String(branch.id) === String(id));
+    return available || (branchAvailability.status === 'success' ? null : branchById(id));
+  }
+
+  function branchDeliveryBlocked(branch, orderType = opDraft?.order_type) {
+    return orderType === 'delivery'
+      && branchAvailability.status === 'success'
+      && branchAvailability.data?.address_provided === true
+      && branch?.delivery !== null
+      && branch?.delivery?.delivers_to_address === false;
+  }
+
+  function branchSelectable(branch, orderType = opDraft?.order_type) {
+    if (!branch) return false;
+    if (orderType === 'pickup') return branch.accepts_pickup !== false;
+    if (branchAvailability.data?.address_provided === true) return !branchDeliveryBlocked(branch, orderType);
+    return branch.accepts_delivery !== false;
+  }
+
+  function sortedOperationBranches(items, orderType) {
+    if (orderType !== 'delivery' || branchAvailability.data?.address_provided !== true) return items;
+    const group = branch => branchDeliveryBlocked(branch, orderType) ? 2 : (branch.is_open ? 0 : 1);
+    const distance = branch => asFiniteNumber(branch.delivery?.distance_km) ?? Number.POSITIVE_INFINITY;
+    return items.map((branch, index) => ({ branch, index })).sort((left, right) => (
+      group(left.branch) - group(right.branch)
+      || distance(left.branch) - distance(right.branch)
+      || left.index - right.index
+    )).map(item => item.branch);
+  }
+
+  function unavailableBranchReason(delivery = {}) {
+    const message = nonEmptyString(delivery.message);
+    if (message) return message;
+    return ({
+      outside_delivery_area: 'Fora da área de entrega para o endereço selecionado.',
+      branch_closed: 'Esta unidade está fechada no momento.',
+      delivery_disabled: 'Esta unidade não faz entregas.',
+      prep_time_unavailable: 'Entrega indisponível nesta unidade no momento.',
+      delivery_fee_config_unavailable: 'Não foi possível calcular a taxa desta unidade.',
+      route_not_found: 'Não encontramos uma rota até o endereço selecionado.',
+      route_unavailable: 'Não foi possível calcular a rota agora.',
+      address_not_found: 'Revise o endereço selecionado para continuar.'
+    })[delivery.reason] || 'Esta unidade não entrega no endereço selecionado.';
+  }
+
+  function formatBranchDistance(value) {
+    const distance = asFiniteNumber(value);
+    if (distance === null) return '';
+    return `${distance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km`;
+  }
+
+  function branchAvailabilityFeedback() {
+    if (branchAvailability.status === 'loading' && validAddressForApi(opDraft?.address)) {
+      return '<div class="op-branch-feedback" role="status">Calculando distância e taxa...</div>';
+    }
+    if (branchAvailability.status === 'error' && validAddressForApi(opDraft?.address)) {
+      return '<div class="op-branch-feedback error" role="status">Não foi possível verificar a entrega. Tente novamente.</div>';
+    }
+    return '';
+  }
+
+  async function requestBranchAvailability(address = opDraft?.address) {
+    const key = availabilityKey(address);
+    const sequence = ++branchAvailabilityRequestSequence;
+    branchAvailability = { status: 'loading', key, data: null, error: null };
+    renderOperationBranches();
+    try {
+      const data = await window.PedeAquiBranchAvailabilityService.getAvailability(
+        getRestaurantSlug(),
+        availabilityPayload(address)
+      );
+      if (sequence !== branchAvailabilityRequestSequence || availabilityKey(currentAvailabilityAddress()) !== key) return null;
+      branchAvailability = { status: 'success', key, data, error: null };
+      const selectedBranch = operationBranchById(opDraft?.branch_id, opDraft?.order_type);
+      if (opDraft?.branch_id && !branchSelectable(selectedBranch, opDraft?.order_type)) {
+        Object.assign(opDraft, { branch_id: null, branch_label: '', branch_name: '', branch_address: '' });
+      }
+      renderOperationBranches();
+      return data;
+    } catch (error) {
+      if (sequence !== branchAvailabilityRequestSequence) return null;
+      console.error('[PedeAqui] Falha ao carregar disponibilidade das unidades', error);
+      branchAvailability = { status: 'error', key, data: null, error };
+      renderOperationBranches();
+      return null;
+    }
   }
 
   function defaultBranchFor(orderType) {
@@ -5393,17 +5542,57 @@
   }
 
   // ---- Operation / location modal ----
-  function openOperationScreen(immediate) {
-    if (!operationContext) return;
+  function setOperationEntryLoading(control, loading) {
+    if (!control) return;
+    control.classList.toggle('is-loading', loading);
+    if (loading) control.setAttribute('aria-busy', 'true');
+    else control.removeAttribute('aria-busy');
+  }
+
+  function clearOperationEntryLoading() {
+    setOperationEntryLoading($('mobNavMenu'), false);
+  }
+
+  function openOperationScreen(immediate, trigger) {
+    if (!operationContext) return Promise.resolve(null);
+    if (operationScreenOpenPromise) return operationScreenOpenPromise;
+    const openSequence = ++operationScreenOpenSequence;
     _opOpenedImmediately = !!immediate;
     opDraft = JSON.parse(JSON.stringify(operationContext));
     if ($('opBranchSearch')) $('opBranchSearch').value = '';
-    renderOperationScreen();
-    if (immediate) openModalImmediately('operationModal');
-    else openModal('operationModal');
+    const availabilityAlreadyResolved = branchAvailability.key === availabilityKey(opDraft.address)
+      && (branchAvailability.status === 'success' || branchAvailability.status === 'error');
+    const revealOperationScreen = () => {
+      if (openSequence !== operationScreenOpenSequence) return null;
+      renderOperationScreen();
+      if (immediate) openModalImmediately('operationModal');
+      else openModal('operationModal');
+      return branchAvailability.data;
+    };
+    if (availabilityAlreadyResolved) return Promise.resolve(revealOperationScreen());
+
+    // O widget nunca vira um loader: a disponibilidade normal já foi aquecida
+    // no boot. Só o Cardápio sinaliza espera se uma atualização excepcional
+    // ainda estiver em trânsito.
+    const loadingTarget = trigger?.id === 'mobNavMenu' ? trigger : null;
+    setOperationEntryLoading(loadingTarget, true);
+    const promise = requestBranchAvailability(opDraft.address).then(() => {
+      // Uma confirmação programática pode cancelar a abertura enquanto a rota
+      // ainda está em trânsito. Nesse caso a resposta atualiza o estado, mas o
+      // modal não reaparece por cima da tela para a qual o cliente já avançou.
+      return revealOperationScreen();
+    }).finally(() => {
+      if (operationScreenOpenPromise === promise) operationScreenOpenPromise = null;
+      if (openSequence === operationScreenOpenSequence) setOperationEntryLoading(loadingTarget, false);
+    });
+    operationScreenOpenPromise = promise;
+    return promise;
   }
 
   function closeOperationScreen() {
+    operationScreenOpenSequence += 1;
+    operationScreenOpenPromise = null;
+    clearOperationEntryLoading();
     if (_opOpenedImmediately) closeModalImmediately('operationModal');
     else closeModalId('operationModal');
     _opOpenedImmediately = false;
@@ -5444,26 +5633,43 @@
     const list = $('opBranchList');
     if (!list || !opDraft) return;
     const query = ($('opBranchSearch')?.value || '').toLowerCase().trim();
-    let items = compatibleBranches(opDraft.order_type);
+    let items = operationBranches(opDraft.order_type);
     if (query) {
       items = items.filter(b => `${b.name} ${b.full_address} ${b.neighborhood}`.toLowerCase().includes(query));
     }
+    items = sortedOperationBranches(items, opDraft.order_type);
+    const feedback = branchAvailabilityFeedback();
     if (!items.length) {
-      list.innerHTML = '<div class="op-branch-empty">Nenhuma unidade disponível para esta operação.</div>';
+      list.innerHTML = `${feedback}<div class="op-branch-empty">Nenhuma unidade disponível para esta operação.</div>`;
       updateConfirmButton();
       return;
     }
-    list.innerHTML = items.map(b => {
+    list.innerHTML = feedback + items.map(b => {
       const selected = String(b.id) === String(opDraft.branch_id);
-      const badge = b.is_open
+      const blocked = branchDeliveryBlocked(b, opDraft.order_type);
+      const statusBadge = b.is_open
         ? '<span class="op-branch-badge open">Aberto</span>'
         : '<span class="op-branch-badge closed">Fechado</span>';
-      return `<button type="button" class="op-branch-card${selected ? ' selected' : ''}" ${act('click', 'selectBranch', b.id)}>
-        <span class="op-branch-radio"></span>
+      const showDeliveryContext = opDraft.order_type === 'delivery'
+        && branchAvailability.status === 'success'
+        && branchAvailability.data?.address_provided === true;
+      const distanceText = showDeliveryContext ? formatBranchDistance(b.delivery?.distance_km) : '';
+      const fee = showDeliveryContext ? asFiniteNumber(b.delivery?.delivery_fee) : null;
+      const badges = [
+        distanceText ? `<span class="op-branch-badge metric">${esc(distanceText)}</span>` : '',
+        fee !== null ? `<span class="op-branch-badge metric">${esc(fmt(fee))}</span>` : '',
+        statusBadge
+      ].filter(Boolean).join('');
+      const reason = blocked
+        ? `<span class="op-branch-reason">${esc(unavailableBranchReason(b.delivery))}</span>`
+        : '';
+      return `<button type="button" role="radio" class="op-branch-card${selected && !blocked ? ' selected' : ''}${blocked ? ' unavailable' : ''}" ${blocked ? 'disabled aria-disabled="true"' : act('click', 'selectBranch', b.id)} aria-checked="${selected && !blocked}">
+        <span class="op-branch-radio" aria-hidden="true"></span>
         <span class="op-branch-body">
           <span class="op-branch-name">${esc(b.name)}</span>
           <span class="op-branch-addr" title="${esc(b.full_address)}">${esc(truncateAddress(b.full_address))}</span>
-          ${badge}
+          <span class="op-branch-badges">${badges}</span>
+          ${reason}
         </span>
         <svg class="op-branch-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
       </button>`;
@@ -5473,19 +5679,25 @@
 
   function selectBranch(id) {
     if (!opDraft) return;
-    const branch = branchById(id);
-    if (!branch) return;
+    const branch = operationBranchById(id, opDraft.order_type);
+    if (!branchSelectable(branch, opDraft.order_type)) return;
     Object.assign(opDraft, branchSnapshot(branch));
     renderOperationBranches();
   }
 
   function updateConfirmButton() {
     const btn = $('opConfirmBtn');
-    if (btn) btn.disabled = !opDraft?.branch_id;
+    if (!btn) return;
+    const selectedBranch = operationBranchById(opDraft?.branch_id, opDraft?.order_type);
+    const waitingForAddress = opDraft?.order_type === 'delivery'
+      && validAddressForApi(opDraft?.address)
+      && branchAvailability.status === 'loading';
+    btn.disabled = !opDraft?.branch_id || waitingForAddress || !branchSelectable(selectedBranch, opDraft?.order_type);
   }
 
   function confirmOperation() {
-    if (!opDraft?.branch_id) return;
+    const selectedBranch = operationBranchById(opDraft?.branch_id, opDraft?.order_type);
+    if (!opDraft?.branch_id || !branchSelectable(selectedBranch, opDraft?.order_type)) return;
     // Delivery sem endereço: confirma assim mesmo e mostra o widget com os 3
     // mini-widgets. O endereço fica como "Use seu endereço para melhores
     // resultados" (renderWidget) e só é exigido no checkout.
@@ -5656,6 +5868,7 @@
   let _addrPickerSelected = null;
   let _addrPickerItems = [];
   let _addrPickerOrigin = 'operation';
+  let _addrPickerConfirming = false;
   let _addrJustSavedAddress = null;
   let _addrPickerDeleteId = null;
   let _addrPickerDeleteMode = 'confirm';
@@ -5709,7 +5922,10 @@
     _addrPickerDeleteId = null;
     setAddrDeleteConfirm(false);
     const confirmBtn = $('addrPickerConfirmBtn');
-    if (confirmBtn) confirmBtn.disabled = true;
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      setOperationEntryLoading(confirmBtn, false);
+    }
     const current = getCurrentPickerAddress();
     const currentItem = currentPickerItem(current);
     const localItems = readLocalAddressList().map(currentPickerItem).filter(Boolean);
@@ -5924,31 +6140,45 @@
   }
 
   async function confirmAddrPicker() {
-    if (!_addrPickerSelected) return;
+    if (!_addrPickerSelected || _addrPickerConfirming) return;
     let address = _addrPickerItems.find(item => addrPickerId(item) === _addrPickerSelected);
     if (!address) return;
-    if (window.PedeAquiCustomerAuth?.getToken?.() && isRemoteAddress(address)) {
-      try {
-        await window.PedeAquiAddressService.setDefaultCustomerAddress(addrPickerId(address));
-        const remote = await synchronizeCustomerAddresses({ importLocal: false });
-        address = remote.find(item => addrPickerId(item) === addrPickerId(address)) || address;
-      } catch (error) {
-        console.error('[PedeAqui] Falha ao definir endereço padrão', error);
-        alert('O endereço foi selecionado neste aparelho, mas não foi possível defini-lo como padrão na sua conta.');
+    const origin = _addrPickerOrigin;
+    const confirmBtn = $('addrPickerConfirmBtn');
+    _addrPickerConfirming = true;
+    if (confirmBtn) confirmBtn.disabled = true;
+    setOperationEntryLoading(confirmBtn, true);
+    try {
+      if (window.PedeAquiCustomerAuth?.getToken?.() && isRemoteAddress(address)) {
+        try {
+          await window.PedeAquiAddressService.setDefaultCustomerAddress(addrPickerId(address));
+          const remote = await synchronizeCustomerAddresses({ importLocal: false });
+          address = remote.find(item => addrPickerId(item) === addrPickerId(address)) || address;
+        } catch (error) {
+          console.error('[PedeAqui] Falha ao definir endereço padrão', error);
+          alert('O endereço foi selecionado neste aparelho, mas não foi possível defini-lo como padrão na sua conta.');
+        }
       }
+      _addrJustSavedAddress = null;
+      if (opDraft) opDraft.address = address;
+      setSelectedOperationAddress(address, { confirmed: true });
+      if (origin === 'operation' && opDraft) {
+        await requestBranchAvailability(address);
+        renderOperationScreen();
+      }
+      closeModalImmediately('addrPickerModal');
+      if (origin === 'profile') {
+        $('mobViewProfile')?.classList.add('active');
+        setMobNavActive('mobNavProfile');
+        renderProfileView();
+        syncCartStickyForActiveView();
+      }
+      _addrPickerOrigin = 'operation';
+    } finally {
+      _addrPickerConfirming = false;
+      setOperationEntryLoading(confirmBtn, false);
+      if (confirmBtn && $('addrPickerModal')?.classList.contains('active')) confirmBtn.disabled = !_addrPickerSelected;
     }
-    _addrJustSavedAddress = null;
-    if (opDraft) opDraft.address = address;
-    setSelectedOperationAddress(address, { confirmed: true });
-    if (opDraft) renderOperationScreen();
-    closeModalImmediately('addrPickerModal');
-    if (_addrPickerOrigin === 'profile') {
-      $('mobViewProfile')?.classList.add('active');
-      setMobNavActive('mobNavProfile');
-      renderProfileView();
-      syncCartStickyForActiveView();
-    }
-    _addrPickerOrigin = 'operation';
   }
 
   // ============================================================
@@ -8182,7 +8412,7 @@
     closeProfilePolicyBeforeNavigation();
     if (!operationConfirmed) {
       _pendingMenuNav = true;
-      openOperationScreen(true); // immediate = sem animacao de entrada
+      await openOperationScreen(true, $('mobNavMenu')); // sem lista parcial durante a consulta
       return;
     }
     const returningToVisibleMenu = document.body.classList.contains('menu-tab')
@@ -9277,7 +9507,12 @@
     // precisa ser o daquela filial, porque é contra ele que os itens são
     // conferidos e é dele que sai o preço.
     initOperationContext();
-    await ensureMenuMatchesSelectedBranch();
+    // A disponibilidade faz parte do boot: quando a Home aparece, o widget já
+    // abre Unidades diretamente com KM, taxa e status, sem carregar na seta.
+    await Promise.all([
+      ensureMenuMatchesSelectedBranch(),
+      requestBranchAvailability(operationContext.address)
+    ]);
     restoreCart();
     applyTheme();
     initStoreInfoModal();

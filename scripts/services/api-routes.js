@@ -10,6 +10,9 @@
     restaurantInfo: (restaurantSlug, branchId) =>
       `/restaurants/${routeSlug(restaurantSlug)}/info${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
 
+    restaurantPaymentConfig: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/payment-config`,
+
     // O cardápio é DA FILIAL desde 20/08/2026: produtos, categorias, preços e
     // `settings` saem todos da filial pedida, e cada loja tem os próprios ids.
     // Sem `branch_id` vale a filial padrão do backend — que é a resposta certa
@@ -79,7 +82,11 @@
     customerAddress: addressId =>
       `/customers/me/addresses/${routeSlug(addressId)}`,
     customerAddressDefault: addressId =>
-      `/customers/me/addresses/${routeSlug(addressId)}/default`
+      `/customers/me/addresses/${routeSlug(addressId)}/default`,
+    customerCards: restaurantSlug =>
+      `/customers/me/cards?restaurant_slug=${routeSlug(restaurantSlug)}`,
+    customerCard: cardId =>
+      `/customers/me/cards/${routeSlug(cardId)}`
   };
 
   window.API_ROUTES = API_ROUTES;

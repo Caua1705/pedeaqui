@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "types": ["vite/client"]
+  },
+  "files": [
+    "scripts/types/api.d.ts",
+    "scripts/types/payment-card-globals.d.ts",
+    "scripts/services/payment-config-service.js",
+    "scripts/services/customer-card-service.js",
+    "scripts/services/mercado-pago-service.js",
+    "scripts/pages/payment-card-flow.js"
+  ]
+}

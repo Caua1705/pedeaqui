@@ -58,6 +58,7 @@
 <link rel="stylesheet" href="styles/assistant.css">
 <link rel="stylesheet" href="styles/coupons-api.css">
 <link rel="stylesheet" href="styles/pix.css">
+<link rel="stylesheet" href="styles/payment-card.css">
 <link rel="stylesheet" href="styles/markup.css">
 </head>
 <body class="app-booting">
@@ -1299,11 +1300,14 @@
           <img class="payment-pix-icon" src="assets/icons/payment/pix.png" alt="">
           <span>PIX</span>
         </button>
-        <div class="payment-method-divider" aria-hidden="true"></div>
-        <button class="payment-add-card" type="button" data-act-click='showCardComingSoon'>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Cadastrar novo cartão</span>
-        </button>
+        <div class="payment-online-cards" id="paymentOnlineCards" hidden>
+          <div class="payment-method-divider" aria-hidden="true"></div>
+          <div class="payment-saved-cards" id="paymentSavedCards" aria-live="polite"></div>
+          <button class="payment-add-card" id="paymentAddCard" type="button" data-act-click='openAddCardTypeScreen'>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Cadastrar novo cartão</span>
+          </button>
+        </div>
       </section>
       <section class="payment-method-panel" data-payment-screen-panel="delivery" hidden>
         <div class="payment-delivery-groups" id="paymentDeliveryGroups"></div>
@@ -1312,6 +1316,110 @@
     <footer class="payment-method-footer" id="paymentMethodFooter" hidden>
       <button class="payment-method-confirm" type="button" data-act-click='confirmPaymentMethodSelection'>Confirmar</button>
     </footer>
+  </section>
+</div>
+
+<!-- SCREEN: ADD CARD TYPE -->
+<div class="overlay payment-card-overlay" id="addCardTypeModal">
+  <section class="payment-card-screen payment-card-type-screen" role="dialog" aria-modal="true" aria-labelledby="addCardTypeTitle">
+    <header class="payment-card-header">
+      <button class="payment-card-back" type="button" data-act-click='closeAddCardTypeScreen' aria-label="Voltar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 id="addCardTypeTitle">Adicionar cartão</h2>
+      <span aria-hidden="true"></span>
+    </header>
+    <div class="payment-card-type-body">
+      <button class="payment-card-type-option" id="addCreditCardOption" type="button" data-act-click='openCreditCardForm'>
+        <span class="payment-card-type-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 14h4"/></svg>
+        </span>
+        <span>Crédito</span>
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- SCREEN: CREDIT CARD SECURE FIELDS -->
+<div class="overlay payment-card-overlay" id="creditCardModal">
+  <section class="payment-card-screen payment-card-form-screen" role="dialog" aria-modal="true" aria-labelledby="creditCardTitle">
+    <header class="payment-card-header">
+      <button class="payment-card-back" type="button" data-act-click='backToAddCardType' aria-label="Voltar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 id="creditCardTitle">Crédito</h2>
+      <span aria-hidden="true"></span>
+    </header>
+
+    <form class="payment-card-form" id="creditCardForm" data-act-submit='["saveCreditCard","$event"]' novalidate>
+      <div class="payment-card-form-body">
+        <div class="payment-card-field payment-card-field--wide">
+          <label for="mpCardNumber">Número do cartão</label>
+          <div class="payment-secure-field" id="mpCardNumber" role="group" aria-label="Número do cartão"></div>
+        </div>
+        <div class="payment-card-field-row">
+          <div class="payment-card-field">
+            <label for="mpExpirationDate">Data de validade</label>
+            <div class="payment-secure-field" id="mpExpirationDate" role="group" aria-label="Data de validade"></div>
+          </div>
+          <div class="payment-card-field payment-card-field--cvv">
+            <label for="mpSecurityCode">CVV</label>
+            <div class="payment-secure-field" id="mpSecurityCode" role="group" aria-label="CVV"></div>
+          </div>
+        </div>
+        <div class="payment-card-field payment-card-field--wide">
+          <label for="cardholderName">Nome do titular</label>
+          <input id="cardholderName" type="text" autocomplete="cc-name" maxlength="80" required>
+        </div>
+        <div class="payment-card-field payment-card-field--wide">
+          <label for="cardholderCpf">CPF do titular</label>
+          <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='["maskCardholderCpf","$this"]' required>
+        </div>
+
+        <section class="billing-address-section" aria-labelledby="billingAddressTitle">
+          <h3 id="billingAddressTitle">Dados de cobrança</h3>
+          <label class="billing-copy-address" for="copyDeliveryAddress">
+            <input id="copyDeliveryAddress" type="checkbox" data-act-change='["copyBillingFromDelivery","$this"]'>
+            <span aria-hidden="true"></span>
+            Copiar do endereço de entrega
+          </label>
+          <div class="payment-card-field payment-card-field--wide">
+            <label for="billingPostalCode">CEP</label>
+            <input id="billingPostalCode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" data-act-input='["maskBillingPostalCode","$this"]' required>
+          </div>
+          <div class="payment-card-field payment-card-field--wide">
+            <label for="billingStreet">Endereço</label>
+            <input id="billingStreet" type="text" autocomplete="address-line1" required>
+          </div>
+          <div class="payment-card-field-row payment-card-field-row--address">
+            <div class="payment-card-field payment-card-field--number">
+              <label for="billingNumber">Número</label>
+              <input id="billingNumber" type="text" autocomplete="address-line2" required>
+            </div>
+            <div class="payment-card-field">
+              <label for="billingComplement">Complemento</label>
+              <input id="billingComplement" type="text" autocomplete="address-line3">
+            </div>
+          </div>
+          <div class="payment-card-field payment-card-field--wide">
+            <label for="billingNeighborhood">Bairro</label>
+            <input id="billingNeighborhood" type="text" required>
+          </div>
+          <div class="payment-card-field payment-card-field--wide">
+            <label for="billingCity">Cidade</label>
+            <input id="billingCity" type="text" autocomplete="address-level2" required>
+          </div>
+          <div class="payment-card-field payment-card-field--wide">
+            <label for="billingState">Estado</label>
+            <input id="billingState" type="text" autocomplete="address-level1" required>
+          </div>
+        </section>
+        <p class="payment-card-form-error" id="creditCardFormError" role="alert" hidden></p>
+      </div>
+      <footer class="payment-card-form-footer">
+        <button class="payment-card-save" id="saveCreditCardButton" type="submit" disabled>Salvar</button>
+      </footer>
+    </form>
   </section>
 </div>
 <!-- SCREEN: UNIDADES E OPERAÇÃO -->

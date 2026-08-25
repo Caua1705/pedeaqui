@@ -9,6 +9,7 @@
     "npm": ">=11.7.0"
   },
   "scripts": {
+    "api:generate": "openapi-typescript ../pedeaqui_back/openapi.json -o scripts/types/api.d.ts",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
@@ -17,15 +18,19 @@
     "format:check": "prettier --check \"**/*.{js,css,html,json,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck:cards": "tsc -p jsconfig.cards.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.0",
+    "@types/node": "^26.3.0",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
     "vite": "^8.1.5",
     "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^4.1.10"

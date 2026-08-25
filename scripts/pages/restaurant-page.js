@@ -48,6 +48,7 @@
   // ("credit" -> "credit_card"), que é o valor enviado em POST /orders.
   let paymentMethod = '';
   let paymentMethodKey = '';
+  let selectedSavedCard = null;
   const paymentApiTypeByKey = new Map();
   const paymentScopeByKey = new Map();
   let selectedCoupon = null;
@@ -3176,7 +3177,10 @@
     if (selectedAddress) fillCheckoutAddress(selectedAddress);
     setDeliveryType(deliveryType);
     requestDeliveryEstimate();
-    await ensureRestaurantInfo();
+    await Promise.all([
+      ensureRestaurantInfo(),
+      window.PedeAquiPaymentConfigService?.getPaymentConfig?.(getRestaurantSlug()).catch(() => null)
+    ]);
     openPaymentMethodScreen();
   }
 
@@ -3227,7 +3231,7 @@
       </div>
       <section class='prof-payment-panel' data-profile-payment-panel='online'>
         <div class='prof-info-card'>${profilePaymentChips(groups.online)}</div>
-        <button class='prof-card-coming-soon' type='button' ${act('click', 'showCardComingSoon')}>Cadastrar novo cartão <span>Em breve</span></button>
+        <button class='prof-card-coming-soon' type='button' ${act('click', 'openAddCardTypeScreen')} hidden>Cadastrar novo cartão</button>
       </section>
       <section class='prof-payment-panel' data-profile-payment-panel='delivery' hidden>
         <div class='prof-info-card'>${profileDeliveryPaymentGroups(groups.delivery)}</div>
@@ -3242,10 +3246,6 @@
   function setProfilePaymentTab(tab) {
     document.querySelectorAll('[data-profile-payment-tab]').forEach(button => button.classList.toggle('active', button.dataset.profilePaymentTab === tab));
     document.querySelectorAll('[data-profile-payment-panel]').forEach(panel => { panel.hidden = panel.dataset.profilePaymentPanel !== tab; });
-  }
-
-  function showCardComingSoon() {
-    alert('Cadastro de cartão estará disponível em breve.');
   }
 
   function syncPaymentMethodFooter() {
@@ -3278,7 +3278,7 @@
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    if (overlay && confirmedButton) {
+    if (overlay && paymentMethod) {
       overlay.dataset.paymentValue = paymentMethod;
       overlay.dataset.paymentKey = confirmedKey;
     } else {
@@ -3288,6 +3288,7 @@
     syncPaymentMethodFooter();
     overlay?.classList.remove('is-entered', 'is-closing');
     openModal('paymentMethodModal');
+    window.PedeAquiCardFlow?.refreshPaymentMethods?.();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (overlay?.classList.contains('active')) overlay.classList.add('is-entered');
     }));
@@ -3376,6 +3377,12 @@
       paymentScopeByKey.set('pix', 'online');
     }
     availableCheckoutPaymentKeys = new Set([...onlineKeys, ...deliveryKeys]);
+    if (selectedSavedCard?.id) {
+      const savedKey = `credit:${selectedSavedCard.id}`;
+      availableCheckoutPaymentKeys.add(savedKey);
+      paymentApiTypeByKey.set(savedKey, 'credit_card');
+      paymentScopeByKey.set(savedKey, 'online');
+    }
     const buttons = Array.from(document.querySelectorAll('.payment-method-option[data-payment-key]'));
     buttons.forEach(button => {
       const scopeKeys = button.dataset.paymentScope === 'online' ? onlineKeys : deliveryKeys;
@@ -3398,6 +3405,7 @@
   }
 
   function commitPaymentMethod(value, key) {
+    if (!String(key || '').startsWith('credit:')) selectedSavedCard = null;
     paymentMethod = value;
     paymentMethodKey = key;
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = value;
@@ -3453,6 +3461,45 @@
     if (!selected || selected.dataset.paymentScope !== 'online' || !type || !availableCheckoutPaymentKeys.has(key)) return;
     commitPaymentMethod(type, key);
     returnToCartFromPayment();
+  }
+
+  function savedCardBrandLabel(value) {
+    const brand = String(value || '').toLowerCase();
+    return ({
+      amex: 'American Express',
+      american_express: 'American Express',
+      elo: 'Elo',
+      hiper: 'Hiper',
+      master: 'Mastercard',
+      mastercard: 'Mastercard',
+      visa: 'Visa'
+    })[brand] || (brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : 'Cartão');
+  }
+
+  function selectSavedCardPayment(card) {
+    if (!card?.id) return;
+    selectedSavedCard = card;
+    const key = `credit:${card.id}`;
+    const label = `Crédito - ${savedCardBrandLabel(card.brand)} •••• ${card.last_four_digits || ''}`.trim();
+    paymentApiTypeByKey.set(key, 'credit_card');
+    paymentScopeByKey.set(key, 'online');
+    availableCheckoutPaymentKeys.add(key);
+    commitPaymentMethod(label, key);
+    const overlay = $('paymentMethodModal');
+    if (overlay) {
+      overlay.dataset.paymentValue = label;
+      overlay.dataset.paymentKey = key;
+    }
+    closeProfSub();
+    returnToCartFromPayment();
+  }
+
+  function clearSavedCardPayment(cardId) {
+    if (paymentMethodKey !== `credit:${cardId}`) return;
+    selectedSavedCard = null;
+    paymentMethod = '';
+    paymentMethodKey = '';
+    updateCartUI();
   }
 
   // ============================================================
@@ -9425,7 +9472,11 @@
     if (subId === 'pagamento') {
       const body = document.querySelector('#profSubpagamento .prof-sub-body');
       if (body && restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando formas de pagamento...</div></div>';
-      await ensureRestaurantInfo();
+      await Promise.all([
+        ensureRestaurantInfo(),
+        window.PedeAquiPaymentConfigService?.getPaymentConfig?.(getRestaurantSlug()).catch(() => null)
+      ]);
+      await window.PedeAquiCardFlow?.refreshProfilePaymentMethods?.();
     }
     if (subId === 'info') {
       const body = document.querySelector('#profSubinfo .prof-sub-body');
@@ -9631,7 +9682,7 @@
     openAddrPicker, selectAddrPickerItem, editAddrPickerItem, confirmAddrPicker, toggleAddrPickerActions, removeAddrPickerItem, confirmAddrPickerDelete, cancelAddrPickerDelete, closeAddrDeleteConfirm,
     openPolicyScreen, closePolicyScreen,
     useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
-    setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, showCardComingSoon,
+    setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, selectSavedCardPayment, clearSavedCardPayment,
     mobNavHome, mobNavMenu, mobNavClub, mobNavAssistant, mobNavProfile, assistantGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, openProfOrderHelp, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, syncCustomerSession, openCashbackStatement, retryCashbackStatement, closeCashbackStatement

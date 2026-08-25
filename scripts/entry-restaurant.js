@@ -48,9 +48,12 @@ import './services/customer-auth-service.js';
 import './services/branch-availability-service.js';
 import './services/restaurant-service.js';
 import './services/restaurant-info-service.js';
+import './services/payment-config-service.js';
 import './services/menu-service.js';
 import './services/customer-service.js';
 import './services/address-service.js';
+import './services/customer-card-service.js';
+import './services/mercado-pago-service.js';
 import './services/delivery-service.js';
 import './services/cart-service.js';
 import './services/order-service.js';
@@ -75,4 +78,7 @@ import './pages/restaurant-assistant-voice.js';
 // O transporte se registra na tela por setDriver(), então vem DEPOIS dela.
 import './pages/restaurant-assistant-voice-session.js';
 import './pages/restaurant-page.js';
+// A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
+// sacola com o meio de pagamento selecionado, portanto vem logo depois dela.
+import './pages/payment-card-flow.js';
 import './pages/cashback-statement.js';

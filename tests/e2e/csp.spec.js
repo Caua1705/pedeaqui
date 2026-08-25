@@ -117,6 +117,21 @@ test('a produção deixa o modo voz existir', () => {
   expect(permissoes).toContain('camera=()');
 });
 
+test('a produção permite somente os hosts necessários aos Secure Fields', () => {
+  const directives = CSP.split(';').map(value => value.trim());
+  const script = directives.find(value => value.startsWith('script-src'));
+  const connect = directives.find(value => value.startsWith('connect-src'));
+  const frame = directives.find(value => value.startsWith('frame-src'));
+
+  expect(script).toContain('https://sdk.mercadopago.com');
+  expect(connect).toContain('https://api.mercadopago.com');
+  expect(connect).toContain('https://events.mercadopago.com');
+  expect(frame).toContain('https://secure-fields.mercadopago.com');
+  expect(script).not.toMatch(/\s\*/);
+  expect(connect).not.toMatch(/\s\*/);
+  expect(frame).not.toMatch(/\s\*/);
+});
+
 test('o app boota sob a CSP sem nenhuma violação', async ({ page }) => {
   const { violations } = await bootUnderCsp(page);
 

@@ -46,11 +46,18 @@ test('mostra o loader de tela inteira somente quando as fotos visíveis demoram'
   });
 
   await boot(page, 'slow');
-  // Dispara sem devolver a Promise: o teste precisa observar o estado
-  // intermediário enquanto as imagens continuam bloqueadas.
-  await page.evaluate(() => {
+  // No primeiro quadro após o clique o loader já precisa estar na frente.
+  // Se a classe entrar depois deste requestAnimationFrame, o cliente enxerga
+  // o cardápio por um instante antes da cobertura.
+  const firstFrame = await page.evaluate(() => new Promise(resolve => {
     window.mobNavMenu?.();
-  });
+    requestAnimationFrame(() => resolve({
+      menuVisible: document.body.classList.contains('menu-tab'),
+      loaderVisible: document.body.classList.contains('menu-media-loading')
+    }));
+  }));
+
+  expect(firstFrame).toEqual({ menuVisible: true, loaderVisible: true });
 
   await expect(page.locator('body')).toHaveClass(/menu-media-loading/);
   await expect(page.locator('#appLoader')).toBeVisible();
@@ -59,9 +66,24 @@ test('mostra o loader de tela inteira somente quando as fotos visíveis demoram'
   releaseImages();
   await expect(page.locator('body')).not.toHaveClass(/menu-media-loading/);
   await expect(page.locator('.product-image').first()).toHaveJSProperty('complete', true);
+
+  // Na segunda entrada os mesmos pixels já estão prontos: a otimização de
+  // cache continua valendo e não cria um loader desnecessário.
+  await page.evaluate(() => {
+    window.RapidexActions.resolve('mobNavHome')();
+    window.__menuLoaderAppearedFromCache = false;
+    new MutationObserver(() => {
+      if (document.body.classList.contains('menu-media-loading')) {
+        window.__menuLoaderAppearedFromCache = true;
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    window.mobNavMenu?.();
+  });
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => window.__menuLoaderAppearedFromCache)).toBe(false);
 });
 
-test('não pisca o loader quando as fotos já chegam rápido', async ({ page }) => {
+test('não revela o cardápio antes do loader mesmo quando as fotos respondem rápido', async ({ page }) => {
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (!url.pathname.includes('/products/')) return route.fallback();
@@ -69,16 +91,15 @@ test('não pisca o loader quando as fotos já chegam rápido', async ({ page }) 
   });
 
   await boot(page, 'fast');
-  await page.evaluate(() => {
-    window.__menuLoaderAppeared = false;
-    new MutationObserver(() => {
-      if (document.body.classList.contains('menu-media-loading'))
-        window.__menuLoaderAppeared = true;
-    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  const firstFrame = await page.evaluate(() => new Promise(resolve => {
     window.mobNavMenu?.();
-  });
+    requestAnimationFrame(() => resolve({
+      menuVisible: document.body.classList.contains('menu-tab'),
+      loaderVisible: document.body.classList.contains('menu-media-loading')
+    }));
+  }));
 
+  expect(firstFrame).toEqual({ menuVisible: true, loaderVisible: true });
   await expect(page.locator('.product-image').first()).toHaveJSProperty('complete', true);
-  await page.waitForTimeout(300);
-  expect(await page.evaluate(() => window.__menuLoaderAppeared)).toBe(false);
+  await expect(page.locator('body')).not.toHaveClass(/menu-media-loading/);
 });

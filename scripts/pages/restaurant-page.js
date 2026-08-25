@@ -104,10 +104,9 @@
   const APP_LOADER_MIN_MS = 900;
   const TAB_LOADER_MIN_MS = 500;
   // A troca para o cardápio continua instantânea quando as miniaturas vieram
-  // do cache. Em rede lenta, esperamos um pouco antes de cobrir a tela para que
-  // o loader não pisque; depois de exibido, ele fica tempo suficiente para ser
-  // percebido como uma transição intencional.
-  const MENU_MEDIA_LOADER_DELAY_MS = 220;
+  // do cache. Se alguma ainda estiver pendente, o loader entra no MESMO quadro
+  // do clique: deixar a tela aparecer antes dele produz o flash
+  // "cardápio -> loader -> cardápio".
   const MENU_MEDIA_LOADER_MIN_VISIBLE_MS = 360;
   const MENU_MEDIA_TIMEOUT_MS = 6500;
   let menuMediaLoadSequence = 0;
@@ -732,11 +731,14 @@
     const sequence = ++menuMediaLoadSequence;
     images.slice(0, 3).forEach(img => { img.fetchPriority = 'high'; });
     const ready = Promise.allSettled(images.map(waitForProductImageReady));
-    const first = await Promise.race([
-      ready.then(() => 'ready'),
-      wait(MENU_MEDIA_LOADER_DELAY_MS).then(() => 'delayed')
-    ]);
-    if (first === 'ready' || sequence !== menuMediaLoadSequence || !document.body.classList.contains('menu-tab')) return;
+    // complete + naturalWidth significa que o browser já tem pixels para
+    // pintar. Nesse caso esperamos apenas o decode, sem piscar um loader.
+    const hasPendingImage = images.some(img => !img.complete || img.naturalWidth <= 0);
+    if (!hasPendingImage) {
+      await ready;
+      return;
+    }
+    if (sequence !== menuMediaLoadSequence || !document.body.classList.contains('menu-tab')) return;
 
     const shownAt = performance.now();
     setMenuMediaLoading(true);

@@ -2859,7 +2859,7 @@
     // para ONDE o pedido vai — o alfinete é o desenho desse dado. Com visitante
     // é o mesmo arquivo do widget, então o navegador já o tem.
     const map = $('orderConfirmMapImage');
-    const mapStem = 'assets/icons/cart/cart-location-guest';
+    const mapStem = '/assets/icons/cart/cart-location-guest';
     const mapSource = `${mapStem}@1x.webp`;
     if (map && map.getAttribute('src') !== mapSource) {
       // srcset junto com src: com os dois presentes quem decide é o srcset, e
@@ -2955,8 +2955,8 @@
     const locationImage = $('cartLocationImage');
     if (locationImage) {
       const stem = isLogged()
-        ? 'assets/icons/cart/cart-location-customer'
-        : 'assets/icons/cart/cart-location-guest';
+        ? '/assets/icons/cart/cart-location-customer'
+        : '/assets/icons/cart/cart-location-guest';
       const imageSource = `${stem}@1x.webp`;
       if (locationImage.getAttribute('src') !== imageSource) {
         // srcset precisa ser trocado JUNTO com src: quando os dois existem, o

@@ -28,14 +28,15 @@ function runtimeAssetPaths() {
   const found = new Set();
   for (const file of sources) {
     const code = readFileSync(resolve(repo, file), 'utf8');
-    for (const [, path] of code.matchAll(/['"`](assets\/[\w@./-]+\.(?:webp|png|avif|jpg|svg))['"`]/g)) {
-      found.add(path);
+    for (const [, path] of code.matchAll(/['"`](\/?assets\/[\w@./-]+\.(?:webp|png|avif|jpg|svg))['"`]/g)) {
+      found.add(path.replace(/^\//, ''));
     }
     // O mascote e os ícones do carrinho montam o srcset por template, então o
     // caminho aparece interpolado (`${stem}@2x.webp`). Reconstrói esses casos.
-    for (const [, stem] of code.matchAll(/['"`](assets\/[\w./-]+)@\$\{?/g)) {
-      found.add(`${stem}@1x.webp`);
-      found.add(`${stem}@2x.webp`);
+    for (const [, stem] of code.matchAll(/['"`](\/?assets\/[\w./-]+)@\$\{?/g)) {
+      const normalizedStem = stem.replace(/^\//, '');
+      found.add(`${normalizedStem}@1x.webp`);
+      found.add(`${normalizedStem}@2x.webp`);
     }
   }
   return [...found];

@@ -3,17 +3,42 @@ export {};
 declare global {
   type MercadoPagoCardToken = {
     id: string;
+    luhn_validation?: boolean;
     payment_method_id?: string;
     issuer_id?: string | number;
   };
 
   type MercadoPagoField = {
     mount(containerId: string): MercadoPagoField;
-    on?(event: 'ready', callback: (event?: { field?: string }) => void): MercadoPagoField;
+    on?(event: 'ready' | 'change' | 'blur' | 'validityChange' | 'error' | 'binChange', callback: (event?: MercadoPagoFieldEvent) => void): MercadoPagoField;
+    update?(properties: Record<string, unknown>): MercadoPagoField;
     unmount?(): void;
   };
 
+  type MercadoPagoFieldEvent = {
+    field?: string;
+    error?: string;
+    bin?: string | null;
+    errorMessages?: Array<{ message?: string; cause?: string }>;
+  };
+
+  type MercadoPagoFieldCallbacks = {
+    onReady?(field: string, event?: MercadoPagoFieldEvent): void;
+    onChange?(field: string, event?: MercadoPagoFieldEvent): void;
+    onBlur?(field: string, event?: MercadoPagoFieldEvent): void;
+    onValidityChange?(field: string, event?: MercadoPagoFieldEvent): void;
+    onError?(field: string, event?: MercadoPagoFieldEvent): void;
+  };
+
   type MercadoPagoInstance = {
+    getPaymentMethods?(data: { bin: string }): Promise<{
+      results?: Array<{
+        settings?: Array<{
+          card_number?: Record<string, unknown>;
+          security_code?: Record<string, unknown>;
+        }>;
+      }>;
+    }>;
     fields: {
       create(
         type: 'cardNumber' | 'expirationDate' | 'securityCode',
@@ -80,8 +105,8 @@ declare global {
       cardNumber: string;
       expirationDate: string;
       securityCode: string;
-    }): Promise<void>;
-    mountSavedCardSecurityCode(publicKey: string, container: string): Promise<void>;
+    }, callbacks?: MercadoPagoFieldCallbacks): Promise<void>;
+    mountSavedCardSecurityCode(publicKey: string, container: string, callbacks?: MercadoPagoFieldCallbacks): Promise<void>;
     createCardToken(data: {
       cardId?: string;
       cardholderName?: string;

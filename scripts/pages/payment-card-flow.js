@@ -10,6 +10,22 @@
   let fieldsMounted = false;
   /** @type {{card: SavedCardResponse, resolve: (value: string) => void, reject: (reason?: unknown) => void, promise: Promise<string>} | null} */
   let savedCardCvvContext = null;
+  const SECURE_FIELD_UI = {
+    cardNumber: { host: 'mpCardNumber', error: 'cardNumberError' },
+    expirationDate: { host: 'mpExpirationDate', error: 'expirationDateError' },
+    securityCode: { host: 'mpSecurityCode', error: 'securityCodeError' }
+  };
+
+  function emptySecureFieldState() {
+    return { ready: false, changed: false, valid: null, failed: false, causes: [] };
+  }
+
+  let secureFieldState = {
+    cardNumber: emptySecureFieldState(),
+    expirationDate: emptySecureFieldState(),
+    securityCode: emptySecureFieldState()
+  };
+  let savedCvvState = emptySecureFieldState();
 
   function restaurantSlug() {
     return window.RapidexTenant?.resolveSlug?.() || '';
@@ -152,7 +168,99 @@
     if (!error) return;
     error.textContent = message || '';
     error.hidden = !message;
+    error.classList.toggle('show', Boolean(message));
   }
+
+  function setCardFieldError(field, message) {
+    const ui = SECURE_FIELD_UI[field] || {
+      cardholderName: { host: 'cardholderName', error: 'cardholderNameError' },
+      cardholderCpf: { host: 'cardholderCpf', error: 'cardholderCpfError' }
+    }[field];
+    if (!ui) return;
+    const host = $(ui.host);
+    const wrapper = host?.closest('.payment-card-field');
+    const error = $(ui.error);
+    wrapper?.classList.toggle('payment-card-field--error', Boolean(message));
+    host?.setAttribute('aria-invalid', message ? 'true' : 'false');
+    if (error) {
+      error.textContent = message || '';
+      error.classList.toggle('show', Boolean(message));
+    }
+  }
+
+  function setSecureFieldLoading(field, loading, failed = false) {
+    const host = $(SECURE_FIELD_UI[field]?.host);
+    host?.classList.toggle('is-loading', Boolean(loading));
+    host?.classList.toggle('has-load-error', Boolean(failed));
+    host?.setAttribute('aria-busy', loading ? 'true' : 'false');
+  }
+
+  function resetSecureFieldStates() {
+    secureFieldState = {
+      cardNumber: emptySecureFieldState(),
+      expirationDate: emptySecureFieldState(),
+      securityCode: emptySecureFieldState()
+    };
+    Object.keys(SECURE_FIELD_UI).forEach(field => {
+      setCardFieldError(field, '');
+      setSecureFieldLoading(field, true);
+    });
+  }
+
+  function secureFieldErrorMessage(field) {
+    if (field === 'cardNumber') return 'Número do cartão inválido';
+    if (field === 'expirationDate') return 'Informe uma data de validade futura';
+    return 'CVV inválido para a bandeira do cartão';
+  }
+
+  function secureFieldReady(field) {
+    const state = secureFieldState[field];
+    if (!state) return;
+    state.ready = true;
+    state.failed = false;
+    setSecureFieldLoading(field, false);
+  }
+
+  function secureFieldChanged(field) {
+    const state = secureFieldState[field];
+    if (!state) return;
+    state.changed = true;
+    if (state.valid !== false) setCardFieldError(field, '');
+  }
+
+  function secureFieldBlurred(field) {
+    const state = secureFieldState[field];
+    if (!state?.ready) return;
+    if (!state.changed) setCardFieldError(field, 'Campo obrigatório');
+    else if (state.valid === false) setCardFieldError(field, secureFieldErrorMessage(field));
+  }
+
+  function secureFieldValidityChanged(field, event) {
+    const state = secureFieldState[field];
+    if (!state) return;
+    const errors = Array.isArray(event?.errorMessages) ? event.errorMessages : [];
+    state.changed = true;
+    state.valid = errors.length === 0;
+    state.causes = errors.map(item => String(item?.cause || ''));
+    setCardFieldError(field, state.valid ? '' : secureFieldErrorMessage(field));
+  }
+
+  function secureFieldFailed(field) {
+    const state = secureFieldState[field];
+    if (!state) return;
+    state.failed = true;
+    state.ready = false;
+    setSecureFieldLoading(field, false, true);
+    setCardFieldError(field, 'Não foi possível carregar este campo seguro');
+  }
+
+  const secureFieldCallbacks = {
+    onReady: secureFieldReady,
+    onChange: secureFieldChanged,
+    onBlur: secureFieldBlurred,
+    onValidityChange: secureFieldValidityChanged,
+    onError: secureFieldFailed
+  };
 
   async function openAddCardTypeScreen() {
     if (!isLogged()) {
@@ -177,9 +285,12 @@
     const form = $('creditCardForm');
     if (form instanceof HTMLFormElement) form.reset();
     showFormError('');
+    setCardFieldError('cardholderName', '');
+    setCardFieldError('cardholderCpf', '');
+    resetSecureFieldStates();
     const save = $('saveCreditCardButton');
     if (save instanceof HTMLButtonElement) {
-      save.disabled = true;
+      save.disabled = false;
       save.classList.remove('is-loading');
       save.textContent = 'Salvar';
     }
@@ -196,12 +307,11 @@
         cardNumber: 'mpCardNumber',
         expirationDate: 'mpExpirationDate',
         securityCode: 'mpSecurityCode'
-      });
+      }, secureFieldCallbacks);
       fieldsMounted = true;
-      const save = $('saveCreditCardButton');
-      if (save instanceof HTMLButtonElement) save.disabled = false;
     } catch (error) {
-      showFormError(error?.message || 'Não foi possível abrir os campos seguros do cartão.');
+      Object.keys(SECURE_FIELD_UI).forEach(secureFieldFailed);
+      showFormError(error?.message || 'Não foi possível carregar a segurança do cartão.');
     }
   }
 
@@ -222,27 +332,65 @@
       .replace(/^(\d{3})(\d)/, '$1.$2')
       .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
+    validateCardholderInput('cardholderCpf');
+  }
+
+  function isValidCpf(digits) {
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+    let sum = 0;
+    for (let index = 0; index < 9; index++) sum += Number(digits[index]) * (10 - index);
+    let firstDigit = (sum * 10) % 11;
+    if (firstDigit === 10) firstDigit = 0;
+    if (firstDigit !== Number(digits[9])) return false;
+    sum = 0;
+    for (let index = 0; index < 10; index++) sum += Number(digits[index]) * (11 - index);
+    let secondDigit = (sum * 10) % 11;
+    if (secondDigit === 10) secondDigit = 0;
+    return secondDigit === Number(digits[10]);
+  }
+
+  function validateCardholderInput(field) {
+    const input = /** @type {HTMLInputElement | null} */ ($(field));
+    if (!input) return false;
+    if (!String(input.value || '').trim()) {
+      setCardFieldError(field, 'Campo obrigatório');
+      return false;
+    }
+    if (field === 'cardholderCpf' && !isValidCpf(onlyDigits(input.value))) {
+      setCardFieldError(field, 'CPF inválido');
+      return false;
+    }
+    setCardFieldError(field, '');
+    return true;
+  }
+
+  function validateSecureField(field) {
+    const state = secureFieldState[field];
+    if (!state || state.failed || !state.ready) return false;
+    if (!state.changed) {
+      setCardFieldError(field, 'Campo obrigatório');
+      return false;
+    }
+    if (state.valid === false) {
+      setCardFieldError(field, secureFieldErrorMessage(field));
+      return false;
+    }
+    setCardFieldError(field, '');
+    return true;
   }
 
   function validateForm() {
     const form = $('creditCardForm');
     if (!(form instanceof HTMLFormElement)) return false;
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      showFormError('Preencha todos os dados obrigatórios.');
-      return false;
-    }
-    const cpf = /** @type {HTMLInputElement | null} */ ($('cardholderCpf'));
-    if (onlyDigits(cpf?.value).length !== 11) {
-      cpf?.focus();
-      showFormError('Informe um CPF com 11 dígitos.');
-      return false;
-    }
-    if (!fieldsMounted) {
-      showFormError('Aguarde os campos seguros do cartão carregarem.');
-      return false;
-    }
-    return true;
+    showFormError('');
+    const results = [
+      validateSecureField('cardNumber'),
+      validateSecureField('expirationDate'),
+      validateSecureField('securityCode'),
+      validateCardholderInput('cardholderName'),
+      validateCardholderInput('cardholderCpf')
+    ];
+    return fieldsMounted && results.every(Boolean);
   }
 
   function setSaving(saving) {
@@ -266,7 +414,18 @@
         identificationType: 'CPF',
         identificationNumber: onlyDigits(cpf?.value)
       });
-      if (!token?.id) throw new Error('O Mercado Pago não devolveu o token do cartão.');
+      // Mercado Pago can return a token for sandbox cards while explicitly
+      // reporting that the check digit failed. Never persist that card.
+      if (token?.luhn_validation === false) {
+        setCardFieldError('cardNumber', secureFieldErrorMessage('cardNumber'));
+        setSaving(false);
+        return;
+      }
+      if (!token?.id) {
+        const validationError = new Error('Confira os dados do cartão.');
+        validationError.name = 'SecureFieldsValidationError';
+        throw validationError;
+      }
       const card = await window.PedeAquiCustomerCardService.saveCard(restaurantSlug(), token.id);
       savedCards = [card, ...savedCards.filter(item => item.id !== card.id)];
       renderSavedCards();
@@ -276,7 +435,30 @@
       window.PedeAquiRestaurantUi?.closeModalImmediately('addCardTypeModal');
       action('selectSavedCardPayment', card);
     } catch (error) {
-      showFormError(error?.message || 'Não foi possível salvar o cartão. Tente novamente.');
+      if (error?.name === 'SecureFieldsValidationError') {
+        const rejectedFields = Object.keys(secureFieldState)
+          .filter(field => secureFieldState[field].valid === false);
+        // Some Mercado Pago builds resolve `undefined` for a Luhn failure
+        // without including cardNumber in the error object or event payload.
+        // When no other field reported an error, the unresolved PCI validation
+        // is the number itself.
+        if (!rejectedFields.length) rejectedFields.push('cardNumber');
+        rejectedFields.forEach(field => setCardFieldError(field, secureFieldErrorMessage(field)));
+        setSaving(false);
+        return;
+      }
+      const raw = JSON.stringify(error, Object.getOwnPropertyNames(error || {})).toLowerCase();
+      if (raw.includes('cardnumber') || raw.includes('luhn')) {
+        setCardFieldError('cardNumber', secureFieldErrorMessage('cardNumber'));
+      } else if (raw.includes('expiration')) {
+        setCardFieldError('expirationDate', secureFieldErrorMessage('expirationDate'));
+      } else if (raw.includes('securitycode') || raw.includes('cvv')) {
+        setCardFieldError('securityCode', secureFieldErrorMessage('securityCode'));
+      } else if (raw.includes('identification') || raw.includes('cpf')) {
+        setCardFieldError('cardholderCpf', 'CPF inválido');
+      } else {
+        showFormError(error?.message || 'Não foi possível salvar o cartão. Tente novamente.');
+      }
       setSaving(false);
     }
   }
@@ -286,7 +468,39 @@
     if (!error) return;
     error.textContent = message || '';
     error.hidden = !message;
+    error.classList.toggle('show', Boolean(message));
+    error.closest('.payment-card-field')?.classList.toggle('payment-card-field--error', Boolean(message));
+    $('mpSavedCardSecurityCode')?.setAttribute('aria-invalid', message ? 'true' : 'false');
   }
+
+  const savedCvvCallbacks = {
+    onReady() {
+      savedCvvState.ready = true;
+      savedCvvState.failed = false;
+      $('mpSavedCardSecurityCode')?.classList.remove('is-loading', 'has-load-error');
+      $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'false');
+    },
+    onChange() {
+      savedCvvState.changed = true;
+      if (savedCvvState.valid !== false) savedCardCvvError('');
+    },
+    onBlur() {
+      if (savedCvvState.ready && !savedCvvState.changed) savedCardCvvError('Campo obrigatório');
+    },
+    onValidityChange(_field, event) {
+      const errors = Array.isArray(event?.errorMessages) ? event.errorMessages : [];
+      savedCvvState.changed = true;
+      savedCvvState.valid = errors.length === 0;
+      savedCardCvvError(savedCvvState.valid ? '' : 'CVV inválido para a bandeira do cartão');
+    },
+    onError() {
+      savedCvvState.failed = true;
+      savedCvvState.ready = false;
+      $('mpSavedCardSecurityCode')?.classList.remove('is-loading');
+      $('mpSavedCardSecurityCode')?.classList.add('has-load-error');
+      savedCardCvvError('Não foi possível carregar este campo seguro');
+    }
+  };
 
   function closeSavedCardCvv(reject = true) {
     window.PedeAquiMercadoPago?.unmountCardFields();
@@ -309,11 +523,19 @@
     savedCardCvvContext = { card, resolve: resolveRequest, reject: rejectRequest, promise };
     const save = $('confirmSavedCardCvvButton');
     if (save instanceof HTMLButtonElement) save.disabled = true;
+    savedCvvState = emptySecureFieldState();
     savedCardCvvError('');
+    $('mpSavedCardSecurityCode')?.classList.add('is-loading');
+    $('mpSavedCardSecurityCode')?.classList.remove('has-load-error');
+    $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'true');
     window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     try {
       const config = paymentConfig || await ensurePaymentConfig();
-      await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(config.public_key, 'mpSavedCardSecurityCode');
+      await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(
+        config.public_key,
+        'mpSavedCardSecurityCode',
+        savedCvvCallbacks
+      );
       fieldsMounted = true;
       if (save instanceof HTMLButtonElement) save.disabled = false;
     } catch (error) {
@@ -331,8 +553,15 @@
   async function confirmSavedCardCvv(event) {
     event?.preventDefault?.();
     const context = savedCardCvvContext;
-    if (!context || !fieldsMounted) {
-      savedCardCvvError('Aguarde o campo de CVV carregar.');
+    if (!context || !fieldsMounted || !savedCvvState.ready) {
+      return;
+    }
+    if (!savedCvvState.changed) {
+      savedCardCvvError('Campo obrigatório');
+      return;
+    }
+    if (savedCvvState.valid === false) {
+      savedCardCvvError('CVV inválido para a bandeira do cartão');
       return;
     }
     const save = $('confirmSavedCardCvvButton');
@@ -377,6 +606,7 @@
     openCreditCardForm,
     backToAddCardType,
     maskCardholderCpf,
+    validateCardholderInput,
     closeSavedCardCvv,
     confirmSavedCardCvv,
     saveCreditCard,

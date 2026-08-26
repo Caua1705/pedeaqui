@@ -75,3 +75,73 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   expect(JSON.stringify(posts)).not.toContain('5031433215406351');
   expect(JSON.stringify(posts)).not.toContain('12345678909');
 });
+
+test('Secure Fields real informa Luhn, validade futura e tamanho do CVV no campo correto', async ({ page }) => {
+  test.skip(!publicKey, 'PAYMENT_PUBLIC_KEY ausente');
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.addInitScript(({ slug, branchId }) => {
+    const address = {
+      street: 'Rua Andrade Furtado', number: '955', neighborhood: 'Cocó', city: 'Fortaleza',
+      state: 'Ceará', postal_code: '60190090', summary: 'Rua Andrade Furtado, 955 - Cocó'
+    };
+    localStorage.setItem('rapidex.customer.token', 'live-secure-fields-token');
+    localStorage.setItem('rapidex.customer.profile', JSON.stringify({
+      id: 'customer-live-sdk', name: 'Cliente Teste', phone: '85999999999', email: 'cliente@example.com'
+    }));
+    localStorage.setItem('rapidex.customerAddress', JSON.stringify(address));
+    localStorage.setItem(`rapidex.operationContext.${slug}`, JSON.stringify({
+      order_type: 'delivery', branch_id: branchId, branch_label: 'Matriz', address, confirmed: true
+    }));
+  }, { slug: SLUG, branchId: BRANCH_MATRIZ });
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-live-sdk', name: 'Cliente Teste', phone: '85999999999', email: 'cliente@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: publicKey, card_enabled: true
+  })));
+  await page.route('**/customers/me/cards**', route => route.fulfill(json([])));
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#paymentAddCard').click();
+  await page.locator('#addCreditCardOption').click();
+  await expect(page.locator('#saveCreditCardButton')).toBeEnabled();
+
+  await page.frameLocator('#mpCardNumber iframe').locator('#cardNumber').click();
+  await page.keyboard.type('41111111');
+  await page.waitForTimeout(1500);
+  await page.keyboard.type('11111112', { delay: 30 });
+  await page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate').click();
+  await page.keyboard.type('11/31');
+  await page.frameLocator('#mpSecurityCode iframe').locator('#securityCode').click();
+  await page.keyboard.type('123');
+  await page.locator('#cardholderName').fill('APRO');
+  await page.locator('#cardholderCpf').fill('12345678909');
+  await page.locator('#saveCreditCardButton').click();
+  await expect(page.locator('#cardNumberError')).toHaveText('Número do cartão inválido');
+
+  const number = page.frameLocator('#mpCardNumber iframe').locator('#cardNumber');
+  await number.click();
+  await number.press('Control+A');
+  await page.keyboard.type('5031433215406351');
+  const expiration = page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate');
+  await expiration.click();
+  await expiration.press('Control+A');
+  await page.keyboard.type('01/20');
+  const cvv = page.frameLocator('#mpSecurityCode iframe').locator('#securityCode');
+  await cvv.click();
+  await cvv.press('Control+A');
+  await page.keyboard.type('12');
+  await page.locator('#cardholderCpf').fill('12345678900');
+  await page.locator('#saveCreditCardButton').click();
+
+  await expect(page.locator('#expirationDateError')).toHaveText('Informe uma data de validade futura');
+  await expect(page.locator('#securityCodeError')).toHaveText('CVV inválido para a bandeira do cartão');
+  await expect(page.locator('#cardholderCpfError')).toHaveText('CPF inválido');
+});

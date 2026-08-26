@@ -7,8 +7,6 @@
   /** @type {MercadoPagoField[]} */
   let mountedFields = [];
 
-  const FIELD_READY_TIMEOUT_MS = 15_000;
-
   function loadSdk() {
     if (window.MercadoPago) return Promise.resolve(window.MercadoPago);
     if (sdkPromise) return sdkPromise;
@@ -43,10 +41,44 @@
   }
 
   /**
+   * @param {MercadoPagoField} field
+   * @param {string} type
+   * @param {MercadoPagoFieldCallbacks} [callbacks]
+   */
+  function bindFieldEvents(field, type, callbacks = {}) {
+    if (typeof field.on !== 'function') return field;
+    field.on('ready', event => callbacks.onReady?.(type, event));
+    field.on('change', event => callbacks.onChange?.(type, event));
+    field.on('blur', event => callbacks.onBlur?.(type, event));
+    field.on('validityChange', event => callbacks.onValidityChange?.(type, event));
+    field.on('error', event => callbacks.onError?.(type, event));
+    return field;
+  }
+
+  /** Apply the card brand rules returned for the BIN without ever reading PAN/CVV. */
+  async function updateCardFieldSettings(bin, cardNumberField, securityCodeField) {
+    if (!bin || typeof instance?.getPaymentMethods !== 'function') return;
+    const response = await instance.getPaymentMethods({ bin });
+    const settings = response?.results?.[0]?.settings?.[0];
+    if (!settings) return;
+    if (settings.card_number) {
+      cardNumberField.update?.({
+        settings: { ...settings.card_number, validation: 'standard' }
+      });
+    }
+    if (settings.security_code) securityCodeField.update?.({ settings: settings.security_code });
+  }
+
+  /**
+   * Mounting an iframe and waiting for its `ready` event are deliberately two
+   * separate things. A slow iframe must stay mounted (and keep loading); it must
+   * never be removed merely because a wall-clock timeout elapsed.
+   *
    * @param {string} publicKey
    * @param {{cardNumber: string, expirationDate: string, securityCode: string}} containers
+   * @param {MercadoPagoFieldCallbacks} [callbacks]
    */
-  async function mountCardFields(publicKey, containers) {
+  async function mountCardFields(publicKey, containers, callbacks = {}) {
     const MercadoPago = await loadSdk();
     if (!instance || instanceKey !== publicKey) {
       instance = new MercadoPago(publicKey, { locale: 'pt-BR', advancedFraudPrevention: true });
@@ -67,7 +99,7 @@
       {
         type: /** @type {const} */ ('cardNumber'),
         container: containers.cardNumber,
-        options: { placeholder: '0000 0000 0000 0000', srLabel: 'Número do cartão', ariaRequired: true, style }
+        options: { placeholder: '0000 0000 0000 0000', srLabel: 'Número do cartão', ariaRequired: true, enableLuhnValidation: true, style }
       },
       {
         type: /** @type {const} */ ('expirationDate'),
@@ -80,38 +112,25 @@
         options: { placeholder: 'CVV', srLabel: 'Código de segurança', ariaRequired: true, style }
       }
     ];
-    const ready = definitions.map(({ type, container, options }) => {
-      const field = instance.fields.create(type, options);
-      const initialized = new Promise(resolve => {
-        if (typeof field.on !== 'function') {
-          resolve(undefined);
-          return;
-        }
-        field.on('ready', () => resolve(undefined));
-      });
-      mountedFields.push(field.mount(container));
-      return initialized;
-    });
-    let timeoutId;
     try {
-      await Promise.race([
-        Promise.all(ready),
-        new Promise((_, reject) => {
-          timeoutId = window.setTimeout(() => {
-            reject(new Error('Os campos seguros demoraram para carregar. Tente novamente.'));
-          }, FIELD_READY_TIMEOUT_MS);
-        })
-      ]);
+      const fields = Object.fromEntries(definitions.map(({ type, options }) => [
+        type,
+        bindFieldEvents(instance.fields.create(type, options), type, callbacks)
+      ]));
+      fields.cardNumber.on?.('binChange', event => {
+        updateCardFieldSettings(event?.bin, fields.cardNumber, fields.securityCode).catch(() => {
+          // The fields remain usable; tokenization still performs final validation.
+        });
+      });
+      mountedFields = definitions.map(({ type, container }) => fields[type].mount(container));
     } catch (error) {
       unmountCardFields();
       throw error;
-    } finally {
-      window.clearTimeout(timeoutId);
     }
   }
 
   /** Mount only the security code when charging a card already saved by the customer. */
-  async function mountSavedCardSecurityCode(publicKey, container) {
+  async function mountSavedCardSecurityCode(publicKey, container, callbacks = {}) {
     const MercadoPago = await loadSdk();
     if (!instance || instanceKey !== publicKey) {
       instance = new MercadoPago(publicKey, { locale: 'pt-BR', advancedFraudPrevention: true });
@@ -128,35 +147,17 @@
       width: '100%',
       placeholderColor: '#aaa6a3'
     };
-    const field = instance.fields.create('securityCode', {
+    const field = bindFieldEvents(instance.fields.create('securityCode', {
       placeholder: 'CVV',
       srLabel: 'CVV do cartão salvo',
       ariaRequired: true,
       style
-    });
-    const ready = new Promise(resolve => {
-      if (typeof field.on !== 'function') {
-        resolve(undefined);
-        return;
-      }
-      field.on('ready', () => resolve(undefined));
-    });
-    mountedFields = [field.mount(container)];
-    let timeoutId;
+    }), 'securityCode', callbacks);
     try {
-      await Promise.race([
-        ready,
-        new Promise((_, reject) => {
-          timeoutId = window.setTimeout(() => {
-            reject(new Error('O campo de CVV demorou para carregar. Tente novamente.'));
-          }, FIELD_READY_TIMEOUT_MS);
-        })
-      ]);
+      mountedFields = [field.mount(container)];
     } catch (error) {
       unmountCardFields();
       throw error;
-    } finally {
-      window.clearTimeout(timeoutId);
     }
   }
 

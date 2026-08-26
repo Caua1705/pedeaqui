@@ -1355,31 +1355,36 @@
       <div class="payment-card-form-body">
         <div class="payment-card-field payment-card-field--wide">
           <label for="mpCardNumber">Número do cartão</label>
-          <div class="payment-secure-field" id="mpCardNumber" role="group" aria-label="Número do cartão"></div>
+          <div class="payment-secure-field" id="mpCardNumber" role="group" aria-label="Número do cartão" aria-describedby="cardNumberError"></div>
+          <div class="reg-error" id="cardNumberError"></div>
         </div>
         <div class="payment-card-field-row">
           <div class="payment-card-field">
             <label for="mpExpirationDate">Data de validade</label>
-            <div class="payment-secure-field" id="mpExpirationDate" role="group" aria-label="Data de validade"></div>
+            <div class="payment-secure-field" id="mpExpirationDate" role="group" aria-label="Data de validade" aria-describedby="expirationDateError"></div>
+            <div class="reg-error" id="expirationDateError"></div>
           </div>
           <div class="payment-card-field payment-card-field--cvv">
             <label for="mpSecurityCode">CVV</label>
-            <div class="payment-secure-field" id="mpSecurityCode" role="group" aria-label="CVV"></div>
+            <div class="payment-secure-field" id="mpSecurityCode" role="group" aria-label="CVV" aria-describedby="securityCodeError"></div>
+            <div class="reg-error" id="securityCodeError"></div>
           </div>
         </div>
         <div class="payment-card-field payment-card-field--wide">
           <label for="cardholderName">Nome do titular</label>
-          <input id="cardholderName" type="text" autocomplete="cc-name" maxlength="80" required>
+          <input id="cardholderName" type="text" autocomplete="cc-name" maxlength="80" required aria-describedby="cardholderNameError" data-act-input='["validateCardholderInput","cardholderName"]'>
+          <div class="reg-error" id="cardholderNameError"></div>
         </div>
         <div class="payment-card-field payment-card-field--wide">
           <label for="cardholderCpf">CPF do titular</label>
-          <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='["maskCardholderCpf","$this"]' required>
+          <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='["maskCardholderCpf","$this"]' required aria-describedby="cardholderCpfError">
+          <div class="reg-error" id="cardholderCpfError"></div>
         </div>
 
-        <p class="payment-card-form-error" id="creditCardFormError" role="alert" hidden></p>
+        <p class="reg-error payment-card-form-error" id="creditCardFormError" role="alert" hidden></p>
       </div>
       <footer class="payment-card-form-footer">
-        <button class="payment-card-save" id="saveCreditCardButton" type="submit" disabled>Salvar</button>
+        <button class="payment-card-save" id="saveCreditCardButton" type="submit">Salvar</button>
       </footer>
     </form>
   </section>
@@ -1398,9 +1403,9 @@
       <div class="payment-card-form-body">
         <div class="payment-card-field payment-card-field--wide">
           <label for="mpSavedCardSecurityCode">CVV</label>
-          <div class="payment-secure-field" id="mpSavedCardSecurityCode" role="group" aria-label="CVV do cartão salvo"></div>
+          <div class="payment-secure-field" id="mpSavedCardSecurityCode" role="group" aria-label="CVV do cartão salvo" aria-describedby="savedCardCvvError"></div>
+          <p class="reg-error payment-card-form-error" id="savedCardCvvError" role="alert" hidden></p>
         </div>
-        <p class="payment-card-form-error" id="savedCardCvvError" role="alert" hidden></p>
       </div>
       <footer class="payment-card-form-footer">
         <button class="payment-card-save" id="confirmSavedCardCvvButton" type="submit" disabled>Continuar</button>

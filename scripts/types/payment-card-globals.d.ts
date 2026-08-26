@@ -9,6 +9,7 @@ declare global {
 
   type MercadoPagoField = {
     mount(containerId: string): MercadoPagoField;
+    on?(event: 'ready', callback: (event?: { field?: string }) => void): MercadoPagoField;
     unmount?(): void;
   };
 

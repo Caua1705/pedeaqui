@@ -7,6 +7,8 @@
   /** @type {MercadoPagoField[]} */
   let mountedFields = [];
 
+  const FIELD_READY_TIMEOUT_MS = 15_000;
+
   function loadSdk() {
     if (window.MercadoPago) return Promise.resolve(window.MercadoPago);
     if (sdkPromise) return sdkPromise;
@@ -51,19 +53,61 @@
       instanceKey = publicKey;
     }
     unmountCardFields();
-    const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
     const style = {
-      color: dark ? '#f5f5f5' : '#3f3d3c',
+      color: '#3f3d3c',
       fontFamily: 'Inter, Arial, sans-serif',
       fontSize: '15px',
       fontWeight: '400',
-      placeholderColor: dark ? '#77736f' : '#aaa6a3'
+      height: '100%',
+      padding: '0',
+      width: '100%',
+      placeholderColor: '#aaa6a3'
     };
-    mountedFields = [
-      instance.fields.create('cardNumber', { placeholder: '0000 0000 0000 0000', style }).mount(containers.cardNumber),
-      instance.fields.create('expirationDate', { placeholder: 'MM/AAAA', style }).mount(containers.expirationDate),
-      instance.fields.create('securityCode', { placeholder: 'CVV', style }).mount(containers.securityCode)
+    const definitions = [
+      {
+        type: /** @type {const} */ ('cardNumber'),
+        container: containers.cardNumber,
+        options: { placeholder: '0000 0000 0000 0000', srLabel: 'Número do cartão', ariaRequired: true, style }
+      },
+      {
+        type: /** @type {const} */ ('expirationDate'),
+        container: containers.expirationDate,
+        options: { placeholder: 'MM/AA', mode: 'short', srLabel: 'Data de validade', ariaRequired: true, style }
+      },
+      {
+        type: /** @type {const} */ ('securityCode'),
+        container: containers.securityCode,
+        options: { placeholder: 'CVV', srLabel: 'Código de segurança', ariaRequired: true, style }
+      }
     ];
+    const ready = definitions.map(({ type, container, options }) => {
+      const field = instance.fields.create(type, options);
+      const initialized = new Promise(resolve => {
+        if (typeof field.on !== 'function') {
+          resolve(undefined);
+          return;
+        }
+        field.on('ready', () => resolve(undefined));
+      });
+      mountedFields.push(field.mount(container));
+      return initialized;
+    });
+    let timeoutId;
+    try {
+      await Promise.race([
+        Promise.all(ready),
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(new Error('Os campos seguros demoraram para carregar. Tente novamente.'));
+          }, FIELD_READY_TIMEOUT_MS);
+        })
+      ]);
+    } catch (error) {
+      unmountCardFields();
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   }
 
   /**

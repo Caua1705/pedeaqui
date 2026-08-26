@@ -44,6 +44,11 @@ async function installMercadoPagoSecureFieldsMock(page) {
       constructor(type) {
         this.type = type;
         this.input = null;
+        this.listeners = {};
+      }
+      on(event, callback) {
+        this.listeners[event] = callback;
+        return this;
       }
       mount(containerId) {
         const host = document.getElementById(containerId);
@@ -52,6 +57,7 @@ async function installMercadoPagoSecureFieldsMock(page) {
         input.setAttribute('aria-label', this.type);
         host.appendChild(input);
         this.input = input;
+        queueMicrotask(() => this.listeners.ready?.({ field: this.type }));
         return this;
       }
       unmount() {
@@ -82,6 +88,7 @@ async function installMercadoPagoSecureFieldsMock(page) {
 
 test('lista → cadastrar → formulário Secure Fields → salvar → sacola selecionada', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark' });
   await mockApi(page);
   await seedLoggedDelivery(page);
   await installMercadoPagoSecureFieldsMock(page);
@@ -160,10 +167,15 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
   await page.locator('#addCreditCardOption').click();
   await expect(page.locator('#creditCardModal')).toHaveClass(/active/);
   await expect(page.locator('[data-secure-field="cardNumber"]')).toBeVisible();
+  await expect(page.locator('#creditCardModal .payment-card-screen')).toHaveCSS('background-color', 'rgb(247, 245, 243)');
+  await expect(page.locator('#creditCardModal .payment-card-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 
-  await page.locator('[data-secure-field="cardNumber"]').fill('5031433215406351');
-  await page.locator('[data-secure-field="expirationDate"]').fill('11/31');
-  await page.locator('[data-secure-field="securityCode"]').fill('123');
+  await page.locator('[data-secure-field="cardNumber"]').click();
+  await page.keyboard.type('5031433215406351');
+  await page.locator('[data-secure-field="expirationDate"]').click();
+  await page.keyboard.type('11/31');
+  await page.locator('[data-secure-field="securityCode"]').click();
+  await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');
   await page.locator('#cardholderCpf').fill('12345678909');
   await page.locator('.billing-copy-address').click();

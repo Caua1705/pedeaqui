@@ -9,6 +9,7 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   test.skip(!publicKey, 'PAYMENT_PUBLIC_KEY ausente');
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark' });
   await mockApi(page);
   await page.addInitScript(({ slug, branchId }) => {
     const address = {
@@ -54,9 +55,13 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   await page.locator('#paymentAddCard').click();
   await page.locator('#addCreditCardOption').click();
 
-  await page.frameLocator('#mpCardNumber iframe').locator('#cardNumber').fill('5031433215406351');
-  await page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate').fill('11/31');
-  await page.frameLocator('#mpSecurityCode iframe').locator('#securityCode').fill('123');
+  await expect(page.locator('#creditCardModal .payment-card-screen')).toHaveCSS('background-color', 'rgb(247, 245, 243)');
+  await page.frameLocator('#mpCardNumber iframe').locator('#cardNumber').click();
+  await page.keyboard.type('5031433215406351');
+  await page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate').click();
+  await page.keyboard.type('11/31');
+  await page.frameLocator('#mpSecurityCode iframe').locator('#securityCode').click();
+  await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');
   await page.locator('#cardholderCpf').fill('12345678909');
   await page.locator('.billing-copy-address').click();

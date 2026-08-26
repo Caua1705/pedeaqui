@@ -41,13 +41,71 @@
   }
 
   /**
+   * The SDK inserts an iframe before its remote document is ready. A click in
+   * that interval focuses the empty iframe and every typed character is lost.
+   * Resolve on the SDK event when available, or on the iframe's real load as a
+   * fallback for WebViews where `ready` is not emitted.
+   *
+   * @param {{type: string, container: string}[]} definitions
+   */
+  function createFieldReadiness(definitions) {
+    const resolvers = new Map();
+    const resolved = new Set();
+    const promises = definitions.map(({ type }) => new Promise(resolve => resolvers.set(type, resolve)));
+    const markReady = type => {
+      if (resolved.has(type)) return;
+      resolved.add(type);
+      resolvers.get(type)?.();
+    };
+    const observers = definitions.map(({ type, container }) => {
+      const host = document.getElementById(container);
+      if (!host) throw new Error(`Contêiner do campo seguro não encontrado: ${container}`);
+      let trackedIframe = null;
+      const bindIframe = () => {
+        const iframe = host.querySelector('iframe');
+        if (!(iframe instanceof HTMLIFrameElement) || iframe === trackedIframe) return;
+        trackedIframe = iframe;
+        iframe.addEventListener('load', () => {
+          requestAnimationFrame(() => requestAnimationFrame(() => markReady(type)));
+        });
+      };
+      const observer = new MutationObserver(bindIframe);
+      observer.observe(host, { childList: true, subtree: true });
+      bindIframe();
+      return observer;
+    });
+    const wait = async () => {
+      let timeoutId;
+      try {
+        await Promise.race([
+          Promise.all(promises),
+          new Promise((_, reject) => {
+            timeoutId = window.setTimeout(
+              () => reject(new Error('Não foi possível iniciar os campos seguros do cartão.')),
+              20_000
+            );
+          })
+        ]);
+      } finally {
+        if (timeoutId) window.clearTimeout(timeoutId);
+        observers.forEach(observer => observer.disconnect());
+      }
+    };
+    return { markReady, wait };
+  }
+
+  /**
    * @param {MercadoPagoField} field
    * @param {string} type
    * @param {MercadoPagoFieldCallbacks} [callbacks]
+   * @param {(type: string) => void} [markReady]
    */
-  function bindFieldEvents(field, type, callbacks = {}) {
+  function bindFieldEvents(field, type, callbacks = {}, markReady = () => {}) {
     if (typeof field.on !== 'function') return field;
-    field.on('ready', event => callbacks.onReady?.(type, event));
+    field.on('ready', event => {
+      markReady(type);
+      callbacks.onReady?.(type, event);
+    });
     field.on('change', event => callbacks.onChange?.(type, event));
     field.on('blur', event => callbacks.onBlur?.(type, event));
     field.on('validityChange', event => callbacks.onValidityChange?.(type, event));
@@ -112,10 +170,11 @@
         options: { placeholder: 'CVV', srLabel: 'Código de segurança', ariaRequired: true, style }
       }
     ];
+    const readiness = createFieldReadiness(definitions);
     try {
       const fields = Object.fromEntries(definitions.map(({ type, options }) => [
         type,
-        bindFieldEvents(instance.fields.create(type, options), type, callbacks)
+        bindFieldEvents(instance.fields.create(type, options), type, callbacks, readiness.markReady)
       ]));
       fields.cardNumber.on?.('binChange', event => {
         updateCardFieldSettings(event?.bin, fields.cardNumber, fields.securityCode).catch(() => {
@@ -123,6 +182,7 @@
         });
       });
       mountedFields = definitions.map(({ type, container }) => fields[type].mount(container));
+      await readiness.wait();
     } catch (error) {
       unmountCardFields();
       throw error;
@@ -147,14 +207,16 @@
       width: '100%',
       placeholderColor: '#aaa6a3'
     };
+    const readiness = createFieldReadiness([{ type: 'securityCode', container }]);
     const field = bindFieldEvents(instance.fields.create('securityCode', {
       placeholder: 'CVV',
       srLabel: 'CVV do cartão salvo',
       ariaRequired: true,
       style
-    }), 'securityCode', callbacks);
+    }), 'securityCode', callbacks, readiness.markReady);
     try {
       mountedFields = [field.mount(container)];
+      await readiness.wait();
     } catch (error) {
       unmountCardFields();
       throw error;

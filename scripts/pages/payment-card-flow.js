@@ -8,6 +8,7 @@
   /** @type {SavedCardResponse[]} */
   let savedCards = [];
   let fieldsMounted = false;
+  let fieldsMounting = false;
   /** @type {{card: SavedCardResponse, resolve: (value: string) => void, reject: (reason?: unknown) => void, promise: Promise<string>} | null} */
   let savedCardCvvContext = null;
   const SECURE_FIELD_UI = {
@@ -298,10 +299,11 @@
   }
 
   async function openCreditCardForm() {
+    if (fieldsMounting) return;
     const config = paymentConfig || await ensurePaymentConfig();
     if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config) || !config.public_key) return;
+    fieldsMounting = true;
     resetCreditCardForm();
-    window.PedeAquiRestaurantUi?.openModal('creditCardModal');
     try {
       await window.PedeAquiMercadoPago.mountCardFields(config.public_key, {
         cardNumber: 'mpCardNumber',
@@ -313,9 +315,15 @@
       // todos os WebViews; ele serve como confirmação adicional, não como
       // bloqueio para digitar ou salvar.
       Object.keys(SECURE_FIELD_UI).forEach(secureFieldReady);
+      // A tela só fica clicável depois que os iframes existem. Abrir antes
+      // criava uma janela em que o teclado escrevia no contêiner vazio.
+      window.PedeAquiRestaurantUi?.openModal('creditCardModal');
     } catch (error) {
+      window.PedeAquiRestaurantUi?.openModal('creditCardModal');
       Object.keys(SECURE_FIELD_UI).forEach(secureFieldFailed);
       showFormError(error?.message || 'Não foi possível carregar a segurança do cartão.');
+    } finally {
+      fieldsMounting = false;
     }
   }
 
@@ -531,7 +539,6 @@
     savedCardCvvError('');
     $('mpSavedCardSecurityCode')?.classList.remove('is-loading', 'has-load-error');
     $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'false');
-    window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     try {
       const config = paymentConfig || await ensurePaymentConfig();
       await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(
@@ -542,6 +549,7 @@
       fieldsMounted = true;
       savedCvvCallbacks.onReady();
       if (save instanceof HTMLButtonElement) save.disabled = false;
+      window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     } catch (error) {
       savedCardCvvError(error?.message || 'Não foi possível abrir o campo de CVV.');
       const context = savedCardCvvContext;

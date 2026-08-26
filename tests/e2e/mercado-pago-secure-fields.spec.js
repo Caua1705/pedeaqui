@@ -58,12 +58,18 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   await expect(page.locator('#creditCardModal')).not.toContainText('Carregando...');
   await expect(page.locator('#creditCardModal .payment-secure-field.is-loading')).toHaveCount(0);
   await expect(page.locator('#creditCardModal .payment-card-screen')).toHaveCSS('background-color', 'rgb(247, 245, 243)');
-  await page.frameLocator('#mpCardNumber iframe').locator('#cardNumber').click();
+  // Reproduz o gesto do cliente: clica na área visível, sem acessar o input
+  // interno do iframe pelo seletor de teste.
+  await expect(page.locator('#mpCardNumber iframe')).toHaveCount(1);
+  await page.locator('#mpCardNumber').click();
   await page.keyboard.type('5031433215406351');
-  await page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate').click();
+  await expect(page.frameLocator('#mpCardNumber iframe').locator('#cardNumber')).toHaveValue('5031 4332 1540 6351');
+  await page.locator('#mpExpirationDate').click();
   await page.keyboard.type('11/31');
-  await page.frameLocator('#mpSecurityCode iframe').locator('#securityCode').click();
+  await expect(page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate')).toHaveValue('11/31');
+  await page.locator('#mpSecurityCode').click();
   await page.keyboard.type('123');
+  await expect(page.frameLocator('#mpSecurityCode iframe').locator('#securityCode')).toHaveValue('123');
   await page.locator('#cardholderName').fill('APRO');
   await page.locator('#cardholderCpf').fill('12345678909');
   await page.locator('#saveCreditCardButton').click();

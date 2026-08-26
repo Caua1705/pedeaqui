@@ -74,7 +74,7 @@ async function installMercadoPagoSecureFieldsMock(page) {
               [...document.querySelectorAll('[data-secure-field]')]
                 .map(input => [input.dataset.secureField, input.value])
             );
-            if (!values.cardNumber || !values.expirationDate || !values.securityCode) {
+            if (data.cardId ? !values.securityCode : (!values.cardNumber || !values.expirationDate || !values.securityCode)) {
               throw new Error('Campos seguros incompletos');
             }
             window.__mpTokenNonPciData = data;
@@ -178,16 +178,8 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
   await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');
   await page.locator('#cardholderCpf').fill('12345678909');
-  await page.locator('.billing-copy-address').click();
-  await expect(page.locator('#copyDeliveryAddress')).toBeChecked();
-
-  await expect(page.locator('#billingPostalCode')).toHaveValue('60190-090');
-  await expect(page.locator('#billingStreet')).toHaveValue('Rua Andrade Furtado');
-  await expect(page.locator('#billingNumber')).toHaveValue('955');
-  await expect(page.locator('#billingComplement')).toHaveValue('Ao 1802 bloco LUZ');
-  await expect(page.locator('#billingNeighborhood')).toHaveValue('Cocó');
-  await expect(page.locator('#billingCity')).toHaveValue('Fortaleza');
-  await expect(page.locator('#billingState')).toHaveValue('Ceará');
+  await expect(page.locator('#creditCardForm input')).toHaveCount(2);
+  await expect(page.locator('.billing-address-section')).toHaveCount(0);
 
   await page.locator('#saveCreditCardButton').click();
   await expect(page.locator('#creditCardModal')).not.toHaveClass(/active/);

@@ -20,9 +20,10 @@ declare global {
         options?: Record<string, unknown>
       ): MercadoPagoField;
       createCardToken(data: {
-        cardholderName: string;
-        identificationType: string;
-        identificationNumber: string;
+        cardId?: string;
+        cardholderName?: string;
+        identificationType?: string;
+        identificationNumber?: string;
       }): Promise<MercadoPagoCardToken>;
     };
   };
@@ -80,10 +81,12 @@ declare global {
       expirationDate: string;
       securityCode: string;
     }): Promise<void>;
+    mountSavedCardSecurityCode(publicKey: string, container: string): Promise<void>;
     createCardToken(data: {
-      cardholderName: string;
-      identificationType: string;
-      identificationNumber: string;
+      cardId?: string;
+      cardholderName?: string;
+      identificationType?: string;
+      identificationNumber?: string;
     }): Promise<MercadoPagoCardToken>;
     unmountCardFields(): void;
   };
@@ -92,5 +95,6 @@ declare global {
     refreshPaymentMethods(): Promise<void>;
     refreshProfilePaymentMethods(): Promise<void>;
     openAddCardTypeScreen(): Promise<void>;
+    requestSavedCardToken(card: import('./api').components['schemas']['SavedCardResponse']): Promise<string | null>;
   };
 }

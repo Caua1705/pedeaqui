@@ -1376,48 +1376,34 @@
           <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='["maskCardholderCpf","$this"]' required>
         </div>
 
-        <section class="billing-address-section" aria-labelledby="billingAddressTitle">
-          <h3 id="billingAddressTitle">Dados de cobrança</h3>
-          <label class="billing-copy-address" for="copyDeliveryAddress">
-            <input id="copyDeliveryAddress" type="checkbox" data-act-change='["copyBillingFromDelivery","$this"]'>
-            <span aria-hidden="true"></span>
-            Copiar do endereço de entrega
-          </label>
-          <div class="payment-card-field payment-card-field--wide">
-            <label for="billingPostalCode">CEP</label>
-            <input id="billingPostalCode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" data-act-input='["maskBillingPostalCode","$this"]' required>
-          </div>
-          <div class="payment-card-field payment-card-field--wide">
-            <label for="billingStreet">Endereço</label>
-            <input id="billingStreet" type="text" autocomplete="address-line1" required>
-          </div>
-          <div class="payment-card-field-row payment-card-field-row--address">
-            <div class="payment-card-field payment-card-field--number">
-              <label for="billingNumber">Número</label>
-              <input id="billingNumber" type="text" autocomplete="address-line2" required>
-            </div>
-            <div class="payment-card-field">
-              <label for="billingComplement">Complemento</label>
-              <input id="billingComplement" type="text" autocomplete="address-line3">
-            </div>
-          </div>
-          <div class="payment-card-field payment-card-field--wide">
-            <label for="billingNeighborhood">Bairro</label>
-            <input id="billingNeighborhood" type="text" required>
-          </div>
-          <div class="payment-card-field payment-card-field--wide">
-            <label for="billingCity">Cidade</label>
-            <input id="billingCity" type="text" autocomplete="address-level2" required>
-          </div>
-          <div class="payment-card-field payment-card-field--wide">
-            <label for="billingState">Estado</label>
-            <input id="billingState" type="text" autocomplete="address-level1" required>
-          </div>
-        </section>
         <p class="payment-card-form-error" id="creditCardFormError" role="alert" hidden></p>
       </div>
       <footer class="payment-card-form-footer">
         <button class="payment-card-save" id="saveCreditCardButton" type="submit" disabled>Salvar</button>
+      </footer>
+    </form>
+  </section>
+</div>
+<!-- SCREEN: CVV FOR SAVED CARD -->
+<div class="overlay payment-card-overlay" id="savedCardCvvModal">
+  <section class="payment-card-screen payment-card-form-screen" role="dialog" aria-modal="true" aria-labelledby="savedCardCvvTitle">
+    <header class="payment-card-header">
+      <button class="payment-card-back" type="button" data-act-click='closeSavedCardCvv' aria-label="Voltar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <h2 id="savedCardCvvTitle">Confirmar cartão</h2>
+      <span aria-hidden="true"></span>
+    </header>
+    <form class="payment-card-form" id="savedCardCvvForm" data-act-submit='["confirmSavedCardCvv","$event"]' novalidate>
+      <div class="payment-card-form-body">
+        <div class="payment-card-field payment-card-field--wide">
+          <label for="mpSavedCardSecurityCode">CVV</label>
+          <div class="payment-secure-field" id="mpSavedCardSecurityCode" role="group" aria-label="CVV do cartão salvo"></div>
+        </div>
+        <p class="payment-card-form-error" id="savedCardCvvError" role="alert" hidden></p>
+      </div>
+      <footer class="payment-card-form-footer">
+        <button class="payment-card-save" id="confirmSavedCardCvvButton" type="submit" disabled>Continuar</button>
       </footer>
     </form>
   </section>

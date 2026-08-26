@@ -49,6 +49,7 @@
   let paymentMethod = '';
   let paymentMethodKey = '';
   let selectedSavedCard = null;
+  let savedCardPaymentToken = '';
   const paymentApiTypeByKey = new Map();
   const paymentScopeByKey = new Map();
   let selectedCoupon = null;
@@ -303,6 +304,8 @@
     availableCheckoutPaymentKeys = new Set();
     paymentMethod = '';
     paymentMethodKey = '';
+    selectedSavedCard = null;
+    savedCardPaymentToken = '';
     paymentApiTypeByKey.clear();
     paymentScopeByKey.clear();
     currentProd = null;
@@ -2922,7 +2925,13 @@
     }
     setOrderConfirmLoading(true);
     try {
+      if (selectedSavedCard?.id && !savedCardPaymentToken) {
+        savedCardPaymentToken = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard) || '';
+        if (!savedCardPaymentToken) return;
+      }
       await submitOrder();
+    } catch (error) {
+      if (error?.message !== 'Pagamento cancelado.') logAppError('Falha ao confirmar o cartão salvo', error);
     } finally {
       // Em caso de sucesso a folha já desceu junto com a sacola; o que sobra
       // aqui é devolver o botão quando a criação falhou e o cliente continua
@@ -3407,7 +3416,10 @@
   }
 
   function commitPaymentMethod(value, key) {
-    if (!String(key || '').startsWith('credit:')) selectedSavedCard = null;
+    if (!String(key || '').startsWith('credit:')) {
+      selectedSavedCard = null;
+      savedCardPaymentToken = '';
+    }
     paymentMethod = value;
     paymentMethodKey = key;
     if ($('checkoutPaymentLabel')) $('checkoutPaymentLabel').textContent = value;
@@ -3481,6 +3493,7 @@
   function selectSavedCardPayment(card) {
     if (!card?.id) return;
     selectedSavedCard = card;
+    savedCardPaymentToken = '';
     const key = `credit:${card.id}`;
     const label = `Crédito - ${savedCardBrandLabel(card.brand)} •••• ${card.last_four_digits || ''}`.trim();
     paymentApiTypeByKey.set(key, 'credit_card');
@@ -3499,6 +3512,7 @@
   function clearSavedCardPayment(cardId) {
     if (paymentMethodKey !== `credit:${cardId}`) return;
     selectedSavedCard = null;
+    savedCardPaymentToken = '';
     paymentMethod = '';
     paymentMethodKey = '';
     updateCartUI();
@@ -3513,6 +3527,14 @@
     // Sem correspondência do backend, mandamos a chave da UI: um 422 legível é
     // melhor do que inventar um valor que o servidor não conhece.
     return paymentApiTypeByKey.get(key) || key;
+  }
+
+  function currentCardPaymentPayload() {
+    if (!selectedSavedCard?.id || !savedCardPaymentToken) return null;
+    return {
+      saved_card_id: selectedSavedCard.id,
+      token: savedCardPaymentToken
+    };
   }
 
   function currentOrderState() {
@@ -3823,6 +3845,8 @@
     couponPreviewKey = '';
     paymentMethod = '';
     paymentMethodKey = '';
+    selectedSavedCard = null;
+    savedCardPaymentToken = '';
     resetOrderIdempotencyKey(); // próximo pedido = chave nova
     updateCartUI();
     setOrderSubmitting(false);
@@ -3857,12 +3881,16 @@
     }
     // A cobrança é criada com a folha ainda na frente; a sacola só sai de cena
     // no quadro em que a tela do Pix entra.
-    const session = await preparePixPayment(response, { items, ownsCart: true });
+    const session = await preparePixPayment(response, {
+      items,
+      ownsCart: true,
+      cardPayment: currentCardPaymentPayload()
+    });
     // A confirmação deixa de ser interativa, mas a sacola permanece visível
     // atrás enquanto a tela Pix desliza por cima dela.
     setOrderSubmitting(false);
     closeOrderConfirm();
-    presentPixPayment(session);
+    if (!session.cardCompleted) presentPixPayment(session);
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -4056,10 +4084,19 @@
    *
    * @returns {{message: string, title: string, canRetry: boolean, code: string}}
    */
-  function pixChargeErrorOutcome(error) {
+  function pixChargeErrorOutcome(error, { card = false } = {}) {
     const info = window.PedeAquiApiError?.paymentErrorInfo?.(error)
       || { code: '', retryable: false, text: '', structured: false };
     const code = info.code;
+
+    if (card && info.text) {
+      return {
+        title: 'Pagamento não realizado',
+        message: info.text,
+        canRetry: info.retryable,
+        code: ''
+      };
+    }
 
     // Num 5xx o `detail` é mensagem INTERNA do servidor ("gateway indisponível"),
     // escrita para log, não para o cliente. Só aproveitamos o texto quando ele
@@ -4221,11 +4258,13 @@
    * @returns {Promise<object>} a sessão preparada, para presentPixPayment()
    *   conferir que ela ainda é a corrente
    */
-  async function preparePixPayment(order, { items, ownsCart = false } = {}) {
+  async function preparePixPayment(order, { items, ownsCart = false, cardPayment = null } = {}) {
     const trackingToken = String(order?.tracking_token || '').trim();
     pixSession = {
       order,
       ownsCart,
+      cardPayment,
+      cardCompleted: false,
       trackingToken,
       payment: null,
       pollTimer: null,
@@ -4306,17 +4345,39 @@
 
     let payment;
     try {
-      payment = await window.PedeAquiOrderService.startOrderPayment(getRestaurantSlug(), session.trackingToken);
+      payment = await window.PedeAquiOrderService.startOrderPayment(
+        getRestaurantSlug(),
+        session.trackingToken,
+        session.cardPayment ? { card: session.cardPayment } : {}
+      );
     } catch (error) {
       if (pixSession !== session) return;
       logAppError('Falha ao criar a cobrança do Pix', error);
-      const outcome = pixChargeErrorOutcome(error);
+      const outcome = pixChargeErrorOutcome(error, { card: Boolean(session.cardPayment) });
       showPixError(outcome.message, outcome);
       return;
     }
     if (pixSession !== session) return; // a tela mudou enquanto esperávamos
 
     session.payment = payment;
+    if (session.cardPayment) {
+      const cardStatus = paymentStatusKind(payment?.payment_status);
+      if (cardStatus === 'failed') {
+        const message = String(payment?.message || '').trim();
+        showPixError(message || 'Pagamento não realizado.', {
+          title: 'Pagamento não realizado',
+          canRetry: false,
+          code: ''
+        });
+        return;
+      }
+      if (cardStatus === 'paid' || cardStatus === 'in_review' || cardStatus === 'pending') {
+        session.cardCompleted = true;
+        leaveCartAfterOrder();
+        showOrderSuccess(session.order);
+        return;
+      }
+    }
     const kind = paymentStatusKind(payment?.payment_status);
     if (kind === 'paid') {
       // A cobrança já nasceu paga (retomada de um pagamento feito antes).
@@ -4674,6 +4735,11 @@
   async function retryPixPayment() {
     if (!pixSession) return;
     pixSession.stopped = false;
+    if (pixSession.cardPayment && selectedSavedCard?.id) {
+      const token = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard);
+      if (!token) return;
+      pixSession.cardPayment = { ...pixSession.cardPayment, token };
+    }
     // A tela de erro continua na frente enquanto a tentativa acontece: a
     // espera cabe no próprio botão, e trocar a tela por uma de carregamento
     // faria o cliente perder de vista o que deu errado.

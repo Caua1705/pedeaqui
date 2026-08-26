@@ -64,7 +64,6 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');
   await page.locator('#cardholderCpf').fill('12345678909');
-  await page.locator('.billing-copy-address').click();
   await page.locator('#saveCreditCardButton').click();
 
   await expect(page.locator('#cartPaymentLabel')).toHaveText('Crédito - Mastercard •••• 6351');

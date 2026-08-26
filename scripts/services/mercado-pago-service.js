@@ -110,8 +110,58 @@
     }
   }
 
+  /** Mount only the security code when charging a card already saved by the customer. */
+  async function mountSavedCardSecurityCode(publicKey, container) {
+    const MercadoPago = await loadSdk();
+    if (!instance || instanceKey !== publicKey) {
+      instance = new MercadoPago(publicKey, { locale: 'pt-BR', advancedFraudPrevention: true });
+      instanceKey = publicKey;
+    }
+    unmountCardFields();
+    const style = {
+      color: '#3f3d3c',
+      fontFamily: 'Inter, Arial, sans-serif',
+      fontSize: '15px',
+      fontWeight: '400',
+      height: '100%',
+      padding: '0',
+      width: '100%',
+      placeholderColor: '#aaa6a3'
+    };
+    const field = instance.fields.create('securityCode', {
+      placeholder: 'CVV',
+      srLabel: 'CVV do cartão salvo',
+      ariaRequired: true,
+      style
+    });
+    const ready = new Promise(resolve => {
+      if (typeof field.on !== 'function') {
+        resolve(undefined);
+        return;
+      }
+      field.on('ready', () => resolve(undefined));
+    });
+    mountedFields = [field.mount(container)];
+    let timeoutId;
+    try {
+      await Promise.race([
+        ready,
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(new Error('O campo de CVV demorou para carregar. Tente novamente.'));
+          }, FIELD_READY_TIMEOUT_MS);
+        })
+      ]);
+    } catch (error) {
+      unmountCardFields();
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
   /**
-   * @param {{cardholderName: string, identificationType: string, identificationNumber: string}} data
+   * @param {{cardId?: string, cardholderName?: string, identificationType?: string, identificationNumber?: string}} data
    */
   function createCardToken(data) {
     if (!instance) return Promise.reject(new Error('Os campos seguros ainda não foram carregados.'));
@@ -121,6 +171,7 @@
   window.PedeAquiMercadoPago = {
     SDK_URL,
     mountCardFields,
+    mountSavedCardSecurityCode,
     createCardToken,
     unmountCardFields
   };

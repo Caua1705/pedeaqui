@@ -8,6 +8,8 @@
   /** @type {SavedCardResponse[]} */
   let savedCards = [];
   let fieldsMounted = false;
+  /** @type {{card: SavedCardResponse, resolve: (value: string) => void, reject: (reason?: unknown) => void, promise: Promise<string>} | null} */
+  let savedCardCvvContext = null;
 
   function restaurantSlug() {
     return window.RapidexTenant?.resolveSlug?.() || '';
@@ -222,46 +224,6 @@
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
   }
 
-  function maskBillingPostalCode(input) {
-    if (!(input instanceof HTMLInputElement)) return;
-    const digits = onlyDigits(input.value).slice(0, 8);
-    input.value = digits.replace(/^(\d{5})(\d)/, '$1-$2');
-  }
-
-  function billingFields() {
-    return {
-      postalCode: /** @type {HTMLInputElement | null} */ ($('billingPostalCode')),
-      street: /** @type {HTMLInputElement | null} */ ($('billingStreet')),
-      number: /** @type {HTMLInputElement | null} */ ($('billingNumber')),
-      complement: /** @type {HTMLInputElement | null} */ ($('billingComplement')),
-      neighborhood: /** @type {HTMLInputElement | null} */ ($('billingNeighborhood')),
-      city: /** @type {HTMLInputElement | null} */ ($('billingCity')),
-      state: /** @type {HTMLInputElement | null} */ ($('billingState'))
-    };
-  }
-
-  function copyBillingFromDelivery(input) {
-    if (!(input instanceof HTMLInputElement) || !input.checked) return;
-    const address = window.PedeAquiAddressService?.readSelectedAddress?.();
-    if (!address) {
-      input.checked = false;
-      showFormError('Defina um endereço de entrega antes de copiá-lo.');
-      return;
-    }
-    const fields = billingFields();
-    if (fields.postalCode) {
-      fields.postalCode.value = String(address.postal_code || address.zipcode || address.cep || '');
-      maskBillingPostalCode(fields.postalCode);
-    }
-    if (fields.street) fields.street.value = String(address.street || '');
-    if (fields.number) fields.number.value = String(address.number || '');
-    if (fields.complement) fields.complement.value = String(address.complement || '');
-    if (fields.neighborhood) fields.neighborhood.value = String(address.neighborhood || '');
-    if (fields.city) fields.city.value = String(address.city || '');
-    if (fields.state) fields.state.value = String(address.state || '');
-    showFormError('');
-  }
-
   function validateForm() {
     const form = $('creditCardForm');
     if (!(form instanceof HTMLFormElement)) return false;
@@ -319,6 +281,76 @@
     }
   }
 
+  function savedCardCvvError(message) {
+    const error = $('savedCardCvvError');
+    if (!error) return;
+    error.textContent = message || '';
+    error.hidden = !message;
+  }
+
+  function closeSavedCardCvv(reject = true) {
+    window.PedeAquiMercadoPago?.unmountCardFields();
+    fieldsMounted = false;
+    window.PedeAquiRestaurantUi?.closeModalId('savedCardCvvModal');
+    const context = savedCardCvvContext;
+    savedCardCvvContext = null;
+    if (reject && context?.reject) context.reject(new Error('Pagamento cancelado.'));
+  }
+
+  async function requestSavedCardToken(card) {
+    if (!card?.id || !window.PedeAquiMercadoPago?.mountSavedCardSecurityCode) return null;
+    if (savedCardCvvContext) return savedCardCvvContext.promise;
+    let resolveRequest;
+    let rejectRequest;
+    const promise = new Promise((resolve, reject) => {
+      resolveRequest = resolve;
+      rejectRequest = reject;
+    });
+    savedCardCvvContext = { card, resolve: resolveRequest, reject: rejectRequest, promise };
+    const save = $('confirmSavedCardCvvButton');
+    if (save instanceof HTMLButtonElement) save.disabled = true;
+    savedCardCvvError('');
+    window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
+    try {
+      const config = paymentConfig || await ensurePaymentConfig();
+      await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(config.public_key, 'mpSavedCardSecurityCode');
+      fieldsMounted = true;
+      if (save instanceof HTMLButtonElement) save.disabled = false;
+    } catch (error) {
+      savedCardCvvError(error?.message || 'Não foi possível abrir o campo de CVV.');
+      const context = savedCardCvvContext;
+      savedCardCvvContext = null;
+      window.PedeAquiMercadoPago?.unmountCardFields();
+      fieldsMounted = false;
+      window.PedeAquiRestaurantUi?.closeModalId('savedCardCvvModal');
+      if (context) context.reject(error);
+    }
+    return promise;
+  }
+
+  async function confirmSavedCardCvv(event) {
+    event?.preventDefault?.();
+    const context = savedCardCvvContext;
+    if (!context || !fieldsMounted) {
+      savedCardCvvError('Aguarde o campo de CVV carregar.');
+      return;
+    }
+    const save = $('confirmSavedCardCvvButton');
+    if (save instanceof HTMLButtonElement) save.disabled = true;
+    try {
+      const token = await window.PedeAquiMercadoPago.createCardToken({ cardId: context.card.id });
+      if (!token?.id) throw new Error('O Mercado Pago não devolveu o token do cartão.');
+      savedCardCvvContext = null;
+      window.PedeAquiMercadoPago.unmountCardFields();
+      fieldsMounted = false;
+      window.PedeAquiRestaurantUi?.closeModalImmediately('savedCardCvvModal');
+      context.resolve(token.id);
+    } catch (error) {
+      savedCardCvvError(error?.message || 'Não foi possível confirmar o cartão.');
+      if (save instanceof HTMLButtonElement) save.disabled = false;
+    }
+  }
+
   function selectSavedCard(cardId) {
     const card = savedCards.find(item => item.id === cardId);
     if (card) action('selectSavedCardPayment', card);
@@ -345,8 +377,8 @@
     openCreditCardForm,
     backToAddCardType,
     maskCardholderCpf,
-    maskBillingPostalCode,
-    copyBillingFromDelivery,
+    closeSavedCardCvv,
+    confirmSavedCardCvv,
     saveCreditCard,
     selectSavedCard,
     deleteSavedCard
@@ -355,6 +387,7 @@
   window.PedeAquiCardFlow = {
     refreshPaymentMethods,
     refreshProfilePaymentMethods,
-    openAddCardTypeScreen
+    openAddCardTypeScreen,
+    requestSavedCardToken
   };
 })();

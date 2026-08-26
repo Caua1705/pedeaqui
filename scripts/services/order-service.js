@@ -55,8 +55,8 @@
    *
    * Cria a cobrança no gateway. Também é autorizada pelo tracking token, e é
    * deliberadamente separada da criação do pedido (o backend não fala com o
-   * gateway dentro da transação do pedido). Sem corpo: o método de pagamento já
-   * foi gravado no pedido.
+   * gateway dentro da transação do pedido). Pix segue sem corpo; cartão recebe
+   * `{card: {token, saved_card_id}}` quando usa um cartão salvo.
    *
    * Chamar duas vezes é seguro pelo lado do front — o backend devolve a cobrança
    * corrente —, mas ainda assim só chamamos uma vez por pedido.
@@ -66,6 +66,7 @@
       window.PedeAquiApiRoutes.startOrderPayment(restaurantSlug, trackingToken),
       {
         method: 'POST',
+        ...(options.card ? { body: JSON.stringify({ card: options.card }) } : {}),
         // Criar cobrança passa por um gateway externo: mais lento que uma
         // leitura, mais rápido que criar o pedido.
         timeout: Number.isFinite(options.timeout) ? options.timeout : 15000

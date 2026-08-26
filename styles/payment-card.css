@@ -47,8 +47,7 @@
 .payment-card-field input,.payment-secure-field{display:block;width:100%;height:34px;padding:0 0 7px;border:0;border-bottom:1px solid #d7d4d1;border-radius:0;outline:0;background:transparent;color:#464340;font:400 14px/26px Inter,Arial,sans-serif;box-sizing:border-box}
 .payment-secure-field{position:relative;height:35px;padding:0;overflow:hidden;cursor:text;touch-action:manipulation}
 .payment-secure-field iframe{display:block!important;width:100%!important;height:100%!important;border:0!important;pointer-events:auto!important}
-.payment-secure-field.is-loading::after,.payment-secure-field.has-load-error::after{position:absolute;inset:0;z-index:2;display:flex;align-items:center;background:#f7f5f3;color:#aaa6a3;font:400 14px/26px Inter,Arial,sans-serif;pointer-events:none}
-.payment-secure-field.is-loading::after{content:"Carregando..."}
+.payment-secure-field.has-load-error::after{position:absolute;inset:0;z-index:2;display:flex;align-items:center;background:#f7f5f3;color:#aaa6a3;font:400 14px/26px Inter,Arial,sans-serif;pointer-events:none}
 .payment-secure-field.has-load-error::after{content:"Campo indisponível"}
 .payment-secure-field:focus-within{border-bottom-color:var(--brand-primary)}
 .payment-card-field input:focus{border-bottom-color:var(--brand-primary)}

@@ -207,6 +207,8 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
   await expect(page.locator('#addCardTypeModal')).toHaveClass(/active/);
   await page.locator('#addCreditCardOption').click();
   await expect(page.locator('#creditCardModal')).toHaveClass(/active/);
+  await expect(page.locator('#creditCardModal')).not.toContainText('Carregando...');
+  await expect(page.locator('#creditCardModal .payment-secure-field.is-loading')).toHaveCount(0);
   await expect(page.locator('[data-secure-field="cardNumber"]')).toBeVisible();
   await expect(page.locator('#creditCardModal .payment-card-screen')).toHaveCSS('background-color', 'rgb(247, 245, 243)');
   await expect(page.locator('#creditCardModal .payment-card-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)');

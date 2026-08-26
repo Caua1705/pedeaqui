@@ -188,11 +188,11 @@
     }
   }
 
-  function setSecureFieldLoading(field, loading, failed = false) {
+  function setSecureFieldLoading(field, _loading, failed = false) {
     const host = $(SECURE_FIELD_UI[field]?.host);
-    host?.classList.toggle('is-loading', Boolean(loading));
+    host?.classList.remove('is-loading');
     host?.classList.toggle('has-load-error', Boolean(failed));
-    host?.setAttribute('aria-busy', loading ? 'true' : 'false');
+    host?.setAttribute('aria-busy', 'false');
   }
 
   function resetSecureFieldStates() {
@@ -203,7 +203,7 @@
     };
     Object.keys(SECURE_FIELD_UI).forEach(field => {
       setCardFieldError(field, '');
-      setSecureFieldLoading(field, true);
+      setSecureFieldLoading(field, false);
     });
   }
 
@@ -309,6 +309,10 @@
         securityCode: 'mpSecurityCode'
       }, secureFieldCallbacks);
       fieldsMounted = true;
+      // `mount()` já inseriu os iframes. O evento `ready` não é confiável em
+      // todos os WebViews; ele serve como confirmação adicional, não como
+      // bloqueio para digitar ou salvar.
+      Object.keys(SECURE_FIELD_UI).forEach(secureFieldReady);
     } catch (error) {
       Object.keys(SECURE_FIELD_UI).forEach(secureFieldFailed);
       showFormError(error?.message || 'Não foi possível carregar a segurança do cartão.');
@@ -525,9 +529,8 @@
     if (save instanceof HTMLButtonElement) save.disabled = true;
     savedCvvState = emptySecureFieldState();
     savedCardCvvError('');
-    $('mpSavedCardSecurityCode')?.classList.add('is-loading');
-    $('mpSavedCardSecurityCode')?.classList.remove('has-load-error');
-    $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'true');
+    $('mpSavedCardSecurityCode')?.classList.remove('is-loading', 'has-load-error');
+    $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'false');
     window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     try {
       const config = paymentConfig || await ensurePaymentConfig();
@@ -537,6 +540,7 @@
         savedCvvCallbacks
       );
       fieldsMounted = true;
+      savedCvvCallbacks.onReady();
       if (save instanceof HTMLButtonElement) save.disabled = false;
     } catch (error) {
       savedCardCvvError(error?.message || 'Não foi possível abrir o campo de CVV.');

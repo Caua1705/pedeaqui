@@ -55,6 +55,8 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   await page.locator('#paymentAddCard').click();
   await page.locator('#addCreditCardOption').click();
 
+  await expect(page.locator('#creditCardModal')).not.toContainText('Carregando...');
+  await expect(page.locator('#creditCardModal .payment-secure-field.is-loading')).toHaveCount(0);
   await expect(page.locator('#creditCardModal .payment-card-screen')).toHaveCSS('background-color', 'rgb(247, 245, 243)');
   await page.frameLocator('#mpCardNumber iframe').locator('#cardNumber').click();
   await page.keyboard.type('5031433215406351');

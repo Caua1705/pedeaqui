@@ -247,7 +247,8 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 10.5v3"/><path d="M8.5 6.5v11"/><path d="M13 3.5v17"/><path d="M17.5 7.5v9"/><path d="M22 11v2"/></svg>';
   const ASSISTANT_STOP_ICON = '<span class="assistant-stop-icon" aria-hidden="true"></span>';
 
-  // 'send' | 'voice' | 'stop'. Guardado só para evitar o rewrite por tecla.
+  // 'send' | 'voice' | 'voice-locked' | 'stop'. Guardado só para evitar o
+  // rewrite por tecla.
   let _assistantSendMode = null;
 
   function paintAssistantSendButton(sendBtn, mode, label) {
@@ -265,14 +266,19 @@
     const sendBtn = document.querySelector('.assistant-ai-send');
     if (!sendBtn || _assistantSending) return;
     const hasText = Boolean(inputEl?.value?.trim());
+    const voiceNeedsLogin = !hasText && !window.PedeAquiCustomerAuth?.isLoggedIn?.();
     // Nunca desabilitado: campo vazio deixou de ser "nada a fazer" e passou a
-    // ser o modo voz.
+    // ser o modo voz. Para visitante ele continua clicável para abrir o login,
+    // mas o bloqueio fica explícito antes do toque.
     sendBtn.disabled = false;
     sendBtn.classList.toggle('is-ready', hasText);
     sendBtn.classList.toggle('is-voice', !hasText);
+    sendBtn.classList.toggle('is-login-required', voiceNeedsLogin);
     sendBtn.classList.remove('is-inactive');
-    paintAssistantSendButton(sendBtn, hasText ? 'send' : 'voice',
-      hasText ? 'Enviar' : 'Conversar por voz');
+    const hint = document.getElementById('assistantVoiceLoginHint');
+    if (hint) hint.hidden = !voiceNeedsLogin;
+    paintAssistantSendButton(sendBtn, hasText ? 'send' : (voiceNeedsLogin ? 'voice-locked' : 'voice'),
+      hasText ? 'Enviar' : (voiceNeedsLogin ? 'Entre para usar a voz' : 'Conversar por voz'));
   }
 
   function setAssistantGenerating(generating) {
@@ -973,6 +979,10 @@
             </svg>
           </button>
         </div>
+        <p class="assistant-voice-login-hint" id="assistantVoiceLoginHint" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          Entre para usar a voz
+        </p>
 
       </div>
 
@@ -1458,6 +1468,7 @@
     setAssistantHeaderMenuOpen(false);
     setupAssistantSuggestionClicks();
     setupAssistantKeyboardViewport();
+    updateAssistantSendButton();
 
     // A view é reaproveitada entre visitas: a abertura precisa voltar ao ponto
     // de partida antes do próximo quadro, ou a pergunta reaparece já escrita e

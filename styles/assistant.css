@@ -4113,6 +4113,45 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   stroke-width:2.2!important;
 }
 
+/* Visitante sabe antes do toque por que a voz está indisponível. O botão
+   continua acionável: ele abre o login com o contexto da voz preservado. */
+#mobViewAssistant .assistant-ai-send.is-voice.is-login-required,
+#mobViewAssistant .assistant-ai-send.is-voice.is-login-required:hover,
+#mobViewAssistant .assistant-ai-send.is-voice.is-login-required:active,
+#mobViewAssistant .assistant-ai-send.is-voice.is-login-required:focus-visible{
+  background:#e5e7eb!important;
+  border-color:#d1d5db!important;
+  color:#6b7280!important;
+  opacity:1!important;
+}
+#mobViewAssistant .assistant-voice-login-hint{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  margin:6px 8px 0 0;
+  color:#6b7280;
+  font:600 11px/15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#mobViewAssistant .assistant-voice-login-hint[hidden]{display:none!important}
+#mobViewAssistant .assistant-voice-login-hint svg{
+  width:13px;
+  height:13px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.modal--login .login-voice-reason:not([hidden]){
+  display:block!important;
+  margin:0 24px 18px;
+  color:#5f6670;
+  font:500 13px/18px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  text-align:center;
+}
+.login-voice-reason[hidden]{display:none!important}
+
 /* ── A tela ── */
 #mobViewAssistant .assistant-voice[hidden]{ display:none!important }
 #mobViewAssistant .assistant-voice{

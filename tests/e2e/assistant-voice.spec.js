@@ -116,13 +116,49 @@ test('a troca é imediata: nada de transição no botão de voz', async ({ page 
 test('visitante não entra na voz: vai para o login', async ({ page }) => {
   await abrirChat(page, { logado: false });
 
+  // O motivo aparece ANTES do toque; não é uma surpresa explicada só depois.
+  await expect(page.locator('#assistantVoiceLoginHint')).toBeVisible();
+  await expect(page.locator('#assistantVoiceLoginHint')).toHaveText(/entre para usar a voz/i);
+  await expect(botao(page)).toHaveClass(/is-login-required/);
+  await expect(botao(page)).toHaveAttribute('aria-label', 'Entre para usar a voz');
+
   await botao(page).click();
 
   // A emissão da credencial exige token de cliente. Sem login não se abre a tela
   // nem se pede o microfone — o 401 viria depois de tudo isso.
   await expect(page.locator('#loginModal')).toHaveClass(/active/);
+  await expect(page.locator('#loginVoiceReason')).toBeVisible();
   await expect(painel(page)).toHaveCount(0);
   await expect(page.locator('body')).not.toHaveClass(/assistant-voice-open/);
+});
+
+test('login pedido pela voz volta ao chat e deixa o microfone pronto', async ({ page }) => {
+  await abrirChat(page, { logado: false });
+  await page.route('**/auth/login', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      access_token: 'e2e.voice.after-login',
+      customer: { id: 'c-voice', name: 'Cliente Voz', email: 'voz@e2e.com', phone: '85999999999' }
+    })
+  }));
+  await page.route('**/customers/me/addresses**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ addresses: [] })
+  }));
+
+  await botao(page).click();
+  await page.locator('#loginModal .login-secondary').click();
+  await page.locator('#loginEmail').fill('voz@e2e.com');
+  await page.locator('#loginPassword').fill('senha-e2e');
+  await page.locator('#loginSubmitBtn').click();
+
+  await expect(page.locator('#loginModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#mobViewAssistant')).toHaveClass(/active/);
+  await expect(painel(page)).toHaveClass(/is-open/);
+  await expect.poll(() => page.evaluate(() => window.__voz.inicios)).toBe(1);
+  await expect(page.locator('#assistantVoiceLoginHint')).toBeHidden();
 });
 
 test('a tela de voz não tem campo de texto, nem dock, nem barra inferior', async ({ page }) => {

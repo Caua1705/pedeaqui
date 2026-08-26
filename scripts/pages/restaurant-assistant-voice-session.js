@@ -47,7 +47,7 @@
      Tudo aqui nasce e morre com uma conversa. `encerrado` começa true porque não
      há sessão: é ele que torna stop() idempotente. */
   let tela = null;
-  let sessao = null;          // { id, limites, restauranteId, filialId }
+  let sessao = null;          // { id, limites, saudacao, restauranteId, filialId }
   let conexao = null;
   let canal = null;
   let microfone = null;
@@ -416,6 +416,25 @@
     }
   }
 
+  /**
+   * Pede ao modelo que fale uma frase pronta sem substituir as instruções da
+   * sessão. O item `system` preserva o prefixo/cache da conversa; o
+   * `response.create` continua passando pela fila única acima.
+   */
+  function pedirFalaExata(ordem, descartavel = false) {
+    const texto = String(ordem || '').trim();
+    if (!texto || (descartavel && respostaAtiva)) return;
+    const criouItem = enviar({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'system',
+        content: [{ type: 'input_text', text: texto }]
+      }
+    });
+    if (criouItem) pedirResposta(null, descartavel);
+  }
+
   function escoarFila() {
     if (!fila.length) return;
     const proximo = fila.shift();
@@ -613,7 +632,7 @@
       // público desta tela.
       avisoTimer = setTimeout(() => {
         avisoTimer = null;
-        pedirResposta({ instructions: AVISO_DE_INATIVIDADE });
+        pedirFalaExata(AVISO_DE_INATIVIDADE);
       }, (corte - antes) * 1000);
     }
     inatividadeTimer = setTimeout(
@@ -746,7 +765,12 @@
     canal.addEventListener('open', () => {
       // O assistente fala primeiro. Descartável: se ele já tiver começado por
       // conta própria, esta saudação perde a vez em vez de virar uma segunda.
-      pedirResposta(null, true);
+      const saudacao = String(sessao?.saudacao || '').trim();
+      if (!saudacao) return;
+      pedirFalaExata(
+        `Cumprimente o cliente falando exatamente isto, e nada mais: ${saudacao}`,
+        true
+      );
     });
 
     const oferta = await conexao.createOffer();
@@ -841,6 +865,7 @@
       sessao = {
         id: emissao?.sessao_id || '',
         limites: emissao?.limites || {},
+        saudacao: String(emissao?.saudacao || '').trim(),
         restauranteId,
         filialId
       };

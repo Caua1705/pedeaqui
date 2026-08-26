@@ -35,6 +35,7 @@ const emissaoOk = (limites = LIMITES) => ({
     expires_at: Math.floor(Date.now() / 1000) + 585,
     session: { type: 'realtime', model: 'gpt-realtime-mini' }
   },
+  saudacao: 'Olá, E2E! Como posso te ajudar hoje?',
   limites
 });
 
@@ -245,9 +246,19 @@ test('o caminho feliz: emite, conecta, registra o call_id e o assistente fala pr
   await expect.poll(() => chamadas.connected.length).toBe(1);
   expect(chamadas.connected[0]).toEqual({ call_id: CALL_ID });
 
-  // 4. O assistente fala primeiro: um response.create sai assim que o canal abre.
-  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
-    .toContain('response.create');
+  // 4. O assistente fala primeiro usando, sem remontar, a frase do backend.
+  const abertura = await recebidos(page);
+  const saudacao = abertura.find(m => m.type === 'conversation.item.create'
+    && m.item?.role === 'system');
+  expect(saudacao?.item).toEqual({
+    type: 'message',
+    role: 'system',
+    content: [{
+      type: 'input_text',
+      text: 'Cumprimente o cliente falando exatamente isto, e nada mais: Olá, E2E! Como posso te ajudar hoje?'
+    }]
+  });
+  expect(abertura.map(m => m.type)).toContain('response.create');
 });
 
 test('sem filial escolhida a voz para antes de emitir, e diz por quê', async ({ page, context }) => {
@@ -434,8 +445,13 @@ test('o silêncio avisa por FALA antes de cortar, e falar cancela o corte', asyn
   await conversar(page);
   await page.evaluate(() => { window.__recebidos.length = 0; });
 
-  const avisou = async () => (await recebidos(page))
-    .some(m => m.type === 'response.create' && /inatividade/i.test(m.response?.instructions || ''));
+  const avisou = async () => {
+    const mensagens = await recebidos(page);
+    const ordem = mensagens.some(m => m.type === 'conversation.item.create'
+      && m.item?.role === 'system'
+      && /inatividade/i.test(m.item?.content?.[0]?.text || ''));
+    return ordem && mensagens.some(m => m.type === 'response.create');
+  };
 
   // Falar zera o contador. Duas vezes seguidas, para provar que cada fala
   // adia o aviso em vez de só a primeira.

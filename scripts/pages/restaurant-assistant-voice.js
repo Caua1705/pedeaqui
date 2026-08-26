@@ -280,7 +280,7 @@
    */
   function request() {
     if (!window.PedeAquiCustomerAuth?.isLoggedIn?.()) {
-      window.RapidexActions?.resolve('openLoginScreen')?.('assistant');
+      window.RapidexActions?.resolve('openLoginScreen')?.('assistant-voice');
       return;
     }
     if (_open) return;

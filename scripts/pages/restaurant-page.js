@@ -7026,6 +7026,8 @@
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
     $('loginModal')?.classList.toggle('from-bottom-nav', ['profile', 'club'].includes(origin));
+    const voiceReason = $('loginVoiceReason');
+    if (voiceReason) voiceReason.hidden = origin !== 'assistant-voice';
     openModal('loginModal');
   }
 
@@ -8008,6 +8010,7 @@
   }
 
   function goToInitialScreenAfterAuth() {
+    if (resumeAssistantVoiceAfterAuth()) return;
     document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
       el.classList.remove('active');
     });
@@ -8021,12 +8024,34 @@
     unlockBodyScrollIfClear();
   }
 
+  function resumeAssistantVoiceAfterAuth() {
+    if (_loginOrigin !== 'assistant-voice' || !window.PedeAquiCustomerAuth?.isLoggedIn?.()) return false;
+    _loginOrigin = 'profile';
+    document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
+      el.classList.remove('active');
+    });
+    $('loginModal')?.classList.remove('signin-open');
+    if ($('loginVoiceReason')) $('loginVoiceReason').hidden = true;
+    closeProfSub();
+    renderHomeLoginPrompt();
+    renderProfileView();
+    updateCartUI();
+    setBottomNavSuppressedForAuth(false);
+    unlockBodyScrollIfClear();
+
+    Promise.resolve(mobNavAssistant()).then(() => {
+      requestAnimationFrame(() => window.RapidexAssistantVoice?.request?.());
+    }).catch(error => console.error('[Assistente] Não foi possível retomar a voz após o login.', error));
+    return true;
+  }
+
   function finishLoginNavigation() {
     $('loginScreen')?.classList.remove('active');
     $('loginModal')?.classList.remove('signin-open');
     setBottomNavSuppressedForAuth(false);
     renderHomeLoginPrompt();
     updateCartUI();
+    if (resumeAssistantVoiceAfterAuth()) return;
     if (_loginOrigin === 'coupon') {
       closeModalId('loginModal');
       closeCouponDetail();

@@ -585,6 +585,27 @@
     }
   }
 
+  /**
+   * Trilha da confirmação do CVV do cartão salvo.
+   *
+   * Existe porque esta tela tinha como falhar sem dizer nada: o `Continuar`
+   * saía por um `return` mudo quando o campo não estava pronto, e o resultado
+   * no console era ausência — nenhum erro, nenhuma chamada a `card_tokens`,
+   * nada para investigar. Cada etapa se anuncia com o estado que a governa, de
+   * modo que o console diga em qual delas o fluxo parou.
+   */
+  function cvvTrace(step, detail = {}) {
+    console.log(`[PedeAqui][CartaoSalvo] ${step}`, {
+      temContexto: Boolean(savedCardCvvContext),
+      camposMontados: fieldsMounted,
+      campoPronto: savedCvvState.ready,
+      campoFalhou: savedCvvState.failed,
+      digitou: savedCvvState.changed,
+      valido: savedCvvState.valid,
+      ...detail
+    });
+  }
+
   function savedCardCvvError(message) {
     const error = $('savedCardCvvError');
     if (!error) return;
@@ -671,10 +692,12 @@
     $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'true');
     window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     try {
+      cvvTrace('A/E abrindo tela de CVV: buscando chave pública e SDK');
       const [config] = await Promise.all([
         paymentConfig || ensurePaymentConfig(),
         window.PedeAquiMercadoPago.ensureSdk()
       ]);
+      cvvTrace('B/E chave e SDK prontos', { temChavePublica: Boolean(config?.public_key) });
       // Fechar a tela zera o contexto: a partir daí esta abertura é passado.
       if (savedCardCvvContext?.promise !== promise) return promise;
       const { ready } = await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(
@@ -687,11 +710,14 @@
         return promise;
       }
       fieldsMounted = true;
+      cvvTrace('C/E iframe do CVV criado, esperando ficar pronto');
       await ready;
       if (savedCardCvvContext?.promise !== promise) return promise;
       savedCvvCallbacks.onReady();
+      cvvTrace('D/E campo de CVV pronto, Continuar liberado');
       if (save instanceof HTMLButtonElement) save.disabled = false;
     } catch (error) {
+      cvvTrace('E/E PAROU: falha ao abrir o campo de CVV', { erro: error?.message || String(error) });
       if (savedCardCvvContext?.promise !== promise) return promise;
       savedCardCvvError(error?.message || 'Não foi possível abrir o campo de CVV.');
       const context = savedCardCvvContext;
@@ -706,13 +732,30 @@
 
   async function confirmSavedCardCvv(event) {
     event?.preventDefault?.();
+    cvvTrace('1/5 Continuar pressionado');
     const context = savedCardCvvContext;
     if (!context || !fieldsMounted || !savedCvvState.ready) {
+      // Era aqui que o fluxo morria calado. O botão só chega habilitado depois
+      // do campo ficar pronto, então cair neste ramo significa que o campo
+      // seguro não montou (ou foi desmontado por baixo da tela) — e o cliente
+      // precisa ver isso, não um botão que não faz nada.
+      cvvTrace('1/5 PAROU: campo seguro indisponível');
+      savedCardCvvError(savedCvvState.failed
+        ? 'Não foi possível carregar este campo seguro'
+        : 'O campo de CVV ainda não está pronto. Feche e tente de novo.');
       return;
     }
     savedCvvState.showErrors = true;
     renderSavedCvvError();
-    if (savedCvvErrorFor()) return;
+    const validation = savedCvvErrorFor();
+    if (validation) {
+      cvvTrace('2/5 PAROU: CVV não passou na validação local', { motivo: validation });
+      // `renderSavedCvvError` se cala quando o campo falhou ao carregar; sem
+      // isto, a recusa por validação também sairia muda nesse estado.
+      if (savedCvvState.failed) savedCardCvvError(validation);
+      return;
+    }
+    cvvTrace('2/5 CVV validado localmente');
     const save = $('confirmSavedCardCvvButton');
     if (save instanceof HTMLButtonElement) save.disabled = true;
     try {
@@ -723,12 +766,15 @@
       // 400 {"message":"invalid card_id","cause":[{"code":"E201"}]} — e a tela
       // dizer "Não foi possível confirmar o cartão" sem nunca dizer por quê.
       const providerCardId = String(context.card.provider_card_id || '').trim();
+      cvvTrace('3/5 card_id do gateway lido', { temProviderCardId: Boolean(providerCardId) });
       if (!providerCardId) {
         // Cadastrar de novo não resolveria: o campo vem do backend, não do
         // cartão. Então a orientação é a única que funciona agora.
         throw new Error('Não foi possível confirmar este cartão. Escolha outra forma de pagamento.');
       }
+      cvvTrace('4/5 chamando createCardToken no Mercado Pago');
       const token = await window.PedeAquiMercadoPago.createCardToken({ cardId: providerCardId });
+      cvvTrace('5/5 token recebido', { temToken: Boolean(token?.id) });
       if (!token?.id) throw new Error('O Mercado Pago não devolveu o token do cartão.');
       savedCardCvvContext = null;
       window.PedeAquiMercadoPago.unmountCardFields();
@@ -736,6 +782,7 @@
       window.PedeAquiRestaurantUi?.closeModalImmediately('savedCardCvvModal');
       context.resolve(token.id);
     } catch (error) {
+      cvvTrace('PAROU: erro na confirmação', { erro: error?.message || String(error) });
       savedCardCvvError(error?.message || 'Não foi possível confirmar o cartão.');
       if (save instanceof HTMLButtonElement) save.disabled = false;
     }

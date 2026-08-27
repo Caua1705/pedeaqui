@@ -55,6 +55,27 @@ new MercadoPago(publicKey, {
 });
 ```
 
+### Cloudflare Insights
+
+O domínio está atrás do Cloudflare (`Server: cloudflare`, `CF-RAY`) na frente do Vercel, e o
+Cloudflare **reescreve o nosso HTML na borda** para injetar o beacon do Web Analytics:
+
+```html
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/..." data-cf-beacon="...">
+```
+
+A injeção só acontece para requisições de navegador — um `curl` sem `Accept: text/html` recebe
+o HTML limpo, o que faz o beacon não aparecer em inspeção por linha de comando.
+
+Ele é bloqueado pelo `script-src` e o console reclama. Não atrapalha nada além de si mesmo:
+é analítica, e o resto da injeção do Cloudflare está desligado (verificado — sem Rocket
+Loader, sem ofuscação de e-mail no HTML servido). Liberá-lo custaria **dois** hosts —
+`static.cloudflareinsights.com` no `script-src` e `cloudflareinsights.com` no `connect-src`,
+para onde o beacon faz POST — pelo mesmo tipo de dado que já se decidiu não abrir para o
+Mercado Livre. Por coerência, a recomendação é desligar o Web Analytics no painel do
+Cloudflare em vez de abrir os hosts. Enquanto ele estiver ligado e bloqueado, não coleta
+nada: está assim desde que a CSP entrou.
+
 ## O script inline: por que não tem nonce nem hash
 
 Com `advancedFraudPrevention: true`, o SDK pede `POST /v1/devices/widgets` e injeta a

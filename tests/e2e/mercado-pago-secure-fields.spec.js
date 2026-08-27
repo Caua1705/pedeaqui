@@ -211,3 +211,92 @@ test('Secure Fields real informa Luhn, validade futura e tamanho do CVV no campo
   expect(violations, `violacoes de CSP:\n${violations.join('\n')}`).toEqual([]);
   expect(csp.consoleErrors(), `erros no console:\n${csp.consoleErrors().join('\n')}`).toEqual([]);
 });
+
+test('Secure Fields real: o CVV do cartão salvo chega até o createCardToken', async ({ page }) => {
+  test.skip(!publicKey, 'PAYMENT_PUBLIC_KEY ausente');
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  // A cobertura que existia deste fluxo usava um MOCK do SDK, cujo campo dispara
+  // `ready` num microtask: qualquer motivo real para o campo não ficar pronto —
+  // e portanto para o `Continuar` não fazer nada — era invisível. Este teste roda
+  // o SDK de verdade, sob o header de verdade, e cobra a etapa exata em que o
+  // fluxo morria calado: chegar ao `createCardToken`.
+  const trace = [];
+  page.on('console', message => {
+    const text = message.text();
+    if (text.includes('[PedeAqui][CartaoSalvo]')) trace.push(text);
+  });
+
+  const mpCalls = [];
+  await page.route('**/api.mercadopago.com/**', async route => {
+    const request = route.request();
+    const response = await route.fetch();
+    mpCalls.push(`${request.method()} ${new URL(request.url()).pathname}`);
+    await route.fulfill({ response });
+  });
+
+  const csp = await underProductionCsp(page);
+  await mockApi(page);
+  await page.addInitScript(({ slug, branchId }) => {
+    const address = {
+      street: 'Rua Andrade Furtado', number: '955', neighborhood: 'Cocó', city: 'Fortaleza',
+      state: 'Ceará', postal_code: '60190090', summary: 'Rua Andrade Furtado, 955 - Cocó'
+    };
+    localStorage.setItem('rapidex.customer.token', 'live-secure-fields-token');
+    localStorage.setItem('rapidex.customer.profile', JSON.stringify({
+      id: 'customer-live-sdk', name: 'Cliente Teste', phone: '85999999999', email: 'cliente@example.com'
+    }));
+    localStorage.setItem('rapidex.customerAddress', JSON.stringify(address));
+    localStorage.setItem(`rapidex.operationContext.${slug}`, JSON.stringify({
+      order_type: 'delivery', branch_id: branchId, branch_label: 'Matriz', address, confirmed: true
+    }));
+  }, { slug: SLUG, branchId: BRANCH_MATRIZ });
+
+  const card = {
+    id: '11111111-1111-4111-8111-111111111111',
+    provider_card_id: '1562188766181',
+    brand: 'visa', last_four_digits: '2508',
+    expiration_month: 12, expiration_year: 2030, created_at: '2026-08-25T12:00:00Z'
+  };
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-live-sdk', name: 'Cliente Teste', phone: '85999999999', email: 'cliente@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: publicKey, card_enabled: true
+  })));
+  await page.route('**/customers/me/cards**', route => route.fulfill(json([card])));
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('.payment-saved-card-select').click();
+  await expect(page.locator('#cartPaymentLabel')).toHaveText(/Visa/);
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#orderConfirmCta').click();
+  await expect(page.locator('#savedCardCvvModal')).toHaveClass(/active/);
+
+  // O campo precisa MONTAR: enquanto ele não monta, o Continuar fica desabilitado
+  // e um clique nele não produz erro nenhum — foi esse silêncio que escondeu o bug.
+  await expect(page.locator('#mpSavedCardSecurityCode iframe')).toHaveCount(1);
+  await expect(page.locator('#confirmSavedCardCvvButton')).toBeEnabled();
+
+  await page.locator('#mpSavedCardSecurityCode').click();
+  await page.keyboard.type('123', { delay: 60 });
+  await page.locator('#confirmSavedCardCvvButton').click();
+
+  await expect
+    .poll(() => mpCalls.filter(call => call.includes('card_tokens')).length, { timeout: 20_000 })
+    .toBeGreaterThan(0);
+
+  // A trilha tem que atravessar as cinco etapas sem parar no meio.
+  const passos = trace.join(' | ');
+  expect(passos, `trilha do CVV:\n${trace.join('\n')}`).toContain('4/5 chamando createCardToken');
+  expect(passos, 'o fluxo parou antes de chegar ao Mercado Pago').not.toContain('PAROU');
+
+  const violations = await csp.collect();
+  expect(violations, `violacoes de CSP:\n${violations.join('\n')}`).toEqual([]);
+});

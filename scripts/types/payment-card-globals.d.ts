@@ -99,14 +99,23 @@ declare global {
     deleteCard(cardId: string): Promise<unknown>;
   };
 
+  /**
+   * `ready` resolve quando o iframe do campo terminou de carregar. Ele é
+   * separado da montagem de propósito: a tela abre assim que os iframes
+   * existem, e só sai de "carregando" quando esta promessa resolve.
+   */
+  type MercadoPagoMountedFields = { ready: Promise<void> };
+
   type MercadoPagoService = {
     SDK_URL: string;
+    preloadSdk(): Promise<boolean>;
+    ensureSdk(): Promise<void>;
     mountCardFields(publicKey: string, containers: {
       cardNumber: string;
       expirationDate: string;
       securityCode: string;
-    }, callbacks?: MercadoPagoFieldCallbacks): Promise<void>;
-    mountSavedCardSecurityCode(publicKey: string, container: string, callbacks?: MercadoPagoFieldCallbacks): Promise<void>;
+    }, callbacks?: MercadoPagoFieldCallbacks): Promise<MercadoPagoMountedFields>;
+    mountSavedCardSecurityCode(publicKey: string, container: string, callbacks?: MercadoPagoFieldCallbacks): Promise<MercadoPagoMountedFields>;
     createCardToken(data: {
       cardId?: string;
       cardholderName?: string;

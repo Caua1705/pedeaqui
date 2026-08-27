@@ -47,8 +47,19 @@
 .payment-card-field input,.payment-secure-field{display:block;width:100%;height:34px;padding:0 0 7px;border:0;border-bottom:1px solid #d7d4d1;border-radius:0;outline:0;background:transparent;color:#464340;font:400 14px/26px Inter,Arial,sans-serif;box-sizing:border-box}
 .payment-secure-field{position:relative;height:35px;padding:0;overflow:hidden;cursor:text;touch-action:manipulation}
 .payment-secure-field iframe{display:block!important;width:100%!important;height:100%!important;border:0!important;pointer-events:auto!important}
+/* Os dois estados da caixa antes de o iframe assumir. `is-loading` é o normal
+   (o campo está a caminho) e `has-load-error` é a falha de verdade. Só existia
+   o segundo, então toda espera era lida como defeito pelo cliente. */
+.payment-secure-field.is-loading::after,
 .payment-secure-field.has-load-error::after{position:absolute;inset:0;z-index:2;display:flex;align-items:center;background:#f7f5f3;color:#aaa6a3;font:400 14px/26px Inter,Arial,sans-serif;pointer-events:none}
 .payment-secure-field.has-load-error::after{content:"Campo indisponível"}
+.payment-secure-field.is-loading::after{content:"Carregando...";background:linear-gradient(90deg,#f7f5f3 0 38%,#efece9 50%,#f7f5f3 62% 100%) 0 0/260% 100%;animation:payment-secure-field-shimmer 1.15s linear infinite}
+/* Enquanto carrega o iframe existe mas ainda não escuta: um toque aqui focaria
+   um documento vazio e cada tecla digitada se perderia. */
+.payment-secure-field.is-loading{cursor:progress}
+.payment-secure-field.is-loading iframe{pointer-events:none!important}
+@keyframes payment-secure-field-shimmer{to{background-position:-260% 0}}
+@media (prefers-reduced-motion:reduce){.payment-secure-field.is-loading::after{animation:none}}
 .payment-secure-field:focus-within{border-bottom-color:var(--brand-primary)}
 .payment-card-field input:focus{border-bottom-color:var(--brand-primary)}
 .payment-card-field input::placeholder{color:#aaa6a3}

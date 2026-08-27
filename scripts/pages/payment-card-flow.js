@@ -9,6 +9,10 @@
   let savedCards = [];
   let fieldsMounted = false;
   let fieldsMounting = false;
+  // Agora que a tela abre ANTES de os campos existirem, dá para sair dela no
+  // meio do carregamento. Este contador invalida a abertura em curso para que
+  // ela não monte iframes numa tela que já foi fechada.
+  let cardFormSequence = 0;
   /** @type {{card: SavedCardResponse, resolve: (value: string) => void, reject: (reason?: unknown) => void, promise: Promise<string>} | null} */
   let savedCardCvvContext = null;
   const SECURE_FIELD_UI = {
@@ -138,6 +142,10 @@
     try {
       const config = await ensurePaymentConfig();
       if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config)) return;
+      // Cartão está disponível nesta loja: começa o download do SDK AGORA,
+      // dois toques antes de "Crédito". É o que tira a rede do caminho do
+      // clique — antes o SDK só era baixado depois do toque.
+      window.PedeAquiMercadoPago?.preloadSdk?.();
       if (cardArea) cardArea.hidden = false;
       if (!isLogged()) {
         savedCards = [];
@@ -189,14 +197,24 @@
     }
   }
 
-  function setSecureFieldLoading(field, _loading, failed = false) {
+  /**
+   * Enquanto o iframe não chega o campo mostra CARREGANDO, não erro.
+   *
+   * Antes esta função só sabia apagar o `is-loading` — a classe nunca era
+   * posta, e nem existia regra de CSS para ela. O único estado visível durante
+   * a espera era `has-load-error` ("Campo indisponível"), ou seja: o cliente
+   * lia falha enquanto a coisa ainda estava carregando normalmente.
+   */
+  function setSecureFieldLoading(field, loading, failed = false) {
     const host = $(SECURE_FIELD_UI[field]?.host);
-    host?.classList.remove('is-loading');
-    host?.classList.toggle('has-load-error', Boolean(failed));
-    host?.setAttribute('aria-busy', 'false');
+    if (!host) return;
+    const busy = Boolean(loading) && !failed;
+    host.classList.toggle('is-loading', busy);
+    host.classList.toggle('has-load-error', Boolean(failed));
+    host.setAttribute('aria-busy', busy ? 'true' : 'false');
   }
 
-  function resetSecureFieldStates() {
+  function resetSecureFieldStates(loading = false) {
     secureFieldState = {
       cardNumber: emptySecureFieldState(),
       expirationDate: emptySecureFieldState(),
@@ -204,7 +222,7 @@
     };
     Object.keys(SECURE_FIELD_UI).forEach(field => {
       setCardFieldError(field, '');
-      setSecureFieldLoading(field, false);
+      setSecureFieldLoading(field, loading);
     });
   }
 
@@ -271,6 +289,7 @@
     try {
       const config = await ensurePaymentConfig();
       if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config)) return;
+      window.PedeAquiMercadoPago?.preloadSdk?.();
       window.PedeAquiRestaurantUi?.openModal('addCardTypeModal');
     } catch (error) {
       const list = $('paymentSavedCards');
@@ -282,44 +301,76 @@
     window.PedeAquiRestaurantUi?.closeModalId('addCardTypeModal');
   }
 
-  function resetCreditCardForm() {
+  function resetCreditCardForm({ loading = false } = {}) {
     const form = $('creditCardForm');
     if (form instanceof HTMLFormElement) form.reset();
     showFormError('');
     setCardFieldError('cardholderName', '');
     setCardFieldError('cardholderCpf', '');
-    resetSecureFieldStates();
+    resetSecureFieldStates(loading);
     const save = $('saveCreditCardButton');
     if (save instanceof HTMLButtonElement) {
-      save.disabled = false;
+      // Salvar só depois que os campos seguros existem: sem isso o botão
+      // convida a enviar um formulário que ainda não tem como ser tokenizado.
+      save.disabled = loading;
       save.classList.remove('is-loading');
       save.textContent = 'Salvar';
     }
     fieldsMounted = false;
   }
 
+  /**
+   * A tela abre PRIMEIRO, em estado de carregamento.
+   *
+   * Antes ela só aparecia depois de: buscar a chave pública, baixar o SDK,
+   * instanciar o MercadoPago e os TRÊS iframes terminarem de carregar — tudo
+   * em série. Do lado do cliente isso era um toque em "Crédito" sem resposta
+   * nenhuma por segundos, e um erro no fim quando algum passo demorava demais.
+   *
+   * Agora o toque abre a tela na hora; a chave e o SDK são buscados em
+   * paralelo (não dependem um do outro); e os campos só saem de "carregando"
+   * quando os iframes ficam prontos — ou viram erro se realmente falharem.
+   */
   async function openCreditCardForm() {
     if (fieldsMounting) return;
-    const config = paymentConfig || await ensurePaymentConfig();
-    if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config) || !config.public_key) return;
     fieldsMounting = true;
-    resetCreditCardForm();
+    const sequence = ++cardFormSequence;
+    const abandoned = () => sequence !== cardFormSequence;
+    resetCreditCardForm({ loading: true });
+    window.PedeAquiRestaurantUi?.openModal('creditCardModal');
     try {
-      await window.PedeAquiMercadoPago.mountCardFields(config.public_key, {
+      const [config] = await Promise.all([
+        paymentConfig || ensurePaymentConfig(),
+        window.PedeAquiMercadoPago.ensureSdk()
+      ]);
+      if (abandoned()) return;
+      if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config) || !config.public_key) {
+        window.PedeAquiRestaurantUi?.closeModalId('creditCardModal');
+        return;
+      }
+      const { ready } = await window.PedeAquiMercadoPago.mountCardFields(config.public_key, {
         cardNumber: 'mpCardNumber',
         expirationDate: 'mpExpirationDate',
         securityCode: 'mpSecurityCode'
       }, secureFieldCallbacks);
+      // Saiu da tela enquanto os iframes eram criados: eles não podem ficar
+      // para trás, senão o próximo cadastro reaproveitaria campos órfãos.
+      if (abandoned()) {
+        window.PedeAquiMercadoPago.unmountCardFields();
+        return;
+      }
       fieldsMounted = true;
-      // `mount()` já inseriu os iframes. O evento `ready` não é confiável em
-      // todos os WebViews; ele serve como confirmação adicional, não como
-      // bloqueio para digitar ou salvar.
+      // Os iframes já estão no DOM, mas digitar antes de o documento remoto
+      // carregar perde as teclas — por isso o campo continua bloqueado até aqui.
+      await ready;
+      if (abandoned()) return;
+      // O evento `ready` não é confiável em todo WebView; ele serve como
+      // confirmação adicional, não como único caminho para liberar o campo.
       Object.keys(SECURE_FIELD_UI).forEach(secureFieldReady);
-      // A tela só fica clicável depois que os iframes existem. Abrir antes
-      // criava uma janela em que o teclado escrevia no contêiner vazio.
-      window.PedeAquiRestaurantUi?.openModal('creditCardModal');
+      const save = $('saveCreditCardButton');
+      if (save instanceof HTMLButtonElement) save.disabled = false;
     } catch (error) {
-      window.PedeAquiRestaurantUi?.openModal('creditCardModal');
+      if (abandoned()) return;
       Object.keys(SECURE_FIELD_UI).forEach(secureFieldFailed);
       showFormError(error?.message || 'Não foi possível carregar a segurança do cartão.');
     } finally {
@@ -328,6 +379,7 @@
   }
 
   function backToAddCardType() {
+    cardFormSequence += 1;
     window.PedeAquiMercadoPago?.unmountCardFields();
     fieldsMounted = false;
     window.PedeAquiRestaurantUi?.closeModalId('creditCardModal');
@@ -537,20 +589,35 @@
     if (save instanceof HTMLButtonElement) save.disabled = true;
     savedCvvState = emptySecureFieldState();
     savedCardCvvError('');
-    $('mpSavedCardSecurityCode')?.classList.remove('is-loading', 'has-load-error');
-    $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'false');
+    // Mesmo negócio da tela de cadastro: abre já, carregando, e a chave e o
+    // SDK vão em paralelo em vez de um esperar o outro.
+    $('mpSavedCardSecurityCode')?.classList.remove('has-load-error');
+    $('mpSavedCardSecurityCode')?.classList.add('is-loading');
+    $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'true');
+    window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     try {
-      const config = paymentConfig || await ensurePaymentConfig();
-      await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(
+      const [config] = await Promise.all([
+        paymentConfig || ensurePaymentConfig(),
+        window.PedeAquiMercadoPago.ensureSdk()
+      ]);
+      // Fechar a tela zera o contexto: a partir daí esta abertura é passado.
+      if (savedCardCvvContext?.promise !== promise) return promise;
+      const { ready } = await window.PedeAquiMercadoPago.mountSavedCardSecurityCode(
         config.public_key,
         'mpSavedCardSecurityCode',
         savedCvvCallbacks
       );
+      if (savedCardCvvContext?.promise !== promise) {
+        window.PedeAquiMercadoPago.unmountCardFields();
+        return promise;
+      }
       fieldsMounted = true;
+      await ready;
+      if (savedCardCvvContext?.promise !== promise) return promise;
       savedCvvCallbacks.onReady();
       if (save instanceof HTMLButtonElement) save.disabled = false;
-      window.PedeAquiRestaurantUi?.openModal('savedCardCvvModal');
     } catch (error) {
+      if (savedCardCvvContext?.promise !== promise) return promise;
       savedCardCvvError(error?.message || 'Não foi possível abrir o campo de CVV.');
       const context = savedCardCvvContext;
       savedCardCvvContext = null;

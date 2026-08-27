@@ -1,5 +1,7 @@
 (function () {
   const SDK_URL = 'https://sdk.mercadopago.com/js/v2';
+  const SDK_LOAD_TIMEOUT_MS = 15_000;
+  const FIELDS_READY_TIMEOUT_MS = 15_000;
   let sdkPromise = null;
   /** @type {MercadoPagoInstance | null} */
   let instance = null;
@@ -7,30 +9,71 @@
   /** @type {MercadoPagoField[]} */
   let mountedFields = [];
 
+  /**
+   * Carrega o SDK UMA vez e devolve sempre a mesma promessa.
+   *
+   * A tag morta é REMOVIDA de propósito. Um <script> que já falhou nunca mais
+   * dispara `load`, então reaproveitá-lo deixava a promessa pendente para
+   * sempre: depois de uma única falha de rede, toda tentativa seguinte de abrir
+   * o cartão morria no relógio dos campos e o erro virava permanente até
+   * recarregar a página. Com a tag nova, tentar de novo realmente tenta.
+   */
   function loadSdk() {
     if (window.MercadoPago) return Promise.resolve(window.MercadoPago);
     if (sdkPromise) return sdkPromise;
     sdkPromise = new Promise((resolve, reject) => {
-      const found = document.querySelector('script[data-mercado-pago-sdk]');
-      const existing = found instanceof HTMLScriptElement ? found : null;
-      const script = existing || document.createElement('script');
-      const onLoad = () => window.MercadoPago
-        ? resolve(window.MercadoPago)
-        : reject(new Error('O SDK do Mercado Pago não ficou disponível.'));
-      const onError = () => reject(new Error('Não foi possível carregar a segurança do cartão.'));
-      script.addEventListener('load', onLoad, { once: true });
-      script.addEventListener('error', onError, { once: true });
-      if (!existing) {
-        script.src = SDK_URL;
-        script.async = true;
-        script.dataset.mercadoPagoSdk = 'true';
-        document.head.appendChild(script);
-      }
+      document.querySelectorAll('script[data-mercado-pago-sdk]').forEach(node => node.remove());
+      const script = document.createElement('script');
+      let timeoutId = 0;
+      const settle = (settleWith, value) => {
+        window.clearTimeout(timeoutId);
+        settleWith(value);
+      };
+      script.addEventListener('load', () => (window.MercadoPago
+        ? settle(resolve, window.MercadoPago)
+        : settle(reject, new Error('O SDK do Mercado Pago não ficou disponível.'))), { once: true });
+      script.addEventListener(
+        'error',
+        () => settle(reject, new Error('Não foi possível carregar a segurança do cartão.')),
+        { once: true }
+      );
+      // Rede que aceita a conexão e não responde não dispara nem `load` nem
+      // `error`. Sem este relógio a tela ficaria carregando para sempre.
+      timeoutId = window.setTimeout(
+        () => settle(reject, new Error('Não foi possível carregar a segurança do cartão.')),
+        SDK_LOAD_TIMEOUT_MS
+      );
+      script.src = SDK_URL;
+      script.async = true;
+      script.dataset.mercadoPagoSdk = 'true';
+      document.head.appendChild(script);
     }).catch(error => {
       sdkPromise = null;
       throw error;
     });
     return sdkPromise;
+  }
+
+  /**
+   * Aquece o SDK sem prender ninguém ao resultado.
+   *
+   * Chamado assim que a tela de pagamento abre — dois toques antes de "Crédito"
+   * —, de modo que o download já esteja feito quando o cliente pedir a tela do
+   * cartão. A falha aqui é silenciosa de propósito: ninguém está esperando por
+   * ela, e quem reporta erro é o ensureSdk() de quem realmente abriu a tela.
+   */
+  function preloadSdk() {
+    return loadSdk().then(() => true, () => false);
+  }
+
+  /**
+   * O mesmo carregamento, mas PROPAGANDO a falha: é o que a tela do cartão usa
+   * para poder pedir a chave pública em paralelo e ainda assim saber que o SDK
+   * não veio. Esperar o preloadSdk() aqui custaria duas tentativas seguidas — a
+   * dele e a do mount — e portanto o dobro do tempo até o cliente ver o erro.
+   */
+  function ensureSdk() {
+    return loadSdk().then(() => undefined);
   }
 
   function unmountCardFields() {
@@ -74,6 +117,7 @@
       bindIframe();
       return observer;
     });
+    const disconnect = () => observers.forEach(observer => observer.disconnect());
     const wait = async () => {
       let timeoutId;
       try {
@@ -82,16 +126,16 @@
           new Promise((_, reject) => {
             timeoutId = window.setTimeout(
               () => reject(new Error('Não foi possível iniciar os campos seguros do cartão.')),
-              20_000
+              FIELDS_READY_TIMEOUT_MS
             );
           })
         ]);
       } finally {
         if (timeoutId) window.clearTimeout(timeoutId);
-        observers.forEach(observer => observer.disconnect());
+        disconnect();
       }
     };
-    return { markReady, wait };
+    return { markReady, wait, abort: disconnect };
   }
 
   /**
@@ -128,9 +172,15 @@
   }
 
   /**
-   * Mounting an iframe and waiting for its `ready` event are deliberately two
-   * separate things. A slow iframe must stay mounted (and keep loading); it must
-   * never be removed merely because a wall-clock timeout elapsed.
+   * Montar o iframe e esperar o `ready` dele são duas coisas separadas — e
+   * agora são também dois MOMENTOS separados para quem chama. Esta função
+   * resolve assim que os iframes existem no DOM; a prontidão vem depois, na
+   * promessa `ready` devolvida. É isso que deixa a tela do cartão aparecer na
+   * hora, carregando, em vez de ficar um toque sem resposta até o último
+   * iframe responder.
+   *
+   * Um iframe lento continua montado (e carregando): ele nunca é removido só
+   * porque um relógio de parede estourou.
    *
    * @param {string} publicKey
    * @param {{cardNumber: string, expirationDate: string, securityCode: string}} containers
@@ -182,11 +232,12 @@
         });
       });
       mountedFields = definitions.map(({ type, container }) => fields[type].mount(container));
-      await readiness.wait();
     } catch (error) {
+      readiness.abort();
       unmountCardFields();
       throw error;
     }
+    return { ready: readiness.wait() };
   }
 
   /** Mount only the security code when charging a card already saved by the customer. */
@@ -216,11 +267,12 @@
     }), 'securityCode', callbacks, readiness.markReady);
     try {
       mountedFields = [field.mount(container)];
-      await readiness.wait();
     } catch (error) {
+      readiness.abort();
       unmountCardFields();
       throw error;
     }
+    return { ready: readiness.wait() };
   }
 
   /**
@@ -233,6 +285,8 @@
 
   window.PedeAquiMercadoPago = {
     SDK_URL,
+    preloadSdk,
+    ensureSdk,
     mountCardFields,
     mountSavedCardSecurityCode,
     createCardToken,

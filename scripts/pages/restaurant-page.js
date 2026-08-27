@@ -99,10 +99,10 @@
   let couponsRenderSignature = '';
   let highlightsRenderSignature = '';
   const HERO_BANNER_INTERVAL_MS = 5000;
-  // Os três pontos levam .9s para completar uma volta no CSS. Mesmo quando a
-  // API responde instantaneamente, deixamos essa primeira volta terminar para o
-  // loader não parecer um flash ou uma falha visual.
-  const APP_LOADER_MIN_MS = 900;
+  // NÃO existe piso de tempo para o loader do boot. Havia um (APP_LOADER_MIN_MS
+  // = 900ms), para a volta dos três pontinhos não parecer um flash — ou seja,
+  // toda primeira abertura pagava 0,9s de espera inventada. Loader que some
+  // rápido é exatamente o objetivo; a tela aparece assim que os dados chegam.
   const TAB_LOADER_MIN_MS = 500;
   // A troca para o cardápio continua instantânea quando as miniaturas vieram
   // do cache. Se alguma ainda estiver pendente, o loader entra no MESMO quadro
@@ -626,24 +626,6 @@
     return `loading="${loading}" decoding="async"${fetchPriority}`;
   }
 
-  function waitForImageReady(img) {
-    if (!img || !img.src) return Promise.resolve();
-    img.loading = 'eager';
-    if (img.complete) {
-      return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
-    }
-    return new Promise(resolve => {
-      const done = () => {
-        img.removeEventListener('load', done);
-        img.removeEventListener('error', done);
-        if (img.decode) img.decode().catch(() => {}).finally(resolve);
-        else resolve();
-      };
-      img.addEventListener('load', done, { once: true });
-      img.addEventListener('error', done, { once: true });
-    });
-  }
-
   function replaceFailedProductImage(img) {
     if (!img?.isConnected) return;
     const placeholder = document.createElement('div');
@@ -751,23 +733,11 @@
     if (sequence === menuMediaLoadSequence) setMenuMediaLoading(false);
   }
 
-  async function waitForHomeCriticalMedia(timeoutMs = 1400) {
-    const selectors = [
-      '.mob-logo img',
-      '#restaurantHeroImg',
-      '#restaurantHeroTrack img',
-      '#couponRail img',
-      '#highlightRail img'
-    ];
-    const images = Array.from(document.querySelectorAll(selectors.join(',')))
-      .filter(img => img && img.src)
-      .slice(0, 10);
-    if (!images.length) return;
-    await Promise.race([
-      Promise.allSettled(images.map(waitForImageReady)),
-      wait(timeoutMs)
-    ]);
-  }
+  // waitForHomeCriticalMedia() foi REMOVIDA. Ela segurava o loader do boot por
+  // até 1,4s esperando logo, hero, cupons e destaques terminarem de baixar —
+  // imagens que já têm caixa reservada (width/height + aspect-ratio), então
+  // aparecer depois não move nada de lugar. Era espera por rede que não
+  // precisa terminar antes de a tela existir.
 
   // Emite srcset para a foto de catálogo quando a origem é transformável.
   //
@@ -4969,6 +4939,15 @@
   }
 
   /**
+   * O endereço da visita anterior, lido ANTES de existir cardápio — as mesmas
+   * duas fontes, na mesma ordem, que o initOperationContext() usa depois. É o
+   * que permite pedir a disponibilidade das unidades junto com o /menu.
+   */
+  function bootAvailabilityAddress() {
+    return loadOperationContext()?.address || customerAddress || null;
+  }
+
+  /**
    * A filial guardada, lida ANTES de existir cardápio.
    *
    * É ela que decide com qual loja o primeiro `GET /menu` vai falar — e por
@@ -5500,16 +5479,21 @@
     return '';
   }
 
-  async function requestBranchAvailability(address = opDraft?.address) {
+  /**
+   * `inflight` é a MESMA busca, já disparada antes (só o boot usa). Reaproveitá-la
+   * evita uma segunda ida à rede idêntica: o endereço do boot é lido das mesmas
+   * duas fontes de storage que o initOperationContext() vai ler.
+   */
+  async function requestBranchAvailability(address = opDraft?.address, inflight = null) {
     const key = availabilityKey(address);
     const sequence = ++branchAvailabilityRequestSequence;
     branchAvailability = { status: 'loading', key, data: null, error: null };
     renderOperationBranches();
     try {
-      const data = await window.PedeAquiBranchAvailabilityService.getAvailability(
+      const data = await (inflight || window.PedeAquiBranchAvailabilityService.getAvailability(
         getRestaurantSlug(),
         availabilityPayload(address)
-      );
+      ));
       if (sequence !== branchAvailabilityRequestSequence || availabilityKey(currentAvailabilityAddress()) !== key) return null;
       branchAvailability = { status: 'success', key, data, error: null };
       const selectedBranch = operationBranchById(opDraft?.branch_id, opDraft?.order_type);
@@ -9616,10 +9600,23 @@
     if (bootPromise) return bootPromise;
     resetRuntimeStateForPageLoad();
     setAppBooting(true);
-    const minimumLoaderCycle = wait(APP_LOADER_MIN_MS);
     renderSectionLoader('menuContainer', 'Carregando cardápio...', 'menu-skeleton');
+    const restaurantSlugAtBoot = getRestaurantSlug();
+    // A disponibilidade das unidades precisa só do slug (que está na URL) e do
+    // endereço (que está no storage). Nada disso depende do cardápio — mas ela
+    // era disparada DEPOIS do /menu responder, custando uma ida à rede inteira
+    // encadeada no caminho do primeiro render. Aqui ela sai junto com o /menu;
+    // o resultado continua sendo aplicado depois, quando o contexto de
+    // operação já existe para recebê-lo.
+    const availabilityAtBoot = restaurantSlugAtBoot
+      ? window.PedeAquiBranchAvailabilityService
+        .getAvailability(restaurantSlugAtBoot, availabilityPayload(bootAvailabilityAddress()))
+      : null;
+    // Se o /menu falhar, ninguém chega a esperar por esta busca. O ramo mudo
+    // existe só para a rejeição dela não virar "unhandled rejection" no console.
+    availabilityAtBoot?.catch(() => {});
     const loadInitialData = async () => {
-    const restaurantSlug = getRestaurantSlug();
+    const restaurantSlug = restaurantSlugAtBoot;
     // URL que não identifica um restaurante: nem chega a bater na API.
     if (!restaurantSlug) throw restaurantNotFoundError('');
     // A filial da visita anterior, lida do storage antes de existir cardápio:
@@ -9669,7 +9666,7 @@
     // abre Unidades diretamente com KM, taxa e status, sem carregar na seta.
     await Promise.all([
       ensureMenuMatchesSelectedBranch(),
-      requestBranchAvailability(operationContext.address)
+      requestBranchAvailability(operationContext.address, availabilityAtBoot)
     ]);
     restoreCart();
     applyTheme();
@@ -9691,10 +9688,6 @@
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
     initPageRubberBand();
     initMenuHeaderHide();
-    await Promise.all([
-      waitForHomeCriticalMedia(),
-      minimumLoaderCycle
-    ]);
     setAppBooting(false);
     // Best-effort: refresh the logged customer against the backend (clears
     // the session on 401). Runs after first paint so it never blocks the page.

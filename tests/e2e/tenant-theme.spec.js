@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, MENU, SLUG } from './helpers.js';
+import { mockApi, MENU, SLUG, menuForBranch } from './helpers.js';
 
 // Fase 4, bloco A: a trava do white-label.
 //
@@ -154,21 +154,38 @@ test('loader de três pontos usa a cor sólida e as medidas do white label', asy
   });
 });
 
-test('loader conclui ao menos uma animação antes de revelar o aplicativo', async ({ page }) => {
+// O contrário do que este teste pedia antes: ele exigia que o loader
+// completasse uma volta inteira dos pontinhos (900ms) antes de revelar o app.
+// Esse piso era espera inventada e saiu. O que passa a ser garantido é que
+// NADA segura a tela depois de os dados chegarem — nem relógio, nem imagem.
+test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por imagem', async ({ page }) => {
   await mockApi(page);
-  await page.addInitScript(() => {
-    window.__appLoaderIterations = 0;
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelector('.app-loader-dots span')?.addEventListener('animationiteration', () => {
-        window.__appLoaderIterations += 1;
-      });
-    }, { once: true });
+  // As imagens da Home nunca respondem: se o boot ainda dependesse delas,
+  // a tela ficaria presa no loader até o timeout.
+  await page.route('**/storage/v1/**', () => { /* pendente de propósito */ });
+
+  let releaseMenu;
+  const menuGate = new Promise(resolve => { releaseMenu = resolve; });
+  await page.route('**/restaurants/*/menu**', async (route) => {
+    await menuGate;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(menuForBranch(MENU.branch_id))
+    });
   });
 
-  await page.goto(`/restaurant.html?slug=${SLUG}`);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  // `commit` porque as imagens ficam pendentes de propósito: o evento `load`
+  // da página nunca chegaria, e não é dele que este teste trata.
+  await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil: 'commit' });
+  await expect(page.locator('body')).toHaveClass(/app-booting/);
 
-  expect(await page.evaluate(() => window.__appLoaderIterations)).toBeGreaterThanOrEqual(1);
+  // Mede a partir da RESPOSTA, não do início da navegação: assim o limite
+  // afere a espera do app, e não a velocidade da máquina que roda o teste.
+  const releasedAt = Date.now();
+  releaseMenu();
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  expect(Date.now() - releasedAt).toBeLessThan(900);
 });
 
 test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {

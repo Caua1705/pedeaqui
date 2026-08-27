@@ -40,7 +40,17 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Pedido Online">
 <meta property="og:description" content="Peça online no seu restaurante favorito.">
+<!-- A folha do Google Fonts BLOQUEIA o primeiro render e sai de outra origem:
+     sem preconnect o browser só começa DNS + TLS quando encontra a tag. Os dois
+     preconnect abrem a conversa em paralelo com o resto do <head>. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Cartão: o handshake com o Mercado Pago fica pronto ANTES de o cliente tocar
+     em "Crédito". Preconnect não baixa nada — quem baixa o SDK é o
+     preloadSdk(), disparado quando a tela de pagamento abre. -->
+<link rel="preconnect" href="https://sdk.mercadopago.com">
+<link rel="preconnect" href="https://secure-fields.mercadopago.com">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/base.css">
 <link rel="stylesheet" href="styles/layout.css">

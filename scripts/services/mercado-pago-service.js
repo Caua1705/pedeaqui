@@ -1,5 +1,15 @@
 (function () {
   const SDK_URL = 'https://sdk.mercadopago.com/js/v2';
+  // Os hosts SEM os quais os campos não existem: o SDK faz `fetch` na página
+  // dos campos (`secure-fields`, com `api-static` de reserva) antes de apontar
+  // o iframe para ela, e tokeniza pela `api`. Um bloqueio de CSP em qualquer um
+  // deles é fatal; em `events` ou nos hosts do Mercado Livre, não — por isso a
+  // lista é nominal, e não um `*.mercadopago.com`.
+  const REQUIRED_FIELD_ORIGINS = [
+    'https://secure-fields.mercadopago.com',
+    'https://api-static.mercadopago.com',
+    'https://api.mercadopago.com'
+  ];
   const SDK_LOAD_TIMEOUT_MS = 15_000;
   const FIELDS_READY_TIMEOUT_MS = 15_000;
   let sdkPromise = null;
@@ -76,11 +86,71 @@
     return loadSdk().then(() => undefined);
   }
 
+  /**
+   * O SDK carregado e a instância do vendedor, reaproveitada entre as telas.
+   *
+   * `advancedFraudPrevention` fica DESLIGADO por causa da CSP. Ligado, o SDK
+   * pede `POST /v1/devices/widgets` e injeta a resposta como script INLINE no
+   * <head>. Esse corpo carrega o `session_id` daquela chamada — ele muda a cada
+   * carregamento da página —, então não existe hash estável para liberar, e o
+   * SDK não expõe nenhum ponto para um nonce (a string "nonce" não aparece no
+   * bundle). Só `'unsafe-inline'` ou `'strict-dynamic'` o deixariam rodar, e
+   * qualquer um dos dois abriria o script-src do site inteiro; o script ainda
+   * fala com hosts do Mercado Livre que a política também não tem.
+   *
+   * O efeito prático de desligar é nenhum hoje: sob a CSP atual o inline já não
+   * executava — só sujava o console. O que se perde é o sinal de device
+   * fingerprint na análise antifraude do Mercado Pago; a tokenização e a compra
+   * seguem funcionando sem ele.
+   *
+   * `trackingDisabled` é a mesma conta com a analítica: ligada, o SDK bate em
+   * `api.mercadolibre.com/tracks` cinco vezes por tela do cartão. Nada disso é
+   * do caminho do pagamento — com o host bloqueado os campos montam, aceitam
+   * digitação e tokenizam igual —, então a escolha é desligar o beacon em vez
+   * de abrir na CSP um domínio que a compra não usa.
+   *
+   * @param {string} publicKey
+   */
+  async function ensureInstance(publicKey) {
+    const MercadoPago = await loadSdk();
+    if (instance && instanceKey === publicKey) return instance;
+    instance = new MercadoPago(publicKey, {
+      locale: 'pt-BR',
+      advancedFraudPrevention: false,
+      trackingDisabled: true
+    });
+    instanceKey = publicKey;
+    return instance;
+  }
+
   function unmountCardFields() {
     mountedFields.forEach(field => {
       try { field.unmount?.(); } catch { /* o iframe já pode ter saído do DOM */ }
     });
     mountedFields = [];
+  }
+
+  /**
+   * Avisa quando a CSP do site bloqueia um host de que os campos dependem.
+   *
+   * É a única falha que o SDK não tem como reportar. Quando o `fetch` da página
+   * dos campos é barrado, o cliente REST dele rejeita SEM VALOR NENHUM, e o
+   * próprio `catch` do SDK estoura em `undefined.message` antes de emitir o
+   * evento de erro — do lado de cá não chega nem `error`, nem `ready`. Sem este
+   * vigia a tela ficaria os 15 s inteiros do relógio para no fim dizer só que
+   * "não foi possível iniciar", escondendo que a causa é a política do site.
+   */
+  function watchBlockedByCsp() {
+    /** @type {(reason: Error) => void} */
+    let fail = () => {};
+    const blocked = new Promise((_, reject) => { fail = reject; });
+    const onViolation = event => {
+      const uri = String(event.blockedURI || '');
+      if (!REQUIRED_FIELD_ORIGINS.some(origin => uri.startsWith(origin))) return;
+      fail(new Error('A segurança do site bloqueou os campos do cartão.'));
+    };
+    document.addEventListener('securitypolicyviolation', onViolation);
+    return { blocked, stop: () => document.removeEventListener('securitypolicyviolation', onViolation) };
   }
 
   /**
@@ -117,12 +187,17 @@
       bindIframe();
       return observer;
     });
-    const disconnect = () => observers.forEach(observer => observer.disconnect());
+    const csp = watchBlockedByCsp();
+    const disconnect = () => {
+      csp.stop();
+      observers.forEach(observer => observer.disconnect());
+    };
     const wait = async () => {
       let timeoutId;
       try {
         await Promise.race([
           Promise.all(promises),
+          csp.blocked,
           new Promise((_, reject) => {
             timeoutId = window.setTimeout(
               () => reject(new Error('Não foi possível iniciar os campos seguros do cartão.')),
@@ -187,11 +262,7 @@
    * @param {MercadoPagoFieldCallbacks} [callbacks]
    */
   async function mountCardFields(publicKey, containers, callbacks = {}) {
-    const MercadoPago = await loadSdk();
-    if (!instance || instanceKey !== publicKey) {
-      instance = new MercadoPago(publicKey, { locale: 'pt-BR', advancedFraudPrevention: true });
-      instanceKey = publicKey;
-    }
+    await ensureInstance(publicKey);
     unmountCardFields();
     const style = {
       color: '#3f3d3c',
@@ -242,11 +313,7 @@
 
   /** Mount only the security code when charging a card already saved by the customer. */
   async function mountSavedCardSecurityCode(publicKey, container, callbacks = {}) {
-    const MercadoPago = await loadSdk();
-    if (!instance || instanceKey !== publicKey) {
-      instance = new MercadoPago(publicKey, { locale: 'pt-BR', advancedFraudPrevention: true });
-      instanceKey = publicKey;
-    }
+    await ensureInstance(publicKey);
     unmountCardFields();
     const style = {
       color: '#3f3d3c',

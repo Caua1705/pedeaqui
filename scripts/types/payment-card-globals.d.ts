@@ -57,7 +57,7 @@ declare global {
     APP_CONFIG?: Record<string, unknown>;
     MercadoPago?: new (
       publicKey: string,
-      options?: { locale?: string; advancedFraudPrevention?: boolean }
+      options?: { locale?: string; advancedFraudPrevention?: boolean; trackingDisabled?: boolean }
     ) => MercadoPagoInstance;
     PedeAquiApiClient: {
       request(path: string, options?: RequestInit & { timeout?: number }): Promise<unknown>;

@@ -127,6 +127,25 @@ test('a produção permite somente os hosts necessários aos Secure Fields', () 
   expect(connect).toContain('https://api.mercadopago.com');
   expect(connect).toContain('https://events.mercadopago.com');
   expect(frame).toContain('https://secure-fields.mercadopago.com');
+
+  // O host do iframe também precisa estar em connect-src: antes de apontar o
+  // <iframe> para lá, o SDK faz um `fetch` na página dos campos (cacheUrl) e
+  // cai no api-static (sourceUrl) se ela falhar. Com só o frame-src liberado o
+  // fetch morria na política, os campos nunca montavam e o cliente via "campo
+  // indisponível" — que foi exatamente o bug desta linha.
+  expect(connect, 'o fetch da página dos campos seria bloqueado')
+    .toContain('https://secure-fields.mercadopago.com');
+  expect(connect, 'a reserva do fetch da página dos campos seria bloqueada')
+    .toContain('https://api-static.mercadopago.com');
+
+  // O device fingerprint do SDK injeta script INLINE com o session_id da vez
+  // dentro — corpo diferente a cada carregamento, portanto sem hash estável, e
+  // o SDK não aceita nonce. Ele fica desligado (advancedFraudPrevention:false)
+  // justamente para o script-src não precisar afrouxar.
+  expect(script, "o inline do device fingerprint nao justifica 'unsafe-inline'")
+    .not.toContain("'unsafe-inline'");
+  expect(script, "'strict-dynamic' liberaria qualquer script criado por script")
+    .not.toContain("'strict-dynamic'");
   expect(script).not.toMatch(/\s\*/);
   expect(connect).not.toMatch(/\s\*/);
   expect(frame).not.toMatch(/\s\*/);

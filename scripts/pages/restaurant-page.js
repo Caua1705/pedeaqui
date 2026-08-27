@@ -4797,6 +4797,11 @@
     };
     panel?.addEventListener('transitionend', onTransitionEnd);
     closeModalId('pixPaymentModal');
+    // A pendência não deixa de existir porque a saída foi para a sacola. A
+    // barra da loja é o único caminho de volta à cobrança depois que a sacola
+    // também for fechada, e sem esta chamada ela nunca aparecia nesta saída —
+    // só na de closePixPayment(), que este ramo justamente evita.
+    renderPendingPaymentBar();
     setTimeout(finish, 650);
   }
 

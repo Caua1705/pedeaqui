@@ -87,11 +87,17 @@ test('product -> cart -> payment -> submit creates an order with the contract pa
   expect(body.items[0]).toMatchObject({ product_id: expect.any(String), quantity: 3 });
   expect(body).not.toHaveProperty('total'); // backend is authoritative
 
-  // Cart is cleared only after confirmed success.
+  // No fluxo ONLINE a sacola sobrevive à criação do pedido, de propósito: ela é
+  // o caminho de volta à cobrança pendente, e o CTA reabre a cobrança existente
+  // em vez de criar um segundo pedido. Quem é dono desse contrato é
+  // pix-payment.spec.js ("Cancelar pedido" volta lateralmente à sacola sem
+  // criar outro pedido); aqui só se registra que ela NÃO é esvaziada agora.
+  // O esvaziamento acontece na confirmação do pagamento — ver, no mesmo
+  // arquivo, "o pagamento confirmado apaga a pendência guardada para a loja".
   const cartCount = await page.evaluate(
     () => (window.PedeAquiCartStore?.get?.().items || []).length
   );
-  expect(cartCount).toBe(0);
+  expect(cartCount).toBe(1);
 });
 
 test('pedido pago na entrega vai direto para a tela de sucesso, sem passar pelo Pix', async ({

@@ -21,8 +21,20 @@
     securityCode: { host: 'mpSecurityCode', error: 'securityCodeError' }
   };
 
+  /**
+   * `showErrors` é QUANDO o aviso pode aparecer, e é o que separa os dois casos:
+   *
+   *   VAZIO   -> só reclama no Salvar. Passar por um campo sem preencher é um
+   *              gesto normal (o cliente pode estar só indo para o próximo);
+   *              acusar ali é ranzinza.
+   *   ERRADO  -> reclama ao SAIR do campo. Errar um dígito do cartão é coisa
+   *              que se quer saber ali, não três campos depois.
+   *
+   * Nos dois casos, digitar qualquer coisa desarma na hora: enquanto a pessoa
+   * mexe no campo ela não está errando — está corrigindo.
+   */
   function emptySecureFieldState() {
-    return { ready: false, changed: false, valid: null, failed: false, causes: [] };
+    return { ready: false, changed: false, valid: null, failed: false, causes: [], showErrors: false };
   }
 
   let secureFieldState = {
@@ -31,6 +43,9 @@
     securityCode: emptySecureFieldState()
   };
   let savedCvvState = emptySecureFieldState();
+  // Mesma regra dos campos seguros, para nome e CPF: o aviso de cada um só
+  // pode aparecer depois de o campo entrar aqui.
+  const cardholderErrorsArmed = new Set();
 
   function restaurantSlug() {
     return window.RapidexTenant?.resolveSlug?.() || '';
@@ -232,6 +247,23 @@
     return 'CVV inválido para a bandeira do cartão';
   }
 
+  /** A mensagem que ESTE campo mereceria agora, independente de poder aparecer. */
+  function secureFieldErrorFor(field) {
+    const state = secureFieldState[field];
+    if (!state) return '';
+    if (!state.changed) return 'Campo obrigatório';
+    if (state.valid === false) return secureFieldErrorMessage(field);
+    return '';
+  }
+
+  function renderSecureFieldError(field) {
+    const state = secureFieldState[field];
+    // Campo que nem carregou já mostra o aviso de falha de carregamento; a
+    // validação não tem o que dizer por cima disso.
+    if (!state || state.failed) return;
+    setCardFieldError(field, state.showErrors ? secureFieldErrorFor(field) : '');
+  }
+
   function secureFieldReady(field) {
     const state = secureFieldState[field];
     if (!state) return;
@@ -240,20 +272,28 @@
     setSecureFieldLoading(field, false);
   }
 
+  /** Digitou: o aviso sai na hora e só volta ao sair do campo ou no Salvar. */
   function secureFieldChanged(field) {
     const state = secureFieldState[field];
     if (!state) return;
     state.changed = true;
-    if (state.valid !== false) setCardFieldError(field, '');
+    state.showErrors = false;
+    renderSecureFieldError(field);
   }
 
+  /** Saiu do campo: acusa CONTEÚDO errado. Campo vazio fica para o Salvar. */
   function secureFieldBlurred(field) {
     const state = secureFieldState[field];
-    if (!state?.ready) return;
-    if (!state.changed) setCardFieldError(field, 'Campo obrigatório');
-    else if (state.valid === false) setCardFieldError(field, secureFieldErrorMessage(field));
+    if (!state?.ready || !state.changed) return;
+    state.showErrors = true;
+    renderSecureFieldError(field);
   }
 
+  /**
+   * Só ANOTA a validade e repinta o que já estiver visível. Armar o aviso aqui
+   * faria "Número do cartão inválido" piscar no segundo dígito digitado, o que
+   * é exatamente o oposto do que o cliente pediu.
+   */
   function secureFieldValidityChanged(field, event) {
     const state = secureFieldState[field];
     if (!state) return;
@@ -261,7 +301,7 @@
     state.changed = true;
     state.valid = errors.length === 0;
     state.causes = errors.map(item => String(item?.cause || ''));
-    setCardFieldError(field, state.valid ? '' : secureFieldErrorMessage(field));
+    renderSecureFieldError(field);
   }
 
   function secureFieldFailed(field) {
@@ -305,6 +345,7 @@
     const form = $('creditCardForm');
     if (form instanceof HTMLFormElement) form.reset();
     showFormError('');
+    cardholderErrorsArmed.clear();
     setCardFieldError('cardholderName', '');
     setCardFieldError('cardholderCpf', '');
     resetSecureFieldStates(loading);
@@ -396,7 +437,6 @@
       .replace(/^(\d{3})(\d)/, '$1.$2')
       .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
-    validateCardholderInput('cardholderCpf');
   }
 
   function isValidCpf(digits) {
@@ -413,34 +453,52 @@
     return secondDigit === Number(digits[10]);
   }
 
-  function validateCardholderInput(field) {
+  /** A mensagem que ESTE input mereceria agora, independente de poder aparecer. */
+  function cardholderErrorFor(field) {
     const input = /** @type {HTMLInputElement | null} */ ($(field));
-    if (!input) return false;
-    if (!String(input.value || '').trim()) {
-      setCardFieldError(field, 'Campo obrigatório');
-      return false;
-    }
-    if (field === 'cardholderCpf' && !isValidCpf(onlyDigits(input.value))) {
-      setCardFieldError(field, 'CPF inválido');
-      return false;
-    }
-    setCardFieldError(field, '');
-    return true;
+    if (!input) return '';
+    const value = String(input.value || '').trim();
+    if (!value) return 'Campo obrigatório';
+    if (field === 'cardholderCpf' && !isValidCpf(onlyDigits(value))) return 'CPF inválido';
+    return '';
   }
 
+  function renderCardholderError(field) {
+    setCardFieldError(field, cardholderErrorsArmed.has(field) ? cardholderErrorFor(field) : '');
+  }
+
+  /** Digitou: o aviso sai na hora e só volta ao sair do campo ou no Salvar. */
+  function handleCardholderInput(field) {
+    cardholderErrorsArmed.delete(field);
+    renderCardholderError(field);
+  }
+
+  /**
+   * Saiu do campo: acusa CPF inválido, mas nunca campo vazio — sair de um campo
+   * em branco é só o cliente passando por ele.
+   */
+  function handleCardholderBlur(field) {
+    const input = /** @type {HTMLInputElement | null} */ ($(field));
+    if (!input || !String(input.value || '').trim()) return;
+    cardholderErrorsArmed.add(field);
+    renderCardholderError(field);
+  }
+
+  /** O Salvar é o momento em que TUDO pode reclamar, inclusive o campo vazio. */
+  function validateCardholderInput(field) {
+    if (!$(field)) return false;
+    cardholderErrorsArmed.add(field);
+    renderCardholderError(field);
+    return !cardholderErrorFor(field);
+  }
+
+  /** O Salvar é o momento em que TUDO pode reclamar, inclusive o campo vazio. */
   function validateSecureField(field) {
     const state = secureFieldState[field];
     if (!state || state.failed || !state.ready) return false;
-    if (!state.changed) {
-      setCardFieldError(field, 'Campo obrigatório');
-      return false;
-    }
-    if (state.valid === false) {
-      setCardFieldError(field, secureFieldErrorMessage(field));
-      return false;
-    }
-    setCardFieldError(field, '');
-    return true;
+    state.showErrors = true;
+    renderSecureFieldError(field);
+    return !secureFieldErrorFor(field);
   }
 
   function validateForm() {
@@ -537,6 +595,17 @@
     $('mpSavedCardSecurityCode')?.setAttribute('aria-invalid', message ? 'true' : 'false');
   }
 
+  function savedCvvErrorFor() {
+    if (!savedCvvState.changed) return 'Campo obrigatório';
+    if (savedCvvState.valid === false) return 'CVV inválido para a bandeira do cartão';
+    return '';
+  }
+
+  function renderSavedCvvError() {
+    if (savedCvvState.failed) return;
+    savedCardCvvError(savedCvvState.showErrors ? savedCvvErrorFor() : '');
+  }
+
   const savedCvvCallbacks = {
     onReady() {
       savedCvvState.ready = true;
@@ -544,18 +613,24 @@
       $('mpSavedCardSecurityCode')?.classList.remove('is-loading', 'has-load-error');
       $('mpSavedCardSecurityCode')?.setAttribute('aria-busy', 'false');
     },
+    // As mesmas duas regras da tela de cadastro, para as duas telas não
+    // discordarem sobre quando reclamar: digitar apaga o aviso; sair do campo
+    // acusa CVV errado; campo vazio fica para o Continuar.
     onChange() {
       savedCvvState.changed = true;
-      if (savedCvvState.valid !== false) savedCardCvvError('');
+      savedCvvState.showErrors = false;
+      renderSavedCvvError();
     },
     onBlur() {
-      if (savedCvvState.ready && !savedCvvState.changed) savedCardCvvError('Campo obrigatório');
+      if (!savedCvvState.ready || !savedCvvState.changed) return;
+      savedCvvState.showErrors = true;
+      renderSavedCvvError();
     },
     onValidityChange(_field, event) {
       const errors = Array.isArray(event?.errorMessages) ? event.errorMessages : [];
       savedCvvState.changed = true;
       savedCvvState.valid = errors.length === 0;
-      savedCardCvvError(savedCvvState.valid ? '' : 'CVV inválido para a bandeira do cartão');
+      renderSavedCvvError();
     },
     onError() {
       savedCvvState.failed = true;
@@ -635,14 +710,9 @@
     if (!context || !fieldsMounted || !savedCvvState.ready) {
       return;
     }
-    if (!savedCvvState.changed) {
-      savedCardCvvError('Campo obrigatório');
-      return;
-    }
-    if (savedCvvState.valid === false) {
-      savedCardCvvError('CVV inválido para a bandeira do cartão');
-      return;
-    }
+    savedCvvState.showErrors = true;
+    renderSavedCvvError();
+    if (savedCvvErrorFor()) return;
     const save = $('confirmSavedCardCvvButton');
     if (save instanceof HTMLButtonElement) save.disabled = true;
     try {
@@ -685,7 +755,8 @@
     openCreditCardForm,
     backToAddCardType,
     maskCardholderCpf,
-    validateCardholderInput,
+    handleCardholderInput,
+    handleCardholderBlur,
     closeSavedCardCvv,
     confirmSavedCardCvv,
     saveCreditCard,

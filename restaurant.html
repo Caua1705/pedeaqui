@@ -1382,12 +1382,12 @@
         </div>
         <div class="payment-card-field payment-card-field--wide">
           <label for="cardholderName">Nome do titular</label>
-          <input id="cardholderName" type="text" autocomplete="cc-name" maxlength="80" required aria-describedby="cardholderNameError" data-act-input='["validateCardholderInput","cardholderName"]'>
+          <input id="cardholderName" type="text" autocomplete="cc-name" maxlength="80" required aria-describedby="cardholderNameError" data-act-input='["handleCardholderInput","cardholderName"]' data-act-blur='["handleCardholderBlur","cardholderName"]'>
           <div class="reg-error" id="cardholderNameError"></div>
         </div>
         <div class="payment-card-field payment-card-field--wide">
           <label for="cardholderCpf">CPF do titular</label>
-          <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='["maskCardholderCpf","$this"]' required aria-describedby="cardholderCpfError">
+          <input id="cardholderCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" data-act-input='[["maskCardholderCpf","$this"],["handleCardholderInput","cardholderCpf"]]' data-act-blur='["handleCardholderBlur","cardholderCpf"]' required aria-describedby="cardholderCpfError">
           <div class="reg-error" id="cardholderCpfError"></div>
         </div>
 

@@ -115,6 +115,14 @@ async function installMercadoPagoSecureFieldsMock(page) {
               [...document.querySelectorAll('[data-secure-field]')]
                 .map(input => [input.dataset.secureField, input.value])
             );
+            // O gateway recusa qualquer card_id que não seja o id do cartão
+            // DENTRO da conta dele — um UUID nosso volta
+            // 400 {"message":"invalid card_id","cause":[{"code":"E201"}]}.
+            // O mock imita essa recusa: sem isso ele aceitava o UUID errado e
+            // o teste passava enquanto a tela real quebrava.
+            if (data.cardId !== undefined && !/^\d+$/.test(String(data.cardId))) {
+              throw new Error('invalid card_id');
+            }
             if (data.cardId ? !values.securityCode : (!values.cardNumber || !values.expirationDate || !values.securityCode)) {
               throw new Error('Campos seguros incompletos');
             }
@@ -136,6 +144,7 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
 
   const savedCards = [{
     id: '11111111-1111-4111-8111-111111111111',
+    provider_card_id: '1562188766181',
     brand: 'visa',
     last_four_digits: '2508',
     expiration_month: 12,
@@ -176,6 +185,7 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
       cardRequests.push(body);
       const card = {
         id: '22222222-2222-4222-8222-222222222222',
+        provider_card_id: '1562188766182',
         brand: 'master',
         last_four_digits: '1111',
         expiration_month: 11,
@@ -308,6 +318,7 @@ async function runSavedCardCheckout(page, paymentStatus) {
   await installMercadoPagoSecureFieldsMock(page);
   const card = {
     id: '11111111-1111-4111-8111-111111111111',
+    provider_card_id: '1562188766181',
     brand: 'visa',
     last_four_digits: '2508',
     expiration_month: 12,
@@ -346,6 +357,13 @@ async function runSavedCardCheckout(page, paymentStatus) {
       token: 'tok_test_secure_fields_123'
     }
   }]);
+
+  // Os DOIS ids, cada um no seu lugar: o nosso UUID vai no corpo do pagamento
+  // (`saved_card_id`), e o id do cartão na conta do Mercado Pago é o que
+  // tokeniza (`cardId`). Trocá-los é o bug que derrubava a tela de CVV.
+  const tokenData = await page.evaluate(() => window.__mpTokenNonPciData);
+  expect(tokenData).toEqual({ cardId: card.provider_card_id });
+  expect(tokenData.cardId).not.toBe(card.id);
 }
 
 test('checkout com cartão salvo pede CVV e conclui o pagamento', async ({ page }) => {

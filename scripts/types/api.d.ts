@@ -2012,10 +2012,12 @@ export interface paths {
          *     teste para producao. Nos tres casos a tela e a mesma: oferecer o cadastro
          *     de um cartao novo.
          *
-         *     ## O que NAO sai daqui
+         *     ## Os DOIS ids, e para que serve cada um
          *
-         *     O id do cartao no Mercado Pago. O `id` da resposta e o nosso UUID, e e
-         *     ele que volta em `card.saved_card_id` na hora de pagar.
+         *     `id` e o nosso UUID, e e ele que volta em `card.saved_card_id` na hora
+         *     de pagar. `provider_card_id` e o id do cartao na conta do Mercado Pago
+         *     do lojista, e o navegador precisa dele para gerar o token da cobranca
+         *     (`card_id` + CVV) — sem ele a tokenizacao volta `invalid card_id`.
          */
         get: operations["list_saved_cards_customers_me_cards_get"];
         put?: never;
@@ -2491,6 +2493,54 @@ export interface paths {
         get: operations["track_order_restaurants__restaurant_slug__orders_track__tracking_token__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/restaurants/{restaurant_slug}/orders/track/{tracking_token}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Order By Customer
+         * @description O cliente desistindo do proprio pedido, antes do preparo.
+         *
+         *     **Ate onde ela vai: `pending` e `accepted`.** Antes do preparo ninguem
+         *     gastou nada e desistir e barato para os dois lados. A partir de
+         *     `preparing` o insumo ja saiu do estoque, e quem decide quem come o
+         *     prejuizo passa a ser o lojista — a rota responde **409** e o app manda o
+         *     cliente falar com o restaurante.
+         *
+         *     **Sem login, de proposito.** Pedido de convidado e caso normal, e exigir
+         *     conta aqui deixaria justamente o convidado sem saida. Quem autoriza e o
+         *     `tracking_token` desta URL — o mesmo do acompanhamento e da avaliacao,
+         *     com 256 bits e sem rota de reemissao.
+         *
+         *     **O corpo e opcional, e o motivo dentro dele tambem.** Exigir
+         *     justificativa de quem desiste de um pedido que nem comecou produz um
+         *     campo preenchido com "a"; quem cancelou ja fica gravado no historico.
+         *
+         *     ## O que ela faz junto, e que o app nao precisa pedir
+         *
+         *     E a MESMA escrita do cancelamento pelo painel
+         *     (`OrderStatusChangeService`), entao o cupom volta a ficar disponivel, o
+         *     cashback resgatado volta para o saldo e **o pagamento online e
+         *     estornado** — um pix pago e cancelado em seguida volta sem ninguem ligar
+         *     para o restaurante. O estorno acontece depois do commit e nao pode
+         *     derrubar esta resposta: se o gateway estiver fora do ar, o cancelamento
+         *     vale e uma varredura devolve o dinheiro depois.
+         *
+         *     **Sem `Idempotency-Key`**, e ela nao faz falta: o segundo clique chega
+         *     com o pedido ja em `cancelled` e leva 409 da maquina de estados.
+         */
+        post: operations["cancel_order_by_customer_restaurants__restaurant_slug__orders_track__tracking_token__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4590,6 +4640,43 @@ export interface components {
             periods?: components["schemas"]["BusinessHourInput"][];
         };
         /**
+         * CancelOrderErrorCode
+         * @description Os desfechos do cancelamento que o painel trata de forma propria.
+         *
+         *     Enum e nao `str` solto para a LISTA sair no /openapi.json (armadilha 16):
+         *     o painel precisa dela para escrever a tela, e nao so o status HTTP.
+         * @enum {string}
+         */
+        CancelOrderErrorCode: "confirmation_required";
+        /**
+         * CancelOrderErrorDetail
+         * @description O `detail` de um cancelamento que precisa de confirmacao.
+         */
+        CancelOrderErrorDetail: {
+            code: components["schemas"]["CancelOrderErrorCode"];
+            /**
+             * Message
+             * @description Pronta para ser mostrada no dialogo de confirmacao do painel.
+             */
+            message: string;
+            /**
+             * Order Status
+             * @description O status em que o pedido estava. E o que permite ao painel dizer 'ja saiu para entrega' em vez de 'ja esta em preparo'.
+             */
+            order_status: string;
+        };
+        /**
+         * CancelOrderErrorResponse
+         * @description O CORPO INTEIRO, com o envelope `detail` do FastAPI.
+         *
+         *     Existe pelo mesmo motivo de `PaymentErrorResponse`: `HTTPException`
+         *     entrega `{"detail": {...}}`, e anunciar o detail na raiz faria o painel
+         *     escrever o parser contra um formato que a rota nunca devolve.
+         */
+        CancelOrderErrorResponse: {
+            detail: components["schemas"]["CancelOrderErrorDetail"];
+        };
+        /**
          * CancelOrderRequest
          * @description Corpo do cancelamento pelo painel.
          *
@@ -4604,6 +4691,12 @@ export interface components {
          *     viraria um `if` por status.
          */
         CancelOrderRequest: {
+            /**
+             * Confirm Prepared Order
+             * @description Confirmacao explicita de que o lojista sabe que a comida ja foi feita. Obrigatoria a partir de `preparing`; sem ela a rota responde 428 com `confirmation_required`. Antes disso e ignorada.
+             * @default false
+             */
+            confirm_prepared_order: boolean;
             /** Reason */
             reason: string;
         };
@@ -5423,6 +5516,26 @@ export interface components {
             updated_at?: string | null;
             /** Zipcode */
             zipcode?: string | null;
+        };
+        /**
+         * CustomerCancelOrderRequest
+         * @description Corpo do cancelamento pelo cliente. Tudo opcional, inclusive ele.
+         *
+         *     **O motivo e OPCIONAL aqui e obrigatorio no painel**, e a assimetria e
+         *     proposital: exigir justificativa de quem desiste de um pedido que nem
+         *     comecou vira um campo que todo mundo preenche com "a", e o historico
+         *     ganha ruido em vez de informacao. Quem cancelou ja fica em
+         *     `order_status_history.changed_by`, que e a pergunta que o suporte faz.
+         *
+         *     Nao ha campo de status, e nao havera: esta rota so cancela, e so ate
+         *     `accepted`. Ver CustomerOrderCancelService.
+         */
+        CustomerCancelOrderRequest: {
+            /**
+             * Reason
+             * @description Opcional. Entra no historico do pedido, precedido de 'Cancelado pelo cliente'.
+             */
+            reason?: string | null;
         };
         /**
          * CustomerDataExportResponse
@@ -7168,12 +7281,25 @@ export interface components {
         };
         /**
          * SavedCardResponse
-         * @description O cartao como a tela precisa dele: para reconhecer, nao para cobrar.
+         * @description O cartao como a tela precisa dele: para reconhecer E para tokenizar.
          *
          *     `id` e o nosso UUID, e e ele que volta em `card.saved_card_id` na hora
-         *     de pagar. O id do cartao no Mercado Pago **nao sai daqui** — ele so tem
-         *     sentido dentro da conta do restaurante, e publica-lo nao ajudaria o
-         *     front em nada.
+         *     de pagar.
+         *
+         *     `provider_card_id` e o id do cartao na conta do Mercado Pago do lojista,
+         *     e ele SAI daqui de proposito. A versao anterior deste contrato o retinha
+         *     ("nao ajudaria o front em nada") e isso contradizia o
+         *     `CardPaymentPayload` deste mesmo backend, que exige um `token` gerado no
+         *     navegador "a partir do `card_id` mais o CVV". Sem este campo o navegador
+         *     mandava o nosso UUID no lugar e a tokenizacao voltava
+         *     `400 {"message":"invalid card_id", "cause":[{"code":"E201"}]}` —
+         *     a tela de CVV nunca conseguia confirmar cartao salvo nenhum.
+         *
+         *     Publicar o valor nao afrouxa nada: ele so vale acompanhado do CVV (que
+         *     esta pessoa acabou de digitar) ou do access_token do lojista (que nunca
+         *     sai do servidor), a rota e `/customers/me/cards` autorizada pelo Bearer
+         *     do dono do cartao, e a propria referencia do Mercado Pago carrega esse id
+         *     num input escondido do navegador.
          */
         SavedCardResponse: {
             /**
@@ -7200,6 +7326,11 @@ export interface components {
              * @description Os quatro ultimos digitos, para a tela.
              */
             last_four_digits: string;
+            /**
+             * Provider Card Id
+             * @description Id do cartao na conta do Mercado Pago do restaurante. O SDK do navegador precisa dele para gerar o token de cobranca a partir de `card_id` + CVV.
+             */
+            provider_card_id: string;
         };
         /**
          * StartPaymentRequest
@@ -7335,6 +7466,12 @@ export interface components {
          *     efeito.
          */
         UpdateOrderStatusRequest: {
+            /**
+             * Confirm Prepared Order
+             * @description Mesma confirmacao de `CancelOrderRequest`, e ela precisa existir aqui tambem: esta rota aceita `status='cancelled'` e seria a porta pela qual o painel pularia o dialogo. So tem efeito nesse status.
+             * @default false
+             */
+            confirm_prepared_order: boolean;
             /** Note */
             note?: string | null;
             /** Status */
@@ -9063,6 +9200,15 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description Cancelamento de pedido ja em producao sem `confirm_prepared_order`. Nao e erro: o painel abre o dialogo de confirmacao e reenvia. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelOrderErrorResponse"];
+                };
+            };
         };
     };
     get_order_print_jobs_admin_orders__order_id__print_jobs_get: {
@@ -9130,6 +9276,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Cancelamento de pedido ja em producao sem `confirm_prepared_order`. Nao e erro: o painel abre o dialogo de confirmacao e reenvia. */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelOrderErrorResponse"];
                 };
             };
         };
@@ -11431,6 +11586,56 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrderDetailResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_by_customer_restaurants__restaurant_slug__orders_track__tracking_token__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                restaurant_slug: string;
+                tracking_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CustomerCancelOrderRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailResponse"];
+                };
+            };
+            /** @description Pedido nao encontrado, ou token invalido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description O pedido ja saiu da janela em que o cliente cancela sozinho (a partir de `preparing`), ou ja e um estado final */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

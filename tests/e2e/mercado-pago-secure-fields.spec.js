@@ -41,7 +41,8 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
     if (route.request().method() === 'POST') {
       posts.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill(json({
-        id: '33333333-3333-4333-8333-333333333333', brand: 'master', last_four_digits: '6351',
+        id: '33333333-3333-4333-8333-333333333333', provider_card_id: '1562188766183',
+        brand: 'master', last_four_digits: '6351',
         expiration_month: 11, expiration_year: 2031, created_at: '2026-08-25T18:00:00Z'
       }, 201));
     }

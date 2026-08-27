@@ -716,7 +716,19 @@
     const save = $('confirmSavedCardCvvButton');
     if (save instanceof HTMLButtonElement) save.disabled = true;
     try {
-      const token = await window.PedeAquiMercadoPago.createCardToken({ cardId: context.card.id });
+      // `provider_card_id`, NUNCA `id`. São dois ids diferentes: `id` é o UUID
+      // desta plataforma (o que volta em `card.saved_card_id`) e `card_id` é o
+      // id do cartão dentro da conta do Mercado Pago do lojista. Mandar o UUID
+      // aqui é o que fazia a tokenização responder
+      // 400 {"message":"invalid card_id","cause":[{"code":"E201"}]} — e a tela
+      // dizer "Não foi possível confirmar o cartão" sem nunca dizer por quê.
+      const providerCardId = String(context.card.provider_card_id || '').trim();
+      if (!providerCardId) {
+        // Cadastrar de novo não resolveria: o campo vem do backend, não do
+        // cartão. Então a orientação é a única que funciona agora.
+        throw new Error('Não foi possível confirmar este cartão. Escolha outra forma de pagamento.');
+      }
+      const token = await window.PedeAquiMercadoPago.createCardToken({ cardId: providerCardId });
       if (!token?.id) throw new Error('O Mercado Pago não devolveu o token do cartão.');
       savedCardCvvContext = null;
       window.PedeAquiMercadoPago.unmountCardFields();

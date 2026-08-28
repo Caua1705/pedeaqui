@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, seedOnlineCardBranch } from './helpers.js';
 
 // Enquanto o SDK do Mercado Pago carrega o cliente vê CARREGANDO. Erro só
 // quando falha de verdade.
@@ -33,6 +33,8 @@ async function seedLoggedDelivery(page) {
 }
 
 async function mockCustomerRoutes(page) {
+  // Sem cartao online na filial, o checkout nao desenha a area do cartao.
+  await seedOnlineCardBranch(page);
   await page.route('**/payment-config', route => route.fulfill(json({
     provider: 'mercadopago', public_key: PUBLIC_KEY, card_enabled: true
   })));

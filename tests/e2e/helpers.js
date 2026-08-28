@@ -289,3 +289,35 @@ export async function addH2OToCart(page, qty = 3) {
     { productId: PRODUCT_H2O, qty }
   );
 }
+
+/**
+ * Uma filial que ACEITA CARTÃO ONLINE.
+ *
+ * `info.json` é cópia fiel da produção, e lá `credit_card` existe SÓ no grupo
+ * `delivery` — a maquininha na porta. Nessa filial o checkout NÃO oferece
+ * cartão, e é isso que impede o pedido de nascer `payment_flow: "delivery"`
+ * com o cartão já tokenizado e nenhuma cobrança (é o backend quem decide o
+ * fluxo, em `_resolve_payment_flow`, lendo `branch_payment_methods`).
+ *
+ * Todo teste que exercita o CARTÃO precisa, portanto, de uma filial que o
+ * habilite — que é a linha que esta função acrescenta. Chame DEPOIS de
+ * mockApi(): no Playwright a rota registrada por último vence.
+ */
+export async function seedOnlineCardBranch(page) {
+  const info = JSON.parse(JSON.stringify(INFO));
+  info.payment_methods.online.push({
+    id: 'c0000000-0000-4000-8000-000000000001',
+    payment_flow: 'online',
+    method_type: 'credit_card',
+    brand: null,
+    label: 'Cartão de crédito',
+    icon_key: 'credit',
+    enabled: true,
+    requires_gateway: true
+  });
+  await page.route(/\/info(\?|$)/, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(info)
+  }));
+}

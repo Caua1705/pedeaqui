@@ -3305,7 +3305,9 @@
     syncPaymentMethodFooter();
     overlay?.classList.remove('is-entered', 'is-closing');
     openModal('paymentMethodModal');
-    window.PedeAquiCardFlow?.refreshPaymentMethods?.();
+    window.PedeAquiCardFlow?.refreshPaymentMethods?.({
+      branchAcceptsOnlineCard: branchAcceptsOnlineCard()
+    });
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (overlay?.classList.contains('active')) overlay.classList.add('is-entered');
     }));
@@ -3368,6 +3370,40 @@
     return keyedEntries;
   }
 
+  /**
+   * Esta entrada de /info é cartão de crédito NO GATEWAY?
+   *
+   * `api_method_type` é a grafia do BACKEND (`credit_card`) e é ela que o
+   * pedido manda em `payment_method`; `method_type` é a chave normalizada da
+   * UI (`credit`). Conferimos as duas porque `/info` existe em duas formas no
+   * ambiente real (ver infoPaymentData) e nem sempre traz a original.
+   */
+  const isOnlineCardEntry = entry =>
+    String(entry?.api_method_type || '').trim().toLowerCase() === 'credit_card'
+    || entry?.method_type === 'credit';
+
+  /**
+   * Esta filial aceita cartão ONLINE?
+   *
+   * ⚠️ São DUAS perguntas diferentes, e o front só fazia uma:
+   *
+   *   1. "o restaurante tem credencial de gateway?" — `/payment-config`
+   *      (`card_enabled`). É do RESTAURANTE.
+   *   2. "esta filial habilitou credit_card no grupo `online`?" — `/info`.
+   *      É da FILIAL, e é ela que decide o `payment_flow` do pedido.
+   *
+   * O backend resolve o fluxo por (2): `_resolve_payment_flow` procura as
+   * linhas de `branch_payment_methods` com aquele `method_type` e devolve
+   * "online" só se alguma delas for online. Com `credit_card` habilitado
+   * apenas como `delivery` — a maquininha na porta —, o pedido nascia
+   * `payment_flow: "delivery"` mesmo com o cartão salvo escolhido e o token
+   * já gerado: cartão tokenizado, nenhuma cobrança, e o pedido indo para a
+   * cozinha como "paga na entrega".
+   */
+  function branchAcceptsOnlineCard(data = restaurantInfoState.data) {
+    return (infoPaymentData(data)?.online || []).some(isOnlineCardEntry);
+  }
+
   function renderCheckoutPaymentMethods(data) {
     const groups = data ? infoPaymentData(data) : { online: [], delivery: [] };
     const onlineKeys = new Set(groups.online.map(entry => entry.method_type));
@@ -3394,7 +3430,15 @@
       paymentScopeByKey.set('pix', 'online');
     }
     availableCheckoutPaymentKeys = new Set([...onlineKeys, ...deliveryKeys]);
-    if (selectedSavedCard?.id) {
+    // O cartão salvo só é uma forma DISPONÍVEL onde a filial aceita cartão
+    // online. Antes esta chave entrava incondicionalmente, e era ela que
+    // deixava escolher um cartão que a filial não cobra pelo gateway — o
+    // pedido nascia `payment_flow: "delivery"` e ninguém cobrava nada.
+    //
+    // Não estando na lista, `paymentMethod` selecionado se limpa sozinho logo
+    // abaixo: é o que faz trocar de filial derrubar o cartão escolhido na
+    // anterior, em vez de levá-lo para uma loja que não o aceita.
+    if (selectedSavedCard?.id && groups.online.some(isOnlineCardEntry)) {
       const savedKey = `credit:${selectedSavedCard.id}`;
       availableCheckoutPaymentKeys.add(savedKey);
       paymentApiTypeByKey.set(savedKey, 'credit_card');
@@ -3413,6 +3457,14 @@
     if (paymentMethod && !availableCheckoutPaymentKeys.has(selectedKey)) {
       paymentMethod = '';
       paymentMethodKey = '';
+      // O cartão cai JUNTO quando era ele o método derrubado. Deixá-lo
+      // pendurado é estado morto: a filial nova não o aceita, e um
+      // `selectedSavedCard` sem método escolhido só serve para confundir as
+      // guardas do checkout mais adiante.
+      if (String(selectedKey || '').startsWith('credit:')) {
+        selectedSavedCard = null;
+        savedCardPaymentToken = '';
+      }
     }
     buttons.forEach(button => {
       button.classList.remove('active');
@@ -3910,6 +3962,31 @@
       pagaComCartao: Boolean(cardPayment)
     });
     if (!isOnlinePaymentFlow(response)) {
+      // A CONTRADIÇÃO: o cliente escolheu cartão, tokenizou o CVV, e o pedido
+      // voltou "paga na entrega". Não há cobrança e não vai haver — mas o
+      // cartão foi digitado, então "pedido feito" sem mais nada leria como
+      // "cartão cobrado", que é a leitura mais cara possível.
+      //
+      // Com a filial gateada (branchAcceptsOnlineCard) isto não deve mais
+      // acontecer; se acontecer, é divergência entre /info e o que
+      // `branch_payment_methods` responde na criação, e o certo é dizer em voz
+      // alta em vez de deixar o cliente descobrir na porta.
+      if (cardPayment) {
+        checkoutTrace('11/11 FIM: CONTRADIÇÃO — cartão escolhido, pedido nasceu na entrega', {
+          payment_flow: response?.payment_flow ?? null,
+          payment_status: response?.payment_status ?? null
+        });
+        logAppError(
+          'Pedido de cartão criado com payment_flow=delivery: a filial não aceita cartão online',
+          new Error(`payment_flow=${response?.payment_flow}`)
+        );
+        leaveCartAfterOrder();
+        showOrderSuccess({
+          ...response,
+          message: 'Seu pedido foi registrado para PAGAMENTO NA ENTREGA — o cartão não foi cobrado. Tenha a forma de pagamento em mãos na entrega.'
+        });
+        return;
+      }
       checkoutTrace('11/11 FIM: pagamento na entrega — sem cobrança online', {
         payment_flow: response?.payment_flow ?? null
       });

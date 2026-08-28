@@ -149,12 +149,27 @@
     return paymentConfig;
   }
 
-  async function refreshPaymentMethods() {
+  /**
+   * @param {object} [options]
+   * @param {boolean} [options.branchAcceptsOnlineCard] se ESTA filial habilitou
+   *   `credit_card` no grupo `online` de /info. Quem sabe isso é o checkout
+   *   (`branchAcceptsOnlineCard()` em restaurant-page.js), que é quem lê /info.
+   *
+   * O padrão é `false` — falha FECHADA de propósito. Mostrar o cartão numa
+   * filial que só o aceita na maquininha é o bug que esta gate existe para
+   * impedir: o pedido nasceria `payment_flow: "delivery"`, sem cobrança
+   * nenhuma, com o cliente achando que pagou. Esconder um cartão que caberia
+   * custa um toque; mostrar um que não cabe custa o pedido.
+   */
+  async function refreshPaymentMethods({ branchAcceptsOnlineCard = false } = {}) {
     const cardArea = $('paymentOnlineCards');
     const list = $('paymentSavedCards');
     if (cardArea) cardArea.hidden = true;
     if (list) list.replaceChildren(cardState('Carregando cartões...'));
     try {
+      // A credencial do gateway é do RESTAURANTE; o `credit_card` online é da
+      // FILIAL. As duas precisam valer, e é a segunda que faltava.
+      if (!branchAcceptsOnlineCard) return;
       const config = await ensurePaymentConfig();
       if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config)) return;
       // Cartão está disponível nesta loja: começa o download do SDK AGORA,

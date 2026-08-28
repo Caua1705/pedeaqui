@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, seedOnlineCardBranch } from './helpers.js';
 
 // QUANDO cada aviso aparece. São duas regras diferentes de propósito:
 //
@@ -115,6 +115,8 @@ async function openCardForm(page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await seedLoggedDelivery(page);
+  // Sem cartao online na filial, o checkout nao desenha a area do cartao.
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
   await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
   await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));

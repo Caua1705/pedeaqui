@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, pixOrder, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, addH2OToCart, pixOrder, seedOnlineCardBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
 
 const json = (body, status = 200) => ({
   status,
@@ -140,6 +140,7 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
   await page.emulateMedia({ colorScheme: 'dark' });
   await mockApi(page);
   await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
 
   const savedCards = [{
@@ -258,6 +259,7 @@ test('Salvar fica ativo e mostra cada erro no campo correto com o visual do cada
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
   await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
   await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
@@ -317,6 +319,7 @@ async function runSavedCardCheckout(page, paymentStatus) {
     }
   });
   await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
   const card = {
     id: '11111111-1111-4111-8111-111111111111',
@@ -385,6 +388,7 @@ test('cartão em análise conclui sem abrir a tela de Pix', async ({ page }) => 
 test('card_enabled falso não desenha cartão nem inicializa o SDK', async ({ page }) => {
   await mockApi(page);
   await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
   await page.route('**/payment-config', route => route.fulfill(json({
     provider: 'mercadopago',
@@ -413,6 +417,7 @@ test('card_enabled falso não desenha cartão nem inicializa o SDK', async ({ pa
 async function runDeclinedSavedCardCheckout(page, onStartPayment) {
   const api = await mockApi(page, { orderResponse: () => pixOrder(1), onStartPayment });
   await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
   await installMercadoPagoSecureFieldsMock(page);
   const card = {
     id: '11111111-1111-4111-8111-111111111111',
@@ -574,4 +579,128 @@ test('401 login_required não vira "pedido feito": mostra a frase do backend na 
 
   await expect(page.locator('#cartOrderError')).toHaveText(/preciso entrar na sua conta/);
   await expectNoOrderPlaced(page);
+});
+
+/**
+ * A FILIAL MANDA, e é ela que decide o `payment_flow`.
+ *
+ * `/payment-config` diz que o RESTAURANTE tem credencial de gateway.
+ * `/info` diz que ESTA FILIAL habilitou `credit_card` como online. O front só
+ * conferia a primeira, e com `credit_card` habilitado apenas como `delivery`
+ * — a maquininha — o cliente escolhia o cartão salvo, digitava o CVV, o token
+ * era gerado, e o pedido nascia `payment_flow: "delivery"` sem cobrança
+ * nenhuma. O fixture de /info é cópia da produção e já continha o caso.
+ */
+async function seedCardBranchScenario(page, { onlineCard }) {
+  const api = await mockApi(page, { orderResponse: () => pixOrder(1) });
+  await seedLoggedDelivery(page);
+  if (onlineCard) await seedOnlineCardBranch(page);
+  await installMercadoPagoSecureFieldsMock(page);
+  const card = {
+    id: '11111111-1111-4111-8111-111111111111',
+    provider_card_id: '1562188766181',
+    brand: 'visa',
+    last_four_digits: '2508',
+    expiration_month: 12,
+    expiration_year: 2030,
+    created_at: '2026-08-25T12:00:00Z'
+  };
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-e2e', name: 'Cliente Teste', phone: '85999999999', email: 'cliente.e2e@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true
+  })));
+  await page.route('**/customers/me/cards**', route => route.fulfill(json([card])));
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  return api;
+}
+
+test('filial que só aceita cartão na maquininha não oferece cartão online', async ({ page }) => {
+  await seedCardBranchScenario(page, { onlineCard: false });
+
+  // O PIX continua lá — ele está em `online` no fixture; o cartão, não.
+  await expect(page.locator('[data-payment-screen-panel="online"] [data-payment-key="pix"]')).toBeVisible();
+  await expect(page.locator('#paymentOnlineCards')).toBeHidden();
+  await expect(page.locator('.payment-saved-card')).toHaveCount(0);
+
+  // "Crédito" segue OFERECIDO — como pagamento NA ENTREGA, que é o que a
+  // filial de fato aceita (o painel só não é o que está na frente). O que não
+  // pode existir é a versão online.
+  await expect(page.locator('[data-payment-delivery-group="credit"] .payment-method-option'))
+    .not.toHaveCount(0);
+});
+
+test('a mesma filial COM credit_card online volta a oferecer o cartão salvo', async ({ page }) => {
+  await seedCardBranchScenario(page, { onlineCard: true });
+
+  await expect(page.locator('#paymentOnlineCards')).toBeVisible();
+  await expect(page.locator('.payment-saved-card')).toHaveCount(1);
+  await expect(page.locator('.payment-saved-card-copy strong')).toHaveText('Visa - Crédito');
+});
+
+test('o pedido nunca sai com credit_card numa filial que não cobra cartão online', async ({ page }) => {
+  const api = await seedCardBranchScenario(page, { onlineCard: false });
+
+  // Sem cartão oferecido, o cliente fecha por PIX — e o pedido tem que sair
+  // com o método que a filial aceita, não com o que a UI deixou pendurado.
+  await page.locator('[data-payment-screen-panel="online"] [data-payment-key="pix"]').click();
+  await page.locator('.payment-method-confirm').click();
+  await expect(page.locator('#cartPaymentLabel')).toHaveText('PIX');
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#orderConfirmCta').click();
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
+
+  expect(api.orderRequests).toHaveLength(1);
+  expect(api.orderRequests[0].body.payment_method).toBe('pix');
+});
+
+test('pedido de cartão que volta payment_flow=delivery avisa que o cartão NÃO foi cobrado', async ({ page }) => {
+  // A divergência que não deve acontecer com a gate no lugar: /info diz que a
+  // filial aceita cartão online, mas a criação do pedido devolve "delivery".
+  // Se acontecer, "pedido feito" sem mais nada leria como "cartão cobrado".
+  const paymentCalls = [];
+  await mockApi(page, {
+    orderResponse: () => pixOrder(1, { payment_flow: 'delivery', payment_status: 'on_delivery' }),
+    onStartPayment: (route) => { paymentCalls.push(1); return route.fulfill(json({})); }
+  });
+  await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
+  await installMercadoPagoSecureFieldsMock(page);
+  const card = {
+    id: '11111111-1111-4111-8111-111111111111', provider_card_id: '1562188766181',
+    brand: 'visa', last_four_digits: '2508', expiration_month: 12, expiration_year: 2030,
+    created_at: '2026-08-25T12:00:00Z'
+  };
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-e2e', name: 'Cliente Teste', phone: '85999999999'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true
+  })));
+  await page.route('**/customers/me/cards**', route => route.fulfill(json([card])));
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('.payment-saved-card-select').click();
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#orderConfirmCta').click();
+  await expect(page.locator('#savedCardCvvModal')).toHaveClass(/active/);
+  await page.locator('[data-secure-field="securityCode"]').fill('123');
+  await page.locator('#confirmSavedCardCvvButton').click();
+
+  await expect(page.locator('#orderSuccessModal')).toHaveClass(/active/);
+  await expect(page.locator('#ordSuccessMessage')).toHaveText(/o cartão não foi cobrado/i);
+  // Nenhuma cobrança foi tentada: não havia fluxo online para cobrar.
+  expect(paymentCalls).toHaveLength(0);
 });

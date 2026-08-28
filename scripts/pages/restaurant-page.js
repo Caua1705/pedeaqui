@@ -263,6 +263,31 @@
   }
 
   /**
+   * Rastro do checkout, do toque em "Confirmar" até a resposta da cobrança.
+   *
+   * Mesmo princípio (e mesmo formato) do `cvvTrace` da tela de cartão: cada
+   * etapa se ANUNCIA com o estado que a governa, de modo que o console diga em
+   * qual delas o fluxo parou — sem isso, um checkout que morre no meio deixa
+   * apenas ausência no console, e ausência não se investiga.
+   *
+   * Continua a numeração daquele rastro: a tela do CVV vai de A/E a 5/5, e o
+   * checkout segue de 6 em diante, para os dois lerem como UMA sequência.
+   */
+  function checkoutTrace(step, detail = {}) {
+    console.log(`[PedeAqui][Checkout] ${step}`, detail);
+  }
+
+  /** Só o que identifica o erro — nunca o objeto inteiro, que polui o console. */
+  function errorTrace(error) {
+    return {
+      tipo: error?.name || 'Error',
+      status: error?.status ?? null,
+      mensagem: error?.message || String(error),
+      detail: error?.data?.detail ?? error?.detail ?? null
+    };
+  }
+
+  /**
    * Toda mensagem de erro de API desta página passa por aqui. O `detail` chega
    * como string, array (422) ou objeto (pagamento), e só o PedeAquiApiError sabe
    * ler os três — interpolar o valor cru mostraria "[object Object]" ao cliente.
@@ -2895,12 +2920,23 @@
     }
     setOrderConfirmLoading(true);
     try {
+      checkoutTrace('6/11 Confirmar pressionado', {
+        formaDePagamento: paymentMethodKey || paymentMethod || null,
+        cartaoSalvoSelecionado: selectedSavedCard?.id || null,
+        jaTemTokenDoCartao: Boolean(savedCardPaymentToken),
+        itensNaSacola: cart.length
+      });
       if (selectedSavedCard?.id && !savedCardPaymentToken) {
+        // Abre a tela de CVV; o rastro dela é o `[CartaoSalvo]` (A/E a 5/5).
         savedCardPaymentToken = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard) || '';
-        if (!savedCardPaymentToken) return;
+        if (!savedCardPaymentToken) {
+          checkoutTrace('6/11 PAROU: a tela de CVV não devolveu token');
+          return;
+        }
       }
       await submitOrder();
     } catch (error) {
+      checkoutTrace('6/11 PAROU: erro antes de criar o pedido', errorTrace(error));
       if (error?.message !== 'Pagamento cancelado.') logAppError('Falha ao confirmar o cartão salvo', error);
     } finally {
       // Em caso de sucesso a folha já desceu junto com a sacola; o que sobra
@@ -3741,11 +3777,31 @@
     if (orderSubmitInFlight) return; // trava de duplo-clique
     const orderPayload = buildCurrentOrderPayload();
     const problems = validateCurrentOrder(orderPayload);
+    checkoutTrace('7/11 payload do pedido montado', {
+      payment_method: orderPayload?.payment_method ?? null,
+      order_type: orderPayload?.order_type ?? null,
+      itens: orderPayload?.items?.length ?? 0,
+      problemas: problems
+    });
     if (problems.length) {
       // O aviso mora na sacola, atrás da folha: mostrá-lo com a folha em cima
       // seria escrever para uma tela que o cliente não está vendo.
       closeOrderConfirm();
       showCartOrderProblems(problems);
+      return;
+    }
+
+    // Cartão selecionado e token ausente = não há como cobrar este pedido.
+    // Criá-lo assim produziria um pedido de cartão que a rota de cobrança
+    // receberia SEM cartão — ou seja, exatamente o pedido sem pagamento que
+    // este fluxo existe para impedir. O caminho normal (confirmOrderFromSheet)
+    // já pede o CVV antes; esta é a rede embaixo dele.
+    if (selectedSavedCard?.id && !savedCardPaymentToken) {
+      checkoutTrace('7/11 PAROU: cartão sem token — pedido NÃO criado', {
+        cartaoSalvoSelecionado: selectedSavedCard.id
+      });
+      closeOrderConfirm();
+      showCartOrderError('Não foi possível confirmar o cartão. Informe o CVV novamente para continuar.');
       return;
     }
 
@@ -3763,6 +3819,7 @@
       // Falha REAL da requisição: o carrinho não é tocado e a Idempotency-Key é
       // preservada de propósito — a retentativa precisa ser reconhecida como a
       // mesma tentativa, não como um pedido novo.
+      checkoutTrace('7/11 PAROU: POST /orders falhou — nenhum pedido criado', errorTrace(error));
       logAppError('Falha ao criar pedido', error);
       setOrderSubmitting(false); // reabilita para retry
       closeOrderConfirm(); // o erro é da sacola, e ela está atrás da folha
@@ -3844,7 +3901,18 @@
   // criação. Pagamento na entrega segue direto para a confirmação, exatamente
   // como sempre; pagamento online precisa da cobrança antes de o pedido valer.
   async function routeCreatedOrder(response, items) {
+    const cardPayment = currentCardPaymentPayload();
+    checkoutTrace('8/11 pedido criado, decidindo o caminho', {
+      order_number: response?.order_number ?? null,
+      payment_flow: response?.payment_flow ?? null,
+      payment_status: response?.payment_status ?? null,
+      temTrackingToken: Boolean(response?.tracking_token),
+      pagaComCartao: Boolean(cardPayment)
+    });
     if (!isOnlinePaymentFlow(response)) {
+      checkoutTrace('11/11 FIM: pagamento na entrega — sem cobrança online', {
+        payment_flow: response?.payment_flow ?? null
+      });
       leaveCartAfterOrder();
       showOrderSuccess(response);
       return;
@@ -3854,13 +3922,49 @@
     const session = await preparePixPayment(response, {
       items,
       ownsCart: true,
-      cardPayment: currentCardPaymentPayload()
+      cardPayment
     });
     // A confirmação deixa de ser interativa, mas a sacola permanece visível
     // atrás enquanto a tela Pix desliza por cima dela.
     setOrderSubmitting(false);
+    // Cartão não aprovado: o cliente NÃO pode ver "pedido feito" nem cair na
+    // tela do Pix, que é de outra forma de pagamento. Ele fica onde estava —
+    // na sacola —, com o motivo e os itens intactos.
+    if (session.cardDeclined) {
+      failCardCheckout(session.cardDeclined.message);
+      return;
+    }
     closeOrderConfirm();
     if (!session.cardCompleted) presentPixPayment(session);
+  }
+
+  /**
+   * Volta ao checkout depois de um cartão não aprovado.
+   *
+   * Três coisas, e cada uma tem um motivo:
+   *
+   * 1. `pixSession = null` — não há cobrança aberta para retomar. Sem isto o
+   *    próximo toque em "Efetuar pagamento" cairia em
+   *    resumeCreatedCartPixPayment() e reabriria a tela do Pix do pedido que
+   *    acabou de ser recusado, em vez de deixar o cliente tentar de novo.
+   * 2. o token do cartão é ZERADO — ele é de uso único no Mercado Pago, e um
+   *    token já gasto só produziria a mesma recusa. A retentativa pede o CVV
+   *    de novo, que é o gesto certo depois de uma recusa por CVV.
+   * 3. a sacola NÃO é tocada. É a regra que vale em todo erro deste arquivo:
+   *    falha não pode custar o pedido do cliente.
+   *
+   * ⚠️ PENDÊNCIA DE BACKEND: o pedido JÁ FOI CRIADO no servidor antes da
+   * cobrança — é assim que a API funciona (POST /orders e depois
+   * POST /orders/{token}/payment; não há como cobrar um pedido que não existe).
+   * O front não tem rota para cancelá-lo (o OpenAPI só expõe o PATCH de status
+   * em /admin). Enquanto o backend não cancelar sozinho o pedido online cuja
+   * cobrança foi recusada, ele fica registrado sem pagamento.
+   */
+  function failCardCheckout(message) {
+    pixSession = null;
+    savedCardPaymentToken = '';
+    closeOrderConfirm();
+    showCartOrderError(message);
   }
 
   // Totais vêm como number; descontos vêm como string decimal ("0.00").
@@ -3998,6 +4102,79 @@
     if (['paid', 'approved', 'succeeded', 'success', 'confirmed', 'captured', 'settled', 'completed'].includes(value)) return 'paid';
     if (['failed', 'failure', 'canceled', 'cancelled', 'expired', 'refused', 'rejected', 'declined', 'error', 'refunded', 'chargeback', 'voided'].includes(value)) return 'failed';
     return 'pending';
+  }
+
+  // Cartão APROVADO, e cartão EM ANÁLISE — as duas únicas listas que autorizam
+  // o pedido a existir. Ambas são explícitas de propósito (ver cardChargeKind).
+  const CARD_APPROVED_STATUSES = new Set([
+    'paid', 'approved', 'succeeded', 'success', 'confirmed', 'captured', 'settled', 'completed', 'authorized'
+  ]);
+  const CARD_IN_REVIEW_STATUSES = new Set([
+    'in_review', 'in_process', 'in_analysis', 'under_review', 'pending_review', 'review'
+  ]);
+
+  /**
+   * Desfecho de uma cobrança NO CARTÃO — e por que ele NÃO é paymentStatusKind().
+   *
+   * No Pix, "não sei" quer dizer ESPERE: a cobrança fica aberta, o cliente ainda
+   * vai pagar, e continuar consultando é o erro barato. No cartão não existe
+   * esperar. A autorização é síncrona: quando esta resposta chega, o gateway já
+   * disse sim ou não. Então aqui o desconhecido cai para o outro lado —
+   * NÃO APROVADO —, porque o erro caro passou a ser o oposto: dar como feito um
+   * pedido que ninguém pagou.
+   *
+   * Era exatamente esse buraco que deixava um cartão recusado virar tela de
+   * "pedido feito": `pending` (e qualquer status fora da lista de recusa) caía
+   * no mesmo balde do Pix aguardando pagamento.
+   *
+   * @returns {'approved'|'in_review'|'declined'}
+   */
+  function cardChargeKind(status) {
+    const value = String(status || '').trim().toLowerCase();
+    if (CARD_APPROVED_STATUSES.has(value)) return 'approved';
+    // Análise antifraude é decisão TOMADA, só não liquidada: o pedido vale, e
+    // é assim que a tela já se comportava.
+    if (CARD_IN_REVIEW_STATUSES.has(value)) return 'in_review';
+    return 'declined';
+  }
+
+  /**
+   * O motivo da recusa, em português — traduzido de `status_detail`.
+   *
+   * `StartPaymentResponse` NÃO tem campo de mensagem: numa recusa (200 com
+   * `payment_status: "failed"`) o que vem é `status_detail`, o motivo CRU do
+   * Mercado Pago. Sem esta tabela o cliente lê sempre a mesma frase genérica,
+   * e "cartão sem limite" e "CVV errado" pedem coisas opostas dele.
+   *
+   * A tabela é NOMINAL de propósito: um `status_detail` que não conhecemos cai
+   * na frase genérica, em vez de virar um palpite errado sobre o que corrigir.
+   */
+  const CARD_DECLINE_REASONS = {
+    cc_rejected_bad_filled_security_code: 'Código de segurança incorreto. Confira o CVV do cartão e tente de novo.',
+    cc_rejected_bad_filled_date: 'Data de validade incorreta. Confira a validade do cartão e tente de novo.',
+    cc_rejected_bad_filled_card_number: 'Número do cartão incorreto. Confira os dados e tente de novo.',
+    cc_rejected_bad_filled_other: 'Algum dado do cartão está incorreto. Confira e tente de novo.',
+    cc_rejected_insufficient_amount: 'O cartão não tem limite suficiente para este pedido. Use outro cartão ou outra forma de pagamento.',
+    cc_rejected_high_risk: 'O cartão não foi aprovado. Escolha outro cartão ou outra forma de pagamento.',
+    cc_rejected_max_attempts: 'Muitas tentativas com este cartão. Use outro cartão ou outra forma de pagamento.',
+    cc_rejected_call_for_authorize: 'O banco precisa autorizar esta compra. Ligue para o seu banco e tente de novo, ou use outro cartão.',
+    cc_rejected_card_disabled: 'Este cartão está desabilitado. Ligue para o seu banco ou use outro cartão.',
+    cc_rejected_duplicated_payment: 'Já existe um pagamento igual a este. Confira antes de pagar de novo.',
+    cc_rejected_card_error: 'Não foi possível processar este cartão. Tente de novo ou use outro cartão.',
+    cc_rejected_invalid_installments: 'O cartão não aceita este parcelamento. Escolha outra forma de pagamento.',
+    cc_rejected_blacklist: 'O cartão não foi aprovado. Escolha outro cartão ou outra forma de pagamento.',
+    cc_rejected_other_reason: 'O cartão não foi aprovado. Escolha outro cartão ou outra forma de pagamento.'
+  };
+
+  /** A frase que o cliente lê quando o cartão não passou. */
+  function cardDeclineMessage(payment) {
+    const detail = String(payment?.status_detail || '').trim().toLowerCase();
+    if (CARD_DECLINE_REASONS[detail]) return CARD_DECLINE_REASONS[detail];
+    // Alguns 200 não têm status_detail; um erro estruturado (401/400/502/503)
+    // já vem com `message` pronta e em português, escrita pelo backend.
+    const fromGateway = String(payment?.message || '').trim() || detailText(payment?.detail);
+    if (fromGateway) return fromGateway;
+    return 'Pagamento não aprovado pelo cartão. Confira os dados, escolha outro cartão ou outra forma de pagamento.';
   }
 
   /**
@@ -4313,8 +4490,14 @@
     const session = pixSession;
     if (!session?.trackingToken) return;
 
+    const isCard = Boolean(session.cardPayment);
     let payment;
     try {
+      checkoutTrace(`9/11 criando a cobrança (${isCard ? 'cartão' : 'pix'})`, {
+        trackingToken: session.trackingToken,
+        temTokenDoCartao: Boolean(session.cardPayment?.token),
+        savedCardId: session.cardPayment?.saved_card_id || null
+      });
       payment = await window.PedeAquiOrderService.startOrderPayment(
         getRestaurantSlug(),
         session.trackingToken,
@@ -4322,31 +4505,53 @@
       );
     } catch (error) {
       if (pixSession !== session) return;
+      checkoutTrace('9/11 PAROU: a rota de cobrança falhou', errorTrace(error));
       logAppError('Falha ao criar a cobrança do Pix', error);
-      const outcome = pixChargeErrorOutcome(error, { card: Boolean(session.cardPayment) });
+      const outcome = pixChargeErrorOutcome(error, { card: isCard });
+      // Cartão é o mesmo desfecho da recusa: não houve cobrança, então não
+      // pode haver tela de pedido feito nem tela de Pix. O cliente volta para
+      // a sacola com o motivo.
+      if (isCard) {
+        session.cardDeclined = { message: outcome.message };
+        return;
+      }
       showPixError(outcome.message, outcome);
       return;
     }
     if (pixSession !== session) return; // a tela mudou enquanto esperávamos
 
     session.payment = payment;
-    if (session.cardPayment) {
-      const cardStatus = paymentStatusKind(payment?.payment_status);
-      if (cardStatus === 'failed') {
-        const message = String(payment?.message || '').trim();
-        showPixError(message || 'Pagamento não realizado.', {
-          title: 'Pagamento não realizado',
-          canRetry: false,
-          code: ''
+    if (isCard) {
+      const kind = cardChargeKind(payment?.payment_status);
+      checkoutTrace('10/11 o gateway respondeu a cobrança do cartão', {
+        payment_status: payment?.payment_status ?? null,
+        // O motivo CRU do Mercado Pago: é ele que diz se a recusa foi de CVV,
+        // de limite ou do banco. Sem ele no console, uma recusa é indistinguível
+        // de outra.
+        status_detail: payment?.status_detail ?? null,
+        desfecho: kind,
+        provider: payment?.provider ?? null,
+        provider_payment_id: payment?.provider_payment_id ?? null
+      });
+      // ⚠️ REGRA DO CARTÃO: só APROVAÇÃO (ou análise, que é decisão tomada)
+      // cria pedido. Qualquer outra coisa — recusa, `pending`, status que não
+      // conhecemos, resposta sem status — é NÃO PAGO, e não pago não vira tela
+      // de sucesso. Ver cardChargeKind().
+      if (kind === 'declined') {
+        checkoutTrace('11/11 FIM: cartão não aprovado — voltando para a sacola', {
+          payment_status: payment?.payment_status ?? null
         });
+        session.cardDeclined = { message: cardDeclineMessage(payment) };
         return;
       }
-      if (cardStatus === 'paid' || cardStatus === 'in_review' || cardStatus === 'pending') {
-        session.cardCompleted = true;
-        leaveCartAfterOrder();
-        showOrderSuccess(session.order);
-        return;
-      }
+      checkoutTrace('11/11 FIM: cartão aprovado — pedido confirmado', {
+        payment_status: payment?.payment_status ?? null,
+        desfecho: kind
+      });
+      session.cardCompleted = true;
+      leaveCartAfterOrder();
+      showOrderSuccess(session.order);
+      return;
     }
     const kind = paymentStatusKind(payment?.payment_status);
     if (kind === 'paid') {
@@ -4714,9 +4919,18 @@
     // espera cabe no próprio botão, e trocar a tela por uma de carregamento
     // faria o cliente perder de vista o que deu errado.
     const button = $('pixRetryBtn');
+    const session = pixSession;
     button?.classList.add('is-loading');
     try {
       await startPixCharge();
+      // Uma retentativa de CARTÃO também pode voltar recusada, e recusa não
+      // tem tela aqui: o desfecho do cartão é sempre a sacola. Sem isto o
+      // botão pararia de girar e nada mais aconteceria — a falha muda que este
+      // fluxo já teve uma vez.
+      if (session?.cardDeclined) {
+        closeModalImmediately('pixPaymentModal');
+        failCardCheckout(session.cardDeclined.message);
+      }
     } finally {
       button?.classList.remove('is-loading');
     }

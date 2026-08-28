@@ -53,10 +53,20 @@
   /**
    * POST /restaurants/{slug}/orders/{tracking_token}/payment → StartPaymentResponse.
    *
-   * Cria a cobrança no gateway. Também é autorizada pelo tracking token, e é
-   * deliberadamente separada da criação do pedido (o backend não fala com o
-   * gateway dentro da transação do pedido). Pix segue sem corpo; cartão recebe
-   * `{card: {token, saved_card_id}}` quando usa um cartão salvo.
+   * Cria a cobrança no gateway. É deliberadamente separada da criação do pedido
+   * (o backend não fala com o gateway dentro da transação do pedido). Pix segue
+   * sem corpo; cartão recebe `{card: {token, saved_card_id}}`.
+   *
+   * ⚠️ O TOKEN DO CLIENTE VAI JUNTO, e não é opcional para cartão.
+   *
+   * O tracking token do path continua sendo a AUTORIZAÇÃO — é o que mantém o
+   * Pix de visitante funcionando sem conta. Mas o backend exige, além disso,
+   * um cliente AUTENTICADO para cobrar no cartão: o `payer.email` de um pedido
+   * de visitante é sintético, e sintético entra na análise antifraude do
+   * Mercado Pago e volta recusado. Sem este header, toda cobrança de cartão
+   * responde 401 `login_required` — antes de o gateway ser chamado, com CVV
+   * certo ou errado, sempre. Era essa a falha silenciosa do checkout de
+   * cartão: o pedido nascia e a cobrança morria aqui.
    *
    * Chamar duas vezes é seguro pelo lado do front — o backend devolve a cobrança
    * corrente —, mas ainda assim só chamamos uma vez por pedido.
@@ -69,7 +79,8 @@
         ...(options.card ? { body: JSON.stringify({ card: options.card }) } : {}),
         // Criar cobrança passa por um gateway externo: mais lento que uma
         // leitura, mais rápido que criar o pedido.
-        timeout: Number.isFinite(options.timeout) ? options.timeout : 15000
+        timeout: Number.isFinite(options.timeout) ? options.timeout : 15000,
+        ...authOptions()
       }
     );
   }

@@ -303,10 +303,12 @@ test('Salvar fica ativo e mostra cada erro no campo correto com o visual do cada
 
 async function runSavedCardCheckout(page, paymentStatus) {
   const paymentBodies = [];
+  const paymentAuth = [];
   const api = await mockApi(page, {
     orderResponse: () => pixOrder(1),
     onStartPayment: (route, request) => {
       paymentBodies.push(JSON.parse(request.postData() || '{}'));
+      paymentAuth.push(request.headers().authorization || null);
       return route.fulfill(json({
         provider: 'mercadopago',
         provider_payment_id: 'card-payment-e2e',
@@ -351,6 +353,12 @@ async function runSavedCardCheckout(page, paymentStatus) {
 
   expect(api.orderRequests).toHaveLength(1);
   expect(api.orderRequests[0].body.payment_method).toBe('credit_card');
+
+  // O Bearer do cliente NA COBRANÇA. O tracking token do path autoriza a rota,
+  // mas o backend só cobra no cartão com cliente autenticado — sem este header
+  // a resposta é 401 `login_required`, com CVV certo ou errado, e o pedido fica
+  // criado sem pagamento. Este expect é o que impede a regressão de voltar.
+  expect(paymentAuth).toEqual(['Bearer e2e-card-token']);
   expect(paymentBodies).toEqual([{
     card: {
       saved_card_id: card.id,
@@ -393,4 +401,177 @@ test('card_enabled falso não desenha cartão nem inicializa o SDK', async ({ pa
 
   await expect(page.locator('#paymentOnlineCards')).toBeHidden();
   expect(await page.evaluate(() => window.__mpPublicKeys)).toEqual([]);
+});
+
+/**
+ * O MESMO checkout de cartão salvo, mas com a cobrança RECUSADA.
+ *
+ * `onStartPayment` decide o que a rota de cobrança responde; o resto do
+ * caminho é idêntico ao do sucesso, inclusive os cliques. É isso que torna a
+ * comparação honesta: a única variável é a resposta do gateway.
+ */
+async function runDeclinedSavedCardCheckout(page, onStartPayment) {
+  const api = await mockApi(page, { orderResponse: () => pixOrder(1), onStartPayment });
+  await seedLoggedDelivery(page);
+  await installMercadoPagoSecureFieldsMock(page);
+  const card = {
+    id: '11111111-1111-4111-8111-111111111111',
+    provider_card_id: '1562188766181',
+    brand: 'visa',
+    last_four_digits: '2508',
+    expiration_month: 12,
+    expiration_year: 2030,
+    created_at: '2026-08-25T12:00:00Z'
+  };
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-e2e', name: 'Cliente Teste', phone: '85999999999', email: 'cliente.e2e@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true
+  })));
+  await page.route('**/customers/me/cards**', route => route.fulfill(json([card])));
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('.payment-saved-card-select').click();
+  await expect(page.locator('#cartPaymentLabel')).toHaveText('Crédito - Visa •••• 2508');
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#orderConfirmCta').click();
+  await expect(page.locator('#savedCardCvvModal')).toHaveClass(/active/);
+  await page.locator('[data-secure-field="securityCode"]').fill('123');
+  await page.locator('#confirmSavedCardCvvButton').click();
+
+  // O desfecho da recusa: a sacola, com o motivo escrito nela.
+  await expect(page.locator('#cartOrderError')).toBeVisible();
+  return api;
+}
+
+/** O que NUNCA pode aparecer depois de uma recusa. */
+async function expectNoOrderPlaced(page) {
+  await expect(page.locator('#orderSuccessModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#orderConfirmSheet')).not.toHaveClass(/is-open/);
+  // A sacola INTACTA: recusa não pode custar os itens do cliente.
+  const stored = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(name => name.startsWith('rapidex.cart.'));
+    return key ? JSON.parse(localStorage.getItem(key)).items.length : 0;
+  });
+  expect(stored).toBe(1);
+}
+
+test('cartão recusado não vira pedido feito: erro na sacola, com a frase do gateway', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    provider: 'mercadopago',
+    provider_payment_id: 'card-payment-e2e',
+    payment_status: 'rejected',
+    message: 'Confira o código de segurança do cartão.'
+  })));
+
+  await expect(page.locator('#cartOrderError')).toHaveText('Confira o código de segurança do cartão.');
+  await expectNoOrderPlaced(page);
+});
+
+/**
+ * O buraco que deixava um CVV errado virar "pedido feito".
+ *
+ * No Pix, status desconhecido quer dizer "ainda vai ser pago" e o polling
+ * continua. No CARTÃO não existe esperar: a autorização é síncrona. Estes dois
+ * casos travam a regra de que, no cartão, tudo o que não é aprovação explícita
+ * é NÃO PAGO — inclusive `pending`, inclusive resposta sem status nenhum.
+ */
+for (const [label, body] of [
+  ['pending', { payment_status: 'pending' }],
+  ['sem payment_status', {}]
+]) {
+  test(`cobrança de cartão com status "${label}" não confirma o pedido`, async ({ page }) => {
+    await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+      provider: 'mercadopago', provider_payment_id: 'card-payment-e2e', ...body
+    })));
+
+    await expect(page.locator('#cartOrderError'))
+      .toHaveText(/Pagamento não aprovado pelo cartão/);
+    await expectNoOrderPlaced(page);
+  });
+}
+
+test('falha da rota de cobrança no cartão volta para a sacola, não para a tela do Pix', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    detail: { code: 'cc_rejected_bad_filled_security_code', retryable: false, message: 'Confira o código de segurança do cartão.' }
+  }, 400)));
+
+  await expect(page.locator('#cartOrderError')).toHaveText('Confira o código de segurança do cartão.');
+  await expectNoOrderPlaced(page);
+});
+
+test('depois da recusa, tentar de novo pede o CVV outra vez em vez de reabrir o Pix', async ({ page }) => {
+  const api = await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    provider: 'mercadopago', provider_payment_id: 'card-payment-e2e', payment_status: 'rejected'
+  })));
+  expect(api.orderRequests).toHaveLength(1);
+
+  await page.locator('#cartCtaBtn').click();
+  await page.locator('#orderConfirmCta').click();
+
+  // O token do Mercado Pago é de uso único: sem pedir o CVV de novo, a
+  // retentativa só repetiria a mesma recusa. E nada de tela de Pix — a
+  // cobrança recusada não é uma cobrança pendente para retomar.
+  await expect(page.locator('#savedCardCvvModal')).toHaveClass(/active/);
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+});
+
+test('recusa por CVV vira a frase do CVV, e não a genérica — status_detail é lido', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    provider: 'mercadopago',
+    provider_payment_id: 'card-payment-e2e',
+    payment_status: 'failed',
+    // O motivo cru do Mercado Pago. É a ÚNICA pista do que pedir ao cliente:
+    // StartPaymentResponse não tem campo de mensagem numa recusa.
+    status_detail: 'cc_rejected_bad_filled_security_code'
+  })));
+
+  await expect(page.locator('#cartOrderError'))
+    .toHaveText('Código de segurança incorreto. Confira o CVV do cartão e tente de novo.');
+  await expectNoOrderPlaced(page);
+});
+
+test('recusa por limite pede outro cartão, não que o CVV seja redigitado', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    provider: 'mercadopago',
+    provider_payment_id: 'card-payment-e2e',
+    payment_status: 'failed',
+    status_detail: 'cc_rejected_insufficient_amount'
+  })));
+
+  await expect(page.locator('#cartOrderError')).toHaveText(/não tem limite suficiente/);
+  await expectNoOrderPlaced(page);
+});
+
+test('status_detail desconhecido cai na frase genérica, nunca num palpite errado', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    provider: 'mercadopago',
+    provider_payment_id: 'card-payment-e2e',
+    payment_status: 'failed',
+    status_detail: 'cc_rejected_motivo_que_ainda_nao_existe'
+  })));
+
+  await expect(page.locator('#cartOrderError')).toHaveText(/Pagamento não aprovado pelo cartão/);
+  await expectNoOrderPlaced(page);
+});
+
+test('401 login_required não vira "pedido feito": mostra a frase do backend na sacola', async ({ page }) => {
+  await runDeclinedSavedCardCheckout(page, route => route.fulfill(json({
+    detail: {
+      code: 'login_required',
+      retryable: false,
+      message: 'Para pagar com cartão é preciso entrar na sua conta. Você também pode pagar com Pix ou na entrega.'
+    }
+  }, 401)));
+
+  await expect(page.locator('#cartOrderError')).toHaveText(/preciso entrar na sua conta/);
+  await expectNoOrderPlaced(page);
 });

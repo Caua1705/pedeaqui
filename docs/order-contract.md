@@ -13,7 +13,7 @@ Se o contrato mudar, é esse arquivo que muda.
 | Rota | Quem autoriza | Quando |
 |---|---|---|
 | `POST /restaurants/{slug}/orders` | Bearer **opcional** | cria o pedido; devolve `tracking_token` |
-| `POST /restaurants/{slug}/orders/{tracking_token}/payment` | o próprio token (sem security) | abre a cobrança no gateway |
+| `POST /restaurants/{slug}/orders/{tracking_token}/payment` | o próprio token — **+ Bearer obrigatório no cartão** | abre a cobrança no gateway |
 | `GET /restaurants/{slug}/orders/track/{tracking_token}` | o próprio token (sem security) | acompanha status e pagamento |
 
 Cliente logado tem um quarto caminho, `GET /customers/me/orders/{order_id}`, autorizado pelo
@@ -101,8 +101,22 @@ sucesso normaliza com `Number()` antes de formatar.
 
 ## Cobrança online — `POST /restaurants/{slug}/orders/{tracking_token}/payment`
 
-**Sem corpo de requisição** (o schema não define `requestBody`): o método de pagamento já
-foi gravado no pedido. **Sem `security`**: o token no path é a autorização.
+**Corpo OPCIONAL** — `StartPaymentRequest { card?: CardPaymentPayload }`. Pix continua
+sendo um POST sem corpo, exatamente como antes de o cartão existir; `card` (com `token`
+obrigatório e `saved_card_id` quando é cartão salvo) só vai quando a forma de pagamento do
+pedido é cartão.
+
+**`security: HTTPBearer`, e o Bearer NÃO é decorativo.** O `tracking_token` do path
+continua sendo a autorização — é o que mantém o Pix de visitante funcionando sem conta —,
+mas o backend **exige cliente autenticado para cobrar no cartão**: o `payer.email` de um
+pedido de visitante é sintético, e sintético entra na análise antifraude do Mercado Pago e
+volta recusado. Sem o header, cobrança de cartão responde **401 `login_required`** antes de
+o gateway ser chamado, com CVV certo ou errado. Por isso `startOrderPayment()`
+(`scripts/services/order-service.js`) manda `authOptions()` junto.
+
+⚠️ Esta seção já esteve **errada** aqui, afirmando "sem corpo" e "sem security" — e foi
+essa descrição que deixou o cartão sem o header. O `POST .../payment` mudou quando o cartão
+entrou; a fonte é `../pedeaqui_back/openapi.json`, não a memória desta página.
 
 Resposta 200 — `StartPaymentResponse`:
 
@@ -111,8 +125,28 @@ Resposta 200 — `StartPaymentResponse`:
 | `provider` | string | sim |
 | `provider_payment_id` | string | sim |
 | `payment_status` | string | sim |
+| `status_detail` | string\|null | não |
 | `qr_code` | string\|null | não |
 | `checkout_url` | string\|null | não |
+
+**`payment_status` significa coisas diferentes em cada forma de pagamento**, e é essa
+diferença que decide a tela: no Pix é **sempre `pending`** (a cobrança nasce aberta e o
+cliente ainda vai pagar); no cartão ele **já é o desfecho** — `paid`, `failed` ou
+`in_review` —, porque a autorização é síncrona.
+
+Daí as duas classificações separadas em `restaurant-page.js`:
+
+- `paymentStatusKind()` — do **Pix**. Desconhecido = `pending`: seguir esperando é barato.
+- `cardChargeKind()` — do **cartão**. Desconhecido = `declined`: no cartão não existe
+  esperar, então o erro caro passa a ser o oposto — dar como feito um pedido que ninguém
+  pagou. Só aprovação (ou `in_review`, que é decisão tomada) cria pedido.
+
+`status_detail` é o motivo **cru** do gateway e só existe no cartão. É a única pista do que
+pedir ao cliente numa recusa — `StartPaymentResponse` não tem campo de mensagem —, e
+`cc_rejected_bad_filled_security_code` (redigitar o CVV) pede coisa oposta de
+`cc_rejected_insufficient_amount` (usar outro cartão). A tradução mora em
+`CARD_DECLINE_REASONS`, é **nominal**, e o valor desconhecido cai numa frase genérica em
+vez de virar um palpite errado.
 
 `qr_code` é o **copia-e-cola** do Pix (payload EMV em texto), não uma imagem: o schema não
 tem nenhum campo de imagem.
@@ -211,17 +245,17 @@ mensagem pode levar o cliente a refazê-lo.
    pago; `failed|canceled|expired|refused|rejected|declined|refunded|chargeback|voided` →
    falhou), e **tudo o que não reconhece é tratado como pendente** — o polling continua em
    vez de declarar pago por engano. Validar os valores reais do gateway.
-9. **`PaymentErrorDetail` NÃO EXISTE no OpenAPI publicado.** Verificado em
-   `GET https://api.pederapidex.com/openapi.json` (80 schemas, nenhum com esse
-   nome; as strings `retryable`, `PaymentError` e `error_code` não aparecem em
-   lugar nenhum do documento). O endpoint `POST .../payment` declara **só** `200`
-   (`StartPaymentResponse`) e `422` (`HTTPValidationError`) — nenhuma resposta de
-   erro de pagamento. Os nomes `code`/`retryable` vieram **do backend por fora do
-   contrato**, e a **lista de valores de `code` é desconhecida**.
-   Consequência no front: não existe tabela de códigos. Um `code` desconhecido
-   não vira mensagem errada — ele só é exibido como referência para o cliente
-   citar ao restaurante, e quem decide a tela é o `retryable`.
-   **Pendência de backend:** publicar o schema e o enum de `code` no OpenAPI.
+9. ~~**`PaymentErrorDetail` NÃO EXISTE no OpenAPI publicado.**~~ **RESOLVIDO.**
+   O schema existe e está publicado (`PaymentErrorDetail`/`PaymentErrorResponse`,
+   com o enum `PaymentErrorCode`), e o `POST .../payment` declara `400`, `401`,
+   `422`, `502` e `503` além do `200`. Os códigos que importam ao checkout:
+   `login_required` (401 — cartão sem cliente autenticado) e `card_token_required`
+   (400 — cartão sem o token do navegador).
+   Nota: `https://api.pederapidex.com/openapi.json` responde **404** hoje — a
+   fonte é `../pedeaqui_back/openapi.json`, que é de onde
+   `npm run api:generate` já lê.
+   O front continua sem tabela de `code`: quem decide a tela é o `retryable`, e a
+   `message` do backend já vem pronta em português.
 10. **Não há rota para trocar a forma de pagamento de um pedido já criado.** O
    OpenAPI expõe, para o cliente, apenas `POST /orders`, `POST .../payment` e
    `GET .../track` (o único `PATCH` é `/admin/orders/{id}/status`). Por isso, no
@@ -248,3 +282,16 @@ mensagem pode levar o cliente a refazê-lo.
    devolver os itens em `GET .../track`, essa cópia local perde a razão de ser.
    A gaveta mostra só quantidade e nome — o valor continua guardado, mas não vai à tela:
    o número que tem de bater com a cobrança é o total, e é ele que fica visível.
+13. **⚠️ CARTÃO RECUSADO DEIXA PEDIDO ÓRFÃO — pendência de backend, a mais importante
+   desta lista.** A ordem das chamadas é imposta pela API: o pedido precisa EXISTIR para
+   ser cobrado (`POST /orders` e só então `POST /orders/{tracking_token}/payment`, que é
+   endereçada pelo `tracking_token`). Logo, quando o cartão é recusado, o pedido **já está
+   gravado** — sem pagamento.
+   O que o front faz hoje: não mostra tela de pedido feito, devolve o cliente à sacola com
+   o motivo da recusa e **não toca nos itens** (ver `failCardCheckout`). O que ele **não**
+   pode fazer: cancelar o pedido — não existe rota de cliente para isso (o único `PATCH` de
+   status é `/admin/orders/{id}/status`).
+   **Pendência de backend:** cancelar (ou não expor à cozinha) o pedido `payment_flow:
+   online` cuja cobrança de cartão voltou `failed`. Enquanto isso não existir, uma recusa
+   de cartão deixa um pedido registrado e não pago. Uma rota de cancelamento pelo
+   `tracking_token` também resolveria, e aí o front a chamaria em `failCardCheckout`.

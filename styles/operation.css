@@ -106,13 +106,8 @@
   background:#fff!important;
   border-bottom:1px solid #f1f1f1!important;
 }
-#operationModal .cart-hdr-back{
-  width:32px!important;
-  height:32px!important;
-  border-radius:9px!important;
-  background:#ececec!important;
-  color:#252a31!important;
-}
+/* Seta de voltar: a regra por id saiu — repetia exatamente a base
+   (.cart-hdr-back em restaurant.css: 32x32 / 9px / #ececec). */
 #operationModal .cart-hdr-back svg{
   width:17px!important;
   height:17px!important;
@@ -132,9 +127,6 @@
 #operationModal p.title{
   width:166.22px!important;
   height:66px!important;
-}
-#operationModal .cart-hdr-spacer{
-  width:32px!important;
 }
 #operationModal .cart-scroll{
   flex:1!important;
@@ -586,18 +578,6 @@
   border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
-#addAddressModal .cart-hdr-back{
-  width:32px!important;
-  height:32px!important;
-  border-radius:9px!important;
-  background:#ececec!important;
-  color:#252a31!important;
-}
-#addAddressModal .cart-hdr-back svg{
-  width:16px!important;
-  height:16px!important;
-  stroke-width:1.8!important;
-}
 #addAddressModal .cart-hdr-title{
   font-size:16px!important;
   line-height:20px!important;
@@ -608,9 +588,6 @@
   text-shadow:none!important;
   transform:none!important;
   text-align:center!important;
-}
-#addAddressModal .cart-hdr-spacer{
-  width:32px!important;
 }
 
 /* Icon wrapper above title */
@@ -858,22 +835,6 @@
   border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
-#addrSearchModal .cart-hdr-back,
-#addrMapModal .cart-hdr-back,
-#addrDetailsModal .cart-hdr-back{
-  width:32px!important;
-  height:32px!important;
-  border-radius:9px!important;
-  background:#ececec!important;
-  color:#252a31!important;
-}
-#addrSearchModal .cart-hdr-back svg,
-#addrMapModal .cart-hdr-back svg,
-#addrDetailsModal .cart-hdr-back svg{
-  width:16px!important;
-  height:16px!important;
-  stroke-width:1.8!important;
-}
 #addrSearchModal .cart-hdr-title,
 #addrMapModal .cart-hdr-title,
 #addrDetailsModal .cart-hdr-title{
@@ -886,11 +847,6 @@
   text-shadow:none!important;
   transform:none!important;
   text-align:center!important;
-}
-#addrSearchModal .cart-hdr-spacer,
-#addrMapModal .cart-hdr-spacer,
-#addrDetailsModal .cart-hdr-spacer{
-  width:32px!important;
 }
 
 /* ── STEP 1: ADDRESS SEARCH ── */
@@ -1336,13 +1292,6 @@
   background:#fff!important;
   border-bottom:1px solid #e2e2e2!important;
 }
-#addrPickerModal .cart-hdr-back{
-  width:32px!important;
-  height:32px!important;
-  border-radius:9px!important;
-  background:#ececec!important;
-  color:#252a31!important;
-}
 #addrPickerModal .cart-hdr-back svg{
   width:17px!important;
   height:17px!important;
@@ -1358,9 +1307,6 @@
   text-shadow:none!important;
   transform:none!important;
   text-align:center!important;
-}
-#addrPickerModal .cart-hdr-spacer{
-  width:32px!important;
 }
 #addrPickerModal .cart-scroll{
   flex:1!important;

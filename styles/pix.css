@@ -87,20 +87,9 @@
   border-bottom: 1px solid #f1f1f1;
 }
 
-/* Vale para os DOIS botões — a seta e o X usam a mesma classe. */
-#pixPaymentModal .cart-hdr-back {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: #ececec;
-  color: #252a31;
-}
-
-#pixPaymentModal .cart-hdr-back svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.8;
-}
+/* A caixa da seta e o tamanho do ícone vêm da base (.cart-hdr-back em
+   restaurant.css). O que sobra aqui é só o que ESTA tela tem de diferente: o X
+   de fechar, que é mais claro e mais grosso que a seta ao lado dele. */
 
 #pixPaymentModal .cart-hdr-back[aria-label='Fechar'] {
   color: #7d8389;

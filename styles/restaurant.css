@@ -40,12 +40,6 @@
     background:#fff!important;
     border-bottom:1px solid #ececec!important;
   }
-  #cartModal .cart-hdr-back{
-    width:32px!important;
-    height:32px!important;
-    border-radius:9px!important;
-    background:#f0f0f0!important;
-  }
   #cartModal .cart-hdr-copy{
     flex:1!important;
     display:flex!important;
@@ -66,7 +60,6 @@
     line-height:15px!important;
     color:#777!important;
   }
-  #cartModal .cart-hdr-spacer{width:32px!important}
   #cartModal > .modal--cart > .cart-tabs{display:none!important}
   #cartModal .cart-scroll{
     flex:1!important;
@@ -599,10 +592,28 @@ a{text-decoration:none;color:inherit}
 .modal--cart{display:flex;flex-direction:column}
 /* Cart header */
 .cart-hdr{display:flex;align-items:center;padding:14px 16px 12px;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0}
-.cart-hdr-back{width:36px;height:36px;border-radius:50%;border:none;background:#f5f5f5;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#444;flex-shrink:0;transition:background .15s}
-.cart-hdr-back:active{background:#ebebeb}
+/* SETA DE VOLTAR — a base, e o que aparece na tela.
+   Antes esta regra dizia 36x36 / raio 50% / #f5f5f5, e a de dentro do
+   @media(max-width:767px) dizia 40x40 / raio 12px. Nenhuma das duas era o que
+   o cliente via na maioria das telas: DEZ regras prefixadas por id
+   (#operationModal, #addAddressModal, #addrSearchModal, #addrMapModal,
+   #addrDetailsModal, #addrPickerModal, #pixPaymentModal, #cartModal, e as duas
+   de perfil em utilities.css) repetiam exatamente 32x32 / 9px / #ececec para
+   derruba-la, oito delas com !important.
+   As unicas telas que de fato mostravam a base eram o Checkout e o Ajuda do
+   perfil — que por isso tinham uma seta visivelmente maior e mais clara que a
+   dos irmaos ao lado. A base passa a ser o valor que as dez repetiam; as dez
+   sairam. */
+.cart-hdr-back{width:32px;height:32px;flex:0 0 32px;border-radius:9px;border:none;background:#ececec;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#252a31;padding:0;flex-shrink:0;transition:background .15s}
+.cart-hdr-back:active{background:#e0e0e0}
+/* O svg vinha do markup (width="18" stroke-width="2.5") nas telas sem regra
+   propria, e de uma regra por id nas outras. 16/1.8 e o que a maioria delas
+   pedia; as que pedem 17 continuam declarando isso onde estao. */
+.cart-hdr-back svg{width:16px;height:16px;stroke-width:1.8}
 .cart-hdr-title{flex:1;text-align:center;font-size:.95rem;font-weight:800;color:#1a1a1a}
-.cart-hdr-spacer{width:36px;flex-shrink:0}
+/* Espelha a largura do botao: e ele que mantem o titulo no centro. Sete
+   regras por id ja diziam 32px; a base dizia 36 (e 40 no mobile). */
+.cart-hdr-spacer{width:32px;flex-shrink:0}
 /* Cart tabs */
 .cart-tabs{display:flex;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0}
 .cart-tab{flex:1;padding:12px 0;text-align:center;font-size:.88rem;font-weight:700;color:#aaa;border:none;background:transparent;border-bottom:2.5px solid transparent;cursor:pointer;transition:all .2s;margin-bottom:-1px;font-family:inherit}
@@ -1663,21 +1674,8 @@ a{text-decoration:none;color:inherit}
   border-bottom:1px solid #f0f0f0;
   flex-shrink:0;
 }
-.cart-hdr-back{
-  width:40px;
-  height:40px;
-  border-radius:12px;
-  border:none;
-  background:#f5f5f5;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  color:#333;
-  flex-shrink:0;
-  transition:background .15s;
-}
-.cart-hdr-back:active{background:#ebebeb}
+/* A segunda base (40x40 / 12px) saiu junto: ela existia so para o mobile e era
+   derrubada por todas as regras por id. Ver a nota da base, acima. */
 .cart-hdr-title{
   flex:1;
   text-align:center;
@@ -1685,7 +1683,6 @@ a{text-decoration:none;color:inherit}
   font-weight:800;
   color:#1a1a1a;
 }
-.cart-hdr-spacer{width:40px;flex-shrink:0}
 
 /* 5. Cart tabs — refined */
 .cart-tabs{
@@ -2838,16 +2835,10 @@ a{text-decoration:none;color:inherit}
     background:#fff!important;
     border-bottom:1px solid #ececec!important;
   }
-  #cartModal .cart-hdr-back,
-  #cartModal .cart-hdr-spacer{
-    width:32px!important;
-    height:32px!important;
-    flex:0 0 32px!important;
-  }
-  #cartModal .cart-hdr-back{
-    border-radius:9px!important;
-    background:#f0f0f0!important;
-  }
+/* Seta de voltar e espacador do #cartModal: as regras sairam — repetiam a
+   base (.cart-hdr-back / .cart-hdr-spacer: 32x32, 9px, #ececec), e duas
+   delas ainda pediam #f0f0f0, que uma terceira ja derrubava. O svg de 17px
+   fica: ele difere da base (16px). */
   #cartModal .cart-hdr-copy{
     flex:1!important;
     min-width:0!important;
@@ -2949,10 +2940,6 @@ a{text-decoration:none;color:inherit}
   #cartModal .cart-hdr-sub{
     margin-top:4px!important;
     line-height:14px!important;
-  }
-  #cartModal .cart-hdr-back{
-    background:#ececec!important;
-    color:#252a31!important;
   }
   #cartModal .cart-hdr-back svg{
     width:17px!important;

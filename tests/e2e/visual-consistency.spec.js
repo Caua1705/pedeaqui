@@ -69,6 +69,48 @@ test('o botao que EXCLUI nao pode ser igual ao que confirma o pedido', async ({ 
   ).toBeGreaterThanOrEqual(4.5);
 });
 
+test('toda seta de voltar do app tem a mesma caixa', async ({ page }) => {
+  // Havia DEZ regras prefixadas por id repetindo 32x32 / 9px / #ececec para
+  // derrubar uma base que dizia 36x36 / 50% / #f5f5f5 (e 40x40 / 12px no
+  // mobile). As unicas telas que mostravam a base eram o Checkout e o Ajuda do
+  // perfil — que por isso tinham a seta visivelmente maior e mais clara que a
+  // dos irmaos ao lado. A base virou o valor que as dez repetiam.
+  //
+  // A varredura le TODOS os botoes do documento, inclusive os de telas
+  // fechadas: getComputedStyle nao precisa do elemento visivel, e assim o teste
+  // cobre as 14 setas sem navegar por 14 telas.
+  await mockApi(page);
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+
+  const caixas = await page.evaluate(() =>
+    [...document.querySelectorAll('.cart-hdr-back')].map((el) => {
+      const s = getComputedStyle(el);
+      return {
+        onde: el.closest('[id]')?.id || '(sem id)',
+        w: s.width,
+        h: s.height,
+        raio: s.borderRadius,
+        fundo: s.backgroundColor
+      };
+    })
+  );
+
+  expect(caixas.length, 'o app tem varias setas de voltar').toBeGreaterThanOrEqual(10);
+  const fora = caixas.filter(
+    (c) => c.w !== '32px' || c.h !== '32px' || c.raio !== '9px' || c.fundo !== 'rgb(236, 236, 236)'
+  );
+  expect(fora, `setas fora do padrao:\n${JSON.stringify(fora, null, 2)}`).toEqual([]);
+
+  // O espacador acompanha o botao, senao o titulo sai do centro.
+  const espacadores = await page.evaluate(() =>
+    [...document.querySelectorAll('.cart-hdr-spacer')].map((el) => getComputedStyle(el).width)
+  );
+  expect(new Set(espacadores).size, 'um unico valor de espacador').toBeLessThanOrEqual(1);
+  if (espacadores.length) expect(espacadores[0]).toBe('32px');
+});
+
 test('nenhum peso de fonte pedido esta fora dos que o Inter carrega', async ({ page }) => {
   // O <link> do Google Fonts pede Inter em 100;300;400;500;600;700;800. Pesos
   // fora dessa lista (650, 850, 615, 425...) nao existem no arquivo: o

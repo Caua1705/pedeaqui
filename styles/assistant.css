@@ -114,8 +114,8 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav {
 }
 
 @keyframes assistant-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { }
+  to   { }
 }
 
 /* Global guard: never let the bottom nav peek through fullscreen flows. */
@@ -1011,9 +1011,9 @@ body.app-error .app-loader-message {
 }
 
 /* Final assistant-only overrides kept at the end to win over legacy assistant styles. */
-.mob-view--assistant{display:none!important;transform:none!important;transition:none!important;background:#ffffff!important}
-.mob-view--assistant.active{display:flex!important;transform:none!important}
-.assistant-page{background:#ffffff!important;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
+.mob-view--assistant{display:none!important;transform:none!important;transition:none!important;}
+.mob-view--assistant.active{transform:none!important}
+.assistant-page{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
 .assistant-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
 .assistant-hero::before,.assistant-hero::after{display:none!important}
 .assistant-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
@@ -1021,7 +1021,7 @@ body.app-error .app-loader-message {
 .assistant-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
 .assistant-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:16px!important}
 .assistant-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
-.assistant-prompt-card{margin:10px 14px 0!important;padding:15px!important;border:1px solid #eeeeee!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
+.assistant-prompt-card{margin:10px 14px 0!important;padding:15px!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
 .assistant-prompt-headline{font-size:var(--ref-text-lg)!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
 .assistant-prompt-sub{color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;margin-bottom:12px!important}
 .assistant-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
@@ -1033,11 +1033,11 @@ body.app-error .app-loader-message {
 .assistant-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 .assistant-chip-svg{width:15px!important;height:15px!important;display:block!important}
 .assistant-chip--active{background:var(--brand-tint)!important;color:var(--brand-primary)!important;border-color:rgba(var(--brand-primary-rgb), .34)!important;box-shadow:none!important}
-.assistant-starter.hidden{display:none!important}
+.assistant-starter.hidden{}
 .assistant-result-image-wrap{height:104px!important}
 .assistant-toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
 
-.assistant-location-wrap{padding:0!important;background:#ffffff!important}
+.assistant-location-wrap{}
 .assistant-location-widget{margin:0 auto!important}
 .assistant-location-widget .address-card-copy strong{font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:300!important}
 .assistant-hero{margin-top:10px!important}
@@ -1046,12 +1046,12 @@ body.app-error .app-loader-message {
 .mob-view--assistant{background:#ffffff!important}
 .assistant-page{background:#ffffff!important;max-width:430px!important;margin:0 auto!important;width:100%!important}
 .assistant-location-wrap{padding:0!important;background:#ffffff!important}
-.assistant-location-widget.delivery-widget{width:calc(100% - 40px)!important;max-width:374px!important;height:75px!important;min-height:75px!important;margin:0 auto!important}
-.assistant-location-widget .delivery-widget-tabs{gap:5px!important}
-.assistant-location-widget .assistant-location-tab{flex:0 0 auto!important;min-width:0!important;padding:0 7px!important}
-.assistant-location-widget .assistant-location-tab--mode{max-width:82px!important}
-.assistant-location-widget .assistant-location-tab--brand{flex:0 1 auto!important;max-width:112px!important;justify-content:center!important;text-align:center!important}
-.assistant-location-widget .assistant-location-tab--branch{max-width:74px!important}
+.assistant-location-widget.delivery-widget{}
+.assistant-location-widget .delivery-widget-tabs{}
+.assistant-location-widget .assistant-location-tab{}
+.assistant-location-widget .assistant-location-tab--mode{}
+.assistant-location-widget .assistant-location-tab--brand{}
+.assistant-location-widget .assistant-location-tab--branch{}
 .assistant-top-separator{height:10px!important;margin-top:10px!important;background:#f4f4f4!important;border-top:1px solid #eeeeee!important;border-bottom:1px solid #eeeeee!important}
 .assistant-hero{margin:0!important;padding:18px 20px!important;min-height:108px!important;border:0!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #eeeeee!important}
 .assistant-avatar-wrap{width:72px!important;height:72px!important;flex-basis:72px!important}
@@ -1380,11 +1380,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-bottom-dock{
   left:0!important;
   right:0!important;
-  bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
   padding:16px 18px 14px!important;
   background:linear-gradient(180deg,rgba(255,255,255,0) 0%,#ffffff 18%,#ffffff 100%)!important;
   border-top:0!important;
-  box-shadow:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock::before{
   content:""!important;
@@ -1399,7 +1397,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-suggest-rail{
   gap:12px!important;
   margin:0 0 16px!important;
-  padding:0 2px 2px!important;
   opacity:1!important;
   transform:translateY(0)!important;
   transition:opacity .18s ease,transform .18s ease!important;
@@ -1409,9 +1406,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   opacity:0!important;
   pointer-events:none!important;
   transform:translateY(8px)!important;
-  height:0!important;
-  margin:0!important;
-  padding:0!important;
   overflow:hidden!important;
 }
 #mobViewAssistant .assistant-suggest-chip{
@@ -1421,11 +1415,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   padding:0 14px!important;
   border:1px solid #eceff3!important;
   border-radius:999px!important;
-  background:#ffffff!important;
   color:#5f6670!important;
   font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
-  font-weight:600!important;
   box-shadow:none!important;
   transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease!important;
 }
@@ -1437,7 +1429,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   transform:translateY(-1px)!important;
 }
 #mobViewAssistant .assistant-ai-input-bar{
-  min-height:58px!important;
   padding:8px 9px 8px 18px!important;
   gap:10px!important;
   border:1px solid #e7e9ee!important;
@@ -1461,30 +1452,21 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   font-weight:500!important;
 }
 #mobViewAssistant .assistant-ai-send{
-  width:42px!important;
-  height:42px!important;
   border-radius:14px!important;
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  box-shadow:none!important;
   transition:transform .14s ease,opacity .14s ease,background .14s ease!important;
 }
 #mobViewAssistant .assistant-ai-send:hover{
-  background:var(--brand-primary)!important;
 }
 #mobViewAssistant .assistant-ai-send:active{
   transform:scale(.94)!important;
   opacity:.9!important;
 }
 #mobViewAssistant .assistant-ai-body--searching{
-  background:#ffffff!important;
   padding-top:18px!important;
   padding-bottom:148px!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   display:block!important;
-  width:100%!important;
-  max-height:none!important;
   margin-top:0!important;
   animation:assistant-chat-in .18s ease both!important;
 }
@@ -1518,25 +1500,20 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-body{
   overflow:hidden!important;
   overscroll-behavior:none!important;
-  touch-action:none!important;
   padding:0 20px 150px!important;
 }
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching){
-  justify-content:flex-start!important;
 }
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   position:static!important;
   inset:auto!important;
   margin:0!important;
-  transform:none!important;
   color:#1a1a1a!important;
 }
 #mobViewAssistant .assistant-ai-body--searching{
-  overflow:hidden!important;
   touch-action:auto!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  overflow-y:auto!important;
   overscroll-behavior:contain!important;
   -webkit-overflow-scrolling:touch!important;
 }
@@ -1547,7 +1524,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  transform:translateY(-4px)!important;
 }
 #mobViewAssistant .assistant-bottom-dock{
   bottom:calc(112px + env(safe-area-inset-bottom,0px))!important;
@@ -1673,7 +1649,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: physical upward spacing from input. */
 #mobViewAssistant .assistant-suggest-rail{
-  transform:none!important;
   margin-top:-28px!important;
   margin-bottom:24px!important;
 }
@@ -1735,21 +1710,13 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* assistant intro: serif typewriter question and delayed suggestions. */
 #mobViewAssistant .assistant-ai-question{
   min-height:34px!important;
-  font-family:"Inter",sans-serif!important;
-  font-size:24px!important;
   line-height:30px!important;
-  font-weight:600!important;
   letter-spacing:0!important;
   color:#252a34!important;
-  text-align:center!important;
-  -webkit-font-smoothing:antialiased!important;
   text-rendering:geometricPrecision!important;
 }
 #mobViewAssistant .assistant-ai-subtitle{
-  max-width:300px!important;
   margin:6px auto 0!important;
-  font-size:var(--ref-text-md)!important;
-  line-height:20px!important;
   font-weight:400!important;
   letter-spacing:.005em!important;
   color:#7a7f89!important;
@@ -1781,10 +1748,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   transform:translateY(10px)!important;
 }
 #mobViewAssistant #assistantStarter.assistant-suggest-rail--ready{
-  display:flex!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-  visibility:visible!important;
   animation:assistant-suggestions-fade-in .34s ease both!important;
 }
 #mobViewAssistant .assistant-ai-body--searching #assistantStarter.assistant-suggest-rail--ready,
@@ -1856,8 +1819,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   font-family:"Inter",sans-serif!important;
   font-weight:600!important;
-  font-size:24px!important;
-  line-height:31px!important;
   letter-spacing:.005em!important;
   font-style:normal!important;
   font-synthesis:none!important;
@@ -1901,7 +1862,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   position:absolute!important;
   left:50%!important;
   right:auto!important;
-  bottom:14px!important;
   transform:translateX(-50%)!important;
   pointer-events:auto!important;
 }
@@ -1919,7 +1879,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   padding:0!important;
-  max-height:none!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-results{
   display:flex!important;
@@ -1957,15 +1916,11 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   border-radius:19px!important;
   background:#f1f2f4!important;
   color:#34383f!important;
-  font-size:15px!important;
   line-height:20px!important;
-  font-weight:500!important;
   text-align:left!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   display:block!important;
-  background:transparent!important;
-  padding:0!important;
   font-size:var(--ref-text-lg)!important;
   line-height:24px!important;
   font-weight:700!important;
@@ -2000,18 +1955,13 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   padding:0!important;
   margin:0!important;
   border:1px solid #d6d6d6!important;
-  border-radius:7px!important;
   background:#ffffff!important;
   box-shadow:none!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   align-items:center!important;
-  justify-content:center!important;
-  gap:2px!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
-  width:3px!important;
-  height:3px!important;
   background:#6f6f6f!important;
 }
 #mobViewAssistant .assistant-typing-label{
@@ -2032,7 +1982,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-send:focus-visible,
 #mobViewAssistant .assistant-ai-send:active{
   outline:none!important;
-  box-shadow:none!important;
   -webkit-tap-highlight-color:transparent!important;
 }
 
@@ -2065,12 +2014,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   color:#8c929b!important;
   border-color:#e7e9ed!important;
   cursor:not-allowed!important;
-  opacity:1!important;
 }
 #mobViewAssistant .assistant-ai-send.is-ready{
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  border-color:var(--brand-primary)!important;
   cursor:pointer!important;
 }
 #mobViewAssistant .assistant-ai-send.is-stopping{
@@ -2093,10 +2038,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   margin-top:12px!important;
 }
 #mobViewAssistant .assistant-feedback-btn{
-  width:20px!important;
-  height:20px!important;
-  min-width:20px!important;
-  min-height:20px!important;
   padding:0!important;
   border:0!important;
   background:transparent!important;
@@ -2163,8 +2104,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   background:transparent!important;
 }
 #mobViewAssistant .assistant-bottom-dock::before{
-  content:none!important;
-  display:none!important;
 }
 
 /* Product suggestions: image-and-title cards in a horizontal rail. */
@@ -2188,9 +2127,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   width:78%!important;
   max-width:280px!important;
   border:0!important;
-  border-radius:10px!important;
   background:#172235!important;
-  box-shadow:none!important;
   overflow:hidden!important;
   scroll-snap-align:start!important;
 }
@@ -2198,11 +2135,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-product-card .assistant-result-image{width:100%!important;height:100%!important;object-fit:cover!important}
 #mobViewAssistant .assistant-product-card .assistant-result-content{padding:12px!important}
 #mobViewAssistant .assistant-product-card .assistant-result-title{
-  color:#ffffff!important;
   font-family:"Inter",sans-serif!important;
-  font-size:15px!important;
   line-height:var(--ref-line-md)!important;
-  font-weight:600!important;
   text-transform:none!important;
   white-space:nowrap!important;
   overflow:hidden!important;
@@ -2214,7 +2148,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   min-height:0!important;
   padding:0!important;
   border:0!important;
-  background:none!important;
   box-shadow:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock::before,
@@ -2231,17 +2164,11 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   overflow:hidden!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  flex:1 1 auto!important;
-  min-height:0!important;
   height:100%!important;
   max-height:none!important;
   margin:0!important;
   padding:0 0 96px!important;
   box-sizing:border-box!important;
-  overflow-x:hidden!important;
-  overflow-y:auto!important;
-  background:#ffffff!important;
-  touch-action:pan-y!important;
 }
 /* Keep assistente scrollable without a visible scrollbar track on the right. */
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap,
@@ -2272,12 +2199,10 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   padding-right:0!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  width:100%!important;
   max-width:none!important;
 }
 /* Align chat bubbles without bringing the full-height side gutters back. */
 #mobViewAssistant .assistant-chat-assistant-message{
-  margin-left:16px!important;
 }
 #mobViewAssistant .assistant-chat-user-message{
   margin-right:16px!important;
@@ -2311,25 +2236,20 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   flex-direction:column!important;
   align-items:flex-start!important;
   justify-content:center!important;
-  gap:4px!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-title,
 #mobViewAssistant .assistant-product-card .assistant-result-price{
   color:#ffffff!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  font-size:var(--ref-text-md)!important;
   line-height:17px!important;
-  font-weight:700!important;
   color:#f3e8c8!important;
 }
 /* Assistant copy: readable body text with selective Markdown emphasis. */
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   font-size:15px!important;
-  font-weight:400!important;
   line-height:1.55!important;
   letter-spacing:.002em!important;
-  white-space:pre-wrap!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
   color:var(--brand-primary)!important;
@@ -2371,7 +2291,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 /* Lower the composer slightly to reduce the visible strip above the bottom nav. */
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
-  bottom:14px!important;
 }
 /* assistente typing indicator: neutral radial dot matrix and left-to-right text beam. */
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
@@ -2417,10 +2336,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   43%{opacity:.56;transform:scale(1);background:#777}
 }
 #mobViewAssistant .assistant-typing-label{
-  color:transparent!important;
   background:linear-gradient(105deg,#777 0%,#777 36%,#f7f7f7 47%,#fff 50%,#f7f7f7 53%,#777 64%,#777 100%)!important;
-  background-size:250% 100%!important;background-position:100% 0;
-  -webkit-background-clip:text!important;background-clip:text!important;
+  background-size:250% 100%!important;
   animation:assistant-typing-text-beam 2.4s linear infinite!important;
 }
 @keyframes assistant-typing-text-beam{from{background-position:100% 0}to{background-position:-150% 0}}
@@ -2432,7 +2349,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-chat-typing .assistant-typing-row{
   border:0!important;background:transparent!important;box-shadow:none!important;
 }
-#mobViewAssistant .assistant-chat-typing .assistant-typing-row{min-height:0!important;padding:0!important}
+#mobViewAssistant .assistant-chat-typing .assistant-typing-row{}
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
   width:28px!important;height:28px!important;flex-basis:28px!important;padding:4px!important;
   border:0!important;border-radius:7px!important;background:#eee!important;
@@ -2449,8 +2366,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   24%{opacity:1;transform:scale(1.9);box-shadow:0 0 4px rgba(65,65,65,.8)}
   43%{opacity:.46;transform:scale(.9);box-shadow:0 0 1px rgba(65,65,65,.25)}
 }
-#mobViewAssistant .assistant-typing-label{
-  background-position:100% 0;animation:assistant-typing-text-beam-visible 2.2s ease-in-out infinite!important;
+#mobViewAssistant .assistant-typing-label{animation:assistant-typing-text-beam-visible 2.2s ease-in-out infinite!important;
 }
 @keyframes assistant-typing-text-beam-visible{
   0%{background-position:100% 0}
@@ -2459,9 +2375,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* Compact square geometry for the typing matrix. */
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{border-radius:2px!important}
 #mobViewAssistant .assistant-typing-label{
-  display:inline-block!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
-  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;
-  background-repeat:no-repeat!important;background-size:240% 100%!important;background-position:140% 0;
+  display:inline-block!important;
+  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;background-size:240% 100%!important;background-position:140% 0;
   animation:assistant-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
 }
 @keyframes assistant-typing-light-sweep{
@@ -2509,7 +2424,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* Chat color refinement. Product cards intentionally remain unchanged. */
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{color:#2f2f2f!important}
-#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{}
 #mobViewAssistant .assistant-chat-user-message .assistant-result-title{background:#f4f4f5!important}
 #mobViewAssistant .assistant-rating-btn{
   color:#737373!important;transition:color .18s ease,background-color .18s ease!important;
@@ -2522,7 +2437,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   #mobViewAssistant .assistant-rating-btn:hover{color:var(--brand-hover)!important}
 }
 #mobViewAssistant .assistant-rating-btn.is-selected,
-#mobViewAssistant .assistant-rating-btn[aria-pressed="true"]{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"]{}
 #mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child,
 #mobViewAssistant .assistant-rating-btn[aria-pressed="true"] svg path:last-child{fill:var(--brand-hover)!important}
 /* Unified copy / like / dislike icon states. */
@@ -2598,18 +2513,12 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   box-shadow:0 3px 12px rgba(44,36,28,.045)!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
-  padding:0!important;
   color:#202124!important;
-  font-size:15.5px!important;
   line-height:1.62!important;
-  font-weight:500!important;
   letter-spacing:0!important;
   white-space:pre-wrap!important;
-  text-wrap:pretty!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
-  color:var(--brand-hover)!important;
-  font-weight:700!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   margin-top:12px!important;
@@ -2635,7 +2544,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 
 /* Recommended products: remove the blue-gray footer and use a warm neutral base. */
 #mobViewAssistant .assistant-product-rail{
-  gap:12px!important;
   padding-top:3px!important;
   padding-bottom:10px!important;
 }
@@ -2651,8 +2559,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   border-radius:0!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-content{
-  height:72px!important;
-  min-height:72px!important;
   padding:10px 13px!important;
   border-top:1px solid #e5ded4!important;
   background:#f7f4ef!important;
@@ -2660,15 +2566,8 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-card .assistant-result-title{
   color:#24211f!important;
-  font-size:15px!important;
-  line-height:19px!important;
-  font-weight:700!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  color:var(--brand-hover)!important;
-  font-size:var(--ref-text-md)!important;
-  line-height:var(--ref-line-md)!important;
-  font-weight:700!important;
 }
 
 /* Composer uses the same warm-neutral surface language as messages and cards. */
@@ -2709,11 +2608,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   margin-right:20px!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
-  padding:0!important;
-  border:0!important;
-  border-radius:0!important;
   background:transparent!important;
-  box-shadow:none!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   padding:0!important;
@@ -2726,7 +2621,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
   color:var(--brand-hover)!important;
-  font-weight:700!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   margin-top:14px!important;
@@ -2735,9 +2629,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 #mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
   justify-content:flex-start!important;
   gap:14px!important;
-  margin:12px 0 0!important;
-  padding-top:0!important;
-  border-top:0!important;
 }
 #mobViewAssistant .assistant-feedback-btn{
   width:20px!important;
@@ -2776,7 +2667,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
   color:var(--brand-hover)!important;
-  font-weight:700!important;
 }
 
 /* Composer: visually related to the neutral cards, without another heavy box. */
@@ -2814,7 +2704,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   outline-offset:3px!important;
 }
 #mobViewAssistant .assistant-product-detail[hidden]{
-  display:none!important;
 }
 #mobViewAssistant .assistant-product-detail{
   position:absolute!important;

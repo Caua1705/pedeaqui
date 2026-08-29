@@ -705,6 +705,18 @@ a{text-decoration:none;color:inherit}
 .success-card-row[hidden]{display:none}
 .success-card-row:last-child{border-bottom:none}
 .success-card-row strong{color:#1a1a1a;font-weight:700}
+/* Total do pedido diferente do que o cliente confirmou. Fica FORA do cartão de
+   valores de propósito: dentro dele leria como mais uma linha do resumo, e isto
+   não é um valor — é um aviso sobre os valores. Ver renderTotalMismatch().
+
+   NEUTRO, e não âmbar de "atenção": num app white-label a única paleta
+   confiável é a do tenant mais os neutros. Uma caixa âmbar chumbada sobrevive
+   num tenant azul como cor de ninguém — é o que tenant-theme.spec.js barra, e
+   com razão. A ênfase vem da borda mais forte e do peso do texto, que
+   funcionam em qualquer marca. (--state-warning existe nos tokens e continua
+   sem uso pelo mesmo motivo.) */
+.success-total-mismatch{width:100%;box-sizing:border-box;margin:-16px 0 24px;padding:11px 13px;border:1px solid var(--border-strong);border-radius:12px;background:var(--surface-3);color:var(--text-main);font-size:.8rem;font-weight:600;line-height:1.45;text-align:left}
+.success-total-mismatch[hidden]{display:none}
 
 /* Checkout Fields */
 .input{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;color:var(--fg);font-size:.9rem;outline:none;transition:.2s;margin-bottom:12px}

@@ -1005,6 +1005,12 @@
         <div class="success-card-row" id="ordSuccessPaymentRow" hidden><span>Pagamento</span><strong id="ordSuccessPayment">—</strong></div>
         <div class="success-card-row"><span>Total</span><strong id="ordSuccessTotal">—</strong></div>
       </div>
+      <!-- Só aparece quando o total do pedido difere do que o cliente confirmou.
+           A API não orça pedido, então o número da confirmação é calculado no
+           app e o do pedido vem do servidor; quando divergem, dizer é a única
+           coisa honesta a fazer — trocar de número em silêncio não é.
+           Ver renderTotalMismatch() em scripts/pages/restaurant-page.js. -->
+      <p class="success-total-mismatch" id="ordSuccessMismatchRow" role="alert" hidden><span id="ordSuccessMismatch"></span></p>
       <!-- Só aparece quando temos o tracking_token: é ele que dá ao visitante
            acesso ao próprio pedido depois que a rota por telefone saiu da API. -->
       <button class="success-track-btn" type="button" id="ordSuccessTrackBtn" hidden data-act-click='refreshTrackedOrder'>Atualizar status do pedido</button>
@@ -1112,6 +1118,10 @@
             <span>Total</span>
             <strong id="pixOrderTotal">—</strong>
           </div>
+          <!-- Total do pedido diferente do que foi confirmado na sacola. Aqui
+               pesa mais que na tela de sucesso: este número vira cobrança no
+               próximo toque. Ver renderTotalMismatch(). -->
+          <p class="pix-total-mismatch" id="pixTotalMismatchRow" role="alert" hidden><span id="pixTotalMismatch"></span></p>
           <button class="pix-order-toggle" type="button" id="pixItemsToggle" hidden aria-expanded="false" aria-controls="pixOrderItems" data-act-click='togglePixOrderItems'>
             <span>Ver itens do pedido</span>
             <svg class="pix-order-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>

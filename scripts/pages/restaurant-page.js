@@ -79,6 +79,15 @@
   let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || readSessionCustomer();
   let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(readStorageKey(STORAGE_ADDRESS) || 'null');
   let submittedOrder = null;
+  // O total que estava NA TELA no instante em que o cliente confirmou.
+  //
+  // Existe porque a API não tem rota que orce um pedido: não há como pedir ao
+  // backend o total antes de criar o pedido (/coupons/preview só responde com
+  // cupom, /delivery/estimate só a taxa). Então o número que o cliente aprova é
+  // calculado aqui (cartTotals) e o número que ele paga vem de lá (order.total),
+  // e nada garantia que fossem o mesmo. Guardamos o primeiro para poder
+  // COMPARAR com o segundo em vez de trocar de número na virada da tela.
+  let confirmedTotalAtSubmit = null;
   let heroBannerIndex = 0;
   let heroBannerTimer = null;
   let heroSwipeReady = false;
@@ -3891,6 +3900,10 @@
     }
 
     hideCartOrderError();
+    // Congela o número que o cliente está aprovando NESTE toque. Depois daqui a
+    // sacola é esvaziada e cartTotals() passa a devolver zero — comparar mais
+    // tarde compararia contra nada.
+    confirmedTotalAtSubmit = cartTotals().total;
     setOrderSubmitting(true);
 
     let response;
@@ -3970,6 +3983,8 @@
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
     submittedOrder = response || null;
+    // Antes de qualquer tela: as duas que mostram total leem o resultado daqui.
+    evaluateTotalMismatch(response);
     const items = orderItemsSnapshot();
     // O tracking_token é gravado ANTES de qualquer renderização: ele é a única
     // porta do visitante para o próprio pedido, e uma exceção mais adiante não
@@ -4110,6 +4125,7 @@
     setText('ordSuccessDiscount', `- ${fmt(discount)}`);
 
     setText('ordSuccessTotal', fmt(orderAmount(order.total)));
+    renderTotalMismatch(order, 'ordSuccessMismatchRow', 'ordSuccessMismatch');
 
     // Linha de pagamento: só faz sentido quando houve cobrança online. Num
     // pedido pago na entrega ela continua ausente, e o cartão fica idêntico ao
@@ -4127,6 +4143,81 @@
     }
 
     openModal('orderSuccessModal');
+  }
+
+  // Um centavo. Abaixo disso é ruído de ponto flutuante (0.1 + 0.2), não
+  // divergência: somar reais em Number produz erro na 15ª casa, e acusar isso
+  // seria alarme falso em todo pedido.
+  const TOTAL_MISMATCH_TOLERANCE = 0.005;
+
+  /**
+   * Aviso de divergência do pedido recém-criado: `{ orderId, message }`.
+   *
+   * Fica preso ao ID do pedido de propósito. As duas telas que mostram total
+   * (sucesso e Pix) leem daqui, e reabrir a tela de um pedido ANTIGO não pode
+   * herdar a comparação de outro.
+   */
+  let pendingTotalMismatch = null;
+
+  /**
+   * Compara o total que o cliente APROVOU com o total que o pedido TEM.
+   *
+   * A API não orça pedido: não existe rota que devolva o total antes da
+   * criação (/coupons/preview só responde com cupom, /delivery/estimate só a
+   * taxa). Então o número da confirmação sai de uma conta feita AQUI
+   * (cartTotals: itens + taxa de serviço + frete − desconto) e o número do
+   * pedido vem de `order.total`, calculado LÁ. Duas autoridades para o mesmo
+   * valor, uma tela de distância.
+   *
+   * Enquanto as duas contas coincidiram ninguém percebeu — e o fixture do e2e
+   * fazia as duas darem 22,14, então nem o teste percebia. Basta uma regra que
+   * só o backend conhece (teto de desconto, arredondamento, taxa por
+   * modalidade) para o cliente confirmar um número e pagar outro, sem uma
+   * palavra.
+   *
+   * Não dá para IMPEDIR a divergência daqui: quando ela aparece o pedido já
+   * existe, com o total do servidor, que é o que vale. O que dá para fazer é
+   * parar de trocar de número em silêncio — dizer o que foi confirmado, dizer o
+   * que ficou, e registrar os dois no console para a causa ser investigável.
+   *
+   * Roda UMA vez por pedido, em handleOrderCreated.
+   */
+  function evaluateTotalMismatch(order) {
+    const confirmed = confirmedTotalAtSubmit;
+    confirmedTotalAtSubmit = null;
+    pendingTotalMismatch = null;
+    if (!Number.isFinite(confirmed)) return;
+
+    const finalTotal = orderAmount(order?.total);
+    if (Math.abs(finalTotal - confirmed) <= TOTAL_MISMATCH_TOLERANCE) return;
+
+    logAppError(
+      'Total divergente entre a confirmação e o pedido criado',
+      new Error(`confirmado=${confirmed.toFixed(2)} pedido=${finalTotal.toFixed(2)}`)
+    );
+    checkoutTrace('ATENÇÃO: total confirmado ≠ total do pedido', {
+      confirmado: confirmed,
+      pedido: finalTotal,
+      diferenca: Number((finalTotal - confirmed).toFixed(2))
+    });
+
+    pendingTotalMismatch = {
+      orderId: String(order?.id ?? order?.order_number ?? ''),
+      // Cobrar MAIS do que foi aprovado é o caso que precisa de ação; cobrar
+      // menos é só uma diferença que o cliente tem o direito de ver.
+      message: finalTotal > confirmed
+        ? `O total ficou ${fmt(finalTotal)}, acima dos ${fmt(confirmed)} que você confirmou. Confira com o restaurante antes de pagar.`
+        : `O total ficou ${fmt(finalTotal)}, abaixo dos ${fmt(confirmed)} que você confirmou.`
+    };
+  }
+
+  /** Desenha o aviso na tela pedida, se ele for DESTE pedido. */
+  function renderTotalMismatch(order, rowId, textId) {
+    const row = $(rowId);
+    const mine = pendingTotalMismatch
+      && pendingTotalMismatch.orderId === String(order?.id ?? order?.order_number ?? '');
+    if (row) row.hidden = !mine;
+    if (mine && $(textId)) $(textId).textContent = pendingTotalMismatch.message;
   }
 
   /** Rótulo da linha "Pagamento" — vazio quando o pedido não é de fluxo online. */
@@ -4535,6 +4626,9 @@
       $('pixOrderNumber').textContent = order?.order_number != null ? `Nº do pedido ${order.order_number}` : 'Seu pedido';
     }
     if ($('pixOrderTotal')) $('pixOrderTotal').textContent = fmt(orderAmount(order?.total));
+    // Aqui o aviso pesa MAIS que na tela de sucesso: este total vira cobranca
+    // no proximo toque, e o cliente paga antes de qualquer conferencia.
+    renderTotalMismatch(order, 'pixTotalMismatchRow', 'pixTotalMismatch');
     renderPixOrderItems(items || order?.items);
     // O prazo sai de PIX_POLL_WINDOW_MS para não poder divergir do contador.
     // ⚠️ O cancelamento é afirmação de PRODUTO, não do contrato: nem a cobrança

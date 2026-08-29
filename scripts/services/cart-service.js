@@ -5,17 +5,15 @@
       : null;
   }
 
-  function calculateTotals(items = [], settings = {}, deliveryType = 'delivery', deliveryEstimate = null) {
-    const subtotal = items.reduce((sum, item) => {
-      const unitPrice = Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
-      return sum + unitPrice * Number(item.qty || 0);
-    }, 0);
-    const rawDeliveryFee = deliveryEstimate?.delivery_fee;
-    const estimatedDeliveryFee = rawDeliveryFee == null || rawDeliveryFee === '' ? NaN : Number(rawDeliveryFee);
-    const deliveryFee = deliveryType === 'delivery' && Number.isFinite(estimatedDeliveryFee) ? estimatedDeliveryFee : 0;
-    const serviceFee = settings.service_fee_enabled === false ? 0 : Number(settings.service_fee_amount || 0);
-    return { subtotal, delivery: deliveryFee, svc: serviceFee, total: subtotal + deliveryFee + serviceFee };
-  }
+  // calculateTotals() foi REMOVIDA. Era uma segunda implementação do total, que
+  // ninguém chamava e que tinha 5 testes verdes — o app sempre usou cartTotals()
+  // em scripts/pages/restaurant-page.js. As duas já divergiam: esta não conhecia
+  // cupom, não checava se a estimativa de entrega tinha dado certo, e lia a taxa
+  // de serviço com `||` em vez de `??`, ignorando o defaultServiceFee.
+  //
+  // Uma conta de dinheiro em dois lugares é uma divergência esperando acontecer;
+  // com testes só no lado morto, é uma divergência com álibi. O total do
+  // carrinho tem UM dono: cartTotals().
 
   // uid identifica a LINHA do carrinho (para editar/remover), não o produto.
   // Date.now() colidia quando dois itens eram adicionados no mesmo milissegundo
@@ -37,7 +35,6 @@
 
   window.PedeAquiCartService = {
     createCart,
-    calculateTotals,
     normalizeCartItem,
     newCartItemUid
   };

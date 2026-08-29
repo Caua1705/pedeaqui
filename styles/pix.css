@@ -557,6 +557,28 @@
   color: var(--text-main);
 }
 
+/* Total do pedido diferente do confirmado. Não é erro: o pedido existe e a
+   cobrança é válida — o que estaria errado é o cliente descobrir a diferença
+   depois de pagar. Ver renderTotalMismatch().
+
+   Neutro pelo mesmo motivo do .success-total-mismatch em restaurant.css: cor
+   chumbada de aviso é cor de ninguém num tenant que não seja laranja. */
+.pix-total-mismatch {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-3);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.pix-total-mismatch[hidden] {
+  display: none;
+}
+
 .pix-order-toggle {
   display: flex;
   align-items: center;

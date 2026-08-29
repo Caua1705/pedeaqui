@@ -4,10 +4,10 @@
 // gitignored — see .env.example). window.RAPIDEX_MAPS_KEY is kept as a runtime
 // fallback for backward compatibility with the Fase 0 maps-config.local.js setup.
 (function () {
-  var envKey = '';
+  var envKey;
   try {
     envKey = (import.meta.env && import.meta.env.VITE_MAPS_KEY) || '';
-  } catch (error) {
+  } catch {
     envKey = '';
   }
   var key = envKey || window.RAPIDEX_MAPS_KEY || '';

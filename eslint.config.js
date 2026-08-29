@@ -34,7 +34,15 @@ export default [
     },
     rules: {
       eqeqeq: ['error', 'smart'],
-      'no-unused-vars': ['warn', { args: 'none', ignoreRestSiblings: true }],
+      // ERRO desde a limpeza de 29/08/2026. Como warning ele nunca barrou nada:
+      // o CI passava com 114 avisos, e entre eles estavam 5 funções mortas, um
+      // `submittedOrder` escrito duas vezes e lido nunca, e dois estados
+      // (`secondaryCartBottomOffset`, `_assistantReturnNav`) calculados a cada
+      // navegação para ninguém. Código morto não se acumula por decisão — ele
+      // se acumula porque o aviso rola para fora da tela.
+      //
+      // `args: 'none'` fica: assinatura de handler é contrato, não uso.
+      'no-unused-vars': ['error', { args: 'none', ignoreRestSiblings: true }],
       // Map the remaining XSS surface without breaking the build.
       'no-restricted-syntax': [
         'warn',
@@ -44,13 +52,14 @@ export default [
             'Assigning innerHTML is an XSS sink. Ensure every interpolated value is escaped (esc()).'
         }
       ],
-      // Conservative posture: these recommended rules flag pre-existing patterns
-      // (intentional empty catches, defensive null inits, dead code after an
-      // early return) whose "fix" would be risky churn in this phase. Keep them
-      // visible as warnings and list them in the report instead of forcing edits.
+      // `no-empty` continua warning porque catch vazio às vezes É a resposta
+      // certa (modo privativo, iframe já fora do DOM) e cada caso pede leitura.
+      // Os outros dois viraram erro: inicializador que ninguém lê e código
+      // depois de um return não têm caso legítimo, e como aviso ficaram anos
+      // rolando para fora da tela junto com os 80 de innerHTML.
       'no-empty': ['warn', { allowEmptyCatch: true }],
-      'no-useless-assignment': 'warn',
-      'no-unreachable': 'warn',
+      'no-useless-assignment': 'error',
+      'no-unreachable': 'error',
       'preserve-caught-error': 'off'
     }
   },
@@ -90,7 +99,7 @@ export default [
     },
     rules: {
       eqeqeq: ['error', 'smart'],
-      'no-unused-vars': 'warn'
+      'no-unused-vars': 'error'
     }
   },
 

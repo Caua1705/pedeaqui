@@ -1,12 +1,12 @@
 (function () {
   // API base comes from Vite env (VITE_API_BASE_URL in .env — see .env.example),
   // falling back to the production URL so the app still boots without a .env.
-  var envApiBase = '';
-  var envRootDomains = '';
+  var envApiBase;
+  var envRootDomains;
   try {
     envApiBase = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
     envRootDomains = (import.meta.env && import.meta.env.VITE_TENANT_ROOT_DOMAINS) || '';
-  } catch (error) {
+  } catch {
     envApiBase = '';
     envRootDomains = '';
   }

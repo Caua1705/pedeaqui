@@ -35,6 +35,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Type-check do caminho do CARTAO (payment-card-flow, mercado-pago-service,
+      # customer-card-service, payment-config-service) contra scripts/types/api.d.ts.
+      # Ficou fora do CI desde que foi criado: existia so como script que alguem
+      # tinha de lembrar de rodar, justamente no caminho que cobra dinheiro. E o
+      # unico lugar que pega um campo de API renomeado antes do runtime.
+      - name: Typecheck (cartao)
+        run: npm run typecheck:cards
+
       - name: Build
         run: npm run build
 
@@ -44,12 +52,27 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      # The E2E mocks every API call (tests/e2e/helpers.js), so CI never reaches
-      # the production API. VITE_API_BASE_URL/VITE_MAPS_KEY are unset here on
-      # purpose — app-config falls back to a default base and no request escapes
-      # the page anyway.
+      # A E2E mocka a nossa API inteira (tests/e2e/helpers.js), entao o CI nunca
+      # cria pedido de verdade. VITE_API_BASE_URL/VITE_MAPS_KEY ficam sem valor
+      # de proposito: app-config cai numa base padrao e nenhuma chamada nossa
+      # escapa da pagina.
+      #
+      # "Nenhuma requisicao escapa" NAO vale para o SDK do Mercado Pago:
+      # payment-card-loading-state.spec.js baixa sdk.mercadopago.com DE VERDADE,
+      # de proposito — com o SDK mockado antes do boot, loadSdk() nunca chega a
+      # baixar nada e o atraso e a falha do download passavam batidos. Com
+      # PAYMENT_PUBLIC_KEY configurado, mercado-pago-secure-fields.spec.js
+      # tambem fala com o Mercado Pago. Sao os unicos hosts externos da suite.
+      # PAYMENT_PUBLIC_KEY liga os 3 testes de mercado-pago-secure-fields.spec.js
+      # que rodam o SDK REAL sob a CSP REAL de producao. Sem ela eles se PULAM em
+      # silencio — e sao exatamente os que pegam bloqueio de connect-src, a classe
+      # de bug do commit 63ffa5a. Uma chave PUBLICA de teste do Mercado Pago;
+      # esta como secret por higiene, nao por sigilo. Sem o secret configurado no
+      # repositorio os 3 continuam pulando, como hoje.
       - name: E2E tests
         run: npm run test:e2e
+        env:
+          PAYMENT_PUBLIC_KEY: ${{ secrets.PAYMENT_PUBLIC_KEY }}
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

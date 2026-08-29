@@ -1342,7 +1342,7 @@
         setTimeout(() => button.classList.remove('is-restoring'), 280);
         button._assistantCopyTimer = null;
       }, 3000);
-    } catch (_) {
+    } catch {
       showAssistantToast('Não foi possível copiar a resposta');
     }
   };
@@ -1422,7 +1422,7 @@
       } else {
         showAssistantToast('Abra o cardápio para adicionar este item');
       }
-    } catch (e) {
+    } catch {
       showAssistantToast('Não foi possível adicionar. Tente pelo cardápio.');
     }
   };

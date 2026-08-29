@@ -60,7 +60,7 @@
       if (callerSignal) callerSignal.removeEventListener('abort', onCallerAbort);
     };
 
-    let data = null;
+    let data;
     try {
       response = await fetch(url, {
         ...fetchOptions,

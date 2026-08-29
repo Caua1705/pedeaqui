@@ -15,3 +15,11 @@ styles/operation.css
 # Reformatar mudaria os bytes e faria o teste de contrato acusar divergência.
 scripts/types/openapi.json
 scripts/types/api.d.ts
+
+# NOTA: `npm run format:check` NAO esta no CI, e e uma decisao, nao um esquecimento.
+# Hoje 115 arquivos estao fora do padrao do prettier. Formatar todos reescreveria
+# ~4.600 linhas de scripts/pages/restaurant-page.js e ~6.500 de restaurant.html —
+# os dois arquivos onde mora metade do app — e enterraria o git blame deles num
+# commit mecanico. E o mesmo motivo que ja mantinha as folhas grandes na lista
+# acima. Se um dia valer a pena, o caminho e um commit isolado de formatacao,
+# so entao o passo no CI. Arquivo novo nasce formatado por convencao.

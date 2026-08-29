@@ -9,7 +9,6 @@
   const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
   const storageKeys = () => window.RapidexStorage;
   const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
-  const STORAGE_ADDRESS_LIST = storageKeys()?.KEYS.customerAddressList || 'rapidex.customerAddresses.local';
   const readStorageKey = (key) => storageKeys()?.readWithMigration
     ? storageKeys().readWithMigration(key)
     : localStorage.getItem(key);
@@ -78,7 +77,6 @@
   let couponDetailScrollY = 0;
   let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || readSessionCustomer();
   let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(readStorageKey(STORAGE_ADDRESS) || 'null');
-  let submittedOrder = null;
   // O total que estava NA TELA no instante em que o cliente confirmou.
   //
   // Existe porque a API não tem rota que orce um pedido: não há como pedir ao
@@ -458,10 +456,6 @@
       </div>`;
   }
 
-  function renderTabLoader(targetId, message) {
-    renderSectionLoader(targetId, message, 'tab-loader tab-loader--dots');
-  }
-
   const clubController = window.PedeAquiRestaurantClub.createRestaurantClubController({
     appState,
     getRestaurantSlug,
@@ -665,12 +659,6 @@
   // (o que acontecia com DEFAULT_RESTAURANT_SLUG) é falha de isolamento.
   function getRestaurantSlug() {
     return window.RapidexTenant?.resolveSlug?.() || '';
-  }
-
-  function normalizePayload(raw) {
-    return window.PedeAquiMenuService?.normalizeMenuPayload
-      ? window.PedeAquiMenuService.normalizeMenuPayload(raw)
-      : raw;
   }
 
   function imageAttrs({ lazy = true, priority = 'auto' } = {}) {
@@ -960,10 +948,6 @@
       cash: 'Dinheiro'
     };
     return labels[key] || String(method || '').replace(/_/g, ' ');
-  }
-
-  function renderStoreInfoPayment() {
-    renderRestaurantInfoPayment(restaurantInfoState.data);
   }
 
   function deliveryWindowText() {
@@ -2255,10 +2239,7 @@
     });
   }
 
-  let scrollAnimationToken = 0;
-
   function jumpToTop() {
-    scrollAnimationToken += 1;
     const html = document.documentElement;
     const previousHtmlBehavior = html.style.scrollBehavior;
     const previousBodyBehavior = document.body.style.scrollBehavior;
@@ -2270,23 +2251,6 @@
       html.style.scrollBehavior = previousHtmlBehavior;
       document.body.style.scrollBehavior = previousBodyBehavior;
     });
-  }
-
-  function scrollToFast(targetTop, duration = 260) {
-    const token = ++scrollAnimationToken;
-    const startTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-    const distance = targetTop - startTop;
-    const startedAt = performance.now();
-    const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
-
-    function step(now) {
-      if (token !== scrollAnimationToken) return;
-      const progress = Math.min(1, (now - startedAt) / duration);
-      window.scrollTo(0, startTop + distance * easeOutCubic(progress));
-      if (progress < 1) requestAnimationFrame(step);
-    }
-
-    requestAnimationFrame(step);
   }
 
   function scrollToMenu() {
@@ -3982,7 +3946,6 @@
 
   // Só aqui o carrinho pode ser limpo: depois de sucesso confirmado.
   function handleOrderCreated(response) {
-    submittedOrder = response || null;
     // Antes de qualquer tela: as duas que mostram total leem o resultado daqui.
     evaluateTotalMismatch(response);
     const items = orderItemsSnapshot();
@@ -4896,7 +4859,7 @@
     const code = $('pixCopyCode')?.dataset.code?.trim();
     if (!code) return;
 
-    let copied = false;
+    let copied;
     try {
       await navigator.clipboard.writeText(code);
       copied = true;
@@ -4915,7 +4878,7 @@
     field.setAttribute('readonly', '');
     field.className = 'u-visually-hidden';
     document.body.appendChild(field);
-    let copied = false;
+    let copied;
     try {
       field.select();
       copied = document.execCommand('copy');
@@ -5986,12 +5949,6 @@
     if (customerAddress) persistCustomerAddress(customerAddress);
   }
 
-  function operationValid(ctx) {
-    if (!ctx || !ctx.branch_id) return false;
-    if (ctx.order_type === 'delivery' && !ctx.address) return false;
-    return true;
-  }
-
   /**
    * O cardápio carregado tem de ser o da filial escolhida.
    *
@@ -6814,10 +6771,8 @@
   //  Google Maps address flow (search → map → details)
   // ============================================================
 
-  let _googleMapsLoading = false;
   let _addrTempLoc = null;   // { lat, lng, formatted_address, place_id, street_name, number, street, neighborhood, city, state, postal_code }
   let _addrMap = null;
-  let _addrMapMarker = null;
   let _addrSearchDebounce = null;
   let _googleMapsPromise = null;
   let _placesLibraryPromise = null;
@@ -6859,7 +6814,7 @@
     const s = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
     if (!s) return null;
     try { return (new URL(s.src).searchParams.get('key') || '').slice(0, 10) || null; }
-    catch (_) { return null; }
+    catch { return null; }
   }
 
   function _logMapsDebug(stage, extra) {
@@ -6867,7 +6822,6 @@
     const cfgKey = window.GOOGLE_MAPS_API_KEY || '';
     const scripts = _loadedMapsScripts();
     const scriptKey = _scriptKeyPrefix();
-    /* eslint-disable no-console */
     console.groupCollapsed(`[PedeAqui][maps-debug] ${stage}`);
     console.log('location.href      :', window.location.href);
     console.log('location.origin    :', window.location.origin);
@@ -6884,7 +6838,6 @@
       : 'NEW AutocompleteSuggestion → places.googleapis.com (Places API New)');
     if (extra) Object.keys(extra).forEach(k => console.log(`${k.padEnd(19)}:`, extra[k]));
     console.groupEnd();
-    /* eslint-enable no-console */
   }
 
   // Map raw Google errors / status codes to friendly Portuguese messages.
@@ -6941,15 +6894,13 @@
       return _googleMapsPromise;
     }
 
-    _googleMapsLoading = true;
     _googleMapsPromise = new Promise((resolve, reject) => {
       const bootstrapCallback = '__pedeAquiGoogleMapsReady';
       window.google = window.google || {};
       window.google.maps = window.google.maps || {};
       window.google.maps[bootstrapCallback] = () => {
-        _googleMapsLoading = false;
         resolve(window.google.maps);
-        try { delete window.google.maps[bootstrapCallback]; } catch (_) { window.google.maps[bootstrapCallback] = undefined; }
+        try { delete window.google.maps[bootstrapCallback]; } catch { window.google.maps[bootstrapCallback] = undefined; }
       };
 
       const s = document.createElement('script');
@@ -6962,7 +6913,6 @@
       s.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
       s.async = true;
       s.onerror = () => {
-        _googleMapsLoading = false;
         reject(new Error('Falha ao carregar o script do Google Maps.'));
       };
       document.head.appendChild(s);
@@ -6974,7 +6924,7 @@
     await _ensureGoogleMapsLoader();
     try {
       return await google.maps.importLibrary(name);
-    } catch (err) {
+    } catch {
       throw new Error(`Falha ao carregar a biblioteca ${name} do Google Maps.`);
     }
   }
@@ -7321,7 +7271,6 @@
     const el = $('addrMapContainer');
     if (!el) return;
     _addrMap = new google.maps.Map(el, { center:{lat,lng}, zoom:17, disableDefaultUI:true, zoomControl:true, gestureHandling:'greedy' });
-    _addrMapMarker = null;
     const stage = el.closest('.addr-map-stage');
     _addrMap.addListener('dragstart', () => stage?.classList.add('is-moving'));
     _addrMap.addListener('idle', () => {
@@ -7582,7 +7531,7 @@
     }
     const cursor = digits.length < slots.length ? slots[digits.length] : out.length;
     requestAnimationFrame(() => {
-      try { el.setSelectionRange(cursor, cursor); } catch (_) {}
+      try { el.setSelectionRange(cursor, cursor); } catch { /* campo fora do DOM */ }
     });
   }
 
@@ -7763,7 +7712,6 @@
 
   function handleRegPrivacyInput() {
     regTouched.add('regPrivacy');
-    const privacy = $('regPrivacy');
     hideRegError('regPrivacyErr');
     maybeHideRegSummary();
   }
@@ -8075,7 +8023,7 @@
         $('verifyScreen')?.classList.remove('active');
         goToInitialScreenAfterAuth();
       }
-    } catch (error) {
+    } catch {
       $('verifyScreen')?.classList.add('vfy-error');
       showVfyMsg('O código de verificação é inválido ou expirou!', 'error');
     } finally {
@@ -8445,7 +8393,7 @@
     try {
       await window.PedeAquiCustomerAuth.forgotPassword({ email: recoverCtx.email });
       showRecMsg('');
-    } catch (error) {
+    } catch {
       showRecMsg('Não foi possível reenviar o código.', 'error');
       _recResendCooldown = false;
     }
@@ -8463,7 +8411,7 @@
       const res = await window.PedeAquiCustomerAuth.verifyResetCode({ email: recoverCtx.email, code });
       $('recoverCodeScreen')?.classList.remove('active');
       openResetPasswordScreen(res?.reset_token, recoverCtx.email);
-    } catch (error) {
+    } catch {
       openVfyAlert('O código de verificação expirou!', () => {
         clearRecInputs();
         recDigits()[0]?.focus();
@@ -8614,7 +8562,7 @@
       } else {
         showLgnSummary('Dados de login incorretos. Verifique suas informações.');
       }
-    } catch (error) {
+    } catch {
       showLgnSummary('Dados de login incorretos. Verifique suas informações.');
     } finally {
       _loginSubmitting = false;
@@ -9105,7 +9053,6 @@
   }
 
   const MOB_VIEWS = ['mobViewClub', 'mobViewAssistant', 'mobViewProfile'];
-  let secondaryCartBottomOffset = null;
 
   function preserveSecondaryNavGeometry() {
     const nav = $('mobBottomNav');
@@ -9118,18 +9065,12 @@
     nav.style.setProperty('min-height', `${height}px`, 'important');
     nav.style.setProperty('max-height', `${height}px`, 'important');
     nav.style.setProperty('padding', style.padding, 'important');
-    const sticky = $('cartSticky');
-    if (sticky?.classList.contains('show')) {
-      const bottom = sticky.getBoundingClientRect().bottom;
-      secondaryCartBottomOffset = Math.max(0, window.innerHeight - bottom);
-    }
   }
 
   function releaseSecondaryNavGeometry() {
     const nav = $('mobBottomNav');
     if (!nav) return;
     ['box-sizing', 'height', 'min-height', 'max-height', 'padding'].forEach(property => nav.style.removeProperty(property));
-    secondaryCartBottomOffset = null;
   }
 
   function syncCartStickyForActiveView() {
@@ -9164,7 +9105,6 @@
   }
 
   let _pendingMenuNav = false;
-  let _assistantReturnNav = 'home';
 
   function getCurrentBottomNav() {
     if ($('mobNavAssistantTab')?.classList.contains('active')) return 'assistant';
@@ -9200,7 +9140,6 @@
     closeProfilePolicyBeforeNavigation();
     const currentNav = getCurrentBottomNav();
     const shouldFocusAssistantInput = currentNav !== 'assistant';
-    if (currentNav !== 'assistant') _assistantReturnNav = currentNav;
     closeMobViews();
     uiStore()?.set?.({ activeView: 'assistant', bottomNav: 'assistant' });
     setMobNavActive('mobNavAssistantTab');
@@ -10251,7 +10190,7 @@
     // é ela que faz a PRIMEIRA carga já ser a da loja certa, em vez de mostrar
     // a filial padrão do backend e trocar depois.
     const storedBranchId = uuidOrNull(storedOperationBranchId());
-    let fresh = null;
+    let fresh;
     try {
       fresh = await fetchMenuPayload(storedBranchId);
     } catch (error) {
@@ -10284,7 +10223,6 @@
     };
     bootPromise = (async () => {
     await loadInitialData();
-    submittedOrder = window.PedeAquiOrderState?.listOrders()?.[0] || null;
     // A ORDEM IMPORTA: a chave da sacola tem a filial, então o contexto de
     // operação precisa estar montado antes de restaurá-la — e o cardápio
     // precisa ser o daquela filial, porque é contra ele que os itens são

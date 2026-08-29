@@ -25,7 +25,7 @@
 .store-info-name{font-size:1rem;font-weight:800;color:#5a5a5a;margin-bottom:6px}
 .store-info-neighborhood{font-size:.9rem;color:#9a9a9a;margin-bottom:22px}
 .store-contact-list{display:grid;gap:16px;justify-items:center}
-.store-contact-row{display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#8c8c8c;font-size:.78rem;font-weight:750;text-decoration:none;max-width:100%}
+.store-contact-row{display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#8c8c8c;font-size:.78rem;font-weight:800;text-decoration:none;max-width:100%}
 .store-contact-row svg{width:18px;height:18px;flex-shrink:0;color:#8f8f8f}
 .store-contact-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .store-contact-row--wa,.store-contact-row--wa svg{color:#3f7d4f}
@@ -34,7 +34,7 @@
 .store-info-tabs button{height:34px;border:0;border-bottom:3px solid transparent;background:transparent;color:#aaa;font-size:.75rem;font-weight:800;white-space:nowrap}
 .store-info-tabs button.active{color:#3f7d4f;border-bottom-color:#3f7d4f}
 .store-hours-card,.store-address-card{margin-top:22px;background:#fff;border-radius:9px;padding:20px;box-shadow:0 12px 30px rgba(0,0,0,.03)}
-.store-hours-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;color:#9a9a9a;font-size:.78rem;font-weight:650}
+.store-hours-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;color:#9a9a9a;font-size:.78rem;font-weight:700}
 .store-hours-row.active span{position:relative;color:#8b8b8b;font-weight:800;padding-left:16px}
 .store-hours-row.active span::before{content:'';position:absolute;left:0;top:50%;width:8px;height:8px;border-radius:50%;background:#3f7d4f;transform:translateY(-50%)}
 .store-hours-row strong{font-size:.78rem;color:#8a8a8a;font-weight:800}
@@ -43,11 +43,11 @@
 
 #loginModal{background:#EEF3FA!important;backdrop-filter:none!important;align-items:stretch!important;overflow:hidden!important}
 #loginModal .modal--login{position:relative!important;width:calc(100% - 20px)!important;max-width:400px!important;min-height:calc(100dvh - 20px)!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;overflow:hidden!important;margin:10px auto!important;border:0!important;border-radius:14px!important;background:#fff!important;transform:translateY(0)!important;padding:0 18px 20px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important}
-.modal--login .login-close{position:absolute!important;top:20px!important;right:20px!important;width:42px!important;height:42px!important;border-radius:10px!important;background:#F5F5F5!important;color:#a0a0a0!important;border:0!important;font-size:11.5px!important;font-weight:900!important;-webkit-text-stroke:0.45px currentColor!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.modal--login .login-close{position:absolute!important;top:20px!important;right:20px!important;width:42px!important;height:42px!important;border-radius:10px!important;background:#F5F5F5!important;color:#a0a0a0!important;border:0!important;font-size:11.5px!important;font-weight:800!important;-webkit-text-stroke:0.45px currentColor!important;display:flex!important;align-items:center!important;justify-content:center!important}
 .modal--login .login-logo{width:150px!important;height:150px!important;border-radius:50%!important;border:0!important;overflow:hidden!important;margin:85px auto 0!important;background:var(--brand-accent)!important}
 .modal--login .login-logo img{width:100%!important;height:100%!important;object-fit:contain!important}
 .modal--login .login-logo .mob-logo-fallback{width:100%;height:100%;border-radius:50%;background:var(--brand-accent);color:#fff;font-size:1.9rem}
-.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:560!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important;text-align:center!important;margin:30px 0 66px!important}
+.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:600!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important;text-align:center!important;margin:30px 0 66px!important}
 .modal--login p{display:none!important}
 .modal--login .cart-cta-btn{width:354px!important;max-width:100%!important;height:41px!important;border-radius:10px!important;background:var(--brand-primary)!important;color:var(--brand-on)!important;font-size:12px!important;font-weight:700!important;box-shadow:none!important;margin:0!important;padding:0!important}
 .modal--login .login-secondary{width:354px!important;max-width:100%!important;height:41px!important;border:0!important;border-radius:10px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;font-size:12px!important;font-weight:700!important;margin:10px 0 0!important;padding:0!important}
@@ -287,13 +287,13 @@
 }
 .coupon-detail-art-fallback span{
   font-size:28px!important;
-  font-weight:900!important;
+  font-weight:800!important;
 }
 .coupon-detail-art-fallback strong{
   color:#ffd95b!important;
   font-size:58px!important;
   line-height:1!important;
-  font-weight:900!important;
+  font-weight:800!important;
 }
 .coupon-detail-summary{
   box-sizing:border-box!important;
@@ -341,7 +341,7 @@
   color:#454545!important;
   font-size:16px!important;
   line-height:18px!important;
-  font-weight:560!important;
+  font-weight:600!important;
   transform:translateY(1px)!important;
 }
 .coupon-detail-main span{
@@ -452,7 +452,7 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .store-info-neighborhood{font-size:14px!important;line-height:18px!important;font-weight:500!important}
 .store-contact-row,.store-info-tabs button,.store-hours-row,.store-hours-row strong,.store-address-card p{font-size:12px!important;line-height:18px!important}
 .store-address-card h3{font-size:14px!important;line-height:18px!important;font-weight:700!important}
-.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:560!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important}
+.modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:600!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;text-shadow:none!important;-webkit-text-stroke:0!important;color:#0f0f0f!important}
 .modal--login .cart-cta-btn,.modal--login .login-secondary{font-size:12px!important;line-height:18px!important;font-weight:700!important}
 .modal--login .login-privacy{font-size:12px!important;line-height:18px!important}
 .prof-hero-label,.prof-option-title,.cart-rest-name,.cir-name,.pm-name{font-size:14px!important;line-height:18px!important;font-weight:600!important}
@@ -630,7 +630,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   background:var(--brand-tint)!important;
 }
 .mob-logo img{width:100%!important;height:100%!important;object-fit:cover!important}
-.mob-logo-fallback{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;background:var(--brand-tint)!important;color:var(--brand)!important;font-size:15px!important;font-weight:900!important}
+.mob-logo-fallback{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;background:var(--brand-tint)!important;color:var(--brand)!important;font-size:15px!important;font-weight:800!important}
 .mob-rest-details{max-width:none!important;flex:1!important;min-width:0!important}
 .mob-rest-name{
   margin:0 0 2px!important;
@@ -838,7 +838,7 @@ body.menu-tab .menu-section{scroll-margin-top:260px!important}
   color:#ffe066!important;
   font-size:30px!important;
   line-height:30px!important;
-  font-weight:900!important;
+  font-weight:800!important;
   text-transform:lowercase!important;
   letter-spacing:-.01em!important;
 }
@@ -3365,7 +3365,7 @@ body,button,input,textarea,select{
 /* 3 — Restaurant identity header (Início only). */
 body.home-tab .mob-rest-name{
   font-size:18px!important;
-  font-weight:650!important;
+  font-weight:700!important;
   line-height:1.2!important;
   color:#3D434A!important;
 }
@@ -3554,7 +3554,7 @@ body.home-tab .delivery-widget.pending-selection{
 .home-highlights-section h2,
 #homeHighlightsTitle{
   font-size:18px!important;
-  font-weight:650!important;
+  font-weight:700!important;
   line-height:22px!important;
   color:#454B52!important;
   letter-spacing:-0.01em!important;
@@ -4516,7 +4516,7 @@ body.menu-tab .cat{
 body.menu-tab .cat.active{
   color:var(--primary-orange)!important;
   border-bottom-color:transparent!important;
-  font-weight:550!important;
+  font-weight:600!important;
 }
 
 body.menu-tab .cat.active::after{
@@ -5756,7 +5756,7 @@ body.home-tab.soft-scroll-locked.modal-open{
   }
 
   #productModal .pm-hero-photo.product-image--placeholder span{
-    font-weight:900!important;
+    font-weight:800!important;
   }
 
   #productModal .modal-header{
@@ -6488,7 +6488,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
   color:#5f5f5f!important;
   font-size:12px!important;
   line-height:16px!important;
-  font-weight:650!important;
+  font-weight:700!important;
   -webkit-text-stroke:0!important;
 }
 
@@ -6920,7 +6920,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #mobViewProfile .prof-account-row:active{background:#fafafa!important}
   #mobViewProfile .prof-account-row-icon{width:18px!important;min-width:18px!important;height:18px!important;margin-left:3px!important;color:#9a9a9a!important;display:flex!important;align-items:center!important;justify-content:center!important}
   #mobViewProfile .prof-account-icon-svg{width:16px!important;height:16px!important;display:block!important}
-  #mobViewProfile .prof-account-row-label{color:#5c636d!important;font-size:14px!important;line-height:18px!important;font-weight:650!important;white-space:nowrap!important}
+  #mobViewProfile .prof-account-row-label{color:#5c636d!important;font-size:14px!important;line-height:18px!important;font-weight:700!important;white-space:nowrap!important}
   #mobViewProfile .prof-account-row--logout{border-bottom:0!important}
 }
 /* Profile screen: never show the Home/Menu location widget above account page. */
@@ -7036,7 +7036,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     background:#e9e9e9!important;
     color:#4a5360!important;
     font-size:9px!important;
-    font-weight:850!important;
+    font-weight:800!important;
     line-height:24px!important;
     white-space:nowrap!important;
     overflow:hidden!important;
@@ -7199,7 +7199,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     background:#9fc2ff!important;
     color:#1e355d!important;
     font-size:9px!important;
-    font-weight:850!important;
+    font-weight:800!important;
     line-height:1!important;
     white-space:nowrap!important;
     overflow:hidden!important;
@@ -7219,8 +7219,8 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   }
   .club-coupon-art--green{background:#bfdc55!important;color:#1f8852!important}
   .club-coupon-art img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
-  .club-coupon-art span{font-size:15px!important;font-weight:900!important;line-height:1.08!important;text-shadow:0 1px 0 rgba(0,0,0,.05)!important}
-  .club-coupon-art strong{font-size:29px!important;font-weight:900!important;line-height:.86!important;color:inherit!important}
+  .club-coupon-art span{font-size:15px!important;font-weight:800!important;line-height:1.08!important;text-shadow:0 1px 0 rgba(0,0,0,.05)!important}
+  .club-coupon-art strong{font-size:29px!important;font-weight:800!important;line-height:.86!important;color:inherit!important}
   .club-coupon-title{
     display:flex!important;
     align-items:center!important;
@@ -7229,7 +7229,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     margin:9px 8px 0!important;
     color:#666!important;
     font-size:14px!important;
-    font-weight:850!important;
+    font-weight:800!important;
     line-height:17px!important;
     text-align:center!important;
     text-transform:uppercase!important;
@@ -7283,7 +7283,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     background:var(--brand-primary)!important;
     color:var(--brand-on)!important;
     font-size:13px!important;
-    font-weight:850!important;
+    font-weight:800!important;
     line-height:1!important;
     box-shadow:none!important;
   }
@@ -7377,7 +7377,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media (max-width:767px){
   #mobViewProfile .prof-account-page{padding-top:20px!important}
   #mobViewProfile .prof-account-header{margin-top:-2px!important;margin-bottom:12px!important;transform:translateY(-4px)!important}
-  #mobViewProfile .prof-account-header h1{transform:translateY(1px)!important;color:#263241!important;font-weight:780!important}
+  #mobViewProfile .prof-account-header h1{transform:translateY(1px)!important;color:#263241!important;font-weight:800!important}
   #mobViewProfile .prof-account-list{transform:translateY(-6px)!important}
   #mobViewProfile .prof-account-row{gap:12px!important;color:#777f89!important}
   #mobViewProfile .prof-account-row-icon{margin-left:0!important;color:#b7b7b7!important}
@@ -8228,7 +8228,7 @@ body.menu-tab .product-card.is-pressing{
     color:#9a9a9a!important;
     font-size:12px!important;
     line-height:12px!important;
-    font-weight:900!important;
+    font-weight:800!important;
     -webkit-text-stroke:.35px currentColor!important;
   }
 }
@@ -9907,7 +9907,7 @@ body.menu-tab .product-card.is-pressing{
     padding:0 12px!important;
     color:#5d514a!important;
     font-size:13px!important;
-    font-weight:650!important;
+    font-weight:700!important;
     line-height:19px!important;
     text-align:center!important;
   }

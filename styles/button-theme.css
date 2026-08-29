@@ -9,7 +9,12 @@
    valor é um token, então quem vence a disputa de cascata pinta a cor do tenant
    de qualquer jeito. Ele só arbitra contra as folhas de override que vieram
    antes (utilities.css, operation.css) — sem ele, botão primário volta a herdar
-   o cinza da regra genérica. */
+   o cinza da regra genérica.
+
+   `.addr-delete-yes` saiu desta lista em 29/08/2026. Ele confirma uma EXCLUSÃO
+   (item da sacola, endereço) e estava pintado com a cor do tenant, idêntico ao
+   botão que confirma um pedido: o gesto que apaga e o gesto que compra eram o
+   mesmo botão. Passou ao tratamento de perigo, em operation.css. */
 
 .home-order-cta,
 .btn-cart,
@@ -17,7 +22,6 @@
 .btn-primary,
 .op-confirm:not(:disabled),
 .adc-confirm-btn:not(:disabled),
-.addr-delete-yes,
 .reg-submit:not(:disabled),
 .lgn-submit:not(:disabled),
 .vfy-submit:not(:disabled),
@@ -46,8 +50,6 @@
 .op-confirm:not(:disabled):active,
 .adc-confirm-btn:not(:disabled):hover,
 .adc-confirm-btn:not(:disabled):active,
-.addr-delete-yes:hover,
-.addr-delete-yes:active,
 .reg-submit:not(:disabled):hover,
 .reg-submit:not(:disabled):active,
 .lgn-submit:not(:disabled):hover,

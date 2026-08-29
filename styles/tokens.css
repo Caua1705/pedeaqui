@@ -115,6 +115,14 @@
   /* Estado — semântico, não de marca. */
   --state-success: #2f7d49;
   --state-danger: #ef5a5a;
+  /* O irmão escuro de --state-danger, para SUPERFÍCIE preenchida com texto
+     branco em cima. Mesma matiz (0°), luminosidade em 45%.
+     Existe porque --state-danger sozinho não serve para isso: branco sobre
+     #ef5a5a dá 3,34:1, e o botão de excluir é 12px/700 — texto normal, alvo de
+     4,5:1. Sobre #c52020 são 5,83:1. Mesma razão pela qual --brand-primary tem
+     o --brand-ink-strong ao lado: o token da cor e o token que carrega texto
+     não podem ser o mesmo valor. */
+  --state-danger-strong: #c52020;
   --state-warning: #d97706;
 
   /* Sombra neutra dos cards. */

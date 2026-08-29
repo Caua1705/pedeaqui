@@ -1131,7 +1131,7 @@
   background:transparent!important;
   font-size:12px!important;
   line-height:18px!important;
-  font-weight:650!important;
+  font-weight:700!important;
   padding:4px 0!important;
   color:#6f7680!important;
   cursor:pointer!important;
@@ -1412,8 +1412,8 @@
 .addr-picker-pin svg{width:12px!important;height:16px!important}
 .addr-picker-pin.active{background:var(--brand-tint)!important;border-color:var(--brand-tint-strong)!important;color:var(--brand-light)!important}
 .addr-picker-copy{flex:1!important;min-width:0!important;display:flex!important;flex-direction:column!important;gap:5px!important;transform:translate(9px,-2px)!important}
-.addr-picker-copy strong{font-size:12px!important;font-weight:550!important;color:#3f454d!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(-2px)!important}
-.addr-picker-copy small{font-size:11.8px!important;font-weight:425!important;color:#a3a3a3!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(1px)!important}
+.addr-picker-copy strong{font-size:12px!important;font-weight:600!important;color:#3f454d!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(-2px)!important}
+.addr-picker-copy small{font-size:11.8px!important;font-weight:500!important;color:#a3a3a3!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(1px)!important}
 .addr-picker-check,.addr-picker-dots{flex-shrink:0!important;display:flex!important;align-items:center!important;color:#bbb!important}
 .addr-picker-check{width:11px!important;height:11px!important;min-width:11px!important;min-height:11px!important;justify-content:center!important;overflow:visible!important}
 .addr-picker-check svg{width:11px!important;height:11px!important;min-width:11px!important;min-height:11px!important;transform:none!important;transform-origin:center!important}
@@ -1514,10 +1514,26 @@
   cursor:pointer!important;
   box-sizing:border-box!important;
 }
+/* BOTÃO DE PERIGO — o que confirma uma exclusão.
+   Usado por "Excluir item da sacola" e "Excluir endereço".
+
+   Era `var(--brand-primary)`: o botão que apaga um endereço era pixel a pixel o
+   mesmo que confirma um pedido. Num diálogo de duas opções onde a outra também
+   é laranja (a de cancelar é contornada na mesma cor), a única pista de que um
+   deles destrói alguma coisa era a palavra "Sim".
+
+   A cor é `--state-danger-strong`, não `--state-danger`: o texto é 12px/700,
+   texto normal para efeito de contraste, e o alvo é 4,5:1. Sobre o token claro
+   dariam 3,34:1. Ver a nota do token em tokens.css.
+
+   `#logoutConfirm` INVERTE os papéis destas duas classes — lá o cheio é o
+   "Cancelar" e o `.addr-delete-yes` é o contornado — e continua fazendo isso:
+   a regra dele em utilities.css é mais específica e vem depois. Sair da conta
+   não é o mesmo gesto que apagar um endereço, e a tela já dizia isso. */
 .addr-delete-yes{
   border:0!important;
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
+  background:var(--state-danger-strong)!important;
+  color:#fff!important;
   margin-bottom:9px!important;
 }
 .addr-delete-cancel{
@@ -1553,7 +1569,7 @@
   color:#7b828a!important;
   font-size:12px!important;
   line-height:16px!important;
-  font-weight:450!important;
+  font-weight:500!important;
   grid-column:1 / -1!important;
 }
 
@@ -1623,7 +1639,7 @@
   color:#7b828a!important;
   font-size:12px!important;
   line-height:16px!important;
-  font-weight:450!important;
+  font-weight:500!important;
 }
 
 #addrDetailsModal .addr-det-checkbox-label input{

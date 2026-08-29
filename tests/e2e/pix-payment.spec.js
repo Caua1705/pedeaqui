@@ -142,7 +142,13 @@ test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', 
   ).toEqual({
     borderRadius: '10px',
     fontSize: '12.25px',
-    fontWeight: '650',
+    // Era 650 aqui, e passava — mas 650 nunca chegou à tela. O Inter é
+    // carregado em 100;300;400;500;600;700;800 (ver o <link> do restaurant.html),
+    // e um peso fora dessa lista é arredondado pelo navegador na hora de
+    // escolher o arquivo da fonte. getComputedStyle devolve o valor DECLARADO,
+    // então o teste conferia o que a folha pedia, não o que o cliente via.
+    // A folha passou a declarar o peso que de fato renderiza.
+    fontWeight: '700',
     lineHeight: '18px'
   });
 

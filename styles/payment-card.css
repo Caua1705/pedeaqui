@@ -32,7 +32,7 @@
 .payment-card-screen{position:relative;display:flex;flex-direction:column;width:100%;max-width:414px;height:100dvh;margin:0 auto;background:#f7f5f3;color:#444;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
 .payment-card-header{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;flex:0 0 70px;height:70px;padding:0 20px;border-bottom:1px solid #f0eeec;background:#fff;box-sizing:border-box}
 .payment-card-header h2{margin:0;color:#3f3d3c;font:700 16px/20px Inter,Arial,sans-serif;text-align:center}
-.payment-card-back{display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:#ececeb;color:#343331}
+.payment-card-back{display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:#ececec;color:#343331}
 .payment-card-back svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .payment-card-type-body{flex:1;padding:20px;background:#f7f5f3}
 .payment-card-type-option{display:flex;align-items:center;gap:16px;width:100%;height:70px;padding:0 18px;border:1px solid #ebe8e5;border-radius:9px;background:#fff;color:#555;font:600 13px/18px Inter,Arial,sans-serif;text-align:left;box-shadow:0 7px 24px rgba(70,55,45,.025)}
@@ -83,7 +83,7 @@
   #paymentMethodModal .payment-method-screen{position:relative!important;display:flex!important;flex-direction:column!important;width:100%!important;max-width:414px!important;height:calc(100dvh - 36px)!important;max-height:900px!important;margin:0 auto!important;border-radius:12px!important;overflow:hidden!important;background:#f7f5f3!important;box-shadow:0 20px 70px rgba(39,52,72,.13)!important}
   #paymentMethodModal .payment-method-header{display:grid!important;grid-template-columns:32px 1fr 32px!important;align-items:center!important;flex:0 0 70px!important;height:70px!important;padding:0 20px!important;border-bottom:1px solid #f0eeec!important;background:#fff!important;box-sizing:border-box!important}
   #paymentMethodModal .payment-method-header h2{margin:0!important;color:#3f3d3c!important;font:700 16px/20px Inter,Arial,sans-serif!important;text-align:center!important}
-  #paymentMethodModal .payment-method-back{display:flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:9px!important;background:#ececeb!important;color:#343331!important}
+  #paymentMethodModal .payment-method-back{display:flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:9px!important;background:#ececec!important;color:#343331!important}
   #paymentMethodModal .payment-method-header-spacer{width:32px!important;height:32px!important}
   #paymentMethodModal .payment-method-tabs{position:relative!important;display:grid!important;grid-template-columns:1fr 1fr!important;flex:0 0 57px!important;height:57px!important;padding:0 20px!important;background:#f7f5f3!important;box-sizing:border-box!important}
   #paymentMethodModal .payment-method-tabs::after{content:"";position:absolute!important;left:20px!important;bottom:5px!important;width:calc((100% - 40px)/2)!important;height:3px!important;border-radius:2px 2px 0 0!important;background:#4b4b4b!important;transform:translateX(var(--payment-tab-index,0%))!important}

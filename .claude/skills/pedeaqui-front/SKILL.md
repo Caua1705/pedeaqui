@@ -1,0 +1,278 @@
+---
+name: pedeaqui-front
+description: Mapa do front do PedeAqui/Rapidex e as armadilhas que já custaram dinheiro nele — pedido, pagamento (Pix e cartão), cupom, cashback, troca de filial, white-label e, principalmente, o que faz um teste passar sem valer nada. Leia ANTES de mexer em qualquer coisa deste repositório, e obrigatoriamente antes de escrever ou confiar num teste.
+---
+
+# PedeAqui / Rapidex — front
+
+Escrito depois da auditoria de 27–29/08/2026, com o que só se descobre errando.
+Cada afirmação aqui tem endereço no código; se divergirem, o código venceu e
+esta skill está velha — conserte-a.
+
+## 1. O terreno
+
+App **white-label** de pedidos de restaurante. Duas páginas: `index.html`
+(landing) e `restaurant.html` (o app inteiro). Vite constrói, `vite preview`
+serve, Playwright roda contra o **bundle construído**.
+
+Nada é ES module ainda. Todo arquivo em `scripts/` é uma IIFE que publica em
+`window.PedeAqui*` / `window.Rapidex*` e depende de quem rodou antes.
+`scripts/entry-restaurant.js` é a **ordem de carregamento** — ela substitui as
+27 tags `<script>` antigas e **não pode ser reordenada** sem entender o que
+depende de quê (os comentários no arquivo dizem). Não converta esses arquivos
+para módulos de passagem; é fase própria.
+
+Funções de tela são internas ao IIFE de `restaurant-page.js` e alcançáveis por
+nome via `scripts/utils/actions.js` (delegação por `data-act-*`) e por um
+`Object.assign(window, {...})` no fim do arquivo (`restaurant-page.js:10356`),
+que é como os E2E dirigem o app (`window.openProduct`, `window.addToCart`,
+`window.openModal`).
+
+**Handler inline `on*=` é proibido** e há teste que barra
+(`tests/unit/inline-handlers.test.js`): 269 deles obrigavam a CSP a liberar
+`script-src 'unsafe-inline'`, e a sessão do cliente é global do Rapidex —
+todos os tenants dividem a mesma origem.
+
+## 2. Mapa — onde mora cada coisa
+
+| Preciso mexer em… | Vá para |
+|---|---|
+| Payload de `POST /orders` | `scripts/services/order-payload.js` — **ponto único** |
+| Totais da sacola | `restaurant-page.js:2673` `cartTotals()` — **dono único** |
+| Rotas da API (strings) | `scripts/services/api-routes.js` |
+| Chamada HTTP, erro, header | `scripts/services/api-client.js`, `utils/api-error.js` |
+| Cupom e cashback (dados) | `scripts/services/club-service.js` |
+| Cupom (tela) | `scripts/pages/restaurant-club.js` + a folha de detalhe em `restaurant-page.js` |
+| Cartão: SDK e campos seguros | `scripts/services/mercado-pago-service.js` |
+| Cartão: tela e checkout | `scripts/pages/payment-card-flow.js` |
+| Cartões salvos | `scripts/services/customer-card-service.js` |
+| Gateway habilitado no restaurante | `scripts/services/payment-config-service.js` |
+| Chaves de localStorage | `scripts/utils/storage-keys.js` (leia o cabeçalho inteiro) |
+| Tema do tenant | `scripts/utils/brand-theme.js`, `styles/tokens.css` |
+| Tipos da API | `scripts/types/api.d.ts` + `openapi.json` (**gerados**, não edite) |
+| Contrato de pedido/pagamento, em prosa | `docs/order-contract.md` |
+| CSP de produção | `vercel.json` (+ `docs/csp-mercado-pago.md`) |
+
+`scripts/pages/restaurant-page.js` tem ~10.400 linhas. Não leia inteiro:
+`grep -n "function nomeDaCoisa"` e leia a vizinhança. Os comentários longos dele
+são histórico de defeito real — leia antes de "simplificar".
+
+## 3. As três regras que não se negociam
+
+### 3.1 O front não calcula dinheiro. Ele exibe e confere.
+
+O backend é a fonte de verdade de subtotal, desconto, cashback e total.
+`buildOrderPayload()` manda **só inputs** (itens, opções, endereço, modalidade,
+cupom, forma de pagamento) — valores nem existem no schema.
+
+- Desconto de cupom vem de `CouponPreviewResponse`. O total pós-cupom se chama
+  **`total_after_coupon`**. Refazer a conta no browser
+  (`beforeDiscount - discount`) é fallback, não caminho: com teto de desconto ou
+  arredondamento os números divergem e a tela mente.
+- Existe **um** dono do total: `cartTotals()`. Já houve uma segunda
+  implementação morta (`cart-service.calculateTotals()`) com 5 testes verdes e
+  já divergente do dono vivo — conta de dinheiro em dois lugares é divergência
+  esperando acontecer, e com testes só no lado morto é divergência com álibi.
+  Se você se pegar somando preço fora de `cartTotals()`, pare.
+- **Não existe rota que orce um pedido.** Conferido no OpenAPI:
+  `/coupons/preview` só responde com cupom aplicado e `/delivery/estimate` só
+  devolve a taxa. Quando o total do servidor chega, o pedido **já existe** e o
+  total dele é o que vale. Por isso o app congela o total mostrado no instante
+  do toque e **compara** com `order.total` (tolerância de 1 centavo — somar
+  reais em `Number` erra na 15ª casa). Ele avisa, não bloqueia; e a comparação
+  é amarrada ao **id do pedido**, senão vaza para o pedido seguinte.
+
+### 3.2 Contrato é lido, não lembrado
+
+`api.d.ts` e `openapi.json` são gerados por `npm run api:generate` e conferidos
+por `tests/unit/api-contract.test.js`, que também exige que **toda rota que o
+front chama exista no spec**. Esse teste nasceu de um incidente: o backend
+trocou `/coupons/available` por `/coupons`, o front continuou na rota velha, a
+tela do Clube ficou em "Não foi possível carregar seus cupons" para todo mundo —
+e lint, 253 unitários e 243 E2E passaram.
+
+Renome de campo é a classe de bug mais silenciosa daqui. Já aconteceu:
+`is_public` virou **`visibility`** (revisão 20260828_0043). E campos que o front
+procurava — `final_total`, `total_after_discount`, `discounted_total`,
+`payable_amount`, `coupon.eligible` — **nunca existiram em lugar nenhum da API**:
+o código lia `undefined` e caía no fallback em 100% das chamadas, sem nunca
+acusar nada.
+
+Antes de ler um campo, ache-o em `scripts/types/api.d.ts`. `npm run
+typecheck:cards` é o único portão que pega renome no caminho do cartão antes do
+runtime — está no CI, mantenha assim.
+
+### 3.3 Teste que você não viu falhar não vale nada
+
+O procedimento, sem atalho:
+
+1. Escreva o teste.
+2. **Reverta a correção** (ou insira o defeito) e rode o teste.
+3. Se ele não falhar, ele não cobre nada — conserte o teste, não a expectativa.
+4. Restaure e rode de novo.
+
+E confira **por que** ele falhou. Já houve teste que passava pelo motivo errado
+(sacola vazia esconde o rótulo, então a limpeza que ele "provava" não era
+provada). Uma sonda antes do teste custa dois minutos e evita um teste-fantasma
+que dá cobertura de mentira por anos.
+
+## 4. Armadilhas comprovadas
+
+Todas foram encontradas com o defeito já em produção ou a um commit de chegar lá.
+
+**O catch-all 200 do mock.** A última linha de `mockApi()`
+(`tests/e2e/helpers.js`) devolve `{}` com **200** para qualquer rota que o app
+invente. É de propósito (a suíte não pode escapar para a rede), mas significa
+que **um E2E verde não prova que a rota existe**. Rota que morreu precisa de um
+`410`/`404` explícito **antes** do catch-all — como já está feito para a
+consulta por telefone e para `/menu` de filial alheia. Quem prova rota é
+`api-contract.test.js`, não o E2E.
+
+**O fixture de filial não aceita cartão online.** `tests/fixtures/info.json` é
+cópia fiel da produção, e lá `credit_card` existe só no grupo `delivery` (a
+maquininha na porta). Quem decide o `payment_flow` é o backend, olhando
+`branch_payment_methods` da **filial** — não o `payment_method` que a UI mandou.
+Resultado do bug: cartão tokenizado, nenhuma cobrança, e o pedido indo para a
+cozinha como "paga na entrega". Todo teste de cartão precisa de
+`seedOnlineCardBranch(page)`, chamado **depois** de `mockApi()` (no Playwright a
+rota registrada por último vence). E a pergunta "o restaurante tem gateway?"
+(`/payment-config`, `card_enabled`) **não é** a pergunta "a filial habilitou
+cartão online?" (`/info`) — a segunda é a que decide, e falha **fechada**:
+esconder um cartão que caberia custa um toque, mostrar um que não cabe custa o
+pedido.
+
+**O SDK definido antes do boot.** `card-payment-flow.spec.js` define
+`window.MercadoPago` num `addInitScript`. `loadSdk()` começa com
+`if (window.MercadoPago) return Promise.resolve(...)` — então lá ele **nunca
+baixa nada**, e o atraso e a falha do download passaram batidos pela suíte
+inteira. Quem exercita o download real é `payment-card-loading-state.spec.js`
+(de propósito, com chave inválida), e quem roda o SDK real **sob a CSP real de
+produção** é `mercado-pago-secure-fields.spec.js`. Este último **se pula em
+silêncio** sem `PAYMENT_PUBLIC_KEY` — e são exatamente os testes que pegam
+bloqueio de `connect-src` (o SDK faz `fetch` em `secure-fields.mercadopago.com`
+antes de montar o iframe; estar só no `frame-src` não basta). Se você mexeu em
+CSP ou no SDK e a suíte ficou verde rápido demais, confira se eles rodaram.
+
+**O mock que aceita qualquer coisa.** O `createCardToken` falso aceitava
+qualquer `cardId`. O gateway real recusa qualquer `card_id` que não seja o id do
+cartão **dentro da conta dele** (`400 invalid card_id`, `E201`) — e nós
+mandávamos nosso UUID. O teste passava, a tela quebrava. O mock hoje imita a
+recusa. Regra geral: **um mock que só aceita é um teste que só concorda.**
+Quando imitar um serviço externo, imite as recusas dele primeiro.
+
+**Fixture vazio esconde a tela inteira.** `/coupons` respondia `{coupons: []}` e
+nenhum E2E chegava a **desenhar** um card. Por essa fresta passaram oito
+defeitos juntos (rota morta, filtro que se auto-desligava, "0% OFF", tarja fixa,
+botão igual nos três estados, ler-aplicava, recusado-virava-aplicado, total
+recalculado). `tests/fixtures/coupons.json` hoje traz os três estados do
+contrato — `applicable`, `missing_amount`, `login_required` — com os **tipos de
+produção**: `min_order_value`, `discount_amount` e `missing_amount` chegam como
+**string decimal**. Isso é parte do teste.
+
+**Fixture cujos números coincidem.** No E2E, `3 × 7,05 + 0,99 = 22,14` dá o
+mesmo resultado dos dois lados, então divergência de total era invisível. Se o
+teste é sobre dois números concordarem, **faça-os discordar** no fixture.
+
+**O cupom que grudava ao ser aberto.** `selectedCoupon` fazia dois trabalhos:
+"o que a folha está mostrando" e "o que está aplicado à sacola".
+`openCouponDetail()` escrevia nela só de abrir. Quem tocasse num card para
+**ler** as regras saía com o cupom armado — desconto na tela sem ninguém
+confirmar, `coupon_id` no `POST /orders`, e num cupom de uso único isso o
+**queima**. A correção é a separação (`couponDetailCoupon` = aberto para
+leitura; `selectedCoupon` = aplicado; só `confirmCouponDetail()` promove um ao
+outro), **não** um `clear` no fechar: `clear` conserta o sintoma e quebra de
+novo no dia em que alguém acrescentar outra saída da folha. Fechar a leitura
+também não desaplica o que já valia — abrir um segundo cupom para comparar não
+pode custar o primeiro. Quando um estado responde a duas perguntas, ele já está
+errado; separe.
+
+**200 não é sucesso.** `CouponPreviewResponse` responde **200 com
+`valid: false`** e `ineligibility_reason` — ler só o HTTP fazia a tela dizer
+"Cupom aplicado. Desconto de R$ 0,00" e mandar o `coupon_id` de um cupom que o
+backend já tinha recusado. `StartPaymentResponse` numa recusa não tem campo de
+mensagem: o motivo vem em `status_detail`, cru do gateway. E o classificador do
+Pix ("não sei = pending = siga esperando") **não serve para cartão**, onde a
+autorização é síncrona e "não sei" tem de cair para **não pago**. Leia sempre o
+campo de veredito, nunca só o status.
+
+**Trocar de filial é transacional.** Ids de produto não se repetem entre
+filiais. Um `catch` que só logava deixava `restoreCart()` conferir a sacola da
+loja **nova** contra o cardápio da **antiga**: nada casava, o carrinho virava
+vazio — e a última linha de `restoreCart()` gravava esse vazio **por cima** da
+sacola guardada. O cliente perdia o pedido montado por uma falha de rede, sem
+uma palavra na tela. Ou tudo muda (contexto, cardápio, sacola) ou nada muda, com
+rollback e aviso. E o **cupom não atravessa**: ele foi calculado contra os
+preços daquela filial. Pagamento e cartão tokenizado caem junto.
+
+**Corridas no E2E.** `confirmOperation()` dispara `handleMenuBranchChange()`
+**sem await**, de propósito (a tela fecha na hora e o cardápio chega por trás).
+Afirmar logo depois do clique passa sozinho e falha com a máquina ocupada.
+Espere um efeito observável do **fim** do caminho (ex.: o número de linhas da
+sacola depois do `restoreCart()`), nunca um `waitForTimeout`. E
+`confirmOrderSheet(page)` é obrigatório: um spec que clique só no CTA da sacola
+**nunca vê o `POST /orders`**.
+
+**Ordem das rotas importa.** Em `mockApi()`, `/coupons/preview` (POST) é testado
+antes de `/coupons`, senão a lista responde pela validação. Em `page.route`, a
+**última registrada vence** — é por isso que `seedOnlineCardBranch()` vem depois
+de `mockApi()`.
+
+## 5. Como verificar de verdade
+
+```
+npm run lint
+npm run typecheck:cards      # o único portão que pega renome de campo no cartão
+npm run test                 # vitest, ~259–264 unitários
+npm run test:e2e             # playwright; constrói e serve o bundle real
+```
+
+Rode os quatro. O E2E leva minutos — rode em background e espere uma vez, não em
+laço.
+
+**Flakes conhecidos** (passam isolados, caem sob carga paralela; não são seus):
+`tenant-theme.spec.js:188` (limite de tempo de parede) e, às vezes,
+`assistant-voice-session.spec.js:294`. Se falhou outra coisa, é sua.
+
+Guardas que existem para barrar reincidência — se uma delas te barrar, ela
+provavelmente está certa: `css-duplicate-declarations` (a folha não pode brigar
+com ela mesma), `inline-handlers`, `mark-contrast`, `tenant-theme.spec.js`,
+`visual-consistency.spec.js`, `csp.spec.js`, `api-contract.test.js`.
+
+## 6. Estado no cliente
+
+Namespace `rapidex.*`. **A conta é do Rapidex, não do restaurante** — o backend
+é assim (`customers.phone` é único na tabela inteira). Então token, perfil,
+endereços e pedidos são **globais**; carrinho, contexto de operação e
+`orderTracking` são **por slug**. O carrinho é o único dado que não pode vazar
+entre lojas. A sessão só é tocada por `readSession`/`writeSession`/
+`clearSession` — um dia ela vira cookie de domínio, e essas três funções são a
+costura.
+
+`tracking_token` é a **única** forma de um visitante alcançar o próprio pedido
+(a consulta pública por telefone não existe mais na API). Ele é persistido por
+slug em `scripts/state/order-tracking.js` **antes** de qualquer renderização de
+confirmação.
+
+## 7. White-label
+
+Cor chumbada no CSS é bug. ~250 delas (86 sob `!important`) venciam as custom
+properties que `applyTheme()` escrevia, e todo restaurante novo nascia
+parcialmente laranja do piloto — o que travava comercialmente o cadastro do
+segundo cliente. Use tokens (`styles/tokens.css`); `tenant-theme.spec.js` falha
+se a regressão voltar.
+
+Cor de estado (âmbar, vermelho) num tenant azul é **cor de ninguém**: prefira
+peso, borda e hierarquia. Cor de marca sobre fundo claro passa pela guarda de
+contraste (`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária crua.
+
+## 8. Antes de fechar
+
+- [ ] O teste novo foi visto **falhando** com a correção revertida, e pelo motivo certo.
+- [ ] `lint`, `typecheck:cards`, `test`, `test:e2e` — com os números no commit.
+- [ ] Nenhum valor de dinheiro calculado fora de `cartTotals()`; nenhum campo lido sem estar em `api.d.ts`.
+- [ ] Rota nova? Ela existe no spec (`api-contract.test.js` prova) e o mock **não** a atende por acidente pelo catch-all.
+- [ ] Pendência de backend virou texto. `docs/order-contract.md` tem a lista, e a mais cara continua aberta: **numa recusa de cartão o pedido já está gravado e não há rota de cliente para cancelá-lo.**
+
+A mensagem de commit deste repo conta **o defeito**, não a mudança: o que a
+pessoa via, por que ninguém pegou, o que passa a valer, e a verificação com
+números no fim. Siga o formato — foi ele que tornou esta auditoria possível.

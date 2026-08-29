@@ -52,6 +52,24 @@
   let savedCardPaymentToken = '';
   const paymentApiTypeByKey = new Map();
   const paymentScopeByKey = new Map();
+  // ------------------------------------------------------------
+  //  DOIS cupons, e a diferença entre eles vale dinheiro.
+  //
+  //  `couponDetailCoupon` é o que está ABERTO NA TELA para leitura. Some quando
+  //  a folha fecha e não entra em pedido nenhum.
+  //
+  //  `selectedCoupon` é o que está APLICADO À SACOLA. É ele que vai no
+  //  payload de POST /orders (currentOrderState) e que o backend consome.
+  //
+  //  Eram a MESMA variável, e openCouponDetail() a escrevia só de abrir. Quem
+  //  tocasse num card de cupom para ler as regras e fechasse saía com o cupom
+  //  armado: o updateCartUI() seguinte disparava o preview em silêncio, o
+  //  desconto aparecia sem ninguém ter confirmado, e o coupon_id ia no pedido.
+  //  Num cupom de uso único isso o QUEIMA — gasto sem nunca ter sido escolhido.
+  //
+  //  Só confirmCouponDetail() promove um ao outro. Ler nunca aplica.
+  // ------------------------------------------------------------
+  let couponDetailCoupon = null;
   let selectedCoupon = null;
   let selectedCouponPreview = null;
   let couponPreviewPromise = null;
@@ -335,6 +353,7 @@
     paymentScopeByKey.clear();
     currentProd = null;
     editingCartItemUid = null;
+    couponDetailCoupon = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewPromise = null;
@@ -2658,9 +2677,23 @@
     return Number.isFinite(value) && value > 0 ? value : 0;
   }
 
+  /**
+   * O total que o backend calculou para esta sacola COM o cupom.
+   *
+   * `total_after_coupon` é o nome no contrato (CouponPreviewResponse), e ele
+   * não estava na lista: os quatro nomes procurados aqui não existem em lugar
+   * nenhum da API. A função devolvia `null` em 100% das chamadas e cartTotals()
+   * caía no `beforeDiscount - discount`, refazendo no browser uma conta que já
+   * tinha vindo pronta. Enquanto os dois resultados coincidiram ninguém viu;
+   * bastava um arredondamento ou um teto de desconto para o número da tela
+   * divergir do que o pedido ia cobrar.
+   *
+   * Os outros nomes ficam como tolerância a versões antigas da resposta, atrás
+   * do nome certo.
+   */
   function couponPreviewTotal() {
     const preview = couponPreviewData();
-    const value = Number(preview.final_total ?? preview.total_after_discount ?? preview.discounted_total ?? preview.payable_amount);
+    const value = Number(preview.total_after_coupon ?? preview.final_total ?? preview.total_after_discount ?? preview.discounted_total ?? preview.payable_amount);
     return Number.isFinite(value) && value >= 0 ? value : null;
   }
 
@@ -8643,6 +8676,23 @@
       orderType: deliveryType
     }).then(response => {
       if (couponPreviewKey !== requestKey) return response;
+      // 200 NÃO quer dizer aplicado. O contrato responde `valid: false` com
+      // `ineligibility_reason` para o cupom que existe mas não vale nesta
+      // sacola — e ninguém lia esse campo. O resultado era a mensagem "Cupom
+      // aplicado. Desconto de R$ 0,00" e o coupon_id indo no pedido de um
+      // cupom que o backend já tinha recusado.
+      const preview = response?.data ?? response ?? {};
+      const payload = preview.preview ?? preview;
+      if (payload.valid === false) {
+        selectedCouponPreview = null;
+        // A razão vem do backend em português e é específica ("primeira compra",
+        // "fora do período"). Ela ganha da nossa frase genérica sempre que existe.
+        if (!silent) showCouponNotice(detailText(payload.ineligibility_reason)
+          || String(payload.ineligibility_reason || '').trim()
+          || 'Este cupom não vale para esta sacola.');
+        updateCartUI();
+        return null;
+      }
       selectedCouponPreview = response;
       updateCartUI();
       return response;
@@ -8734,7 +8784,9 @@
     const coupon = clubController.getCoupon(code)
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
     if (!coupon) return;
-    selectedCoupon = coupon;
+    // ABRIR É LER. Só confirmCouponDetail() aplica — ver a nota em
+    // `couponDetailCoupon`, lá em cima.
+    couponDetailCoupon = coupon;
     document.body.classList.add('coupon-nav-keep');
     couponDetailScrollY = currentScrollY();
     lockBodyScroll(couponDetailScrollY, 'soft');
@@ -8771,6 +8823,10 @@
     if (event && event.currentTarget && event.target !== event.currentTarget) return;
     const restoreY = couponDetailScrollY;
     const overlay = $('couponDetailOverlay');
+    // A leitura acabou. `selectedCoupon` NÃO é tocado aqui de propósito: se um
+    // cupom já estava aplicado à sacola, abrir outro para ler e fechar não pode
+    // desaplicar o que estava valendo.
+    couponDetailCoupon = null;
     overlay?.classList.remove('active');
     document.body.classList.remove('coupon-nav-keep');
     setTimeout(() => {
@@ -8778,26 +8834,51 @@
     }, 560);
   }
 
+  /**
+   * O ÚNICO caminho que aplica um cupom à sacola.
+   *
+   * Toca no `selectedCoupon` só depois de o cupom ter passado por todas as
+   * portas, e o desarma de novo se ele não passar — sair daqui com um cupom
+   * armado que o backend recusou é o mesmo defeito de antes, uma porta adiante.
+   */
   async function confirmCouponDetail() {
-    if (!selectedCoupon) return;
+    const coupon = couponDetailCoupon;
+    if (!coupon) return;
     // `requires_login` era do contrato antigo e sumiu junto com
     // /coupons/available. Como o campo deixou de existir, a comparação
     // `=== true` passou a ser sempre falsa: o cupom que exige conta seguia
     // direto para o preview, que respondia 401, e o cliente via "Não foi
     // possível aplicar este cupom" em vez da tela de login.
-    if (selectedCoupon.state === 'login_required' && !isLogged()) {
+    if (coupon.state === 'login_required' && !isLogged()) {
       openLoginScreen('coupon');
       return;
     }
+    // O cupom que ainda não cabe nesta sacola não vira tentativa: o backend já
+    // disse quanto falta, e gastar uma requisição para ouvir a mesma coisa só
+    // adiaria o aviso.
+    if (coupon.state === 'missing_amount') {
+      const missing = couponAmount(coupon.missing_amount);
+      showCouponNotice(missing > 0
+        ? `Faltam ${fmt(missing)} na sacola para usar este cupom.`
+        : 'Este cupom ainda não vale para esta sacola.');
+      return;
+    }
+
+    const previousCoupon = selectedCoupon;
+    selectedCoupon = coupon;
     selectedCouponPreview = null;
     couponPreviewKey = '';
+
     if (!cart.length) {
+      // Escolha explícita com a sacola vazia: fica guardado para quando houver
+      // itens. É o único caso em que armar sem preview é o que a pessoa pediu.
       cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
       closeCouponDetail();
       await mobNavMenu();
       showCouponNotice('Cupom selecionado. Adicione produtos à sacola para usar.');
       return;
     }
+
     const button = document.querySelector('.coupon-detail-use');
     if (button) {
       button.disabled = true;
@@ -8808,7 +8889,17 @@
       button.disabled = false;
       button.textContent = 'Usar cupom';
     }
-    if (!preview) return;
+    if (!preview) {
+      // Recusado, inelegível ou falha de rede: a sacola volta EXATAMENTE ao que
+      // era. Antes o `return` seco deixava `selectedCoupon` apontando para um
+      // cupom que o backend não aceitou — a tela não mostrava desconto nenhum,
+      // mas o coupon_id seguia indo no pedido.
+      selectedCoupon = previousCoupon;
+      selectedCouponPreview = null;
+      couponPreviewKey = '';
+      updateCartUI();
+      return;
+    }
     closeCouponDetail();
     showCouponNotice(`Cupom aplicado. Desconto de ${fmt(couponDiscountAmount())}.`);
   }

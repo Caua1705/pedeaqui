@@ -9,6 +9,19 @@ const readFixture = (name) =>
 
 export const MENU = readFixture('menu.json');
 export const INFO = readFixture('info.json');
+/**
+ * Os cupons do cliente (GET /restaurants/{slug}/coupons), nos TRÊS estados que
+ * o contrato tem — `applicable`, `missing_amount` e `login_required`.
+ *
+ * Antes deste fixture a rota devolvia `{coupons: []}` e nenhum e2e chegava a
+ * desenhar um card. Foi por essa fresta que passaram, juntos: a rota morta, o
+ * filtro `eligible`, o rótulo "0% OFF", a tarja fixa e o botão que dizia
+ * "Usar cupom" nos três casos.
+ *
+ * Os tipos são os de produção, e isso é parte do teste: `min_order_value`,
+ * `discount_amount` e `missing_amount` chegam como STRING decimal.
+ */
+export const COUPONS = readFixture('coupons.json');
 
 export const SLUG = 'junior-da-picanha';
 export const BRANCH_MATRIZ = '4b054122-ee72-424c-817c-110f02c6b994';
@@ -44,16 +57,29 @@ function json(body, status = 200) {
  * @param {Function} [handlers.onStartPayment] POST /orders/{token}/payment
  * @param {Function} [handlers.onTrackOrder]   GET  /orders/track/{token}
  * @param {Function} [handlers.orderResponse]  body of the default created order
+ * @param {Function} [handlers.onListCoupons]   GET  /restaurants/{slug}/coupons
+ * @param {Function} [handlers.onPreviewCoupon] POST /restaurants/{slug}/coupons/preview
  *
  * Returns live arrays of every order/payment/tracking call seen, so a test can
  * assert BOTH what was sent and how many times. `paymentRequests` and
  * `trackRequests` are what pin the Pix flow: a charge is created once, and the
- * polling stops when it stops.
+ * polling stops when it stops. `couponListRequests` e `couponPreviewRequests`
+ * fazem o mesmo pelo cupom: qual contexto de sacola foi enviado, e quantas
+ * vezes — um cupom validado duas vezes é uma requisição a mais por toque.
  */
-export async function mockApi(page, { onCreateOrder, onStartPayment, onTrackOrder, orderResponse } = {}) {
+export async function mockApi(page, {
+  onCreateOrder,
+  onStartPayment,
+  onTrackOrder,
+  orderResponse,
+  onListCoupons,
+  onPreviewCoupon
+} = {}) {
   const orderRequests = [];
   const paymentRequests = [];
   const trackRequests = [];
+  const couponListRequests = [];
+  const couponPreviewRequests = [];
 
   await page.route('**/api.pederapidex.com/**', async (route) => {
     const request = route.request();
@@ -134,13 +160,25 @@ export async function mockApi(page, { onCreateOrder, onStartPayment, onTrackOrde
     if (/\/delivery\/estimate/.test(url)) {
       return route.fulfill(json({ serviceable: true, delivery_fee: 5, eta_min: 30, eta_max: 60 }));
     }
-    if (/\/coupons/.test(url)) return route.fulfill(json({ coupons: [] }));
+    // A ORDEM importa: /coupons/preview é POST e precisa ser testado ANTES do
+    // /coupons genérico, senão a lista responderia à validação também.
+    if (/\/coupons\/preview(\?|$)/.test(url)) {
+      couponPreviewRequests.push({ body: JSON.parse(request.postData() || '{}') });
+      if (onPreviewCoupon) return onPreviewCoupon(route, request, couponPreviewRequests.length);
+      return route.fulfill(json({ detail: 'Token ausente' }, 401));
+    }
+    if (/\/coupons(\?|$)/.test(url)) {
+      couponListRequests.push({ url });
+      if (onListCoupons) return onListCoupons(route, request, couponListRequests.length);
+      // O padrão é a lista VAZIA, como era antes: quem quer cards pede.
+      return route.fulfill(json({ coupons: [] }));
+    }
     if (/\/customers\/me/.test(url)) return route.fulfill(json({}, 401));
     // Anything else the app happens to call: benign empty 200.
     return route.fulfill(json({}));
   });
 
-  return { orderRequests, paymentRequests, trackRequests };
+  return { orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests };
 }
 
 export const TRACKING_TOKEN = 'trk_e2e_0000000000000000';

@@ -1,0 +1,46 @@
+{
+  "coupons": [
+    {
+      "id": "0d6e7327-6637-48fb-ad67-fdc362d32ace",
+      "code": "JP5",
+      "title": "5% OFF",
+      "description": null,
+      "image_url": "https://cdn.example/coupon-5-percent-off.webp",
+      "discount_type": "percent",
+      "min_order_value": "20.00",
+      "valid_until": "2099-12-31T23:59:59Z",
+      "label": "selected_for_you",
+      "state": "applicable",
+      "discount_amount": "1.06",
+      "missing_amount": "0.00"
+    },
+    {
+      "id": "11c5185d-1e5c-440a-afcf-cd6e67764853",
+      "code": "FRETE0",
+      "title": "Frete grátis",
+      "description": null,
+      "image_url": "https://cdn.example/coupon-free-delivery.webp",
+      "discount_type": "free_delivery",
+      "min_order_value": "30.00",
+      "valid_until": "2099-12-31T23:59:59Z",
+      "label": null,
+      "state": "missing_amount",
+      "discount_amount": "0.00",
+      "missing_amount": "8.85"
+    },
+    {
+      "id": "d0d99eee-9cf1-409d-bd48-b5afb991da70",
+      "code": "JP10",
+      "title": "10% OFF",
+      "description": null,
+      "image_url": "https://cdn.example/coupon-10-percent-off.webp",
+      "discount_type": "percent",
+      "min_order_value": "30.00",
+      "valid_until": "2099-12-31T23:59:59Z",
+      "label": null,
+      "state": "login_required",
+      "discount_amount": "0.00",
+      "missing_amount": "30.00"
+    }
+  ]
+}

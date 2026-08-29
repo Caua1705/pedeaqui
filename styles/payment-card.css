@@ -17,7 +17,7 @@
 .payment-saved-card.is-removing{opacity:.55;pointer-events:none}
 .payment-saved-card-select.active{background:color-mix(in srgb,var(--brand-primary) 7%,transparent)}
 .payment-saved-card-select.active::after{content:"";flex:0 0 14px;width:14px;height:14px;margin-left:auto;border-radius:50%;background:var(--brand-primary);box-shadow:inset 0 0 0 4px #fff}
-.payment-saved-cards-state{padding:12px 4px;color:#8f8b88;font-size:12px;text-align:center}
+.payment-saved-cards-state{padding:12px 4px;color:#8f8b88;font-size:var(--ref-text-sm);text-align:center}
 .payment-saved-cards-state--error{color:#b14a3b}
 .payment-saved-card .payment-brand-icon{position:relative;display:block;flex:0 0 32px;width:32px;height:23px;border-radius:2px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
 .payment-saved-card .payment-brand-icon.pay-brand--amex{background:linear-gradient(135deg,#35c3e6 0 49%,#1b9ec4 50% 100%)}

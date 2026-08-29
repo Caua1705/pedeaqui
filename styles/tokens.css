@@ -128,6 +128,33 @@
   /* Sombra neutra dos cards. */
   --shadow-card: rgba(0, 0, 0, 0.05);
 
+  /* ---------------------------------------------------------------------
+     ESCALA TIPOGRAFICA — cinco tamanhos e quatro alturas de linha.
+
+     Estava declarada em styles/utilities.css, o arquivo que carrega por
+     ultimo, e por isso ninguem a achava: existia ha meses e NENHUM font-size
+     do app a usava. Veio para ca em 29/08/2026, e os font-size que ja estavam
+     exatamente nestes valores passaram a le-la.
+
+     Os numeros nao mudaram — sao os mesmos de antes, e sao tambem os mais
+     usados do app (12px sozinho responde por 225 declaracoes). O que mudou e
+     que agora ha UM lugar para mexer neles.
+
+     FORA da escala, de proposito, porque nao cabe a uma limpeza decidir:
+     13px (53 usos), 11px (42) e 15px (23). Sao frequentes demais para serem
+     descuido e nao estao na escala que o projeto declarou. Entrar ou sair e
+     decisao de design. */
+  --ref-font: 'Inter', Arial, sans-serif;
+  --ref-text-xs: 10px;
+  --ref-text-sm: 12px;
+  --ref-text-md: 14px;
+  --ref-text-lg: 16px;
+  --ref-text-xl: 18px;
+  --ref-line-sm: 15px;
+  --ref-line-md: 18px;
+  --ref-line-lg: 22px;
+  --ref-line-xl: 25px;
+
   /* Tipografia */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 

@@ -26,14 +26,14 @@
   .club-available-coupon-badge{
     min-height:34px;display:flex;align-items:center;justify-content:center;
     box-sizing:border-box;padding:7px 12px;background:#e8f0ff;color:#27466f;
-    font-size:12px;font-weight:700;line-height:16px;text-align:center;
+    font-size:var(--ref-text-sm);font-weight:700;line-height:16px;text-align:center;
   }
   .club-available-coupon-image{width:100%;height:110px;display:block;object-fit:cover}
   .club-available-coupon-content{display:flex;flex:1;flex-direction:column;padding:16px 16px 10px}
   .club-available-coupon-discount{color:var(--brand-primary);font-size:22px;line-height:27px;font-weight:800}
-  .club-available-coupon-content h3{margin:5px 0 0;color:#2f3f50;font-size:17px;line-height:22px;font-weight:800}
-  .club-available-coupon-content p{margin:7px 0 0;color:#687584;font-size:13px;line-height:18px;overflow-wrap:anywhere}
-  .club-available-coupon-meta{display:grid;gap:4px;margin-top:auto;padding-top:12px;color:#596777;font-size:12px;line-height:17px}
+  .club-available-coupon-content h3{margin:5px 0 0;color:#2f3f50;font-size:17px;line-height:var(--ref-line-lg);font-weight:800}
+  .club-available-coupon-content p{margin:7px 0 0;color:#687584;font-size:13px;line-height:var(--ref-line-md);overflow-wrap:anywhere}
+  .club-available-coupon-meta{display:grid;gap:4px;margin-top:auto;padding-top:12px;color:#596777;font-size:var(--ref-text-sm);line-height:17px}
   .club-available-coupon-use{
     min-height:44px;margin:0 16px 16px;border:0;border-radius:9px;
     background:var(--brand-primary);color:var(--brand-on);font:800 14px/20px inherit;cursor:pointer;
@@ -59,7 +59,7 @@
 .coupon-notice{
   position:fixed;z-index:2000;left:50%;bottom:calc(94px + env(safe-area-inset-bottom,0px));
   width:calc(100% - 40px);max-width:390px;box-sizing:border-box;padding:12px 16px;
-  border-radius:10px;background:#293746;color:#fff;font-size:14px;line-height:20px;
+  border-radius:10px;background:#293746;color:#fff;font-size:var(--ref-text-md);line-height:20px;
   text-align:center;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:.2s ease;
 }
 .coupon-notice.is-visible{opacity:1;transform:translate(-50%,0)}

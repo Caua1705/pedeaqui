@@ -88,7 +88,7 @@
      a linha de base, e centrar sozinho a deixa alta demais. */
   padding: 2px 20px 0;
   border-bottom: 1px solid #e5e5e5;
-  font-size: 16px;
+  font-size: var(--ref-text-lg);
   line-height: 21px;
   font-weight: 600;
   color: #383838;
@@ -144,7 +144,7 @@
 }
 
 .order-confirm-label {
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 600;
   color: var(--text-muted);
@@ -160,14 +160,14 @@
 }
 
 .order-confirm-copy strong {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-md);
   font-weight: 700;
   color: #404040;
 }
 
 .order-confirm-note {
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   color: var(--text-muted);
 }
@@ -245,8 +245,8 @@
 
 .order-confirm-total {
   flex: 0 0 auto;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: var(--ref-text-md);
+  line-height: var(--ref-line-md);
   font-weight: 700;
   color: #595959;
   transform: translate(-5px, 8px);
@@ -308,7 +308,7 @@
   background: transparent;
   color: var(--brand-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 700;
   cursor: pointer;

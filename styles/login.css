@@ -56,8 +56,8 @@
 }
 .lgn-title {
   margin: 0;
-  font-size: 16px;
-  line-height: 22px;
+  font-size: var(--ref-text-lg);
+  line-height: var(--ref-line-lg);
   font-weight: 600;
   color: #2F343A;
   text-align: center;
@@ -126,7 +126,7 @@
 .lgn-error {
   display: none;
   font-size: 11px;
-  line-height: 15px;
+  line-height: var(--ref-line-sm);
   font-weight: 400;
   color: #EF5A5A;
   margin-top: 6px;
@@ -140,7 +140,7 @@
   left: 11px;
   background: #FFFFFF;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 500;
   color: #6F747A;
@@ -179,8 +179,8 @@ label[for="loginPassword"].lgn-label { top: -11px; }
 }
 .lgn-forgot {
   font-family: inherit;
-  font-size: 12px;
-  line-height: 22px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-lg);
   font-weight: 500;
   color: #6F747A;
   background: transparent;
@@ -209,7 +209,7 @@ label[for="loginPassword"].lgn-label { top: -11px; }
   border-radius: 10px;
   background: var(--brand-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 600;
   color: var(--brand-on);

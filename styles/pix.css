@@ -74,7 +74,7 @@
    então qualquer ajuste tem que acontecer nos dois lugares.
 
    O !important é por causa de styles/utilities.css, que carrega antes e crava
-   `.cart-hdr-title{line-height:22px!important}` para o app inteiro: sem ele,
+   `.cart-hdr-title{line-height:var(--ref-line-lg)!important}` para o app inteiro: sem ele,
    especificidade nenhuma ganha de um !important. */
 
 #pixPaymentModal .cart-hdr {
@@ -103,7 +103,7 @@
 }
 
 #pixPaymentModal .cart-hdr-title {
-  font-size: 16px !important;
+  font-size: var(--ref-text-lg) !important;
   line-height: 20px !important;
   font-weight: 600 !important;
   color: #2f343a;
@@ -691,7 +691,7 @@
   padding: 0;
   border-radius: 10px;
   font-size: 12.25px !important;
-  line-height: 18px !important;
+  line-height: var(--ref-line-md) !important;
   font-weight: 700 !important;
   letter-spacing: 0;
 }
@@ -884,7 +884,7 @@
   margin: 0 0 10px;
   color: #505050;
   font-size: 15.75px;
-  line-height: 22px;
+  line-height: var(--ref-line-lg);
   font-weight: 700;
 }
 
@@ -893,7 +893,7 @@
   margin: 0 auto 20px;
   color: #747474;
   font-size: 11.75px;
-  line-height: 18px;
+  line-height: var(--ref-line-md);
   font-weight: 400;
 }
 
@@ -903,8 +903,8 @@
   height: 45px;
   padding: 0;
   border-radius: 10px;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-md);
   font-weight: 700;
   letter-spacing: 0;
 }

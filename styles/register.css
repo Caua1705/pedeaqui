@@ -57,8 +57,8 @@
 }
 .reg-title {
   margin: 0;
-  font-size: 16px;
-  line-height: 22px;
+  font-size: var(--ref-text-lg);
+  line-height: var(--ref-line-lg);
   font-weight: 600;
   color: #2F343A;
   text-align: center;
@@ -127,7 +127,7 @@
   left: 11px;
   background: #FFFFFF;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 500;
   color: #6F747A;
@@ -139,7 +139,7 @@
 #regPhone, #regBirth, #regCpf { padding-left: 20px; }
 #regPhone::placeholder,
 #regBirth::placeholder,
-#regCpf::placeholder { color: #D2D2D2; font-size: 14px; }
+#regCpf::placeholder { color: #D2D2D2; font-size: var(--ref-text-md); }
 
 /* ---------- Stacked row (phone + birth date each full width) ---------- */
 .reg-row {
@@ -227,16 +227,16 @@
   outline-offset: 2px;
 }
 .reg-check-label {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-md);
   font-weight: 400;
   color: #8A8A8A;
   white-space: normal;
 }
 .reg-privacy-link {
   font-family: inherit;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-md);
   font-weight: 700;
   color: #555555;
   text-decoration: none;
@@ -266,7 +266,7 @@
   border-radius: 10px;
   background: var(--brand-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 600;
   color: var(--brand-on);
@@ -299,7 +299,7 @@
 .reg-error {
   display: none;
   font-size: 11px;
-  line-height: 15px;
+  line-height: var(--ref-line-sm);
   font-weight: 500;
   color: #EE8A8A;
   margin-top: 4px;
@@ -356,7 +356,7 @@
   justify-content: center;
   background: #FEE8E8;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: var(--ref-text-lg);
   font-weight: 400;
   color: #DC6868;
 }

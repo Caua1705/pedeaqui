@@ -114,7 +114,7 @@
   stroke-width:1.8!important;
 }
 #operationModal .cart-hdr-title{
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:600!important;
   color:#2F343A!important;
@@ -202,7 +202,7 @@
 .op-addr-card .op-addr-pin{color:var(--op-orange);flex-shrink:0;display:flex;align-items:center}
 .op-addr-card .op-addr-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .op-addr-card .op-addr-copy strong{
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:600!important;
   color:#3F454B!important;
   line-height:16px!important;
@@ -241,7 +241,7 @@
   width:100%!important;
   height:36px!important;
   padding:0 8px!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
   font-weight:600!important;
   color:#3F454B!important;
@@ -293,7 +293,7 @@
 /* ---- Branch section ---- */
 .op-section-title{
   width:100%!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   font-weight:600!important;
   color:#6A6F76!important;
   line-height:20px!important;
@@ -326,7 +326,7 @@
   outline:none;
   background:transparent;
   font-family:inherit;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   color:var(--op-ink);
   line-height:16px!important;
   transform:none!important;
@@ -410,13 +410,13 @@
   gap:0;
 }
 .op-branch-name{
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   font-weight:600!important;
   color:#565C63!important;
-  line-height:18px!important;
+  line-height:var(--ref-line-md)!important;
 }
 .op-branch-addr{
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:400!important;
   color:#8E959D!important;
   line-height:16px!important;
@@ -430,7 +430,7 @@
   align-items:center!important;
   justify-content:center!important;
   height:20px!important;
-  font-size:10px!important;
+  font-size:var(--ref-text-xs)!important;
   font-weight:700!important;
   line-height:10px!important;
   letter-spacing:.01em!important;
@@ -461,7 +461,7 @@
   color:#747980!important;
   font-size:11px!important;
   font-weight:500!important;
-  line-height:15px!important;
+  line-height:var(--ref-line-sm)!important;
 }
 
 .op-branch-chevron{
@@ -483,7 +483,7 @@
   background:#F4F5F6!important;
   color:#747980!important;
   font-size:11px!important;
-  line-height:15px!important;
+  line-height:var(--ref-line-sm)!important;
 }
 .op-branch-feedback.error{
   background:#FFF4F1!important;
@@ -513,7 +513,7 @@
   border:none;
   border-radius:9px!important;
   background:var(--brand-primary)!important;color:var(--brand-on);font-family:inherit;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
   cursor:pointer;
   letter-spacing:0!important;
@@ -579,7 +579,7 @@
   flex-shrink:0!important;
 }
 #addAddressModal .cart-hdr-title{
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:600!important;
   color:#2F343A!important;
@@ -662,7 +662,7 @@
 }
 .adc-opt-card.selected svg{color:var(--brand-primary)!important}
 .adc-opt-card span{
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
   color:#111827!important;
   transform:translateY(2px)!important;
@@ -732,9 +732,9 @@
 }
 .adc-card.selected .adc-card-icon{color:var(--brand-primary)!important}
 .adc-card span:not(.adc-card-icon-wrap){
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   font-weight:700!important;
-  line-height:18px!important;
+  line-height:var(--ref-line-md)!important;
   color:#111827!important;
   text-align:left!important;
 }
@@ -760,7 +760,7 @@
   height:45px!important;
   border:none!important;
   border-radius:10px!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
   font-family:inherit!important;
   background:var(--brand-primary)!important;
@@ -786,7 +786,7 @@
   border-radius:10px!important;
   background:#fff!important;
   color:var(--brand-primary)!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
   font-family:inherit!important;
   cursor:pointer!important;
@@ -838,7 +838,7 @@
 #addrSearchModal .cart-hdr-title,
 #addrMapModal .cart-hdr-title,
 #addrDetailsModal .cart-hdr-title{
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:600!important;
   color:#2F343A!important;
@@ -888,7 +888,7 @@
   margin:2px 0 10px!important;
 }
 .addr-search-sub{
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   font-weight:400!important;
   line-height:20px!important;
   color:#6b7280!important;
@@ -955,11 +955,11 @@
   color:#9aa0a8!important;
 }
 .addr-google-powered strong{
-  font-size:10px!important;
+  font-size:var(--ref-text-xs)!important;
   font-weight:600!important;
   letter-spacing:-.2px!important;
 }
-.addr-google-powered strong span{font-size:10px!important;font-weight:600!important}
+.addr-google-powered strong span{font-size:var(--ref-text-xs)!important;font-weight:600!important}
 .addr-google-powered .g-blue{color:#4285f4!important}
 .addr-google-powered .g-red{color:#ea4335!important}
 .addr-google-powered .g-yellow{color:#fbbc05!important}
@@ -1022,7 +1022,7 @@
 .addr-sug-copy{flex:1!important;min-width:0!important}
 .addr-sug-main{
   display:block!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:400!important;
   color:#4b5563!important;
   line-height:17px!important;
@@ -1085,8 +1085,8 @@
   margin-top:2px!important;
   border:none!important;
   background:transparent!important;
-  font-size:12px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:700!important;
   padding:4px 0!important;
   color:#6f7680!important;
@@ -1176,7 +1176,7 @@
 .addr-det-location-copy small{
   display:block!important;
   font-size:13px!important;
-  line-height:18px!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:400!important;
   color:#4b5563!important;
   overflow:hidden!important;
@@ -1215,7 +1215,7 @@
   row-gap:8px!important;
 }
 .addr-det-label{
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:500!important;
   color:#4b5563!important;
   text-transform:none!important;
@@ -1253,7 +1253,7 @@
   display:flex!important;
   align-items:center!important;
   gap:8px!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:500!important;
   color:#4b5563!important;
   cursor:pointer!important;
@@ -1298,7 +1298,7 @@
   stroke-width:1.8!important;
 }
 #addrPickerModal .cart-hdr-title{
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:600!important;
   color:#2F343A!important;
@@ -1343,7 +1343,7 @@
 
 /* ---- Address Picker Modal ---- */
 .addr-picker-body{padding:24px 20px 16px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;background:#fff!important}
-.addr-picker-add-btn{position:relative!important;width:338px!important;max-width:calc(100% - 28px)!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:var(--brand-tint-strong)!important;border:1px solid var(--brand-tint-strong)!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;box-sizing:border-box!important}
+.addr-picker-add-btn{position:relative!important;width:338px!important;max-width:calc(100% - 28px)!important;height:45px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:0 24px!important;margin-bottom:6px!important;background:var(--brand-tint-strong)!important;border:1px solid var(--brand-tint-strong)!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:var(--ref-text-sm)!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;box-sizing:border-box!important}
 .addr-picker-add-btn svg{position:static!important;transform:translateX(-3px)!important;flex-shrink:0!important}
 .addr-picker-add-btn span{width:auto!important;text-align:left!important;transform:none!important}
 .addr-picker-add-btn:active{background:var(--brand-tint-strong)!important}
@@ -1358,7 +1358,7 @@
 .addr-picker-pin svg{width:12px!important;height:16px!important}
 .addr-picker-pin.active{background:var(--brand-tint)!important;border-color:var(--brand-tint-strong)!important;color:var(--brand-light)!important}
 .addr-picker-copy{flex:1!important;min-width:0!important;display:flex!important;flex-direction:column!important;gap:5px!important;transform:translate(9px,-2px)!important}
-.addr-picker-copy strong{font-size:12px!important;font-weight:600!important;color:#3f454d!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(-2px)!important}
+.addr-picker-copy strong{font-size:var(--ref-text-sm)!important;font-weight:600!important;color:#3f454d!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(-2px)!important}
 .addr-picker-copy small{font-size:11.8px!important;font-weight:500!important;color:#a3a3a3!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transform:translateY(1px)!important}
 .addr-picker-check,.addr-picker-dots{flex-shrink:0!important;display:flex!important;align-items:center!important;color:#bbb!important}
 .addr-picker-check{width:11px!important;height:11px!important;min-width:11px!important;min-height:11px!important;justify-content:center!important;overflow:visible!important}
@@ -1432,16 +1432,16 @@
 }
 .addr-delete-title{
   margin:0 0 8px!important;
-  font-size:16px!important;
-  line-height:22px!important;
+  font-size:var(--ref-text-lg)!important;
+  line-height:var(--ref-line-lg)!important;
   font-weight:600!important;
   color:#3d3d3d!important;
   text-align:center!important;
 }
 .addr-delete-text{
   margin:0 0 20px!important;
-  font-size:12px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:400!important;
   color:#878787!important;
   text-align:center!important;
@@ -1454,8 +1454,8 @@
   min-height:45px!important;
   border-radius:10px!important;
   font-family:inherit!important;
-  font-size:12px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:700!important;
   cursor:pointer!important;
   box-sizing:border-box!important;
@@ -1513,7 +1513,7 @@
 #addrDetailsModal .addr-det-label{
   margin:8px 0 2px!important;
   color:#7b828a!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
   font-weight:500!important;
   grid-column:1 / -1!important;
@@ -1583,7 +1583,7 @@
   padding:2px 0 0!important;
   margin:0!important;
   color:#7b828a!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
   font-weight:500!important;
 }
@@ -1817,9 +1817,9 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
 .mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon),
 .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
   margin-top:9px!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   font-weight:500!important;
-  line-height:15px!important;
+  line-height:var(--ref-line-sm)!important;
 }
 .mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
   color:#787878!important;

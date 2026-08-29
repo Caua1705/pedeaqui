@@ -52,8 +52,8 @@
 .vfy-back svg { width: 17px; height: 17px; color: #7A7A7A; }
 .vfy-htitle {
   margin: 0;
-  font-size: 16px;
-  line-height: 22px;
+  font-size: var(--ref-text-lg);
+  line-height: var(--ref-line-lg);
   font-weight: 600;
   color: #2F343A;
   text-align: center;
@@ -83,7 +83,7 @@
 }
 .vfy-text {
   margin: 0 0 22px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 20px;
   font-weight: 400;
   color: #6F747A;
@@ -106,7 +106,7 @@
   background: #FFFFFF;
   text-align: center;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   font-weight: 700;
   color: #141414;
   outline: none;
@@ -148,7 +148,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: var(--ref-text-lg);
   font-weight: 400;
 }
 .vfy-msg.is-error { background: #FEF2F2; color: #E49090; }
@@ -159,14 +159,14 @@
 /* ---------- Resend ---------- */
 .vfy-resend-row {
   margin-top: 16px;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--ref-text-sm);
+  line-height: var(--ref-line-md);
   text-align: center;
   color: #777777;
 }
 .vfy-resend {
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   font-weight: 600;
   color: #777777;
   background: transparent;
@@ -197,7 +197,7 @@
   left: 11px;
   background: #FFFFFF;
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 500;
   color: #6F747A;
@@ -241,7 +241,7 @@
 .vfy-eye svg { width: 20px; height: 20px; }
 .vfy-field-err {
   display: none;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   color: #EF5A5A;
   margin-top: 6px;
@@ -277,7 +277,7 @@
 #forgotPasswordScreen .vfy-input { height: 60px; }
 #forgotPasswordScreen .vfy-text {
   text-align: center;
-  font-size: 14px;
+  font-size: var(--ref-text-md);
   line-height: 17px;
   color: #969BA2;
 }
@@ -293,7 +293,7 @@
 
 /* ---------- "Redefina sua senha" — new-password step ---------- */
 #resetPasswordScreen .vfy-scroll { padding: 39px 20px 24px; }
-#resetPasswordScreen .vfy-text { text-align: center; margin-bottom: 21px; font-size: 14px; line-height: 20px; color: #858B92; }
+#resetPasswordScreen .vfy-text { text-align: center; margin-bottom: 21px; font-size: var(--ref-text-md); line-height: 20px; color: #858B92; }
 #resetPasswordScreen .vfy-field { max-width: 374px; }
 #resetPasswordScreen .vfy-input { height: 60px; }
 /* Field errors match the register form: 11px, soft red, just under the field. */
@@ -302,7 +302,7 @@
   margin: 4px auto 16px;
   text-align: left;
   font-size: 11px;
-  line-height: 15px;
+  line-height: var(--ref-line-sm);
   font-weight: 500;
   color: #EE8A8A;
 }
@@ -314,7 +314,7 @@
 #recoverCodeScreen .vfy-text {
   text-align: center;
   margin-bottom: 20px;
-  font-size: 14px;
+  font-size: var(--ref-text-md);
   line-height: 20px;
   color: #9499A0;
 }
@@ -325,7 +325,7 @@
   width: 50px;
   height: 50px;
   flex: 0 0 50px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
 }
 /* Swap emphasis: "Não recebeu o código?" is the bold/dark part, "Reenviar"
    is the lighter link. */
@@ -335,12 +335,12 @@
   justify-content: center;
   align-items: baseline;
   gap: 5px;
-  font-size: 14px;
+  font-size: var(--ref-text-md);
   color: #6B7280;
   font-weight: 600;
 }
 #recoverCodeScreen .vfy-resend {
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   color: #777C84;
   font-weight: 400;
 }
@@ -349,7 +349,7 @@
 #recoverCodeScreen .vfy-bottom--solo { padding-bottom: 26px; }
 .rec-code-label {
   margin: 0 0 13px;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 17px;
   font-weight: 700;
   color: #2F343A;
@@ -368,7 +368,7 @@
   border-radius: 10px;
   background: var(--brand-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   line-height: 16px;
   font-weight: 700;
   color: var(--brand-on);
@@ -387,7 +387,7 @@
   margin-top: 16px;
   text-align: center;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   font-weight: 500;
   color: #777777;
   text-decoration: underline;
@@ -455,7 +455,7 @@
 }
 .vfy-alert-title {
   margin: 0 0 28px;
-  font-size: 14px;
+  font-size: var(--ref-text-md);
   line-height: 19px;
   font-weight: 400;
   color: #6A6F76;
@@ -463,7 +463,7 @@
 .vfy-alert-text {
   margin: 0 0 22px;
   font-size: 13px;
-  line-height: 18px;
+  line-height: var(--ref-line-md);
   font-weight: 400;
   color: #6F747A;
 }
@@ -475,7 +475,7 @@
   background: var(--brand-primary);
   color: var(--brand-on);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--ref-text-sm);
   font-weight: 700;
   cursor: pointer;
 }

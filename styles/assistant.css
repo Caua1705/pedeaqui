@@ -1019,17 +1019,17 @@ body.app-error .app-loader-message {
 .assistant-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
 .assistant-avatar-img{width:76px!important;height:76px!important;object-fit:cover!important;border-radius:50%!important;filter:none!important}
 .assistant-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
-.assistant-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:12px!important;line-height:16px!important}
+.assistant-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:16px!important}
 .assistant-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
 .assistant-prompt-card{margin:10px 14px 0!important;padding:15px!important;border:1px solid #eeeeee!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
-.assistant-prompt-headline{font-size:16px!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
-.assistant-prompt-sub{color:#6f747a!important;font-size:12px!important;line-height:17px!important;margin-bottom:12px!important}
+.assistant-prompt-headline{font-size:var(--ref-text-lg)!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
+.assistant-prompt-sub{color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;margin-bottom:12px!important}
 .assistant-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
 .assistant-input{font-size:13px!important;min-width:0!important}
 .assistant-send-btn{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important}
 .assistant-content{padding:0 14px!important}
-.assistant-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:10px!important;letter-spacing:.08em!important}
-.assistant-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:12px!important;font-weight:700!important}
+.assistant-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:var(--ref-text-xs)!important;letter-spacing:.08em!important}
+.assistant-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:var(--ref-text-sm)!important;font-weight:700!important}
 .assistant-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 .assistant-chip-svg{width:15px!important;height:15px!important;display:block!important}
 .assistant-chip--active{background:var(--brand-tint)!important;color:var(--brand-primary)!important;border-color:rgba(var(--brand-primary-rgb), .34)!important;box-shadow:none!important}
@@ -1039,7 +1039,7 @@ body.app-error .app-loader-message {
 
 .assistant-location-wrap{padding:0!important;background:#ffffff!important}
 .assistant-location-widget{margin:0 auto!important}
-.assistant-location-widget .address-card-copy strong{font-size:12px!important;line-height:17px!important;font-weight:300!important}
+.assistant-location-widget .address-card-copy strong{font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:300!important}
 .assistant-hero{margin-top:10px!important}
 
 /* Assistant tab final composition: same system rhythm as Home/Menu. */
@@ -1058,10 +1058,10 @@ body.app-error .app-loader-message {
 .assistant-avatar-img{width:72px!important;height:72px!important}
 .assistant-prompt-card{margin:14px 20px 0!important;border-radius:10px!important;border:1px solid #eeeeee!important;box-shadow:0 8px 22px rgba(0,0,0,.035)!important}
 .assistant-content{padding:0 20px!important}
-.assistant-section-label{padding:18px 0 9px!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:10px!important}
+.assistant-section-label{padding:18px 0 9px!important;color:#2f343a!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;border-bottom:1px solid #f0f0f0!important;margin-bottom:10px!important}
 .assistant-starter{display:block!important;margin:14px 0 0!important;padding:0!important;background:#ffffff!important;border:1px solid #eeeeee!important;border-radius:10px!important;box-shadow:0 8px 22px rgba(0,0,0,.025)!important;overflow:hidden!important}
 .assistant-starter.hidden{display:none!important}
-.assistant-starter-title{margin:0!important;padding:12px 14px!important;border-bottom:1px solid #f0f0f0!important;color:#2f343a!important;font-size:14px!important;line-height:18px!important;font-weight:600!important}
+.assistant-starter-title{margin:0!important;padding:12px 14px!important;border-bottom:1px solid #f0f0f0!important;color:#2f343a!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:600!important}
 .assistant-starter button{display:block!important;width:100%!important;margin:0!important;padding:12px 14px!important;border:0!important;border-bottom:1px solid #f0f0f0!important;background:#ffffff!important;color:#5f666f!important;font:500 12px/18px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;text-align:left!important}
 .assistant-starter button:last-child{border-bottom:0!important}
 
@@ -1423,7 +1423,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   border-radius:999px!important;
   background:#ffffff!important;
   color:#5f6670!important;
-  font-size:12px!important;
+  font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
   font-weight:600!important;
   box-shadow:none!important;
@@ -1452,8 +1452,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   transform:translateY(-1px)!important;
 }
 #mobViewAssistant .assistant-ai-input{
-  font-size:14px!important;
-  line-height:22px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-lg)!important;
   color:#20252c!important;
 }
 #mobViewAssistant .assistant-ai-input::placeholder{
@@ -1581,8 +1581,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: match text scale to larger chips. */
 #mobViewAssistant .assistant-suggest-chip{
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:600!important;
   letter-spacing:0!important;
   text-align:center!important;
@@ -1748,7 +1748,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-subtitle{
   max-width:300px!important;
   margin:6px auto 0!important;
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   line-height:20px!important;
   font-weight:400!important;
   letter-spacing:.005em!important;
@@ -1966,7 +1966,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   display:block!important;
   background:transparent!important;
   padding:0!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:24px!important;
   font-weight:700!important;
   text-align:left!important;
@@ -2201,7 +2201,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   color:#ffffff!important;
   font-family:"Inter",sans-serif!important;
   font-size:15px!important;
-  line-height:18px!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:600!important;
   text-transform:none!important;
   white-space:nowrap!important;
@@ -2318,7 +2318,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   color:#ffffff!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   line-height:17px!important;
   font-weight:700!important;
   color:#f3e8c8!important;
@@ -2666,8 +2666,8 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
   color:var(--brand-hover)!important;
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:700!important;
 }
 
@@ -2952,7 +2952,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   margin:0 0 6px!important;
   color:#292522!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
-  font-size:18px!important;
+  font-size:var(--ref-text-xl)!important;
   line-height:23px!important;
   font-weight:700!important;
   letter-spacing:-.01em!important;
@@ -2961,7 +2961,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 #mobViewAssistant .assistant-product-detail-price{
   margin:0 0 22px!important;
   color:var(--brand-ink-strong)!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:700!important;
 }
@@ -2984,13 +2984,13 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-detail-recommendation strong{
   color:#292522!important;
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:700!important;
 }
 #mobViewAssistant .assistant-product-detail-recommendation span{
   color:#6b7077!important;
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   line-height:21px!important;
   font-weight:400!important;
   text-wrap:pretty!important;
@@ -3012,7 +3012,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   background:var(--brand-ink-strong)!important;
   color:var(--surface)!important;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:700!important;
   box-shadow:none!important;
@@ -3223,7 +3223,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   align-items:center!important;
   gap:7px!important;
   margin:0!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:20px!important;
   font-weight:600!important;
   letter-spacing:-0.01em!important;
@@ -3303,8 +3303,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   background:transparent!important;
   color:var(--text-main)!important;
   font-family:inherit!important;
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:600!important;
   text-align:left!important;
   cursor:pointer!important;
@@ -3563,7 +3563,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   background:var(--surface)!important;
   color:var(--text-main)!important;
   font-family:inherit!important;
-  font-size:16px!important;
+  font-size:var(--ref-text-lg)!important;
   line-height:24px!important;
   font-weight:600!important;
   cursor:pointer!important;
@@ -3815,7 +3815,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   max-width:300px!important;
   margin-top:8px!important;
   color:var(--text-muted)!important;
-  font-size:14px!important;
+  font-size:var(--ref-text-md)!important;
   line-height:20px!important;
 }
 
@@ -3997,8 +3997,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 /* LUGAR 2 da cor, segunda metade: o preço. */
 #mobViewAssistant .assistant-product-card .assistant-result-price{
   color:var(--brand-ink-strong)!important;
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
   font-weight:700!important;
 }
 
@@ -4214,7 +4214,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   margin:0;
   max-width:280px;
   color:var(--text-muted);
-  font-size:14px;
+  font-size:var(--ref-text-md);
   line-height:20px;
 }
 
@@ -4365,8 +4365,8 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   max-width:100%!important;
 }
 #mobViewAssistant .assistant-voice-rail .assistant-result-title{
-  font-size:14px!important;
-  line-height:18px!important;
+  font-size:var(--ref-text-md)!important;
+  line-height:var(--ref-line-md)!important;
 }
 
 /* ── Os controles ── */
@@ -4486,7 +4486,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 #mobViewAssistant .assistant-voice-alert__text{
   margin:0;
   color:var(--text-main);
-  font-size:16px;
+  font-size:var(--ref-text-lg);
   line-height:23px;
 }
 #mobViewAssistant .assistant-voice-alert__btn{

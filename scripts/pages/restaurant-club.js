@@ -57,13 +57,51 @@
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(number);
     }
 
+    /**
+     * O rótulo grande do card ("10% OFF", "Frete grátis").
+     *
+     * Vem PRONTO em `title`. A versão anterior recalculava a partir de
+     * `discount_value`, que não existe em CustomerCouponResponse: `Number(
+     * undefined ?? ...)` dava 0 e todo cupom percentual da tela do Clube
+     * escrevia "0% OFF" — o desconto certo, anunciado como nenhum.
+     *
+     * `discount_value` não voltou nem vai voltar: ele é PARÂMETRO da conta, e
+     * quem faz a conta é o backend (ver CustomerCouponResponse no OpenAPI). O
+     * cálculo local abaixo é só para a vitrine pública do /menu, que é outro
+     * schema (PublicCouponResponse) e ainda manda o valor.
+     */
     function getCouponLabel(coupon) {
+      const title = String(coupon.title || '').trim();
+      if (title) return title;
       const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
       const value = Number(coupon.discount_value ?? coupon.value ?? coupon.amount ?? 0);
       if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
       if (type === 'percent' || type === 'percentage') return `${value.toLocaleString('pt-BR')}% OFF`;
       if (type === 'fixed' || type === 'fixed_amount' || value > 0) return `${fmtClubCurrency(value)} OFF`;
-      return coupon.discount_label || coupon.title || coupon.name || 'Cupom';
+      return coupon.name || 'Cupom';
+    }
+
+    /** "30.00" -> 30. Os valores do contrato novo são string decimal. */
+    function couponAmount(value) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    /**
+     * O que o botão do card pode fazer com ESTA sacola — direto de `state`.
+     *
+     * Antes o botão dizia "Usar cupom" nos três casos. Para quem não estava
+     * logado isso levava a um cupom que não aplicava sem explicar por quê, e
+     * para quem não tinha atingido o mínimo levava a um desconto de R$ 0,00
+     * anunciado como aplicado.
+     */
+    function couponCta(coupon) {
+      if (coupon.state === 'login_required') return 'Entre para usar';
+      if (coupon.state === 'missing_amount') {
+        const missing = couponAmount(coupon.missing_amount);
+        return missing > 0 ? `Faltam ${fmtClubCurrency(missing)}` : 'Usar cupom';
+      }
+      return 'Usar cupom';
     }
 
     function getCouponCode(coupon, index) {
@@ -74,15 +112,19 @@
       return coupon.image_url || coupon.image || coupon.image_path || coupon.banner_url || coupon.cover_url || '';
     }
 
+    /**
+     * A tarja do topo do card.
+     *
+     * `label` é o único selo do contrato — hoje só `selected_for_you`, e `null`
+     * na maioria dos cupons. A versão anterior procurava `badge_label`,
+     * `audience`, `segment` e `campaign_type`, nenhum dos quais existe: o
+     * resultado era "Cupom disponível" em 100% dos cards, uma tarja que não
+     * distinguia nada de nada.
+     */
     function getCouponBadge(coupon) {
-      const explicit = coupon.badge_label || coupon.badge || coupon.audience_label || coupon.public_label;
-      if (explicit) return String(explicit);
+      if (coupon.label === 'selected_for_you') return 'Selecionado para você';
       const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
       if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
-      const audience = String(coupon.audience || coupon.target_audience || coupon.segment || coupon.campaign_type || '').toLowerCase();
-      if (['public', 'all', 'everyone'].includes(audience)) return 'Disponível para todos';
-      if (['first_purchase', 'first_order', 'new_customer'].includes(audience)) return 'Exclusivo para primeira compra';
-      if (['loyal_customer', 'loyalty', 'vip'].includes(audience)) return 'Benefício para cliente fiel';
       return 'Cupom disponível';
     }
 
@@ -95,14 +137,27 @@
       return Number.isNaN(date.getTime()) ? raw : new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date);
     }
 
+    /**
+     * As linhas pequenas do rodapé do card.
+     *
+     * `max_discount` saiu: é limite interno da campanha e o contrato não o
+     * publica de propósito — quem aplica o teto é quem calcula. O que entrou é
+     * o `discount_amount` JÁ CALCULADO para esta sacola, que é o número que o
+     * cliente quer ver e o único que combina com o que o checkout vai tirar.
+     */
     function renderCouponMeta(coupon) {
       const rows = [];
-      const minimum = Number(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal ?? 0);
-      const maximum = Number(coupon.max_discount ?? coupon.maximum_discount ?? coupon.max_discount_value ?? 0);
+      const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
+      const discount = couponAmount(coupon.discount_amount);
       const validUntil = formatCouponDate(coupon.valid_until || coupon.expires_at || coupon.end_date || coupon.valid_to);
+      // Só quando o cupom de fato aplica agora: com `missing_amount` ou
+      // `login_required` o desconto vem 0,00, e escrever "Desconto de R$ 0,00"
+      // seria anunciar a ausência como se fosse o benefício.
+      if (coupon.state === 'applicable' && discount > 0) {
+        rows.push(`<div>Desconto de ${esc(fmtClubCurrency(discount))} nesta sacola</div>`);
+      }
       if (minimum > 0) rows.push(`<div>Em pedidos a partir de ${esc(fmtClubCurrency(minimum))}</div>`);
       if (validUntil) rows.push(`<div>Válido até ${esc(validUntil)}</div>`);
-      if (maximum > 0) rows.push(`<div>Desconto máximo de ${esc(fmtClubCurrency(maximum))}</div>`);
       return rows.join('');
     }
 
@@ -112,17 +167,22 @@
       const image = getCouponImage(coupon);
       const title = coupon.title || coupon.name || coupon.code || coupon.coupon_code || 'Cupom';
       const description = coupon.short_description || coupon.description || coupon.subtitle || '';
+      // No contrato do cliente `title` JÁ É o rótulo do desconto ("10% OFF") —
+      // não existe um nome de campanha separado como havia no contrato antigo.
+      // Repetir os dois deixaria o card com a mesma frase duas vezes, empilhada.
+      // Quando coincidem, o rótulo grande basta e o <h3> sai.
+      const subtitle = title === label ? '' : title;
       return `
         <article class='club-available-coupon-card' data-coupon-key='${esc(code)}'>
           <div class='club-available-coupon-badge'>${esc(getCouponBadge(coupon))}</div>
           ${image ? `<img class='club-available-coupon-image' src='${esc(image)}' alt='${esc(title)}' loading='lazy'>` : ''}
           <div class='club-available-coupon-content'>
             <strong class='club-available-coupon-discount'>${esc(label)}</strong>
-            <h3>${esc(title)}</h3>
+            ${subtitle ? `<h3>${esc(subtitle)}</h3>` : ''}
             ${description ? `<p>${esc(description)}</p>` : ''}
             <div class='club-available-coupon-meta'>${renderCouponMeta(coupon)}</div>
           </div>
-          <button type='button' class='club-available-coupon-use'>Usar cupom</button>
+          <button type='button' class='club-available-coupon-use' data-coupon-state='${esc(coupon.state || '')}'>${esc(couponCta(coupon))}</button>
         </article>`;
     }
 

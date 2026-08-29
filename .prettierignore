@@ -10,3 +10,8 @@ styles/utilities.css
 styles/restaurant.css
 styles/rapi.css
 styles/operation.css
+
+# Contrato da API: cópia fiel do backend, gerada por `npm run api:generate`.
+# Reformatar mudaria os bytes e faria o teste de contrato acusar divergência.
+scripts/types/openapi.json
+scripts/types/api.d.ts

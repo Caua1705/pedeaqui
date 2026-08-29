@@ -8661,22 +8661,71 @@
     return couponPreviewPromise;
   }
 
+  // ============================================================
+  //  Esta tela de detalhe serve DOIS contratos, e é preciso saber disso.
+  //
+  //  Vitrine pública (`payload.coupons`, de GET /menu — PublicCouponResponse):
+  //    name, discount_type, discount_value (número), min_order_value (número).
+  //  Feed do cliente (clubController, de GET /coupons — CustomerCouponResponse):
+  //    title, state, label, discount_amount, missing_amount, valid_until,
+  //    min_order_value (string decimal). NÃO tem discount_value.
+  //
+  //  Por isso cada leitor abaixo prefere o campo já resolvido e só cai no
+  //  cálculo quando ele falta — que é exatamente o caso da vitrine.
+  // ============================================================
+
+  /** "30.00" e 30 chegam aqui pelos dois contratos. */
+  function couponAmount(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+  }
+
   function couponLabel(coupon) {
+    const title = String(coupon.title || '').trim();
+    if (title) return title;
     const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
-    const value = Number(coupon.discount_value ?? coupon.value ?? coupon.amount ?? 0);
+    const value = couponAmount(coupon.discount_value ?? coupon.value ?? coupon.amount);
     if (['percent', 'percentage'].includes(type)) return `${value.toLocaleString('pt-BR')}% OFF`;
     if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
     if (value > 0) return `${fmt(value)} OFF`;
-    return coupon.name || coupon.title || coupon.code || 'Cupom';
+    return coupon.name || coupon.code || 'Cupom';
+  }
+
+  /** "2099-12-31T23:59:59Z" -> "31/12/2099". */
+  function couponValidUntil(value) {
+    if (!value) return '';
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? String(value)
+      : new Intl.DateTimeFormat('pt-BR').format(date);
   }
 
   function couponRules(coupon) {
     const rules = [];
-    const minimum = Number(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal ?? 0);
-    const maximum = Number(coupon.max_discount ?? coupon.maximum_discount ?? coupon.max_discount_value ?? 0);
+    const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
+    const discount = couponAmount(coupon.discount_amount);
+    const missing = couponAmount(coupon.missing_amount);
+    // O desconto desta sacola, quando o backend já o decidiu. Vem antes do
+    // mínimo porque é a resposta à pergunta que traz a pessoa até aqui.
+    if (coupon.state === 'applicable' && discount > 0) {
+      rules.push(`Desconto de ${fmt(discount)} nesta sacola`);
+    }
+    if (coupon.state === 'missing_amount' && missing > 0) {
+      rules.push(`Faltam ${fmt(missing)} para este cupom valer`);
+    }
+    if (coupon.state === 'login_required') {
+      rules.push('Entre na sua conta para usar este cupom');
+    }
     if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
-    if (coupon.expires_at || coupon.valid_until) rules.push(`Válido até ${coupon.expires_at || coupon.valid_until}`);
-    if (maximum > 0) rules.push(`Desconto máximo de ${fmt(maximum)}`);
+    // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
+    // vitrine o campo não vinha, então ninguém tinha visto ainda; o feed do
+    // cliente manda `valid_until` em todo cupom.
+    const validUntil = couponValidUntil(coupon.expires_at || coupon.valid_until);
+    if (validUntil) rules.push(`Válido até ${validUntil}`);
+    // `max_discount` saiu de propósito do contrato do cliente: teto é limite
+    // interno da campanha, e publicá-lo só serviria para refazer a conta.
     if (coupon.description) rules.push(coupon.description);
     return rules;
   }
@@ -8731,7 +8780,12 @@
 
   async function confirmCouponDetail() {
     if (!selectedCoupon) return;
-    if (selectedCoupon.requires_login === true && !isLogged()) {
+    // `requires_login` era do contrato antigo e sumiu junto com
+    // /coupons/available. Como o campo deixou de existir, a comparação
+    // `=== true` passou a ser sempre falsa: o cupom que exige conta seguia
+    // direto para o preview, que respondia 401, e o cliente via "Não foi
+    // possível aplicar este cupom" em vez da tela de login.
+    if (selectedCoupon.state === 'login_required' && !isLogged()) {
       openLoginScreen('coupon');
       return;
     }

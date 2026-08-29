@@ -9,7 +9,7 @@
     "npm": ">=11.7.0"
   },
   "scripts": {
-    "api:generate": "openapi-typescript ../pedeaqui_back/openapi.json -o scripts/types/api.d.ts",
+    "api:generate": "node tools/sync-api-contract.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

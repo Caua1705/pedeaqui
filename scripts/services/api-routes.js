@@ -21,8 +21,17 @@
       `/restaurants/${routeSlug(restaurantSlug)}/menu${branchId ? `?branch_id=${routeSlug(branchId)}` : ''}`,
     branchAvailability: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/branches/availability`,
-    availableCoupons: restaurantSlug =>
-      `/restaurants/${routeSlug(restaurantSlug)}/coupons/available`,
+    // Os cupons DESTA loja para QUEM ESTÁ OLHANDO. Substituiu
+    // `/coupons/available`, que responde 404 desde 28/08/2026 — enquanto o
+    // front chamou a rota velha, a tela do Clube ficou em "Não foi possível
+    // carregar seus cupons" para todo mundo.
+    //
+    // Os parâmetros de contexto (subtotal, delivery_fee, order_type) são os
+    // mesmos de antes: sem eles a resposta é a do Clube, com eles é a do
+    // checkout. O que mudou é a RESPOSTA — cada cupom vem com `state`,
+    // `discount_amount` e `missing_amount` já decididos (ver club-service.js).
+    customerCoupons: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/coupons`,
     previewCoupon: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/coupons/preview`,
     deliveryEstimate: restaurantSlug =>

@@ -2365,17 +2365,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/restaurants/{restaurant_slug}/coupons/available": {
+    "/restaurants/{restaurant_slug}/coupons": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Available Coupons */
-        get: operations["list_available_coupons_restaurants__restaurant_slug__coupons_available_get"];
+        /**
+         * List Customer Coupons
+         * @description Os cupons desta loja para QUEM ESTA OLHANDO, com o estado pronto.
+         *
+         *     Substituiu `GET .../coupons/available`. O front nao calcula nada: cada
+         *     card ja vem com a etiqueta, o estado do botao e o desconto que aquele
+         *     cupom daria NESTA sacola. O porque de a conta nao poder ser do outro lado
+         *     esta em `CustomerCouponResponse`.
+         *
+         *     **A sacola e opcional.** Sem `subtotal` a rota responde a tela do Clube —
+         *     os cupons que a pessoa tem, com o minimo inteiro faltando em quem tem
+         *     minimo. Com `subtotal` ela responde a tela do checkout.
+         *
+         *     **Sem token, so sai o que e publico.** Cupom de segmento e cupom privado
+         *     nao aparecem para convidado nem como "entre para usar": a existencia
+         *     deles, com titulo e codigo, e justamente o que eles nao publicam.
+         *
+         *     Cupom sem conserto nesta sacola nao vem na lista — nem vencido, nem de
+         *     outro segmento, nem primeira-compra para quem ja comprou. Cupom em que
+         *     falta valor VEM, com `state = "missing_amount"` e o quanto falta.
+         */
+        get: operations["list_customer_coupons_restaurants__restaurant_slug__coupons_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/restaurants/{restaurant_slug}/coupons/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Coupon
+         * @description Digitar um codigo SEM SACOLA — o cupom passa a ser do cliente.
+         *
+         *     A porta do Clube, e o par de `GET .../coupons`: resgatado aqui, o cupom
+         *     aparece na lista e aplica depois, no checkout.
+         *
+         *     RESGATE nao e USO. A linha vai para `coupon_claims`, que nao tem pedido
+         *     nem valor e concede visibilidade; `coupon_redemptions` continua sendo o
+         *     registro de uso, e e ela que conta no teto da campanha. Gravar resgate la
+         *     faria o cupom de 100 usos se esgotar com gente que so digitou o codigo.
+         *
+         *     **Idempotente**: resgatar de novo devolve o mesmo cupom, 201, sem erro.
+         *
+         *     O `request` na assinatura nao e decoracao — o `@limiter.limit` do slowapi
+         *     o exige por posicao, e sem ele a rota levanta no boot.
+         */
+        post: operations["claim_coupon_restaurants__restaurant_slug__coupons_claim_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4117,58 +4170,6 @@ export interface components {
             /** Role */
             role?: ("owner" | "manager" | "attendant") | null;
         };
-        /** AvailableCouponResponse */
-        AvailableCouponResponse: {
-            /** Code */
-            code: string;
-            /** Cooldown Days */
-            cooldown_days?: number | null;
-            /** Description */
-            description?: string | null;
-            /**
-             * Discount Type
-             * @enum {string}
-             */
-            discount_type: "fixed" | "percent" | "free_delivery";
-            /** Discount Value */
-            discount_value: string;
-            /** Eligible */
-            eligible: boolean;
-            /** Estimated Discount */
-            estimated_discount: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Ineligibility Reason */
-            ineligibility_reason?: string | null;
-            /** Max Discount Amount */
-            max_discount_amount?: string | null;
-            /** Min Order Value */
-            min_order_value: string;
-            /** Missing Amount */
-            missing_amount: string;
-            /** Next Available At */
-            next_available_at?: string | null;
-            /**
-             * Requires Login
-             * @default false
-             */
-            requires_login: boolean;
-            /** Title */
-            title: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
-        };
-        /** AvailableCouponsResponse */
-        AvailableCouponsResponse: {
-            /** Coupons */
-            coupons: components["schemas"]["AvailableCouponResponse"][];
-        };
         /** BannerResponse */
         BannerResponse: {
             /**
@@ -5077,7 +5078,7 @@ export interface components {
          */
         CouponAdminResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Cooldown Days */
             cooldown_days?: number | null;
             /**
@@ -5105,8 +5106,6 @@ export interface components {
             id: string;
             /** Is Active */
             is_active: boolean;
-            /** Is Public */
-            is_public: boolean;
             /** Max Discount Amount */
             max_discount_amount?: string | null;
             /** Min Order Value */
@@ -5116,6 +5115,7 @@ export interface components {
              * Format: uuid
              */
             restaurant_id: string;
+            target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
             /** Total Usage Count */
@@ -5136,11 +5136,33 @@ export interface components {
              * Format: date-time
              */
             valid_until: string;
+            visibility: components["schemas"]["CouponVisibility"];
+        };
+        /** CouponClaimRequest */
+        CouponClaimRequest: {
+            /** Code */
+            code: string;
+        };
+        /**
+         * CouponClaimResponse
+         * @description O cupom que acabou de virar do cliente.
+         *
+         *     Vem no MESMO formato da lista, e nao numa resposta propria, para o app
+         *     poder inserir o card resgatado direto na tela sem uma segunda chamada —
+         *     e para nao existirem duas descricoes de cupom que precisem concordar.
+         *
+         *     O `state` aqui e calculado sobre uma sacola VAZIA (o resgate acontece no
+         *     Clube, sem carrinho), entao um cupom com pedido minimo volta como
+         *     `missing_amount` com o minimo inteiro faltando. Isso e o certo: ele foi
+         *     resgatado, ele e do cliente, e ainda nao cabe.
+         */
+        CouponClaimResponse: {
+            coupon: components["schemas"]["CustomerCouponResponse"];
         };
         /** CouponCreate */
         CouponCreate: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Cooldown Days */
             cooldown_days?: number | null;
             /**
@@ -5167,11 +5189,6 @@ export interface components {
              * @default true
              */
             is_active: boolean;
-            /**
-             * Is Public
-             * @default true
-             */
-            is_public: boolean;
             /** Max Discount Amount */
             max_discount_amount?: number | string | null;
             /**
@@ -5179,6 +5196,7 @@ export interface components {
              * @default 0.00
              */
             min_order_value: number | string;
+            target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
             /** Total Usage Limit */
@@ -5195,6 +5213,8 @@ export interface components {
              * Format: date-time
              */
             valid_until: string;
+            /** @default public */
+            visibility: components["schemas"]["CouponVisibility"];
         };
         /** CouponPreviewRequest */
         CouponPreviewRequest: {
@@ -5215,7 +5235,7 @@ export interface components {
         /** CouponPreviewResponse */
         CouponPreviewResponse: {
             /** Coupon Code */
-            coupon_code: string;
+            coupon_code?: string | null;
             /**
              * Coupon Id
              * Format: uuid
@@ -5291,12 +5311,11 @@ export interface components {
             first_order_only?: boolean | null;
             /** Is Active */
             is_active?: boolean | null;
-            /** Is Public */
-            is_public?: boolean | null;
             /** Max Discount Amount */
             max_discount_amount?: number | string | null;
             /** Min Order Value */
             min_order_value?: number | string | null;
+            target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title?: string | null;
             /** Total Usage Limit */
@@ -5307,7 +5326,21 @@ export interface components {
             valid_from?: string | null;
             /** Valid Until */
             valid_until?: string | null;
+            visibility?: components["schemas"]["CouponVisibility"] | null;
         };
+        /**
+         * CouponVisibility
+         * @description Quem enxerga o cupom. Substituiu o `is_public` na revisao 20260828_0043.
+         *
+         *     `str, Enum` e nao `Literal` pelo mesmo motivo de `PaymentErrorCode` e de
+         *     `CustomerSegment`: so assim a LISTA de valores sai nomeada no
+         *     `/openapi.json`, e o painel gera o seletor a partir do documento em vez
+         *     de decorar tres strings.
+         *
+         *     Os valores espelham o CHECK `ck_restaurant_coupons_visibility`.
+         * @enum {string}
+         */
+        CouponVisibility: "public" | "segment" | "private";
         /** CreateCustomerAddressRequest */
         CreateCustomerAddressRequest: {
             /** City */
@@ -5536,6 +5569,106 @@ export interface components {
              * @description Opcional. Entra no historico do pedido, precedido de 'Cancelado pelo cliente'.
              */
             reason?: string | null;
+        };
+        /**
+         * CustomerCouponLabel
+         * @description A etiqueta que o app pinta no card do cupom.
+         *
+         *     **So existe UMA etiqueta, e cupom publico vem sem nenhuma.** Se todo
+         *     mundo ve, "para todos" e ruido no card — o espaco e caro e a frase nao
+         *     informa nada que a presenca do cupom na lista ja nao diga.
+         *
+         *     E ela **nunca fala de disponibilidade**. "Selecionado para voce" diz de
+         *     quem e a campanha, e nao se da para usar agora; quem responde isso e o
+         *     `state`. Sem essa separacao a etiqueta e o botao se contradizem na mesma
+         *     tela — "selecionado para voce" ao lado de "faltam R$ 12".
+         *
+         *     Nao ha `exclusivo`: o alvo e um SEGMENTO, nao uma pessoa, e prometer
+         *     exclusividade para um recorte de milhares de clientes e propaganda que
+         *     nao se sustenta.
+         * @enum {string}
+         */
+        CustomerCouponLabel: "selected_for_you";
+        /**
+         * CustomerCouponResponse
+         * @description Um cupom no app do cliente, com o estado JA DECIDIDO pelo backend.
+         *
+         *     O front nao calcula nada aqui — nem o desconto, nem se cabe, nem quanto
+         *     falta. Ele pinta `label`, pinta `state` e mostra `discount_amount`.
+         *
+         *     **Por que a conta nao pode ser do lado de la.** Ela depende de
+         *     `max_discount_amount`, do teto por cliente, do cooldown, do
+         *     primeira-compra e de qual parte da sacola o desconto morde
+         *     (`free_delivery` desconta a taxa, os outros dois descontam o subtotal).
+         *     Reproduzir isso no app seria a segunda implementacao da regra de cupom, e
+         *     a divergencia apareceria onde mais custa: o card promete R$ 15, o
+         *     checkout tira R$ 10, e o cliente ve o desconto encolher entre uma tela e
+         *     a outra.
+         *
+         *     ## O que NAO vem aqui, e nao e esquecimento
+         *
+         *     `discount_value`, `max_discount_amount`, `total_usage_limit`,
+         *     `usage_limit_per_customer` e `cooldown_days` sao PARAMETROS da conta e
+         *     limites internos da campanha. Quem precisa deles e quem calcula, e quem
+         *     calcula e o backend. Publicados, so serviriam para alguem refazer a
+         *     conta errado — ou para mapear os limites da campanha de fora.
+         *
+         *     `min_order_value` fica, porque ele nao e parametro: e a frase "pedido
+         *     minimo R$ 30" que o card precisa escrever. E `valid_until` fica pelo
+         *     mesmo motivo — "valido ate" e texto de card.
+         */
+        CustomerCouponResponse: {
+            /** Code */
+            code?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Discount Amount */
+            discount_amount: string;
+            /**
+             * Discount Type
+             * @enum {string}
+             */
+            discount_type: "fixed" | "percent" | "free_delivery";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Image Url */
+            image_url?: string | null;
+            label?: components["schemas"]["CustomerCouponLabel"] | null;
+            /** Min Order Value */
+            min_order_value: string;
+            /** Missing Amount */
+            missing_amount: string;
+            state: components["schemas"]["CustomerCouponState"];
+            /** Title */
+            title: string;
+            /**
+             * Valid Until
+             * Format: date-time
+             */
+            valid_until: string;
+        };
+        /**
+         * CustomerCouponState
+         * @description O que o botao do card pode fazer com ESTA sacola.
+         *
+         *     Nao ha valor para "nao aparece": cupom sem conserto nesta sacola —
+         *     vencido, primeira-compra para quem ja comprou, de outro segmento, teto
+         *     estourado, cooldown correndo — simplesmente nao entra na lista. Um card
+         *     cinza com "voce nao pode usar" so ocupa a tela com uma negativa que a
+         *     pessoa nao tem como resolver.
+         *
+         *     O que ENTRA e o que ela consegue mudar agora: colocar mais coisa na
+         *     sacola (`missing_amount`) ou entrar na conta (`login_required`).
+         * @enum {string}
+         */
+        CustomerCouponState: "applicable" | "missing_amount" | "login_required";
+        /** CustomerCouponsResponse */
+        CustomerCouponsResponse: {
+            /** Coupons */
+            coupons: components["schemas"]["CustomerCouponResponse"][];
         };
         /**
          * CustomerDataExportResponse
@@ -6320,7 +6453,7 @@ export interface components {
          *     tambem e a fonte unica dos codigos — PaymentService importa daqui.
          * @enum {string}
          */
-        PaymentErrorCode: "gateway_unavailable" | "payment_unavailable" | "payment_rejected" | "login_required" | "card_token_required" | "saved_card_not_found";
+        PaymentErrorCode: "gateway_unavailable" | "payment_unavailable" | "payment_rejected" | "login_required" | "card_token_required" | "saved_card_not_found" | "amount_below_minimum";
         /**
          * PaymentErrorDetail
          * @description O `detail` quando a cobranca nao pode ser criada.
@@ -6878,7 +7011,7 @@ export interface components {
          */
         PublicCouponResponse: {
             /** Code */
-            code: string;
+            code?: string | null;
             /** Discount Type */
             discount_type: string;
             /** Discount Value */
@@ -11357,7 +11490,7 @@ export interface operations {
             };
         };
     };
-    list_available_coupons_restaurants__restaurant_slug__coupons_available_get: {
+    list_customer_coupons_restaurants__restaurant_slug__coupons_get: {
         parameters: {
             query?: {
                 subtotal?: number | string | null;
@@ -11378,7 +11511,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AvailableCouponsResponse"];
+                    "application/json": components["schemas"]["CustomerCouponsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_coupon_restaurants__restaurant_slug__coupons_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                restaurant_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponClaimRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CouponClaimResponse"];
                 };
             };
             /** @description Validation Error */
@@ -11723,7 +11891,7 @@ export interface operations {
                     "application/json": components["schemas"]["StartPaymentResponse"];
                 };
             };
-            /** @description Cobranca de cartao sem o token do navegador */
+            /** @description Cobranca de cartao que nao pode ser criada como pedida: sem o token do navegador, ou com o total abaixo do minimo do gateway */
             400: {
                 headers: {
                     [name: string]: unknown;

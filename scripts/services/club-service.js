@@ -162,17 +162,37 @@
     return getCashbackTransactions(options);
   }
 
-  function normalizeAvailableCoupons(response) {
+  /** Estados que o card pode ter. Fora desta lista, o cupom não é desenhável. */
+  const COUPON_STATES = new Set(['applicable', 'missing_amount', 'login_required']);
+
+  /**
+   * A lista já vem RESOLVIDA do backend, e é por isso que aqui não há filtro.
+   *
+   * O filtro que existia procurava `coupon.eligible === true` — campo que a
+   * rota nova não tem e a antiga só tinha às vezes. Como ele se auto-desligava
+   * quando o campo faltava ("backendSentEligibility"), o resultado prático era
+   * nenhum filtro: cupom inelegível entrava na tela com aparência de usável.
+   *
+   * O contrato novo resolve isso na origem: cupom sem conserto NESTA sacola
+   * (vencido, de outro segmento, primeira-compra para quem já comprou, teto
+   * estourado, cooldown correndo) simplesmente não vem na lista. O que vem é o
+   * que a pessoa consegue mudar agora — pôr mais coisa na sacola
+   * (`missing_amount`) ou entrar na conta (`login_required`). Refiltrar aqui
+   * só poderia esconder cupom bom.
+   *
+   * O que ainda é nosso é descartar linha quebrada: sem `id` não há como
+   * abrir o detalhe, e com `state` desconhecido não há botão que faça sentido.
+   */
+  function normalizeCustomerCoupons(response) {
     const payload = response?.data ?? response ?? {};
-    const list = Array.isArray(payload) ? payload : (payload.coupons || payload.items || []);
+    const list = Array.isArray(payload) ? payload : (payload.coupons || []);
     if (!Array.isArray(list)) return [];
-    const backendSentEligibility = list.some(coupon => Object.prototype.hasOwnProperty.call(coupon || {}, 'eligible'));
-    return backendSentEligibility ? list.filter(coupon => coupon?.eligible === true) : list;
+    return list.filter(coupon => coupon?.id && COUPON_STATES.has(coupon?.state));
   }
 
-  async function getAvailableCoupons(options = {}) {
-    const response = await window.PedeAquiApi.getAvailableCoupons(options);
-    return normalizeAvailableCoupons(response);
+  async function getCustomerCoupons(options = {}) {
+    const response = await window.PedeAquiApi.getCustomerCoupons(options);
+    return normalizeCustomerCoupons(response);
   }
 
   async function previewCoupon(options = {}) {
@@ -182,7 +202,7 @@
   async function getClubData(restaurantSlug, context = {}) {
     const [cashback, coupons] = await Promise.all([
       getCashback(),
-      getAvailableCoupons({ restaurantSlug, ...context })
+      getCustomerCoupons({ restaurantSlug, ...context })
     ]);
     return {
       restaurant_slug: restaurantSlug,
@@ -205,7 +225,7 @@
     getCashback,
     getCashbackTransactions,
     getTransactions,
-    getAvailableCoupons,
+    getCustomerCoupons,
     previewCoupon,
     getClubData
   };

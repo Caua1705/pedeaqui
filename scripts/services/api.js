@@ -45,8 +45,11 @@
     return query ? `?${query}` : '';
   }
 
-  async function getAvailableCoupons({ restaurantSlug, subtotal, deliveryFee, orderType } = {}) {
-    const path = routes().availableCoupons(restaurantSlug) + couponContextQuery({ subtotal, deliveryFee, orderType });
+  // Sem token a rota responde só o que é público, e cada cupom volta com
+  // `state: "login_required"` — por isso authOptions() é opcional aqui, e não
+  // uma pré-condição.
+  async function getCustomerCoupons({ restaurantSlug, subtotal, deliveryFee, orderType } = {}) {
+    const path = routes().customerCoupons(restaurantSlug) + couponContextQuery({ subtotal, deliveryFee, orderType });
     return window.PedeAquiApiClient.request(path, { method: 'GET', ...authOptions() });
   }
 
@@ -90,7 +93,7 @@
     getRestaurantMenu,
     getCategoryProducts,
     getProduct,
-    getAvailableCoupons,
+    getCustomerCoupons,
     previewCoupon,
     createOrder
   };

@@ -16,7 +16,6 @@ button:focus,
 button:focus-visible,
 [role="button"]:focus,
 [role="button"]:focus-visible {
-  outline: none;
 }
 
 /* Remove mobile/browser blue tap highlight from clickable surfaces. */

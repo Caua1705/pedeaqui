@@ -1020,7 +1020,6 @@
 }
 .addr-sug-copy{flex:1!important;min-width:0!important}
 .addr-sug-main{
-  display:block!important;
   font-size:var(--ref-text-sm)!important;
   font-weight:400!important;
   color:#4b5563!important;
@@ -1498,11 +1497,9 @@
 }
 
 #addrDetailsModal .addr-det-form{
-  width:338px!important;
   margin:0 auto!important;
   padding:16px 0 12px!important;
   display:grid!important;
-  grid-template-columns:132px 196px!important;
   column-gap:10px!important;
   row-gap:6px!important;
   align-items:start!important;
@@ -1510,10 +1507,8 @@
 
 #addrDetailsModal .addr-det-label{
   margin:8px 0 2px!important;
-  color:#7b828a!important;
   font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
-  font-weight:500!important;
   grid-column:1 / -1!important;
 }
 
@@ -1531,7 +1526,6 @@
 }
 
 #addrDetailsModal .addr-det-input:focus{
-  border-color:#bfc5cd!important;
 }
 
 #addrDetailsModal .addr-det-input:disabled{
@@ -1555,29 +1549,22 @@
 
 #addrDetailsModal .addr-det-label[for="addrDetNumber"]{
   grid-column:1!important;
-  grid-row:5!important;
 }
 
 #addrDetailsModal #addrDetNumber{
   grid-column:1!important;
-  grid-row:6!important;
-  width:132px!important;
 }
 
 #addrDetailsModal .addr-det-label[for="addrDetComplement"]{
   grid-column:2!important;
-  grid-row:5!important;
 }
 
 #addrDetailsModal #addrDetComplement{
   grid-column:2!important;
-  grid-row:6!important;
-  width:196px!important;
 }
 
 #addrDetailsModal .addr-det-checkbox-label{
   grid-column:1!important;
-  grid-row:7!important;
   padding:2px 0 0!important;
   margin:0!important;
   color:#7b828a!important;
@@ -1591,7 +1578,6 @@
 }
 
 #addrDetailsModal .addr-det-footer{
-  padding:8px 20px max(20px,env(safe-area-inset-bottom))!important;
 }
 
 #addrDetailsModal #addrDetSaveBtn{
@@ -1649,10 +1635,6 @@
 }
 
 #addrDetailsModal .addr-det-footer{
-  z-index:6!important;
-  margin-top:-8px!important;
-  padding:6px 20px max(22px,env(safe-area-inset-bottom))!important;
-  box-shadow:0 -18px 18px #ffffff!important;
 }
 
 /* Address details footer: solid white cover with enough scroll room above it. */
@@ -1665,7 +1647,6 @@
 }
 
 #addrDetailsModal .addr-det-footer{
-  position:relative!important;
   z-index:8!important;
   margin-top:0!important;
   padding:10px 20px max(30px,env(safe-area-inset-bottom))!important;

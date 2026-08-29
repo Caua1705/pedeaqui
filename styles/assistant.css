@@ -9,16 +9,11 @@
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: #f7f8fa;
-  display: flex;
   flex-direction: column;
-  transform: translateX(100vw);
-  transition: transform .53s cubic-bezier(.4, 0, .2, 1);
   overflow: hidden;
 }
 
 .mob-view--assistant.active {
-  transform: translateX(0);
 }
 
 body.modal-open.assistant-nav-keep .mob-bottom-nav,
@@ -33,19 +28,12 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 16px);
 }
 
 /* ── HERO SECTION ── */
 .assistant-hero {
   position: relative;
-  background: linear-gradient(160deg, var(--brand-tint) 0%, var(--brand-tint) 60%, var(--brand-tint-strong) 100%);
-  padding: 28px 20px 22px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
 }
 
 .assistant-hero::before {
@@ -73,8 +61,6 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav {
 /* ── Avatar wrap (hero) ── */
 .assistant-avatar-wrap {
   position: relative;
-  width: 96px;
-  height: 96px;
   margin-bottom: 14px;
   z-index: 1;
   animation: assistant-avatar-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -99,12 +85,8 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav {
 }
 
 .assistant-avatar-img {
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 8px 24px rgba(var(--brand-primary-rgb), 0.30));
 }
 
 /* ── Title block ── */
@@ -467,18 +449,11 @@ body.app-error .app-loader-message {
 }
 
 .assistant-title-block h2 {
-  font-size: 1.4rem;
   font-weight: 800;
   color: #1a1a1a;
-  margin: 0 0 2px;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
 }
 
 .assistant-title-block p {
-  font-size: 0.82rem;
-  color: #888;
-  margin: 0 0 10px;
   font-weight: 500;
 }
 
@@ -486,13 +461,10 @@ body.app-error .app-loader-message {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.68rem;
   color: #22c55e;
   font-weight: 700;
   background: rgba(34, 197, 94, 0.10);
   border: 1px solid rgba(34, 197, 94, 0.20);
-  padding: 3px 10px;
-  border-radius: 20px;
   letter-spacing: 0.01em;
 }
 
@@ -511,26 +483,17 @@ body.app-error .app-loader-message {
 
 /* ── Prompt card ── */
 .assistant-prompt-card {
-  margin: -1px 16px 0;
   background: #fff;
-  border-radius: 0 0 20px 20px;
-  padding: 16px 16px 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   animation: assistant-fade-up 0.4s 0.25s ease both;
 }
 
 .assistant-prompt-headline {
-  font-size: 0.9rem;
-  font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 3px;
 }
 
 .assistant-prompt-sub {
-  font-size: 0.78rem;
-  color: #999;
   margin: 0 0 12px;
-  line-height: 1.4;
 }
 
 /* ── Input card ── */
@@ -538,10 +501,6 @@ body.app-error .app-loader-message {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f7f8fa;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 14px;
-  padding: 10px 10px 10px 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -556,7 +515,6 @@ body.app-error .app-loader-message {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.88rem;
   color: #1a1a1a;
   font-family: inherit;
   min-height: 22px;
@@ -567,9 +525,6 @@ body.app-error .app-loader-message {
 }
 
 .assistant-send-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
   border: none;
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
   color: var(--brand-on);
@@ -579,7 +534,6 @@ body.app-error .app-loader-message {
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
-  box-shadow: 0 3px 10px rgba(var(--brand-primary-rgb), 0.35);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -590,17 +544,10 @@ body.app-error .app-loader-message {
 
 /* ── Content area ── */
 .assistant-content {
-  padding: 0 16px;
 }
 
 /* ── Section label ── */
 .assistant-section-label {
-  font-size: 0.70rem;
-  font-weight: 700;
-  color: #bbb;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  padding: 18px 0 8px;
 }
 
 /* ── Quick grid ── */
@@ -615,18 +562,10 @@ body.app-error .app-loader-message {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  border: 1.5px solid #eeeeee;
-  border-radius: 14px;
-  padding: 11px 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #333;
   cursor: pointer;
   transition: all 0.18s ease;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.04);
   text-align: left;
   line-height: 1.25;
 }
@@ -646,10 +585,6 @@ body.app-error .app-loader-message {
 }
 
 .assistant-chip--active {
-  background: linear-gradient(135deg, var(--brand-primary), var(--brand-light));
-  color: var(--brand-on);
-  border-color: transparent;
-  box-shadow: 0 4px 14px rgba(var(--brand-primary-rgb), 0.32);
 }
 
 .assistant-chip--active .assistant-chip-icon {
@@ -823,7 +758,6 @@ body.app-error .app-loader-message {
 
 .assistant-result-image-wrap {
   width: 100%;
-  height: 120px;
   overflow: hidden;
   background: linear-gradient(135deg, #f5f5f5, #ebebeb);
 }
@@ -978,7 +912,6 @@ body.app-error .app-loader-message {
 /* ── Toast feedback ── */
 .assistant-toast {
   position: fixed;
-  bottom: 92px;
   left: 50%;
   transform: translateX(-50%) translateY(10px);
   background: #1a1a1a;
@@ -1013,22 +946,22 @@ body.app-error .app-loader-message {
 /* Final assistant-only overrides kept at the end to win over legacy assistant styles. */
 .mob-view--assistant{display:none!important;transform:none!important;transition:none!important;}
 .mob-view--assistant.active{transform:none!important}
-.assistant-page{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-x:hidden!important}
-.assistant-hero{margin:10px 14px 0!important;min-height:88px!important;padding:13px 14px!important;border:1px solid #eeeeee!important;border-radius:16px!important;background:#ffffff!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
+.assistant-page{overflow-x:hidden!important}
+.assistant-hero{background:#ffffff!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;text-align:left!important}
 .assistant-hero::before,.assistant-hero::after{display:none!important}
-.assistant-avatar-wrap{width:76px!important;height:76px!important;margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
-.assistant-avatar-img{width:76px!important;height:76px!important;object-fit:cover!important;border-radius:50%!important;filter:none!important}
+.assistant-avatar-wrap{margin:0!important;border-radius:50%!important;background:#ffffff!important;border:1px solid #f0f0f0!important;box-shadow:0 8px 20px rgba(18,24,31,.10)!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 76px!important}
+.assistant-avatar-img{object-fit:cover!important;border-radius:50%!important;filter:none!important}
 .assistant-title-block h2{font-size:20px!important;line-height:24px!important;margin:0 0 2px!important;letter-spacing:0!important}
 .assistant-title-block p{margin:0 0 7px!important;color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:16px!important}
 .assistant-status-pill{padding:3px 8px!important;border-radius:999px!important;font-size:11px!important;line-height:14px!important}
-.assistant-prompt-card{margin:10px 14px 0!important;padding:15px!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(18,24,31,.05)!important}
+.assistant-prompt-card{padding:15px!important;}
 .assistant-prompt-headline{font-size:var(--ref-text-lg)!important;line-height:21px!important;font-weight:800!important;margin-bottom:3px!important}
 .assistant-prompt-sub{color:#6f747a!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;margin-bottom:12px!important}
 .assistant-input-card{min-height:48px!important;border-radius:13px!important;padding:6px 7px 6px 13px!important;background:#f7f8fa!important;border:1px solid #e7e8ea!important}
 .assistant-input{font-size:13px!important;min-width:0!important}
 .assistant-send-btn{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important}
-.assistant-content{padding:0 14px!important}
-.assistant-section-label{padding:15px 0 8px!important;color:#8b9096!important;font-size:var(--ref-text-xs)!important;letter-spacing:.08em!important}
+.assistant-content{}
+.assistant-section-label{}
 .assistant-chip{min-height:44px!important;padding:10px 12px!important;border-radius:12px!important;background:#ffffff!important;border:1px solid #ebedf0!important;box-shadow:none!important;color:#34383e!important;font-size:var(--ref-text-sm)!important;font-weight:700!important}
 .assistant-chip-icon{width:24px!important;height:24px!important;border-radius:8px!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 .assistant-chip-svg{width:15px!important;height:15px!important;display:block!important}
@@ -1045,7 +978,7 @@ body.app-error .app-loader-message {
 /* Assistant tab final composition: same system rhythm as Home/Menu. */
 .mob-view--assistant{background:#ffffff!important}
 .assistant-page{background:#ffffff!important;max-width:430px!important;margin:0 auto!important;width:100%!important}
-.assistant-location-wrap{padding:0!important;background:#ffffff!important}
+.assistant-location-wrap{}
 .assistant-location-widget.delivery-widget{}
 .assistant-location-widget .delivery-widget-tabs{}
 .assistant-location-widget .assistant-location-tab{}
@@ -1086,10 +1019,10 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 .assistant-location-widget .assistant-location-tab--branch{max-width:74px!important;overflow:hidden!important;text-overflow:ellipsis!important}
 
 /* Lower the whole assistant composition slightly while keeping internal spacing intact. */
-.assistant-page{padding-top:12px!important}
+.assistant-page{}
 
 /* Fine tune only the location widget position. */
-.assistant-location-wrap{transform:translateY(-2px)!important}
+.assistant-location-wrap{}
 
 /* ============================================================
    ASSISTENTE — AI LAYOUT (WHITE BG)
@@ -1380,46 +1313,30 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-bottom-dock{
   left:0!important;
   right:0!important;
-  padding:16px 18px 14px!important;
-  background:linear-gradient(180deg,rgba(255,255,255,0) 0%,#ffffff 18%,#ffffff 100%)!important;
   border-top:0!important;
 }
 #mobViewAssistant .assistant-bottom-dock::before{
-  content:""!important;
   position:absolute!important;
   left:0!important;
   right:0!important;
   top:-18px!important;
   height:18px!important;
   pointer-events:none!important;
-  background:linear-gradient(180deg,rgba(255,255,255,0),#ffffff)!important;
 }
 #mobViewAssistant .assistant-suggest-rail{
   gap:12px!important;
-  margin:0 0 16px!important;
   opacity:1!important;
-  transform:translateY(0)!important;
   transition:opacity .18s ease,transform .18s ease!important;
 }
 #mobViewAssistant .assistant-suggest-rail.hidden{
   display:flex!important;
   opacity:0!important;
   pointer-events:none!important;
-  transform:translateY(8px)!important;
   overflow:hidden!important;
 }
 #mobViewAssistant .assistant-suggest-chip{
-  min-width:auto!important;
-  width:auto!important;
-  height:38px!important;
-  padding:0 14px!important;
   border:1px solid #eceff3!important;
-  border-radius:999px!important;
-  color:#5f6670!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:16px!important;
   box-shadow:none!important;
-  transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease!important;
 }
 #mobViewAssistant .assistant-suggest-chip:hover,
 #mobViewAssistant .assistant-suggest-chip:active{
@@ -1432,38 +1349,26 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   padding:8px 9px 8px 18px!important;
   gap:10px!important;
   border:1px solid #e7e9ee!important;
-  border-radius:20px!important;
   background:#ffffff!important;
   box-shadow:0 8px 24px rgba(21,28,36,.06)!important;
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease!important;
 }
 #mobViewAssistant .assistant-ai-input-bar:focus-within{
-  border-color:rgba(var(--brand-primary-rgb), .36)!important;
-  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .08),0 10px 28px rgba(21,28,36,.07)!important;
-  transform:translateY(-1px)!important;
 }
 #mobViewAssistant .assistant-ai-input{
   font-size:var(--ref-text-md)!important;
   line-height:var(--ref-line-lg)!important;
-  color:#20252c!important;
 }
 #mobViewAssistant .assistant-ai-input::placeholder{
-  color:#9aa1aa!important;
   font-weight:500!important;
 }
 #mobViewAssistant .assistant-ai-send{
-  border-radius:14px!important;
-  transition:transform .14s ease,opacity .14s ease,background .14s ease!important;
 }
 #mobViewAssistant .assistant-ai-send:hover{
 }
 #mobViewAssistant .assistant-ai-send:active{
-  transform:scale(.94)!important;
-  opacity:.9!important;
 }
 #mobViewAssistant .assistant-ai-body--searching{
-  padding-top:18px!important;
-  padding-bottom:148px!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   display:block!important;
@@ -1484,7 +1389,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   background:#ffffff!important;
 }
 #mobViewAssistant .assistant-ai-question{
-  color:#1a1a1a!important;
 }
 
 /* Mobile assistant bugfix: keep intro locked and place question below the avatar. */
@@ -1495,7 +1399,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   max-height:100dvh!important;
   overflow:hidden!important;
   overscroll-behavior:none!important;
-  touch-action:none!important;
 }
 #mobViewAssistant .assistant-ai-body{
   overflow:hidden!important;
@@ -1508,10 +1411,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   position:static!important;
   inset:auto!important;
   margin:0!important;
-  color:#1a1a1a!important;
 }
 #mobViewAssistant .assistant-ai-body--searching{
-  touch-action:auto!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   overscroll-behavior:contain!important;
@@ -1526,14 +1427,11 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
 }
 #mobViewAssistant .assistant-bottom-dock{
-  bottom:calc(112px + env(safe-area-inset-bottom,0px))!important;
 }
 
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  transform:translateY(-8px)!important;
 }
 #mobViewAssistant .assistant-bottom-dock{
-  bottom:calc(124px + env(safe-area-inset-bottom,0px))!important;
 }
 
 /* Assistant: hide location widget on this screen only. */
@@ -1542,23 +1440,16 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  transform:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock{
-  bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
 }
 #mobViewAssistant .assistant-suggest-chip{
-  min-width:227.52px!important;
-  width:227.52px!important;
   height:56px!important;
   padding:0 20px!important;
-  border-radius:16px!important;
 }
 
 /* assistant suggestions: match text scale to larger chips. */
 #mobViewAssistant .assistant-suggest-chip{
-  font-size:var(--ref-text-md)!important;
-  line-height:var(--ref-line-md)!important;
   font-weight:600!important;
   letter-spacing:0!important;
   text-align:center!important;
@@ -1568,15 +1459,10 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   transform:translateY(-4px)!important;
 }
 #mobViewAssistant .assistant-bottom-dock{
-  bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;
 }
 
 /* assistant send button: circular arrow button. */
 #mobViewAssistant .assistant-ai-send{
-  width:42px!important;
-  height:42px!important;
-  min-width:42px!important;
-  min-height:42px!important;
   border-radius:50%!important;
   padding:0!important;
 }
@@ -1597,28 +1483,18 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant send arrow final size. */
 #mobViewAssistant .assistant-ai-send svg{
-  width:13.13px!important;
-  height:15.63px!important;
 }
 
 /* assistant send arrow: slightly larger for better visibility. */
 #mobViewAssistant .assistant-ai-send svg{
-  width:16px!important;
-  height:18px!important;
 }
 
 /* assistant send arrow: taller, closer to the reference. */
 #mobViewAssistant .assistant-ai-send svg{
-  width:17px!important;
-  height:22px!important;
-  stroke-width:2.35!important;
 }
 
 /* assistant send arrow: larger final adjustment. */
 #mobViewAssistant .assistant-ai-send svg{
-  width:20px!important;
-  height:25px!important;
-  stroke-width:2.6!important;
 }
 
 /* assistant send arrow: one more slight increase. */
@@ -1635,8 +1511,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: raise chips without moving the input. */
 #mobViewAssistant .assistant-suggest-rail{
-  transform:translateY(-8px)!important;
-  margin-bottom:8px!important;
 }
 #mobViewAssistant .assistant-suggest-rail.hidden{
   transform:translateY(0)!important;
@@ -1644,7 +1518,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: raise chips a bit more. */
 #mobViewAssistant .assistant-suggest-rail{
-  transform:translateY(-16px)!important;
 }
 
 /* assistant suggestions: physical upward spacing from input. */
@@ -1696,7 +1569,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: force chips higher above the input. */
 #mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail{
-  bottom:124px!important;
 }
 #mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail.hidden{
   bottom:124px!important;
@@ -1710,16 +1582,11 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* assistant intro: serif typewriter question and delayed suggestions. */
 #mobViewAssistant .assistant-ai-question{
   min-height:34px!important;
-  line-height:30px!important;
-  letter-spacing:0!important;
-  color:#252a34!important;
-  text-rendering:geometricPrecision!important;
 }
 #mobViewAssistant .assistant-ai-subtitle{
   margin:6px auto 0!important;
   font-weight:400!important;
   letter-spacing:.005em!important;
-  color:#7a7f89!important;
   text-align:center!important;
   -webkit-font-smoothing:antialiased!important;
   text-rendering:optimizeLegibility!important;
@@ -1819,7 +1686,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
   font-family:"Inter",sans-serif!important;
   font-weight:600!important;
-  letter-spacing:.005em!important;
   font-style:normal!important;
   font-synthesis:none!important;
   text-rendering:optimizeLegibility!important;
@@ -1847,7 +1713,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant suggestions: keep the swipe rail inside the dock hit area on mobile browsers. */
 #mobViewAssistant .assistant-bottom-dock{
-  height:214px!important;
   pointer-events:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock #assistantStarter.assistant-suggest-rail{
@@ -1866,7 +1731,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   pointer-events:auto!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  transform:translateX(-50%) translateY(-1px)!important;
 }
 #mobViewAssistant .assistant-bottom-dock #assistantStarter .assistant-suggest-chip{
   user-select:none!important;
@@ -1875,16 +1739,13 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistant chat message layout aligned to the reference chat surface. */
 #mobViewAssistant .assistant-ai-body--searching{
-  padding:24px 16px 150px!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  padding:0!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-results{
   display:flex!important;
   flex-direction:column!important;
   align-items:stretch!important;
-  gap:18px!important;
 }
 #mobViewAssistant .assistant-chat-user-message,
 #mobViewAssistant .assistant-chat-assistant-message{
@@ -1912,18 +1773,10 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   display:block!important;
   width:max-content!important;
   max-width:100%!important;
-  padding:14px 18px!important;
-  border-radius:19px!important;
-  background:#f1f2f4!important;
-  color:#34383f!important;
-  line-height:20px!important;
   text-align:left!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   display:block!important;
-  font-size:var(--ref-text-lg)!important;
-  line-height:24px!important;
-  font-weight:700!important;
   text-align:left!important;
 }
 #mobViewAssistant .assistant-chat-typing{
@@ -1949,23 +1802,15 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  width:24px!important;
-  height:24px!important;
-  flex:0 0 24px!important;
-  padding:0!important;
   margin:0!important;
-  border:1px solid #d6d6d6!important;
-  background:#ffffff!important;
   box-shadow:none!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
   align-items:center!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
-  background:#6f6f6f!important;
 }
 #mobViewAssistant .assistant-typing-label{
-  color:#747474!important;
   font-size:15px!important;
   line-height:20px!important;
   font-weight:500!important;
@@ -1993,7 +1838,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-send:focus-visible{
   transform:none!important;
   opacity:1!important;
-  transition:none!important;
 }
 #mobViewAssistant .assistant-ai-send svg{
   transform:none!important;
@@ -2010,18 +1854,12 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 #mobViewAssistant .assistant-ai-send.is-inactive,
 #mobViewAssistant .assistant-ai-send:disabled{
-  background:#e7e9ed!important;
-  color:#8c929b!important;
-  border-color:#e7e9ed!important;
   cursor:not-allowed!important;
 }
 #mobViewAssistant .assistant-ai-send.is-ready{
   cursor:pointer!important;
 }
 #mobViewAssistant .assistant-ai-send.is-stopping{
-  background:rgba(var(--brand-primary-rgb), .16)!important;
-  color:var(--brand-primary)!important;
-  border-color:rgba(var(--brand-primary-rgb), .22)!important;
   cursor:pointer!important;
 }#mobViewAssistant .assistant-ai-send .assistant-stop-icon{
   display:block;
@@ -2041,7 +1879,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   padding:0!important;
   border:0!important;
   background:transparent!important;
-  color:currentColor!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -2050,8 +1887,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   -webkit-tap-highlight-color:transparent!important;
 }
 #mobViewAssistant .assistant-feedback-btn svg{
-  width:20px!important;
-  height:20px!important;
   display:block!important;
 }
 #mobViewAssistant .assistant-copy-btn.is-copied svg,
@@ -2060,7 +1895,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 #mobViewAssistant .assistant-rating-btn{
   border-radius:4px!important;
-  transition:background-color .18s ease!important;
 }
 #mobViewAssistant .assistant-rating-btn.is-selected{
   background:rgba(255,255,255,.08)!important;
@@ -2072,7 +1906,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   fill:none!important;
 }
 #mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child{
-  fill:#000!important;
 }
 #mobViewAssistant .assistant-feedback-actions:has(.assistant-rating-btn.is-selected) .assistant-rating-btn:not(.is-selected){
   display:none!important;
@@ -2101,7 +1934,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* assistente surface: keep one continuous background and avoid the dock covering content. */
 #mobViewAssistant .assistant-bottom-dock{
-  background:transparent!important;
 }
 #mobViewAssistant .assistant-bottom-dock::before{
 }
@@ -2110,7 +1942,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-product-rail{
   display:flex!important;
   flex-direction:row!important;
-  gap:10px!important;
   width:100%!important;
   overflow-x:auto!important;
   overflow-y:hidden!important;
@@ -2119,24 +1950,17 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   overscroll-behavior-x:contain!important;
   scrollbar-width:none!important;
   -webkit-overflow-scrolling:touch!important;
-  touch-action:pan-x!important;
 }
 #mobViewAssistant .assistant-product-rail::-webkit-scrollbar{display:none!important}
 #mobViewAssistant .assistant-product-card{
-  flex:0 0 78%!important;
-  width:78%!important;
-  max-width:280px!important;
-  border:0!important;
-  background:#172235!important;
   overflow:hidden!important;
   scroll-snap-align:start!important;
 }
-#mobViewAssistant .assistant-product-card .assistant-result-image-wrap{width:100%!important;height:248px!important;background:#edf0f3!important}
+#mobViewAssistant .assistant-product-card .assistant-result-image-wrap{}
 #mobViewAssistant .assistant-product-card .assistant-result-image{width:100%!important;height:100%!important;object-fit:cover!important}
-#mobViewAssistant .assistant-product-card .assistant-result-content{padding:12px!important}
+#mobViewAssistant .assistant-product-card .assistant-result-content{}
 #mobViewAssistant .assistant-product-card .assistant-result-title{
   font-family:"Inter",sans-serif!important;
-  line-height:var(--ref-line-md)!important;
   text-transform:none!important;
   white-space:nowrap!important;
   overflow:hidden!important;
@@ -2160,14 +1984,11 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-ai-body--searching{
   align-items:stretch!important;
   min-height:0!important;
-  padding:24px 16px 0!important;
   overflow:hidden!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  height:100%!important;
   max-height:none!important;
   margin:0!important;
-  padding:0 0 96px!important;
   box-sizing:border-box!important;
 }
 /* Keep assistente scrollable without a visible scrollbar track on the right. */
@@ -2212,26 +2033,16 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   flex:0 0 258px!important;
   width:258px!important;
   max-width:258px!important;
-  border-radius:10px!important;
-  background:#484F5C!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-image-wrap{
   width:258px!important;
-  height:258px!important;
-  border-radius:0 0 10px 10px!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-image,
 #mobViewAssistant .assistant-product-card .assistant-result-image-placeholder{
-  border-radius:0 0 10px 10px!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-content{
   width:258px!important;
-  height:69.5px!important;
-  min-height:69.5px!important;
-  padding:9px 12px!important;
   box-sizing:border-box!important;
-  background:#484F5C!important;
-  border-top:1px solid rgba(255,255,255,.12)!important;
   display:flex!important;
   flex-direction:column!important;
   align-items:flex-start!important;
@@ -2239,21 +2050,13 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 #mobViewAssistant .assistant-product-card .assistant-result-title,
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  color:#ffffff!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  line-height:17px!important;
-  color:#f3e8c8!important;
 }
 /* Assistant copy: readable body text with selective Markdown emphasis. */
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
-  font-size:15px!important;
-  line-height:1.55!important;
-  letter-spacing:.002em!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
-  color:var(--brand-primary)!important;
-  font-weight:600!important;
 }
 /* Keep assistant messages visually compact without changing their Markdown. */
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
@@ -2287,23 +2090,18 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* Add a short, intentional gap only before the final question. */
 #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   display:block!important;
-  margin-top:10px!important;
 }
 /* Lower the composer slightly to reduce the visible strip above the bottom nav. */
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
 }
 /* assistente typing indicator: neutral radial dot matrix and left-to-right text beam. */
-#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
-  width:42px!important;height:42px!important;flex:0 0 42px!important;padding:7px!important;
-  border-radius:10px!important;background:#ededed!important;
+#mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{flex:0 0 42px!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
-  display:grid!important;grid-template-columns:repeat(5,3px)!important;grid-template-rows:repeat(5,3px)!important;
-  align-content:center!important;justify-content:center!important;gap:3px!important;
+  display:grid!important;
+  align-content:center!important;justify-content:center!important;
 }
-#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
-  width:3px!important;height:3px!important;border-radius:50%!important;background:#a8a8a8!important;
-  opacity:.28;transform:scale(.72);animation:assistant-dot-radial-wave 1.8s ease-in-out infinite!important;
+#mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{border-radius:50%!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(13){animation-delay:0s!important}
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span:nth-child(7),
@@ -2336,9 +2134,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   43%{opacity:.56;transform:scale(1);background:#777}
 }
 #mobViewAssistant .assistant-typing-label{
-  background:linear-gradient(105deg,#777 0%,#777 36%,#f7f7f7 47%,#fff 50%,#f7f7f7 53%,#777 64%,#777 100%)!important;
-  background-size:250% 100%!important;
-  animation:assistant-typing-text-beam 2.4s linear infinite!important;
 }
 @keyframes assistant-typing-text-beam{from{background-position:100% 0}to{background-position:-150% 0}}
 /* Compact unboxed AI state; animated values must remain free of !important. */
@@ -2352,10 +2147,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-chat-typing .assistant-typing-row{}
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{
   width:28px!important;height:28px!important;flex-basis:28px!important;padding:4px!important;
-  border:0!important;border-radius:7px!important;background:#eee!important;
+  border:0!important;background:#eee!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
-  grid-template-columns:repeat(5,2px)!important;grid-template-rows:repeat(5,2px)!important;gap:2px!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark span{
   width:2px!important;height:2px!important;background:var(--brand-hover)!important;
@@ -2366,7 +2160,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   24%{opacity:1;transform:scale(1.9);box-shadow:0 0 4px rgba(65,65,65,.8)}
   43%{opacity:.46;transform:scale(.9);box-shadow:0 0 1px rgba(65,65,65,.25)}
 }
-#mobViewAssistant .assistant-typing-label{animation:assistant-typing-text-beam-visible 2.2s ease-in-out infinite!important;
+#mobViewAssistant .assistant-typing-label{
 }
 @keyframes assistant-typing-text-beam-visible{
   0%{background-position:100% 0}
@@ -2376,8 +2170,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{border-radius:2px!important}
 #mobViewAssistant .assistant-typing-label{
   display:inline-block!important;
-  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;background-size:240% 100%!important;background-position:140% 0;
-  animation:assistant-typing-light-sweep 1.65s linear infinite!important;will-change:background-position!important;
+  background-image:linear-gradient(100deg,#747474 0%,#747474 32%,var(--brand-light) 41%,var(--brand-primary) 48%,var(--brand-light) 52%,var(--brand-primary) 56%,var(--brand-light) 63%,#747474 72%,#747474 100%)!important;will-change:background-position!important;
 }
 @keyframes assistant-typing-light-sweep{
   0%{background-position:140% 0}
@@ -2410,11 +2203,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 /* Single-layer traveling beam clipped inside the glyphs. */
 #mobViewAssistant .assistant-typing-label{
-  position:relative!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
-  background:linear-gradient(90deg,#747474 0%,#747474 42%,var(--brand-light) 47%,var(--brand-primary) 50%,var(--brand-light) 53%,#747474 58%,#747474 100%)!important;
+  position:relative!important;
   background-repeat:no-repeat!important;background-size:300% 100%!important;background-position:100% 0;
   -webkit-background-clip:text!important;background-clip:text!important;
-  animation:assistant-typing-beam-inside 1.8s linear infinite!important;
 }
 #mobViewAssistant .assistant-typing-label::after{content:none!important;display:none!important}
 @keyframes assistant-typing-beam-inside{
@@ -2423,9 +2214,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 
 /* Chat color refinement. Product cards intentionally remain unchanged. */
-#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{color:#2f2f2f!important}
+#mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{}
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{}
-#mobViewAssistant .assistant-chat-user-message .assistant-result-title{background:#f4f4f5!important}
+#mobViewAssistant .assistant-chat-user-message .assistant-result-title{}
 #mobViewAssistant .assistant-rating-btn{
   color:#737373!important;transition:color .18s ease,background-color .18s ease!important;
 }
@@ -2434,14 +2225,14 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   transition:color .18s ease,fill .18s ease,stroke .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewAssistant .assistant-rating-btn:hover{color:var(--brand-hover)!important}
+  #mobViewAssistant .assistant-rating-btn:hover{}
 }
 #mobViewAssistant .assistant-rating-btn.is-selected,
 #mobViewAssistant .assistant-rating-btn[aria-pressed="true"]{}
 #mobViewAssistant .assistant-rating-btn.is-selected svg path:last-child,
-#mobViewAssistant .assistant-rating-btn[aria-pressed="true"] svg path:last-child{fill:var(--brand-hover)!important}
+#mobViewAssistant .assistant-rating-btn[aria-pressed="true"] svg path:last-child{}
 /* Unified copy / like / dislike icon states. */
-#mobViewAssistant .assistant-feedback-btn{color:#6b7280!important;transition:color .18s ease!important}
+#mobViewAssistant .assistant-feedback-btn{transition:color .18s ease!important}
 #mobViewAssistant .assistant-feedback-btn svg,
 #mobViewAssistant .assistant-feedback-btn svg path,
 #mobViewAssistant .assistant-feedback-btn svg circle,
@@ -2449,33 +2240,29 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   stroke:currentColor!important;transition:color .18s ease,stroke .18s ease,fill .18s ease!important;
 }
 @media (hover:hover){
-  #mobViewAssistant .assistant-feedback-btn:hover{color:var(--brand-hover)!important}
+  #mobViewAssistant .assistant-feedback-btn:hover{}
 }
 #mobViewAssistant .assistant-rating-btn.is-selected,
 #mobViewAssistant .assistant-rating-btn[aria-pressed="true"],
 #mobViewAssistant .assistant-copy-btn.is-copied,
-#mobViewAssistant .assistant-copy-btn.is-restoring{color:var(--brand-hover)!important}
+#mobViewAssistant .assistant-copy-btn.is-restoring{}
 /* Product names use application-wide Title Case presentation. */
 body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}
 
 /* Rapidex loading identity: orange loader, medium-gray status text. */
-#mobViewAssistant .assistant-typing-label{
-  color:#6b7280!important;-webkit-text-fill-color:#6b7280!important;background:none!important;animation:none!important;
+#mobViewAssistant .assistant-typing-label{background:none!important;animation:none!important;
 }
 /* Rapidex quick suggestions: light, quiet interaction styling. */
 #mobViewAssistant .assistant-suggest-chip{
-  flex:0 0 auto!important;width:max-content!important;min-width:0!important;max-width:none!important;
-  background:#ffffff!important;border-color:#e5e7eb!important;color:#374151!important;border-radius:20px!important;
+  flex:0 0 auto!important;width:max-content!important;min-width:0!important;max-width:none!important;border-radius:20px!important;
   transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
 }
 @media (hover:hover){
   #mobViewAssistant .assistant-suggest-chip:hover{
-    background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
   }
 }
 #mobViewAssistant .assistant-suggest-chip:active,
 #mobViewAssistant .assistant-suggest-chip:focus-visible{
-  background:var(--brand-tint)!important;border-color:var(--brand-hover)!important;color:var(--brand-hover)!important;
 }
 /* Native two-axis gestures inside chat results and product cards. */
 #mobViewAssistant .assistant-ai-body--searching,
@@ -2496,62 +2283,32 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 /* assistant chat readability: warm premium surfaces and stronger content hierarchy. */
 #mobViewAssistant .assistant-ai-body--searching,
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  background:#fbfaf8!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-results{
-  gap:20px!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message{
-  max-width:calc(100% - 32px)!important;
-  margin-left:16px!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
-  padding:15px 16px 12px!important;
-  border:1px solid #e9e3da!important;
-  border-radius:16px!important;
-  background:#f7f4ef!important;
-  box-shadow:0 3px 12px rgba(44,36,28,.045)!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
-  color:#202124!important;
-  line-height:1.62!important;
-  letter-spacing:0!important;
   white-space:pre-wrap!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
-  margin-top:12px!important;
-  color:#313131!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
-  gap:11px!important;
-  margin:11px 0 0!important;
-  padding-top:10px!important;
-  border-top:1px solid rgba(88,72,56,.09)!important;
 }
 #mobViewAssistant .assistant-feedback-btn{
-  width:19px!important;
-  height:19px!important;
-  min-width:19px!important;
-  min-height:19px!important;
-  color:#77736e!important;
 }
 #mobViewAssistant .assistant-feedback-btn svg{
-  width:18px!important;
-  height:18px!important;
 }
 
 /* Recommended products: remove the blue-gray footer and use a warm neutral base. */
 #mobViewAssistant .assistant-product-rail{
-  padding-top:3px!important;
-  padding-bottom:10px!important;
 }
 #mobViewAssistant .assistant-product-card{
-  border:1px solid #e5ded4!important;
   border-radius:14px!important;
-  background:#f7f4ef!important;
-  box-shadow:0 5px 16px rgba(44,36,28,.055)!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-image-wrap,
 #mobViewAssistant .assistant-product-card .assistant-result-image,
@@ -2559,35 +2316,23 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   border-radius:0!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-content{
-  padding:10px 13px!important;
-  border-top:1px solid #e5ded4!important;
-  background:#f7f4ef!important;
-  gap:5px!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-title{
-  color:#24211f!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
 }
 
 /* Composer uses the same warm-neutral surface language as messages and cards. */
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
-  border-color:#e5ded4!important;
-  background:#fffdfa!important;
-  box-shadow:0 7px 22px rgba(44,36,28,.07)!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  border-color:rgba(var(--brand-primary-rgb), .42)!important;
-  box-shadow:0 0 0 3px rgba(var(--brand-primary-rgb), .07),0 8px 24px rgba(44,36,28,.075)!important;
 }
 #mobViewAssistant .assistant-ai-input{
-  color:#24211f!important;
 }
 
 /* Conversation hierarchy: keep the user as a bubble and let assistente answer in open space. */
 #mobViewAssistant .assistant-ai-body--searching,
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
-  background:#ffffff!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-results{
   gap:22px!important;
@@ -2596,8 +2341,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   padding:12px 16px!important;
   border:1px solid #ebe8e3!important;
   border-radius:18px 18px 5px 18px!important;
-  background:#f5f3f0!important;
-  color:#34312f!important;
   font-size:15px!important;
   line-height:21px!important;
   font-weight:500!important;
@@ -2608,23 +2351,16 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   margin-right:20px!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-content{
-  background:transparent!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title{
   padding:0!important;
-  color:#292725!important;
-  font-size:15.5px!important;
-  line-height:1.65!important;
-  font-weight:500!important;
   letter-spacing:.001em!important;
   text-wrap:pretty!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-result-title strong{
-  color:var(--brand-hover)!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-final-question{
   margin-top:14px!important;
-  color:#292725!important;
 }
 #mobViewAssistant .assistant-chat-assistant-message .assistant-feedback-actions{
   justify-content:flex-start!important;
@@ -2635,7 +2371,6 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   height:20px!important;
   min-width:20px!important;
   min-height:20px!important;
-  color:#85817c!important;
 }
 #mobViewAssistant .assistant-feedback-btn svg{
   width:17px!important;
@@ -2650,35 +2385,21 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
 }
 #mobViewAssistant .assistant-product-card{
   border-color:#e7e2dc!important;
-  background:#f8f6f3!important;
-  box-shadow:0 4px 14px rgba(44,36,28,.045)!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-content{
-  height:72px!important;
-  min-height:72px!important;
-  padding:10px 14px 11px!important;
   border-top-color:#e7e2dc!important;
-  background:#f8f6f3!important;
-  gap:4px!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-title{
-  color:#292522!important;
-  font-weight:700!important;
 }
 #mobViewAssistant .assistant-product-card .assistant-result-price{
-  color:var(--brand-hover)!important;
 }
 
 /* Composer: visually related to the neutral cards, without another heavy box. */
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar{
   bottom:14px!important;
   border-color:#e7e2dc!important;
-  background:#fffefa!important;
-  box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
-  border-color:#e7e2dc!important;
-  box-shadow:0 4px 16px rgba(44,36,28,.055)!important;
   transform:translateX(-50%)!important;
 }
 
@@ -2968,8 +2689,6 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav::before{
   padding:0 4px!important;
   border:2px solid var(--surface)!important;
   border-radius:9px!important;
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
   font-size:9.5px!important;
   line-height:13px!important;
   font-weight:800!important;
@@ -2981,7 +2700,6 @@ body:has(#mobViewAssistant.active) .mob-bottom-nav::before{
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   padding-bottom:20px!important;
-  scroll-padding-bottom:20px!important;
 }
 #mobViewAssistant.assistant-keyboard-open .assistant-ai-body--searching{
   padding-bottom:calc(var(--assistant-keyboard-height,0px) + 92px)!important;
@@ -3023,7 +2741,6 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 /* Let chat content scroll to the composer instead of being clipped by a blank band. */
 #mobViewAssistant .assistant-ai-body--searching{
-  padding:72px 0 0!important;
 }
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   flex:1 1 auto!important;
@@ -3032,7 +2749,6 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   min-height:0!important;
   padding:0 0 112px!important;
   scroll-padding-bottom:112px!important;
-  background:#ffffff!important;
   overflow-x:hidden!important;
   overflow-y:auto!important;
   overscroll-behavior-y:contain!important;
@@ -3480,19 +3196,13 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   white-space:nowrap!important;
 }
 #mobViewAssistant .assistant-starter-card:active{
-  background:var(--brand-tint)!important;
-  border-color:rgba(var(--brand-primary-rgb), .30)!important;
 }
 #mobViewAssistant .assistant-starter-card:focus-visible{
-  background:var(--brand-tint)!important;
-  border-color:rgba(var(--brand-primary-rgb), .30)!important;
   outline:2px solid rgba(var(--brand-primary-rgb), .55)!important;
   outline-offset:2px!important;
 }
 @media (hover:hover){
   #mobViewAssistant .assistant-starter-card:hover{
-    background:var(--brand-tint)!important;
-    border-color:rgba(var(--brand-primary-rgb), .30)!important;
   }
 }
 @media (prefers-reduced-motion: reduce){

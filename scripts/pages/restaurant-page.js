@@ -6001,14 +6001,24 @@
    * initOperationContext() escolhe outra — e aí a carga que veio é da loja
    * errada.
    */
+  /**
+   * @returns {Promise<boolean>} true se o cardápio em memória é o da filial
+   *          escolhida — ou seja, se dá para conferir a sacola contra ele.
+   */
   async function ensureMenuMatchesSelectedBranch() {
-    if (!menuBranchIsStale() || !operationContext?.branch_id) return;
+    if (!menuBranchIsStale() || !operationContext?.branch_id) return true;
     try {
       applyMenuPayload(await fetchMenuPayload(operationContext.branch_id));
+      return true;
     } catch (error) {
       // Fica com o que veio e segue: a aba Cardápio detecta o desencontro e
       // tenta de novo, com tela de erro própria.
+      //
+      // Mas quem chama PRECISA saber que o cardápio em memória é de outra
+      // filial. No boot é o que decide se a sacola pode ser restaurada: contra
+      // o cardápio errado ela seria esvaziada e o vazio gravado por cima.
       logAppError('Falha ao carregar o cardápio da unidade', error);
+      return false;
     }
   }
 
@@ -6020,7 +6030,50 @@
    * false pelo mesmo motivo do boot: um updateCartUI() no meio do caminho
    * gravaria uma sacola vazia por cima da que a filial nova tem guardada.
    */
-  async function handleMenuBranchChange(previousBranchId) {
+  /**
+   * O que foi escolhido PARA UMA LOJA e não sobrevive à troca dela.
+   *
+   * Pagamento e cupom são da filial: cada uma declara os próprios meios em
+   * /info (`branchAcceptsOnlineCard`) e o desconto do cupom é calculado contra
+   * a sacola daquela loja. Antes eles atravessavam a troca intactos — escolher
+   * cartão numa filial que aceita e mudar para uma que não aceita levava direto
+   * na contradição tratada em routeCreatedOrder: pedido de cartão nascendo
+   * "paga na entrega", com o CVV já tokenizado e nenhuma cobrança.
+   *
+   * O token do cartão é de uso único no gateway; deixá-lo vivo só produziria
+   * uma recusa mais adiante.
+   */
+  function clearBranchScopedSelection() {
+    paymentMethod = '';
+    paymentMethodKey = '';
+    selectedSavedCard = null;
+    savedCardPaymentToken = '';
+    couponDetailCoupon = null;
+    selectedCoupon = null;
+    selectedCouponPreview = null;
+    couponPreviewKey = '';
+  }
+
+  /**
+   * A troca de loja é TRANSACIONAL: ou o cardápio da filial nova chega, ou nada
+   * muda.
+   *
+   * O que acontecia quando o /menu falhava: o `catch` só escrevia no console e
+   * a função seguia. `restoreCart()` então conferia a sacola guardada da loja
+   * NOVA contra `products`, que ainda era o cardápio da ANTIGA. Como os ids de
+   * produto não se repetem entre filiais (ver cartStorageKey), nada casava, o
+   * carrinho virava vazio — e a última linha de restoreCart() gravava esse
+   * vazio por cima da sacola guardada. O cliente perdia o pedido montado, sem
+   * uma palavra na tela, por causa de uma falha de rede.
+   *
+   * Agora: se o cardápio novo não chega, o contexto volta para a filial
+   * anterior, a sacola dela é restaurada contra o cardápio dela (que continua
+   * em memória, intacto) e a tela diz o que houve.
+   *
+   * @param {object|null} previousContext cópia do operationContext ANTES da troca
+   */
+  async function handleMenuBranchChange(previousContext) {
+    const previousBranchId = previousContext?.branch_id || null;
     const nextBranchId = operationContext?.branch_id || null;
     if (String(previousBranchId || '') === String(nextBranchId || '')) return;
 
@@ -6031,12 +6084,18 @@
     appState.menuLoaded = false;
     menuRenderSignature = null;
 
+    let fresh;
     try {
-      applyMenuPayload(await fetchMenuPayload(nextBranchId));
+      fresh = await fetchMenuPayload(nextBranchId);
     } catch (error) {
       logAppError('Falha ao carregar o cardápio da unidade', error);
+      rollbackBranchChange(previousContext, previousLabel);
+      return;
     }
 
+    // Só a partir daqui a troca é fato consumado.
+    applyMenuPayload(fresh);
+    clearBranchScopedSelection();
     // Depois do cardápio novo: é contra ELE que os itens são conferidos, e é
     // dele que sai o preço — a mesma picanha custa o que a loja nova cobra.
     restoreCart();
@@ -6050,6 +6109,38 @@
         ? `Sua sacola da ${previousLabel} ficou guardada.`
         : 'Sua sacola da unidade anterior ficou guardada.');
     }
+  }
+
+  /**
+   * Desfaz a troca de loja que não completou.
+   *
+   * `products` em memória ainda é o cardápio da filial anterior — foi
+   * justamente ele que não chegou a ser substituído. Voltando o contexto para
+   * ela, tudo volta a combinar: a chave da sacola, os ids dos produtos e os
+   * preços. É por isso que o rollback restaura a sacola DEPOIS de devolver o
+   * contexto, e não antes.
+   */
+  function rollbackBranchChange(previousContext, previousLabel) {
+    if (previousContext) {
+      operationContext = JSON.parse(JSON.stringify(previousContext));
+      persistOperationContext();
+      applyOperationToLegacy();
+      renderWidget();
+      setCartTab(operationContext.order_type || 'delivery');
+    }
+    // O cardápio em memória volta a ser o da filial do contexto.
+    appState.menuLoaded = true;
+    restoreCart();
+    renderBanners();
+    renderCoupons();
+    renderHighlights();
+    updateCartUI();
+    // A estimativa era da filial que não vingou.
+    invalidateDeliveryEstimate();
+    requestDeliveryEstimate();
+    showAppToast(previousLabel
+      ? `Não foi possível carregar o cardápio. Você continua na ${previousLabel}.`
+      : 'Não foi possível carregar o cardápio da unidade. Nada foi alterado.');
   }
 
   // ---- Home location widget ----
@@ -6239,7 +6330,9 @@
     // resultados" (renderWidget) e só é exigido no checkout.
     const previousEstimateKey = deliveryEstimateKey();
     const previousInfoKey = restaurantInfoKey();
-    const previousBranchId = operationContext?.branch_id || null;
+    // Cópia do contexto INTEIRO, não só do id: se o cardápio da filial nova não
+    // chegar, é para este estado que a tela volta (ver rollbackBranchChange).
+    const previousContext = operationContext ? JSON.parse(JSON.stringify(operationContext)) : null;
     operationContext = JSON.parse(JSON.stringify(opDraft));
     operationConfirmed = true;
     // ANTES de qualquer updateCartUI(): a sacola em memória ainda é da loja
@@ -6248,7 +6341,7 @@
     // troca solta a memória de forma SÍNCRONA (só o cardápio é assíncrono), e
     // enquanto ela não é restaurada persistCart() não grava.
     // Não é aguardada: a tela fecha na hora e a carga se resolve por trás.
-    handleMenuBranchChange(previousBranchId);
+    handleMenuBranchChange(previousContext);
     persistOperationContext();
     applyOperationToLegacy();
     renderWidget();
@@ -6272,7 +6365,7 @@
     if (!operationContext || !operationConfirmed || operationContext.order_type === type) return;
     const previousEstimateKey = deliveryEstimateKey();
     const previousInfoKey = restaurantInfoKey();
-    const previousBranchId = operationContext.branch_id || null;
+    const previousContext = JSON.parse(JSON.stringify(operationContext));
     operationContext.order_type = type;
     const current = branchById(operationContext.branch_id);
     if (!current || !branchAccepts(current, type)) {
@@ -6281,7 +6374,7 @@
     // Trocar entrega/retirada pode trocar a FILIAL junto (quando a atual não
     // serve para o novo tipo), e aí o cardápio na tela vira o de outra loja.
     // Vem antes de tudo pelo mesmo motivo de confirmOperation().
-    handleMenuBranchChange(previousBranchId);
+    handleMenuBranchChange(previousContext);
     persistOperationContext();
     renderWidget();
     if (previousEstimateKey !== deliveryEstimateKey()) invalidateDeliveryEstimate();
@@ -10199,11 +10292,18 @@
     initOperationContext();
     // A disponibilidade faz parte do boot: quando a Home aparece, o widget já
     // abre Unidades diretamente com KM, taxa e status, sem carregar na seta.
-    await Promise.all([
+    const [menuMatchesBranch] = await Promise.all([
       ensureMenuMatchesSelectedBranch(),
       requestBranchAvailability(operationContext.address, availabilityAtBoot)
     ]);
-    restoreCart();
+    // A sacola só é conferida contra o cardápio DA FILIAL DELA. Se o cardápio
+    // da filial guardada não chegou, o que está em memória é o da filial padrão
+    // — e conferir contra ele apagaria a sacola (os ids não se repetem entre
+    // filiais) e ainda gravaria o vazio por cima. Nesse caso não se restaura
+    // nada: `cartRestored` continua false, então persistCart() também não
+    // grava, e a sacola guardada sobrevive intacta para a próxima visita.
+    if (menuMatchesBranch) restoreCart();
+    else showAppToast('Não foi possível carregar o cardápio da sua unidade. Recarregue a página.');
     applyTheme();
     initStoreInfoModal();
     initCashbackState();

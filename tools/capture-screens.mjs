@@ -91,7 +91,7 @@ const act = (page, name, ...args) => page.evaluate(([acao, argumentos]) => {
  * um estado montado à mão, que provaria só que o CSS existe, e não que o
  * caminho que leva até ele continua chegando lá.
  */
-const SCREENS = [
+export const SCREENS = [
   { name: 'home', go: boot },
 
   {
@@ -213,7 +213,9 @@ const SCREENS = [
  *   (0,791926 contra 0,884243).
  *
  *   endereco-busca: o campo de busca recebe foco, e o fundo dele muda com
- *   :focus — entao o valor dependia de o foco ter chegado ou nao.
+ *   :focus — entao o valor dependia de o foco ter chegado ou nao. Esta segunda
+ *   voltou depois (o foco e agendado dentro de um `.finally()` de rede, e nem
+ *   sempre chegava antes do blur): a correcao esta em `estabilizar()`.
  *
  * Uma ferramenta que acusa diferenca sem que nada tenha mudado e pior que
  * nenhuma: em duas semanas todo mundo ignora a saida dela. Entao, antes de ler:
@@ -221,30 +223,65 @@ const SCREENS = [
  * que e o que interessa), e o foco tirado de qualquer campo.
  */
 async function estabilizar(page) {
-  // ORDEM IMPORTA: desfocar PRIMEIRO. Tirar o foco dispara a transicao de
-  // border-color de volta, e ler no meio dela dava 231 onde a outra captura
-  // lia 232 — a ultima diferenca de ruido que sobrou nesta ferramenta.
+  // PRIMEIRA CAMADA, e a que resolve: apagar `transition` e `animation` das
+  // REGRAS, pelo CSSOM, em vez de tentar sobrepo-las com outra regra.
+  //
+  // A tentativa anterior era um `*{transition:none!important}` injetado, e ela
+  // perde por especificidade: o app declara transicao com `!important` sob
+  // classe e sob id (`.addr-search-field{transition:border-color .15s!important}`,
+  // `#mobViewAssistant .assistant-ai-input-bar{...!important}`), e `!important`
+  // contra `!important` quem decide e a especificidade — 0,0,1,0 ganha de
+  // 0,0,0,0. Apagando a declaracao da propria regra nao ha disputa: nao existe
+  // mais transicao nenhuma para correr, e todo valor lido e o estado FINAL.
+  //
+  // Sem isto, o ruido aparecia como cor a um passo do destino:
+  // `borderTopColor: rgb(204,204,204) -> rgb(205,206,207)` no mesmo codigo.
   await page.evaluate(() => {
-    const ativo = document.activeElement;
-    if (ativo && ativo !== document.body && typeof ativo.blur === 'function') ativo.blur();
+    const limpar = (regras) => {
+      for (const regra of regras) {
+        if (regra.style) { regra.style.removeProperty('transition'); regra.style.removeProperty('animation'); }
+        if (regra.cssRules) limpar(regra.cssRules);   // @media
+      }
+    };
+    for (const folha of document.styleSheets) {
+      try { limpar(folha.cssRules); } catch { /* folha de outra origem: nao ha o que congelar nela */ }
+    }
   });
 
-  // Best-effort. NAO vence tudo: o app declara transicoes com `!important` sob
-  // seletores de especificidade alta (ex.: `#mobViewAssistant
-  // .assistant-ai-input-bar{transition:...!important}`), e um `*` com
-  // `!important` perde para eles. Serve para o resto — inclusive as animacoes
-  // de vapor da marca do assistente, que sao o ruido mais barulhento.
+  // Cinto e suspensorio: pega `style="transition:..."` inline e as animacoes
+  // declaradas em regras que por algum motivo o laco acima nao alcance.
   await page.addStyleTag({
     content: '*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important}'
   });
 
-  // A garantia de verdade e esta espera: a transicao mais longa do app e de
-  // 200ms, entao 400 cobre com folga o que o estilo injetado nao alcanca.
+  // Deixa o layout assentar depois de tudo isso.
   await page.waitForTimeout(400);
 }
 
-/** Lê o documento inteiro. Este corpo roda dentro do browser. */
+/**
+ * Lê o documento inteiro. Este corpo roda dentro do browser.
+ *
+ * O BLUR MORA AQUI, e nao em estabilizar(), de proposito.
+ *
+ * O foco desta suite nao chega junto com a tela: em
+ * `restaurant-address-flow.js:716` ele e agendado num `setTimeout(200)`
+ * pendurado no `.finally()` de uma promessa de REDE. A hora em que ele pousa
+ * depende de o mock responder, entao um blur dado num `page.evaluate()` e a
+ * leitura dada em OUTRO deixam uma fresta entre os dois turnos por onde esse
+ * foco atrasado entra — e `.addr-search-field:focus-within` troca a borda e o
+ * fundo. Era 1 elemento diferente em `endereco-busca` comparando a MESMA build
+ * consigo mesma, intermitente. E o custo disso nao e o falso alarme de hoje: e
+ * a rodada de amanha, em que alguem ve "1 elemento diferente" e assume que e o
+ * de sempre.
+ *
+ * Desfocar e ler no MESMO turno fecha a fresta: JS de pagina e uma thread so,
+ * nenhum timer roda no meio desta funcao. E como estabilizar() ja apagou as
+ * transicoes das regras, o blur vale na hora, sem estado intermediario.
+ */
 function readDocument(props) {
+  const ativo = document.activeElement;
+  if (ativo && ativo !== document.body && typeof ativo.blur === 'function') ativo.blur();
+
   const path = (el) => {
     const parts = [];
     for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
@@ -351,6 +388,11 @@ function diff(a, b) {
   process.exit(problemas ? 1 : 0);
 }
 
-const args = process.argv.slice(2);
-if (args[0] === '--diff') diff(args[1], args[2]);
-else await capture(args[0] || 'captura.json');
+// SCREENS e exportado, entao este arquivo tambem e IMPORTADO (por
+// tools/css-usage.mjs, que reusa a lista de telas). Sem esta guarda, importar
+// a lista dispararia uma captura inteira de 14 telas como efeito colateral.
+if (process.argv[1] && process.argv[1].endsWith('capture-screens.mjs')) {
+  const args = process.argv.slice(2);
+  if (args[0] === '--diff') diff(args[1], args[2]);
+  else await capture(args[0] || 'captura.json');
+}

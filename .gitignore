@@ -37,3 +37,12 @@ playwright-report/
 test-results/
 .playwright/
 coverage/
+
+# Saidas das ferramentas de analise (tools/css-usage.mjs, tools/ui-inventory.mjs,
+# tools/capture-screens.mjs). Sao medidas de UMA rodada, nao fonte: versionar
+# uma delas seria criar uma linha de base que muda a cada mudanca legitima de
+# tela — o mesmo motivo pelo qual a captura nao e portao de CI.
+css-usage.json
+css-cores.json
+ui-inventory.json
+captura*.json

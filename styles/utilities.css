@@ -827,7 +827,7 @@ body{
 }
 .modal--login .cart-cta-btn,
 .modal--login .login-secondary{
-  height:41px!important;
+  height:45px!important;
   border-radius:10px!important;
   font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
@@ -1721,9 +1721,9 @@ body:not(.menu-tab) .home-order-cta,
 #loginModal .login-secondary{
   width:354px!important;
   max-width:100%!important;
-  height:41px!important;
-  min-height:41px!important;
-  max-height:41px!important;
+  height:45px!important;
+  min-height:45px!important;
+  max-height:45px!important;
   border-radius:10px!important;
   padding:0!important;
 }
@@ -3979,7 +3979,7 @@ body.home-tab.soft-scroll-locked.modal-open{
   #productModal #pmAddBtn{
     padding:0!important;
     border:0!important;
-    border-radius:9px!important;
+    border-radius:10px!important;
     box-shadow:none!important;
     font-size:var(--ref-text-sm)!important;
     line-height:16px!important;

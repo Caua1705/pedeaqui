@@ -830,7 +830,7 @@
 .pix-sheet-ghost {
   display: block;
   width: 100%;
-  height: 48px;
+  height: 45px;
   border-radius: 10px;
   font-family: var(--font-sans);
   font-size: 0.9rem;

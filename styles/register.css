@@ -251,7 +251,7 @@
   justify-content: center;
   width: 100%;
   max-width: 374px;
-  height: 41px;
+  height: 45px;
   margin: 0 auto;
   border: none;
   border-radius: 10px;
@@ -259,7 +259,7 @@
   font-family: inherit;
   font-size: var(--ref-text-sm);
   line-height: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--brand-on);
   cursor: pointer;
 }

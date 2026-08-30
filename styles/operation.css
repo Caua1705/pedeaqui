@@ -504,7 +504,7 @@
   max-width:374px!important;
   height:45px!important;
   border:none;
-  border-radius:9px!important;
+  border-radius:10px!important;
   background:var(--brand-primary)!important;color:var(--brand-on);font-family:inherit;
   font-size:var(--ref-text-sm)!important;
   font-weight:700!important;

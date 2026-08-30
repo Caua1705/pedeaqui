@@ -239,9 +239,7 @@
   const onlyDigits = window.PedeAquiValidators?.onlyDigits || ((value) => String(value ?? '').replace(/\D/g, ''));
   const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || '';
   const restaurantStore = () => window.PedeAquiRestaurantStore;
-  const customerStore = () => window.PedeAquiCustomerStore;
   const cartStore = () => window.PedeAquiCartStore;
-  const uiStore = () => window.PedeAquiUiStore;
   const productOptionGroups = (product) => Array.isArray(product?.option_groups) ? product.option_groups : [];
   const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
   const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
@@ -260,7 +258,6 @@
   function persistCustomer(nextCustomer) {
     customer = nextCustomer || null;
     appState.customer = customer;
-    customerStore()?.setCustomer?.(customer);
     if (customer) storageKeys()?.writeSessionCustomer?.(customer);
     else storageKeys()?.clearSessionCustomer?.();
     return customer;
@@ -269,7 +266,6 @@
   function persistCustomerAddress(address) {
     if (!address) return null;
     customerAddress = window.PedeAquiAddressService?.saveSelectedAddress?.(address) || address;
-    customerStore()?.setSelectedAddress?.(customerAddress);
     return customerAddress;
   }
 
@@ -2208,7 +2204,6 @@
   function showHomeTab() {
     document.body.classList.remove('menu-tab', 'menu-scrolled');
     document.body.classList.add('home-tab');
-    uiStore()?.set?.({ activeView: 'home', bottomNav: 'home' });
     setMobNavActive('mobNavHome');
     syncCartStickyForActiveView();
   }
@@ -2216,7 +2211,6 @@
   function showMenuTab() {
     document.body.classList.remove('home-tab');
     document.body.classList.add('menu-tab');
-    uiStore()?.set?.({ activeView: 'menu', bottomNav: 'menu' });
     setMobNavActive('mobNavMenu');
     syncCartStickyForActiveView();
     setFirstCategoryActive();
@@ -5643,7 +5637,6 @@
     if (opDraft) opDraft.address = normalized;
     if (normalized && options.forceDelivery !== false) operationContext.order_type = 'delivery';
     customerAddress = normalized ? { ...normalized, summary: addressSummary(normalized) } : null;
-    customerStore()?.setSelectedAddress?.(customerAddress);
     if (customerAddress) window.PedeAquiAddressService?.saveSelectedAddress?.(customerAddress);
     else localStorage.removeItem(STORAGE_ADDRESS);
     if (options.confirmed === true) operationConfirmed = true;
@@ -5740,7 +5733,6 @@
         }
       }
       appState.customerAddresses = remote;
-      customerStore()?.setAddresses?.(remote);
       const backendDefault = defaultBackendAddress(remote);
       const current = operationContext?.address || customerAddress;
       const currentRemoteId = remoteAddressId(current);
@@ -7483,7 +7475,6 @@
   function mockLogin(mode) {
     persistCustomer({ name: mode === 'signup' ? 'Cliente Rapidex' : 'Cliente identificado', phone: '' });
     appState.profileLoaded = false;
-    customerStore()?.set?.({ profileLoaded: false });
     closeModalId('loginModal');
     renderProfileView();
   }
@@ -8446,7 +8437,6 @@
     });
     window.PedeAquiCustomerAuth?.setStoredCustomer?.(apiCustomer);
     appState.profileLoaded = false;
-    customerStore()?.set?.({ profileLoaded: false });
   }
 
   function tokenFromAuthResponse(res) {
@@ -8596,7 +8586,6 @@
         appState.customerOrders = null;
         appState.customerAddresses = null;
         appState.profileLoaded = false;
-        customerStore()?.clear?.();
         // persistCustomer(null) e auth.logout() já limparam a sessão: uma chave só.
         renderHomeLoginPrompt();
         renderProfileView();
@@ -9141,7 +9130,6 @@
     const currentNav = getCurrentBottomNav();
     const shouldFocusAssistantInput = currentNav !== 'assistant';
     closeMobViews();
-    uiStore()?.set?.({ activeView: 'assistant', bottomNav: 'assistant' });
     setMobNavActive('mobNavAssistantTab');
     $('mobViewAssistant')?.classList.add('active');
     syncCartStickyForActiveView();
@@ -9176,7 +9164,6 @@
     setMobNavActive('mobNavOrders');
     closeMobViews();
     preserveSecondaryNavGeometry();
-    uiStore()?.set?.({ activeView: 'club', bottomNav: 'club' });
     $('mobViewClub')?.classList.add('active');
     syncCartStickyForActiveView();
     await clubController.renderClubView();
@@ -9225,15 +9212,12 @@
         if (addressesResult.status === 'fulfilled') {
           const value = addressesResult.value;
           appState.customerAddresses = Array.isArray(value) ? value : (value?.addresses || value?.items || value?.data || []);
-          customerStore()?.setAddresses?.(appState.customerAddresses);
         }
         if (ordersResult.status === 'fulfilled') {
           const value = ordersResult.value;
           appState.customerOrders = Array.isArray(value) ? value : (value?.orders || value?.items || value?.data || []);
-          customerStore()?.setOrders?.(appState.customerOrders);
         }
         appState.profileLoaded = true;
-        customerStore()?.set?.({ profileLoaded: true });
         return {
           customer: appState.customer,
           addresses: appState.customerAddresses,
@@ -9261,7 +9245,6 @@
     setMobNavActive('mobNavProfile');
     closeMobViews();
     preserveSecondaryNavGeometry();
-    uiStore()?.set?.({ activeView: 'profile', bottomNav: 'profile' });
     $('mobViewProfile')?.classList.add('active');
     syncCartStickyForActiveView();
     if (!appState.profileLoaded) renderProfileLoading();
@@ -9386,7 +9369,6 @@
     appState.customerOrders = null;
     appState.customerAddresses = null;
     appState.profileLoaded = false;
-    customerStore()?.clear?.();
     window.PedeAquiCustomerAuth?.logout();
     renderSharedCashbackState();
     setTimeout(() => {
@@ -9450,7 +9432,6 @@
   function redirectCustomerDataToLogin() {
     window.PedeAquiCustomerAuth?.logout?.();
     persistCustomer(null);
-    customerStore()?.clear?.();
     releaseFocusFrom($('profDataScreen'));
     $('profDataScreen')?.classList.remove('active');
     $('profDataScreen')?.setAttribute('aria-hidden', 'true');
@@ -9827,7 +9808,6 @@
     try {
       const orders = await window.PedeAquiOrderService.getCustomerOrders();
       appState.customerOrders = Array.isArray(orders) ? orders : [];
-      customerStore()?.setOrders?.(appState.customerOrders);
       renderProfPedidos(appState.customerOrders);
     } catch (error) {
       if (error?.status === 401) {

@@ -1,34 +1,24 @@
 (function () {
-  const cfg = () => window.APP_CONFIG || {};
   const routes = () => window.PedeAquiApiRoutes || window.API_ROUTES;
 
-  function useMockData() {
-    return cfg().USE_MOCK_DATA === true || cfg().STORAGE_MODE === 'mock';
-  }
-
-  async function getRestaurant(slug) {
-    return window.PedeAquiApiClient.get(routes().restaurant(slug));
-  }
-
-  async function getHealth() {
-    return window.PedeAquiApiClient.get(routes().health);
-  }
+  // Só o que tem chamador. Foram removidos daqui, na auditoria de 29/08/2026:
+  //
+  //   getHealth, getRestaurant, getCategoryProducts, getProduct — zero chamadas
+  //   em todo o repositório desde que existem.
+  //
+  //   createOrder — SEGUNDA implementação da criação de pedido, sem
+  //   Idempotency-Key. O caminho vivo é PedeAquiOrderService.createOrder(), que
+  //   manda o cabeçalho e reaproveita a chave numa retentativa. Escolher a
+  //   errada custava um pedido duplicado a cada falha de rede — e as duas
+  //   estavam a um autocomplete de distância.
+  //
+  //   O ramo de dados locais de getRestaurantMenu — vivia atrás de
+  //   USE_MOCK_DATA/STORAGE_MODE, que eram constantes `false`/`'api'` no
+  //   app-config e não vinham de env nenhum. Era código inalcançável, e o
+  //   getLocalJson que ele chamava saiu junto do api-client.
 
   async function getRestaurantMenu(slug, branchId) {
-    if (!useMockData()) {
-      return window.PedeAquiApiClient.get(routes().menu(slug, branchId));
-    }
-
-    const base = cfg().MOCK_DATA_BASE_PATH || 'data/restaurants';
-    return window.PedeAquiApiClient.getLocalJson(`${base}/${encodeURIComponent(slug)}.json`);
-  }
-
-  async function getCategoryProducts(slug, categorySlug) {
-    return window.PedeAquiApiClient.get(routes().productsByCategory(slug, categorySlug));
-  }
-
-  async function getProduct(slug, productSlug) {
-    return window.PedeAquiApiClient.get(routes().productDetail(slug, productSlug));
+    return window.PedeAquiApiClient.get(routes().menu(slug, branchId));
   }
 
   function authOptions() {
@@ -68,33 +58,13 @@
     });
   }
 
-  async function createOrder(slug, payload) {
-    if (useMockData()) {
-      return {
-        id: 'mock-' + Date.now(),
-        order_number: Math.floor(1000 + Math.random() * 9000),
-        status: 'submitted',
-        created_at: new Date().toISOString(),
-        subtotal: payload.items?.length ? null : 0,
-        ...payload
-      };
-    }
-
-    return window.PedeAquiApiClient.post(routes().createOrder(slug), payload);
-  }
-
   // A busca de pedido por telefone foi REMOVIDA da API. O acompanhamento passa
   // pelo tracking_token (window.PedeAquiOrderService.trackOrder) e o histórico
   // do cliente logado por /customers/me/orders — não há substituto aqui.
 
   window.PedeAquiApi = {
-    getHealth,
-    getRestaurant,
     getRestaurantMenu,
-    getCategoryProducts,
-    getProduct,
     getCustomerCoupons,
-    previewCoupon,
-    createOrder
+    previewCoupon
   };
 })();

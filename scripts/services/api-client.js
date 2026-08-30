@@ -118,28 +118,26 @@
     return apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
   }
 
-  async function getLocalJson(path) {
-    const response = await fetch(path);
-    if (!response.ok) throw new Error(`Local fallback not found: ${path}`);
-    return response.json();
-  }
-
-  window.buildApiUrl = buildApiUrl;
-  window.apiFetch = apiFetch;
-  window.apiGet = apiGet;
-  window.apiPost = apiPost;
-  window.apiPatch = apiPatch;
+  // UMA porta. Removidos na auditoria de 29/08/2026, todos com zero chamadas:
+  //
+  //   window.buildApiUrl / apiFetch / apiGet / apiPost / apiPatch — cinco
+  //   globais soltos apontando para as mesmas funções que PedeAquiApiClient já
+  //   publica. Nenhum arquivo os usava. Enquanto existiam, uma chamada de rede
+  //   podia ser escrita de duas formas, e só uma delas aparece ao procurar
+  //   quem fala com a API.
+  //
+  //   buildUrl / buildApiUrl / apiFetch / apiGet / apiPost / apiPatch DENTRO do
+  //   objeto — apelidos dos quatro nomes canônicos (get/post/patch/request),
+  //   também sem chamador.
+  //
+  //   getLocalJson — só era chamada pelo ramo de dados locais do api.js, que
+  //   dependia de USE_MOCK_DATA e nunca rodava. Era também o único `fetch` do
+  //   app fora do buildApiUrl, e por isso o único caminho que escapava do
+  //   tratamento de erro comum.
   window.PedeAquiApiClient = {
     get: apiGet,
     post: apiPost,
     patch: apiPatch,
-    request: apiFetch,
-    getLocalJson,
-    buildUrl: buildApiUrl,
-    buildApiUrl,
-    apiFetch,
-    apiGet,
-    apiPost,
-    apiPatch
+    request: apiFetch
   };
 })();

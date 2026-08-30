@@ -50,10 +50,6 @@
   ];
 
   /* ── Helpers ── */
-  function getAssistantProducts() {
-    return (window.PedeAquiRestaurantStore?.get?.()?.products || []);
-  }
-
   // Um gradiente por instância. IDs de <defs> são GLOBAIS no documento: com um
   // id fixo, a segunda marca da tela (a mini do esqueleto de digitação) definiria
   // um <linearGradient> de mesmo nome, o segundo seria ignorado e as duas
@@ -1088,25 +1084,6 @@
     window.assistantAddProduct(product);
   };
 
-  window.assistantViewProductInMenu = function () {
-    const product = _assistantActiveDetailProduct;
-    if (!product) return;
-    const productId = product.id || product.product_id;
-    const menuHasProduct = getAssistantProducts().some(menuProduct => String(menuProduct.id) === String(productId));
-    if (!menuHasProduct || typeof window.openProduct !== 'function') {
-      showAssistantToast('Produto não disponível no cardápio agora');
-      return;
-    }
-
-    window.assistantCloseProductDetail();
-    window.openProduct(productId);
-
-    if (typeof window.mobNavMenu === 'function') {
-      Promise.resolve(window.mobNavMenu())
-        .catch(error => console.error('[Assistente] Não foi possível preparar o cardápio atrás do produto:', error));
-    }
-  };
-
   function showAssistantToast(msg) {
     const t = document.getElementById('assistantToast');
     if (!t) return;
@@ -1424,18 +1401,6 @@
       }
     } catch {
       showAssistantToast('Não foi possível adicionar. Tente pelo cardápio.');
-    }
-  };
-
-  window.assistantViewInMenu = function (categorySlug) {
-    if (typeof window.mobNavMenu === 'function') window.mobNavMenu();
-    if (categorySlug && typeof window.scrollToCategory === 'function') {
-      setTimeout(() => {
-        const btn = typeof window.findCategoryButton === 'function'
-          ? window.findCategoryButton(categorySlug)
-          : Array.from(document.querySelectorAll('.cat')).find(b => b.dataset.catSlug === categorySlug) || null;
-        window.scrollToCategory(categorySlug, btn);
-      }, 400);
     }
   };
 

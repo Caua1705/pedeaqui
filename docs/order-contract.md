@@ -154,8 +154,13 @@ tem nenhum campo de imagem.
 A tela de pagamento exibe esse payload **truncado** (uma linha, cortada pelo CSS) com o
 botão de copiar ao lado — ninguém digita um EMV, e o texto inteiro só tomaria a tela. O
 elemento guarda a string **completa**: é dela que a cópia sai. **Não existe mais QR
-desenhado na tela** (decisão de produto ao alinhar a tela com a referência de mercado);
-`scripts/utils/qrcode.js` continua no bundle, mas sem chamador.
+desenhado na tela** (decisão de produto ao alinhar a tela com a referência de mercado).
+O gerador `scripts/utils/qrcode.js` foi REMOVIDO na auditoria de 29/08/2026 — eram 566
+linhas no bundle de todo cliente, sem um chamador. Se o QR desenhado voltar, ele está em
+`git show b2a80ff:scripts/utils/qrcode.js`, com os 34 testes que o conferiam contra a
+norma em `tests/unit/qrcode.test.js`. As duas razões que o justificavam continuam de pé
+(zero dependências de runtime, e a CSP proíbe imagem de terceiro), então é resgate, não
+reescrita.
 
 `qr_code` e `checkout_url` são ambos anuláveis e **alternativos** — a tela renderiza o que
 vier e só falha se vierem os dois vazios. Com `qr_code`, a tela mostra código + botão de

@@ -117,7 +117,8 @@
     STATIC_ROOTS
   };
 
-  // Nomes antigos mantidos como alias fino: o resto do app já os chamava.
-  window.getRestaurantSlugFromUrl = resolveSlug;
-  window.PedeAquiRestaurantSlug = { getRestaurantSlugFromUrl: resolveSlug, resolveSlug };
+  // Os aliases window.getRestaurantSlugFromUrl e window.PedeAquiRestaurantSlug
+  // saíram na auditoria de 29/08/2026. O comentário que os acompanhava dizia
+  // "o resto do app já os chamava" — e não chamava: zero ocorrências em scripts,
+  // HTML e testes. Quem resolve tenant é window.RapidexTenant, acima.
 })();

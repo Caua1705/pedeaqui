@@ -29,18 +29,23 @@
     // tema do tenant não chegou, ou quando a API não informa primary/secondary.
     // Assim que /menu responde, applyTheme() sobrescreve com a cor do tenant.
     PLATFORM_BRAND_PRIMARY: '#F36F21',
-    PLATFORM_BRAND_SECONDARY: '#111111',
-    STORAGE_MODE: 'api',
-    USE_MOCK_DATA: false,
-    MOCK_DATA_BASE_PATH: 'data/restaurants',
-    STORAGE_PREFIX: 'pedeaqui'
+    PLATFORM_BRAND_SECONDARY: '#111111'
   };
 
+  // Saíram daqui na auditoria de 29/08/2026, todos constantes que nada lia como
+  // variável:
+  //
+  //   STORAGE_MODE ('api') e USE_MOCK_DATA (false) — o único leitor era o ramo
+  //   de dados locais do api.js, que portanto nunca rodava. Não vinham de env:
+  //   ligar o modo mock exigia editar este arquivo, o que ninguém fez em toda a
+  //   história do repo.
+  //   MOCK_DATA_BASE_PATH — caminho do ramo acima.
+  //   STORAGE_PREFIX ('pedeaqui') — o prefixo real das chaves é `rapidex.` e
+  //   mora em scripts/utils/storage-keys.js. Este valor só alimentava
+  //   PedeAquiConfig.storagePrefix, e um prefixo errado publicado ao lado do
+  //   certo é convite a gravar no lugar errado.
+  //
+  //   window.PedeAquiConfig inteiro — quatro campos, zero leitores. Quem lê
+  //   configuração lê window.APP_CONFIG.
   window.APP_CONFIG = APP_CONFIG;
-  window.PedeAquiConfig = {
-    appName: 'Rapidex',
-    storagePrefix: APP_CONFIG.STORAGE_PREFIX,
-    useMockData: APP_CONFIG.USE_MOCK_DATA,
-    apiBaseUrl: APP_CONFIG.API_BASE_URL
-  };
 })();

@@ -35,9 +35,6 @@ import './utils/lifecycle.js';
 // Cache com prazo e teto. Precisa vir antes dos serviços que o instanciam.
 import './utils/ttl-cache.js';
 import './utils/image-cdn.js';
-// Gerador do QR do Pix. Sem dependência de runtime e sem imagem externa — a
-// CSP proíbe as duas coisas. Ver o cabeçalho do arquivo.
-import './utils/qrcode.js';
 import './utils/validators.js';
 // Leitura do `detail` de erro da API (string | array 422 | objeto estruturado).
 // Precisa vir antes do api-client, que o usa para montar a mensagem do erro.
@@ -65,11 +62,8 @@ import './state/order-state.js';
 // tracking_token por slug. Precisa vir antes das páginas, que gravam o token no
 // mesmo instante em que a resposta de POST /orders chega.
 import './state/order-tracking.js';
-import './state/ui-state.js';
 import './stores/restaurant-store.js';
-import './stores/customer-store.js';
 import './stores/cart-store.js';
-import './stores/ui-store.js';
 import './pages/restaurant-ui.js';
 import './pages/restaurant-club.js';
 import './pages/restaurant-assistant.js';

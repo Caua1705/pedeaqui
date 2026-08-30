@@ -1,9 +1,9 @@
 (function () {
-  function createCart(settings = {}) {
-    return window.PedeAquiCartState?.createCartState
-      ? window.PedeAquiCartState.createCartState(settings)
-      : null;
-  }
+  // createCart() foi REMOVIDA. Chamava window.PedeAquiCartState.createCartState,
+  // e window.PedeAquiCartState nunca existiu em lugar nenhum do repositório: a
+  // função retornava `null` em 100% das chamadas — se alguém a tivesse chamado.
+  // Ninguém chamava. O optional chaining é o que a mantinha silenciosa: sem ele
+  // seria um TypeError na primeira chamada e teria morrido no mesmo dia.
 
   // calculateTotals() foi REMOVIDA. Era uma segunda implementação do total, que
   // ninguém chamava e que tinha 5 testes verdes — o app sempre usou cartTotals()
@@ -34,7 +34,6 @@
   }
 
   window.PedeAquiCartService = {
-    createCart,
     normalizeCartItem,
     newCartItemUid
   };

@@ -4091,8 +4091,12 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .store-info-header h2{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:100%!important;text-align:center!important}
 #infoModal .store-info-spacer{grid-column:3!important;grid-row:1!important;width:32px!important;height:32px!important}
 
-/* Store info sizing tweaks. */
-#infoModal .store-info-header{border-bottom-width:2px!important}
+/* Store info sizing tweaks.
+   A divisoria de 2px que ficava aqui saiu: era a unica de 2px entre os doze
+   cabecalhos de 70px, e a regra so existia para engrossar a linha que a regra
+   de cima ja desenhava com 1px. Apagada em vez de reescrita para 1px — uma
+   regra que repete o valor que ja vale e a proxima que alguem le achando que
+   decide algo. */
 #infoModal .store-info-card{
   width:414px!important;
   max-width:100%!important;

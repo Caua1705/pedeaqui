@@ -372,8 +372,17 @@ cabe no CI é a parte SEM base ("toda tela abre"), e essa parte é o
 à mão, antes e depois, quando o commit disser "só movi código".
 
 **Flakes conhecidos** (passam isolados, caem sob carga paralela; não são seus):
-`assistant-voice-session.spec.js:294` e `pix-payment.spec.js:116` (geometria).
-Se falhou outra coisa, é sua.
+`assistant-voice-session.spec.js:294`, `assistant-voice-session.spec.js:437`
+(o corte por silêncio — mede tempo de fala) e `pix-payment.spec.js:116`
+(geometria). Se falhou outra coisa, é sua.
+
+Antes de arquivar um deles como flake, RODE ISOLADO
+(`npx playwright test <arquivo> --workers=1`) e confira que o que falhou não é
+o eixo que você mexeu — `pix-payment.spec.js:116` afirma sobre a geometria do
+CTA, e num commit que muda altura de botão "é o flake de sempre" é exatamente a
+frase que deixa passar a regressão. Em 30/08/2026 os três caíram na mesma
+rodada e os 46 testes dos dois arquivos passaram isolados; o :437 entrou nesta
+lista nessa ocasião.
 
 `tenant-theme.spec.js:188` SAIU desta lista em 29/08/2026 — ele não era flaky de
 paralelismo: media tempo de parede e falhava até em série (`--workers=1`, 900

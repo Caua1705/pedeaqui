@@ -132,8 +132,68 @@ Mock e captura:
 - Não existe tests/fixtures/orders.json ainda (só coupons.json, info.json, menu.json).
 - helpers.js exporta successOrder()/pixOrder() com shape de CreateOrderResponse.
 
-## Auditoria de contrato (item 1.4) — tabela a preencher
-(pendente)
+## Auditoria de contrato (item 1.4) — CONCLUÍDA 30/08/2026
+
+Método: agente varreu scripts/ inteiro (pages, services, state, utils) cruzando
+cada leitura de campo de resposta de API com o schema da rota em api.d.ts, mais
+varredura exaustiva de identificadores snake_case. Spot-check meu em 3 schemas
+(BusinessHourDayResponse, VerifyEmailCodeResponse, BannerResponse) — bateram.
+Sacola local, formulários, Google Places e eventos Realtime ficaram FORA (shape
+próprio, não é API).
+
+### DEFEITOS-VISÍVEIS (todos os nomes da cadeia inexistem, ou campo errado)
+
+| # | arquivo:linha | lê | certo (contrato) |
+|---|---|---|---|
+| D1 | restaurant-page.js:6702-6788 (bloco Perfil, já conhecido) | item.name/unit_price/selected_options_snapshot/line_total/image_url; endereço 9 candidatos; cancelled_at etc; restaurant_logo_url | product_name_snapshot / unit_price_snapshot / option_groups[].options[].option_name_snapshot / total; address_street…; status_history; logo local |
+| D2 | restaurant-auth-flow.js:616-620 | verifyEmailCode → customer/user/token (8 nomes); `verified` NUNCA lido | VerifyEmailCodeResponse = {message, verified} — 200 com verified:false vira sucesso hoje |
+| D3 | restaurant-page.js:1182,1189 | item.display_name/day_name/label (horários) | day_label (obrigatório, pronto) |
+| D4 | restaurant-page.js:1289 | compara weekday por texto normalizado | weekday é NÚMERO; current_day_label existe e ninguém lê |
+| D5 | restaurant-page.js:1593 | restaurant.closing_time/settings.closing_time/close_time | business_hours[].periods[].closes_at (/info) ou current_period.closes_at (availability) |
+| D6 | restaurant-page.js:1677-79 | opening_hours_text/business_hours_text | business_hours[] de /info |
+| D7 | restaurant-page.js:4755 + menu-service.js:79-80 | branch.accepts_pickup/accepts_delivery (/menu) | não existe por filial no /menu; existe em RestaurantSettingsResponse da filial |
+| D8 | restaurant-club.js:191 ← club-service.js:210 | cashback.data.balance (soma GLOBAL) como saldo da loja | by_restaurant[] filtrado por restaurant_slug (schema diz que a soma não é gastável) |
+| D9 | menu-service.js:181-197 + page:1729,2017 | banner.title/subtitle/name/description/imageUrl/image/order | BannerResponse = banner_type,id,image_path,image_url,is_active,sort_order — SÓ imagem |
+| D10 | restaurant-page.js:936 ← menu-service.js:154 | old_price/original_price/price_old/compare_at_price/list_price | NÃO existe — preço riscado nunca renderiza (backend-blocked p/ ter o recurso) |
+| D11 | restaurant-assistant.js:337 | data.options[] (chips) | ChatResponse não tem options (mas enum response_type tem 'options') — backend-blocked |
+| D12 | restaurant-assistant.js:824 | rapi_suggestions | não existe — substituído pelo item 4.4 (botões fixos) |
+| D13 | restaurant-assistant.js:1044-46 | product.recommendation_reason/reason/_reason | não existe — frase genérica sempre; backend-blocked p/ frase real |
+| D14 | restaurant-page.js:552 | transactions.data como ARRAY | é {balance,currency,transactions}; código morto (cashback-statement.js:64 é quem vive e está certo) |
+| D15 | cashback-statement.js:8-9 | type 'used'/'refund' | enum: earned/redeemed/expired/cancelled/adjustment ('used' é STATUS) |
+| D16 | restaurant-page.js:1566/1686 | restaurant.email/settings.email; service_fee_description | branch.email (/info); não existe |
+| D17 | restaurant-pix-flow.js:397+452 | item.name/unit_price em items||order.items | CreateOrderResponse NÃO tem items — rastrear fonte (entrada local?) no conserto |
+| D18 | order-tracking.js:123 | order.payment_method de CreateOrderResponse | não existe — entrada grava sempre null |
+
+### FALLBACK-MORTO (primeiro nome certo, resto nunca existiu) — NÃO consertar
+Lista completa no relatório do agente (menu-service, club-service, address-
+service, delivery-service, branch-availability, coupon chains :2668/:2688,
+restaurant-club, api-error). DECISÃO: remoção de fallback defensivo com o nome
+certo em primeiro é limpeza sem teste possível (nada muda), não conserto —
+fica fora do 1.5, anotado. EXCEÇÕES que entram no 1.5: D14/D15 (comportamento
+errado alcançável) e o que o conserto de um D vizinho tocar de graça.
+
+### Fora do contrato de propósito (não mexer)
+- /voice/* (4 rotas): isentas em api-contract.test.js:138-141.
+- delivery.reason: string livre; closed_reason TEM enum e ninguém lê (nota).
+- api-error.js:82-85: prosa desatualizada (PaymentErrorResponse hoje está no
+  spec) — campos lidos existem; corrigir comentário se passar perto.
+
+### Campos que existem e ninguém lê (munição p/ consertos)
+day_label, current_day_label, closed_reason, current_period.opens_at/closes_at,
+status_history, accepts_delivery_now, by_restaurant[], email_verified.
+
+### Ordem do 1.5 (barato → caro), um commit cada salvo mesma tela
+1. D14 (código morto) + D15 (labels do extrato) — baratos, mesmo assunto cashback
+2. D2 verified:false — pequeno e grave
+3. D1 bloco do Perfil inteiro (+ atualizar profile-order-tracking.spec.js que
+   codifica o contrato ERRADO, + D17 se a fonte for API)
+4. D9 banners (imagem certa, tirar title/subtitle fantasma)
+5. D3+D4+D5+D6 horários (mesma vizinhança /info)
+6. D16 email/service_fee_description (vizinho dos horários)
+7. D7 accepts_* por filial
+8. D8 cashback por restaurante
+9. D18 payment_method no tracking (gravar null honesto ou tirar o campo)
+10. D10/D11/D12/D13 → anotar bloqueado-por-backend (D12 morre no 4.4)
 
 ## Inventário de telas (item 3.1) — a preencher
 (pendente)

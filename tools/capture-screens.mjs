@@ -44,7 +44,18 @@ const PROPS = [
   'fontSize', 'fontWeight', 'fontFamily', 'lineHeight', 'letterSpacing',
   'textAlign', 'textTransform', 'whiteSpace',
   'color', 'backgroundColor', 'borderTopWidth', 'borderRightWidth',
-  'borderBottomWidth', 'borderLeftWidth', 'borderTopColor', 'borderTopStyle',
+  'borderBottomWidth', 'borderLeftWidth',
+  // AS QUATRO CORES DE BORDA, e nao so a de cima.
+  //
+  // Por anos esta lista tinha `borderTopColor` sozinha, e a assimetria nao
+  // parecia importar — quem escreve `border:1px solid #eee` pinta os quatro
+  // lados, e a de cima denuncia as outras tres. So que este app quase nao usa
+  // borda inteira: ele usa DIVISORIA, e divisoria e `border-bottom` sozinha.
+  // Um commit que trocou a cor da divisoria de sete cabecalhos passou por esta
+  // ferramenta com "Nenhuma diferenca" — ela nao estava olhando para o unico
+  // lado que mudou.
+  'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+  'borderTopStyle',
   'borderRadius', 'boxShadow', 'transform',
   'flexDirection', 'justifyContent', 'alignItems', 'flexGrow', 'flexShrink',
   'gridTemplateColumns', 'gap'

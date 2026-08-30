@@ -40,7 +40,7 @@
 .products-grid{padding-right:28px!important}
 
 /* Store info modal and login screen based on the mobile references. */
-.store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:var(--surface);border-bottom:1px solid #e9e9e9;flex-shrink:0}
+.store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:var(--surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0}
 .store-info-header h2{color:#1f2933;text-align:center}
 .store-info-close{width:36px;height:36px;border:0;border-radius:12px;background:#f0f0f0;color:#999;font-size:1.3rem;font-weight:700;line-height:1;cursor:pointer}
 .store-info-body{flex:1;overflow:auto;padding:20px 16px 26px;background:#f7f7f7}
@@ -214,7 +214,7 @@
   grid-template-columns:32px 1fr 32px;
   align-items:center;
   padding:0 20px!important;
-  border-bottom:1px solid #f1f1f1;
+  border-bottom:1px solid var(--border-subtle);
   background:var(--surface);
 }
 .coupon-detail-header strong{
@@ -836,7 +836,7 @@ body{
   min-height:70px!important;
   height:auto!important;
   padding:0 20px!important;
-  border-bottom:1px solid rgba(0,0,0,.08);
+  border-bottom:1px solid var(--border-subtle);
 }
 .policy-back{
   width:32px!important;
@@ -4046,7 +4046,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
   min-height:70px!important;
   padding:0 20px!important;
   grid-template-columns:32px 1fr 32px!important;
-  border-bottom:1px solid #f1f1f1!important;
+  border-bottom:1px solid var(--border-subtle)!important;
 }
 #infoModal .store-info-header h2{
   font-size:var(--ref-text-lg)!important;
@@ -5783,7 +5783,7 @@ body.menu-tab .product-card.is-pressing{
     align-items:center!important;
     gap:0!important;
     padding:0 20px!important;
-    border-bottom:1px solid #eeeeee!important;
+    border-bottom:1px solid var(--border-subtle)!important;
     background:var(--surface)!important;
   }
   #profSubajuda .prof-help-header h1{
@@ -5996,7 +5996,7 @@ body.menu-tab .product-card.is-pressing{
     align-items:center!important;
     gap:0!important;
     padding:0 20px!important;
-    border-bottom:1px solid #eeeeee!important;
+    border-bottom:1px solid var(--border-subtle)!important;
     background:var(--surface)!important;
   }
   #profSubmeusdados .prof-manage-header h1,
@@ -6631,7 +6631,7 @@ body.menu-tab .product-card.is-pressing{
     grid-template-columns:32px 1fr 32px;
     align-items:center;
     padding:0 20px;
-    border-bottom:1px solid #eee;
+    border-bottom:1px solid var(--border-subtle);
     background:var(--surface);
   }
   #profSubmeusdados .prof-password-header h1{
@@ -6965,7 +6965,7 @@ body.menu-tab .product-card.is-pressing{
   }
   #profSubmeusdados .prof-data-header{
     box-sizing:border-box;width:100%;height:70px;display:grid;grid-template-columns:32px 1fr 32px;align-items:center;
-    padding:0 20px;border-bottom:1px solid #eee;background:var(--surface);
+    padding:0 20px;border-bottom:1px solid var(--border-subtle);background:var(--surface);
   }
   #profSubmeusdados .prof-data-header h1{margin:0;color:#262626;font-size:var(--ref-text-lg);line-height:20px;font-weight:600;text-align:center}
   #profSubmeusdados .prof-data-back{
@@ -7498,7 +7498,7 @@ body.menu-tab .product-card.is-pressing{
   #paymentMethodModal .payment-method-screen{position:relative!important;display:flex!important;flex-direction:column!important;width:100%!important;max-width:414px!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;background:#f7f5f3!important;transform:translateX(100%)!important;transition:transform .6s ease!important}
   #paymentMethodModal.active.is-entered .payment-method-screen{transform:translateX(0)!important;transition:transform .53s ease!important}
   #paymentMethodModal.active.is-closing{pointer-events:none!important}
-  .payment-method-header{position:relative;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 70px!important;width:100%!important;max-width:414px!important;height:70px!important;padding:0 20px!important;border-bottom:1px solid #f1f1f1!important;background:var(--surface)!important;box-sizing:border-box!important}
+  .payment-method-header{position:relative;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 70px!important;width:100%!important;max-width:414px!important;height:70px!important;padding:0 20px!important;border-bottom:1px solid var(--border-subtle)!important;background:var(--surface)!important;box-sizing:border-box!important}
   .payment-method-header h2{flex:1!important;margin:0!important;color:#404040!important;font-size:var(--ref-text-lg)!important;font-weight:700!important;line-height:20px!important;letter-spacing:0!important;text-align:center!important;font-synthesis:none!important;text-shadow:none}
   .payment-method-back{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 32px!important;width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:9px!important;background:#ececec!important;color:#252a31!important}
   .payment-method-back svg{width:17px!important;height:17px!important;stroke-width:1.8}

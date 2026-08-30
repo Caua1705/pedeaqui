@@ -441,7 +441,7 @@ a{text-decoration:none;color:inherit}
 /* ── NEW CART MODAL ── */
 .modal--cart{display:flex;flex-direction:column}
 /* Cart header */
-.cart-hdr{display:flex;align-items:center;padding:14px 16px 12px;background:var(--surface);border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.cart-hdr{display:flex;align-items:center;padding:14px 16px 12px;background:var(--surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0}
 /* SETA DE VOLTAR — a base, e o que aparece na tela.
    Antes esta regra dizia 36x36 / raio 50% / #f5f5f5, e a de dentro do
    @media(max-width:767px) dizia 40x40 / raio 12px. Nenhuma das duas era o que
@@ -1075,7 +1075,7 @@ a{text-decoration:none;color:inherit}
 .cart-hdr{
   height:56px;
   padding:0 12px 0 8px;
-  border-bottom:1px solid #f0f0f0;
+  border-bottom:1px solid var(--border-subtle);
   flex-shrink:0;
 }
 /* A segunda base (40x40 / 12px) saiu junto: ela existia so para o mobile e era
@@ -1606,7 +1606,7 @@ a{text-decoration:none;color:inherit}
   #cartModal .cart-hdr{
     padding:0 20px!important;
     background:var(--surface)!important;
-    border-bottom:1px solid #ececec!important;
+    border-bottom:1px solid var(--border-subtle)!important;
   }
 /* Seta de voltar e espacador do #cartModal: as regras sairam — repetiam a
    base (.cart-hdr-back / .cart-hdr-spacer: 32x32, 9px, #ececec), e duas

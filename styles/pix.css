@@ -84,7 +84,7 @@
   margin: 0 auto;
   padding: 0 20px;
   background: var(--surface);
-  border-bottom: 1px solid #f1f1f1;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 /* A caixa da seta e o tamanho do ícone vêm da base (.cart-hdr-back em

@@ -106,6 +106,14 @@
   /* Bordas e divisórias */
   --border: #e8e8e8;
   --border-strong: #cccccc;
+  /* A divisória sob o cabeçalho de tela, e SÓ ela. Mais clara que --border de
+     propósito: ela corre a largura inteira embaixo de um título, e no peso de
+     --border a barra lê como uma caixa em volta do cabeçalho em vez de uma
+     linha sob ele.
+     Nasceu com valor decidido, não derivado: dos doze cabeçalhos de 70px, sete
+     cinzas diferentes disputavam esse mesmo pixel (#e2e2e2, #e4e4e4, #ececec,
+     #eeeeee, #f0eeec, #f1f1f1, #e8e8e8). #f1f1f1 era a maioria. */
+  --border-subtle: #f1f1f1;
 
   /* Texto */
   --text-main: #1a1a1a;

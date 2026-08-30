@@ -104,7 +104,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:var(--surface)!important;
-  border-bottom:1px solid #f1f1f1!important;
+  border-bottom:1px solid var(--border-subtle)!important;
 }
 /* Seta de voltar: a regra por id saiu — repetia exatamente a base
    (.cart-hdr-back em restaurant.css: 32x32 / 9px / #ececec). */
@@ -568,7 +568,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:var(--surface)!important;
-  border-bottom:1px solid #e4e4e4!important;
+  border-bottom:1px solid var(--border-subtle)!important;
   flex-shrink:0!important;
 }
 #addAddressModal .cart-hdr-title{
@@ -759,7 +759,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:var(--surface)!important;
-  border-bottom:1px solid #e4e4e4!important;
+  border-bottom:1px solid var(--border-subtle)!important;
   flex-shrink:0!important;
 }
 #addrSearchModal .cart-hdr-title,
@@ -1196,7 +1196,7 @@
   height:70px!important;
   padding:0 20px!important;
   background:var(--surface)!important;
-  border-bottom:1px solid #e2e2e2!important;
+  border-bottom:1px solid var(--border-subtle)!important;
 }
 #addrPickerModal .cart-hdr-back svg{
   width:17px!important;

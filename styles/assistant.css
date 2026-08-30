@@ -2228,7 +2228,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   height:70px!important;
   padding:0 20px!important;
   background:var(--surface)!important;
-  border-bottom:1px solid var(--border)!important;
+  border-bottom:1px solid var(--border-subtle)!important;
   box-sizing:border-box!important;
 }
 #mobViewAssistant .assistant-hdr-btn{

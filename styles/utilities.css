@@ -5710,7 +5710,7 @@ body.menu-tab .product-card.is-pressing{
   #logoutConfirm .addr-delete-yes{
     margin:0!important;
     border:1.5px solid var(--brand-primary)!important;
-    background:#fbfaf9!important;
+    background:var(--surface)!important;
     color:var(--brand-primary)!important;
   }
 }
@@ -6937,7 +6937,7 @@ body.menu-tab .product-card.is-pressing{
     padding:4px 10px!important;
     border:0!important;
     background:transparent!important;
-    color:#ff1f1f!important;
+    color:var(--state-danger-strong)!important;
     font-family:inherit!important;
     font-size:var(--ref-text-sm)!important;
     line-height:16px!important;

@@ -1390,7 +1390,7 @@
 }
 .addr-delete-cancel{
   border:1.5px solid var(--brand-primary)!important;
-  background:#f4f4f4!important;
+  background:var(--surface)!important;
   color:var(--brand-primary)!important;
 }
 

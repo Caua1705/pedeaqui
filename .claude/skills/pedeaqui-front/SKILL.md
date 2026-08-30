@@ -382,6 +382,34 @@ o relógio da página (`clock.install` + **`pauseAt`** — `install()` sozinho n
 para o relógio, e a versão sem `pauseAt` passou com um piso de 900ms injetado de
 propósito). Não há mais nenhuma asserção de `Date.now()` na suíte.
 
+## 4.1 `.addr-delete-yes` e `.addr-delete-cancel` TROCAM DE PAPEL entre telas
+
+NÃO renomeie, não "corrija", não unifique por nome. As duas classes nomeiam a
+POSIÇÃO no par de botões, não a função:
+
+| Tela | `.addr-delete-yes` | `.addr-delete-cancel` |
+|---|---|---|
+| `#addrPickerModal` (apagar endereço) | **vermelho**, apaga | secundário, volta |
+| Sacola (remover item) | **vermelho**, remove | secundário, volta |
+| `#logoutConfirm` (sair da conta) | secundário, **fica** | **primário laranja**, SAI |
+
+No logout os dois invertem: quem tem `yes` no nome é o botão de FICAR, e quem
+tem `cancel` é o que executa a saída. A folha de cada tela repinta por cima
+(`utilities.css`, `#logoutConfirm ...`), e é só por isso que a tela está certa.
+
+Duas consequências práticas:
+
+1. Um `grep .addr-delete-yes` sugere "o botão destrutivo" e está errado em uma
+   das três telas. Antes de mexer, abra a tela.
+2. Uma classe de componente por PAPEL (`.ui-btn-danger`) não pode ser aplicada
+   a essas duas por nome — teria de ser por tela. É exatamente por isso que
+   `styles/components.css` separa FORMA (`.ui-btn`) de PAPEL
+   (`.ui-btn-primary` / `-secondary` / `-danger`): a forma é a mesma nas três
+   telas, o papel não.
+
+Consertar isso é mexer em markup e em três telas de confirmação, e é decisão de
+produto — foi levantado e deixado de propósito em 30/08/2026.
+
 ## 5.1 O CSS, e as quatro ferramentas que respondem por medida
 
 São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em

@@ -79,9 +79,14 @@
   color: var(--brand-on);
 }
 
+/* O fundo e `--surface`, e nao um cinza proprio. Os quatro secundarios deste
+   app tinham quatro brancos-quase: #ffffff no "Ja possuo uma conta", #f4f4f4 no
+   Cancelar de apagar endereco, #f7f5f3 no Cancelar do Pix e #fbfaf9 no Sair do
+   logout. Nenhum era escolha — eram quatro telas calibradas em momentos
+   diferentes, e a diferenca entre eles nao chega a 3% de luminancia. */
 .ui-btn-secondary {
   border: 1.5px solid var(--brand-primary);
-  background: #ffffff;
+  background: var(--surface);
   color: var(--brand-primary);
 }
 

@@ -911,7 +911,7 @@
 
 #pixExitConfirm .pix-sheet-ghost {
   margin-top: 15px;
-  background: #f7f5f3;
+  background: var(--surface);
 }
 
 @media (prefers-reduced-motion: reduce) {

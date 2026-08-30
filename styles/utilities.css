@@ -385,14 +385,7 @@
   box-shadow:0 -6px 16px rgba(0,0,0,.08)!important;
   flex:0 0 95px!important;
 }
-.coupon-detail-use{
-  width:374px!important;
-  max-width:100%!important;
-  height:45px!important;
-  border-radius:10px!important;
-  font-size:var(--ref-text-sm)!important;
-  font-weight:700!important;
-}
+/* A forma do botao "Usar cupom" e `.ui-btn` (styles/components.css). */
 
 /* A escala tipografica (--ref-text-*, --ref-line-*, --ref-font) mudou para
    styles/tokens.css em 29/08/2026, junto com os outros tokens. Ela estava aqui,
@@ -4476,11 +4469,9 @@ body:has(#infoModal.active) .mob-bottom-nav{
   background:transparent!important;
 }
 
-/* Coupon buttons and scroll/animation polish. */
+/* Coupon buttons and scroll/animation polish.
+   A cor de "Usar cupom" e `.ui-btn-primary`; sobra a sombra, que e desta tela. */
 .coupon-detail-use{
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  border:0!important;
   box-shadow:none!important;
 }
 .coupon-use-btn{

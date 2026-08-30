@@ -1517,8 +1517,8 @@
       </div>
     </div>
     <div class="adc-footer">
-      <button class="adc-confirm-btn" id="adcConfirmBtn" data-act-click='adcConfirm' disabled>Confirmar</button>
-      <button class="adc-account-btn" data-act-click='["openLoginScreen","address"]'>Já possuo uma conta</button>
+      <button class="ui-btn ui-btn-primary adc-confirm-btn" id="adcConfirmBtn" data-act-click='adcConfirm' disabled>Confirmar</button>
+      <button class="ui-btn ui-btn-secondary adc-account-btn" data-act-click='["openLoginScreen","address"]'>Já possuo uma conta</button>
     </div>
   </div>
 </div>
@@ -1615,7 +1615,7 @@
       </div>
     </div>
     <div class="addr-map-footer">
-      <button class="adc-confirm-btn" data-act-click='confirmAddrMap'>Confirmar localização</button>
+      <button class="ui-btn ui-btn-primary adc-confirm-btn" data-act-click='confirmAddrMap'>Confirmar localização</button>
     </div>
   </div>
 </div>
@@ -1669,7 +1669,7 @@
       </div>
     </div>
     <div class="addr-det-footer">
-      <button class="adc-confirm-btn" id="addrDetSaveBtn" data-act-click='saveAddressDetails' disabled>Salvar endereço e concluir</button>
+      <button class="ui-btn ui-btn-primary adc-confirm-btn" id="addrDetSaveBtn" data-act-click='saveAddressDetails' disabled>Salvar endereço e concluir</button>
     </div>
   </div>
 </div>
@@ -1703,7 +1703,7 @@
 
 <!-- SCREEN: REGISTER ("Cadastre-se") -->
 <section id="registerScreen" class="reg-screen" aria-label="Cadastre-se">
-  <header class="reg-header">
+  <header class="ui-auth-header">
     <button class="reg-back" type="button" data-act-click='closeRegisterScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -1788,7 +1788,7 @@
 
 <!-- SCREEN: LOGIN ("Entrar") -->
 <section id="loginScreen" class="lgn-screen" aria-label="Entrar">
-  <header class="lgn-header">
+  <header class="ui-auth-header">
     <button class="lgn-back" type="button" data-act-click='closeSigninScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -1830,7 +1830,7 @@
 
 <!-- SCREEN: CODE VERIFICATION (email verification / password reset) -->
 <section id="verifyScreen" class="vfy-screen" aria-label="Validação de e-mail">
-  <header class="vfy-header">
+  <header class="ui-auth-header">
     <button class="vfy-back" type="button" data-act-click='closeVerifyScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -1870,7 +1870,7 @@
 
 <!-- SCREEN: NEW PASSWORD (password reset step 3) -->
 <section id="resetPasswordScreen" class="vfy-screen" aria-label="Recuperar senha">
-  <header class="vfy-header">
+  <header class="ui-auth-header">
     <button class="vfy-back" type="button" data-act-click='closeResetPasswordScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -1909,7 +1909,7 @@
 
 <!-- SCREEN: FORGOT PASSWORD (request reset code) -->
 <section id="forgotPasswordScreen" class="vfy-screen" aria-label="Redefina sua senha">
-  <header class="vfy-header">
+  <header class="ui-auth-header">
     <button class="vfy-back" type="button" data-act-click='closeForgotPasswordScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -1937,7 +1937,7 @@
 
 <!-- SCREEN: RECOVER PASSWORD — code step (own screen, not the e-mail verify one) -->
 <section id="recoverCodeScreen" class="vfy-screen" aria-label="Redefina sua senha">
-  <header class="vfy-header">
+  <header class="ui-auth-header">
     <button class="vfy-back" type="button" data-act-click='closeRecoverCodeScreen' aria-label="Voltar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
@@ -2012,7 +2012,7 @@
       </div>
     </div>
     <footer class="coupon-detail-footer">
-      <button class="coupon-detail-use" data-act-click='confirmCouponDetail'>Usar cupom</button>
+      <button class="ui-btn ui-btn-primary coupon-detail-use" data-act-click='confirmCouponDetail'>Usar cupom</button>
     </footer>
   </section>
 </div>

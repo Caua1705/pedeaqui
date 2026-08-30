@@ -700,19 +700,13 @@
   box-shadow:none!important;
 }
 
-/* Confirm button */
+/* Confirm button. A forma e a cor sao `.ui-btn .ui-btn-primary`
+   (styles/components.css); aqui fica so o que e desta tela.
+   `font-family:inherit` continua com `!important` porque tem adversario:
+   `utilities.css:394` impoe `--ref-font` a todo <button> com !important, e
+   sem este marcador o botao troca de fonte. */
 .adc-confirm-btn{
-  width:374px!important;
-  max-width:100%!important;
-  height:45px!important;
-  border:none!important;
-  border-radius:10px!important;
-  font-size:var(--ref-text-sm)!important;
-  font-weight:700!important;
   font-family:inherit!important;
-  background:var(--brand-primary)!important;
-  color:var(--brand-on)!important;
-  cursor:pointer!important;
   transition:background .15s!important;
   margin-top:4px!important;
 }
@@ -724,19 +718,11 @@
 }
 .adc-confirm-btn:not(:disabled):active{background:var(--brand-hover)!important}
 
-/* "Já possuo uma conta" outlined button */
+/* "Já possuo uma conta". Forma e cor sao `.ui-btn .ui-btn-secondary`
+   (styles/components.css); aqui fica so o que e desta tela. Sobre o
+   `font-family`, ver o comentario de `.adc-confirm-btn` acima. */
 .adc-account-btn{
-  width:374px!important;
-  max-width:100%!important;
-  height:45px!important;
-  border:1.5px solid var(--brand-primary)!important;
-  border-radius:10px!important;
-  background:#fff!important;
-  color:var(--brand-primary)!important;
-  font-size:var(--ref-text-sm)!important;
-  font-weight:700!important;
   font-family:inherit!important;
-  cursor:pointer!important;
   transition:background .15s!important;
   margin-top:2px!important;
 }

@@ -1,5 +1,98 @@
 .is-hidden { display: none !important; }
 
+/* ══ Componentes ═══════════════════════════════════════════════════════════
+
+   O que mora aqui é o que MAIS DE UMA TELA usa com o MESMO valor. O critério
+   não é "parece um cabeçalho": é o valor computado medido nas telas abertas
+   (`node tools/ui-inventory.mjs`, que agrupa por forma e não por classe).
+
+   Onde as telas DISCORDAM do valor, a divergência fica na folha da tela, com
+   um comentário dizendo qual é. Uma classe de componente que engole a
+   divergência não a resolve — ela a esconde, e a tela muda de aparência sem
+   ninguém ter decidido isso. Juntar é decisão de produto; medir é nossa.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cabeçalho das telas de conta ──
+
+   Entrar, Cadastre-se e as quatro telas de verificação. São 85px, e isso NÃO é
+   o cabeçalho de 70px do app — são dois sistemas de propósito, e juntá-los
+   mudaria a altura de todas as telas de um dos dois lados.
+
+   As três regras que isto substitui (`.lgn-header`, `.reg-header`,
+   `.vfy-header`, uma em cada folha) eram BYTE A BYTE iguais. Não havia
+   divergência para decidir: havia a mesma decisão escrita três vezes, em três
+   arquivos, e três lugares onde mudá-la pela metade. */
+.ui-auth-header {
+  position: relative;
+  flex-shrink: 0;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-bottom: 1px solid #dedede;
+}
+
+/* ── Botão de confirmação de tela ──
+
+   A forma medida em 24 botões primários: 374px de largura (com teto na tela),
+   45px de altura, raio 10, `--ref-text-sm` em 700. É a maioria, não um gosto:
+   `.adc-confirm-btn`, `.adc-account-btn`, `.addr-delete-yes`,
+   `.addr-delete-cancel`, `.coupon-detail-use` e `#pixExitConfirm .pix-sheet-*`
+   já chegavam exatamente nela, cada um por um caminho próprio.
+
+   `.ui-btn` é só a FORMA. A cor é o papel, e vem de uma das três classes
+   abaixo — dessa separação sai a resposta para o caso que existe neste app: as
+   MESMAS duas classes trocam de papel entre telas. Em `#addrPickerModal`,
+   `.addr-delete-yes` é o botão vermelho de apagar e `.addr-delete-cancel` é o
+   secundário; em `#logoutConfirm`, `.addr-delete-cancel` é o primário laranja
+   e `.addr-delete-yes` é o secundário. As classes nomeiam a POSIÇÃO no par, e
+   a folha de cada tela repinta por cima. Não foram tocadas aqui: trocar isso
+   mexe em markup e em três telas de confirmação, e é decisão de produto.
+
+   Sem `!important`, e `font-family` FORA. As regras substituídas tinham as
+   duas coisas, e a captura mostrou por quê: `utilities.css:394` declara
+   `body,button,input,textarea,select{font-family:var(--ref-font)!important}`,
+   e é contra ESSA linha que `.adc-confirm-btn{font-family:inherit!important}`
+   existia. Trazer `font-family:inherit` para cá sem `!important` perdia dela
+   (`Inter, sans-serif` virou `Inter, Arial, sans-serif`); trazer COM
+   `!important` mudaria `.coupon-detail-use`, que nunca teve essa declaração e
+   herda de `--ref-font` de propósito. Então `font-family` não é valor
+   compartilhado: é uma divergência entre estes botões, e fica na folha de cada
+   tela, nomeando o adversário. O resto das declarações não disputa com
+   ninguém — a captura no commit mostra a diferença zero. */
+.ui-btn {
+  width: 374px;
+  max-width: 100%;
+  height: 45px;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--ref-text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ui-btn-primary {
+  background: var(--brand-primary);
+  /* `--brand-on` é calculado por luminosidade em brand-theme.js: numa marca
+     clara ele vira texto escuro. Fixar #fff aqui quebraria essas marcas. */
+  color: var(--brand-on);
+}
+
+.ui-btn-secondary {
+  border: 1.5px solid var(--brand-primary);
+  background: #ffffff;
+  color: var(--brand-primary);
+}
+
+/* Vermelho, e não a primária: apagar não pode parecer confirmar. É a única
+   cor de estado que este app usa em botão — ver `--state-danger-strong` em
+   tokens.css, que existe justamente para não haver um vermelho por tela. */
+.ui-btn-danger {
+  background: var(--state-danger-strong);
+  color: #ffffff;
+}
+
 /* ── Aviso curto do app ──
 
    Fica acima da barra de navegação e abaixo dos modais: ele acompanha uma ação

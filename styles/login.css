@@ -22,17 +22,8 @@
 }
 .lgn-screen.active { display: flex; }
 
-/* ---------- Header (414 x 85) ---------- */
-.lgn-header {
-  position: relative;
-  flex-shrink: 0;
-  height: 85px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #FFFFFF;
-  border-bottom: 1px solid #DEDEDE;
-}
+/* O cabecalho (414 x 85) e `.ui-auth-header`, em styles/components.css: as tres
+   telas de conta escreviam a mesma regra byte a byte, cada uma na sua folha. */
 .lgn-back {
   position: absolute;
   left: 14px;

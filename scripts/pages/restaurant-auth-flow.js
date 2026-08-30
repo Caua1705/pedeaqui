@@ -614,15 +614,22 @@
         openResetPasswordScreen(res?.reset_token, verifyCtx.email);
       } else {
         const res = await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
-        stopVfyTimer();
-        const fallbackCustomer = verifyCtx.customer || { email: verifyCtx.email };
-        const verifiedCustomer = customerFromAuthResponse(res, fallbackCustomer);
-        const accessToken = tokenFromAuthResponse(res);
-        if (accessToken) {
-          applyLoggedSession(accessToken, verifiedCustomer);
-          await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
+        // VerifyEmailCodeResponse é {message, verified} — e NADA mais. Este
+        // bloco lia oito nomes que nunca existiram (res.customer, res.user,
+        // res.access_token...) e nunca lia `verified`: um 200 com
+        // verified:false — o backend dizendo "código errado" — fechava a tela
+        // como sucesso. Mesma lição do cupom: 200 não é sucesso, o veredito
+        // mora no corpo.
+        if (res?.verified === false) {
+          $('verifyScreen')?.classList.add('vfy-error');
+          showVfyMsg(res?.message || 'O código de verificação é inválido ou expirou!', 'error');
+          return;
         }
-        else if (verifiedCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(verifiedCustomer);
+        stopVfyTimer();
+        // Não vem token: verificação não loga. A conta local do fluxo de
+        // cadastro é o que o cliente digitou (verifyCtx.customer).
+        const localCustomer = verifyCtx.customer || { email: verifyCtx.email };
+        if (localCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(localCustomer);
         $('verifyScreen')?.classList.remove('active');
         goToInitialScreenAfterAuth();
       }
@@ -1049,14 +1056,6 @@
     });
     window.PedeAquiCustomerAuth?.setStoredCustomer?.(apiCustomer);
     appState.profileLoaded = false;
-  }
-
-  function tokenFromAuthResponse(res) {
-    return res?.access_token || res?.token || res?.accessToken || res?.auth?.access_token || '';
-  }
-
-  function customerFromAuthResponse(res, fallback = {}) {
-    return res?.customer || res?.user || res?.data?.customer || res?.data?.user || fallback;
   }
 
   function goToInitialScreenAfterAuth() {

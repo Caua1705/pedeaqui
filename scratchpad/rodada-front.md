@@ -50,12 +50,13 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
         (+cancelled, -used/-refund). Spec novo cashback-statement.spec.js
         (2 testes) visto VERMELHO (cancelled→'Movimentação de cashback') e
         verde após conserto. Captura 59 telas: 'Nenhuma diferença'.
-      · Conserto 2 (D2 verified:false) codificado: submitVerify lê `verified`;
-        helpers mortos (tokenFromAuthResponse/customerFromAuthResponse)
-        removidos. Spec novo verify-email-code.spec.js (2 testes) visto
-        VERMELHO contra o dist velho (a tela fechava como sucesso) na suíte
-        completa: 267 passed + 1 failed (só ele) + 3 skipped. Falta: rebuild,
-        spec verde, commit.
+      · Conserto 2 (D2 verified:false) FEITO: submitVerify lê `verified`
+        (200 com false = recusa, mensagem do backend na tela); helpers mortos
+        (tokenFromAuthResponse/customerFromAuthResponse) removidos. Spec
+        verify-email-code.spec.js visto VERMELHO contra o dist velho (tela
+        fechava como sucesso) e verde 6/6 (--repeat-each=3) após o conserto.
+        Lição de spec: dígito com auto-avanço de foco não aceita fill() por
+        campo — digitar pelo teclado (page.keyboard.type).
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
 - [ ] 2.1 scripts/utils/screen-kit.js (14 ferramentas: esc, fmt, fallback, $,

@@ -19,6 +19,38 @@ const headerValue = (key) =>
 
 const CSP = headerValue('Content-Security-Policy');
 
+/**
+ * Espera a tela PARAR de mudar, em vez de esperar um numero de milissegundos.
+ *
+ * Aqui havia `waitForTimeout(1200)` depois do boot e `waitForTimeout(250)` a
+ * cada troca de tela. Este teste falha ao contrario dos outros: relogio curto
+ * demais nao o deixa vermelho, deixa CEGO. A violacao que chegasse aos 300ms
+ * numa maquina ocupada nunca entrava em `__cspViolations`, e o teste que existe
+ * para provar que a CSP de producao nao bloqueia nada passava dizendo que
+ * estava tudo bem porque nao olhou. Passar pelo motivo errado, na guarda de
+ * seguranca do arquivo — o pior lugar para isso acontecer.
+ *
+ * O criterio agora e observavel: o DOM parou de mutar E nenhuma violacao nova
+ * chegou, por tres leituras seguidas. Numa maquina lenta isto espera MAIS, que
+ * e exatamente o contrario do que o relogio fixo fazia.
+ */
+async function aguardarSilencio(page, leiturasQuietas = 3) {
+  let anterior = null;
+  let quietas = 0;
+  const limite = Date.now() + 15_000;
+  while (quietas < leiturasQuietas) {
+    if (Date.now() > limite) throw new Error('a tela nao parou de mudar em 15s');
+    const atual = await page.evaluate(
+      () => `${window.__domMutations}:${window.__cspViolations.length}`
+    );
+    quietas = atual === anterior ? quietas + 1 : 0;
+    anterior = atual;
+    // 60ms nao e um prazo: e o intervalo entre AMOSTRAS. Se a tela ainda
+    // estiver mudando, o laco continua — nao ha teto de espera embutido.
+    await page.waitForTimeout(60);
+  }
+}
+
 /** Serve o documento com os headers reais de produção e coleta as violações. */
 async function bootUnderCsp(page) {
   const violations = [];
@@ -33,6 +65,12 @@ async function bootUnderCsp(page) {
         sample: event.sample || ''
       });
     });
+    // Contador de mutacoes do DOM. E ele que diz se a tela TERMINOU de montar
+    // o markup gerado em runtime — que e onde um style/script inline
+    // reapareceria. Ver aguardarSilencio().
+    window.__domMutations = 0;
+    new MutationObserver((records) => { window.__domMutations += records.length; })
+      .observe(document.documentElement, { childList: true, subtree: true, attributes: true });
   });
 
   page.on('console', (message) => {
@@ -52,7 +90,7 @@ async function bootUnderCsp(page) {
 
   await page.goto(`/restaurant.html?slug=${SLUG}`);
   await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
-  await page.waitForTimeout(1200); // deixa o boot assíncrono terminar
+  await aguardarSilencio(page);
 
   // A home sozinha exercita pouca coisa. Estas telas montam markup gerado em
   // runtime — que é justamente onde um style/script inline reapareceria.
@@ -71,7 +109,7 @@ async function bootUnderCsp(page) {
   ];
   for (const go of screens) {
     await page.evaluate(go).catch(() => {});
-    await page.waitForTimeout(250);
+    await aguardarSilencio(page);
   }
 
   violations.push(...(await page.evaluate(() => window.__cspViolations)));

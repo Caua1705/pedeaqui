@@ -68,18 +68,27 @@ test('SDK lento: a tela abre na hora, os campos dizem Carregando e ficam prontos
   await seedLoggedDelivery(page);
   await mockCustomerRoutes(page);
   // 3G ruim. Nesse intervalo inteiro o cliente NÃO pode ler mensagem de erro.
+  //
+  // O atraso e uma COMPORTA, nao um `setTimeout(3500)`. Com o relogio, o teste
+  // dizia "a tela abriu em menos de 2s" — e 2s numa maquina ocupada nao prova
+  // que a tela nao esperou o SDK, prova que a maquina estava livre. Com a
+  // comporta, tudo o que este teste afirma acontece com o download do SDK
+  // COMPROVADAMENTE pendente: nao ha janela de tempo em que ele pudesse ter
+  // chegado antes, em maquina nenhuma. E a suite deixa de gastar 3,5s parada.
+  let liberarSdk;
+  const sdkComporta = new Promise(resolve => { liberarSdk = resolve; });
+  let sdkPedido = false;
   await page.route('https://sdk.mercadopago.com/**', async (route) => {
-    await new Promise(resolve => setTimeout(resolve, 3500));
+    sdkPedido = true;
+    await sdkComporta;
     return route.continue();
   });
 
   await openPaymentScreen(page);
-  const clickedAt = Date.now();
   await page.locator('#addCreditCardOption').click();
 
   // A tela não espera SDK nenhum para existir.
   await expect(page.locator('#creditCardModal')).toHaveClass(/active/, { timeout: 2_000 });
-  expect(Date.now() - clickedAt).toBeLessThan(2_000);
 
   await expect(page.locator('#mpCardNumber')).toHaveClass(/is-loading/);
   await expect(page.locator('#mpCardNumber')).toHaveAttribute('aria-busy', 'true');
@@ -94,6 +103,12 @@ test('SDK lento: a tela abre na hora, os campos dizem Carregando e ficam prontos
   // Salvar não convida a enviar um formulário que ainda não tem como tokenizar.
   await expect(page.locator('#saveCreditCardButton')).toBeDisabled();
 
+  // Tudo acima valeu com o SDK ainda preso na comporta. Esta linha e o que
+  // torna a afirmacao honesta: se o app tivesse deixado de baixar o SDK, o
+  // teste inteiro passaria de graca.
+  expect(sdkPedido, 'o app nem chegou a pedir o SDK — o teste acima nao provou nada').toBe(true);
+
+  liberarSdk();
   await expect(page.locator('#mpCardNumber')).not.toHaveClass(/is-loading/, { timeout: 60_000 });
   await expect(page.locator('#mpCardNumber iframe')).toHaveCount(1);
   await expect(page.locator('#mpCardNumber')).not.toHaveClass(/has-load-error/);

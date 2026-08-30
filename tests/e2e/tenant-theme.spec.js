@@ -175,17 +175,41 @@ test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por
     });
   });
 
+  // O RELOGIO DA PAGINA FICA PARADO o teste inteiro.
+  //
+  // Antes daqui havia `expect(Date.now() - releasedAt).toBeLessThan(900)`, e
+  // ele nao media o app: media a maquina. Passava sozinho e caia com a suite em
+  // paralelo (1200ms medidos contra o teto de 900, na rodada de 29/08/2026), e o
+  // `retries: 1` do CI escondia — um teste que so falha quando a maquina esta
+  // ocupada nao esta afirmando nada sobre o codigo.
+  //
+  // Congelar o relogio troca "foi rapido o bastante" por "nao depende de tempo
+  // nenhum", que e literalmente o que o titulo do teste promete. Com Date,
+  // setTimeout, setInterval e rAF parados, um piso de tempo que volte a existir
+  // NUNCA elapsa: o teste falha por timeout, em qualquer maquina, sempre.
+  //
+  // `install()` SOZINHO NAO BASTA — e foi o primeiro erro desta correcao. Ele
+  // troca os timers pelos falsos, mas o relogio continua andando: com um piso de
+  // 900ms injetado de proposito no boot, a versao com so `install()` passou.
+  // Um teste-fantasma no lugar do flaky teria sido troca ruim. Quem para o
+  // relogio e `pauseAt`.
+  // O instante e fixo e o mesmo nos dois: `pauseAt` so anda para a frente, e
+  // uma data anterior a de instalacao e erro ("Cannot fast-forward to the past").
+  const INSTANTE = new Date('2026-08-29T12:00:00Z');
+  await page.clock.install({ time: INSTANTE });
+  await page.clock.pauseAt(INSTANTE);
+
   // `commit` porque as imagens ficam pendentes de propósito: o evento `load`
   // da página nunca chegaria, e não é dele que este teste trata.
   await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil: 'commit' });
   await expect(page.locator('body')).toHaveClass(/app-booting/);
 
-  // Mede a partir da RESPOSTA, não do início da navegação: assim o limite
-  // afere a espera do app, e não a velocidade da máquina que roda o teste.
-  const releasedAt = Date.now();
   releaseMenu();
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
-  expect(Date.now() - releasedAt).toBeLessThan(900);
+
+  // toHaveClass reavalia PELO PROTOCOLO, de fora da pagina — funciona com o
+  // relogio parado. `waitForFunction`, que fazia polling por rAF DENTRO da
+  // pagina, nao funcionaria: o rAF tambem esta congelado.
+  await expect(page.locator('body')).not.toHaveClass(/app-booting/);
 });
 
 test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {

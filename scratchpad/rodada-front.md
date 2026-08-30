@@ -31,7 +31,11 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       Portões: lint 0 err · typecheck ok · 252 unit · E2E 264 passed/3 skipped.
       ATENÇÃO: os "3 E2E vermelhos herdados" (4.3) NÃO apareceram vermelhos —
       suíte saiu 0. Conferir no 4.3 se são os 3 skipped ou se já foram consertados.
-- [ ] 1.2 capture-screens.mjs: /customers/me/orders com fixture real (não json([]))
+- [x] 1.2 capture-screens.mjs: logado() responde ORDERS/CUSTOMER/orderDetail
+      (rota do detalhe registrada DEPOIS da lista — última vence). Tela nova
+      perfil-pedido-detalhe. Provado rodando: 59 telas, perfil-pedidos 1516
+      elementos, perfil-pedido-detalhe 1568. Baseline desta rodada:
+      scratchpad da sessão, captura-1_2.json.
 - [x] 1.3 tests/fixtures/orders.json — CustomerOrderHistoryItem[] com nomes DO
       CONTRATO. 3 pedidos: #3001 pending (ativo) c/ option_groups (unit_price_
       snapshot JÁ inclui o adicional: 117.5+8.5=126.0), #3002 delivered de OUTRA

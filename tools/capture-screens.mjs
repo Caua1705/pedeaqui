@@ -29,7 +29,7 @@
 // ============================================================================
 import { chromium } from '@playwright/test';
 import { writeFileSync, readFileSync } from 'node:fs';
-import { mockApi, RESTAURANT_URL, PRODUCT_H2O, SLUG, BRANCH_MATRIZ, MENU, COUPONS, pixOrder, seedPickupSession, seedOnlineCardBranch } from '../tests/e2e/helpers.js';
+import { mockApi, RESTAURANT_URL, PRODUCT_H2O, SLUG, BRANCH_MATRIZ, MENU, COUPONS, ORDERS, CUSTOMER, orderDetail, pixOrder, seedPickupSession, seedOnlineCardBranch } from '../tests/e2e/helpers.js';
 
 const BASE = process.env.CAPTURE_BASE_URL || 'http://127.0.0.1:4174';
 
@@ -151,10 +151,21 @@ const json = (body, status = 200) => ({
 /** Sessao COM conta: o Clube, o extrato e as subpaginas do perfil exigem token. */
 async function logado(page) {
   await page.addInitScript(() => localStorage.setItem('rapidex.customer.token', 'captura-token'));
-  await page.route(/\/customers\/me(?:\?|$)/, route =>
-    route.fulfill(json({ id: 'captura-cliente', name: 'Captura', phone: '85999999999', email: 'captura@exemplo.com' })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json(CUSTOMER)));
   await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
-  await page.route('**/customers/me/orders**', route => route.fulfill(json([])));
+  // O histórico REAL, não `json([])`: com a lista vazia esta ferramenta
+  // capturava só o estado "Nenhum pedido encontrado" e assinava "nenhuma
+  // diferença" para qualquer mudança nos cards, no detalhe e nos valores.
+  // O fixture é o do contrato (orders.json). A rota do DETALHE vem por último
+  // de propósito: em page.route a última registrada vence.
+  await page.route('**/customers/me/orders**', route => route.fulfill(json(ORDERS)));
+  await page.route('**/customers/me/orders/*', route => {
+    const url = route.request().url();
+    const id = url.match(/\/customers\/me\/orders\/([^/?]+)/)?.[1];
+    const order = ORDERS.find(item => item.id === id);
+    if (!order) return route.fulfill(json({ detail: 'Pedido não encontrado' }, 404));
+    return route.fulfill(json(orderDetail(order)));
+  });
 }
 
 /** A lista de cupons nos tres estados do contrato (o mock responde vazio por padrao). */
@@ -555,6 +566,23 @@ export const SCREENS = [
       await esperar(page, '#mobViewProfile.active');
       await act(page, 'openProfSub', 'pedidos');
       await esperar(page, '#profSubpedidos.active');
+      await page.waitForTimeout(700);
+    }
+  },
+  {
+    // O detalhe de um pedido do historico — a tela onde moravam os campos
+    // fantasma (item.name, unit_price, selected_options_snapshot). Nunca tinha
+    // sido capturada porque a lista respondia [] e nao havia card para abrir.
+    name: 'perfil-pedido-detalhe',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'openProfSub', 'pedidos');
+      await esperar(page, '#profSubpedidos.active');
+      await act(page, 'openProfOrderDetails', 0);
+      await esperar(page, '#profOrderDetail.active');
       await page.waitForTimeout(700);
     }
   },

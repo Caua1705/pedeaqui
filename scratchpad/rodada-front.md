@@ -22,11 +22,15 @@ E2E vermelhos HERDADOS (item 4.3 conserta): order-flow:42, pix-payment:576, :736
 Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] bloqueado
 
 ### Fase 1 — enxergar antes de mexer
-- [~] 1.1 helpers.js:177 `/customers/me*` → responder logado (fixture de customer).
-      Desenho decidido: mock espelha o backend — SEM Authorization → 401 (guest
-      continua guest); COM Authorization → fixtures (me, orders, orders/:id,
-      addresses [], cashback contrato, cards []); subrota desconhecida → catch-all
-      404. Specs que sobrepõem depois de mockApi continuam vencendo (última vence).
+- [x] 1.1 helpers.js:177 `/customers/me*` → mock espelha o backend: SEM
+      Authorization → 401 (guest continua guest); COM → fixtures do contrato
+      (CUSTOMER, ORDERS, orderDetail(), addresses [], cashback, cards []);
+      subrota desconhecida → catch-all 404 + rotasDesconhecidas. Specs que
+      sobrepõem depois de mockApi() continuam vencendo. Exports novos:
+      ORDERS, CUSTOMER, orderDetail(order, overrides).
+      Portões: lint 0 err · typecheck ok · 252 unit · E2E 264 passed/3 skipped.
+      ATENÇÃO: os "3 E2E vermelhos herdados" (4.3) NÃO apareceram vermelhos —
+      suíte saiu 0. Conferir no 4.3 se são os 3 skipped ou se já foram consertados.
 - [ ] 1.2 capture-screens.mjs: /customers/me/orders com fixture real (não json([]))
 - [x] 1.3 tests/fixtures/orders.json — CustomerOrderHistoryItem[] com nomes DO
       CONTRATO. 3 pedidos: #3001 pending (ativo) c/ option_groups (unit_price_

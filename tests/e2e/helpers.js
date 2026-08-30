@@ -23,6 +23,66 @@ export const INFO = readFixture('info.json');
  */
 export const COUPONS = readFixture('coupons.json');
 
+/**
+ * O histórico de pedidos do cliente (GET /customers/me/orders), com os nomes
+ * DO CONTRATO — CustomerOrderHistoryItem / OrderItemResponse do api.d.ts.
+ *
+ * Antes deste fixture a rota respondia 401 (aqui) ou `[]` (na captura), e a
+ * suíte inteira nunca DESENHOU um pedido — a mesma fresta do cupom vazio.
+ * Os nomes são parte do teste: `product_name_snapshot`, `unit_price_snapshot`
+ * (que JÁ inclui os adicionais), `option_groups[].options[].option_name_snapshot`,
+ * e os descontos como STRING decimal. Um pedido tem `product_id: null`
+ * (produto que saiu do cardápio) de propósito.
+ */
+export const ORDERS = readFixture('orders.json');
+
+/** CurrentCustomerResponse de /customers/me — a conta é do Rapidex, global. */
+export const CUSTOMER = {
+  id: 'c0ffee00-0000-4000-8000-000000000001',
+  name: 'Cliente E2E',
+  phone: '85999990000',
+  email: 'cliente.e2e@exemplo.com',
+  email_verified: true,
+  birth_date: '1990-04-12',
+  marketing_opt_in: false
+};
+
+/**
+ * OrderDetailResponse (GET /customers/me/orders/{id}) montado a partir de um
+ * item do histórico. O detalhe NÃO tem `branch_name`/`restaurant_name` — quem
+ * mostra esses dois é o item da lista, e o app mescla os dois lados. O endereço
+ * vem FLAT (`address_street`...), que é a única forma que o contrato conhece.
+ */
+export function orderDetail(order, overrides = {}) {
+  const base = { ...order };
+  delete base.branch_name;
+  delete base.restaurant_name;
+  return {
+    ...base,
+    branch_id: BRANCH_MATRIZ,
+    restaurant_id: 'aaaa0000-0000-4000-8000-000000000001',
+    customer_id: CUSTOMER.id,
+    customer_name_snapshot: CUSTOMER.name,
+    customer_phone_snapshot: CUSTOMER.phone,
+    customer_address_id: order.order_type === 'delivery' ? 'addre550-0000-4000-8000-000000000001' : null,
+    payment_status: order.status === 'pending' ? 'pending' : 'not_required',
+    payment_flow: 'delivery',
+    payment_method: 'cash',
+    address_street: order.order_type === 'delivery' ? 'Rua Silva Paulet' : null,
+    address_number: order.order_type === 'delivery' ? '450' : null,
+    address_neighborhood: order.order_type === 'delivery' ? 'Aldeota' : null,
+    address_city: order.order_type === 'delivery' ? 'Fortaleza' : null,
+    address_state: order.order_type === 'delivery' ? 'CE' : null,
+    address_zipcode: order.order_type === 'delivery' ? '60120-020' : null,
+    notes: null,
+    updated_at: order.created_at,
+    status_history: [
+      { id: '57a70000-0000-4000-8000-000000000001', status: order.status, created_at: order.created_at, changed_by: null, note: null }
+    ],
+    ...overrides
+  };
+}
+
 export const SLUG = 'junior-da-picanha';
 export const BRANCH_MATRIZ = '4b054122-ee72-424c-817c-110f02c6b994';
 export const BRANCH_VARJOTA = '81b11c6b-8f9c-4a45-9a7f-fc25e781dfc6';
@@ -174,7 +234,49 @@ export async function mockApi(page, {
       // O padrão é a lista VAZIA, como era antes: quem quer cards pede.
       return route.fulfill(json({ coupons: [] }));
     }
-    if (/\/customers\/me/.test(url)) return route.fulfill(json({}, 401));
+    // ── /customers/me*: o mock espelha o BACKEND, não um estado fixo ──
+    //
+    // Isto era `return route.fulfill(json({}, 401))` para TUDO sob
+    // /customers/me — com ou sem token. O efeito: a suíte inteira nunca
+    // desenhou um pedido, um endereço salvo ou um perfil preenchido, e o
+    // detalhe do pedido pôde ler `item.name`/`item.unit_price` (campos que a
+    // API não tem) por meses sem nenhum teste reclamar.
+    //
+    // Agora a resposta depende do que o backend olharia: o header
+    // Authorization. Sem ele, 401 — visitante continua visitante. Com ele,
+    // fixtures com os nomes do contrato. Subrota que não está aqui cai no
+    // catch-all 404 e aparece em `rotasDesconhecidas`. Specs que sobrepõem
+    // rotas DEPOIS de mockApi() continuam vencendo (a última registrada vence).
+    if (/\/customers\/me/.test(url)) {
+      if (!request.headers()['authorization']) {
+        return route.fulfill(json({ detail: 'Não autenticado' }, 401));
+      }
+      const orderIdMatch = url.match(/\/customers\/me\/orders\/([^/?]+)/);
+      if (method === 'GET' && orderIdMatch) {
+        const order = ORDERS.find(item => item.id === orderIdMatch[1]);
+        if (!order) return route.fulfill(json({ detail: 'Pedido não encontrado' }, 404));
+        return route.fulfill(json(orderDetail(order)));
+      }
+      if (method === 'GET' && /\/customers\/me\/orders(\?|$)/.test(url)) {
+        return route.fulfill(json(ORDERS));
+      }
+      if (method === 'GET' && /\/customers\/me\/addresses(\?|$)/.test(url)) {
+        return route.fulfill(json([]));
+      }
+      if (method === 'GET' && /\/customers\/me\/cashback\/transactions/.test(url)) {
+        return route.fulfill(json({ balance: 0, currency: 'BRL', transactions: [] }));
+      }
+      if (method === 'GET' && /\/customers\/me\/cashback(\?|$)/.test(url)) {
+        return route.fulfill(json({ balance: 0, currency: 'BRL', by_restaurant: [] }));
+      }
+      if (method === 'GET' && /\/customers\/me\/cards(\?|$)/.test(url)) {
+        return route.fulfill(json([]));
+      }
+      if (method === 'GET' && /\/customers\/me(\?|$)/.test(url)) {
+        return route.fulfill(json(CUSTOMER));
+      }
+      // POST/PATCH/DELETE e subrotas não declaradas: catch-all lá embaixo.
+    }
 
     // ── QUALQUER OUTRA COISA: 404, e o endereço fica gravado ──
     //

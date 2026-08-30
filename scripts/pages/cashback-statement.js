@@ -5,8 +5,14 @@
   // mostra o sinal como prefixo ("- R$ 10,00"), entao o numero vem sem ele.
   const money=(value,currency)=>window.PedeAquiCurrency.formatCurrency(Math.abs(Number(value)||0),currency||'BRL');
   const date=value=>{if(!value)return '';const raw=String(value);const d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?new Date(raw+'T12:00:00'):new Date(raw);return Number.isNaN(d.getTime())?'':d.toLocaleDateString('pt-BR')};
-  const debit=item=>Number(item.amount)<0||['redeemed','used'].includes(String(item.type||'').toLowerCase());
-  const fallback=type=>({earned:'Crédito de cashback',redeemed:'Uso de saldo',used:'Uso de saldo',adjustment:'Lançamento de crédito',expired:'Cashback expirado',refund:'Estorno de cashback'})[String(type||'').toLowerCase()]||'Movimentação de cashback';
+  // O enum de `type` no contrato (CashbackTransactionResponse) é
+  // earned|redeemed|expired|cancelled|adjustment. Este mapa já teve 'used' e
+  // 'refund' — valores que a API nunca emite ('used' é valor de STATUS) — e
+  // NÃO tinha 'cancelled', que ela emite: a linha cancelada saía com o rótulo
+  // genérico de tipo desconhecido. Nenhum teste via porque nenhum e2e abria o
+  // modal; agora tests/e2e/cashback-statement.spec.js afirma os cinco.
+  const debit=item=>Number(item.amount)<0||String(item.type||'').toLowerCase()==='redeemed';
+  const fallback=type=>({earned:'Crédito de cashback',redeemed:'Uso de saldo',adjustment:'Lançamento de crédito',expired:'Cashback expirado',cancelled:'Cashback cancelado'})[String(type||'').toLowerCase()]||'Movimentação de cashback';
   function summary(show,balance,currency){const el=$('cashbackStatementSummary'),value=$('cashbackStatementBalance');if(el)el.hidden=!show;if(show&&value)value.textContent=money(balance,currency||'BRL')}
   // Fase 4/B1: as linhas do extrato são construídas por DOM, não por template.
   // A versão anterior interpolava item.description e item.restaurant_name via

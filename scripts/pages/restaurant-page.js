@@ -504,138 +504,14 @@
     return window.PedeAquiClubService?.getCashback?.(options) || Promise.resolve(null);
   }
 
-  function cashbackTransactionLabel(type) {
-    return ({
-      earned: 'Cashback recebido',
-      redeemed: 'Cashback utilizado',
-      expired: 'Cashback expirado',
-      cancelled: 'Cashback cancelado',
-      adjustment: 'Ajuste de cashback'
-    })[String(type || '').toLowerCase()] || 'Movimentação de cashback';
-  }
-
-  function cashbackTransactionDate(value) {
-    if (!value) return '';
-    const source = String(value);
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(source) ? new Date(`${source}T12:00:00`) : new Date(source);
-    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR');
-  }
-
-  function cashbackTransactionAmount(value) {
-    const amount = Number(value || 0);
-    if (amount > 0) return `+${fmt(amount)}`;
-    if (amount < 0) return `-${fmt(Math.abs(amount))}`;
-    return fmt(0);
-  }
-
-  function cashbackTransactionDescription(transaction) {
-    return transaction.description
-      || transaction.restaurant_name
-      || transaction.merchant_name
-      || (transaction.order_number ? `Pedido #${transaction.order_number}` : '')
-      || '';
-  }
-
-  function renderCashbackStatement(state = window.PedeAquiClubService?.getState?.()) {
-    renderSharedCashbackState(state);
-    const body = $('cashbackStatementBody');
-    if (!body) return;
-    const transactions = state?.transactions;
-    if (!transactions || transactions.status === 'idle' || transactions.status === 'loading') {
-      body.innerHTML = `<div class='cashback-statement-state'>Carregando extrato...</div>`;
-      return;
-    }
-    if (transactions.status === 'error') {
-      body.innerHTML = `<div class='cashback-statement-state'>Não foi possível carregar o extrato.<button class='cashback-statement-retry' type='button' ${act('click', 'retryCashbackStatement')}>Tentar novamente</button></div>`;
-      return;
-    }
-    const items = Array.isArray(transactions.data) ? transactions.data : [];
-    if (!items.length) {
-      body.innerHTML = `<div class='cashback-statement-state'>Você ainda não possui movimentações de cashback.</div>`;
-      return;
-    }
-    body.innerHTML = items.map(transaction => {
-      const amount = Number(transaction.amount || 0);
-      const description = cashbackTransactionDescription(transaction);
-      const date = cashbackTransactionDate(transaction.created_at);
-      return `<article class='cashback-statement-row'>
-        <div class='cashback-statement-copy'>
-          ${date ? `<time>${esc(date)}</time>` : ''}
-          <strong>${esc(cashbackTransactionLabel(transaction.type))}</strong>
-          ${description ? `<span>${esc(description)}</span>` : ''}
-        </div>
-        <div class='cashback-statement-amount ${amount > 0 ? 'positive' : amount < 0 ? 'negative' : ''}'>${esc(cashbackTransactionAmount(amount))}</div>
-      </article>`;
-    }).join('');
-  }
-
-  function configureCashbackStatementLayout() {
-    const overlay = $('cashbackStatementModal');
-    const modal = overlay?.querySelector('.cashback-statement-modal');
-    if (!overlay || !modal) return;
-    const properties = ['display', 'align-items', 'justify-content', 'padding', 'background', 'z-index'];
-    const modalProperties = ['position', 'top', 'right', 'bottom', 'left', 'width', 'max-width', 'height', 'max-height', 'margin', 'transform', 'transition'];
-    properties.forEach(property => overlay.style.removeProperty(property));
-    modalProperties.forEach(property => modal.style.removeProperty(property));
-    if (!$('mobViewClub')?.classList.contains('active')) return;
-    overlay.style.setProperty('display', 'flex', 'important');
-    overlay.style.setProperty('align-items', 'flex-start', 'important');
-    overlay.style.setProperty('justify-content', 'center', 'important');
-    overlay.style.setProperty('padding', '10px 14px calc(95px + var(--safe-bottom))', 'important');
-    overlay.style.setProperty('background', 'transparent', 'important');
-    overlay.style.setProperty('z-index', '125', 'important');
-    modal.style.setProperty('position', 'relative', 'important');
-    modal.style.setProperty('top', '0', 'important');
-    modal.style.setProperty('width', '386px', 'important');
-    modal.style.setProperty('max-width', '100%', 'important');
-    modal.style.setProperty('height', 'calc(100dvh - 105px)', 'important');
-    modal.style.setProperty('max-height', 'none', 'important');
-    modal.style.setProperty('margin', '0', 'important');
-    modal.style.setProperty('transform', 'translateX(100%)', 'important');
-    modal.style.setProperty('transition', 'transform .28s cubic-bezier(.4,0,.2,1)', 'important');
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (overlay.classList.contains('active')) modal.style.setProperty('transform', 'translateX(0)', 'important');
-    }));
-  }
-
-  function closeCashbackStatement(event) {
-    if (event && event.target !== event.currentTarget) return;
-    const overlay = $('cashbackStatementModal');
-    const modal = overlay?.querySelector('.cashback-statement-modal');
-    if (!overlay?.classList.contains('active') || !modal) return;
-    modal.style.setProperty('transform', 'translateX(100%)', 'important');
-    setTimeout(() => closeUiModalId('cashbackStatementModal'), 280);
-  }
-
-  async function openCashbackStatement() {
-    const auth = window.PedeAquiCustomerAuth;
-    if (!auth?.getToken?.()) {
-      openLoginScreen();
-      return;
-    }
-    openModal('cashbackStatementModal');
-    configureCashbackStatementLayout();
-    if (!auth.isSessionReady?.()) await syncCustomerSession();
-    if (!auth.getToken?.()) {
-      closeModalId('cashbackStatementModal');
-      openLoginScreen();
-      return;
-    }
-    const service = window.PedeAquiClubService;
-    const balancePromise = service?.getCashback?.() || Promise.resolve(null);
-    const transactionsPromise = service?.getTransactions?.() || Promise.resolve(null);
-    renderCashbackStatement(service?.getState?.());
-    await Promise.all([balancePromise, transactionsPromise]);
-    renderCashbackStatement(service?.getState?.());
-  }
-
-  async function retryCashbackStatement() {
-    const service = window.PedeAquiClubService;
-    const request = service?.getTransactions?.({ force: true }) || Promise.resolve(null);
-    renderCashbackStatement(service?.getState?.());
-    await request;
-    renderCashbackStatement(service?.getState?.());
-  }
+  // O extrato de cashback (modal, linhas, rótulos) mora INTEIRO em
+  // scripts/pages/cashback-statement.js, que carrega depois deste arquivo e
+  // sempre venceu em window e no registro de ações. A versão que vivia aqui
+  // (renderCashbackStatement e companhia) era código morto com um defeito
+  // dentro — lia `transactions.data` como array, quando o contrato responde
+  // {balance, currency, transactions} — e saiu em 30/08/2026. Se o extrato
+  // precisar de algo desta página, vai por window.* como já fazem
+  // openLoginScreen e syncCustomerSession.
 
   function handleHomeLoginPromptClick() {
     if (isLogged()) return;
@@ -7131,7 +7007,9 @@
     setStoreInfoTab, openRestaurantInfo, setProfilePaymentTab, selectSavedCardPayment, clearSavedCardPayment,
     mobNavHome, mobNavMenu, mobNavClub, mobNavAssistant, mobNavProfile, assistantGoBack, goToMenuTab: scrollToMenu,
     openProfSub, closeProfSub, openCustomerDataScreen, closeCustomerDataScreen, handleCustomerDataInput, submitCustomerData, openCustomerPasswordScreen, closeCustomerPasswordScreen, handleCustomerPasswordInput, submitCustomerPassword, confirmCustomerPasswordSuccess, loadProfPedidos, openProfOrderDetails, closeProfOrderDetails, openProfOrderHelp, mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
-    retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons, openCashbackStatement, retryCashbackStatement, closeCashbackStatement
+    // As três ações do extrato (openCashbackStatement, retryCashbackStatement,
+    // closeCashbackStatement) são registradas por cashback-statement.js.
+    retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons
   };
 
   window.RapidexActions.register(ACTIONS);
@@ -7143,8 +7021,9 @@
   Object.assign(window, {
     // scripts/pages/restaurant-assistant.js
     openProduct, scrollToCategory, findCategoryButton, mobNavMenu,
-    // scripts/pages/restaurant-club.js
-    openCouponDetail, openCashbackStatement,
+    // scripts/pages/restaurant-club.js (openCashbackStatement, que o clube
+    // também chama, é publicado em window por cashback-statement.js)
+    openCouponDetail,
     // scripts/pages/cashback-statement.js
     openLoginScreen, syncCustomerSession,
     // tests/e2e/helpers.js e order-flow.spec.js

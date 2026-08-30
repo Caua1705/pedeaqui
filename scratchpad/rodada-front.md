@@ -43,8 +43,19 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       delivered c/ product_id NULL (produto saiu do cardápio). Números escolhidos
       para NÃO coincidir entre si (lição do fixture 22,14).
 - [ ] 1.4 Auditoria de contrato do APP INTEIRO → tabela nesta página
-- [ ] 1.5 Consertar TODOS os achados de 1.4, do mais barato ao mais caro,
-      cada um com teste visto vermelho pelo motivo certo
+- [~] 1.5 Consertar os achados de 1.4 (ordem na tabela). Progresso:
+      · Conserto 1 (D14+D15) FEITO: bloco morto do extrato removido do page
+        (7186→7055 linhas; sombreado por cashback-statement.js, que carrega
+        depois e vence); labels do extrato agora são o enum do contrato
+        (+cancelled, -used/-refund). Spec novo cashback-statement.spec.js
+        (2 testes) visto VERMELHO (cancelled→'Movimentação de cashback') e
+        verde após conserto. Captura 59 telas: 'Nenhuma diferença'.
+      · Conserto 2 (D2 verified:false) codificado: submitVerify lê `verified`;
+        helpers mortos (tokenFromAuthResponse/customerFromAuthResponse)
+        removidos. Spec novo verify-email-code.spec.js (2 testes) visto
+        VERMELHO contra o dist velho (a tela fechava como sucesso) na suíte
+        completa: 267 passed + 1 failed (só ele) + 3 skipped. Falta: rebuild,
+        spec verde, commit.
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
 - [ ] 2.1 scripts/utils/screen-kit.js (14 ferramentas: esc, fmt, fallback, $,

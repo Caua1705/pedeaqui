@@ -25,6 +25,10 @@
 //    sem adversario  se, em todos os elementos que ela alcanca, ela e a unica
 //                    a falar daquela propriedade.
 //
+//  E o adversario pode nao estar em folha nenhuma: `mark-contrast.test.js` le o
+//  TEXTO da regra e exige `opacity:.82!important`. Por isso ha um terceiro
+//  veredito, `vetado-por-teste` — ver o comentario de `linhasDeTeste()`.
+//
 //  Note que a pergunta nao e "quem ganha". Uma regra que ganharia de qualquer
 //  jeito, por especificidade ou por ordem, tambem conta como adversario: ela e
 //  a razao pela qual alguem escreveu o `!important`, e tirar o marcador ali
@@ -67,6 +71,42 @@ import { SCREENS, prepararTela } from './capture-screens.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STYLES = join(ROOT, 'styles');
+
+/*
+ * O ADVERSARIO PODE NAO ESTAR NO CSS — ELE PODE SER UM TESTE.
+ *
+ * `tests/unit/mark-contrast.test.js` le o TEXTO da folha e exige
+ * `/opacity:.82!important/` dentro do bloco de movimento reduzido: sob
+ * `prefers-reduced-motion` o vapor da marca tem de parar num valor fixo, e a
+ * animacao que o move declara `opacity` com marcador. Nenhuma varredura de
+ * folha acha esse adversario — ele nao esta em folha nenhuma.
+ *
+ * O custo de nao ver isso foi medido: em 30/08/2026 esta declaracao entrou na
+ * lista de `sem-adversario`, o marcador saiu, e quem barrou foi o `npm run
+ * test` — depois do commit, porque a saida dos tres portoes rapidos tinha sido
+ * engolida pelo shell na hora de rodar. A regra ate tinha um comentario ao lado
+ * dizendo `o !important fica`, e o script de remocao nao le comentario.
+ *
+ * Entao o veto passa a ser da ferramenta: se algum arquivo em tests/ cita a
+ * propriedade e `!important` na MESMA LINHA, a declaracao nao entra na lista.
+ * E grosseiro de proposito, pela mesma razao do outro veto: vetar demais custa
+ * um marcador que fica, vetar de menos custa a tela — ou, aqui, um teste
+ * vermelho depois do commit.
+ */
+function linhasDeTeste() {
+  const out = [];
+  const varrer = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const caminho = join(dir, e.name);
+      if (e.isDirectory()) varrer(caminho);
+      else if (/\.(js|mjs|cjs|ts)$/.test(e.name)) out.push(...readFileSync(caminho, 'utf8').split(/\r?\n/));
+    }
+  };
+  varrer(join(ROOT, 'tests'));
+  return out.filter(l => l.includes('!important'));
+}
+const LINHAS_DE_TESTE = linhasDeTeste();
+const afirmadoPorTeste = (prop) => LINHAS_DE_TESTE.some(l => l.includes(prop));
 
 /**
  * As propriedades declaradas num corpo de regra, com o marcador de cada uma.
@@ -264,7 +304,7 @@ async function main() {
   };
 
   const saida = [];
-  let semAdversario = 0, comAdversario = 0, sem = 0, porVeto = 0;
+  let semAdversario = 0, comAdversario = 0, sem = 0, porVeto = 0, porTeste = 0;
   for (const r of rules) {
     const props = [];
     for (const d of r.decls) {
@@ -272,6 +312,7 @@ async function main() {
       const fam = FAMILIA(d.prop);
       if (!r.alvo || semEvidencia.has(r.alvo)) { props.push({ prop: d.prop, veredito: 'sem-evidencia' }); sem++; continue; }
       if (disputadas.has(r.alvo + '|' + fam)) { props.push({ prop: d.prop, veredito: 'tem-adversario' }); comAdversario++; continue; }
+      if (afirmadoPorTeste(d.prop)) { props.push({ prop: d.prop, veredito: 'vetado-por-teste' }); porTeste++; continue; }
       if (vetado(r, fam)) { props.push({ prop: d.prop, veredito: 'vetado-estatico' }); porVeto++; continue; }
       props.push({ prop: d.prop, veredito: 'sem-adversario' }); semAdversario++;
     }
@@ -280,6 +321,7 @@ async function main() {
   console.log('\ndeclaracoes com !important:');
   console.log('  tem adversario (o marcador decide algo): ' + comAdversario);
   console.log('  vetado pelo criterio estatico:           ' + porVeto);
+  console.log('  vetado por um TESTE que exige o texto:   ' + porTeste);
   console.log('  SEM adversario (o marcador nao decide):  ' + semAdversario);
   console.log('  sem evidencia (regra nao vista em tela): ' + sem);
 

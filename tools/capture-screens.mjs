@@ -29,7 +29,7 @@
 // ============================================================================
 import { chromium } from '@playwright/test';
 import { writeFileSync, readFileSync } from 'node:fs';
-import { mockApi, RESTAURANT_URL, PRODUCT_H2O, seedPickupSession } from '../tests/e2e/helpers.js';
+import { mockApi, RESTAURANT_URL, PRODUCT_H2O, SLUG, BRANCH_MATRIZ, MENU, COUPONS, pixOrder, seedPickupSession, seedOnlineCardBranch } from '../tests/e2e/helpers.js';
 
 const BASE = process.env.CAPTURE_BASE_URL || 'http://127.0.0.1:4174';
 
@@ -96,6 +96,155 @@ const act = (page, name, ...args) => page.evaluate(([acao, argumentos]) => {
   if (typeof fn !== 'function') throw new Error(`acao desconhecida: ${acao}`);
   return fn(...argumentos);
 }, [name, args]);
+
+
+// ============================================================================
+//  PREPARO DE TELA — o que precisa estar de pé ANTES de `go()`
+//
+//  As 14 telas originais nasciam todas do mesmo preparo: `mockApi()` mais uma
+//  sessao de retirada. Isso bastava para o caminho do dinheiro, e por isso
+//  1.628 declaracoes `!important` e 229 cores nunca produziram evidencia
+//  nenhuma — nao porque estivessem mortas, mas porque o estado que as acende
+//  (o Clube com cupom, o extrato, a politica, o chat respondido, o cartao, a
+//  tela de erro) exige um preparo proprio: um token, uma rota a mais, um
+//  contexto de entrega no localStorage.
+//
+//  Entao cada tela pode declarar um `setup(page)`, que roda DEPOIS do preparo
+//  comum e ANTES de `go()`. A ordem importa nos dois sentidos:
+//
+//    - `page.route` registrado por ultimo VENCE, entao um setup que sobrepoe
+//      `/coupons` ou `/info` tem de vir depois de `mockApi()`;
+//    - `addInitScript` empilha, entao um token acrescentado aqui convive com
+//      o perfil que `seedPickupSession()` ja gravou.
+//
+//  As tres ferramentas que abrem estas telas (esta, css-usage e css-important)
+//  passaram a chamar `prepararTela()` em vez de repetir as duas linhas. Uma
+//  tela que so uma delas prepara direito e uma medida que so vale numa delas.
+// ============================================================================
+
+const json = (body, status = 200) => ({
+  status,
+  contentType: 'application/json',
+  body: JSON.stringify(body)
+});
+
+/** Sessao COM conta: o Clube, o extrato e as subpaginas do perfil exigem token. */
+async function logado(page) {
+  await page.addInitScript(() => localStorage.setItem('rapidex.customer.token', 'captura-token'));
+  await page.route(/\/customers\/me(?:\?|$)/, route =>
+    route.fulfill(json({ id: 'captura-cliente', name: 'Captura', phone: '85999999999', email: 'captura@exemplo.com' })));
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/orders**', route => route.fulfill(json([])));
+}
+
+/** A lista de cupons nos tres estados do contrato (o mock responde vazio por padrao). */
+const comCupons = (page) => page.route(/\/coupons(?:\?|$)/, route => route.fulfill(json(COUPONS)));
+
+/**
+ * Extrato de cashback com credito E debito.
+ *
+ * Sao DUAS rotas, e casar so a primeira deixa o extrato em "Carregando...":
+ * `/customers/me/cashback` traz o saldo e
+ * `/customers/me/cashback/transactions?limit=&offset=` traz as linhas. A linha
+ * negativa tem folha propria (`.cashback-statement-amount.negative` e o
+ * `::before` da linha), entao o extrato precisa dos dois sinais.
+ */
+const comExtrato = (page) => page.route('**/customers/me/cashback**', route => route.fulfill(json({
+  balance: 12.5,
+  currency: 'BRL',
+  transactions: [
+    { id: 't1', type: 'earned', amount: '8.40', description: 'Cashback do pedido #1042', created_at: '2026-08-20T18:12:00Z' },
+    { id: 't2', type: 'redeemed', amount: '-4.10', description: 'Usado no pedido #1051', created_at: '2026-08-24T20:03:00Z' }
+  ]
+})));
+
+/** O assistente respondendo com produtos — o que acende o trilho e o detalhe. */
+const comChat = (page) => page.route('**/chat', route => route.fulfill(json({
+  response_type: 'products',
+  message: 'Boa! Separei uma opcao gelada.',
+  products: [{
+    id: PRODUCT_H2O,
+    name: 'Agua H2O',
+    description: 'Produto recomendado pelo Rapi.',
+    price: 7.05,
+    recommendation_reason: 'Combina com o que voce pediu.'
+  }]
+})));
+
+/**
+ * Contexto de ENTREGA confirmado, com endereco.
+ *
+ * `seedPickupSession()` grava retirada, e retirada apaga metade do desenho:
+ * `.address-strip.has-address`, o cartao de endereco da sacola e o rodape de
+ * entrega da tela de pagamento so existem quando a modalidade e entrega.
+ */
+const entregaConfirmada = (page) => page.addInitScript(
+  ({ slug, branchId }) => {
+    localStorage.setItem(`rapidex.operationContext.${slug}`, JSON.stringify({
+      order_type: 'delivery',
+      branch_id: branchId,
+      branch_label: 'Matriz',
+      confirmed: true,
+      address: {
+        id: 'end-captura',
+        label: 'Casa',
+        street_name: 'Rua Silva Paulet',
+        number: '450',
+        neighborhood: 'Aldeota',
+        city: 'Fortaleza',
+        state: 'CE',
+        zipcode: '60120-020',
+        full_address: 'Rua Silva Paulet, 450 - Aldeota, Fortaleza - CE'
+      }
+    }));
+  },
+  { slug: SLUG, branchId: BRANCH_MATRIZ }
+);
+
+/**
+ * Entrega ESCOLHIDA mas sem endereco: e o estado em que a sacola avisa, e ele
+ * tem folha propria (`.cart-location-widget:not(.has-address)`, o CTA que diz
+ * "Informe seu endereco"). Sem isto, essas regras nunca sao medidas.
+ */
+const entregaSemEndereco = (page) => page.addInitScript(
+  ({ slug, branchId }) => {
+    localStorage.setItem(`rapidex.operationContext.${slug}`, JSON.stringify({
+      order_type: 'delivery', branch_id: branchId, branch_label: 'Matriz', confirmed: true
+    }));
+  },
+  { slug: SLUG, branchId: BRANCH_MATRIZ }
+);
+
+/**
+ * Um produto COM grupos de opcao.
+ *
+ * O fixture de cardapio nao tem nenhum — sao 136 produtos e zero
+ * `option_groups` —, entao as 14 regras de `#productModal .pm-option-*` nunca
+ * pintaram nada em medida nenhuma. A opcao aqui e sobrepor a ROTA para esta
+ * tela, e nao mexer no fixture compartilhado: o fixture e copia fiel da
+ * producao e e afirmacao de outros testes; uma tela de captura nao deve mudar
+ * o que os E2E leem.
+ */
+const comOpcoesDeProduto = (page) => page.route(/\/menu(?:\?|$)/, route => {
+  const menu = JSON.parse(JSON.stringify(MENU));
+  const produto = menu.products.find(p => p.id === PRODUCT_H2O);
+  produto.option_groups = [{
+    id: 'grp-captura-1',
+    name: 'Escolha o tamanho',
+    min_select: 1,
+    max_select: 1,
+    is_required: true,
+    sort_order: 0,
+    options: [
+      { id: 'opt-captura-1', name: 'Copo 300ml', description: 'Serve uma pessoa', price: '0.00', is_active: true, sort_order: 0 },
+      { id: 'opt-captura-2', name: 'Garrafa 500ml', description: 'Gelada', price: '2.50', is_active: true, sort_order: 1 }
+    ]
+  }];
+  return route.fulfill(json(menu));
+});
+
+/** Espera um seletor casar, sem depender de relogio de parede. */
+const esperar = (page, seletor, timeout = 15000) => page.waitForSelector(seletor, { timeout });
 
 /**
  * As telas. Cada uma é levada ao estado por AÇÕES do próprio app — nunca por
@@ -212,6 +361,519 @@ export const SCREENS = [
       await act(page, 'openOperationScreen');
       await page.waitForTimeout(500);
     }
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  AS TELAS QUE FALTAVAM
+  //
+  //  Cada uma existe porque um pedaco do CSS so acende nela, e enquanto ela
+  //  nao era aberta esse pedaco ficava em `sem-evidencia` — nem provado vivo,
+  //  nem podendo ser removido. O comentario de cada bloco diz o que ela
+  //  acende, para que a proxima pessoa saiba o que perde ao apaga-la.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // --- Informacoes da loja: as tres abas sao TRES desenhos, e as duas ultimas
+  //     tem regras proprias em utilities.css (`#infoModal[data-store-info-tab=...]`).
+  {
+    name: 'info-horarios',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openRestaurantInfo');
+      await esperar(page, '#infoModal.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'info-endereco',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openRestaurantInfo');
+      await esperar(page, '#infoModal.active');
+      await act(page, 'setStoreInfoTab', 'address');
+      await esperar(page, '#infoModal[data-store-info-tab="address"]');
+      await page.waitForTimeout(400);
+    }
+  },
+  {
+    name: 'info-pagamento',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openRestaurantInfo');
+      await esperar(page, '#infoModal.active');
+      await act(page, 'setStoreInfoTab', 'payment');
+      await esperar(page, '#infoModal[data-store-info-tab="payment"]');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- Politica de privacidade. Ela tem DOIS desenhos, e a diferenca esta no
+  //     `body.policy-from-profile` (a barra de baixo fica, e o cabecalho muda).
+  {
+    name: 'politica',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openPolicyScreen');
+      await esperar(page, '.policy-screen.active');
+      await page.waitForTimeout(400);
+    }
+  },
+  {
+    name: 'politica-do-perfil',
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'openPolicyScreen');
+      await esperar(page, 'body.policy-from-profile .policy-screen.active');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- Clube COM cupons desenhados. A lista vazia escondia a tela inteira;
+  //     e por essa fresta que ja passaram oito defeitos juntos.
+  {
+    name: 'clube-com-cupons',
+    setup: async (page) => { await logado(page); await comCupons(page); await comExtrato(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavClub');
+      await esperar(page, '#mobViewClub.active .club-available-coupon-card');
+      await page.waitForTimeout(600);
+    }
+  },
+  {
+    name: 'cupom-detalhe',
+    setup: async (page) => { await logado(page); await comCupons(page); await comExtrato(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavClub');
+      await esperar(page, '#mobViewClub.active .club-available-coupon-card');
+      await act(page, 'openCouponDetail', COUPONS.coupons[0].code);
+      await esperar(page, '.coupon-detail-overlay.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'extrato-cashback',
+    setup: async (page) => { await logado(page); await comCupons(page); await comExtrato(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavClub');
+      await esperar(page, '#mobViewClub.active');
+      await act(page, 'openCashbackStatement');
+      await esperar(page, '#cashbackStatementModal.active .cashback-statement-row');
+      await page.waitForTimeout(500);
+    }
+  },
+
+  // --- Perfil: as subpaginas sao telas cheias, e cada uma repinta a barra de
+  //     baixo e a sacola flutuante por conta propria.
+  {
+    name: 'perfil-ajuda',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'openProfSub', 'ajuda');
+      await esperar(page, '#profSubajuda.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'perfil-meus-dados',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'openProfSub', 'meusdados');
+      await esperar(page, '#profSubmeusdados.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'perfil-pedidos',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'openProfSub', 'pedidos');
+      await esperar(page, '#profSubpedidos.active');
+      await page.waitForTimeout(700);
+    }
+  },
+  {
+    // A confirmacao de sair inverte o papel dos dois botoes (ver §4.1 da skill):
+    // aqui `.addr-delete-yes` e o botao de FICAR. E a folha desta tela que
+    // repinta por cima, e ela nunca tinha sido medida.
+    name: 'sair-confirmacao',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavProfile');
+      await esperar(page, '#mobViewProfile.active');
+      await act(page, 'logout');
+      await esperar(page, '#logoutConfirm.active');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- Cardapio em BUSCA: esconde catNav e titulos e acende
+  //     `.product-card.is-search-hidden`, que so existe aqui.
+  {
+    name: 'busca-cardapio',
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavMenu');
+      await page.waitForFunction(() => document.querySelectorAll('.product-card').length > 1);
+      await page.locator('#searchInput').fill('pudim');
+      await esperar(page, 'body.menu-tab.menu-search-active');
+      await page.waitForTimeout(500);
+    }
+  },
+
+  // --- Produto COM grupos de opcao (a rota do cardapio e sobreposta so aqui).
+  {
+    name: 'produto-com-opcoes',
+    setup: comOpcoesDeProduto,
+    async go(page) {
+      await boot(page);
+      await page.evaluate((id) => window.openProduct(id), PRODUCT_H2O);
+      await esperar(page, '#productModal.active .pm-option-group');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- Sacola em ENTREGA sem endereco: o aviso, o mapa apagado e o CTA que
+  //     diz "Informe seu endereco" tem folha propria em restaurant.css.
+  {
+    name: 'sacola-entrega-sem-endereco',
+    setup: entregaSemEndereco,
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.waitForTimeout(600);
+    }
+  },
+  // --- Sacola em ENTREGA com endereco: `.address-strip.has-address` e o
+  //     widget de local preenchido.
+  {
+    name: 'sacola-entrega-com-endereco',
+    setup: entregaConfirmada,
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.waitForTimeout(600);
+    }
+  },
+  // --- Formas de pagamento com uma opcao ESCOLHIDA (`.payment-method-option.active`)
+  //     e o rodape de confirmacao aberto.
+  {
+    name: 'pagamento-escolhido',
+    setup: entregaConfirmada,
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+      await esperar(page, '.payment-method-option.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  // --- A sacola DEPOIS do Pix escolhido: o cartao de pagamento troca de cara
+  //     inteira (`.cart-payment-card.is-pix-payment`, 9 regras so dele).
+  {
+    name: 'sacola-com-pix-escolhido',
+    setup: entregaConfirmada,
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+      await esperar(page, '#paymentMethodFooter');
+      await page.locator('.payment-method-confirm').click();
+      await esperar(page, '#cartModal.active .cart-payment-card.is-pix-payment');
+      await page.waitForTimeout(500);
+    }
+  },
+  // --- A folha de confirmacao que fica ENTRE o CTA da sacola e o POST /orders.
+  {
+    name: 'confirmar-pedido',
+    setup: entregaConfirmada,
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+      await esperar(page, '#paymentMethodFooter');
+      await page.locator('.payment-method-confirm').click();
+      await esperar(page, '#cartModal.active .cart-payment-card.is-pix-payment');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#orderConfirmSheet.active');
+      await page.waitForTimeout(500);
+    }
+  },
+  // --- Pix: a tela de cobranca, com QR, codigo e o acompanhamento.
+  //
+  //     O `POST /orders` precisa responder um pedido de PIX. O padrao do mock
+  //     e `successOrder()`, que leva a tela de "pedido recebido" — outro
+  //     desenho, e a folha do Pix (1.117 linhas) continuaria sem ser medida.
+  {
+    name: 'pix',
+    setup: async (page) => {
+      await entregaConfirmada(page);
+      await page.route(/\/orders(\?|$)/, route =>
+        route.request().method() === 'POST' ? route.fulfill(json(pixOrder(1))) : route.fallback());
+    },
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+      await esperar(page, '#paymentMethodFooter');
+      await page.locator('.payment-method-confirm').click();
+      await esperar(page, '#cartModal.active .cart-payment-card.is-pix-payment');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#orderConfirmSheet.active');
+      await page.locator('#orderConfirmSheet .order-confirm-cta').click();
+      await esperar(page, '#pixPaymentModal.active');
+      await page.waitForTimeout(900);
+    }
+  },
+  // --- Cartao online: a lista de cartoes salvos e o formulario de campos
+  //     seguros. Exige TRES coisas que nenhuma outra tela exige, e e por isso
+  //     que ele nunca tinha sido medido:
+  //
+  //       1. uma FILIAL que aceite cartao online — no fixture de producao
+  //          `credit_card` so existe no grupo `delivery` (a maquininha na
+  //          porta), e quem decide e a filial, nao o gateway;
+  //       2. `/payment-config` com `card_enabled`;
+  //       3. o SDK do Mercado Pago. O daqui e um duble MINIMO: monta um
+  //          <input> por campo e avisa `ready`. Ele nao imita as recusas do
+  //          gateway (o mock dos E2E imita, e deve continuar imitando) porque
+  //          aqui nao se testa comportamento nenhum — so se abre a tela para
+  //          medir o que ela pinta.
+  //
+  //     As duas regras de `.payment-secure-field iframe` continuam sem
+  //     evidencia de proposito: o iframe so existe com o SDK REAL, e quem o
+  //     roda sob a CSP de producao e `mercado-pago-secure-fields.spec.js`.
+  {
+    name: 'pagamento-cartao',
+    setup: async (page) => {
+      await logado(page);
+      await entregaConfirmada(page);
+      await seedOnlineCardBranch(page);
+      await page.route('**/payment-config', route => route.fulfill(json({
+        provider: 'mercadopago', public_key: 'APP_USR-captura-public-key', card_enabled: true
+      })));
+      await page.route('**/customers/me/cards**', route => route.fulfill(json([{
+        id: '11111111-1111-4111-8111-111111111111',
+        provider_card_id: '1562188766181',
+        brand: 'visa',
+        last_four_digits: '2508',
+        expiration_month: 12,
+        expiration_year: 2030,
+        created_at: '2026-08-25T12:00:00Z'
+      }])));
+      await page.addInitScript(() => {
+        window.MercadoPago = class {
+          constructor() {
+            this.fields = {
+              create: (tipo) => ({
+                on(evento, callback) { this._[evento] = callback; return this; },
+                _: {},
+                mount(hostId) {
+                  const input = document.createElement('input');
+                  input.dataset.secureField = tipo;
+                  input.setAttribute('aria-label', tipo);
+                  document.getElementById(hostId)?.appendChild(input);
+                  queueMicrotask(() => this._.ready?.({ field: tipo }));
+                  return this;
+                },
+                unmount() {}
+              }),
+              createCardToken: async () => ({ id: 'tok_captura' })
+            };
+          }
+        };
+      });
+    },
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await esperar(page, '.payment-saved-card');
+      await page.locator('#paymentAddCard').click();
+      await esperar(page, '#addCardTypeModal.active');
+      await page.locator('#addCreditCardOption').click();
+      await esperar(page, '#creditCardModal.active');
+      await esperar(page, '[data-secure-field="cardNumber"]');
+      await page.waitForTimeout(700);
+    }
+  },
+
+  // --- Endereco: a folha de escolha (geo x manual) com uma opcao SELECIONADA,
+  //     e o esqueleto de sugestoes que aparece enquanto o Places nao responde.
+  {
+    name: 'endereco-novo',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openAddressChoiceDirect');
+      await esperar(page, '#addAddressModal.active');
+      await act(page, 'selectAdcOption', 'manual');
+      await esperar(page, '.adc-opt-card.selected');
+      await page.waitForTimeout(400);
+    }
+  },
+  {
+    name: 'endereco-sugestoes',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openAddrSearch');
+      await esperar(page, '#addrSearchModal.active');
+      await page.locator('#addrSearchInput').fill('Rua Silva Paulet');
+      await esperar(page, '.addr-sug-skeleton');
+      await page.waitForTimeout(300);
+    }
+  },
+
+  // --- Operacao em ENTREGA: a lista de filiais, com cartao de endereco
+  //     preenchido. Em retirada essa lista nao aparece.
+  {
+    name: 'operacao-entrega',
+    setup: entregaConfirmada,
+    async go(page) {
+      await boot(page);
+      await act(page, 'openOperationScreen');
+      await esperar(page, '#operationModal.active');
+      await act(page, 'setOperationType', 'delivery');
+      await esperar(page, '#operationModal.active .op-branch-card');
+      await page.waitForTimeout(600);
+    }
+  },
+  // --- Primeira visita: nenhum contexto de operacao gravado. E o unico estado
+  //     em que `.delivery-widget.pending-selection` existe (21 regras).
+  {
+    name: 'primeira-visita',
+    setup: (page) => page.addInitScript(({ slug }) => {
+      localStorage.removeItem(`rapidex.operationContext.${slug}`);
+    }, { slug: SLUG }),
+    async go(page) {
+      await page.goto(BASE + RESTAURANT_URL);
+      await page.waitForFunction(() => !document.body.classList.contains('app-booting'), null, { timeout: 30000 });
+      await esperar(page, '.delivery-widget.pending-selection');
+      await page.waitForTimeout(700);
+    }
+  },
+
+  // --- Assistente respondendo: o balao do usuario, o do assistente, o trilho
+  //     de produtos e os botoes de avaliacao. E o maior bloco de CSS que nunca
+  //     tinha sido medido — 583 declaracoes `!important` so em assistant.css.
+  {
+    name: 'assistente-resposta',
+    setup: comChat,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready');
+      await page.locator('#assistantInput').fill('Me recomenda uma bebida');
+      await page.locator('.assistant-ai-send').click();
+      await esperar(page, '.assistant-product-card');
+      await page.waitForTimeout(900);
+    }
+  },
+  {
+    name: 'assistente-detalhe-produto',
+    setup: comChat,
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready');
+      await page.locator('#assistantInput').fill('Me recomenda uma bebida');
+      await page.locator('.assistant-ai-send').click();
+      await esperar(page, '.assistant-product-card');
+      await page.locator('.assistant-product-card').first().click();
+      await esperar(page, '#assistantProductDetail.is-open');
+      await page.waitForTimeout(700);
+    }
+  },
+  {
+    // O modo voz e faturado por minuto, entao o transporte e trocado pelo
+    // mesmo `setDriver` que os E2E usam: a tela abre, o microfone nao.
+    name: 'assistente-voz',
+    setup: logado,
+    async go(page) {
+      await boot(page);
+      await page.evaluate(() => window.RapidexAssistantVoice.setDriver({
+        start: () => {}, stop: () => {}, setMuted: () => {}
+      }));
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready');
+      await page.locator('#mobViewAssistant .assistant-ai-send').click();
+      await esperar(page, '#assistantVoice.is-open');
+      await page.waitForTimeout(900);
+    }
+  },
+
+  // --- A tela de erro do boot. Ela tem folha propria (`body.app-error`) e
+  //     nunca foi aberta por medida nenhuma: a captura so sabia subir o app.
+  {
+    name: 'erro-de-boot',
+    // QUEM DERRUBA O BOOT E O CARDAPIO, nao o /info: `loadInitialData()` so
+    // aguarda `/menu`, e um 503 em `/info` passa batido (a tela de informacoes
+    // carrega depois, sob demanda). Um 503 aqui e falha de rede, nao 404/410 —
+    // e a diferenca importa: 404 vira "restaurante nao encontrado", que e OUTRO
+    // desenho (`body.app-error--not-found`, sem botao de tentar de novo).
+    setup: (page) => page.route(/\/menu(\?|$)/, route => route.fulfill(json({ detail: 'indisponivel' }, 503))),
+    async go(page) {
+      await page.goto(BASE + RESTAURANT_URL);
+      await esperar(page, 'body.app-error', 30000);
+      await page.waitForTimeout(500);
+    }
+  },
+
+  // --- O OUTRO desenho do erro: slug que nao existe. `app-error--not-found`
+  //     esconde o botao de tentar de novo, porque ali recarregar nao resolve.
+  {
+    name: 'erro-restaurante-inexistente',
+    setup: (page) => page.route(/\/menu(\?|$)/, route => route.fulfill(json({ detail: 'nao encontrado' }, 404))),
+    async go(page) {
+      await page.goto(BASE + RESTAURANT_URL);
+      await esperar(page, 'body.app-error--not-found', 30000);
+      await page.waitForTimeout(500);
+    }
+  },
+
+  // --- A landing. E a outra pagina do repositorio, e `landing.css` inteira
+  //     nunca tinha sido medida por ninguem.
+  {
+    name: 'landing',
+    async go(page) {
+      await page.goto(BASE + '/index.html');
+      await page.waitForLoadState('load');
+      await page.waitForTimeout(700);
+    }
   }
 ];
 
@@ -234,6 +896,33 @@ export const SCREENS = [
  * que e o que interessa), e o foco tirado de qualquer campo.
  */
 async function estabilizar(page) {
+  /*
+   * O CARROSSEL DO CABECALHO ANDA SOZINHO, e nao e transicao — e um
+   * `setInterval` que reescreve `transform` no elemento e troca a classe
+   * `active` de um ponto para o outro. Congelar transicao e animacao pelo
+   * CSSOM (abaixo) nao alcanca nada disso.
+   *
+   * O sintoma foi este, capturando a MESMA build duas vezes: as telas do
+   * assistente acusaram 3 elementos diferentes —
+   * `transform: matrix(...,-780,0) -> matrix(...,-390,0)` no trilho, mais os
+   * dois pontos trocando de largura entre 6px e 20px. Nao era o assistente:
+   * eram as telas que demoram mais para chegar ao estado, e por isso pegam o
+   * carrossel um passo adiante. Numa ferramenta cujo trabalho e provar que
+   * nada mudou, 3 elementos de ruido sao 3 elementos que a proxima pessoa
+   * aprende a ignorar.
+   *
+   * Duas medidas, nesta ordem: leva o carrossel a um slide CONHECIDO (pelo
+   * registro de acoes, que e como o markup o chama), e so entao para todo
+   * temporizador da pagina. O `clearInterval` cego e grosseiro de proposito —
+   * neste ponto a tela ja esta no estado final e ninguem mais precisa correr,
+   * e ele apanha de uma vez a contagem regressiva do Pix e o que mais vier.
+   */
+  await page.evaluate(() => {
+    window.RapidexActions?.resolve?.('setHeroBanner')?.(0);
+    const ultimo = setInterval(() => {}, 1 << 30);
+    for (let id = 1; id <= ultimo; id++) clearInterval(id);
+  });
+
   // PRIMEIRA CAMADA, e a que resolve: apagar `transition` e `animation` das
   // REGRAS, pelo CSSOM, em vez de tentar sobrepo-las com outra regra.
   //
@@ -264,6 +953,22 @@ async function estabilizar(page) {
   await page.addStyleTag({
     content: '*,*::before,*::after{animation:none !important;transition:none !important;caret-color:transparent !important}'
   });
+
+  /*
+   * A FONTE PRECISA TER CHEGADO ANTES DE MEDIR LARGURA.
+   *
+   * Capturando a mesma build duas vezes, a home acusou 104 elementos
+   * diferentes — todos por fracao de pixel na largura de texto
+   * (`63,4375px -> 64,6094px`). Nao ha regra nenhuma decidindo isso: e a
+   * primeira leitura tendo pegado a fonte de fallback e a segunda a fonte
+   * carregada. Como a lista de propriedades tem `width`, `height` e
+   * `lineHeight`, uma troca de fonte no meio da captura contamina todo
+   * elemento com texto dentro.
+   *
+   * `document.fonts.ready` resolve na hora quando ja carregou, entao isto nao
+   * custa nada nas telas em que a corrida nao existe.
+   */
+  await page.evaluate(() => document.fonts.ready);
 
   // Deixa o layout assentar depois de tudo isso.
   await page.waitForTimeout(400);
@@ -303,7 +1008,19 @@ function readDocument(props) {
     }
     return parts.join('>');
   };
-  return Array.from(document.querySelectorAll('*')).map((el) => {
+  /*
+   * O QUE NAO DESENHA FICA DE FORA.
+   *
+   * `<script>`, `<link>` e afins nao pintam pixel nenhum, e um deles entrando
+   * na conta so produz ruido: o loader do Google Maps e injetado no <head> por
+   * JS, e a tela de sugestoes de endereco acusou "sumiu html>head>script[8]"
+   * comparando a mesma build consigo mesma — o script tinha chegado numa
+   * rodada e nao na outra. Uma diferenca que nao pode virar pixel nao e
+   * assunto de uma ferramenta que mede pixel.
+   */
+  const INVISIVEIS = new Set(['SCRIPT', 'LINK', 'META', 'STYLE', 'TITLE', 'HEAD', 'BASE', 'NOSCRIPT']);
+
+  return Array.from(document.querySelectorAll('*')).filter((el) => !INVISIVEIS.has(el.tagName)).map((el) => {
     const cs = getComputedStyle(el);
     const style = {};
     for (const p of props) style[p] = cs[p];
@@ -318,14 +1035,29 @@ function readDocument(props) {
   });
 }
 
+/**
+ * O preparo comum + o preparo DA TELA, num lugar so.
+ *
+ * As tres ferramentas que abrem estas telas (esta, css-usage e css-important)
+ * repetiam `mockApi()` e `seedPickupSession()` cada uma no seu laco. Enquanto
+ * toda tela nascia do mesmo preparo isso era so repeticao; a partir do momento
+ * em que uma tela precisa de token, de uma rota sobreposta ou de outro contexto
+ * de operacao, repeticao vira DIVERGENCIA — a mesma tela medida de um jeito
+ * aqui e de outro la, e duas respostas diferentes para a mesma pergunta.
+ */
+export async function prepararTela(page, screen) {
+  await mockApi(page);
+  await seedPickupSession(page);
+  if (screen.setup) await screen.setup(page);
+}
+
 async function capture(out) {
   const browser = await chromium.launch();
   const result = {};
   for (const screen of SCREENS) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await mockApi(page);
-    await seedPickupSession(page);
+    await prepararTela(page, screen);
     try {
       await screen.go(page);
       // Deixa a animação de entrada terminar: transform a meio caminho não é

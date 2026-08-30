@@ -32,11 +32,16 @@
 //
 //  O QUE ESTA MEDIDA NAO ALCANCA, E O QUE SE FAZ A RESPEITO
 //
-//  As 14 telas da captura. Um elemento que so existe no Pix, no cartao ou numa
-//  tela de erro nao aparece aqui, e uma regra que nao casou com NADA em tela
+//  As telas da captura, e so elas. Uma regra que nao casou com NADA em tela
 //  nenhuma nao produz evidencia — ela e listada como `sem-evidencia` e nao
 //  entra na lista de remocao. Nao confunda "nao vi adversario" com "nao ha
 //  adversario" para regras que nunca foram medidas.
+//
+//  Eram 14 telas ate 30/08/2026, e o Pix, o cartao, o Clube com cupom, o
+//  extrato, a politica, o chat respondido e as duas telas de erro estavam
+//  TODOS fora — 1.628 declaracoes ficavam sem julgamento so por isso. Hoje
+//  sao 45 (`SCREENS`, em capture-screens.mjs), e cada tela acrescentada la
+//  encolhe esta lista sem que nada aqui precise mudar.
 //
 //  Pior que isso: uma regra pode alcancar um elemento numa tela capturada SEM
 //  adversario e alcancar outro elemento, numa tela que a captura nao abre, ONDE
@@ -58,8 +63,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCss, paraRuntime } from './css-usage.mjs';
-import { SCREENS } from './capture-screens.mjs';
-import { mockApi, seedPickupSession } from '../tests/e2e/helpers.js';
+import { SCREENS, prepararTela } from './capture-screens.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STYLES = join(ROOT, 'styles');
@@ -177,8 +181,7 @@ async function main() {
   for (const screen of SCREENS) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await mockApi(page);
-    await seedPickupSession(page);
+    await prepararTela(page, screen);
     try {
       await screen.go(page);
       await page.waitForTimeout(500);
@@ -223,7 +226,7 @@ async function main() {
   await browser.close();
 
   /* ── VETO ESTATICO ────────────────────────────────────────────────────────
-     O runtime ve 14 telas, e o app tem mais estados que isso. Uma regra pode
+     O runtime ve as telas de `SCREENS`, e o app tem mais estados que isso. Uma regra pode
      alcancar um elemento numa tela capturada SEM adversario e alcancar outro
      elemento, no Pix ou na tela de erro, ONDE o adversario existe — e ai o
      runtime diz "sem adversario" para uma disputa que so nao foi aberta na

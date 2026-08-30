@@ -26,8 +26,7 @@ import { chromium } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SCREENS } from './capture-screens.mjs';
-import { mockApi, seedPickupSession } from '../tests/e2e/helpers.js';
+import { SCREENS, prepararTela } from './capture-screens.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -93,8 +92,7 @@ async function main() {
   for (const screen of SCREENS) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await mockApi(page);
-    await seedPickupSession(page);
+    await prepararTela(page, screen);
     try {
       await screen.go(page);
       await page.waitForTimeout(600);

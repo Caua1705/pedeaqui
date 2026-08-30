@@ -17,8 +17,10 @@
 //
 //   RUNTIME   - o seletor casa com algum elemento nas telas abertas de verdade?
 //               Mede o quanto do CSS entregue e de fato aplicado, mas NAO prova
-//               morte: sao 14 telas, e o app tem mais estados que isso (Pix,
-//               cartao, verificacao, erro, pedido em andamento).
+//               morte: sao as telas de `SCREENS`, e o app tem mais estados que
+//               isso. Eram 14 ate 30/08/2026, e Pix, cartao, Clube com cupom,
+//               extrato, politica, chat respondido e as duas telas de erro
+//               estavam TODOS fora; hoje sao 45.
 //
 //  So a metade ESTATICA autoriza apagar. A de runtime e termometro: serve para
 //  achar candidato e para dimensionar o desperdicio, nunca para condenar.
@@ -140,8 +142,14 @@ export function paraRuntime(sel) {
    dentro e responder "nada morto" — 426 regras mortas viraram 0 exatamente
    assim, e o zero e uma resposta plausivel demais para levantar suspeita.
    E a armadilha 2 do cabecalho outra vez, so que a folha que se prova sozinha e
-   o relatorio. Ferramenta que le a propria saida sempre concorda consigo. */
-const IGNORA = /node_modules|[\\/]\.git|[\\/]dist[\\/]|test-results|playwright-report|package-lock|css-usage\.json|css-cores\.json|ui-inventory\.json|captura.*\.json/;
+   o relatorio. Ferramenta que le a propria saida sempre concorda consigo.
+   `css-important.json` entrou nesta lista em 30/08/2026: ele fica na mesma raiz
+   e tem o SELETOR de cada regra dentro, entao servia de corpus exatamente como
+   o `css-usage.json` servia. Nao mudou nenhuma resposta hoje — sobrava 1 regra
+   morta com ele e 1 sem ele —, e e por isso que ninguem tinha visto. O buraco
+   so aparece no dia em que a proxima regra morta nascer, e nesse dia ele
+   responde "viva". */
+const IGNORA = /node_modules|[\\/]\.git|[\\/]dist[\\/]|test-results|playwright-report|package-lock|css-usage\.json|css-cores\.json|css-important\.json|ui-inventory\.json|captura.*\.json/;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -256,8 +264,7 @@ const PROPS_COR = [
 
 async function runtime(rules) {
   const { chromium } = await import('@playwright/test');
-  const { SCREENS } = await import('./capture-screens.mjs');
-  const { mockApi, seedPickupSession } = await import('../tests/e2e/helpers.js');
+  const { SCREENS, prepararTela } = await import('./capture-screens.mjs');
 
   const alvos = [...new Set(rules.map(r => paraRuntime(r.selector)).filter(Boolean))];
   const casou = new Set();
@@ -266,8 +273,7 @@ async function runtime(rules) {
   for (const screen of SCREENS) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await mockApi(page);
-    await seedPickupSession(page);
+    await prepararTela(page, screen);
     try {
       await screen.go(page);
       await page.waitForTimeout(500);
@@ -308,19 +314,20 @@ if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('css-usage.m
   const { rules, corpus } = analisar();
   const comRuntime = process.argv.includes('--runtime');
   const pintadas = comRuntime ? await runtime(rules) : null;
+  const TELAS = comRuntime ? (await import('./capture-screens.mjs')).SCREENS.length : 0;
 
   const vivas = rules.filter(r => !r.atRule);
   console.log('');
   console.log('corpus (arquivos nao-CSS lidos): ' + corpus.length);
   console.log('regras: ' + vivas.length + ' | inalcancaveis por construcao: ' + vivas.filter(r => r.mortaEstatica).length);
   if (comRuntime) {
-    console.log('regras que casam em alguma das 14 telas: ' + vivas.filter(r => r.casouRuntime).length);
+    console.log('regras que casam em alguma das ' + TELAS + ' telas: ' + vivas.filter(r => r.casouRuntime).length);
     const cores = coresDasFolhas();
     const normalizaveis = [...cores].filter(([, e]) => e.norm);
     const nuncaNaTela = normalizaveis.filter(([k]) => !pintadas.has(k));
     console.log('');
     console.log('cores escritas nas folhas: ' + cores.size + ' (normalizaveis para rgb: ' + normalizaveis.length + ')');
-    console.log('  nunca pintadas nas 14 telas: ' + nuncaNaTela.length);
+    console.log('  nunca pintadas nas ' + TELAS + ' telas: ' + nuncaNaTela.length);
     writeFileSync(join(ROOT, 'css-cores.json'), JSON.stringify({
       pintadas: [...pintadas].sort(),
       nuncaNaTela: nuncaNaTela

@@ -298,12 +298,65 @@ de `mockApi()`.
 ```
 npm run lint
 npm run typecheck:cards      # o único portão que pega renome de campo no cartão
-npm run test                 # vitest, ~259–264 unitários
+npm run test                 # vitest, ~248 unitários
 npm run test:e2e             # playwright; constrói e serve o bundle real
 ```
 
 Rode os quatro. O E2E leva minutos — rode em background e espere uma vez, não em
 laço.
+
+### NENHUM DOS TRÊS PRIMEIROS EXECUTA O APP
+
+Isto não é detalhe de infraestrutura: é o formato do buraco por onde passou o
+pior defeito de 29/08/2026 — uma linha que derrubava o app INTEIRO no boot,
+com `lint`, `typecheck:cards` e 239 unitários **verdes**.
+
+| Portão | O que ele de fato lê |
+|---|---|
+| `lint` | a árvore sintática. Nome sem declaração, variável sem uso |
+| `typecheck:cards` | tipos de **quatro** arquivos do cartão contra `api.d.ts` |
+| `test` (vitest) | funções puras importadas uma a uma, ambiente `node`, **sem DOM** |
+| `test:e2e` | o bundle real, no browser. **O único que roda o app** |
+
+Consequência prática: se você mexeu em ordem de carga, em `entry-restaurant.js`,
+ou moveu código entre arquivos, **os três rápidos não têm opinião sobre isso**.
+Verde neles não é sinal de nada nesse eixo.
+
+E o E2E pega, sim — medido, com o defeito reinjetado de propósito: 9 de 10
+testes de dois arquivos quaisquer quebram. O problema nunca foi cobertura, foi
+**diagnóstico e prazo**: 200 falhas de timeout, nenhuma linha dizendo "o app não
+subiu", e a causa só apareceu depois de um build com sourcemap para traduzir
+`p is not a function`.
+
+Foi por isso que existem agora dois portões novos, e é neles que se começa a
+depurar quando tudo está vermelho:
+
+**`tests/unit/page-modules.test.js`** — milissegundos, sem browser, dentro do
+`npm run test`. Três verificações, cada uma vista falhando com o defeito
+recolocado:
+
+1. **Importar cada módulo de tela não pode executar nada.** É o ambiente `node`
+   sem DOM que torna isto possível: no import, as injeções ainda são `undefined`
+   — a condição exata do defeito. `TypeError: onTeardown is not a function`, com
+   o nome real, em 40 ms.
+2. **Nenhuma instrução executável no corpo do módulo.** Pega a classe inteira,
+   com arquivo e linha, inclusive a instrução que hoje não usa injeção nenhuma e
+   amanhã passa a usar.
+3. **Toda injeção declarada é passada no `init()`.** É a metade que o lint não
+   vê (§2.1, armadilha 2).
+
+**`tests/e2e/boot-smoke.spec.js`** — 11 s, roda o bundle real. Não acrescenta
+cobertura; acrescenta uma frase. Afirma que o app sai do loader, que as dez
+telas principais abrem, que cada ação existe no registro — e, o que a suíte
+inteira não faz, que **nenhuma exceção não capturada** foi emitida. Um app que
+sobe com uma exceção engolida passa em todo o resto e falha só aqui.
+
+**E a ferramenta de captura, no CI?** Não como portão. `capture-screens.mjs`
+compara contra uma linha de base, e uma base versionada mudaria a cada mudança
+legítima de tela — viraria ruído e seria desligada em duas semanas. O que dela
+cabe no CI é a parte SEM base ("toda tela abre"), e essa parte é o
+`boot-smoke.spec.js`. A comparação continua sendo ferramenta de refactor: rode-a
+à mão, antes e depois, quando o commit disser "só movi código".
 
 **Flakes conhecidos** (passam isolados, caem sob carga paralela; não são seus):
 `assistant-voice-session.spec.js:294` e `pix-payment.spec.js:116` (geometria).
@@ -352,6 +405,8 @@ contraste (`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária cru
 
 - [ ] O teste novo foi visto **falhando** com a correção revertida, e pelo motivo certo.
 - [ ] `lint`, `typecheck:cards`, `test`, `test:e2e` — com os números no commit.
+      Lembre que os três primeiros NÃO executam o app (§5): verde neles não diz
+      nada sobre ordem de carga nem sobre código movido entre arquivos.
 - [ ] Nenhum valor de dinheiro calculado fora de `cartTotals()`; nenhum campo lido sem estar em `api.d.ts`.
 - [ ] Rota nova? Ela existe no spec (`api-contract.test.js` prova) e o mock **não** a atende por acidente pelo catch-all.
 - [ ] Pendência de backend virou texto. `docs/order-contract.md` tem a lista, e a mais cara continua aberta: **numa recusa de cartão o pedido já está gravado e não há rota de cliente para cancelá-lo.**

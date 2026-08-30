@@ -22,6 +22,13 @@ teste falhar, e confira **por que** ele falhou — já houve teste passando pelo
 motivo errado. Um E2E verde não prova que uma rota existe: o mock devolve 200
 para qualquer rota que o app invente.
 
+**Nenhum dos três portões rápidos executa o app.** `lint` lê a árvore sintática,
+`typecheck:cards` confere quatro arquivos do cartão, e os unitários rodam em
+`node` sem DOM. Uma linha no lugar errado já derrubou o app inteiro no boot com
+os três verdes. Quem roda o app é o `test:e2e` — e, desde então,
+`tests/unit/page-modules.test.js` (milissegundos) e `tests/e2e/boot-smoke.spec.js`
+(11 s), que existem para dar a frase certa em vez de 200 timeouts.
+
 ## Não leia o `restaurant-page.js` inteiro
 
 São ~7.200 linhas. Ache a função (`grep -n "function nomeDaCoisa"`) e leia a

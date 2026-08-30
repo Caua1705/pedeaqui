@@ -81,6 +81,10 @@ import './pages/restaurant-assistant-voice-session.js';
 // window.PedeAquiAddressFlow, que o restaurant-page consome no proprio corpo do
 // IIFE, chamando init() com as dependencias que ficaram la.
 import './pages/restaurant-address-flow.js';
+// Pagamento por Pix e acompanhamento do pedido. Mesmo motivo de ordem do
+// modulo de endereco: publica window.PedeAquiPixFlow, que o restaurant-page
+// consome no corpo do proprio IIFE.
+import './pages/restaurant-pix-flow.js';
 import './pages/restaurant-page.js';
 // A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
 // sacola com o meio de pagamento selecionado, portanto vem logo depois dela.

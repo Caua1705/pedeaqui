@@ -103,7 +103,7 @@
   width:100%!important;
   height:70px!important;
   padding:0 20px!important;
-  background:#fff!important;
+  background:var(--surface)!important;
   border-bottom:1px solid #f1f1f1!important;
 }
 /* Seta de voltar: a regra por id saiu — repetia exatamente a base
@@ -567,7 +567,7 @@
   width:100%!important;
   height:70px!important;
   padding:0 20px!important;
-  background:#fff!important;
+  background:var(--surface)!important;
   border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
@@ -758,7 +758,7 @@
   width:100%!important;
   height:70px!important;
   padding:0 20px!important;
-  background:#fff!important;
+  background:var(--surface)!important;
   border-bottom:1px solid #e4e4e4!important;
   flex-shrink:0!important;
 }
@@ -1195,7 +1195,7 @@
   width:100%!important;
   height:70px!important;
   padding:0 20px!important;
-  background:#fff!important;
+  background:var(--surface)!important;
   border-bottom:1px solid #e2e2e2!important;
 }
 #addrPickerModal .cart-hdr-back svg{

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "0a11c001-0000-4000-8000-000000003001",
+    "order_number": 3001,
+    "order_type": "delivery",
+    "status": "pending",
+    "branch_name": "Matriz",
+    "restaurant_name": "Júnior da Picanha",
+    "created_at": "2026-08-30T14:05:00Z",
+    "subtotal": 140.1,
+    "delivery_fee": 7.5,
+    "service_fee": 0.99,
+    "total": 148.59,
+    "coupon_code": null,
+    "coupon_discount_amount": "0.00",
+    "discount_total": "0.00",
+    "cashback_redeemed_amount": "0.00",
+    "items": [
+      {
+        "id": "1b22d001-0000-4000-8000-000000000001",
+        "product_id": "059a122d-d670-4eb1-a093-67350884fe6e",
+        "product_name_snapshot": "Maminha à Moda (400g)",
+        "product_description_snapshot": "Maminha grelhada com acompanhamento.",
+        "quantity": 1,
+        "unit_price_snapshot": 126.0,
+        "total": 126.0,
+        "observation": "Bem passada, por favor",
+        "option_groups": [
+          {
+            "option_group_id": "2c33e001-0000-4000-8000-000000000001",
+            "option_group_name_snapshot": "Acompanhamento",
+            "options": [
+              {
+                "id": "3d44f001-0000-4000-8000-000000000001",
+                "option_id": "4e55a001-0000-4000-8000-000000000001",
+                "option_name_snapshot": "Espaguete ao alho",
+                "additional_price_snapshot": 8.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1b22d001-0000-4000-8000-000000000002",
+        "product_id": "80f16645-1d6b-4fca-b9e4-dd838e4134d2",
+        "product_name_snapshot": "Agua H2O",
+        "quantity": 2,
+        "unit_price_snapshot": 7.05,
+        "total": 14.1
+      }
+    ]
+  },
+  {
+    "id": "0a11c001-0000-4000-8000-000000003002",
+    "order_number": 3002,
+    "order_type": "pickup",
+    "status": "delivered",
+    "branch_name": "Varjota",
+    "restaurant_name": "Júnior da Picanha",
+    "created_at": "2026-08-27T19:41:00Z",
+    "subtotal": 87.9,
+    "delivery_fee": 0,
+    "service_fee": 0.99,
+    "total": 78.89,
+    "coupon_code": "BEMVINDO10",
+    "coupon_discount_amount": "10.00",
+    "discount_total": "10.00",
+    "cashback_redeemed_amount": "0.00",
+    "items": [
+      {
+        "id": "1b22d002-0000-4000-8000-000000000001",
+        "product_id": "ae411928-b13d-4074-958d-816fe47beb82",
+        "product_name_snapshot": "Picanha Suína (400g)",
+        "quantity": 1,
+        "unit_price_snapshot": 87.9,
+        "total": 87.9
+      }
+    ]
+  },
+  {
+    "id": "0a11c001-0000-4000-8000-000000003003",
+    "order_number": 3003,
+    "order_type": "delivery",
+    "status": "delivered",
+    "branch_name": "Matriz",
+    "restaurant_name": "Júnior da Picanha",
+    "created_at": "2026-07-12T12:20:00Z",
+    "subtotal": 45.3,
+    "delivery_fee": 6.99,
+    "service_fee": 0.99,
+    "total": 53.28,
+    "coupon_code": null,
+    "coupon_discount_amount": "0.00",
+    "discount_total": "0.00",
+    "cashback_redeemed_amount": "0.00",
+    "items": [
+      {
+        "id": "1b22d003-0000-4000-8000-000000000001",
+        "product_id": null,
+        "product_name_snapshot": "Feijoada de Sábado (1kg)",
+        "quantity": 1,
+        "unit_price_snapshot": 45.3,
+        "total": 45.3
+      }
+    ]
+  }
+]

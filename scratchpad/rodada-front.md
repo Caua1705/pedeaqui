@@ -22,10 +22,18 @@ E2E vermelhos HERDADOS (item 4.3 conserta): order-flow:42, pix-payment:576, :736
 Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] bloqueado
 
 ### Fase 1 — enxergar antes de mexer
-- [~] 1.1 helpers.js:177 `/customers/me*` → responder logado (fixture de customer)
+- [~] 1.1 helpers.js:177 `/customers/me*` → responder logado (fixture de customer).
+      Desenho decidido: mock espelha o backend — SEM Authorization → 401 (guest
+      continua guest); COM Authorization → fixtures (me, orders, orders/:id,
+      addresses [], cashback contrato, cards []); subrota desconhecida → catch-all
+      404. Specs que sobrepõem depois de mockApi continuam vencendo (última vence).
 - [ ] 1.2 capture-screens.mjs: /customers/me/orders com fixture real (não json([]))
-- [ ] 1.3 tests/fixtures/orders.json com nomes DO CONTRATO (ver recon abaixo):
-      pedido c/ adicionais, pedido de outra filial, pedido c/ produto fora do cardápio
+- [x] 1.3 tests/fixtures/orders.json — CustomerOrderHistoryItem[] com nomes DO
+      CONTRATO. 3 pedidos: #3001 pending (ativo) c/ option_groups (unit_price_
+      snapshot JÁ inclui o adicional: 117.5+8.5=126.0), #3002 delivered de OUTRA
+      FILIAL (Varjota, pickup, cupom BEMVINDO10, strings decimais), #3003
+      delivered c/ product_id NULL (produto saiu do cardápio). Números escolhidos
+      para NÃO coincidir entre si (lição do fixture 22,14).
 - [ ] 1.4 Auditoria de contrato do APP INTEIRO → tabela nesta página
 - [ ] 1.5 Consertar TODOS os achados de 1.4, do mais barato ao mais caro,
       cada um com teste visto vermelho pelo motivo certo

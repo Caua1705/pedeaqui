@@ -5,31 +5,40 @@
 
    O que ela e, medido: de 1.280 regras, UMA comecava com `.u-` — e ja foi para
    styles/markup.css, que e a folha de utilitarios de verdade. As outras sao
-   ajuste de tela (`#productModal`, `#infoModal`, `#profSubmeusdados`,
-   `.delivery-widget`, `.mob-bottom-nav`) escrito aqui por um motivo so: para
-   carregar DEPOIS de restaurant.css e vencer.
+   ajuste de tela (`#productModal`, `#profSubmeusdados`, `.delivery-widget`,
+   `.mob-bottom-nav`) escrito aqui por um motivo so: para carregar DEPOIS de
+   restaurant.css e vencer.
 
    "Carregada por ultimo" deixou de ser verdade quando as folhas de tela
    apareceram. A ordem real esta no <head> do restaurant.html; hoje vem DEPOIS
-   dela: operation, register, login, verify, button-theme, assistant,
-   coupons-api, pix, payment-card e markup.
+   dela: store-info, policy, club, operation, register, login, verify,
+   button-theme, assistant, coupons-api, pix, payment-card e markup.
 
-   POR QUE ISTO NAO FOI SIMPLESMENTE REDISTRIBUIDO: a posicao de carga desta
-   folha e carregando. 1.013 das 1.280 regras (191 kB) tocam classes ou ids que
-   OUTRA folha tambem declara — elas estao numa disputa de ordem, e mover
-   qualquer uma delas para "a folha certa" inverte quem vence. So 267 regras
-   falam de tokens que mais ninguem declara. Redistribuir isto e trabalho de
-   uma regra por vez, com a captura de propriedades a cada passo, e nao um
-   recorta-e-cola.
+   O QUE JA SAIU, E POR QUE SO ISSO PODIA SAIR
 
-   O mesmo vale DENTRO do arquivo: 136 seletores estao escritos mais de uma vez
+   Em 30/08/2026 sairam 211 regras para tres folhas novas — store-info.css
+   (134), club.css (61) e policy.css (16) —, e o criterio foi UM SO: nenhum
+   outro arquivo declara um so dos nomes que elas usam. Sem disputa de ordem,
+   a posicao na cascata nao decide nada e mover nao inverte ninguem. Cada uma
+   das tres tem no cabecalho quais telas provam a mudanca.
+
+   O QUE FICA, E POR QUE NAO E TEIMOSIA
+
+   Sobraram 1.055 regras, e 1.006 delas (190 kB) tocam classes ou ids que OUTRA
+   folha tambem declara: estao numa disputa de ordem, e "levar para a folha
+   certa" inverte quem vence. As outras 49 sao livres mas nao formam grupo — sao
+   restos de `.delivery-widget-tab`, `.home-cart-pill`, `.highlight-*`,
+   `.prof-payment-*`, `.payment-method-*`, espalhados entre as regras em
+   disputa. Tirar cada uma e trabalho de uma regra por vez, com a captura de
+   propriedades a cada passo, e o ganho por regra e pequeno perto do risco.
+
+   O mesmo vale DENTRO do arquivo: 122 seletores estao escritos mais de uma vez
    aqui, e juntar os blocos nao e de graca. A tentativa de juntar todos levou
    `body,button,input,textarea,select{font-family:var(--ref-font)!important}`
    da linha 394 para o bloco de mesmo seletor 1.500 linhas abaixo, e a captura
    acusou 934 elementos com a fonte trocada em 14 telas: entre as duas posicoes
    havia uma terceira regra que vencia a de cima e perdeu para a de baixo.
-   Juntar so vale quando nada no meio disputa a mesma propriedade — sao 12
-   grupos dos 136.
+   Juntar so vale quando nada no meio disputa a mesma propriedade.
 
    Medido com `node tools/css-usage.mjs` e `node tools/css-important.mjs`.
    ============================================================================ */
@@ -39,33 +48,10 @@
 .products-grid{padding-right:28px!important}
 
 /* Store info modal and login screen based on the mobile references. */
-.store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:var(--surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0}
-.store-info-header h2{color:#1f2933;text-align:center}
-.store-info-close{width:36px;height:36px;border:0;border-radius:12px;background:#f0f0f0;color:#999;font-size:1.3rem;font-weight:700;line-height:1;cursor:pointer}
-.store-info-body{flex:1;overflow:auto;padding:20px 16px 26px;background:#f7f7f7}
-.store-info-card{background:#fff;border-radius:9px;padding:30px 18px 26px;text-align:center;box-shadow:0 1px 0 rgba(0,0,0,.02)}
-.store-info-logo{width:120px;height:120px;border-radius:50%;overflow:hidden;margin:0 auto 18px;background:var(--brand-tint);display:flex;align-items:center;justify-content:center}
-.store-info-logo img{width:100%;height:100%;object-fit:cover}
 .store-info-logo .mob-logo-fallback{width:100%;height:100%;border-radius:50%;background:var(--brand);color:#fff;font-size:1.7rem}
-.store-info-name{color:#5a5a5a;margin-bottom:6px}
-.store-info-neighborhood{color:#9a9a9a;margin-bottom:22px}
-.store-contact-list{display:grid;gap:16px;justify-items:center}
-.store-contact-row{display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#8c8c8c;font-weight:800;text-decoration:none;max-width:100%}
-.store-contact-row svg{width:18px;height:18px;flex-shrink:0;color:#8f8f8f}
-.store-contact-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.store-contact-row--wa,.store-contact-row--wa svg{color:#3f7d4f}
-.store-info-tabs{display:flex;gap:24px;overflow-x:auto;margin:20px -16px 0;padding:0 16px;border-bottom:1px solid #e2e2e2;scrollbar-width:none}
-.store-info-tabs::-webkit-scrollbar{display:none}
-.store-info-tabs button{height:34px;border:0;border-bottom:3px solid transparent;background:transparent;color:#aaa;font-weight:800;white-space:nowrap}
 .store-info-tabs button.active{color:#3f7d4f;border-bottom-color:#3f7d4f}
-.store-hours-card,.store-address-card{margin-top:22px;background:#fff;border-radius:9px;padding:20px;box-shadow:0 12px 30px rgba(0,0,0,.03)}
-.store-hours-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;color:#9a9a9a;font-weight:700}
 .store-hours-row.active span{position:relative;color:#8b8b8b;font-weight:800;padding-left:16px}
 .store-hours-row.active span::before{content:'';position:absolute;left:0;top:50%;width:8px;height:8px;border-radius:50%;background:#3f7d4f;transform:translateY(-50%)}
-.store-hours-row strong{color:#8a8a8a;font-weight:800}
-.store-address-card h3{color:#333;margin-bottom:10px}
-.store-address-card p{color:#8a8a8a;margin-bottom:12px}
-
 #loginModal{background:#EEF3FA!important;backdrop-filter:none!important;align-items:stretch!important;overflow:hidden!important}
 #loginModal .modal--login{position:relative!important;width:calc(100% - 20px)!important;min-height:calc(100dvh - 20px)!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;overflow:hidden!important;margin:10px auto!important;border:0!important;border-radius:14px!important;background:#fff!important;transform:translateY(0)!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important}
 .modal--login .login-close{position:absolute!important;top:20px!important;right:20px!important;width:42px!important;height:42px!important;border-radius:10px!important;background:#F5F5F5!important;color:#a0a0a0!important;border:0!important;font-size:11.5px!important;font-weight:800!important;-webkit-text-stroke:0.45px currentColor!important;display:flex!important;align-items:center!important;justify-content:center!important}
@@ -78,10 +64,6 @@
 .modal--login .login-secondary{width:354px!important;max-width:100%!important;border:0!important;background:var(--brand-tint)!important;color:var(--brand-primary)!important;margin:10px 0 0!important;padding:0!important}
 .modal--login.policy-hidden{display:none!important}
 .modal--login .login-privacy{display:none!important}
-.login-policy-links{position:absolute;bottom:24px;left:0;right:0;margin:0!important;display:flex;flex-direction:column!important;align-items:center;gap:8px;text-align:center}
-.policy-link{border:0;background:transparent!important;color:#7a7a7a!important;font:inherit!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:500!important;text-decoration:none;cursor:pointer;padding:0!important}
-.policy-link:hover{color:var(--brand-accent)!important}
-
 .policy-screen{
   position:fixed!important;
   inset:0!important;
@@ -98,82 +80,11 @@
   transform:translateX(-50%)!important;
 }
 .policy-screen.active{display:flex!important}
-.policy-header{
-  display:grid;
-  grid-template-columns:48px 1fr 48px;
-  align-items:center;
-  background:var(--surface);
-  position:sticky!important;
-  top:0!important;
-  z-index:10;
-  flex-shrink:0!important;
-}
-.policy-back{
-  border:0!important;
-  color:#333333;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  padding:0!important;
-}
-.policy-title{
-  text-align:center!important;
-  line-height:var(--ref-line-lg)!important;
-  color:#1f2937;
-  margin:0!important;
-}
 .policy-body{
   flex:1!important;
   overflow-y:auto!important;
   -webkit-overflow-scrolling:touch!important;
 }
-.policy-section-label{
-  margin:28px 0 18px!important;
-  padding-top:20px!important;
-  border-top:1px solid #eeeeee;
-  font-size:13px;
-  line-height:1.55;
-  font-weight:700;
-  color:#111827;
-}
-.policy-content h1,
-.privacy-policy-content h1,
-.loyalty-policy-content h1{display:none!important}
-.policy-content h2,
-.privacy-policy-content h2,
-.loyalty-policy-content h2{
-  display:grid!important;
-  grid-template-columns:28px 1fr;
-  gap:8px;
-  align-items:start;
-  margin:28px 0 18px!important;
-  font-size:13px!important;
-  font-weight:700!important;
-  color:#111827!important;
-  line-height:1.55!important;
-}
-.policy-content h2 span,
-.privacy-policy-content h2 span,
-.loyalty-policy-content h2 span{color:#9ca3af!important;font-weight:700!important}
-.policy-content h3,
-.privacy-policy-content h3,
-.loyalty-policy-content h3{
-  margin:24px 0 12px!important;
-  font-size:var(--ref-text-sm)!important;
-  font-weight:700!important;
-  color:#111827!important;
-  line-height:1.55!important;
-}
-.policy-content p,
-.privacy-policy-content p,
-.loyalty-policy-content p{
-  margin:0 0 11px!important;
-  color:#111827!important;
-  letter-spacing:0!important;
-  text-align:left!important;
-}
-
 .coupon-detail-overlay{
   position:fixed!important;
   inset:0!important;
@@ -196,70 +107,7 @@
 .coupon-detail-overlay.no-motion .coupon-detail-screen{
   transition:none!important;
 }
-.coupon-detail-screen{
-  width:min(100vw,430px)!important;
-  height:100dvh!important;
-  display:flex;
-  flex-direction:column!important;
-  background:#fff;
-  transform:translateX(100%)!important;
-  transition:transform .6s ease!important;
-  visibility:visible;
-}
 .coupon-detail-overlay.active .coupon-detail-screen{transform:translateX(0)!important;transition:transform .53s ease!important;}
-.coupon-detail-header{
-  height:70px!important;
-  display:grid;
-  grid-template-columns:32px 1fr 32px;
-  align-items:center;
-  padding:0 20px!important;
-  border-bottom:1px solid var(--border-subtle);
-  background:var(--surface);
-}
-.coupon-detail-header strong{
-  text-align:center;
-  color:#2F343A;
-  font-size:var(--ref-text-lg);
-  line-height:20px;
-  font-weight:600;
-  letter-spacing:-0.01em;
-  font-synthesis:none;
-  text-shadow:none;
-}
-.coupon-detail-back{
-  width:32px!important;
-  height:32px!important;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:0;
-  border-radius:9px;
-  background:#ececec!important;
-  color:#252a31;
-}
-.coupon-detail-back svg{
-  width:17px!important;
-  height:17px!important;
-  stroke-width:1.8;
-}
-.coupon-detail-body{
-  flex:1!important;
-  overflow-y:auto;
-  background:#f7f5f3;
-}
-.coupon-detail-art{
-  width:min(100%,414px)!important;
-  height:248.39px!important;
-  margin:0 auto!important;
-  padding:0!important;
-  background:#f2f2f2!important;
-}
-.coupon-detail-art img{
-  width:100%!important;
-  height:100%!important;
-  display:block!important;
-  object-fit:cover!important;
-}
 #productModal .product-hero,
 .coupon-detail-art{
   position:relative!important;
@@ -287,137 +135,6 @@
 .coupon-detail-art .detail-image-full.is-ready{
   opacity:1!important;
 }
-.coupon-detail-art-fallback{
-  height:100%!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  border:3px dotted rgba(255,255,255,.55)!important;
-  color:#30343b!important;
-  text-align:center!important;
-  background:linear-gradient(135deg,var(--brand-primary),var(--brand-light))!important;
-}
-.coupon-detail-art-fallback span{
-  font-size:28px!important;
-  font-weight:800!important;
-}
-.coupon-detail-art-fallback strong{
-  color:#ffd95b!important;
-  font-size:58px!important;
-  line-height:1!important;
-  font-weight:800!important;
-}
-.coupon-detail-summary{
-  box-sizing:border-box!important;
-  position:relative!important;
-  width:min(100%,414px)!important;
-  height:114px!important;
-  display:flex!important;
-  align-items:center;
-  gap:12px;
-  margin:0 auto!important;
-  padding:20px 26px!important;
-  border-radius:0!important;
-  background:#fff!important;
-}
-.coupon-detail-summary::before{
-  content:'';
-  position:absolute!important;
-  left:15px!important;
-  top:20px!important;
-  width:calc(100% - 30px)!important;
-  height:74px!important;
-  border-radius:8px!important;
-  background:var(--brand-tint-strong)!important;
-  z-index:0!important;
-}
-.coupon-detail-summary > *{
-  position:relative!important;
-  z-index:1!important;
-}
-.coupon-detail-ticket-icon{
-  width:16.07px!important;
-  height:16.07px!important;
-  color:var(--brand-primary);
-  flex:0 0 16.07px!important;
-  transform:translate(0,2px) rotate(-43deg)!important;
-}
-.coupon-detail-ticket-icon svg{width:100%!important;height:100%!important}
-.coupon-detail-main{
-  min-width:0!important;
-  flex:1!important;
-  transform:translateX(5px)!important;
-}
-.coupon-detail-main strong{
-  display:block!important;
-  color:#454545!important;
-  font-size:var(--ref-text-lg)!important;
-  line-height:var(--ref-line-md)!important;
-  font-weight:600!important;
-  transform:translateY(1px)!important;
-}
-.coupon-detail-main span{
-  display:inline-flex!important;
-  align-items:center;
-  justify-content:center;
-  width:46.06px!important;
-  height:18px!important;
-  margin-top:13px!important;
-  padding:0!important;
-  border-radius:999px;
-  background:var(--brand-border);
-  color:var(--brand-active)!important;
-  font-size:11px!important;
-  line-height:14px!important;
-  font-weight:800!important;
-}
-.coupon-detail-min{
-  max-width:145px!important;
-  transform:translateY(15px)!important;
-  color:#555;
-  font-size:var(--ref-text-sm);
-  line-height:16px;
-  text-align:right;
-  font-weight:500;
-}
-.coupon-detail-rules{
-  box-sizing:border-box!important;
-  width:min(100%,414px)!important;
-  height:193px!important;
-  margin:10px auto 0!important;
-  padding:20px 15px 10px!important;
-  border-top:0;
-  background:#fff;
-  color:#555;
-  overflow:hidden!important;
-}
-.coupon-detail-rules strong{
-  display:block!important;
-  margin-bottom:18px!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:14px!important;
-  font-weight:700!important;
-}
-.coupon-detail-rules ul{
-  margin:0!important;
-  padding-left:14px!important;
-}
-.coupon-detail-rules li{
-  margin:0 0 10px!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:14px!important;
-}
-.coupon-detail-footer{
-  box-sizing:border-box!important;
-  width:min(100%,414px)!important;
-  height:95px!important;
-  margin:0 auto!important;
-  padding:20px 20px max(8px,env(safe-area-inset-bottom))!important;
-  background:#fff;
-  box-shadow:0 -6px 16px rgba(0,0,0,.08);
-  flex:0 0 95px!important;
-}
 /* A forma do botao "Usar cupom" e `.ui-btn` (styles/components.css). */
 
 /* A escala tipografica (--ref-text-*, --ref-line-*, --ref-font) mudou para
@@ -435,10 +152,6 @@ body,button,input,textarea,select{font-family:var(--ref-font)!important}
 .mob-nav-icon{width:24px!important;height:24px!important;stroke-width:1.8!important}
 .btn-cart,.cart-cta-btn,.login-secondary{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
 .cart-hdr-title,.modal-title,.store-info-header h2{font-size:var(--ref-text-lg)!important;line-height:var(--ref-line-lg)!important;font-weight:600!important}
-.store-info-name{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:600!important}
-.store-info-neighborhood{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:500!important}
-.store-contact-row,.store-info-tabs button,.store-hours-row,.store-hours-row strong,.store-address-card p{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important}
-.store-address-card h3{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
 .modal--login .login-rest-name{font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-size:26.5px!important;line-height:31px!important;font-weight:600!important;letter-spacing:-0.45px!important;font-synthesis:none!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale;text-shadow:none;-webkit-text-stroke:0!important;color:#0f0f0f!important}
 .modal--login .cart-cta-btn,.modal--login .login-secondary{line-height:var(--ref-line-md)!important;}
 .modal--login .login-privacy{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important}
@@ -575,44 +288,9 @@ body.menu-tab .menu-area{padding-top:0!important}
 }
 .coupon-card::before{left:-2px!important;border-left:0!important;border-radius:0 7px 7px 0!important}
 .coupon-card::after{right:-2px!important;border-right:0!important;border-radius:7px 0 0 7px!important}
-.coupon-art{
-  position:relative;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  border:0!important;
-  color:#30343b!important;
-}
 /* Backend image fills the art block; gradient + text become the fallback. */
-.coupon-art--has-img{
-  border:0!important;
-  background:var(--brand-tint)!important;
-}
-.coupon-art--has-img span,
-.coupon-art--has-img strong{display:none!important}
 /* "Cupom" label */
-.coupon-art span{
-  margin:0!important;
-  padding:0!important;
-  border-radius:0!important;
-  background:transparent!important;
-  color:rgba(255,255,255,.9)!important;
-  font-size:11px!important;
-  line-height:14px!important;
-  font-weight:700!important;
-  letter-spacing:.04em!important;
-  text-transform:uppercase!important;
-}
 /* Discount text — "12% off" style: large yellow number */
-.coupon-art strong{
-  color:#ffe066!important;
-  font-size:30px!important;
-  line-height:30px!important;
-  text-transform:lowercase!important;
-  letter-spacing:-.01em!important;
-}
 .coupon-use-btn{
   align-self:center;
 }
@@ -818,30 +496,8 @@ body{
   font-size:var(--ref-text-sm)!important;
   font-weight:700!important;
 }
-.policy-header{
-  min-height:70px!important;
-  height:auto!important;
-  padding:0 20px!important;
-  border-bottom:1px solid var(--border-subtle);
-}
-.policy-back{
-  width:32px!important;
-  height:32px!important;
-  border-radius:10px!important;
-  background:#ebebeb!important;
-}
-.policy-title{
-  font-size:var(--ref-text-lg)!important;
-  font-weight:600!important;
-}
 .policy-body{
   padding:24px 20px 30px!important;
-}
-.policy-content p,
-.privacy-policy-content p,
-.loyalty-policy-content p{
-  font-size:var(--ref-text-sm)!important;
-  line-height:1.8!important;
 }
 @media(max-width:767px){
   .restaurant-app-shell{
@@ -1230,40 +886,6 @@ body:not(.menu-tab) .home-order-cta,
 .coupon-card::before,
 .coupon-card::after{
   display:none!important;
-}
-.coupon-art{
-  width:calc(100% - 12px)!important;
-  aspect-ratio:5 / 3!important;
-  height:auto!important;
-  margin:6px 6px 0!important;
-  border-radius:8px!important;
-  overflow:hidden!important;
-  background:var(--brand-tint)!important;
-  flex-shrink:0!important;
-}
-.coupon-art img{
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover;
-  object-position:center center;
-  display:block!important;
-  border-radius:8px!important;
-}
-.coupon-title{
-  flex:0 0 38px!important;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0 10px!important;
-  margin:0!important;
-  text-align:center!important;
-  text-transform:uppercase!important;
-}
-.coupon-dash{
-  flex:0 0 auto!important;
-  height:0!important;
-  border:0!important;
-  border-top:1px dashed rgba(var(--brand-primary-rgb), .2)!important;
 }
 .coupon-use-btn{
   flex:0 0 auto!important;
@@ -2177,13 +1799,6 @@ body.home-tab .delivery-widget.pending-selection{
   border:1px solid rgba(var(--brand-primary-rgb), .18)!important;  /* softer brand-orange tone */
   box-shadow:none!important;
 }
-.coupon-title{
-  font-size:var(--ref-text-md)!important;
-  line-height:17px!important;
-  font-weight:700!important;
-  color:#565656;
-  letter-spacing:0!important;
-}
 .coupon-use-btn{
   font-size:var(--ref-text-sm)!important;
   margin-top:10px!important;
@@ -2193,16 +1808,7 @@ body.home-tab .delivery-widget.pending-selection{
   height:23px!important;
   min-height:23px!important;
 }
-.coupon-dash{
-  margin:24px 18px 4px!important;
-  border-top-width:1.75px!important;
-  border-top-color:rgba(var(--brand-primary-rgb), .32)!important;
-}
 /* Fallback discount number (only shows when a coupon has NO image). */
-.coupon-art strong{
-  font-weight:800!important;          /* was 900 */
-}
-
 /* Home-only micro alignment: nudge non-banner content slightly right. */
 @media(max-width:767px){
   body.home-tab .mob-identity,
@@ -3977,294 +3583,42 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Store information screen - reference layout. */
-#infoModal{backdrop-filter:none!important;align-items:stretch!important}
-#infoModal .modal--store-info{width:100%!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#ffffff!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
-#infoModal .store-info-header{display:grid!important;align-items:center!important;background:var(--surface)!important;}
-#infoModal .store-info-close{border:0!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
-#infoModal .store-info-body{flex:1!important;overflow-y:auto!important;padding:0!important;}
-#infoModal .store-info-card{margin:0!important;padding:24px 26px 23px!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:center!important}
-#infoModal .store-info-logo{margin:0 auto 17px!important;}
 #infoModal .store-info-logo .mob-logo-fallback{width:100%!important;height:100%!important;border-radius:50%!important;background:var(--brand-primary)!important;color:var(--brand-on)!important;font-size:22px!important;font-weight:800!important}
-#infoModal .store-info-name{margin:0!important;color:#4b4b4b!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
-#infoModal .store-info-neighborhood{margin:1px 0 15px!important;color:#777777!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:400!important}
-#infoModal .store-contact-list{display:grid!important;justify-items:center!important}
-#infoModal .store-contact-row{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;max-width:100%!important;color:#757575!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;font-weight:500!important;text-decoration:none!important}
-#infoModal .store-contact-row svg{width:16px!important;height:16px!important;color:#9a9a9a!important;stroke-width:2!important}
-#infoModal .store-contact-row span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-#infoModal .store-contact-row--wa,#infoModal .store-contact-row--wa svg{color:var(--brand-primary)!important;stroke:var(--brand-primary);font-weight:700!important}
-#infoModal .store-info-tabs{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:0!important;overflow:visible!important;}
-#infoModal .store-info-tabs button{min-width:0!important;border:0!important;border-bottom:3px solid transparent!important;background:transparent!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;text-align:center!important;white-space:nowrap!important}
-#infoModal .store-hours-card,#infoModal .store-address-card,#infoModal .store-payment-card{border:0!important;border-radius:0!important;box-shadow:none!important}
-#infoModal .store-hours-row{min-height:29px!important;padding:0!important;display:grid!important;align-items:center!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;}
-#infoModal .store-hours-row span{min-width:0!important}
-#infoModal .store-hours-row strong{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;white-space:nowrap!important}
 #infoModal .store-hours-row.active span{position:relative!important;padding-left:13px!important;}
 #infoModal .store-hours-row.active span::before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:8px!important;height:8px!important;border-radius:50%!important;background:#9e9e9e!important;transform:translateY(-50%)!important}
-#infoModal .store-address-card h3,#infoModal .store-payment-card h3{margin:0 0 10px!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;}
-#infoModal .store-address-card p,#infoModal .store-payment-card p{margin:0 0 9px!important;font-size:var(--ref-text-sm)!important;line-height:19px!important;}
-
 /* Store info refinements: match operation header and reference spacing. */
-#infoModal .modal--store-info{max-width:414px!important}
-#infoModal .store-info-header{
-  height:70px!important;
-  min-height:70px!important;
-  padding:0 20px!important;
-  grid-template-columns:32px 1fr 32px!important;
-  border-bottom:1px solid var(--border-subtle)!important;
-}
-#infoModal .store-info-header h2{
-  font-size:var(--ref-text-lg)!important;
-  line-height:20px!important;
-  font-weight:600!important;
-  color:#2F343A!important;
-  letter-spacing:-0.01em!important;
-}
-#infoModal .store-info-close{
-  width:32px!important;
-  height:32px!important;
-  border-radius:9px!important;
-  background:#ececec!important;
-  color:#252a31!important;
-}
-#infoModal .store-info-close svg{
-  width:17px!important;
-  height:17px!important;
-  stroke-width:1.8!important;
-}
-#infoModal .store-info-logo{
-  width:95px!important;
-  height:95px!important;
-}
-#infoModal .store-info-tabs{
-  align-items:end!important;
-}
-#infoModal .store-info-tabs button{
-  align-self:end!important;
-}
-#infoModal .store-hours-row{
-  grid-template-columns:minmax(0,1fr) max-content!important;
-  gap:18px!important;
-}
-#infoModal .store-hours-row strong{
-  justify-self:end!important;
-  text-align:right!important;
-}
-
 /* Store info header fixed column placement. */
-#infoModal .store-info-close{grid-column:1!important;grid-row:1!important;justify-self:start!important}
-#infoModal .store-info-header h2{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:100%!important;text-align:center!important}
-#infoModal .store-info-spacer{grid-column:3!important;grid-row:1!important;width:32px!important;height:32px!important}
-
 /* Store info sizing tweaks.
    A divisoria de 2px que ficava aqui saiu: era a unica de 2px entre os doze
    cabecalhos de 70px, e a regra so existia para engrossar a linha que a regra
    de cima ja desenhava com 1px. Apagada em vez de reescrita para 1px — uma
    regra que repete o valor que ja vale e a proxima que alguem le achando que
    decide algo. */
-#infoModal .store-info-card{
-  width:414px!important;
-  max-width:100%!important;
-  height:305px!important;
-  min-height:305px!important;
-  padding-bottom:18px!important;
-  box-sizing:border-box!important;
-}
-
 /* Store info card content vertical nudge. */
-#infoModal .store-info-card{padding-top:24px!important}
-
 /* Store info text/contact spacing below logo. */
-#infoModal .store-info-logo{margin-bottom:17px!important}
-#infoModal .store-info-neighborhood{margin-bottom:15px!important}
-#infoModal .store-contact-list{gap:14px!important}
-
 /* Store info contacts lower. */
-#infoModal .store-contact-list{margin-top:8px!important}
-
 /* Store info contact row fine tuning. */
-#infoModal .store-contact-list .store-contact-row--wa{margin-top:7px!important}
-
 /* Store info phone and email lower. */
-#infoModal .store-contact-list .store-contact-row:nth-child(1){margin-top:4px!important}
-#infoModal .store-contact-list .store-contact-row:nth-child(2){margin-top:5px!important}
-
 /* Store info lower schedule block sizing. */
-#infoModal .store-info-tabs button{
-  height:49px!important;
-  padding-top:3px!important;
-}
-
 /* Store info tabs gray line exact size. */
-#infoModal .store-info-tabs{border-bottom:0!important}
-#infoModal .store-info-tabs::after{
-  content:''!important;
-  position:absolute!important;
-  left:20px!important;
-  right:20px!important;
-  bottom:0!important;
-  height:3px!important;
-  border-radius:2px!important;
-  z-index:0!important;
-}
-#infoModal .store-info-tabs button{position:relative!important;z-index:1!important}
-
 /* Store info bottom area after 414x293 block. */
-#infoModal .store-info-card,
-#infoModal .store-info-tabs,
-#infoModal .store-hours-card,
-#infoModal .store-address-card,
-#infoModal .store-payment-card{background:#ffffff!important}
-
 /* Store info gray only after lower block, not between sections. */
-#infoModal .store-info-body{background:#ffffff!important}
-#infoModal .store-info-tabs{border-top-color:#f7f5f3!important}
-
 /* Store info lower white area includes tabs + content: 414x293. */
-#infoModal .store-info-tabs{
-  width:414px!important;
-  max-width:100%!important;
-  height:62px!important;
-  margin:0 auto!important;
-  padding:0 20px!important;
-  box-sizing:border-box!important;
-  background:#ffffff!important;
-  border-top:10px solid #f7f5f3!important;
-}
-#infoModal .store-hours-card,
-#infoModal .store-address-card,
-#infoModal .store-payment-card{
-  width:414px!important;
-  max-width:100%!important;
-  height:231px!important;
-  min-height:231px!important;
-  margin:0 auto!important;
-  padding:12px 20px 0!important;
-  box-sizing:border-box!important;
-  background:#ffffff!important;
-}
-#infoModal .store-info-body::after{
-  content:''!important;
-  display:block!important;
-  width:100%!important;
-  height:240px!important;
-  background:#f7f5f3!important;
-  margin-top:0!important;
-}
-
 /* Store info lower block lighter typography. */
-#infoModal .store-info-tabs button{
-  color:#b0b0b0!important;
-  font-weight:600!important;
-}
 #infoModal .store-info-tabs button.active{
   color:#555555!important;
   font-weight:600!important;
-}
-#infoModal .store-hours-row{
-  color:#8a8a8a!important;
-  font-weight:400!important;
 }
 #infoModal .store-hours-row.active span{
   color:#747474!important;
   font-weight:600!important;
 }
-#infoModal .store-address-card h3,
-#infoModal .store-payment-card h3{
-  color:#666666!important;
-  font-weight:600!important;
-}
-#infoModal .store-address-card p,
-#infoModal .store-payment-card p{
-  color:#7f7f7f!important;
-  font-weight:400!important;
-}
-
 /* Store info lower block final spacing/color tweaks. */
-#infoModal .store-hours-card,
-#infoModal .store-address-card,
-#infoModal .store-payment-card{
-  padding-top:18px!important;
-}
-#infoModal .store-hours-row strong{
-  color:#5f5f5f!important;
-  font-weight:500!important;
-}
-
 /* Store info tabs divider lighter. */
-#infoModal .store-info-tabs::after{background:#f3f3f3!important}
-
 /* Store info animated active tab underline. */
-#infoModal .store-info-tabs{--store-tab-index:0;position:relative!important}
-#infoModal .store-info-tabs button{border-bottom-color:transparent!important}
-#infoModal .store-info-tabs::before{
-  content:''!important;
-  position:absolute!important;
-  left:20px!important;
-  bottom:0!important;
-  width:calc((100% - 40px) / 3)!important;
-  height:3px!important;
-  background:#555555!important;
-  border-radius:2px!important;
-  transform:translateX(calc(var(--store-tab-index) * 100%))!important;
-  transition:transform .28s cubic-bezier(.4,0,.2,1)!important;
-  z-index:2!important;
-}
 #infoModal .store-info-tabs button.active{border-bottom-color:transparent!important}
 
 /* Store info address/payment tab layouts. */
-#infoModal[data-store-info-tab="address"] .store-info-tabs,
-#infoModal[data-store-info-tab="payment"] .store-info-tabs{
-  height:62px!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card{
-  width:414px!important;
-  max-width:100%!important;
-  margin:0 auto!important;
-  display:grid!important;
-  align-items:start!important;
-  box-sizing:border-box!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card::before{
-  content:''!important;
-  background:no-repeat center/15px 15px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%239b9b9b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E")!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card h3{display:none!important}
-#infoModal[data-store-info-tab="address"] .store-address-card p{
-  margin:0!important;
-  color:#777777!important;
-  font-size:var(--ref-text-sm)!important;
-  font-weight:400!important;
-}
-#infoModal[data-store-info-tab="payment"] .store-payment-card{
-  width:414px!important;
-  max-width:100%!important;
-  margin:0 auto!important;
-  padding:17px 20px 0!important;
-  box-sizing:border-box!important;
-}
-#infoModal .store-payment-title,
-#infoModal .store-payment-group{
-  margin:0 0 16px!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:16px!important;
-}
-#infoModal .store-payment-group{margin:0 0 11px!important;}
-#infoModal .store-payment-grid{
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  column-gap:28px!important;
-  row-gap:13px!important;
-}
-#infoModal .store-payment-grid span{
-  display:flex!important;
-  align-items:center!important;
-  min-width:0!important;
-  gap:10px!important;
-  color:#8d8d8d!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:16px!important;
-  font-weight:400!important;
-}
 #infoModal .pay-brand{
   width:30px!important;
   height:20px!important;
@@ -4278,91 +3632,20 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .pay-brand--visa{background:linear-gradient(to bottom,#f5f7fb 0 34%,#293a80 35% 64%,#ff9d1c 65% 100%)!important}
 #infoModal .pay-brand--master{background:radial-gradient(circle at 12px 10px,#ff7a59 0 7px,transparent 7.5px),radial-gradient(circle at 18px 10px,#5b8cff 0 7px,transparent 7.5px),#f2f2f2!important}
 #infoModal .pay-brand--elo{background:radial-gradient(circle at 15px 10px,#ff8a00 0 3px,transparent 3.5px),radial-gradient(circle at 11px 10px,#009bd8 0 3px,transparent 3.5px),radial-gradient(circle at 19px 10px,#f6c400 0 3px,transparent 3.5px),#151515!important}
-#infoModal[data-store-info-tab="address"] .store-info-body::after,
-#infoModal[data-store-info-tab="payment"] .store-info-body::after{background:#f7f5f3!important}
-
 /* Store info payment content lower. */
 
 /* Store info payment vertical fine tuning. */
 
 /* Store info address: gray starts right after 414x133 white block. */
-#infoModal[data-store-info-tab="address"] .store-info-body{background:#f7f5f3!important}
-#infoModal[data-store-info-tab="address"] .store-info-card,
-#infoModal[data-store-info-tab="address"] .store-info-tabs,
-#infoModal[data-store-info-tab="address"] .store-address-card{background:#ffffff!important}
-#infoModal[data-store-info-tab="address"] .store-info-body::after{display:none!important}
-
 /* Store info payment full white 414x363 and debit lower. */
-#infoModal[data-store-info-tab="payment"] .store-info-body{background:#f7f5f3!important}
-#infoModal[data-store-info-tab="payment"] .store-info-card,
-#infoModal[data-store-info-tab="payment"] .store-info-tabs,
-#infoModal[data-store-info-tab="payment"] .store-payment-card{background:#ffffff!important}
-#infoModal[data-store-info-tab="payment"] .store-info-tabs{height:62px!important}
-#infoModal[data-store-info-tab="payment"] .store-payment-card{
-  height:301px!important;
-  min-height:301px!important;
-  padding-top:20px!important;
-}
-#infoModal[data-store-info-tab="payment"] .store-info-body::after{display:none!important}
-#infoModal .store-payment-group--debit{margin-top:32px!important}
-
 /* Store info payment debit section forced lower. */
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
-  margin-top:0!important;
-}
-
 /* Store info payment debit section lower again. */
 
 /* Store info payment credit and debit card spacing. */
-#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit){
-  transform:translateY(8px)!important;
-}
-
 /* Store info final payment/address typography and positioning. */
-#infoModal .store-payment-group{
-  color:#b0b0b0!important;
-  font-weight:400!important;
-}
-#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit) + .store-payment-grid{
-  transform:translateY(16px)!important;
-}
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
-  transform:translateY(38px)!important;
-}
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
-  transform:translateY(46px)!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card{
-  padding-top:24px!important;
-}
-
 /* Store info address and payment title refinements. */
 
 /* Store info address/payment requested refinements. */
-#infoModal .store-payment-title{font-weight:800!important;color:#4a4a4a!important}
-#infoModal[data-store-info-tab="address"] .store-address-card{
-  height:78px!important;
-  min-height:78px!important;
-  padding:16px 20px 0!important;
-  grid-template-columns:18px minmax(0,1fr)!important;
-  column-gap:10px!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card::before{
-  width:17px!important;
-  height:17px!important;
-  margin-top:3px!important;
-  margin-left:0!important;
-  background-size:17px 17px!important;
-}
-#infoModal[data-store-info-tab="address"] .store-address-card p{
-  max-width:330px!important;
-  white-space:normal!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-  line-height:20px!important;
-  transform:none!important;
-}
-
 /* Force payment title prominence. */
 
 /* Payment title softer. */
@@ -4370,42 +3653,13 @@ body.home-tab .home-cart-pill #homeCartTotal{
 /* Payment title slightly lighter. */
 
 /* Payment title one step lighter. */
-#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{font-family:Inter,system-ui,sans-serif!important;
-  font-size:var(--ref-text-sm)!important;
-  line-height:16px!important;
-  -webkit-text-stroke:0;
-  color:#7a7a7a!important;
-  font-weight:600!important}
-
 /* Store info logo image fix. */
-#infoModal .store-info-logo{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  padding:0!important;
-}
-#infoModal .store-info-logo img{
-  border:0!important;
-}
-
 /* Store info lateral slide like operation/address screens. */
-#infoModal{
-  opacity:1!important;
-  background:rgba(0,0,0,0)!important;
-  visibility:hidden!important;
-  pointer-events:none!important;
-  transition:background .28s ease,visibility 0s linear .6s!important;
-}
 #infoModal.active{
   background:rgba(0,0,0,.42)!important;
   visibility:visible!important;
   pointer-events:auto!important;
   transition:background .28s ease,visibility 0s linear 0s!important;
-}
-#infoModal .modal--store-info{
-  visibility:visible!important;
-  transform:translateX(100%)!important;
-  transition:transform .6s ease!important;
 }
 #infoModal.active .modal--store-info{
   transform:translateX(0)!important;
@@ -4419,10 +3673,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Store info logo: show full restaurant logo without crop. */
-#infoModal .store-info-logo{
-  border:0!important;
-}
-
 /* Keep bottom nav rendered while info screen slides over it. */
 body.modal-open:has(#infoModal.active) .mob-bottom-nav,
 body:has(#infoModal.active) .mob-bottom-nav{
@@ -4430,26 +3680,6 @@ body:has(#infoModal.active) .mob-bottom-nav{
 }
 
 /* Store info logo final framing: full rectangular logo inside circle. */
-#infoModal .store-info-logo{
-  background:#ffffff!important;
-  border-radius:50%!important;
-  overflow:hidden!important;
-}
-#infoModal .store-info-logo img{
-  position:static!important;
-  display:block!important;
-  width:86%!important;
-  height:86%!important;
-  max-width:86%!important;
-  max-height:86%!important;
-  object-fit:contain!important;
-  object-position:center center;
-  margin:auto!important;
-  padding:0!important;
-  transform:none!important;
-  background:transparent!important;
-}
-
 /* Coupon buttons and scroll/animation polish.
    A cor de "Usar cupom" e `.ui-btn-primary`; sobra a sombra, que e desta tela. */
 .coupon-detail-use{
@@ -4757,23 +3987,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     background:#fff!important;
     -webkit-overflow-scrolling:touch!important;
   }
-  .club-page{
-    position:relative;
-    width:100%!important;
-    max-width:430px!important;
-    min-height:100%!important;
-    margin:0 auto!important;
-    padding:0 0 126px!important;
-    background:#fff!important;
-    color:#263140;
-    overflow-x:hidden;
-  }
-  .club-location-wrap{
-    width:100%!important;
-    padding:15px 0 9px!important;
-    background:#fff!important;
-  }
-  .club-location-widget.delivery-widget{
+      .club-location-widget.delivery-widget{
     width:calc(100% - 48px)!important;
     max-width:359px!important;
     height:73px!important;
@@ -4872,53 +4086,8 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   }
   .club-location-widget .address-card-copy small:empty{display:none!important}
   .club-location-widget .address-card-chevron{display:none!important}
-  .club-section-divider{
-    width:100%!important;
-    height:10px!important;
-    background:#f7f5f3;
-    border-top:1px solid #f2efed;
-    border-bottom:1px solid #f2efed;
-  }
-  .club-cashback-card{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    width:calc(100% - 48px)!important;
-    max-width:359px!important;
-    height:94px!important;
-    margin:20px auto!important;
-    padding:0 16px!important;
-    border:0!important;
-    border-radius:9px!important;
-    background:#f1f0ef!important;
-    box-shadow:none!important;
-  }
-  .club-cashback-copy{display:flex;flex-direction:column!important;gap:2px!important;min-width:0!important}
-  .club-cashback-copy span{color:#5f6670!important;font-size:var(--ref-text-md)!important;font-weight:500!important;line-height:var(--ref-line-md)!important}
-  .club-cashback-copy strong{color:#313b48!important;font-size:30px!important;font-weight:800!important;line-height:34px!important;letter-spacing:0!important}
-  .club-cashback-icon{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:38px!important;
-    height:38px!important;
-    border:0!important;
-    border-radius:10px!important;
-    background:#dcdcdc!important;
-    color:#9da0a6;
-    padding:0!important;
-  }
-  .club-cashback-icon svg{stroke:#9da0a6}
-  .club-coupons-section{padding:14px 0 0 16px!important;background:#fff!important}
-  .club-coupons-title{
-    margin:0 0 16px!important;
-    color:#596575!important;
-    font-size:var(--ref-text-lg)!important;
-    font-weight:600!important;
-    line-height:var(--ref-line-lg)!important;
-    letter-spacing:0!important;
-  }
-                                .club-coupon-empty{
+                .club-coupons-section{padding:14px 0 0 16px!important;background:#fff!important}
+                                  .club-coupon-empty{
     width:calc(100vw - 48px)!important;
     max-width:359px!important;
     min-height:92px!important;
@@ -5474,24 +4643,8 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 
-.cashback-statement-modal{width:min(430px,calc(100vw - 28px));max-height:min(78vh,680px);overflow:hidden;background:#fff}
-.cashback-statement-header{border-bottom:1px solid #eee}
-.cashback-statement-summary{padding:22px 24px 18px;border-bottom:1px solid #eee}
-.cashback-statement-summary span{display:block;margin-bottom:4px;color:#68707b;font-size:13px}
-.cashback-statement-summary strong{color:#313b48;font-size:30px;line-height:36px}
-.cashback-statement-body{max-height:calc(min(78vh,680px) - 155px);overflow-y:auto;padding:8px 24px 22px}
-.cashback-statement-row{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #eee}
-.cashback-statement-copy{min-width:0}
-.cashback-statement-copy strong,.cashback-statement-copy span,.cashback-statement-copy time{display:block}
-.cashback-statement-copy strong{color:#313b48;font-size:var(--ref-text-md)}
-.cashback-statement-copy span,.cashback-statement-copy time{margin-top:3px;color:#7b8189;font-size:var(--ref-text-sm)}
-.cashback-statement-amount{flex:none;font-size:var(--ref-text-md);font-weight:800;white-space:nowrap}
 .cashback-statement-amount.positive{color:#2f8d53}
 .cashback-statement-amount.negative{color:#c94d4d}
-.cashback-statement-state{padding:34px 8px;color:#747b84;font-size:13px;line-height:19px;text-align:center}
-.cashback-statement-retry{display:block;margin:14px auto 0;padding:9px 16px;border:0;border-radius:8px;background:var(--brand-primary);color:var(--brand-on);font:700 12px inherit}
-
-.store-info-load-state{padding:24px 8px;color:#858b93;font-size:var(--ref-text-sm);line-height:var(--ref-line-md);text-align:center}
 .prof-payment-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 14px;padding:4px;border-radius:10px;background:#f2f2f2}
 .prof-payment-tabs button{min-height:38px;border:0;border-radius:8px;background:transparent;color:#818181;font:700 12px inherit}
 .prof-payment-tabs button.active{background:#fff;color:#3f454d;box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -5501,12 +4654,6 @@ body.menu-tab .product-card.is-pressing{
 .prof-payment-method-group+.prof-payment-method-group{margin-top:16px}
 .prof-payment-method-title{margin-bottom:8px;color:#555;font-size:var(--ref-text-sm);font-weight:800}
 .fs-pay-btn:disabled,.fs-pay-btn.is-unavailable{opacity:.42;cursor:not-allowed;filter:grayscale(.35)}
-#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group,
-#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group + .store-payment-grid{transform:none!important}
-#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title{margin:0 0 12px!important}
-#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title:not(:first-child){margin-top:20px!important}
-#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group{margin:12px 0 8px!important}
-
 /* Product modal full-sheet scroll and observation width fix. */
 @media(max-width:767px){
   #productModal.active{

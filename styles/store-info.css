@@ -1,0 +1,397 @@
+/* ============================================================================
+   AS INFORMACOES DA LOJA — cabecalho, abas, horarios, endereco e pagamento.
+
+   Estas 134 regras estavam em utilities.css, e sairam de la porque NAO
+   DISPUTAM ORDEM COM NINGUEM: nenhuma outra folha declara `#infoModal` nem
+   um so dos nomes `store-*`. Essa era a condicao — em utilities.css ficam
+   as 1.008 regras que tocam classes que outra folha tambem declara, e mover
+   qualquer uma delas inverte quem vence.
+
+   Esta folha carrega LOGO DEPOIS de utilities.css, e nao no fim: o que ela
+   precisa e continuar vindo depois de restaurant.css, como vinha.
+
+   A prova de que a mudanca nao mexeu em pixel e `node tools/capture-screens.mjs`
+   com as tres abas do modal entre as 58 telas — `info-horarios`,
+   `info-endereco` e `info-pagamento`, que ate 30/08/2026 nenhuma medida abria.
+   ============================================================================ */
+
+.store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:var(--surface);border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.store-info-header h2{color:#1f2933;text-align:center}
+.store-info-close{width:36px;height:36px;border:0;border-radius:12px;background:#f0f0f0;color:#999;font-size:1.3rem;font-weight:700;line-height:1;cursor:pointer}
+.store-info-body{flex:1;overflow:auto;padding:20px 16px 26px;background:#f7f7f7}
+.store-info-card{background:#fff;border-radius:9px;padding:30px 18px 26px;text-align:center;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.store-info-logo{width:120px;height:120px;border-radius:50%;overflow:hidden;margin:0 auto 18px;background:var(--brand-tint);display:flex;align-items:center;justify-content:center}
+.store-info-logo img{width:100%;height:100%;object-fit:cover}
+.store-info-name{color:#5a5a5a;margin-bottom:6px}
+.store-info-neighborhood{color:#9a9a9a;margin-bottom:22px}
+.store-contact-list{display:grid;gap:16px;justify-items:center}
+.store-contact-row{display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#8c8c8c;font-weight:800;text-decoration:none;max-width:100%}
+.store-contact-row svg{width:18px;height:18px;flex-shrink:0;color:#8f8f8f}
+.store-contact-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.store-contact-row--wa,.store-contact-row--wa svg{color:#3f7d4f}
+.store-info-tabs{display:flex;gap:24px;overflow-x:auto;margin:20px -16px 0;padding:0 16px;border-bottom:1px solid #e2e2e2;scrollbar-width:none}
+.store-info-tabs::-webkit-scrollbar{display:none}
+.store-info-tabs button{height:34px;border:0;border-bottom:3px solid transparent;background:transparent;color:#aaa;font-weight:800;white-space:nowrap}
+.store-hours-card,.store-address-card{margin-top:22px;background:#fff;border-radius:9px;padding:20px;box-shadow:0 12px 30px rgba(0,0,0,.03)}
+.store-hours-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;color:#9a9a9a;font-weight:700}
+.store-hours-row strong{color:#8a8a8a;font-weight:800}
+.store-address-card h3{color:#333;margin-bottom:10px}
+.store-address-card p{color:#8a8a8a;margin-bottom:12px}
+.store-info-name{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:600!important}
+.store-info-neighborhood{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:500!important}
+.store-contact-row,.store-info-tabs button,.store-hours-row,.store-hours-row strong,.store-address-card p{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important}
+.store-address-card h3{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
+#infoModal{backdrop-filter:none!important;align-items:stretch!important}
+#infoModal .modal--store-info{width:100%!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#ffffff!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#infoModal .store-info-header{display:grid!important;align-items:center!important;background:var(--surface)!important;}
+#infoModal .store-info-close{border:0!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
+#infoModal .store-info-body{flex:1!important;overflow-y:auto!important;padding:0!important;}
+#infoModal .store-info-card{margin:0!important;padding:24px 26px 23px!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:center!important}
+#infoModal .store-info-logo{margin:0 auto 17px!important;}
+#infoModal .store-info-name{margin:0!important;color:#4b4b4b!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
+#infoModal .store-info-neighborhood{margin:1px 0 15px!important;color:#777777!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:400!important}
+#infoModal .store-contact-list{display:grid!important;justify-items:center!important}
+#infoModal .store-contact-row{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;max-width:100%!important;color:#757575!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;font-weight:500!important;text-decoration:none!important}
+#infoModal .store-contact-row svg{width:16px!important;height:16px!important;color:#9a9a9a!important;stroke-width:2!important}
+#infoModal .store-contact-row span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#infoModal .store-contact-row--wa,#infoModal .store-contact-row--wa svg{color:var(--brand-primary)!important;stroke:var(--brand-primary);font-weight:700!important}
+#infoModal .store-info-tabs{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:0!important;overflow:visible!important;}
+#infoModal .store-info-tabs button{min-width:0!important;border:0!important;border-bottom:3px solid transparent!important;background:transparent!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;text-align:center!important;white-space:nowrap!important}
+#infoModal .store-hours-card,#infoModal .store-address-card,#infoModal .store-payment-card{border:0!important;border-radius:0!important;box-shadow:none!important}
+#infoModal .store-hours-row{min-height:29px!important;padding:0!important;display:grid!important;align-items:center!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;}
+#infoModal .store-hours-row span{min-width:0!important}
+#infoModal .store-hours-row strong{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;white-space:nowrap!important}
+#infoModal .store-address-card h3,#infoModal .store-payment-card h3{margin:0 0 10px!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;}
+#infoModal .store-address-card p,#infoModal .store-payment-card p{margin:0 0 9px!important;font-size:var(--ref-text-sm)!important;line-height:19px!important;}
+#infoModal .modal--store-info{max-width:414px!important}
+#infoModal .store-info-header{
+  height:70px!important;
+  min-height:70px!important;
+  padding:0 20px!important;
+  grid-template-columns:32px 1fr 32px!important;
+  border-bottom:1px solid var(--border-subtle)!important;
+}
+#infoModal .store-info-header h2{
+  font-size:var(--ref-text-lg)!important;
+  line-height:20px!important;
+  font-weight:600!important;
+  color:#2F343A!important;
+  letter-spacing:-0.01em!important;
+}
+#infoModal .store-info-close{
+  width:32px!important;
+  height:32px!important;
+  border-radius:9px!important;
+  background:#ececec!important;
+  color:#252a31!important;
+}
+#infoModal .store-info-close svg{
+  width:17px!important;
+  height:17px!important;
+  stroke-width:1.8!important;
+}
+#infoModal .store-info-logo{
+  width:95px!important;
+  height:95px!important;
+}
+#infoModal .store-info-tabs{
+  align-items:end!important;
+}
+#infoModal .store-info-tabs button{
+  align-self:end!important;
+}
+#infoModal .store-hours-row{
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  gap:18px!important;
+}
+#infoModal .store-hours-row strong{
+  justify-self:end!important;
+  text-align:right!important;
+}
+#infoModal .store-info-close{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+#infoModal .store-info-header h2{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:100%!important;text-align:center!important}
+#infoModal .store-info-spacer{grid-column:3!important;grid-row:1!important;width:32px!important;height:32px!important}
+#infoModal .store-info-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:305px!important;
+  min-height:305px!important;
+  padding-bottom:18px!important;
+  box-sizing:border-box!important;
+}
+#infoModal .store-info-card{padding-top:24px!important}
+#infoModal .store-info-logo{margin-bottom:17px!important}
+#infoModal .store-info-neighborhood{margin-bottom:15px!important}
+#infoModal .store-contact-list{gap:14px!important}
+#infoModal .store-contact-list{margin-top:8px!important}
+#infoModal .store-contact-list .store-contact-row--wa{margin-top:7px!important}
+#infoModal .store-contact-list .store-contact-row:nth-child(1){margin-top:4px!important}
+#infoModal .store-contact-list .store-contact-row:nth-child(2){margin-top:5px!important}
+#infoModal .store-info-tabs button{
+  height:49px!important;
+  padding-top:3px!important;
+}
+#infoModal .store-info-tabs{border-bottom:0!important}
+#infoModal .store-info-tabs::after{
+  content:''!important;
+  position:absolute!important;
+  left:20px!important;
+  right:20px!important;
+  bottom:0!important;
+  height:3px!important;
+  border-radius:2px!important;
+  z-index:0!important;
+}
+#infoModal .store-info-tabs button{position:relative!important;z-index:1!important}
+#infoModal .store-info-card,
+#infoModal .store-info-tabs,
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{background:#ffffff!important}
+#infoModal .store-info-body{background:#ffffff!important}
+#infoModal .store-info-tabs{border-top-color:#f7f5f3!important}
+#infoModal .store-info-tabs{
+  width:414px!important;
+  max-width:100%!important;
+  height:62px!important;
+  margin:0 auto!important;
+  padding:0 20px!important;
+  box-sizing:border-box!important;
+  background:#ffffff!important;
+  border-top:10px solid #f7f5f3!important;
+}
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{
+  width:414px!important;
+  max-width:100%!important;
+  height:231px!important;
+  min-height:231px!important;
+  margin:0 auto!important;
+  padding:12px 20px 0!important;
+  box-sizing:border-box!important;
+  background:#ffffff!important;
+}
+#infoModal .store-info-body::after{
+  content:''!important;
+  display:block!important;
+  width:100%!important;
+  height:240px!important;
+  background:#f7f5f3!important;
+  margin-top:0!important;
+}
+#infoModal .store-info-tabs button{
+  color:#b0b0b0!important;
+  font-weight:600!important;
+}
+#infoModal .store-hours-row{
+  color:#8a8a8a!important;
+  font-weight:400!important;
+}
+#infoModal .store-address-card h3,
+#infoModal .store-payment-card h3{
+  color:#666666!important;
+  font-weight:600!important;
+}
+#infoModal .store-address-card p,
+#infoModal .store-payment-card p{
+  color:#7f7f7f!important;
+  font-weight:400!important;
+}
+#infoModal .store-hours-card,
+#infoModal .store-address-card,
+#infoModal .store-payment-card{
+  padding-top:18px!important;
+}
+#infoModal .store-hours-row strong{
+  color:#5f5f5f!important;
+  font-weight:500!important;
+}
+#infoModal .store-info-tabs::after{background:#f3f3f3!important}
+#infoModal .store-info-tabs{--store-tab-index:0;position:relative!important}
+#infoModal .store-info-tabs button{border-bottom-color:transparent!important}
+#infoModal .store-info-tabs::before{
+  content:''!important;
+  position:absolute!important;
+  left:20px!important;
+  bottom:0!important;
+  width:calc((100% - 40px) / 3)!important;
+  height:3px!important;
+  background:#555555!important;
+  border-radius:2px!important;
+  transform:translateX(calc(var(--store-tab-index) * 100%))!important;
+  transition:transform .28s cubic-bezier(.4,0,.2,1)!important;
+  z-index:2!important;
+}
+#infoModal[data-store-info-tab="address"] .store-info-tabs,
+#infoModal[data-store-info-tab="payment"] .store-info-tabs{
+  height:62px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  width:414px!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+  display:grid!important;
+  align-items:start!important;
+  box-sizing:border-box!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card::before{
+  content:''!important;
+  background:no-repeat center/15px 15px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%239b9b9b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E")!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card h3{display:none!important}
+#infoModal[data-store-info-tab="address"] .store-address-card p{
+  margin:0!important;
+  color:#777777!important;
+  font-size:var(--ref-text-sm)!important;
+  font-weight:400!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-card{
+  width:414px!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+  padding:17px 20px 0!important;
+  box-sizing:border-box!important;
+}
+#infoModal .store-payment-title,
+#infoModal .store-payment-group{
+  margin:0 0 16px!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:16px!important;
+}
+#infoModal .store-payment-group{margin:0 0 11px!important;}
+#infoModal .store-payment-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  column-gap:28px!important;
+  row-gap:13px!important;
+}
+#infoModal .store-payment-grid span{
+  display:flex!important;
+  align-items:center!important;
+  min-width:0!important;
+  gap:10px!important;
+  color:#8d8d8d!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:16px!important;
+  font-weight:400!important;
+}
+#infoModal[data-store-info-tab="address"] .store-info-body::after,
+#infoModal[data-store-info-tab="payment"] .store-info-body::after{background:#f7f5f3!important}
+#infoModal[data-store-info-tab="address"] .store-info-body{background:#f7f5f3!important}
+#infoModal[data-store-info-tab="address"] .store-info-card,
+#infoModal[data-store-info-tab="address"] .store-info-tabs,
+#infoModal[data-store-info-tab="address"] .store-address-card{background:#ffffff!important}
+#infoModal[data-store-info-tab="address"] .store-info-body::after{display:none!important}
+#infoModal[data-store-info-tab="payment"] .store-info-body{background:#f7f5f3!important}
+#infoModal[data-store-info-tab="payment"] .store-info-card,
+#infoModal[data-store-info-tab="payment"] .store-info-tabs,
+#infoModal[data-store-info-tab="payment"] .store-payment-card{background:#ffffff!important}
+#infoModal[data-store-info-tab="payment"] .store-info-tabs{height:62px!important}
+#infoModal[data-store-info-tab="payment"] .store-payment-card{
+  height:301px!important;
+  min-height:301px!important;
+  padding-top:20px!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-info-body::after{display:none!important}
+#infoModal .store-payment-group--debit{margin-top:32px!important}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
+  margin-top:0!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit){
+  transform:translateY(8px)!important;
+}
+#infoModal .store-payment-group{
+  color:#b0b0b0!important;
+  font-weight:400!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit) + .store-payment-grid{
+  transform:translateY(16px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
+  transform:translateY(38px)!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
+  transform:translateY(46px)!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  padding-top:24px!important;
+}
+#infoModal .store-payment-title{font-weight:800!important;color:#4a4a4a!important}
+#infoModal[data-store-info-tab="address"] .store-address-card{
+  height:78px!important;
+  min-height:78px!important;
+  padding:16px 20px 0!important;
+  grid-template-columns:18px minmax(0,1fr)!important;
+  column-gap:10px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card::before{
+  width:17px!important;
+  height:17px!important;
+  margin-top:3px!important;
+  margin-left:0!important;
+  background-size:17px 17px!important;
+}
+#infoModal[data-store-info-tab="address"] .store-address-card p{
+  max-width:330px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  line-height:20px!important;
+  transform:none!important;
+}
+#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{font-family:Inter,system-ui,sans-serif!important;
+  font-size:var(--ref-text-sm)!important;
+  line-height:16px!important;
+  -webkit-text-stroke:0;
+  color:#7a7a7a!important;
+  font-weight:600!important}
+#infoModal .store-info-logo{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+}
+#infoModal .store-info-logo img{
+  border:0!important;
+}
+#infoModal{
+  opacity:1!important;
+  background:rgba(0,0,0,0)!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:background .28s ease,visibility 0s linear .6s!important;
+}
+#infoModal .modal--store-info{
+  visibility:visible!important;
+  transform:translateX(100%)!important;
+  transition:transform .6s ease!important;
+}
+#infoModal .store-info-logo{
+  border:0!important;
+}
+#infoModal .store-info-logo{
+  background:#ffffff!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+}
+#infoModal .store-info-logo img{
+  position:static!important;
+  display:block!important;
+  width:86%!important;
+  height:86%!important;
+  max-width:86%!important;
+  max-height:86%!important;
+  object-fit:contain!important;
+  object-position:center center;
+  margin:auto!important;
+  padding:0!important;
+  transform:none!important;
+  background:transparent!important;
+}
+.store-info-load-state{padding:24px 8px;color:#858b93;font-size:var(--ref-text-sm);line-height:var(--ref-line-md);text-align:center}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group,
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group + .store-payment-grid{transform:none!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title{margin:0 0 12px!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-title:not(:first-child){margin-top:20px!important}
+#infoModal[data-store-info-tab='payment'] #storeInfoPayment .store-payment-group{margin:12px 0 8px!important}

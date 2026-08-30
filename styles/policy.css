@@ -1,0 +1,107 @@
+/* ============================================================================
+   A TELA DE POLITICA — privacidade e programa de fidelidade.
+
+   Dezesseis regras vindas de utilities.css pelo mesmo criterio da folha de
+   informacoes: nenhum outro arquivo declara um so dos nomes `policy-*`,
+   entao a posicao delas na cascata nao decide nada e mover nao inverte
+   ninguem.
+
+   Telas que provam: `politica` e `politica-do-perfil` (o segundo desenho
+   e outro — `body.policy-from-profile` mantem a barra de baixo).
+   ============================================================================ */
+
+.login-policy-links{position:absolute;bottom:24px;left:0;right:0;margin:0!important;display:flex;flex-direction:column!important;align-items:center;gap:8px;text-align:center}
+.policy-link{border:0;background:transparent!important;color:#7a7a7a!important;font:inherit!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:500!important;text-decoration:none;cursor:pointer;padding:0!important}
+.policy-link:hover{color:var(--brand-accent)!important}
+.policy-header{
+  display:grid;
+  grid-template-columns:48px 1fr 48px;
+  align-items:center;
+  background:var(--surface);
+  position:sticky!important;
+  top:0!important;
+  z-index:10;
+  flex-shrink:0!important;
+}
+.policy-back{
+  border:0!important;
+  color:#333333;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  padding:0!important;
+}
+.policy-title{
+  text-align:center!important;
+  line-height:var(--ref-line-lg)!important;
+  color:#1f2937;
+  margin:0!important;
+}
+.policy-section-label{
+  margin:28px 0 18px!important;
+  padding-top:20px!important;
+  border-top:1px solid #eeeeee;
+  font-size:13px;
+  line-height:1.55;
+  font-weight:700;
+  color:#111827;
+}
+.policy-content h1,
+.privacy-policy-content h1,
+.loyalty-policy-content h1{display:none!important}
+.policy-content h2,
+.privacy-policy-content h2,
+.loyalty-policy-content h2{
+  display:grid!important;
+  grid-template-columns:28px 1fr;
+  gap:8px;
+  align-items:start;
+  margin:28px 0 18px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  color:#111827!important;
+  line-height:1.55!important;
+}
+.policy-content h2 span,
+.privacy-policy-content h2 span,
+.loyalty-policy-content h2 span{color:#9ca3af!important;font-weight:700!important}
+.policy-content h3,
+.privacy-policy-content h3,
+.loyalty-policy-content h3{
+  margin:24px 0 12px!important;
+  font-size:var(--ref-text-sm)!important;
+  font-weight:700!important;
+  color:#111827!important;
+  line-height:1.55!important;
+}
+.policy-content p,
+.privacy-policy-content p,
+.loyalty-policy-content p{
+  margin:0 0 11px!important;
+  color:#111827!important;
+  letter-spacing:0!important;
+  text-align:left!important;
+}
+.policy-header{
+  min-height:70px!important;
+  height:auto!important;
+  padding:0 20px!important;
+  border-bottom:1px solid var(--border-subtle);
+}
+.policy-back{
+  width:32px!important;
+  height:32px!important;
+  border-radius:10px!important;
+  background:#ebebeb!important;
+}
+.policy-title{
+  font-size:var(--ref-text-lg)!important;
+  font-weight:600!important;
+}
+.policy-content p,
+.privacy-policy-content p,
+.loyalty-policy-content p{
+  font-size:var(--ref-text-sm)!important;
+  line-height:1.8!important;
+}

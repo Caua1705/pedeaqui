@@ -243,6 +243,40 @@ const comOpcoesDeProduto = (page) => page.route(/\/menu(?:\?|$)/, route => {
   return route.fulfill(json(menu));
 });
 
+/**
+ * Enderecos salvos na conta.
+ *
+ * A rota respondia `[]` e o escolhedor abria vazio — 25 regras de operation.css
+ * desenham a LISTA (o pino, o texto, o check, os tres pontos, o lixo) e nenhuma
+ * podia ser medida. O primeiro item repete o endereco do contexto de operacao
+ * de proposito: e ele que nasce `selected`, e o dialogo de apagar o endereco
+ * EM USO e outro desenho (`is-active-warning`).
+ */
+const comEnderecos = (page) => page.route('**/customers/me/addresses**', route => route.fulfill(json([
+  {
+    id: 'end-captura',
+    label: 'Casa',
+    street_name: 'Rua Silva Paulet',
+    number: '450',
+    neighborhood: 'Aldeota',
+    city: 'Fortaleza',
+    state: 'CE',
+    zipcode: '60120-020',
+    full_address: 'Rua Silva Paulet, 450 - Aldeota, Fortaleza - CE'
+  },
+  {
+    id: 'end-captura-2',
+    label: 'Trabalho',
+    street_name: 'Avenida Santos Dumont',
+    number: '3131',
+    neighborhood: 'Papicu',
+    city: 'Fortaleza',
+    state: 'CE',
+    zipcode: '60150-162',
+    full_address: 'Avenida Santos Dumont, 3131 - Papicu, Fortaleza - CE'
+  }
+])));
+
 /** Espera um seletor casar, sem depender de relogio de parede. */
 const esperar = (page, seletor, timeout = 15000) => page.waitForSelector(seletor, { timeout });
 
@@ -872,6 +906,243 @@ export const SCREENS = [
     async go(page) {
       await page.goto(BASE + '/index.html');
       await page.waitForLoadState('load');
+      await page.waitForTimeout(700);
+    }
+  },
+
+  // ── SEGUNDA RODADA ────────────────────────────────────────────────────────
+  //  A primeira levou `sem-evidencia` de 1.628 para 865. O que sobrou nao era
+  //  aleatorio: eram TELAS COM DADO (a lista de enderecos vazia nao desenha
+  //  item nenhum), ESTADOS DE ESPERA (o assistente pensando) e VARIANTES DE
+  //  ORIGEM (o login aberto pelo cupom nao e o login aberto pelo menu). Cada
+  //  bloco abaixo ataca um desses.
+
+  // --- O escolhedor de enderecos COM enderecos salvos. Vinte e cinco regras de
+  //     operation.css desenham essa lista, e nenhuma tinha sido medida: a rota
+  //     respondia `[]` e a tela abria vazia.
+  {
+    name: 'endereco-picker-com-enderecos',
+    setup: async (page) => { await logado(page); await comEnderecos(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'openAddrPicker');
+      await esperar(page, '#addrPickerModal.active .addr-picker-item');
+      await page.waitForTimeout(600);
+    }
+  },
+  // --- O mesmo item com as acoes abertas (o lixo deslizando por baixo).
+  {
+    name: 'endereco-picker-acoes',
+    setup: async (page) => { await logado(page); await comEnderecos(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'openAddrPicker');
+      await esperar(page, '#addrPickerModal.active .addr-picker-item');
+      await page.waitForTimeout(600);
+      await page.locator('.addr-picker-item .addr-picker-dots').first().click();
+      await esperar(page, '.addr-picker-item.actions-open');
+      await page.waitForTimeout(400);
+    }
+  },
+  // --- Apagar o endereco QUE ESTA EM USO tem um dialogo proprio
+  //     (`.addr-delete-confirm.is-active-warning`), diferente do apagar comum.
+  {
+    name: 'endereco-apagar-em-uso',
+    setup: async (page) => { await logado(page); await comEnderecos(page); },
+    async go(page) {
+      await boot(page);
+      await act(page, 'openAddrPicker');
+      await esperar(page, '#addrPickerModal.active .addr-picker-item');
+      await page.waitForTimeout(600);
+      // Apagar o endereco EM USO e outro dialogo. Ele so e "em uso" depois de
+      // escolhido — a lista abre sem selecao quando o contexto e de retirada.
+      await page.locator('.addr-picker-item').first().click();
+      await esperar(page, '.addr-picker-item.selected');
+      // O lixo fica ESCONDIDO ate as acoes do item abrirem: existe no DOM desde
+      // o primeiro render, mas so e clicavel com `actions-open`.
+      await page.locator('.addr-picker-item.selected .addr-picker-dots').click();
+      await esperar(page, '.addr-picker-item.selected.actions-open');
+      await page.locator('.addr-picker-item.selected .addr-picker-delete').click();
+      await esperar(page, '.addr-delete-confirm.is-active-warning');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- O assistente na ABERTURA, com os cartoes de sugestao revelados. O
+  //     `assistente` original media 900 ms depois de abrir, e a intro ainda
+  //     nao tinha terminado.
+  {
+    name: 'assistente-abertura',
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready .assistant-starter-card');
+      await page.waitForTimeout(900);
+    }
+  },
+  // --- O trilho de OPCOES da resposta. `.assistant-suggest-chip` nao e o
+  //     cartao da abertura (`.assistant-starter-card`): ele so nasce de uma
+  //     resposta `response_type: "options"`, e nenhum fixture tinha uma.
+  {
+    name: 'assistente-opcoes',
+    setup: (page) => page.route('**/chat', route => route.fulfill(json({
+      response_type: 'options',
+      message: 'Quer algo gelado ou quente?',
+      options: ['Quero algo gelado', 'Prefiro quente', 'Tanto faz']
+    }))),
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready');
+      await page.locator('#assistantInput').fill('Me ajuda a escolher');
+      await page.locator('.assistant-ai-send').click();
+      await esperar(page, '.assistant-suggest-chip');
+      await page.waitForTimeout(900);
+    }
+  },
+  // --- O assistente PENSANDO: o balao de digitacao, os pontos e as tres linhas
+  //     de esqueleto. Sao ~20 regras que so existem enquanto a resposta nao
+  //     chega, e a unica forma de medi-las e segurar a resposta.
+  {
+    name: 'assistente-pensando',
+    setup: (page) => page.route('**/chat', async (route) => {
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      return route.fulfill(json({ response_type: 'text', message: 'Demorei.' }));
+    }),
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavAssistant');
+      await esperar(page, '#assistantStarter.is-ready');
+      await page.locator('#assistantInput').fill('Me recomenda uma bebida');
+      await page.locator('.assistant-ai-send').click();
+      await esperar(page, '.assistant-chat-typing');
+      await page.waitForTimeout(900);
+    }
+  },
+
+  // --- O cardapio na PRIMEIRA VISITA nao entra aqui, e o motivo vale escrito:
+  //     ELE NAO EXISTE. Medido — tocar no cardapio com a operacao pendente
+  //     abre a tela de operacao por cima e o body continua `home-tab`; fechar
+  //     essa tela volta para a home. Nao ha caminho no app em que
+  //     `body.menu-tab` e `.delivery-widget.pending-selection` valham ao mesmo
+  //     tempo, e as ~10 regras de utilities.css que combinam os dois nao podem
+  //     pintar nada. Ficam como candidatas a remocao, nao como tela.
+
+  // --- A sacola FLUTUANTE. Ela nao aparece na home: `syncCartStickyForActiveView()`
+  //     so a mostra com `body.menu-tab`, sem nenhuma mob-view aberta e com item
+  //     na sacola. Nenhuma tela media isso — a sacola so aparecia ja ABERTA,
+  //     por cima de tudo.
+  {
+    name: 'cardapio-com-sacola-flutuante',
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'mobNavMenu');
+      await esperar(page, '.cart-sticky.show');
+      await page.waitForTimeout(700);
+    }
+  },
+
+  // --- Uma opcao ESCOLHIDA no produto: o radio marcado e o botao de expandir.
+  {
+    name: 'produto-opcao-escolhida',
+    setup: comOpcoesDeProduto,
+    async go(page) {
+      await boot(page);
+      await page.evaluate((id) => window.openProduct(id), PRODUCT_H2O);
+      await esperar(page, '#productModal.active .pm-option-row');
+      await page.locator('#productModal .pm-option-row').first().click();
+      await esperar(page, '#productModal .pm-option-row.selected');
+      await page.waitForTimeout(400);
+    }
+  },
+
+  // --- Uma filial FECHADA e que nao entrega no endereco. O selo, o motivo e a
+  //     tarja de erro sao cinco regras que so existem quando a resposta e nao.
+  {
+    name: 'operacao-filial-indisponivel',
+    setup: async (page) => {
+      await entregaConfirmada(page);
+      await page.route(/\/branches\/availability(\?|$)/, route => route.fulfill(json({
+        restaurant_slug: SLUG,
+        address_provided: true,
+        default_branch_id: MENU.branch_id,
+        branches: MENU.branches.map(branch => ({
+          ...branch,
+          display_name: null,
+          address: {
+            street: branch.address, number: null, neighborhood: branch.neighborhood,
+            city: branch.city, state: branch.state, zipcode: branch.zipcode,
+            full_address: branch.full_address || [branch.address, branch.neighborhood, branch.city].filter(Boolean).join(' - ')
+          },
+          is_open_now: false,
+          delivery: { delivers_to_address: false, reason: 'out_of_range', message: null, distance_km: 42, delivery_fee: null }
+        }))
+      })));
+    },
+    async go(page) {
+      await boot(page);
+      await act(page, 'openOperationScreen');
+      await esperar(page, '#operationModal.active');
+      await act(page, 'setOperationType', 'delivery');
+      await esperar(page, '.op-branch-card.unavailable');
+      await page.waitForTimeout(700);
+    }
+  },
+
+  // --- O login aberto PELO CUPOM. `#loginModal.from-coupon` e
+  //     `.signin-open` sao outra folha do mesmo modal: quem chega pelo cupom
+  //     ve um cabecalho e uma barra de baixo diferentes de quem chega pelo menu.
+  // --- O MESMO modal de entrar, em tres desenhos diferentes. `openLoginScreen`
+  //     recebe a ORIGEM e marca o modal com ela (`from-coupon`,
+  //     `from-add-address`), e `openSigninScreen()` acrescenta `signin-open`.
+  //     Sao ~8 regras de utilities.css, e a tela `login` media so a origem
+  //     padrao ('profile').
+  {
+    name: 'login-vindo-do-cupom',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openLoginScreen', 'coupon');
+      await esperar(page, '#loginModal.active.from-coupon');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'login-vindo-do-endereco',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openLoginScreen', 'address');
+      await esperar(page, '#loginModal.active.from-add-address');
+      await page.waitForTimeout(500);
+    }
+  },
+  {
+    name: 'login-formulario-de-senha',
+    async go(page) {
+      await boot(page);
+      await act(page, 'openLoginScreen', 'profile');
+      await esperar(page, '#loginModal.active');
+      await act(page, 'openSigninScreen');
+      await esperar(page, '#loginModal.signin-open');
+      await page.waitForTimeout(500);
+    }
+  },
+
+  // --- Cardapio SEM foto de produto. `.product-image--placeholder` (as
+  //     iniciais no lugar da imagem) e o que o cliente ve quando o lojista nao
+  //     subiu foto — o caso comum num cadastro novo, e nenhuma medida o via:
+  //     no fixture os 136 produtos tem imagem.
+  {
+    name: 'cardapio-sem-fotos',
+    setup: (page) => page.route(/\/menu(\?|$)/, route => {
+      const menu = JSON.parse(JSON.stringify(MENU));
+      for (const produto of menu.products) { produto.image_url = null; produto.image_path = null; }
+      return route.fulfill(json(menu));
+    }),
+    async go(page) {
+      await boot(page);
+      await act(page, 'mobNavMenu');
+      await esperar(page, '.product-image--placeholder');
       await page.waitForTimeout(700);
     }
   }

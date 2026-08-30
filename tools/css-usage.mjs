@@ -55,7 +55,7 @@ const STYLES = join(ROOT, 'styles');
 export function parseCss(css, file) {
   const rules = [];
   const media = [];
-  let i = 0, line = 1, buf = '', bufLine = 1;
+  let i = 0, line = 1, buf = '', bufLine = 1, bufInicio = 0;
   const len = css.length;
   const contar = (s) => { line += (s.match(/\n/g) || []).length; };
 
@@ -88,7 +88,7 @@ export function parseCss(css, file) {
           else if (css[j] === '\n') line++;
           j++;
         }
-        rules.push({ file, line: bufLine, selector: prelude, media: media.slice(), body: '', atRule: true });
+        rules.push({ file, line: bufLine, selector: prelude, media: media.slice(), body: '', atRule: true, inicio: bufInicio, fim: j });
         i = j;
         bufLine = line;
         continue;
@@ -97,7 +97,7 @@ export function parseCss(css, file) {
 
       const end = css.indexOf('}', i + 1);
       const body = css.slice(i + 1, end < 0 ? len : end);
-      rules.push({ file, line: bufLine, selector: prelude, media: media.slice(), body: body.trim() });
+      rules.push({ file, line: bufLine, selector: prelude, media: media.slice(), body: body.trim(), inicio: bufInicio, fim: (end < 0 ? len : end) + 1 });
       contar(css.slice(i, end < 0 ? len : end));
       i = (end < 0 ? len : end) + 1;
       bufLine = line;
@@ -106,7 +106,7 @@ export function parseCss(css, file) {
     if (c === '}') { media.pop(); i++; buf = ''; bufLine = line; continue; }
     if (c === ';' && buf.trim().startsWith('@')) { buf = ''; i++; bufLine = line; continue; }
     if (c === '\n') line++;
-    if (!buf.trim() && !/\s/.test(c)) bufLine = line;
+    if (!buf.trim() && !/\s/.test(c)) { bufLine = line; bufInicio = i; }
     buf += c;
     i++;
   }
@@ -133,8 +133,15 @@ export function paraRuntime(sel) {
   return s;
 }
 
-/* ── 3. Corpus: tudo que NAO e CSS ─────────────────────────────────────── */
-const IGNORA = /node_modules|[\\/]\.git|[\\/]dist[\\/]|test-results|playwright-report|package-lock/;
+/* ── 3. Corpus: tudo que NAO e CSS ───────────────────────────────────────
+   A SAIDA DESTA FERRAMENTA TAMBEM FICA DE FORA, e isso nao e detalhe.
+   `css-usage.json` guarda todos os seletores analisados; deixa-lo no corpus faz
+   a segunda rodada ler os seletores da primeira, achar cada nome de classe la
+   dentro e responder "nada morto" — 426 regras mortas viraram 0 exatamente
+   assim, e o zero e uma resposta plausivel demais para levantar suspeita.
+   E a armadilha 2 do cabecalho outra vez, so que a folha que se prova sozinha e
+   o relatorio. Ferramenta que le a propria saida sempre concorda consigo. */
+const IGNORA = /node_modules|[\\/]\.git|[\\/]dist[\\/]|test-results|playwright-report|package-lock|css-usage\.json|css-cores\.json|ui-inventory\.json|captura.*\.json/;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {

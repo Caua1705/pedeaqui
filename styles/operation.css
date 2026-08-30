@@ -683,60 +683,8 @@
 .adc-body::-webkit-scrollbar{display:none!important}
 
 /* Cards container */
-.adc-cards{
-  width:100%!important;
-  max-width:372px!important;
-  display:flex!important;
-  flex-direction:column!important;
-  gap:14px!important;
-}
 
 /* Individual card */
-.adc-card{
-  width:100%!important;
-  height:73px!important;
-  border:1px solid #E1E3E6!important;
-  border-radius:12px!important;
-  background:#fff!important;
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  gap:14px!important;
-  cursor:pointer!important;
-  font-family:inherit!important;
-  padding:0 16px!important;
-  transition:background .15s!important;
-}
-.adc-card:not(.selected):active{background:var(--brand-tint)!important}
-.adc-card.selected{
-  background:var(--brand-tint)!important;
-  border-color:var(--brand-border)!important;
-}
-.adc-card-icon-wrap{
-  width:38px!important;
-  height:38px!important;
-  border-radius:50%!important;
-  background:#f5f5f5!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  flex-shrink:0!important;
-}
-.adc-card.selected .adc-card-icon-wrap{background:var(--brand-tint)!important}
-.adc-card-icon{
-  color:#9AA0A8!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-}
-.adc-card.selected .adc-card-icon{color:var(--brand-primary)!important}
-.adc-card span:not(.adc-card-icon-wrap){
-  font-size:var(--ref-text-md)!important;
-  font-weight:700!important;
-  line-height:var(--ref-line-md)!important;
-  color:#111827!important;
-  text-align:left!important;
-}
 
 /* Footer (buttons anchored at bottom) */
 .adc-footer{
@@ -965,26 +913,6 @@
 .addr-google-powered .g-green{color:#34a853!important}
 
 /* Geolocation button */
-.addr-geo-btn{
-  width:100%!important;
-  height:44px!important;
-  border:1px solid #E1E3E6!important;
-  border-radius:8px!important;
-  background:#fff!important;
-  display:flex!important;
-  align-items:center!important;
-  gap:10px!important;
-  padding:0 14px!important;
-  cursor:pointer!important;
-  font-family:inherit!important;
-  font-size:13px!important;
-  font-weight:600!important;
-  color:var(--brand-primary)!important;
-  margin-bottom:16px!important;
-  transition:background .15s!important;
-}
-.addr-geo-btn:active{background:var(--brand-tint)!important}
-.addr-geo-btn svg{color:var(--brand-primary)!important;flex-shrink:0!important}
 
 /* Suggestions container */
 .addr-suggestions{
@@ -1525,8 +1453,6 @@
   grid-column:1 / -1!important;
 }
 
-#addrDetailsModal .addr-det-input:focus{
-}
 
 #addrDetailsModal .addr-det-input:disabled{
   background:#f9f9f9!important;
@@ -1577,8 +1503,6 @@
   accent-color:var(--brand-primary)!important;
 }
 
-#addrDetailsModal .addr-det-footer{
-}
 
 #addrDetailsModal #addrDetSaveBtn{
   width:374px!important;
@@ -1634,8 +1558,6 @@
   -webkit-text-fill-color:#b8bec6!important;
 }
 
-#addrDetailsModal .addr-det-footer{
-}
 
 /* Address details footer: solid white cover with enough scroll room above it. */
 #addrDetailsModal .addr-det-scroll{
@@ -1820,9 +1742,6 @@ body.menu-tab .delivery-widget:not(.pending-selection):has(.address-strip.has-ad
 }
 .mob-bottom-nav #mobNavMenu{
   transform:translateX(3px)!important;
-}
-.mob-bottom-nav #mobNavQr{
-  transform:none!important;
 }
 .mob-bottom-nav #mobNavProfile{
   transform:translateX(-12px)!important;

@@ -113,7 +113,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .order-live{display:flex;align-items:center;gap:6px;font-size:.63rem;color:var(--fg2);padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:7px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 1.5s ease-in-out infinite;flex-shrink:0}
 /* connector arrows */
-.flow-connector{display:flex;align-items:center;justify-content:center;color:var(--fg3);font-size:1rem;position:relative}
 
 /* ── ANIMATIONS ── */
 @keyframes fu{from{opacity:0;transform:translateY(20px);filter:blur(4px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
@@ -121,8 +120,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 /* ── RESPONSIVE ── */
 @media(max-width:960px){
   .flow{grid-template-columns:1fr;max-width:440px}
-  .flow-connector{display:none}
-}
+  }
 @media(max-width:768px){
   /* Nav */
   .nav-links,.btn-spin.desktop-only{display:none}

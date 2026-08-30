@@ -346,42 +346,65 @@ function diff(a, b) {
       problemas++;
       continue;
     }
+    /*
+     * A CHAVE E `caminho|id`, E A CLASSE E COMPARADA A PARTE.
+     *
+     * Ela ja foi `caminho|id|classe`, e a ideia era boa: uma classe a mais que
+     * nao muda nada hoje muda tudo no dia em que alguem escrever a regra dela.
+     * So que, com a classe DENTRO da chave, trocar uma classe de nome faz o
+     * elemento sumir de um lado e nascer do outro — e a comparacao de estilo
+     * dele, que e o que a ferramenta existe para fazer, nunca acontece. Num
+     * commit que introduz classes de componente, isso e exatamente o elemento
+     * que se precisa conferir, e era o unico que escapava.
+     *
+     * Agora a classe continua sendo relatada (linha `classe:`), mas separada da
+     * conta de estilo: da para ler "17 elementos trocaram de classe, 0 mudaram
+     * de valor computado", que e a frase que um commit de componentizacao
+     * precisa dizer. Uma mudanca de classe nao conta como problema; uma
+     * mudanca de VALOR conta.
+     */
     const index = (rows) => {
       const m = new Map();
-      for (const r of rows) m.set(r.path + '|' + r.id + '|' + r.cls, r.style);
+      for (const r of rows) m.set(r.path + '|' + r.id, r);
       return m;
     };
     const mb = index(before);
     const ma = index(after);
-    let mudou = 0;
+    let mudou = 0, classesTrocadas = 0;
     const exemplos = [];
-    for (const [key, styleBefore] of mb) {
-      const styleAfter = ma.get(key);
-      if (!styleAfter) {
+    for (const [key, antes] of mb) {
+      const depois = ma.get(key);
+      if (!depois) {
         mudou++;
-        if (exemplos.length < 6) exemplos.push('sumiu  ' + key);
+        if (exemplos.length < 6) exemplos.push('sumiu  ' + key + ' [' + antes.cls + ']');
         continue;
       }
+      if (antes.cls !== depois.cls) {
+        classesTrocadas++;
+        if (exemplos.length < 6) exemplos.push('classe: ' + key + '\n         "' + antes.cls + '" -> "' + depois.cls + '"');
+      }
       for (const p of PROPS) {
-        if (styleBefore[p] !== styleAfter[p]) {
+        if (antes.style[p] !== depois.style[p]) {
           mudou++;
-          if (exemplos.length < 6) exemplos.push(key + '\n         ' + p + ': ' + styleBefore[p] + ' -> ' + styleAfter[p]);
+          if (exemplos.length < 6) exemplos.push(key + '\n         ' + p + ': ' + antes.style[p] + ' -> ' + depois.style[p]);
           break;
         }
       }
     }
-    for (const key of ma.keys()) {
+    for (const [key, depois] of ma) {
       if (!mb.has(key)) {
         mudou++;
-        if (exemplos.length < 6) exemplos.push('novo   ' + key);
+        if (exemplos.length < 6) exemplos.push('novo   ' + key + ' [' + depois.cls + ']');
       }
     }
+    const sufixo = classesTrocadas ? ' (' + classesTrocadas + ' com classe trocada)' : '';
     if (mudou) {
       problemas++;
-      console.log(name + ': ' + mudou + ' elementos diferentes (de ' + before.length + ')');
+      console.log(name + ': ' + mudou + ' elementos diferentes (de ' + before.length + ')' + sufixo);
       exemplos.forEach(e => console.log('    ' + e));
     } else {
-      console.log(name + ': identico (' + before.length + ' elementos)');
+      console.log(name + ': identico (' + before.length + ' elementos)' + sufixo);
+      if (classesTrocadas) exemplos.forEach(e => console.log('    ' + e));
     }
   }
   console.log(problemas ? '\n' + problemas + ' tela(s) com diferenca.' : '\nNenhuma diferenca.');

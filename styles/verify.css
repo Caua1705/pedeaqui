@@ -74,13 +74,6 @@
   margin: 0 auto;
   text-align: center;
 }
-.vfy-title {
-  margin: 0 0 14px;
-  font-size: 22px;
-  line-height: 28px;
-  font-weight: 700;
-  color: #2F343A;
-}
 .vfy-text {
   margin: 0 0 22px;
   font-size: var(--ref-text-sm);
@@ -440,32 +433,12 @@
   from { opacity: 1; transform: translateY(0); }
   to   { opacity: 0; transform: translateY(-26px); }
 }
-.vfy-alert-icon {
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #FEE8E8;
-  color: #E0392F;
-  font-size: 26px;
-  font-weight: 700;
-}
 .vfy-alert-title {
   margin: 0 0 28px;
   font-size: var(--ref-text-md);
   line-height: 19px;
   font-weight: 400;
   color: #6A6F76;
-}
-.vfy-alert-text {
-  margin: 0 0 22px;
-  font-size: 13px;
-  line-height: var(--ref-line-md);
-  font-weight: 400;
-  color: #6F747A;
 }
 .vfy-alert-btn {
   width: 100%;

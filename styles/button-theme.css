@@ -87,9 +87,6 @@
   border-color:var(--brand-primary)!important;
 }
 
-.app-loader-spinner{
-  border-top-color:var(--brand-primary)!important;
-}
 
 .addr-picker-add-btn{
   border:0!important;

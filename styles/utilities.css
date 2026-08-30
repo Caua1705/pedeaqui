@@ -2,18 +2,10 @@
 
 /* Restaurant page final mobile layout fixes. utilities.css is loaded last. */
 .mobile-home,.search-cat,.menu-area,.promos-section{opacity:1!important;animation:none!important}
-.mob-rest-details{}
-.mob-rest-row2{grid-template-columns:max-content max-content 68px!important;align-items:center!important;padding-right:0!important;width:100%!important}
-.mob-verMais{position:static!important;margin-left:auto!important;white-space:nowrap!important;justify-content:flex-end!important;}
 .prod-card{display:grid!important;grid-template-columns:minmax(0,1fr) 84px!important;width:100%!important;overflow:hidden!important;column-gap:10px!important}
-.prod-info{min-width:0!important;width:auto!important}
-.prod-img-box{}
 .products-grid{padding-right:28px!important}
-.prod-add-btn{right:0!important;bottom:0!important;}
 
 /* Store info modal and login screen based on the mobile references. */
-#infoModal{}
-#infoModal .modal--store-info{}
 .store-info-header{height:84px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:16px 16px 12px;background:#fff;border-bottom:1px solid #e9e9e9;flex-shrink:0}
 .store-info-header h2{color:#1f2933;text-align:center}
 .store-info-close{width:36px;height:36px;border:0;border-radius:12px;background:#f0f0f0;color:#999;font-size:1.3rem;font-weight:700;line-height:1;cursor:pointer}
@@ -407,19 +399,12 @@
    no arquivo que carrega por ultimo, e por isso ninguem a encontrava: existia
    ha meses e nenhum font-size do app a usava. */
 body,button,input,textarea,select{font-family:var(--ref-font)!important}
-.address-strip .address-card-copy strong{}
 .restaurant-hero-fallback span{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-sm)!important;font-weight:800!important}
 .restaurant-hero-fallback strong{font-size:24px!important;line-height:29px!important;font-weight:800!important}
-.mob-rest-name{}
-.mob-rest-sub{}
 .mob-badge-open,.mob-close-time,.mob-rest-row3 span,.mob-verMais{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important}
 .search-bar input{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-lg)!important;font-weight:400!important}
 .cat{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-sm)!important;font-weight:600!important}
 .menu-section-title{line-height:var(--ref-line-xl)!important;}
-.prod-name{}
-.prod-desc{font-weight:400!important}
-.prod-price{line-height:var(--ref-line-md)!important;}
-.prod-add-btn{line-height:20px!important;}
 .mob-nav-item span{font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-sm)!important;font-weight:600!important}
 .mob-nav-icon{width:24px!important;height:24px!important;stroke-width:1.8!important}
 .btn-cart,.cart-cta-btn,.login-secondary{font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
@@ -456,11 +441,8 @@ body.menu-tab .menu-area,
 body.menu-tab .cats{display:block!important}
 /* header scrolls with page — no slide-up animation needed */
 /* search-cat: in normal flow, no fixed positioning */
-body.menu-tab .search-cat{
-}
 /* menu-area: no padding needed since search-cat is in normal flow */
 body.menu-tab .menu-area{padding-top:0!important}
-body.menu-tab .menu-section{}
 /* on mobile, full-width search-cat */
 @media(max-width:767px){
   body.menu-tab .search-cat{left:0!important;transform:none!important;width:100vw!important}
@@ -474,16 +456,10 @@ body.menu-tab .menu-section{}
   display:none!important;
 }
 /* Delivery widget: tabs row + address strip as one fixed block */
-.delivery-widget{
-}
 /* Tabs row inside the widget */
-.delivery-widget-tabs{
-}
 .delivery-widget-tab{
   font-family:var(--ref-font)!important;
   transition:color .15s!important;
-}
-.delivery-widget-tab.active{
 }
 .delivery-widget-chevron{
   margin-left:auto!important;
@@ -496,46 +472,13 @@ body.menu-tab .menu-section{}
   margin:0!important;
 }
 /* Address strip inside widget: no longer fixed, just a row */
-.address-strip.address-card{
-}
 .address-strip.has-address{background:#ffffff!important;border-color:#e8e8e8!important}
 .address-strip .address-card-icon,
 .address-strip .address-card-chevron{color:var(--brand)!important}
 /* Near-transparent separator line below the delivery widget */
-.delivery-widget-bottom-line{
-  box-sizing:border-box!important;
-  position:fixed!important;
-  top:88px!important;
-  z-index:83!important;
-  height:1px!important;
-  background:rgba(0,0,0,.06)!important;
-  margin:0!important;
-  pointer-events:none!important;
-}
-.address-strip .address-card-copy strong{
-}
 
-.mobile-home .mob-identity,
-.mob-identity{
-}
-.mob-logo{
-}
-.mob-logo img{}
 .mob-logo-fallback{display:flex!important;align-items:center!important;justify-content:center!important;background:var(--brand-tint)!important;color:var(--brand)!important;font-weight:800!important}
-.mob-rest-details{}
-.mob-rest-name{
-}
-.mob-rest-sub{
-}
-.mob-rest-row2,
-.mob-rest-row3,
-.mob-verMais{display:none!important}
-.home-cart-pill{
-}
 
-.restaurant-hero{}
-.restaurant-hero-cover{
-}
 .restaurant-hero-img{
   position:absolute!important;
   inset:0!important;
@@ -562,8 +505,6 @@ body.menu-tab .menu-section{}
   width:100%!important;
   height:100%!important;
 }
-.restaurant-hero-slide img{
-}
 .restaurant-hero-cover.has-carousel .restaurant-hero-fallback{display:none!important}
 .restaurant-hero-fallback{
   position:absolute!important;
@@ -576,10 +517,6 @@ body.menu-tab .menu-section{}
   background:linear-gradient(135deg,var(--brand),var(--brand-light))!important;
 }
 .restaurant-hero-img[src] + .restaurant-hero-fallback{display:none!important}
-.restaurant-hero-dots{
-}
-.restaurant-hero-dots span{}
-.restaurant-hero-dots span.active{}
 
 .home-section{
   box-sizing:border-box!important;
@@ -629,8 +566,6 @@ body.menu-tab .menu-section{}
 }
 .coupon-art--has-img span,
 .coupon-art--has-img strong{display:none!important}
-.coupon-art img{
-}
 /* "Cupom" label */
 .coupon-art span{
   margin:0!important;
@@ -652,26 +587,15 @@ body.menu-tab .menu-section{}
   text-transform:lowercase!important;
   letter-spacing:-.01em!important;
 }
-.coupon-title{
-}
-.coupon-dash{}
 .coupon-use-btn{
   align-self:center!important;
 }
 
-.home-highlights-section{
-}
 .highlight-rail{
   margin-top:8px!important;
   padding-bottom:0!important;
 }
-.highlight-banner{
-}
 .highlight-banner:first-child{margin-left:0!important}
-.highlight-banner img{
-}
-.home-highlight-gray-space{
-}
 .highlight-fallback{
   height:100%!important;
   display:flex!important;
@@ -691,23 +615,7 @@ body.menu-tab .menu-section{}
   letter-spacing:0!important;
 }
 /* Keep the pill inside the 430px frame on wider screens. */
-@media(min-width:768px){
-  .home-order-cta{}
-}
-
-.mob-bottom-nav{
-}
-.mob-bottom-nav .mob-nav-item{
-}
 .mob-nav-item.active{color:var(--brand)!important}
-.mob-bottom-nav .mob-nav-icon{
-}
-.mob-bottom-nav .mob-nav-item span{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item.active span{}
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) span{}
 
 @media(min-width:768px){
   .restaurant-app-shell,
@@ -722,15 +630,12 @@ body.menu-tab .menu-section{}
      (the "Faça seu pedido" band) can scroll clear of the nav, while short
      content still fills to the nav via the shell min-height below — no gray
      void (the old 126px reserved too much and peeked above the nav). */
-  body:not(.menu-tab){}
-  .restaurant-app-shell{
+    .restaurant-app-shell{
     display:flex!important;
     flex-direction:column!important;
     min-height:calc(100dvh - 66px - var(--safe-bottom))!important;
   }
-  .restaurant-app-shell::before{
-  }
-  .mob-bottom-nav{
+    .mob-bottom-nav{
     right:0!important;
     overflow:hidden!important;
   }
@@ -742,16 +647,8 @@ body.menu-tab .menu-section{}
     transform:translateY(-50%)!important;
     z-index:3!important;
   }
-  .home-section{}
-  .delivery-widget{
-  }
-  .delivery-widget-bottom-line{
-  }
-
-  .mobile-home .mob-identity,
-  .mob-identity{
-  }
-  .home-order-cta{
+      
+    .home-order-cta{
     margin-right:0!important;
   }
   /* Ajuda acionada dentro de um pedido troca de tela imediatamente. */
@@ -792,33 +689,9 @@ body.prof-order-help-instant #profSubajuda{
   align-items:center!important;
 }
 .prod-card:last-child{border-bottom:none!important}
-.prod-name{
-  font-size:15px!important;font-weight:700!important;
-  color:#1a1a1a!important;line-height:1.3!important;
-  margin-bottom:4px!important;
-}
-.prod-desc{
-  font-size:13px!important;
-  line-height:1.42!important;margin-bottom:10px!important;
-}
-.prod-price{
-  color:#1a1a1a!important;font-size:var(--ref-text-md)!important;
-  font-weight:700!important;margin-top:0!important;
-}
-.prod-img-box{
-  background:#f5f5f5!important;align-self:center!important;
-}
-.prod-add-btn{
-  width:28px!important;height:28px!important;
-  border-radius:7px 0 7px 0!important;
-  background:var(--brand)!important;color:#fff!important;
-  font-size:1.2rem!important;font-weight:400!important;
-  border:0!important;
-}
 
 @media(max-width:767px){
-  body.menu-tab{}
-  body.menu-tab .menu-area{padding-bottom:0!important}
+    body.menu-tab .menu-area{padding-bottom:0!important}
   body:not(.menu-tab) .restaurant-app-shell{
     min-height:auto!important;
     padding-bottom:0!important;
@@ -829,9 +702,7 @@ body.prof-order-help-instant #profSubajuda{
     width:156px!important;
     height:44px!important;
   }
-  body:not(.menu-tab) .home-highlights-section{
   }
-}
 
 /* Take-layout proportions applied to Rapidex assets only. */
 html,
@@ -867,8 +738,6 @@ body{
 .mob-bottom-nav{
   left:50%!important;
   transform:translateX(-50%)!important;
-}
-.delivery-widget{
 }
 .restaurant-hero{
   width:100%!important;
@@ -921,39 +790,18 @@ body{
   border-radius:999px!important;
   background:#ffffff!important;
 }
-.home-coupons-section{
-}
 .home-coupons-section .home-section-title,
 .home-coupons-section .section-title,
 .home-coupons-section h2{
   box-sizing:border-box!important;
 }
-.coupon-rail{
-}
 .coupon-card{
   padding-bottom:16px!important;
-}
-.coupon-card::before,
-.coupon-card::after{
-}
-.coupon-art{
-}
-.coupon-art img{
-}
-.home-highlights-section{
 }
 .home-highlights-section .home-section-title,
 .home-highlights-section .section-title,
 .home-highlights-section h2{
   box-sizing:border-box!important;
-}
-.highlight-rail{
-}
-.highlight-banner{
-}
-.highlight-banner img{
-}
-.home-highlight-gray-space{
 }
 #loginModal .modal--login{
   max-width:400px!important;
@@ -1141,10 +989,6 @@ body:not(.menu-tab) .home-order-cta,
 }
 
 /* Compact bottom navigation: Take-style proportions without changing behavior. */
-.mob-bottom-nav{
-}
-.mob-bottom-nav .mob-nav-item{
-}
 .mob-bottom-nav .mob-nav-icon{
   border-radius:999px!important;
 }
@@ -1155,78 +999,10 @@ body:not(.menu-tab) .home-order-cta,
   font-weight:500!important;
   color:currentColor!important;
 }
-.mob-bottom-nav .mob-nav-item.active{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
-}
-.mob-bottom-nav .mob-nav-item.active span{
-}
-.mob-bottom-nav .mob-nav-item:not(.active){
-}
-.mob-bottom-nav .mob-nav-item:not(.active) span,
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
-}
-@media(max-width:767px){
-  body:not(.menu-tab),
-  body.menu-tab{
-  }
-  .mob-bottom-nav{
-  }
-}
-@media(max-width:430px){
-  .mob-bottom-nav{
-  }
-}
-
 /* Absolute final override: remove top/bottom divider bars from identity card. */
-#mobIdentity,
-.mobile-home #mobIdentity,
-.mobile-home .mob-identity,
-.mob-identity{
-}
 
 /* Premium mobile bottom navigation: 4 equal columns, Take-style proportions. */
-.mob-bottom-nav{
-}
-.mob-bottom-nav .mob-nav-item{
-}
-.mob-bottom-nav .nav-icon{
-}
-.mob-bottom-nav .mob-nav-icon{
-}
-.mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
-}
-.mob-bottom-nav .mob-nav-item.active{
-}
-.mob-bottom-nav .mob-nav-item.active .nav-icon{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
-}
-.mob-bottom-nav .mob-nav-item:not(.active){
-}
-.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
-}
-@media(max-width:767px){
-  body:not(.menu-tab),
-  body.menu-tab{
-  }
-  .mob-bottom-nav{
-  }
-}
-@media(max-width:430px){
-  .mob-bottom-nav{
-  }
-}
-
 /* Final override: no divider bars on the restaurant identity card. */
-#mobIdentity,
-.mobile-home #mobIdentity,
-.mobile-home .mob-identity,
-.mob-identity{
-}
 
 /* Take-style location widget: one compact gray card with tabs and address text. */
 .delivery-widget{
@@ -1395,9 +1171,6 @@ body:not(.menu-tab) .home-order-cta,
 .address-strip .address-card-chevron{
   display:none!important;
 }
-.delivery-widget-bottom-line{
-  display:none!important;
-}
 
 /* Remove translucent white divider bars around the restaurant identity block. */
 #mobIdentity,
@@ -1417,34 +1190,6 @@ body:not(.menu-tab) .home-order-cta,
 }
 
 /* Four-item mobile bottom nav: equal columns for Inicio, Cardapio, Pedidos and Perfil. */
-.mob-bottom-nav{
-}
-.mob-bottom-nav .mob-nav-item{
-}
-.mob-bottom-nav .nav-icon{
-}
-.mob-bottom-nav .mob-nav-icon{
-}
-.mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
-}
-.mob-bottom-nav .mob-nav-item.active{
-}
-.mob-bottom-nav .mob-nav-item.active .nav-icon{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
-}
-@media(max-width:767px){
-  body:not(.menu-tab),
-  body.menu-tab{
-  }
-  .mob-bottom-nav{
-  }
-}
-@media(max-width:430px){
-  .mob-bottom-nav{
-  }
-}
-
 /* Compact coupon cards: Take-style proportions without changing coupon logic. */
 .home-coupons-section{
   padding:12px 0 22px!important;
@@ -1657,41 +1402,9 @@ body:not(.menu-tab) .home-order-cta,
 }
 
 /* Four-item mobile bottom nav: equal columns for Inicio, Cardapio, Pedidos and Perfil. */
-.mob-bottom-nav{
-}
-.mob-bottom-nav .mob-nav-item{
-}
-.mob-bottom-nav .nav-icon{
-}
 .mob-bottom-nav .mob-nav-icon{
   box-sizing:border-box!important;
 }
-.mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
-}
-.mob-bottom-nav .mob-nav-item.active{
-}
-.mob-bottom-nav .mob-nav-item.active .nav-icon{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon{
-}
-.mob-bottom-nav .mob-nav-item:not(.active){
-}
-.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
-}
-@media(max-width:767px){
-  body:not(.menu-tab),
-  body.menu-tab{
-  }
-  .mob-bottom-nav{
-  }
-}
-@media(max-width:430px){
-  .mob-bottom-nav{
-  }
-}
-
 /* EOF override: remove identity top/bottom divider bars. */
 #mobIdentity,
 .mobile-home #mobIdentity,
@@ -1745,23 +1458,8 @@ body:not(.menu-tab) .home-order-cta,
 .mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
   color:currentColor!important;
 }
-.mob-bottom-nav .mob-nav-item.active{
-}
-.mob-bottom-nav .mob-nav-item.active .nav-icon{
-}
-.mob-bottom-nav .mob-nav-item.active .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item.active > span:not(.nav-icon){
-}
-.mob-bottom-nav .mob-nav-item:not(.active),
-.mob-bottom-nav .mob-nav-item:not(.active) .nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon,
-.mob-bottom-nav .mob-nav-item:not(.active) > span:not(.nav-icon){
-}
 @media(max-width:767px){
-  body:not(.menu-tab),
-  body.menu-tab{
-  }
-  .mob-bottom-nav{
+    .mob-bottom-nav{
     left:50%!important;
     width:min(100vw,430px)!important;
     max-width:430px!important;
@@ -1788,18 +1486,15 @@ body:not(.menu-tab) .home-order-cta,
    gray element is the delivery-widget card itself (Take-a-Juice style).
    ─────────────────────────────────────────────────────────────── */
 @media(max-width:767px){
-  body.home-tab{}
-  body.home-tab .restaurant-app-shell,
+    body.home-tab .restaurant-app-shell,
   body.home-tab.restaurant-app-shell{
     background:#ffffff!important;
     max-width:430px!important;
     margin:0 auto!important;
   }
   body.home-tab .delivery-widget{margin:10px auto 0!important}
-  body.home-tab .delivery-widget-bottom-line{display:none!important}
-  body.home-tab .mob-identity{border:0!important;box-shadow:none!important}
-  body.home-tab .restaurant-hero{}
-}
+    body.home-tab .mob-identity{border:0!important;box-shadow:none!important}
+  }
 
 /* ───────────────────────────────────────────────────────────────
    THREE TARGETED HOME FIXES (mobile)
@@ -1821,8 +1516,7 @@ body:not(.menu-tab) .home-order-cta,
     z-index:70!important;
   }
   /* drop the trailing gray spacer that padded the bottom of the home */
-  body.home-tab .home-highlight-gray-space{}
-
+  
   /* 2 — subtle divider line between the gray location card and the header */
   body.home-tab #mobIdentity,
   body.home-tab .mobile-home #mobIdentity,
@@ -1865,11 +1559,7 @@ body:not(.menu-tab) .home-order-cta,
     padding-bottom:96px!important;
   }
 
-  body.home-tab,
-  body.home-tab .restaurant-app-shell,
-  body.home-tab .mobile-home{
-  }
-
+  
   .delivery-widget{
     box-sizing:border-box!important;
     width:min(374px,calc(100% - 32px))!important;
@@ -2180,12 +1870,6 @@ body.home-tab .mob-identity .mob-info-btn{
 
 /* CARDÁPIO (menu-tab) ONLY: reference identity — hide login + cart pill,
    show the "● Aberto agora | Mín R$ X" status line + round chevron. */
-body.menu-tab .mob-identity .mob-rest-sub,
-body.menu-tab .mob-identity #homeLoginPrompt,
-body.menu-tab .mob-identity .home-cart-pill,
-body.menu-tab .mob-identity .mob-rest-row2,
-body.menu-tab .mob-identity .mob-rest-row3{
-}
 body.menu-tab .mob-identity .mob-rest-status{
   font-family:var(--ref-font,'Inter',sans-serif)!important;
 }
@@ -2196,34 +1880,14 @@ body.menu-tab .mob-identity .mob-badge-open{
   border-radius:0!important;
   background:transparent!important;
 }
-body.menu-tab .mob-identity .mob-badge-open::before{
-}
-body.menu-tab .mob-identity .mob-status-sep{
-}
-body.menu-tab .mob-identity .mob-pedido-min{
-}
 /* round chevron button on the right of the identity (opens store info) */
 body.menu-tab .mob-identity .mob-info-btn{
   margin-left:auto!important;
   cursor:pointer!important;
 }
-body.menu-tab .mob-identity{
-}
 
 /* Product rows: remove the orange "+" add button (reference has none). */
-.prod-add-btn{ display:none!important; }
-.prod-img-box{
-  width:96px!important;
-  height:96px!important;
-  flex:0 0 96px!important;
-  border-radius:10px!important;
-  overflow:hidden!important;
-}
 /* allow up to 4 description lines like the reference combos */
-.prod-desc{
-  -webkit-line-clamp:4!important;
-  color:#9a9a9a!important;
-}
 
 /* ═══════════════════════════════════════════════════════════════
    CARDÁPIO — sticky categories.
@@ -2234,8 +1898,6 @@ body.menu-tab .mob-identity{
    ═══════════════════════════════════════════════════════════════ */
 /* let the shared sticky header scroll on the menu tab (it stays sticky on
    Início only) so the categories can reach the top of the screen */
-body.menu-tab .home-sticky-header{
-}
 /* pin the search + categories bar to the top while products scroll under */
 body.menu-tab .search-cat{
   left:auto!important;
@@ -2250,20 +1912,12 @@ body.menu-tab .search-cat{
    ═══════════════════════════════════════════════════════════════ */
 
 /* 1 — mobile container: reserve room for the 82px bottom nav */
-body.menu-tab{ }
 body.menu-tab .restaurant-app-shell{
   margin:0 auto!important;
   padding-bottom:0!important;
 }
 
 /* 2 — location card (tighter top so the whole screen sits higher) */
-body.menu-tab .delivery-widget{
-}
-body.menu-tab .delivery-widget-tab{
-}
-body.menu-tab .address-strip .address-card-copy strong,
-body.menu-tab #homeAddressTitle{
-}
 
 /* 3 — store header (logo + name + status + chevron) */
 body.menu-tab .mob-identity{
@@ -2272,25 +1926,14 @@ body.menu-tab .mob-identity{
 body.menu-tab .mob-logo{
   overflow:hidden!important;
 }
-body.menu-tab .mob-logo img{ }
-body.menu-tab .mob-rest-name{
-}
 body.menu-tab .mob-identity .mob-rest-status{
   margin-top:2px!important;
   font-size:var(--ref-text-sm)!important;
   line-height:var(--ref-line-md)!important;
 }
-body.menu-tab .mob-identity .mob-badge-open{
-}
-body.menu-tab .mob-identity .mob-pedido-min{
-}
-body.menu-tab .mob-identity .mob-info-btn{
-}
 
 /* 4 + 5 — search + categories block */
 /* divider line between the logo/identity section and the search bar */
-body.menu-tab .search-cat{
-}
 /* tighter top above the search, but a clear gap BELOW it so the categories
    and products are visually separated from the search bar */
 body.menu-tab .search-cat-inner{
@@ -2304,15 +1947,11 @@ body.menu-tab .search-bar{
   box-sizing:border-box!important;
   margin:0 auto!important;
 }
-body.menu-tab .search-bar input{ }
-body.menu-tab .search-bar svg{ }
 body.menu-tab .cats{
   flex-wrap:nowrap!important;
 }
 body.menu-tab .cat{
   white-space:nowrap!important;
-}
-body.menu-tab .cat.active{
 }
 
 /* 6 — category section title — drop the inherited 12px section inset so
@@ -2321,34 +1960,14 @@ body.menu-tab .menu-section{
   padding-left:0!important;
   padding-right:0!important;
 }
-body.menu-tab .menu-section-title{
-}
 
 /* 7 + 8 — product card + image */
-body.menu-tab .products-grid{ }
-body.menu-tab .prod-card{
-}
-body.menu-tab .prod-info{ }
-body.menu-tab .prod-name{
-  margin-bottom:8px!important;
-}
-body.menu-tab .prod-desc{
-}
-body.menu-tab .prod-price{
-  margin-top:12px!important;
-}
-body.menu-tab .prod-img-box{
-}
-body.menu-tab .prod-img-box img{ }
 
 /* ═══════════════════════════════════════════════════════════════
    BOTTOM NAV — active state colours the ICON ONLY (no orange ball).
    Earlier layers paint a light-orange circle (#fff0e8) behind the
    active icon's .nav-icon wrapper; clear it so just the icon turns
    orange. Applies to both tabs (shared nav). ═════════════════════ */
-.mob-bottom-nav .mob-nav-item.active .nav-icon,
-.mob-bottom-nav .mob-nav-item .nav-icon{
-}
 
 /* ═══════════════════════════════════════════════════════════════
    INÍCIO — SUAVIZAÇÃO VISUAL (Take-a-Juice tone, CSS-only).
@@ -2393,8 +2012,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 body.home-tab .home-cart-pill{
   transform:translate(-4px,2px)!important;
-}
-body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* 4 — Location card. */
@@ -2467,9 +2084,6 @@ body.home-tab .address-strip.address-card{
 }
 
 /* 5 — Section titles (Cupons / Destaques) — home-only sections. */
-body.home-tab .address-strip.has-address .address-card-copy strong,
-body.home-tab .address-strip.has-address #homeAddressTitle{
-}
 body.home-tab .delivery-widget .delivery-widget-chevron,
 body.home-tab .delivery-widget .delivery-widget-chevron path{
   color:var(--brand-primary)!important;
@@ -2612,9 +2226,7 @@ body.home-tab .delivery-widget.pending-selection{
   body.home-tab .mob-rest-name{
     transform:translate(5px, 2px)!important;
   }
-  body.home-tab #homeLoginPrompt{
-  }
-
+  
   body.home-tab .home-coupons-section{
     transform:none!important;
   }
@@ -2679,21 +2291,14 @@ body.home-tab .home-highlight-gray-space{
   height:21px!important;
   stroke-width:1.5px!important;
 }
-.mob-bottom-nav .mob-nav-item:not(.active) svg,
-.mob-bottom-nav .mob-nav-item:not(.active) .mob-nav-icon{
-}
 .mob-bottom-nav .mob-nav-item:not(.active) span{
   font-size:11px!important;
   font-weight:500!important;
   color:#8F96A0!important;
 }
-.mob-bottom-nav .mob-nav-item.active{
-}
 .mob-bottom-nav .mob-nav-item.active span{
   color:var(--brand-primary)!important;
   font-weight:500!important;
-}
-.mob-bottom-nav .mob-nav-item.active .nav-icon{
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2703,37 +2308,15 @@ body.home-tab .home-highlight-gray-space{
    ═══════════════════════════════════════════════════════════════ */
 
 /* 1 — Location card: 76px height, 16px top margin, softer radius */
-body.menu-tab .home-sticky-header .delivery-widget,
-body.menu-tab .delivery-widget{
-}
 
 /* 2 — Store identity: 48px circular logo, 700-weight name, 24px chevron */
-body.menu-tab .mob-logo{
-}
-body.menu-tab .mob-logo img,
-body.menu-tab #mobIdentity img{
-}
 body.menu-tab .mob-logo-fallback{
   font-size:15px!important;
 }
-body.menu-tab .mob-rest-name{
-}
-body.menu-tab .mob-identity .mob-info-btn{
-}
 
 /* 3 — Search: darker icon, correct border + placeholder colour */
-body.menu-tab .search-bar{
-}
-body.menu-tab .search-bar svg{
-}
-body.menu-tab .search-bar input::placeholder{
-}
 
 /* 4 — Category tabs: 48px tall row, 12/600, #777D86 inactive */
-body.menu-tab .cats{
-}
-body.menu-tab .cat{
-}
 body.menu-tab .cat.active{
   border-bottom:3px solid var(--brand-primary)!important;
 }
@@ -2747,8 +2330,6 @@ body.menu-tab .menu-section-title{
 }
 
 /* Products grid: single column, no gap, no padding */
-body.menu-tab .products-grid{
-}
 
 /* Product card: flex row, 16px padding, no forced min-height */
 body.menu-tab .prod-card{
@@ -2773,87 +2354,16 @@ body.menu-tab .prod-card:last-child{
 }
 
 /* prod-info: column, tight stack — no space-between spreading */
-body.menu-tab .prod-info{
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:flex-start!important;
-  align-items:flex-start!important;
-  flex:1 1 auto!important;
-  min-width:0!important;
-  max-width:none!important;
-  gap:0!important;
-}
 
 /* Product name: 13px/600 */
-body.menu-tab .prod-name{
-  display:block!important;
-  padding:0!important;
-  white-space:normal!important;
-}
 
 /* Product description: 13px/400, 3-line clamp — explicit webkit-box */
-body.menu-tab .prod-desc{
-  display:-webkit-box!important;
-  -webkit-box-orient:vertical!important;
-  -webkit-line-clamp:3!important;
-  overflow:hidden!important;
-  font-size:13px!important;
-  font-weight:400!important;
-  line-height:20px!important;
-  color:#69717A!important;
-  margin:0!important;
-  padding:0!important;
-  max-height:60px!important;
-}
 
 /* Product price: 13px/700, 10px gap above */
-body.menu-tab .prod-price{
-  display:block!important;
-  line-height:var(--ref-line-md)!important;
-  color:#111827!important;
-  margin:10px 0 0!important;
-  padding:0!important;
-}
-body.menu-tab .price-from{
-  font-size:13px!important;
-  font-weight:600!important;
-  color:#111827!important;
-  margin-right:3px!important;
-}
-body.menu-tab .price-old{
-  font-size:var(--ref-text-sm)!important;
-  font-weight:400!important;
-  color:#C0C4CA!important;
-  text-decoration:line-through!important;
-  margin-left:6px!important;
-}
 
 /* Product image: 100×100, right side, flex-shrink:0 */
-body.menu-tab .prod-img-box{
-  flex:0 0 100px!important;
-  width:100px!important;
-  height:100px!important;
-  min-width:100px!important;
-  min-height:100px!important;
-  max-width:100px!important;
-  max-height:100px!important;
-  flex-shrink:0!important;
-  border-radius:8px!important;
-  overflow:hidden!important;
-  align-self:center!important;
-  margin-left:0!important;
-  background:#f5f5f5!important;
-}
-body.menu-tab .prod-img-box img,
-body.menu-tab .prod-photo{
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover!important;
-  border-radius:8px!important;
-}
 
 /* hide add button */
-body.menu-tab .prod-add-btn{ }
 
 /* ═══════════════════════════════════════════════════════════════
    CARDÁPIO v3 — weight reconciliation (final, wins by source order).
@@ -2864,51 +2374,21 @@ body.menu-tab .prod-add-btn{ }
    ═══════════════════════════════════════════════════════════════ */
 
 /* Store name: 16px but SEMIBOLD (was 700) — cleaner, less dominant */
-body.menu-tab .mob-rest-name{
-}
 
 /* Status / min-order line: lighter, 12px */
-body.menu-tab .mob-identity .mob-badge-open,
-body.menu-tab .mob-identity .mob-pedido-min{
-}
-body.menu-tab .mob-identity .mob-status-sep{
-}
 
 /* Location widget chips: lighter labels, subtler orange accent */
-body.menu-tab .delivery-widget-tab{
-}
-body.menu-tab .delivery-widget-tab.active{
-}
-body.menu-tab .address-strip .address-card-copy strong{
-}
 
 /* Section title: 14px SEMIBOLD (was 700) */
-body.menu-tab .menu-section-title{
-}
 
 /* Category tabs: 13px, inactive REGULAR-ish 500, active SEMIBOLD 600
    (were 12px / 600 / 700) — lighter rhythm, thin 3px underline kept */
-body.menu-tab .cat{
-}
-body.menu-tab .cat.active{
-}
 
 /* Product name: 14px SEMIBOLD (bumped from 13px per spec) — emphasis
    without heaviness; sits clearly above the lighter description */
-body.menu-tab .prod-name{
-  font-size:var(--ref-text-md)!important;
-  font-weight:600!important;
-  line-height:var(--ref-line-md)!important;
-  color:#1F2937!important;
-  margin:0 0 9px!important;
-}
 
 /* Price stays the strongest text on the row but at semibold-bold 700,
    13px — clean, not an oversized block. "A partir de" is 600. */
-body.menu-tab .prod-price{
-  font-weight:800!important;
-  font-size:13px!important;
-}
 
 /* Menu catalog - Take a Juice density match, final visual layer. */
 body.menu-tab{
@@ -2962,22 +2442,12 @@ body.menu-tab .delivery-widget{
   justify-content:center!important;
 }
 
-body.menu-tab .delivery-widget-tabs{
-}
-
-body.menu-tab .delivery-widget-tab{
-}
-
-body.menu-tab .delivery-widget-tab.active{
-}
 
 body.menu-tab .delivery-widget-chevron{
   margin-left:auto!important;
   flex:0 0 16px!important;
 }
 
-body.menu-tab .delivery-widget-divider{
-}
 
 body.menu-tab .delivery-widget .address-strip.address-card{
   box-shadow:none!important;
@@ -3557,13 +3027,6 @@ body.menu-tab .product-image--placeholder span{
   justify-content:center!important;
 }
 
-body.menu-tab .prod-add-btn{
-  display:none!important;
-}
-
-body.menu-tab .mob-bottom-nav,
-.mob-bottom-nav{
-}
 
 /* ════════════════════════════════════════════════════════════════
    CARDÁPIO — widget de localização IDÊNTICO ao Início.
@@ -3829,8 +3292,6 @@ body.home-tab .mob-bottom-nav,
 /* Aproxima os quatro itens laterais do QR sem alterar o botao central. */
 .mob-bottom-nav #mobNavHome,
 .mob-bottom-nav #mobNavMenu{transform:translateX(14px)!important;}
-.mob-bottom-nav #mobNavOrders,
-.mob-bottom-nav #mobNavProfile{}
 .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important;}
 .mob-bottom-nav #mobNavHome{transform:translateX(20px)!important;}
 .mob-bottom-nav #mobNavProfile{transform:translateX(-20px)!important;}
@@ -4135,14 +3596,10 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
   #productModal{
     backdrop-filter:none!important;
   }
-  #productModal.active{
-  }
-  #productModal .modal--product{
+    #productModal .modal--product{
     visibility:visible!important;
   }
-  #productModal.active .modal--product{
   }
-}
 
 /* ----------------------------------------------------------------
    BOTTOM NAV � ocultar em modais / telas full-screen
@@ -4155,9 +3612,6 @@ body.menu-tab .delivery-widget:not(.pending-selection) .delivery-widget-chevron 
 body.modal-open .mob-bottom-nav{
   display:none!important;
 }
-body.modal-open.keep-bottom-nav .mob-bottom-nav,
-body.keep-bottom-nav .mob-bottom-nav{
-}
 
 /* 2. Telas full-screen via :has() � cobre casos onde modal-open
       pode nao estar setado (ex: reg-screen, lgn-screen, policy-screen, vfy-screen) */
@@ -4167,8 +3621,6 @@ body:has(.policy-screen.active) .mob-bottom-nav,
 body:has(.vfy-screen.active) .mob-bottom-nav,
 body:has(.overlay.active) .mob-bottom-nav{
   display:none!important;
-}
-body:has(.coupon-detail-overlay.active) .mob-bottom-nav{
 }
 
 body.modal-open.coupon-nav-keep .mob-bottom-nav,
@@ -4233,12 +3685,7 @@ body.product-modal-open{
 
 /* Club/Profile must retain the same bottom controls as Home and Menu. */
 @media(max-width:767px){
-  body:has(#mobViewClub.active) #cartSticky.show,
-  body:has(#mobViewProfile.active) #cartSticky.show{
-  }
-  body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
-  body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{}
-
+    
   body:has(#mobViewClub.active) .mob-bottom-nav,
   body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
     box-sizing:border-box!important;
@@ -4246,55 +3693,16 @@ body.product-modal-open{
     bottom:0!important;
     z-index:130!important;
   }
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavHome{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavMenu{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavQr{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavOrders{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavProfile{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{
-    position:absolute!important;
-    left:50%!important;
-    top:22.5px!important;
-  }
-}
-@media(max-width:414px){
-  body:has(#mobViewClub.active) .mob-bottom-nav,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav{
-  }
-}
-
+                      }
 /* Club must use the same delivery-widget state colors as Home and Menu. */
 @media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .address-strip.has-address .address-card-copy strong{
-  }
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget:not(.pending-selection) .address-strip:not(.has-address) .address-card-copy strong{
-  }
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget.pending-selection .address-card-copy strong{
-  }
-
+      
   /* Keep the bag CTA above the fixed navigation in both logged-in secondary views. */
-  body:has(#mobViewClub.active) #cartSticky.show,
-  body:has(#mobViewProfile.active) #cartSticky.show{
-  }
-  body:has(#mobViewClub.active) #cartSticky.show #cartStickyBtn,
-  body:has(#mobViewProfile.active) #cartSticky.show #cartStickyBtn{}
-}
+    }
 
 /* Keep the cashback statement above the Club content, without the default bottom-sheet transform. */
 @media(max-width:767px){
-  body:has(#mobViewClub.active) #cashbackStatementModal.active{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
+    body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
     top:auto!important;
     right:auto!important;
     bottom:auto!important;
@@ -4344,25 +3752,8 @@ body.product-modal-open{
   }
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon{transform:translate(-6px,-1px)!important}
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-icon svg{width:22px!important;height:22px!important}
-  body:has(#mobViewClub.active) #mobViewClub .club-cashback-use{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:374px!important;
-    max-width:100%!important;
-    height:45px!important;
-    margin:16px 0 0!important;
-    padding:0!important;
-    border:0!important;
-    border-radius:10px!important;
-    background:var(--brand-tint)!important;
-    color:var(--brand-primary)!important;
-    font:700 12px/1 var(--ref-font)!important;
-  }
-
-  body:has(#mobViewClub.active) #cashbackStatementModal.active{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-modal{
+  
+    body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-modal{
     box-sizing:border-box!important;
     width:386px!important;
     max-width:100%!important;
@@ -4384,13 +3775,9 @@ body.product-modal-open{
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
     position:absolute!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back svg{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary span{margin:0!important;text-transform:uppercase!important}
+      body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary span{margin:0!important;text-transform:uppercase!important}
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-summary strong{margin-top:-15px;}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row::before{
+      body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row::before{
     content:"↓";
     align-items:center!important;
     justify-content:center!important;
@@ -4405,12 +3792,7 @@ body.product-modal-open{
     font-weight:700!important;
   }
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-row:has(.cashback-statement-amount.negative)::before{content:"→";background:#fff1d8!important;color:#c18a2e!important}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy strong{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy span,
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-copy time{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount{}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-amount.negative{}
-}
+        }
 
 /* Soft fullscreen flows must preserve the menu's original scroll container. */
 body.soft-scroll-locked.modal-open,
@@ -4444,9 +3826,7 @@ body.home-tab.soft-scroll-locked.modal-open{
     box-shadow:none!important;
   }
 
-  #productModal.active .modal--product{
-  }
-
+  
   #productModal .product-hero{
     flex:0 0 250px!important;
     width:100%!important;
@@ -4510,15 +3890,9 @@ body.home-tab.soft-scroll-locked.modal-open{
     overflow-x:hidden!important;
   }
 
-  #productModal .modal-body::-webkit-scrollbar{
-  }
-
-  #productModal .modal-body::-webkit-scrollbar-track{
-  }
-
-  #productModal .modal-body::-webkit-scrollbar-thumb{
-  }
-
+  
+  
+  
   #productModal .pm-name{
     margin:0 0 19px!important;
     color:#454545!important;
@@ -4549,12 +3923,8 @@ body.home-tab.soft-scroll-locked.modal-open{
     margin-top:24px!important;
   }
 
-  #productModal .pm-label{
-  }
-
-  #productModal .pm-obs{
-  }
-
+  
+  
   #productModal .modal-footer{
     justify-content:flex-start!important;
   }
@@ -4604,9 +3974,7 @@ body.home-tab.soft-scroll-locked.modal-open{
     font-weight:700!important;
   }
 
-  #productModal #pmAddBtn:disabled{
   }
-}
 
 /* Login return: no animation when backing out of the Sign In screen. */
 @media(max-width:767px){
@@ -4636,13 +4004,10 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal{backdrop-filter:none!important;align-items:stretch!important}
 #infoModal .modal--store-info{width:100%!important;height:100dvh!important;max-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#ffffff!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
 #infoModal .store-info-header{display:grid!important;align-items:center!important;background:#ffffff!important;}
-#infoModal .store-info-header h2{}
 #infoModal .store-info-close{border:0!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
-#infoModal .store-info-close svg{}
 #infoModal .store-info-body{flex:1!important;overflow-y:auto!important;padding:0!important;}
 #infoModal .store-info-card{margin:0!important;padding:24px 26px 23px!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:center!important}
 #infoModal .store-info-logo{margin:0 auto 17px!important;}
-#infoModal .store-info-logo img{}
 #infoModal .store-info-logo .mob-logo-fallback{width:100%!important;height:100%!important;border-radius:50%!important;background:var(--brand-primary)!important;color:var(--brand-on)!important;font-size:22px!important;font-weight:800!important}
 #infoModal .store-info-name{margin:0!important;color:#4b4b4b!important;font-size:var(--ref-text-md)!important;line-height:var(--ref-line-md)!important;font-weight:700!important}
 #infoModal .store-info-neighborhood{margin:1px 0 15px!important;color:#777777!important;font-size:var(--ref-text-sm)!important;line-height:17px!important;font-weight:400!important}
@@ -4653,7 +4018,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .store-contact-row--wa,#infoModal .store-contact-row--wa svg{color:var(--brand-primary)!important;stroke:var(--brand-primary)!important;font-weight:700!important}
 #infoModal .store-info-tabs{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:0!important;overflow:visible!important;}
 #infoModal .store-info-tabs button{min-width:0!important;border:0!important;border-bottom:3px solid transparent!important;background:transparent!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;text-align:center!important;white-space:nowrap!important}
-#infoModal .store-info-tabs button.active{}
 #infoModal .store-hours-card,#infoModal .store-address-card,#infoModal .store-payment-card{border:0!important;border-radius:0!important;box-shadow:none!important}
 #infoModal .store-hours-row{min-height:29px!important;padding:0!important;display:grid!important;align-items:center!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;}
 #infoModal .store-hours-row span{min-width:0!important}
@@ -4691,21 +4055,15 @@ body.home-tab .home-cart-pill #homeCartTotal{
   height:17px!important;
   stroke-width:1.8!important;
 }
-#infoModal .store-info-card{
-}
 #infoModal .store-info-logo{
   width:95px!important;
   height:95px!important;
-}
-#infoModal .store-info-logo img{
 }
 #infoModal .store-info-tabs{
   align-items:end!important;
 }
 #infoModal .store-info-tabs button{
   align-self:end!important;
-}
-#infoModal .store-hours-card{
 }
 #infoModal .store-hours-row{
   grid-template-columns:minmax(0,1fr) max-content!important;
@@ -4734,9 +4092,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 
 /* Store info card content vertical nudge. */
 #infoModal .store-info-card{padding-top:24px!important}
-#infoModal .store-info-logo{}
-#infoModal .store-info-neighborhood{}
-#infoModal .store-contact-list{}
 
 /* Store info text/contact spacing below logo. */
 #infoModal .store-info-logo{margin-bottom:17px!important}
@@ -4747,7 +4102,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .store-contact-list{margin-top:8px!important}
 
 /* Store info contact row fine tuning. */
-#infoModal .store-contact-list .store-contact-row:nth-child(2){}
 #infoModal .store-contact-list .store-contact-row--wa{margin-top:7px!important}
 
 /* Store info phone and email lower. */
@@ -4755,16 +4109,9 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .store-contact-list .store-contact-row:nth-child(2){margin-top:5px!important}
 
 /* Store info lower schedule block sizing. */
-#infoModal .store-info-tabs{
-}
 #infoModal .store-info-tabs button{
   height:49px!important;
   padding-top:3px!important;
-}
-#infoModal .store-hours-card{
-}
-#infoModal .store-address-card,
-#infoModal .store-payment-card{
 }
 
 /* Store info tabs gray line exact size. */
@@ -4782,7 +4129,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal .store-info-tabs button{position:relative!important;z-index:1!important}
 
 /* Store info bottom area after 414x293 block. */
-#infoModal .store-info-body{}
 #infoModal .store-info-card,
 #infoModal .store-info-tabs,
 #infoModal .store-hours-card,
@@ -4791,8 +4137,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 
 /* Store info gray only after lower block, not between sections. */
 #infoModal .store-info-body{background:#ffffff!important}
-#infoModal .store-info-body::after{
-}
 #infoModal .store-info-tabs{border-top-color:#f7f5f3!important}
 
 /* Store info lower white area includes tabs + content: 414x293. */
@@ -4840,8 +4184,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
   color:#8a8a8a!important;
   font-weight:400!important;
 }
-#infoModal .store-hours-row strong{
-}
 #infoModal .store-hours-row.active span{
   color:#747474!important;
   font-weight:600!important;
@@ -4858,8 +4200,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Store info lower block final spacing/color tweaks. */
-#infoModal .store-info-tabs::after{
-}
 #infoModal .store-hours-card,
 #infoModal .store-address-card,
 #infoModal .store-payment-card{
@@ -4929,7 +4269,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
   line-height:16px!important;
 }
 #infoModal .store-payment-group{margin:0 0 11px!important;}
-#infoModal .store-payment-group--debit{}
 #infoModal .store-payment-grid{
   display:grid!important;
   grid-template-columns:1fr 1fr!important;
@@ -4963,11 +4302,8 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal[data-store-info-tab="payment"] .store-info-body::after{background:#f7f5f3!important}
 
 /* Store info payment content lower. */
-#infoModal[data-store-info-tab="payment"] .store-payment-card{}
 
 /* Store info payment vertical fine tuning. */
-#infoModal[data-store-info-tab="payment"] .store-payment-card{}
-#infoModal .store-payment-group--debit{}
 
 /* Store info address: gray starts right after 414x133 white block. */
 #infoModal[data-store-info-tab="address"] .store-info-body{background:#f7f5f3!important}
@@ -4994,26 +4330,15 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal[data-store-info-tab="payment"] .store-payment-group--debit{
   margin-top:0!important;
 }
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
-}
 
 /* Store info payment debit section lower again. */
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit,
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
-}
 
 /* Store info payment credit and debit card spacing. */
 #infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit){
   transform:translateY(8px)!important;
 }
-#infoModal[data-store-info-tab="payment"] .store-payment-group:not(.store-payment-group--debit) + .store-payment-grid{
-}
-#infoModal[data-store-info-tab="payment"] .store-payment-group--debit + .store-payment-grid{
-}
 
 /* Store info final payment/address typography and positioning. */
-#infoModal .store-payment-title{
-}
 #infoModal .store-payment-group{
   color:#b0b0b0!important;
   font-weight:400!important;
@@ -5032,13 +4357,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Store info address and payment title refinements. */
-#infoModal .store-payment-title{}
-#infoModal[data-store-info-tab="address"] .store-address-card{
-}
-#infoModal[data-store-info-tab="address"] .store-address-card::before{
-}
-#infoModal[data-store-info-tab="address"] .store-address-card p{
-}
 
 /* Store info address/payment requested refinements. */
 #infoModal .store-payment-title{font-weight:800!important;color:#4a4a4a!important}
@@ -5078,8 +4396,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 }
 
 /* Payment title slightly lighter. */
-#infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
-}
 
 /* Payment title one step lighter. */
 #infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{
@@ -5131,8 +4447,6 @@ body.home-tab .home-cart-pill #homeCartTotal{
 /* Store info logo: show full restaurant logo without crop. */
 #infoModal .store-info-logo{
   border:0!important;
-}
-#infoModal .store-info-logo img{
 }
 
 /* Keep bottom nav rendered while info screen slides over it. */
@@ -5210,23 +4524,10 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 }
 
 /* Product modal: same overlay behavior as coupon detail. */
-@media(max-width:767px){
-  #productModal{
-  }
-  #productModal.active{
-  }
-  #productModal .modal--product{
-  }
-  #productModal.active .modal--product{
-  }
-}
-
 /* Product option groups from API: delivery-app style sheet. */
 @media(max-width:767px){
-  #productModal .modal-close{}
-  #productModal .modal-body{scrollbar-color:var(--brand-primary) #eeeeee!important}
-  #productModal .modal-body::-webkit-scrollbar{}
-  #productModal .modal-body::-webkit-scrollbar-track{background:#eeeeee!important}
+    #productModal .modal-body{scrollbar-color:var(--brand-primary) #eeeeee!important}
+    #productModal .modal-body::-webkit-scrollbar-track{background:#eeeeee!important}
   #productModal .modal-body::-webkit-scrollbar-thumb{background:var(--brand-primary)!important;border-radius:999px!important}
   #productModal .pm-price{margin:0 0 22px!important}
   #productModal .pm-option-groups{display:block!important;margin:0 -30px!important}
@@ -5244,12 +4545,10 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #productModal .pm-option-radio{width:16px!important;height:16px!important;border:1.5px solid #d1d1d1!important}
   #productModal .pm-option-row.selected .pm-option-radio{border-color:var(--brand-primary)!important;background:var(--brand-primary)!important;box-shadow:inset 0 0 0 4px #fff!important}
   #productModal .pm-option-toggle{width:32px!important;height:32px!important;color:var(--brand-primary)!important;font-size:25px!important;line-height:30px!important}
-  #productModal #pmForm{}
-  #productModal .pm-label{font-size:var(--ref-text-lg)!important;line-height:20px!important;text-transform:none!important;letter-spacing:0!important}
+    #productModal .pm-label{font-size:var(--ref-text-lg)!important;line-height:20px!important;text-transform:none!important;letter-spacing:0!important}
   #productModal .pm-obs{display:block!important;border-radius:10px!important;border:1px solid #eee!important;background:#fafafa!important;font-size:13px!important;color:#444!important}
   #productModal #pmAddBtn{color:#fff!important}
-  #productModal #pmAddBtn:disabled{}
-}
+  }
 
 /* Product modal: remove left gray gutter and use a right-only orange scroll marker. */
 @media(max-width:767px){
@@ -5262,15 +4561,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 }
 
 /* Product modal: no gray strip on the left side. */
-@media(max-width:767px){
-  #productModal,
-  #productModal.active{}
-}
 /* Product modal: keep reference width but glue the product sheet to the left edge. */
-@media(max-width:767px){
-  #productModal .modal--product{}
-  #productModal.active .modal--product{}
-}
 /* Product modal footer: requested 414x95 bottom white control area. */
 @media(max-width:767px){
   #productModal .modal-footer{height:95px!important;}
@@ -5281,13 +4572,10 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 }
 /* Product modal header copy: align closer to the left and use add-button orange for price. */
 @media(max-width:767px){
-  #productModal .modal-body{}
-  #productModal .pm-name,
+    #productModal .pm-name,
   #productModal .pm-desc,
   #productModal .pm-price{margin-left:0!important;text-align:left!important}
-  #productModal .pm-price,
-  #productModal .pm-price::before{}
-  #productModal .pm-option-groups,
+    #productModal .pm-option-groups,
   #productModal #pmForm{width:calc(100% + 40px)!important;margin-left:-20px!important;margin-right:-20px!important}
 }
 /* Product modal close button: fixed requested 42x42 square. */
@@ -5298,44 +4586,26 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media(max-width:767px){
   #productModal .pm-price::before{color:#454545!important}
   #productModal .pm-price{color:#454545!important}
-  #productModal .pm-price .pm-price-value{}
-}
+  }
 /* Product modal: move title, description and price slightly lower under the image. */
-@media(max-width:767px){
-  #productModal .modal-body{}
-}
 /* Product modal top typography refinement. */
 @media(max-width:767px){
   #productModal .modal-body{padding-top:26px!important}
-  #productModal .pm-price::before{}
-}
+  }
 /* Product modal price prefix: slightly stronger weight. */
 @media(max-width:767px){
   #productModal .pm-price::before{font-weight:700!important}
 }
 /* Product modal price line: move slightly lower. */
-@media(max-width:767px){
-  #productModal .pm-price{}
-}
 /* Product modal price line: lower a bit more. */
-@media(max-width:767px){
-  #productModal .pm-price{}
-}
 /* Product modal: lower price line more and match order CTA orange. */
 @media(max-width:767px){
-  #productModal .pm-price{}
-  #productModal .pm-price .pm-price-value{color:var(--brand-primary)!important}
+    #productModal .pm-price .pm-price-value{color:var(--brand-primary)!important}
   #productModal #pmAddBtn{background:var(--brand-primary)!important;border-color:var(--brand-primary)!important}
   #productModal #pmAddBtn:disabled{background:#f7f3f0!important;border-color:#f7f3f0!important;color:#c8c0ba!important}
 }
 /* Product modal price line: lower further. */
-@media(max-width:767px){
-  #productModal .pm-price{}
-}
 /* Product modal price line: final lower adjustment. */
-@media(max-width:767px){
-  #productModal .pm-price{}
-}
 /* Product modal price line: raise slightly from the last adjustment. */
 @media(max-width:767px){
   #productModal .pm-price{margin-top:20px!important}
@@ -5345,13 +4615,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #productModal .modal-close{border-radius:11px!important;}
 }
 /* Product modal close button: 10px X glyph. */
-@media(max-width:767px){
-  #productModal .modal-close{}
-}
 /* Product modal observation heading: lighter weight. */
-@media(max-width:767px){
-  #productModal .pm-label{}
-}
 /* Product modal observation heading: slightly lighter color. */
 @media(max-width:767px){
   #productModal .pm-label{color:#777777!important}
@@ -5370,15 +4634,11 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 }
 /* Product modal observation box: darker gray background and live character counter. */
 @media(max-width:767px){
-  #productModal .pm-obs-wrap{}
-  #productModal .pm-obs-wrap .pm-obs{}
-  #productModal .pm-obs-count{pointer-events:none}
+      #productModal .pm-obs-count{pointer-events:none}
 }
 /* Product modal observation counter: place below the textarea, not inside it. */
 @media(max-width:767px){
-  #productModal .pm-obs-wrap{}
-  #productModal .pm-obs-wrap .pm-obs{}
-  #productModal .pm-obs-count{transform:translateY(0);}
+      #productModal .pm-obs-count{transform:translateY(0);}
 }
 /* Product modal observation area: match reference counter below box. */
 @media(max-width:767px){
@@ -5388,9 +4648,6 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #productModal .pm-obs-count{position:absolute!important;top:127px!important;bottom:auto!important;}
 }
 /* Product modal observation placeholder: slightly stronger. */
-@media(max-width:767px){
-  #productModal .pm-obs-wrap .pm-obs::placeholder{}
-}
 /* Product modal observation placeholder: lighter and slightly larger. */
 @media(max-width:767px){
   #productModal .pm-obs-wrap .pm-obs::placeholder{font-weight:500!important;font-size:var(--ref-text-md)!important}
@@ -5398,8 +4655,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 /* Product modal observation box: lighter background and clearer counter. */
 @media(max-width:767px){
   #productModal .pm-obs-wrap .pm-obs{background:#f1f1f1!important;border-color:#e5e5e5!important}
-  #productModal .pm-obs-count{}
-}
+  }
 /* Product modal observation counter: larger and thinner. */
 @media(max-width:767px){
   #productModal .pm-obs-count{font-weight:400!important;color:#d0d0d0!important}
@@ -5424,25 +4680,16 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #productModal.active .modal--product{transform:translateX(-50%)!important;transition:transform .53s ease!important}
 }
 /* Home only: lower the address/login header group slightly. */
-@media(max-width:767px){
-  body.home-tab .home-sticky-header{}
-}
 /* Home only: undo wrapper drop; lower only location + login identity a little. */
 @media(max-width:767px){
   body.home-tab .home-sticky-header{padding-top:0!important}
-  body.home-tab .home-sticky-header .delivery-widget,
-  body.home-tab .home-sticky-header .mob-identity{}
-}
+  }
 /* Home only: lower only the login/register prompt. */
 @media(max-width:767px){
   body.home-tab .home-sticky-header .delivery-widget,
   body.home-tab .home-sticky-header .mob-identity{transform:none!important}
-  body.home-tab #homeLoginPrompt{}
-}
+  }
 /* Home only: fine tune login/register prompt position. */
-@media(max-width:767px){
-  body.home-tab #homeLoginPrompt{}
-}
 /* Home only: keep login/register prompt aligned horizontally; preserve current height. */
 @media(max-width:767px){
   body.home-tab #homeLoginPrompt{left:auto!important;translate:none!important;}
@@ -5463,8 +4710,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 }
 /* Profile logged-in hub: reference-style account menu. */
 @media(max-width:767px){
-  #mobViewProfile.mob-view--profile{}
-  #mobViewProfile .prof-hub-wrap{min-height:100%!important;padding:0 0 calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;box-sizing:border-box!important}
+    #mobViewProfile .prof-hub-wrap{min-height:100%!important;padding:0 0 calc(92px + env(safe-area-inset-bottom,0px))!important;overflow-y:auto!important;box-sizing:border-box!important}
   #mobViewProfile .prof-account-page{width:100%!important;max-width:430px!important;margin:0 auto!important;padding:28px 20px 24px!important;background:#ffffff!important;box-sizing:border-box!important}
   #mobViewProfile .prof-account-header{width:374px!important;height:50px!important;margin:0 auto 15px!important;display:flex!important;align-items:center!important;gap:18px!important;background:#ffffff!important}
   #mobViewProfile .prof-account-avatar{width:28px!important;height:28px!important;min-width:28px!important;border-radius:50%!important;background:var(--brand-primary)!important;color:var(--brand-on)!important;display:flex!important;align-items:center!important;justify-content:center!important}
@@ -5479,10 +4725,6 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #mobViewProfile .prof-account-row--logout{border-bottom:0!important}
 }
 /* Profile screen: never show the Home/Menu location widget above account page. */
-@media(max-width:767px){
-  body:has(#mobViewProfile.active) .home-sticky-header{}
-  #mobViewProfile.active{}
-}
 /* Profile screen bugfix: cover Home completely and keep bottom nav visible. */
 @media(max-width:767px){
   #mobViewProfile,
@@ -5704,113 +4946,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     line-height:var(--ref-line-lg)!important;
     letter-spacing:0!important;
   }
-  .club-coupon-rail{
-    display:flex!important;
-    align-items:stretch!important;
-    gap:10px!important;
-    width:100%!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    padding:0 22px 18px 0!important;
-    scroll-snap-type:x proximity!important;
-    -webkit-overflow-scrolling:touch!important;
-    scrollbar-width:none!important;
-  }
-  .club-coupon-rail::-webkit-scrollbar{display:none!important}
-  .club-coupon-card{
-    position:relative!important;
-    flex:0 0 162px!important;
-    width:162px!important;
-    height:225px!important;
-    scroll-snap-align:start!important;
-    border:1px solid var(--brand-tint-strong)!important;
-    border-radius:9px!important;
-    background:var(--brand-tint)!important;
-    box-shadow:none!important;
-    overflow:visible!important;
-    cursor:pointer!important;
-  }
-  .club-coupon-card::before,
-  .club-coupon-card::after{
-    content:""!important;
-    position:absolute!important;
-    top:170px!important;
-    width:10px!important;
-    height:10px!important;
-    background:#fff!important;
-    border:1px solid var(--brand-tint-strong)!important;
-    border-radius:50%!important;
-    z-index:2!important;
-  }
-  .club-coupon-card::before{left:-6px!important;border-left-color:transparent!important}
-  .club-coupon-card::after{right:-6px!important;border-right-color:transparent!important}
-  .club-coupon-ribbon{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    height:25px!important;
-    margin:5px 6px 0!important;
-    border-radius:6px 6px 0 0!important;
-    background:#9fc2ff!important;
-    color:#1e355d!important;
-    font-size:9px!important;
-    font-weight:800!important;
-    line-height:1!important;
-    white-space:nowrap!important;
-    overflow:hidden!important;
-  }
-  .club-coupon-art{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    height:88px!important;
-    margin:0 6px!important;
-    border-radius:4px!important;
-    border:1px dashed rgba(255,255,255,.75)!important;
-    background:var(--brand-primary)!important;
-    color:#fff7d5!important;
-    text-align:center!important;
-    overflow:hidden!important;
-  }
-  .club-coupon-art--green{background:#bfdc55!important;color:#1f8852!important}
-  .club-coupon-art img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
-  .club-coupon-art span{font-size:15px!important;font-weight:800!important;line-height:1.08!important;text-shadow:0 1px 0 rgba(0,0,0,.05)!important}
-  .club-coupon-art strong{font-size:29px!important;font-weight:800!important;line-height:.86!important;color:inherit!important}
-  .club-coupon-title{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    min-height:34px!important;
-    margin:9px 8px 0!important;
-    color:#666!important;
-    font-size:var(--ref-text-md)!important;
-    font-weight:800!important;
-    line-height:17px!important;
-    text-align:center!important;
-    text-transform:uppercase!important;
-  }
-  .club-coupon-dash{
-    height:1px!important;
-    margin:18px 14px 11px!important;
-    border-top:1.5px dashed var(--brand-border)!important;
-  }
-  .club-coupon-use{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:88px!important;
-    height:24px!important;
-    margin:0 auto!important;
-    padding:0!important;
-    border:0!important;
-    border-radius:4px!important;
-    background:var(--brand-tint-strong)!important;
-    color:var(--brand-active)!important;
-    font-size:var(--ref-text-sm)!important;
-    font-weight:800!important;
-    line-height:1!important;
-  }
-  .club-coupon-empty{
+                                .club-coupon-empty{
     width:calc(100vw - 48px)!important;
     max-width:359px!important;
     min-height:92px!important;
@@ -5823,26 +4959,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     font-size:13px!important;
     font-weight:600!important;
   }
-  .club-add-coupon-btn{
-    position:fixed!important;
-    right:30px!important;
-    bottom:calc(98px + env(safe-area-inset-bottom,0px))!important;
-    z-index:131!important;
-    width:155px!important;
-    height:43px!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    border:0!important;
-    border-radius:9px!important;
-    background:var(--brand-primary)!important;
-    color:var(--brand-on)!important;
-    font-size:13px!important;
-    font-weight:800!important;
-    line-height:1!important;
-    box-shadow:none!important;
-  }
-  body.modal-open:has(#mobViewClub.active) .mob-bottom-nav,
+    body.modal-open:has(#mobViewClub.active) .mob-bottom-nav,
   body:has(#mobViewClub.active) .mob-bottom-nav{
     position:fixed!important;
     left:0!important;
@@ -5893,12 +5010,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
     background:#fff!important;
     z-index:130!important;
   }
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{}
-}
+          }
 @media (max-width:414px){
   body:has(#mobViewClub.active) .mob-bottom-nav,
   body.modal-open:has(#mobViewClub.active) .mob-bottom-nav{
@@ -5925,15 +5037,11 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   }
 }
 /* Club: add-coupon button removed by request. */
-@media (max-width:767px){
-  .club-add-coupon-btn{display:none!important}
-}
 /* Profile logged-in refinement: lighter rows, more left aligned, higher content. */
 @media (max-width:767px){
   #mobViewProfile .prof-account-page{padding-top:20px!important}
   #mobViewProfile .prof-account-header{margin-top:-2px!important;margin-bottom:12px!important;transform:translateY(-4px)!important}
-  #mobViewProfile .prof-account-header h1{}
-  #mobViewProfile .prof-account-list{transform:translateY(-6px)!important}
+    #mobViewProfile .prof-account-list{transform:translateY(-6px)!important}
   #mobViewProfile .prof-account-row{color:#777f89!important}
   #mobViewProfile .prof-account-row-icon{color:#b7b7b7!important}
   #mobViewProfile .prof-account-icon-svg{stroke:#b7b7b7!important}
@@ -5982,20 +5090,16 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   #mobViewProfile .prof-account-avatar{width:30px!important;height:30px!important;min-width:30px!important;}
   #mobViewProfile .prof-account-avatar svg{width:21px!important;height:21px!important}
   #mobViewProfile .prof-account-header h1{font-weight:700!important;transform:translateY(-4px)!important}
-  #mobViewProfile .prof-account-row-icon{}
-  #mobViewProfile .prof-account-icon-svg{stroke-width:1.55!important}
+    #mobViewProfile .prof-account-icon-svg{stroke-width:1.55!important}
 }
 /* Profile logged-in alignment refinement. */
 @media (max-width:767px){
-  #mobViewProfile .prof-account-header h1{}
-  #mobViewProfile .prof-account-row{gap:10px!important}
+    #mobViewProfile .prof-account-row{gap:10px!important}
   #mobViewProfile .prof-account-row-icon{margin-left:-3px!important}
-  #mobViewProfile .prof-account-row-label{}
-}
+  }
 /* Profile logged-in row label/divider final tune. */
 @media (max-width:767px){
-  #mobViewProfile .prof-account-row-label{}
-  #mobViewProfile .prof-account-row{border-bottom-color:#e3e3e3!important}
+    #mobViewProfile .prof-account-row{border-bottom-color:#e3e3e3!important}
 }
 /* Profile logged-in row icons: slightly larger. */
 @media (max-width:767px){
@@ -6107,8 +5211,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{transform:translateX(14px)!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{transform:translateX(-20px)!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{transform:none!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav .nav-icon,
+    body:has(#mobViewClub.active) .mob-bottom-nav .nav-icon,
   body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-icon,
   body:has(#mobViewClub.active) .mob-bottom-nav .mob-nav-item > span:not(.nav-icon){
     transform:none!important;
@@ -6138,40 +5241,7 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
   .club-location-widget .delivery-widget-divider,
   .club-location-widget .address-strip,
   .club-location-widget .address-card{display:none!important}
-  .club-location-address{
-    grid-row:2!important;
-    display:flex!important;
-    align-items:center!important;
-    gap:7px!important;
-    width:100%!important;
-    height:18px!important;
-    min-height:18px!important;
-    overflow:hidden!important;
-    color:#7a828c!important;
-  }
-  .club-location-address-icon{
-    flex:0 0 15px!important;
-    width:15px!important;
-    height:15px!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    color:var(--brand-primary)!important;
-  }
-  .club-location-address-icon svg{width:15px!important;height:15px!important;stroke:var(--brand-primary)!important}
-  .club-location-address-text{
-    flex:1 1 auto!important;
-    min-width:0!important;
-    display:block!important;
-    color:#7a828c!important;
-    font-size:11px!important;
-    line-height:var(--ref-line-md)!important;
-    font-weight:500!important;
-    white-space:nowrap!important;
-    overflow:hidden!important;
-    text-overflow:ellipsis!important;
-  }
-}
+        }
 @media (max-width:414px){
   body:has(#mobViewClub.active) .mob-bottom-nav{
     left:0!important;
@@ -6379,76 +5449,9 @@ body.menu-tab .product-card.is-pressing{
   transition:none!important;
 }
 /* Product modal mobile overflow fix: keep fixed-reference sizing inside the viewport. */
-@media(max-width:767px){
-  html,
-  body,
-  #productModal{
-  }
-  #productModal .modal--product{
-  }
-  #productModal .modal-body,
-  #productModal .modal-footer{
-  }
-  #productModal .modal-footer{
-  }
-  #productModal .qty-bar{
-  }
-  #productModal #pmAddBtn{
-  }
-  #productModal .pm-obs-wrap,
-  #productModal .pm-obs-wrap .pm-obs{
-  }
-}
-
 /* Product modal full-sheet scroll and observation width fix. */
-@media(max-width:767px){
-  #productModal.active{
-  }
-  #productModal .modal--product{
-  }
-  #productModal .modal--product::before,
-  #productModal .modal--product::after{
-  }
-  #productModal .modal-body{
-  }
-  #productModal .modal-footer{
-  }
-  #productModal #pmForm{
-  }
-  #productModal .pm-label{
-  }
-  #productModal .pm-obs-wrap{
-  }
-  #productModal .pm-obs-wrap .pm-obs,
-  #productModal .pm-obs{
-  }
-}
-
 /* Product modal scroll restore: whole product scrolls, footer stays pinned. */
-@media(max-width:767px){
-  #productModal.active,
-  #productModal .modal--product,
-  #productModal .modal--product.product-no-scroll{
-  }
-  #productModal .modal--product{
-  }
-  #productModal .product-hero,
-  #productModal .modal-body,
-  #productModal .modal-footer{
-  }
-  #productModal .modal-body,
-  #productModal .modal--product.product-no-scroll .modal-body{
-  }
-  #productModal .modal-footer{
-  }
-}
-
 /* Product modal observation title: full-bleed gray strip. */
-@media(max-width:767px){
-  #productModal .pm-label{
-  }
-}
-
 /* Product modal mobile overflow fix: keep fixed-reference sizing inside the viewport. */
 @media(max-width:767px){
   html,
@@ -6538,9 +5541,7 @@ body.menu-tab .product-card.is-pressing{
     overflow:hidden!important;
     overscroll-behavior:none!important;
   }
-  #productModal .modal--product{
-  }
-  #productModal .modal--product::before,
+    #productModal .modal--product::before,
   #productModal .modal--product::after{
     display:none!important;
   }
@@ -7096,43 +6097,12 @@ body.menu-tab .product-card.is-pressing{
     background:#fff;
     box-shadow:0 3px 8px rgba(0,0,0,.045);
   }
-  #profSubpedidos .prof-order-card.prof-order-card--active-tone{
-    border-color:rgba(var(--brand-primary-rgb), .38);
-  }
-  #profSubpedidos .prof-order-card.prof-order-card--active-tone::before{
-    content:"";
-    position:absolute;
-    top:0;
-    left:0;
-    z-index:1;
-    width:0;
-    height:3px;
-    background:linear-gradient(90deg,var(--brand-primary) 0%,var(--brand-light) 72%,rgba(var(--brand-primary-rgb), 0) 100%);
-    animation:prof-order-progress 2.4s ease-out infinite;
-  }
-  #profSubpedidos .prof-order-card.prof-order-card--active-tone .prof-order-number{
-    color:var(--brand-primary);
-  }
-  @keyframes prof-order-progress{
+        @keyframes prof-order-progress{
     0%{width:0;opacity:1}
     85%{width:100%;opacity:1}
     100%{width:100%;opacity:0}
   }
-  #profSubpedidos .prof-order-card--confirmed,
-  #profSubpedidos .prof-order-card--cancelled,
-  #profSubpedidos .prof-order-card--canceled{
-    border-color:#f0f0f0;
-  }
-  #profSubpedidos .prof-order-card--completed,
-  #profSubpedidos .prof-order-card--delivered,
-  #profSubpedidos .prof-order-card--finished,
-  #profSubpedidos .prof-order-card--cancelled,
-  #profSubpedidos .prof-order-card--canceled{
-    width:374px;
-    max-width:100%;
-    height:151px;
-  }
-  #profSubpedidos .prof-order-card-main{
+      #profSubpedidos .prof-order-card-main{
     box-sizing:border-box;
     height:90px;
     padding:20px;
@@ -7178,13 +6148,7 @@ body.menu-tab .product-card.is-pressing{
     stroke-linecap:round;
     stroke-linejoin:round;
   }
-  #profSubpedidos .prof-order-status--success .prof-order-status-icon{
-    color:#4a9705;
-  }
-  #profSubpedidos .prof-order-status--danger .prof-order-status-icon{
-    color:#e98585;
-  }
-  #profSubpedidos .prof-order-details-button{
+      #profSubpedidos .prof-order-details-button{
     box-sizing:border-box;
     width:100%;
     height:61px;
@@ -8063,9 +7027,7 @@ body.menu-tab .product-card.is-pressing{
   body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavHome{transform:translateX(10px)!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu,
   body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavMenu{transform:translateX(3px)!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr,
-  body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavQr{transform:translateX(-20px)!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders,
+    body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders,
   body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavOrders{transform:translateX(-14px)!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile,
   body:has(#mobViewProfile.active):not(:has(#mobViewProfile .prof-sub.active)):not(:has(#profSubpedidos.active)) .mob-bottom-nav #mobNavProfile{transform:translateX(-12px)!important}
@@ -8073,8 +7035,7 @@ body.menu-tab .product-card.is-pressing{
   /* The Club active state used to resize these flex items after the nav was laid out. */
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavHome{flex:0 0 31.25px!important;width:31.25px!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavMenu{flex:0 0 52.5625px!important;width:52.5625px!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavQr{flex:0 0 40px!important;width:40px!important}
-  body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{flex:0 0 33.921875px!important;width:33.921875px!important}
+    body:has(#mobViewClub.active) .mob-bottom-nav #mobNavOrders{flex:0 0 33.921875px!important;width:33.921875px!important}
   body:has(#mobViewClub.active) .mob-bottom-nav #mobNavProfile{flex:0 0 30.75px!important;width:30.75px!important}
 }
 @media(max-width:414px){
@@ -8128,20 +7089,7 @@ body.menu-tab .product-card.is-pressing{
     padding-left:4px!important;
     scroll-padding-left:4px!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
-    z-index:2!important;
-    top:6px!important;
-    left:6px!important;
-    right:6px!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    background:#9fc2ff!important;
-    color:#1e355d!important;
-    font-weight:700!important;
-    line-height:1!important;
   }
-}
 /* Club coupon dimensions matched to the approved reference. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .coupon-card{
@@ -8151,17 +7099,7 @@ body.menu-tab .product-card.is-pressing{
     height:236.77px!important;
     min-height:236.77px!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
-    position:static!important;
-    flex:0 0 25px!important;
-    box-sizing:border-box!important;
-    width:157.3px!important;
-    height:25px!important;
-    min-height:25px!important;
-    margin:5px 5.5px 0!important;
-    border-radius:8px 8px 0 0!important;
-  }
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art{
+    body:has(#mobViewClub.active) #mobViewClub .coupon-art{
     flex:0 0 93.77px!important;
     box-sizing:border-box!important;
     width:156.3px!important;
@@ -8170,9 +7108,7 @@ body.menu-tab .product-card.is-pressing{
     aspect-ratio:auto!important;
     margin:0 6px!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
   }
-}
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .coupon-card::before,
   body:has(#mobViewClub.active) #mobViewClub .coupon-card::after{
@@ -8180,20 +7116,10 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 @media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .coupon-availability-ribbon{
-    font-size:var(--ref-text-xs)!important;
-    transform:translateY(1px)!important;
-  }
-  body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
+    body:has(#mobViewClub.active) #mobViewClub .club-coupons-title{
     transform:translateY(4px)!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
   }
-}
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
-  }
-}
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .coupon-use-btn{
     height:25px!important;
@@ -8202,15 +7128,7 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 @media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art,
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
-  }
-}
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art,
-  body:has(#mobViewClub.active) #mobViewClub .coupon-art img{
-  }
-  body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
+    body:has(#mobViewClub.active) #mobViewClub .club-coupons-section .coupon-rail{
     transform:translateY(6px)!important;
   }
 }
@@ -8258,11 +7176,6 @@ body.menu-tab .product-card.is-pressing{
 }
 
 /* Keep the cashback amount optically centered in its card. */
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{
-  }
-}
-
 /* Fine tune only the cashback amount position. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .club-cashback-copy strong{
@@ -8295,9 +7208,7 @@ body.menu-tab .product-card.is-pressing{
     font-weight:800!important;
     line-height:24px!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state{
+    body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state{
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
@@ -8311,8 +7222,7 @@ body.menu-tab .product-card.is-pressing{
     line-height:19px!important;
     text-align:center!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--loading{gap:10px!important;color:#6d727a!important;font-weight:600!important}
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-spinner{
+    body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-spinner{
     width:18px!important;
     height:18px!important;
     border:2px solid #eadcd4!important;
@@ -8380,11 +7290,7 @@ body.menu-tab .product-card.is-pressing{
     justify-content:center!important;
     backdrop-filter:none!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal.active .cashback-statement-modal{
-  }
-  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) .mob-bottom-nav{
-  }
-}
+    }
 /* Cashback statement is a full-screen operation view. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal.active{
@@ -8431,8 +7337,7 @@ body.menu-tab .product-card.is-pressing{
   }
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back svg{width:17px!important;height:17px!important;stroke-width:1.8!important}
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{flex:1!important;max-height:none!important;padding-bottom:24px!important}
-  body:has(#mobViewClub.active):has(#cashbackStatementModal.active) .mob-bottom-nav{}
-}
+  }
 /* Exact empty-statement geometry and no motion on return. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal,
@@ -8448,13 +7353,7 @@ body.menu-tab .product-card.is-pressing{
     background:#f5f5f5!important;
     padding:0!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--empty{
-    width:100%!important;
-    height:300px!important;
-    min-height:300px!important;
-    background:#ffffff!important;
   }
-}
 /* Fine alignment with the Unidades e Operação header and empty reference. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
@@ -8465,14 +7364,7 @@ body.menu-tab .product-card.is-pressing{
     border:0!important;
     box-sizing:border-box!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-state--empty{
-    color:#6d625d!important;
-    font-size:var(--ref-text-md)!important;
-    font-weight:600!important;
-  }
-}
+    }
 /* Final cashback statement placement. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
@@ -8490,19 +7382,7 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 /* Slightly larger and lower separator below the cashback header. */
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
-  }
-}
 /* Balanced cashback header separator. */
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
-  }
-}
 /* Visible lower placement for the cashback empty panel. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header{
@@ -8518,19 +7398,11 @@ body.menu-tab .product-card.is-pressing{
     min-height:78px!important;
     height:78px!important;
   }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
-  }
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
+    body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-body{
     margin-top:0!important;
   }
 }
 /* Final micro-adjustment for the cashback header controls. */
-@media(max-width:767px){
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
-  body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-back{
-  }
-}
 /* Keep the cashback header controls at their original vertical position. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #cashbackStatementModal .cashback-statement-header .modal-title,
@@ -8566,12 +7438,7 @@ body.menu-tab .product-card.is-pressing{
     text-overflow:ellipsis!important;
     white-space:nowrap!important;
   }
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(1),
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(3){
-  }
-  body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tab:nth-of-type(2){
-  }
-}
+    }
 /* Club location chips match the compact layout used elsewhere. */
 @media(max-width:767px){
   body:has(#mobViewClub.active) #mobViewClub .club-location-widget .delivery-widget-tabs{

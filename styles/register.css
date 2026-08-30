@@ -315,7 +315,6 @@
 .reg-field--error .reg-input:focus { border-color: #EF5A5A; }
 /* Labels keep their normal colour even on error — only the border and the
    message below turn red. */
-.reg-check--error .reg-check-box { border-color: #EF5A5A; }
 
 /* Generic summary banner — inline, slides up into position */
 @keyframes reg-summary-in {

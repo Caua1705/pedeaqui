@@ -63,7 +63,10 @@ Três ferramentas respondem por medida o que não dá para responder lendo:
 | Quantos cabeçalhos/botões DIFERENTES existem? | `node tools/ui-inventory.mjs` |
 
 E a prova de que nada mudou continua sendo `node tools/capture-screens.mjs`
-(antes, depois, `--diff`). Ela pegou os dois erros desta limpeza — uma junção
+(antes, depois, `--diff`) — mas ela le **44 propriedades**, não todas. Antes de
+citar um "Nenhuma diferença" como prova, confira se a propriedade que você
+mexeu está em `PROPS`: ela já leu `borderTopColor` sem as outras três e assinou
+embaixo de uma troca de divisória em 239 elementos. A skill tem o caso. Ela pegou os dois erros desta limpeza — uma junção
 de blocos que trocou a fonte de 934 elementos, e um `!important` removido que
 abriu 36px na barra de baixo. Nas duas vezes o erro estava na ferramenta de
 análise, não no CSS: **comentário colado na declaração** fazia o nome da

@@ -437,6 +437,41 @@ São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em
 | Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
 | Nada mudou? | `tools/capture-screens.mjs` | 41 propriedades de ~1.500 elementos em 14 telas, antes e depois. |
 
+### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 44 propriedades, nao todas
+
+`getComputedStyle` devolve ~340 nomes. A captura le 44, escolhidas a mao. Isso
+e correto — ler tudo afogaria a diferenca que importa em ruido legitimo — mas
+tem uma consequencia que custou caro em 30/08/2026 e que voce precisa saber
+antes de citar a saida dela como prova:
+
+**A ferramenta lia `borderTopColor`, e so ela, das quatro cores de borda.**
+
+A suposicao era razoavel: quem escreve `border:1px solid #eee` pinta os quatro
+lados, entao a de cima denuncia as outras tres. Ela e errada NESTE app, que
+quase nao usa borda inteira — ele usa DIVISORIA, e divisoria e `border-bottom`
+sozinha: a linha sob o titulo de toda tela cheia, sob cada linha de lista, sob
+cada aba. E o lugar onde este CSS mais desenha, e era exatamente o lugar onde a
+ferramenta nao olhava.
+
+O flagrante: um commit trocou o cinza da divisoria de sete cabecalhos, em 239
+elementos, e a captura respondeu `Nenhuma diferenca` nas 14 telas. Corrigido
+(`borderRightColor`, `borderBottomColor`, `borderLeftColor` entraram em
+`PROPS`), a mesma troca aparece inteira.
+
+Um verificador que nao olha onde o app desenha e PIOR que nenhum: sem ele voce
+confere a mao; com ele voce para de conferir, e ele assina embaixo. Ele tinha
+assinado embaixo de tres commits de limpeza — que estavam certos, conferido
+depois com a lista corrigida (0 elementos entre 5d2618c e 2455388), mas isso
+foi sorte de ninguem ter mexido em `border-bottom`, nao garantia.
+
+**A regra que fica:** antes de aceitar um `Nenhuma diferenca` como prova de que
+uma mudanca especifica nao mudou nada, confira se a PROPRIEDADE que voce mexeu
+esta em `PROPS` (topo de `tools/capture-screens.mjs`). Se nao estiver,
+acrescente-a e recapture os dois lados — a lista e para crescer. O que ainda
+NAO esta la, e que alguem vai precisar um dia: `outlineColor`, `fill`,
+`stroke`, `textDecoration*`, `backgroundImage` (gradiente), `objectFit`,
+`gridTemplateRows`, `borderRadius` por canto.
+
 ### As armadilhas destas ferramentas (todas custaram uma rodada)
 
 1. **Comentário colado na declaração.** `declaracoes()` lia

@@ -24,9 +24,17 @@ para qualquer rota que o app invente.
 
 ## Não leia o `restaurant-page.js` inteiro
 
-São ~10.400 linhas. Ache a função (`grep -n "function nomeDaCoisa"`) e leia a
-vizinhança. Os comentários longos dele são histórico de defeito real — leia-os
-antes de "simplificar".
+São ~7.200 linhas. Ache a função (`grep -n "function nomeDaCoisa"`) e leia a
+vizinhança — ela pode estar num dos três módulos que saíram dele em 29/08/2026:
+`restaurant-address-flow.js`, `restaurant-pix-flow.js` e `restaurant-auth-flow.js`.
+Os comentários longos são histórico de defeito real — leia-os antes de
+"simplificar".
+
+Os três recebem o que precisam por `init(deps)`. **O que muda de valor vai por
+acessor, não por valor**: uma cópia vira uma fotografia do boot, e o módulo passa
+a decidir com dado velho sem acusar nada. A skill tem o idioma e as quatro
+armadilhas do corte — inclusive a que derrubou o app no boot com lint, typecheck
+e unitários verdes.
 
 ## Antes de mexer
 

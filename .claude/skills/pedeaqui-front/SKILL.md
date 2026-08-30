@@ -24,7 +24,7 @@ para módulos de passagem; é fase própria.
 
 Funções de tela são internas ao IIFE de `restaurant-page.js` e alcançáveis por
 nome via `scripts/utils/actions.js` (delegação por `data-act-*`) e por um
-`Object.assign(window, {...})` no fim do arquivo (`restaurant-page.js:10356`),
+`Object.assign(window, {...})` no fim do arquivo (`restaurant-page.js:7152`),
 que é como os E2E dirigem o app (`window.openProduct`, `window.addToCart`,
 `window.openModal`).
 
@@ -38,7 +38,10 @@ todos os tenants dividem a mesma origem.
 | Preciso mexer em… | Vá para |
 |---|---|
 | Payload de `POST /orders` | `scripts/services/order-payload.js` — **ponto único** |
-| Totais da sacola | `restaurant-page.js:2673` `cartTotals()` — **dono único** |
+| Totais da sacola | `restaurant-page.js:2692` `cartTotals()` — **dono único** |
+| Endereço: escolha, lista, Maps, formulário | `scripts/pages/restaurant-address-flow.js` |
+| Pix e acompanhamento do pedido | `scripts/pages/restaurant-pix-flow.js` |
+| Entrar, cadastrar, verificar, recuperar senha | `scripts/pages/restaurant-auth-flow.js` |
 | Rotas da API (strings) | `scripts/services/api-routes.js` |
 | Chamada HTTP, erro, header | `scripts/services/api-client.js`, `utils/api-error.js` |
 | Cupom e cashback (dados) | `scripts/services/club-service.js` |
@@ -53,9 +56,82 @@ todos os tenants dividem a mesma origem.
 | Contrato de pedido/pagamento, em prosa | `docs/order-contract.md` |
 | CSP de produção | `vercel.json` (+ `docs/csp-mercado-pago.md`) |
 
-`scripts/pages/restaurant-page.js` tem ~10.400 linhas. Não leia inteiro:
-`grep -n "function nomeDaCoisa"` e leia a vizinhança. Os comentários longos dele
-são histórico de defeito real — leia antes de "simplificar".
+`scripts/pages/restaurant-page.js` tem ~7.200 linhas (eram 10.400 até 29/08/2026;
+três blocos saíram para os módulos da tabela acima). Não leia inteiro:
+`grep -n "function nomeDaCoisa"` e leia a vizinhança — e lembre que a função pode
+estar num dos três módulos. Os comentários longos dele são histórico de defeito
+real: leia antes de "simplificar".
+
+### O que ainda NÃO saiu, e por quê
+
+**Operação / filial** (~1.000 linhas, o `operationContext`) fica onde está. Medido:
+62 nomes lidos de fora e 32 chamados de fora — 94 fios para mil linhas. Uma
+"extração" assim é o mesmo fechamento com mais cerimônia, e é exatamente o bloco
+onde mora a troca transacional de filial (b3c03ec), o defeito mais caro que a
+auditoria consertou. Se você for tentar, meça antes.
+
+A folha de detalhe do cupom (29 fios / 261 linhas) e o checkout da sacola
+(14 / 67) ficaram fora pelo mesmo motivo: mais fio que pano.
+
+## 2.1 Como um módulo conversa com o `restaurant-page.js`
+
+Os três módulos saíram do MESMO fechamento, então precisaram de uma costura. Ela
+tem um idioma só, e vale copiar em vez de inventar outro:
+
+```js
+// no módulo
+let esc, closeModalId, /* ...os estáveis... */;
+const S = {};                       // o que muda de valor
+function init(deps) { ({ esc, closeModalId } = deps); /* ... */ }
+window.PedeAquiXFlow = { init, ...portas };
+```
+
+**Estável vai por valor; o que muda vai por acessor.** Uma variável que o outro
+lado reatribui, passada por valor, vira uma FOTOGRAFIA do boot — e a partir da
+primeira troca de filial ou do primeiro login o módulo decide com dado velho, sem
+erro nenhum na tela. `S.x` chama o getter a cada acesso. Quando o módulo também
+ESCREVE (o auth limpa o cupom em leitura; o Pix zera a sessão de cobrança), o
+acessor leva getter **e** setter.
+
+`init()` recusa acessor faltando, em vez de seguir com `undefined`.
+
+**O markup não muda.** `RapidexActions.register()` MESCLA num registro
+compartilhado, então cada módulo registra as ações dele e os `data-act-*` do HTML
+continuam iguais. Foi assim que 82 ações mudaram de arquivo sem uma linha de HTML.
+
+### As quatro armadilhas deste tipo de corte
+
+Todas custaram uma rodada, e as três primeiras passam por lint, typecheck e
+unitários — nenhum deles executa o bundle.
+
+1. **Instrução de topo muda de hora.** `onTeardown(stopVfyTimer)` no corpo do
+   bloco rodava, no fechamento antigo, depois de tudo definido. Como módulo, roda
+   **ao ser importado**, antes do `init()` — e derrubou o app inteiro no boot com
+   "p is not a function", com os três gates verdes. Varra por profundidade de
+   chaves: era a única em 3.800 linhas movidas. Instrução de topo vai para
+   `init()`.
+
+2. **`` não casa antes de `$`.** A varredura que monta a lista de dependências
+   perdeu o `$` (o `getElementById` do app) nos DOIS primeiros módulos. Pior: no
+   segundo, declarar `let $` no módulo deixou o **lint verde** com o `$` ainda
+   faltando na chamada de `init()`. O lint vê a metade de baixo e não vê a de
+   cima. Confira por script que **todo nome declarado aparece na chamada**.
+
+3. **Varredura de identificador erra dos dois lados.** Sub-reporta o que chega
+   por desestruturação (`const { openModal } = window.PedeAquiRestaurantUi`) e
+   super-reporta nome de parâmetro (`fallback`), chave de objeto (`customer:`),
+   string (`'mobNavProfile'`) e menção em comentário. Serve para começar; quem
+   fecha a conta é o lint mais a conferência do item 2.
+
+4. **Nem todo bloco vizinho é do mesmo assunto.** `showAppToast()` morava dentro
+   do bloco do Pix e é o toast do app inteiro. Saiu do bloco ANTES do corte, num
+   move dentro do mesmo arquivo — senão o módulo do Pix viraria dono do toast de
+   tudo.
+
+**A prova de cada corte** é `node tools/capture-screens.mjs`: 14 telas, 41
+propriedades computadas de todos os ~1.500 elementos, antes e depois. Foi ela que
+pegou a armadilha 1 — e só porque ela **lança** quando uma tela não abre, em vez
+de registrar vazio.
 
 ## 3. As três regras que não se negociam
 
@@ -230,8 +306,15 @@ Rode os quatro. O E2E leva minutos — rode em background e espere uma vez, não
 laço.
 
 **Flakes conhecidos** (passam isolados, caem sob carga paralela; não são seus):
-`tenant-theme.spec.js:188` (limite de tempo de parede) e, às vezes,
-`assistant-voice-session.spec.js:294`. Se falhou outra coisa, é sua.
+`assistant-voice-session.spec.js:294` e `pix-payment.spec.js:116` (geometria).
+Se falhou outra coisa, é sua.
+
+`tenant-theme.spec.js:188` SAIU desta lista em 29/08/2026 — ele não era flaky de
+paralelismo: media tempo de parede e falhava até em série (`--workers=1`, 900
+contra um teto de `< 900`), com o `retries: 1` do CI escondendo. Hoje ele congela
+o relógio da página (`clock.install` + **`pauseAt`** — `install()` sozinho não
+para o relógio, e a versão sem `pauseAt` passou com um piso de 900ms injetado de
+propósito). Não há mais nenhuma asserção de `Date.now()` na suíte.
 
 Guardas que existem para barrar reincidência — se uma delas te barrar, ela
 provavelmente está certa: `css-duplicate-declarations` (a folha não pode brigar

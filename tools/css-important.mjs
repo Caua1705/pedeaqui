@@ -30,13 +30,23 @@
 //  a razao pela qual alguem escreveu o `!important`, e tirar o marcador ali
 //  muda quem vence. So sai o que nao disputa com ninguem.
 //
-//  O QUE ESTA MEDIDA NAO ALCANCA
+//  O QUE ESTA MEDIDA NAO ALCANCA, E O QUE SE FAZ A RESPEITO
 //
 //  As 14 telas da captura. Um elemento que so existe no Pix, no cartao ou numa
 //  tela de erro nao aparece aqui, e uma regra que nao casou com NADA em tela
 //  nenhuma nao produz evidencia — ela e listada como `sem-evidencia` e nao
 //  entra na lista de remocao. Nao confunda "nao vi adversario" com "nao ha
 //  adversario" para regras que nunca foram medidas.
+//
+//  Pior que isso: uma regra pode alcancar um elemento numa tela capturada SEM
+//  adversario e alcancar outro elemento, numa tela que a captura nao abre, ONDE
+//  o adversario existe. O runtime diria "sem adversario" para uma disputa que
+//  so nao foi aberta na frente dele. Por isso ha um VETO ESTATICO por cima:
+//  se qualquer outra regra, em folha nenhuma, declara a mesma familia de
+//  propriedade com um seletor que compartilhe ao menos um token, o marcador
+//  fica onde esta. O veto e grosseiro de proposito — ele veta demais, e vetar
+//  demais custa um `!important` a mais no arquivo, enquanto vetar de menos
+//  custa um pixel numa tela que ninguem abriu.
 //
 //  USO
 //    npm run build && npm run preview &
@@ -54,8 +64,27 @@ import { mockApi, seedPickupSession } from '../tests/e2e/helpers.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STYLES = join(ROOT, 'styles');
 
-/** As propriedades declaradas num corpo de regra, com o marcador de cada uma. */
+/**
+ * As propriedades declaradas num corpo de regra, com o marcador de cada uma.
+ *
+ * OS COMENTARIOS SAEM PRIMEIRO, e nao e detalhe de higiene. Sem esta linha, o
+ * comentario que precede uma declaracao gruda no nome dela:
+ *
+ *   /* Zera o gap e devolve o espaco as colunas. *\/
+ *   gap:0!important;
+ *
+ * vinha como a propriedade `"...as colunas. *\/\n  gap"`. Um nome assim nao
+ * casa com familia nenhuma, entao a busca por adversario nao encontra o
+ * `gap:0 36px!important` que estava do outro lado, a declaracao e dada como
+ * livre, o marcador sai — e a barra de baixo do app abre 36px entre os itens,
+ * com os botoes passando de 74,8px para 46px. A captura acusou em 14 telas.
+ *
+ * Neste repositorio a declaracao COMENTADA e a regra, nao a excecao: os
+ * comentarios sao historico de defeito e ficam colados no que explicam. Uma
+ * ferramenta que le CSS aqui tem de tirar comentario antes de tudo.
+ */
 export function declaracoes(body) {
+  body = body.replace(/\/\*[\s\S]*?\*\//g, ' ');
   const out = [];
   // Divide por `;` fora de parenteses: `font:700 12px/17px var(--x, y)` tem
   // virgula e parenteses dentro, e um split ingenuo parte no lugar errado.
@@ -80,15 +109,35 @@ export function declaracoes(body) {
   return decls;
 }
 
-/* `border` e `border-bottom` e `border-bottom-color` disputam o mesmo pixel.
-   Comparar so o nome escrito faria `border:0!important` parecer sem adversario
-   ao lado de um `border-bottom-color:#eee` — e tirar o marcador mudaria a
-   borda. A comparacao e feita pela FAMILIA. */
+/* Duas propriedades de nomes diferentes disputam o mesmo pixel o tempo todo, e
+   comparar o nome escrito deixa passar a disputa. `border:0` contra
+   `border-bottom-color:#eee`; `gap:0` contra `column-gap:36px`; `width:46px`
+   contra `flex:1`. Por isso o agrupamento e GROSSO — cada grupo e "coisas que
+   podem decidir o mesmo valor computado".
+   Foi um grupo fino demais que passou o primeiro erro: `gap` e `column-gap`
+   estavam em familias diferentes, o `gap:0!important` da barra de baixo saiu
+   por "nao ter adversario", e a captura acusou `gap: 0px -> 0px 36px` com os
+   botoes da barra mudando de 74,8px para 46px atras. Errar para o lado de
+   agrupar demais custa um `!important` que fica; errar para o outro custa a
+   tela. */
+const GRUPOS = [
+  [/^border/, 'border'],
+  [/^(gap|column-gap|row-gap|grid-gap|grid-column-gap|grid-row-gap)$/, 'gap'],
+  // tamanho e distribuicao no flex/grid decidem o mesmo retangulo
+  [/^(width|height|min-width|min-height|max-width|max-height|flex|flex-basis|flex-grow|flex-shrink|aspect-ratio|box-sizing)/, 'caixa'],
+  [/^(margin|padding)/, 'espaco'],
+  [/^(top|right|bottom|left|inset|position|transform|translate)/, 'posicao'],
+  [/^(font|line-height|letter-spacing|word-spacing|text-transform|white-space|text-align|text-indent)/, 'texto'],
+  [/^(background|box-shadow|opacity|filter|backdrop-filter)/, 'pintura'],
+  [/^(display|visibility|overflow|z-index|float|clear)/, 'fluxo'],
+  [/^(grid|place|justify|align|order|direction)/, 'arranjo'],
+  [/^(transition|animation|will-change)/, 'movimento'],
+  [/^(color|-webkit-text-fill-color|-webkit-text-stroke)/, 'tinta']
+];
+
 const FAMILIA = (prop) => {
   const p = prop.replace(/^-(webkit|moz|ms)-/, '');
-  if (/^border/.test(p)) return 'border';
-  if (/^(margin|padding|inset|top|right|bottom|left)/.test(p)) return p.replace(/-(top|right|bottom|left|block|inline)(-\w+)?$/, '');
-  if (/^(background|font|flex|grid|transition|animation|overflow|outline|gap|place|list-style|text-decoration|mask)/.test(p)) return p.split('-')[0];
+  for (const [re, nome] of GRUPOS) if (re.test(p)) return nome;
   return p;
 };
 
@@ -173,21 +222,61 @@ async function main() {
   }
   await browser.close();
 
+  /* ── VETO ESTATICO ────────────────────────────────────────────────────────
+     O runtime ve 14 telas, e o app tem mais estados que isso. Uma regra pode
+     alcancar um elemento numa tela capturada SEM adversario e alcancar outro
+     elemento, no Pix ou na tela de erro, ONDE o adversario existe — e ai o
+     runtime diz "sem adversario" para uma disputa que so nao foi aberta na
+     frente dele.
+     Entao, alem da evidencia de tela, exige-se que nenhuma OUTRA regra, em
+     folha nenhuma, declare a mesma familia de propriedade com um seletor que
+     compartilhe pelo menos um token (classe ou id) com esta. E grosseiro de
+     proposito: ele veta demais, e vetar demais custa um `!important` que
+     continua onde esta — enquanto vetar de menos custa um pixel que muda numa
+     tela que ninguem abriu. */
+  const porToken = new Map();
+  for (const f of arquivos) {
+    for (const r of parseCss(readFileSync(join(STYLES, f), 'utf8'), f)) {
+      if (r.atRule || !r.body.trim()) continue;
+      const fams = new Set(declaracoes(r.body).map(d => FAMILIA(d.prop)));
+      const toks = [...(r.selector.replace(/\[[^\]]*\]/g, ' ').matchAll(/[.#](-?[_a-zA-Z][\w-]*)/g))].map(m => m[1]);
+      for (const t of new Set(toks)) {
+        if (!porToken.has(t)) porToken.set(t, new Map());
+        const m = porToken.get(t);
+        for (const fam of fams) {
+          if (!m.has(fam)) m.set(fam, []);
+          m.get(fam).push(f + ':' + r.line);
+        }
+      }
+    }
+  }
+  const vetado = (r, fam) => {
+    const toks = new Set([...(r.selector.replace(/\[[^\]]*\]/g, ' ').matchAll(/[.#](-?[_a-zA-Z][\w-]*)/g))].map(m => m[1]));
+    const eu = r.file + ':' + r.line;
+    for (const t of toks) {
+      const donos = porToken.get(t)?.get(fam);
+      if (donos && donos.some(d => d !== eu)) return true;
+    }
+    return false;
+  };
+
   const saida = [];
-  let semAdversario = 0, comAdversario = 0, sem = 0;
+  let semAdversario = 0, comAdversario = 0, sem = 0, porVeto = 0;
   for (const r of rules) {
     const props = [];
     for (const d of r.decls) {
       if (!d.important) continue;
       const fam = FAMILIA(d.prop);
       if (!r.alvo || semEvidencia.has(r.alvo)) { props.push({ prop: d.prop, veredito: 'sem-evidencia' }); sem++; continue; }
-      if (disputadas.has(r.alvo + '|' + fam)) { props.push({ prop: d.prop, veredito: 'tem-adversario' }); comAdversario++; }
-      else { props.push({ prop: d.prop, veredito: 'sem-adversario' }); semAdversario++; }
+      if (disputadas.has(r.alvo + '|' + fam)) { props.push({ prop: d.prop, veredito: 'tem-adversario' }); comAdversario++; continue; }
+      if (vetado(r, fam)) { props.push({ prop: d.prop, veredito: 'vetado-estatico' }); porVeto++; continue; }
+      props.push({ prop: d.prop, veredito: 'sem-adversario' }); semAdversario++;
     }
     saida.push({ file: r.file, line: r.line, selector: r.selector, inicio: r.inicio, fim: r.fim, props });
   }
   console.log('\ndeclaracoes com !important:');
   console.log('  tem adversario (o marcador decide algo): ' + comAdversario);
+  console.log('  vetado pelo criterio estatico:           ' + porVeto);
   console.log('  SEM adversario (o marcador nao decide):  ' + semAdversario);
   console.log('  sem evidencia (regra nao vista em tela): ' + sem);
 
@@ -196,14 +285,14 @@ async function main() {
     const a = por.get(r.file) || { semAdv: 0, comAdv: 0, sem: 0 };
     for (const p of r.props) {
       if (p.veredito === 'sem-adversario') a.semAdv++;
-      else if (p.veredito === 'tem-adversario') a.comAdv++;
-      else a.sem++;
+      else if (p.veredito === 'sem-evidencia') a.sem++;
+      else a.comAdv++;
     }
     por.set(r.file, a);
   }
-  console.log('\narquivo'.padEnd(23) + 'sem adv'.padStart(9) + 'com adv'.padStart(9) + 'sem evid'.padStart(10));
+  console.log('\narquivo'.padEnd(23) + 'sem adv'.padStart(9) + 'com/veto'.padStart(10) + 'sem evid'.padStart(10));
   for (const [f, a] of [...por].sort((x, y) => y[1].semAdv - x[1].semAdv)) {
-    console.log(f.padEnd(22) + String(a.semAdv).padStart(9) + String(a.comAdv).padStart(9) + String(a.sem).padStart(10));
+    console.log(f.padEnd(22) + String(a.semAdv).padStart(9) + String(a.comAdv).padStart(10) + String(a.sem).padStart(10));
   }
   if (process.argv.includes('--json')) {
     writeFileSync(join(ROOT, 'css-important.json'), JSON.stringify(saida, null, 1));

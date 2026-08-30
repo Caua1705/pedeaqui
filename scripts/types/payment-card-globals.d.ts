@@ -82,6 +82,13 @@ declare global {
     PedeAquiCustomerCardService?: CustomerCardService;
     PedeAquiMercadoPago?: MercadoPagoService;
     PedeAquiCardFlow?: PaymentCardFlow;
+    // Sem `?`: o rotulo da bandeira e o que o cliente le para saber QUAL cartao
+    // ele escolheu, e um modulo ausente tem de quebrar aqui em vez de virar
+    // "Crédito -  •••• 1234" na linha de pagamento. Carrega em
+    // entry-restaurant.js antes desta tela.
+    PedeAquiCardFormat: {
+      cardBrandLabel(value: string | null | undefined): string;
+    };
     PedeAquiRestaurantUi?: {
       openModal(id: string): void;
       closeModalId(id: string): void;

@@ -196,13 +196,26 @@ que dá cobertura de mentira por anos.
 
 Todas foram encontradas com o defeito já em produção ou a um commit de chegar lá.
 
-**O catch-all 200 do mock.** A última linha de `mockApi()`
-(`tests/e2e/helpers.js`) devolve `{}` com **200** para qualquer rota que o app
-invente. É de propósito (a suíte não pode escapar para a rede), mas significa
-que **um E2E verde não prova que a rota existe**. Rota que morreu precisa de um
-`410`/`404` explícito **antes** do catch-all — como já está feito para a
-consulta por telefone e para `/menu` de filial alheia. Quem prova rota é
-`api-contract.test.js`, não o E2E.
+**O catch-all do mock — corrigido em 30/08/2026, e o que ele ainda não faz.**
+Até essa data a última linha de `mockApi()` (`tests/e2e/helpers.js`) devolvia
+`{}` com **200** para qualquer rota que o app inventasse. A intenção era boa (a
+suíte não pode escapar para a rede), mas o efeito era que **um E2E verde não
+dizia nada sobre a rota existir**: o app podia chamar uma rota que o backend
+removeu, receber 200 vazio, cair no fallback e o teste passar — que é
+exatamente o incidente que criou o `api-contract.test.js`.
+
+Hoje o catch-all responde **404** e empurra o endereço para
+`rotasDesconhecidas`, que sai junto com os outros arrays de `mockApi()`. Quem
+lê essa lista é o terceiro teste de `boot-smoke.spec.js`, que percorre as dez
+telas e exige a lista **vazia** — visto falhando com `/coupons/available`
+reinjetada de propósito, e ele nomeia a rota na mensagem.
+
+Isso **não substitui** `api-contract.test.js`: são perguntas diferentes. Lá é
+"esta rota existe no OpenAPI?"; aqui é "o app chamou alguma coisa que ninguém
+declarou?". Uma rota montada por concatenação em runtime só aparece aqui. E
+rota que morreu continua merecendo um `410`/`404` explícito **antes** do
+catch-all, com o motivo escrito — como já está para a consulta por telefone e
+para `/menu` de filial alheia.
 
 **O fixture de filial não aceita cartão online.** `tests/fixtures/info.json` é
 cópia fiel da produção, e lá `credit_card` existe só no grupo `delivery` (a
@@ -368,6 +381,68 @@ contra um teto de `< 900`), com o `retries: 1` do CI escondendo. Hoje ele congel
 o relógio da página (`clock.install` + **`pauseAt`** — `install()` sozinho não
 para o relógio, e a versão sem `pauseAt` passou com um piso de 900ms injetado de
 propósito). Não há mais nenhuma asserção de `Date.now()` na suíte.
+
+## 5.1 O CSS, e as quatro ferramentas que respondem por medida
+
+São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em
+30/08/2026, e escrito no cabeçalho de `styles/utilities.css`:
+
+- **`utilities.css` não é folha de utilitários.** De 1.280 regras, UMA começava
+  com `.u-` (foi para `markup.css`, a folha de utilitários de verdade). As
+  outras são ajuste de tela escrito ali por um motivo só: carregar depois de
+  `restaurant.css` e vencer.
+- **Ela também não carrega por último.** Depois dela vêm operation, register,
+  login, verify, button-theme, assistant, coupons-api, pix, payment-card e
+  markup. O comentário que dizia isso estava errado havia muito tempo.
+- **Por isso não dá para "levar cada regra para a folha certa".** 1.013 das
+  1.280 (191 kB) tocam classes ou ids que outra folha também declara: estão numa
+  disputa de ordem, e mover inverte quem vence. Só 267 falam de tokens que mais
+  ninguém declara.
+- **E juntar blocos repetidos também não é de graça.** 136 seletores estão
+  escritos mais de uma vez no arquivo; só 12 grupos podem ser juntados sem que
+  algo no meio dispute a mesma propriedade.
+
+| Pergunta | Ferramenta | O que ela prova |
+|---|---|---|
+| Esta regra pode pintar algo? | `tools/css-usage.mjs` | Metade **estática** (o nome não existe fora do CSS → morto por construção) e metade **runtime** (casa nas 14 telas → termômetro). Só a estática autoriza apagar. |
+| Este `!important` vence alguém? | `tools/css-important.mjs` | Adversário = outra regra declarando a mesma **família** de propriedade no mesmo elemento. Runtime + um **veto estático** grosseiro por token. |
+| Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
+| Nada mudou? | `tools/capture-screens.mjs` | 41 propriedades de ~1.500 elementos em 14 telas, antes e depois. |
+
+### As armadilhas destas ferramentas (todas custaram uma rodada)
+
+1. **Comentário colado na declaração.** `declaracoes()` lia
+   `/* Zera o gap */
+  gap:0!important` e devolvia a propriedade
+   `"...*/
+  gap"`. Nome assim não casa com família nenhuma: o adversário não
+   foi encontrado, o marcador saiu, e a barra de baixo abriu `gap:0 36px` com os
+   botões passando de 74,8px para 46px em 14 telas. Neste repositório o
+   comentário colado é a REGRA — quem lê CSS aqui tira comentário antes de tudo.
+2. **A ferramenta lendo a própria saída.** `css-usage.json` fica na raiz e tem
+   todos os seletores dentro. Na segunda rodada ele entrou no corpus, toda
+   classe "se provou" viva, e 426 regras mortas viraram **0**. Zero é uma
+   resposta plausível demais para levantar suspeita.
+3. **Família de propriedade fina demais.** `gap` e `column-gap` em famílias
+   diferentes; `width` e `flex` também. Duas propriedades de nomes diferentes
+   decidem o mesmo pixel o tempo todo — o agrupamento tem de ser grosso, e errar
+   para o lado de agrupar demais custa um `!important` que fica, enquanto errar
+   para o outro custa a tela.
+4. **A chave do diff com a classe dentro.** Era `caminho|id|classe`, e assim um
+   elemento que troca de classe some de um lado e nasce do outro — a comparação
+   de estilo dele nunca acontece. Num commit de componentização é exatamente o
+   elemento que se precisa conferir. Hoje a classe é relatada à parte: "11 com
+   classe trocada, 0 com valor diferente".
+5. **O adversário pode não estar no CSS.** `tests/unit/mark-contrast.test.js` lê
+   o TEXTO da regra e exige `opacity:.82!important` no bloco de movimento
+   reduzido. Nenhuma varredura de folha acha esse adversário — ele está num
+   teste. Foi o `npm run test` que barrou, e é por isso que os quatro portões
+   rodam mesmo num commit que "só mexe em CSS".
+6. **Blocos repetidos não são redundância.** Juntar move declarações de cima
+   para baixo. `body,button,input,textarea,select{font-family:...!important}` da
+   linha 394 juntado ao bloco igual 1.500 linhas abaixo trocou a fonte de 934
+   elementos: havia uma terceira regra no meio que vencia a de cima e perdeu
+   para a de baixo. A repetição É o mecanismo de ordem.
 
 Guardas que existem para barrar reincidência — se uma delas te barrar, ela
 provavelmente está certa: `css-duplicate-declarations` (a folha não pode brigar

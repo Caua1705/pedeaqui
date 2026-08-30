@@ -106,7 +106,7 @@
 .reg-input:-webkit-autofill:focus,
 .reg-input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
-  -webkit-text-fill-color: #2F343A !important;
+  -webkit-text-fill-color: #2F343A;
   caret-color: #2F343A;
   transition: background-color 9999s ease-in-out 0s;
 }

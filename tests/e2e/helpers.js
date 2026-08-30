@@ -80,6 +80,7 @@ export async function mockApi(page, {
   const trackRequests = [];
   const couponListRequests = [];
   const couponPreviewRequests = [];
+  const rotasDesconhecidas = [];
 
   await page.route('**/api.pederapidex.com/**', async (route) => {
     const request = route.request();
@@ -174,11 +175,33 @@ export async function mockApi(page, {
       return route.fulfill(json({ coupons: [] }));
     }
     if (/\/customers\/me/.test(url)) return route.fulfill(json({}, 401));
-    // Anything else the app happens to call: benign empty 200.
-    return route.fulfill(json({}));
+
+    // ── QUALQUER OUTRA COISA: 404, e o endereço fica gravado ──
+    //
+    // Isto era `route.fulfill(json({}))` — 200 com corpo vazio para toda rota
+    // que o app inventasse. A intenção era boa (a suíte não pode escapar para a
+    // rede), mas o efeito era que um E2E verde não dizia NADA sobre a rota
+    // existir: o app podia chamar `/restaurants/x/coupons/available`, uma rota
+    // que o backend removeu, receber 200 com `{}`, cair no fallback silencioso
+    // e o teste passar. Foi exatamente esse o incidente que criou o
+    // `api-contract.test.js`: a tela do Clube ficou em "Não foi possível
+    // carregar seus cupons" para todo mundo, com lint, 253 unitários e 243 E2E
+    // verdes.
+    //
+    // Agora responde 404. Não é rigor por rigor: 404 é o que o backend responde
+    // a uma rota que não existe, e um mock que só ACEITA é um teste que só
+    // CONCORDA — a mesma lição do `createCardToken` falso, que aceitava
+    // qualquer `card_id` enquanto o gateway real recusava.
+    //
+    // E o endereço fica em `rotasDesconhecidas`, que sai junto com os outros
+    // arrays: um teste pode afirmar que a lista está VAZIA, que é a afirmação
+    // "este caminho não chamou nada que eu não tenha declarado aqui". Sem
+    // isso, o 404 só troca um silêncio por outro.
+    rotasDesconhecidas.push({ url, method });
+    return route.fulfill(json({ detail: 'rota nao declarada no mock' }, 404));
   });
 
-  return { orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests };
+  return { orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests, rotasDesconhecidas };
 }
 
 export const TRACKING_TOKEN = 'trk_e2e_0000000000000000';

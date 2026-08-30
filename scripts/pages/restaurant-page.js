@@ -3560,18 +3560,9 @@
     returnToCartFromPayment();
   }
 
-  function savedCardBrandLabel(value) {
-    const brand = String(value || '').toLowerCase();
-    return ({
-      amex: 'American Express',
-      american_express: 'American Express',
-      elo: 'Elo',
-      hiper: 'Hiper',
-      master: 'Mastercard',
-      mastercard: 'Mastercard',
-      visa: 'Visa'
-    })[brand] || (brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : 'Cartão');
-  }
+  // Uma implementacao so, em services/card-format.js: esta tabela existia aqui
+  // e, identica, em payment-card-flow.js.
+  const savedCardBrandLabel = (value) => window.PedeAquiCardFormat.cardBrandLabel(value);
 
   function selectSavedCardPayment(card) {
     if (!card?.id) return;

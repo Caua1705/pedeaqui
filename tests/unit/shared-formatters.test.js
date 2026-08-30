@@ -12,6 +12,7 @@ beforeAll(async () => {
   await import('../../scripts/utils/currency.js');
   await import('../../scripts/utils/validators.js');
   await import('../../scripts/services/coupon-format.js');
+  await import('../../scripts/services/card-format.js');
 });
 
 // O separador que o Intl poe entre "R$" e o numero e ESPACO NAO SEPARAVEL
@@ -113,5 +114,45 @@ describe('couponLabel — as DUAS versões divergiam, e em quê', () => {
 
   it('cupom nulo não derruba a renderização da lista', () => {
     expect(label(null)).toBe('Cupom');
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('cardBrandLabel — a tabela de bandeiras que havia em dois arquivos', () => {
+  const label = (v) => window.PedeAquiCardFormat.cardBrandLabel(v);
+
+  // As duas versoes (`brandLabel` em payment-card-flow.js e
+  // `savedCardBrandLabel` em restaurant-page.js) eram copias exatas — nao havia
+  // divergencia a resolver. O que este bloco prova e que a implementacao unica
+  // devolve o que as DUAS devolviam, incluindo os dois caminhos que ninguem
+  // olha: bandeira desconhecida e bandeira ausente.
+  it('cada chave da tabela sai como as duas versões escreviam', () => {
+    expect(label('visa')).toBe('Visa');
+    expect(label('master')).toBe('Mastercard');
+    expect(label('mastercard')).toBe('Mastercard');
+    expect(label('amex')).toBe('American Express');
+    expect(label('american_express')).toBe('American Express');
+    expect(label('elo')).toBe('Elo');
+    expect(label('hiper')).toBe('Hiper');
+  });
+
+  it('a bandeira chega em qualquer caixa e continua casando', () => {
+    // O gateway ja mandou 'Visa' e 'VISA'; a tabela e minuscula de proposito.
+    expect(label('VISA')).toBe('Visa');
+    expect(label('MasterCard')).toBe('Mastercard');
+  });
+
+  it('bandeira que a tabela não conhece vira o próprio nome, não um vazio', () => {
+    // Bandeira nova no gateway (hipercard, aura) tem de aparecer legivel na
+    // linha de pagamento em vez de sumir — a alternativa e o cliente ver
+    // "Crédito -  •••• 1234" e nao saber qual cartao escolheu.
+    expect(label('hipercard')).toBe('Hipercard');
+    expect(label('aura')).toBe('Aura');
+  });
+
+  it('sem bandeira nenhuma, "Cartão" — e nunca "undefined" na tela', () => {
+    expect(label('')).toBe('Cartão');
+    expect(label(null)).toBe('Cartão');
+    expect(label(undefined)).toBe('Cartão');
   });
 });

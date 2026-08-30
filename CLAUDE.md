@@ -19,8 +19,11 @@ nada.
 
 **3. Teste que você não viu falhar não vale nada.** Reverta a correção, veja o
 teste falhar, e confira **por que** ele falhou — já houve teste passando pelo
-motivo errado. Um E2E verde não prova que uma rota existe: o mock devolve 200
-para qualquer rota que o app invente.
+motivo errado. O mock respondia **200 com `{}`** a qualquer rota que o app
+inventasse, e por isso um E2E verde não dizia nada sobre a rota existir; hoje
+ele responde **404 e anota o endereço**, e `boot-smoke.spec.js` cobra a lista
+vazia. Quem prova que a rota existe no contrato continua sendo
+`api-contract.test.js`.
 
 **Nenhum dos três portões rápidos executa o app.** `lint` lê a árvore sintática,
 `typecheck:cards` confere quatro arquivos do cartão, e os unitários rodam em
@@ -43,10 +46,35 @@ a decidir com dado velho sem acusar nada. A skill tem o idioma e as quatro
 armadilhas do corte — inclusive a que derrubou o app no boot com lint, typecheck
 e unitários verdes.
 
+## Se você vai mexer em CSS
+
+São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente: `utilities.css`
+não é folha de utilitários (de 1.280 regras, **uma** começava com `.u-`) e não
+carrega por último. Leia o cabeçalho dela antes de mover qualquer coisa: 1.013
+das 1.280 regras disputam ordem com outra folha, e "levar para a folha certa"
+inverte quem vence.
+
+Três ferramentas respondem por medida o que não dá para responder lendo:
+
+| Pergunta | Ferramenta |
+|---|---|
+| Esta regra pode pintar alguma coisa? | `node tools/css-usage.mjs [--runtime]` |
+| Este `!important` está vencendo alguém? | `node tools/css-important.mjs` |
+| Quantos cabeçalhos/botões DIFERENTES existem? | `node tools/ui-inventory.mjs` |
+
+E a prova de que nada mudou continua sendo `node tools/capture-screens.mjs`
+(antes, depois, `--diff`). Ela pegou os dois erros desta limpeza — uma junção
+de blocos que trocou a fonte de 934 elementos, e um `!important` removido que
+abriu 36px na barra de baixo. Nas duas vezes o erro estava na ferramenta de
+análise, não no CSS: **comentário colado na declaração** fazia o nome da
+propriedade chegar com o comentário inteiro grudado na frente, e um nome assim
+não casa com família nenhuma. Neste repositório o comentário colado na
+declaração é a regra, não a exceção — quem lê CSS aqui tira comentário antes.
+
 ## Antes de mexer
 
 Leia a skill **`pedeaqui-front`** (`.claude/skills/pedeaqui-front/SKILL.md`):
-o mapa de onde mora cada coisa e as armadilhas comprovadas — o catch-all 200 do
+o mapa de onde mora cada coisa e as armadilhas comprovadas — o catch-all do
 mock, o fixture de filial sem cartão online, o SDK definido antes do boot, o
 mock que aceita qualquer coisa, o cupom que grudava ao ser aberto, o 200 com
 `valid: false`, a troca de filial que apagava a sacola guardada. Cada uma custou

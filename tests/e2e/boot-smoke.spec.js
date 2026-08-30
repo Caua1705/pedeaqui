@@ -31,18 +31,21 @@ import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
 //  Vite (ordem de import, minificação, tree-shaking indevido).
 // ============================================================================
 
-/** Liga o app e devolve toda exceção não capturada que a página emitiu. */
+/**
+ * Liga o app e devolve toda exceção não capturada que a página emitiu, mais o
+ * registro do mock (para saber que rotas o app chamou).
+ */
 async function bootar(page) {
   const erros = [];
   page.on('pageerror', (erro) => erros.push(erro.message));
-  await mockApi(page);
+  const mock = await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  return erros;
+  return { erros, mock };
 }
 
 test('o app sai do loader, e sem exceção não capturada', async ({ page }) => {
-  const erros = await bootar(page);
+  const { erros } = await bootar(page);
 
   await expect(
     page.locator('body'),
@@ -78,7 +81,7 @@ const TELAS = [
 ];
 
 test('cada tela abre sem estourar, e a ação existe no registro', async ({ page }) => {
-  const erros = await bootar(page);
+  const { erros } = await bootar(page);
   await expect(page.locator('body')).not.toHaveClass(/app-booting/, { timeout: 30_000 });
 
   const falhas = [];
@@ -102,4 +105,40 @@ test('cada tela abre sem estourar, e a ação existe no registro', async ({ page
 
   expect(falhas, 'telas que não abriram').toEqual([]);
   expect(erros, 'exceção não capturada ao abrir as telas').toEqual([]);
+});
+
+// ============================================================================
+//  Nenhum destes caminhos chama uma rota que o mock não conhece.
+//
+//  O `mockApi()` responde a uma lista de rotas e, para tudo o mais, devolve
+//  404 e ANOTA o endereço. Anotar sem ninguém ler seria trocar um silêncio por
+//  outro — este teste é quem lê.
+//
+//  Por que importa: até 30/08/2026 o catch-all devolvia 200 com `{}` para
+//  qualquer coisa. Um E2E verde não dizia nada sobre a rota existir — o app
+//  podia chamar uma rota que o backend removeu, receber o 200 vazio, cair no
+//  fallback e o teste passar. Foi exatamente esse o incidente da tela do
+//  Clube, com lint, 253 unitários e 243 E2E verdes.
+//
+//  Isto NÃO substitui `api-contract.test.js`, que confere as rotas do front
+//  contra o OpenAPI. São perguntas diferentes: lá é "esta rota existe no
+//  contrato?", aqui é "o app chamou alguma coisa que ninguém declarou?". Uma
+//  rota inventada em runtime, montada por concatenação, só aparece aqui.
+// ============================================================================
+test('nenhuma tela chama rota que o mock não declara', async ({ page }) => {
+  const { mock } = await bootar(page);
+  await expect(page.locator('body')).not.toHaveClass(/app-booting/, { timeout: 30_000 });
+
+  for (const { acao } of TELAS) {
+    await page.evaluate(async ([acaoNome]) => {
+      const fn = window.RapidexActions?.resolve?.(acaoNome);
+      if (typeof fn === 'function') { try { await fn(); } catch { /* o teste acima é quem cobra isto */ } }
+    }, [acao]);
+    await page.waitForTimeout(150);
+  }
+
+  expect(
+    mock.rotasDesconhecidas.map(r => r.method + ' ' + r.url),
+    'o app chamou rotas que o mock não declara — confira se elas existem na API'
+  ).toEqual([]);
 });

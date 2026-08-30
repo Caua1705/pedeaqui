@@ -1524,10 +1524,10 @@ a{text-decoration:none;color:inherit}
     display:grid!important;
     grid-template-columns:54px 1fr 54px!important;
     align-items:center!important;
-    pointer-events:auto!important;
+    pointer-events:auto;
   }
   #cartStickyBtn svg{
-    display:none!important;
+    display:none;
   }
   #cartStickyBtn > div:first-child{
     width:46px!important;
@@ -1544,8 +1544,8 @@ a{text-decoration:none;color:inherit}
     background:#fff!important;
     color:var(--brand-primary)!important;
     display:inline-flex!important;
-    align-items:center!important;
-    justify-content:center!important;
+    align-items:center;
+    justify-content:center;
     font-size:0!important;
     line-height:1!important;
     font-weight:800!important;
@@ -1553,12 +1553,12 @@ a{text-decoration:none;color:inherit}
     transform:translateX(-1px)!important;
   }
   #cartCountSticky::before{
-    content:attr(data-count)!important;
+    content:attr(data-count);
     display:block!important;
     font-size:9.5px!important;
     line-height:1!important;
     font-weight:800!important;
-    -webkit-text-stroke:.32px currentColor!important;
+    -webkit-text-stroke:.32px currentColor;
     transform:translateY(1px)!important;
   }
   #cartStickyBtn > div:nth-child(2){
@@ -1572,7 +1572,7 @@ a{text-decoration:none;color:inherit}
     text-align:right!important;
     font-size:var(--ref-text-xs)!important;
     font-weight:700!important;
-    transform:translateX(4px)!important;
+    transform:translateX(4px);
   }
 }
 

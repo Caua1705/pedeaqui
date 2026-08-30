@@ -71,18 +71,10 @@
     return window.RapidexActions?.resolve(name)?.(...args);
   }
 
-  function brandLabel(value) {
-    const brand = String(value || '').toLowerCase();
-    return ({
-      amex: 'American Express',
-      american_express: 'American Express',
-      elo: 'Elo',
-      hiper: 'Hiper',
-      master: 'Mastercard',
-      mastercard: 'Mastercard',
-      visa: 'Visa'
-    })[brand] || (brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : 'Cartão');
-  }
+  // Uma implementacao so, em services/card-format.js: esta tabela existia aqui
+  // e, identica, em restaurant-page.js — e as duas telas mostram a bandeira do
+  // MESMO cartao, a um toque uma da outra.
+  const brandLabel = (value) => window.PedeAquiCardFormat.cardBrandLabel(value);
 
   function brandClass(value) {
     const brand = String(value || '').toLowerCase();

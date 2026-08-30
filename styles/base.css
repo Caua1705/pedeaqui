@@ -32,7 +32,7 @@ a,
 .mob-nav-item,
 .cat{
   -webkit-tap-highlight-color:transparent!important;
-  -webkit-touch-callout:none!important;
+  -webkit-touch-callout:none;
   -webkit-user-select:none!important;
   user-select:none!important;
   outline:none!important;
@@ -58,6 +58,6 @@ input,
 textarea,
 select,
 [contenteditable="true"]{
-  -webkit-user-select:text!important;
-  user-select:text!important;
+  -webkit-user-select:text;
+  user-select:text;
 }

@@ -10,6 +10,25 @@
  */
 
 /* ---- utilitários de layout usados direto no markup ---- */
+/* Estava em utilities.css, que apesar do nome nao e uma folha de utilitarios:
+   de 1.280 regras de la, UMA comecava com `.u-` — esta. As outras 1.279 sao
+   ajuste de tela, e dependem da posicao de carga daquele arquivo para vencer
+   quem carrega antes. Aqui e o lugar dos utilitarios de verdade.
+   Usado por restaurant-pix-flow.js:712, no campo que leva o codigo Pix para a
+   area de transferencia: ele precisa estar no documento para ser selecionado e
+   nao pode aparecer. */
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .u-hidden { display: none; }
 .u-flex-1 { flex: 1; }
 .u-mb-0 { margin-bottom: 0; }

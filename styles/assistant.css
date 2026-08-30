@@ -324,18 +324,18 @@ body.coupon-nav-keep .mob-bottom-nav {
   width: 60px !important;
   height: 13.333px !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6.667px !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6.667px;
 }
 
 .app-loader-dots span {
   width: 13.333px !important;
   height: 13.333px !important;
   flex: 0 0 13.333px !important;
-  border-radius: 50% !important;
-  background-color: var(--brand-primary) !important;
-  background-image: none !important;
+  border-radius: 50%;
+  background-color: var(--brand-primary);
+  background-image: none;
   display: block !important;
   animation: appLoaderDotPulse 0.9s ease-in-out infinite both !important;
 }
@@ -832,7 +832,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* ── AI Input bar ── */
 .assistant-ai-input-bar {
   display: flex !important;
-  align-items: center !important;
+  align-items: center;
   gap: 8px !important;
   background: #f4f5f7 !important;
   border: 1.5px solid #e5e7ea !important;
@@ -849,9 +849,9 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 .assistant-ai-input {
   flex: 1 !important;
-  border: none !important;
+  border: none;
   outline: none !important;
-  background: transparent !important;
+  background: transparent;
   font-size: 0.88rem !important;
   color: #1a1a1a !important;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
@@ -870,8 +870,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   background: var(--brand-hover) !important;
   color: var(--brand-on) !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: center;
+  justify-content: center;
   cursor: pointer !important;
   flex-shrink: 0 !important;
   transition: transform 0.15s, opacity 0.15s !important;
@@ -885,7 +885,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 /* Ensure the location wrap has no extra padding */
 .assistant-location-wrap {
-  transform: none !important;
+  transform: none;
   padding: 10px 0 0 0 !important;
   background: #fff !important;
 }
@@ -1001,9 +1001,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 
 /* Preserve assistant top/current identity while lower surface is refined. */
-#mobViewAssistant .assistant-location-wrap{
-  background:#ffffff!important;
-}
 
 /* Mobile assistant bugfix: keep intro locked and place question below the avatar. */
 #mobViewAssistant.mob-view--assistant,
@@ -1019,11 +1016,6 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   overscroll-behavior:none!important;
   padding:0 20px 150px!important;
 }
-#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  position:static!important;
-  inset:auto!important;
-  margin:0!important;
-}
 #mobViewAssistant .assistant-ai-body--searching .assistant-ai-results-wrap{
   overscroll-behavior:contain!important;
   -webkit-overflow-scrolling:touch!important;
@@ -1036,9 +1028,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 
 
 /* Assistant: hide location widget on this screen only. */
-#mobViewAssistant .assistant-location-wrap{
-  display:none!important;
-}
+#mobViewAssistant .assistant-location-wrap{background:#ffffff!important;
+  display:none!important}
 
 #mobViewAssistant .assistant-suggest-chip{
   height:56px!important;
@@ -1052,15 +1043,12 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   text-align:center!important;
 }
 
-#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{
-  transform:translateY(-4px)!important;
-}
+#mobViewAssistant .assistant-ai-body:not(.assistant-ai-body--searching) .assistant-ai-question{position:static!important;
+  inset:auto!important;
+  margin:0!important;
+  transform:translateY(-4px)!important}
 
 /* assistant send button: circular arrow button. */
-#mobViewAssistant .assistant-ai-send{
-  border-radius:50%!important;
-  padding:0!important;
-}
 
 /* assistant suggestions: larger prompt text. */
 #mobViewAssistant .assistant-suggest-chip{
@@ -1069,12 +1057,12 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 }
 
 /* assistant send button final size. */
-#mobViewAssistant .assistant-ai-send{
+#mobViewAssistant .assistant-ai-send{border-radius:50%!important;
+  padding:0!important;
   width:40px!important;
   height:40px!important;
   min-width:40px!important;
-  min-height:40px!important;
-}
+  min-height:40px!important}
 
 /* assistant send arrow final size. */
 
@@ -1260,7 +1248,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   font-synthesis:none!important;
   text-rendering:optimizeLegibility!important;
   -webkit-font-smoothing:antialiased!important;
-  -moz-osx-font-smoothing:grayscale!important;
+  -moz-osx-font-smoothing:grayscale;
 }
 
 /* assistant suggestions: allow horizontal swipe while keeping the intro screen locked vertically. */
@@ -1942,7 +1930,7 @@ body.menu-tab .product-name{font-weight:600!important;text-transform:none!import
   width:100%!important;
   height:100%!important;
   object-fit:cover!important;
-  object-position:center!important;
+  object-position:center;
 }
 #mobViewAssistant .assistant-product-detail-placeholder{
   position:absolute!important;
@@ -2293,7 +2281,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   letter-spacing:-0.01em!important;
   color:var(--text-main)!important;
   font-synthesis:none!important;
-  text-shadow:none!important;
+  text-shadow:none;
 }
 #mobViewAssistant .assistant-hdr-dot{
   flex:0 0 6px!important;
@@ -2560,7 +2548,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   max-width:none!important;
   margin:0 -20px!important;
   padding:2px 0!important;
-  scroll-padding-inline:20px!important;
+  scroll-padding-inline:20px;
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
@@ -2693,16 +2681,13 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   gap:9px!important;
   margin-bottom:16px!important;
 }
-#mobViewAssistant .assistant-skeleton-line{
-  display:block!important;
-  height:13px!important;
-  border-radius:7px!important;
-}
 #mobViewAssistant .assistant-skeleton-line:nth-child(2){ width:88%!important }
 #mobViewAssistant .assistant-skeleton-line:nth-child(3){ width:54%!important }
 /* Cinza sobre cinza: o esqueleto é ausência de conteúdo, não um lugar para a
    marca aparecer. */
-#mobViewAssistant .assistant-skeleton-line{
+#mobViewAssistant .assistant-skeleton-line{display:block!important;
+  height:13px!important;
+  border-radius:7px!important;
   background:linear-gradient(100deg,
     var(--surface-3) 0%,
     var(--surface-3) 38%,
@@ -2711,8 +2696,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
     var(--surface-3) 100%)!important;
   background-size:280% 100%!important;
   background-position:120% 0;
-  animation:assistant-skeleton-sweep 1.6s linear infinite!important;
-}
+  animation:assistant-skeleton-sweep 1.6s linear infinite!important}
 @keyframes assistant-skeleton-sweep{
   from{background-position:120% 0}
   to{background-position:-120% 0}
@@ -3043,7 +3027,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   transform-origin:16px 16px;
 }
 .assistant-mark__service{
-  stroke:var(--brand-on)!important;
+  stroke:var(--brand-on);
 }
 .assistant-mark__steam{
   transform-origin:center;
@@ -3090,6 +3074,11 @@ body:has(#mobViewAssistant.active) .assistant-toast{
     animation:none!important;
   }
   .assistant-mark__steam{
+    /* O `!important` fica: o adversario dele nao esta no CSS, esta em
+       tests/unit/mark-contrast.test.js, que le o TEXTO desta regra e exige o
+       marcador. Sob movimento reduzido o vapor tem de parar num valor fixo, e
+       a animacao que o move declara opacity com !important — sem o marcador
+       aqui, a parada nao vence a animacao parada no meio. */
     opacity:.82!important;
     transform:none!important;
   }

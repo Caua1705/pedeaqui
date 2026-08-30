@@ -35,6 +35,9 @@ import './utils/lifecycle.js';
 // Cache com prazo e teto. Precisa vir antes dos serviços que o instanciam.
 import './utils/ttl-cache.js';
 import './utils/image-cdn.js';
+// Formatador unico de dinheiro. Precisa vir ANTES das paginas: quatro delas o
+// chamam ao renderizar, e o modulo nao tem fallback de proposito.
+import './utils/currency.js';
 import './utils/validators.js';
 // Leitura do `detail` de erro da API (string | array 422 | objeto estruturado).
 // Precisa vir antes do api-client, que o usa para montar a mensagem do erro.
@@ -43,7 +46,6 @@ import './services/api-client.js';
 import './services/api.js';
 import './services/customer-auth-service.js';
 import './services/branch-availability-service.js';
-import './services/restaurant-service.js';
 import './services/restaurant-info-service.js';
 import './services/payment-config-service.js';
 import './services/menu-service.js';
@@ -56,6 +58,9 @@ import './services/cart-service.js';
 import './services/order-service.js';
 import './services/order-payload.js';
 import './services/club-service.js';
+// Rotulo do cupom, lido pela folha de detalhe (restaurant-page) e pelo card do
+// Clube (restaurant-club). Usa o formatador de moeda, importado la em cima.
+import './services/coupon-format.js';
 import './content/privacy-policy.js';
 import './content/loyalty-policy.js';
 import './state/order-state.js';

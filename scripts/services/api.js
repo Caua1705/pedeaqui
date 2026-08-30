@@ -12,14 +12,14 @@
   //   errada custava um pedido duplicado a cada falha de rede — e as duas
   //   estavam a um autocomplete de distância.
   //
-  //   O ramo de dados locais de getRestaurantMenu — vivia atrás de
+  //   getRestaurantMenu — era `return ApiClient.get(routes().menu(...))`, uma
+  //   camada de repasse no meio de quatro. Quem chama agora é o menu-service,
+  //   direto no api-client; o cabeçalho de lá desenha a pilha antiga.
+  //
+  //   O ramo de dados locais dele — vivia atrás de
   //   USE_MOCK_DATA/STORAGE_MODE, que eram constantes `false`/`'api'` no
   //   app-config e não vinham de env nenhum. Era código inalcançável, e o
   //   getLocalJson que ele chamava saiu junto do api-client.
-
-  async function getRestaurantMenu(slug, branchId) {
-    return window.PedeAquiApiClient.get(routes().menu(slug, branchId));
-  }
 
   function authOptions() {
     const headers = window.PedeAquiCustomerAuth?.authHeaders?.() || {};
@@ -63,7 +63,6 @@
   // do cliente logado por /customers/me/orders — não há substituto aqui.
 
   window.PedeAquiApi = {
-    getRestaurantMenu,
     getCustomerCoupons,
     previewCoupon
   };

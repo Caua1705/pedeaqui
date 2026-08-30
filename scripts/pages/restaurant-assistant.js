@@ -105,9 +105,7 @@
       ?.classList.toggle('is-thinking', state === 'thinking');
   }
 
-  function fmtPrice(val) {
-    return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+  const fmtPrice = (value) => window.PedeAquiCurrency.formatCurrency(value);
 
   function assistantCartQuantity(snapshot) {
     return (snapshot?.items || []).reduce((total, item) => total + Number(item?.qty || 0), 0);

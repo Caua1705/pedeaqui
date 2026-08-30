@@ -1,4 +1,16 @@
 (function () {
+  /**
+   * Fecha um modal pela porta que o resto do app usa: o closeModalId decorado
+   * de restaurant-page.js, publicado em window. O fallback nao e enfeite — este
+   * arquivo carrega DEPOIS de restaurant-page.js, mas se a ordem mudar, fechar
+   * pela mecanica crua ainda fecha, e nao deixa o cliente presto num modal.
+   */
+  const closeAppModal = (id) => (
+    typeof window.closeModalId === 'function'
+      ? window.closeModalId(id)
+      : window.PedeAquiRestaurantUi?.closeModalId(id)
+  );
+
   /** @typedef {import('../types/api').components['schemas']['PaymentConfigResponse']} PaymentConfigResponse */
   /** @typedef {import('../types/api').components['schemas']['SavedCardResponse']} SavedCardResponse */
 
@@ -353,7 +365,7 @@
   }
 
   function closeAddCardTypeScreen() {
-    window.PedeAquiRestaurantUi?.closeModalId('addCardTypeModal');
+    closeAppModal('addCardTypeModal');
   }
 
   function resetCreditCardForm({ loading = false } = {}) {
@@ -401,7 +413,7 @@
       ]);
       if (abandoned()) return;
       if (!window.PedeAquiPaymentConfigService.cardIsAvailable(config) || !config.public_key) {
-        window.PedeAquiRestaurantUi?.closeModalId('creditCardModal');
+        closeAppModal('creditCardModal');
         return;
       }
       const { ready } = await window.PedeAquiMercadoPago.mountCardFields(config.public_key, {
@@ -438,7 +450,7 @@
     cardFormSequence += 1;
     window.PedeAquiMercadoPago?.unmountCardFields();
     fieldsMounted = false;
-    window.PedeAquiRestaurantUi?.closeModalId('creditCardModal');
+    closeAppModal('creditCardModal');
   }
 
   function onlyDigits(value) {
@@ -454,19 +466,11 @@
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
   }
 
-  function isValidCpf(digits) {
-    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
-    let sum = 0;
-    for (let index = 0; index < 9; index++) sum += Number(digits[index]) * (10 - index);
-    let firstDigit = (sum * 10) % 11;
-    if (firstDigit === 10) firstDigit = 0;
-    if (firstDigit !== Number(digits[9])) return false;
-    sum = 0;
-    for (let index = 0; index < 10; index++) sum += Number(digits[index]) * (11 - index);
-    let secondDigit = (sum * 10) % 11;
-    if (secondDigit === 10) secondDigit = 0;
-    return secondDigit === Number(digits[10]);
-  }
+  // Digitos verificadores do CPF: implementacao unica em
+  // scripts/utils/validators.js. Havia uma copia aqui e outra identica em
+  // payment-card-flow.js — mesmo algoritmo, nomes de variavel diferentes.
+  const isValidCpf = (digits) => window.PedeAquiValidators.isValidCpf(digits);
+
 
   /** A mensagem que ESTE input mereceria agora, independente de poder aparecer. */
   function cardholderErrorFor(field) {
@@ -680,7 +684,7 @@
   function closeSavedCardCvv(reject = true) {
     window.PedeAquiMercadoPago?.unmountCardFields();
     fieldsMounted = false;
-    window.PedeAquiRestaurantUi?.closeModalId('savedCardCvvModal');
+    closeAppModal('savedCardCvvModal');
     const context = savedCardCvvContext;
     savedCardCvvContext = null;
     if (reject && context?.reject) context.reject(new Error('Pagamento cancelado.'));
@@ -739,7 +743,7 @@
       savedCardCvvContext = null;
       window.PedeAquiMercadoPago?.unmountCardFields();
       fieldsMounted = false;
-      window.PedeAquiRestaurantUi?.closeModalId('savedCardCvvModal');
+      closeAppModal('savedCardCvvModal');
       if (context) context.reject(error);
     }
     return promise;

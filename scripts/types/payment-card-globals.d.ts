@@ -70,6 +70,14 @@ declare global {
     PedeAquiAddressService?: {
       readSelectedAddress?(): Record<string, unknown> | null;
     };
+    // Sem `?`: a tela do cartão valida o CPF do titular por aqui, e um módulo
+    // ausente tem de quebrar em vez de deixar passar documento inválido.
+    PedeAquiValidators: {
+      onlyDigits(value: unknown): string;
+      isValidPhone(value: unknown): boolean;
+      isValidName(value: unknown): boolean;
+      isValidCpf(digits: string): boolean;
+    };
     PedeAquiPaymentConfigService?: PaymentConfigService;
     PedeAquiCustomerCardService?: CustomerCardService;
     PedeAquiMercadoPago?: MercadoPagoService;
@@ -79,6 +87,11 @@ declare global {
       closeModalId(id: string): void;
       closeModalImmediately(id: string): void;
     };
+    // A porta única de fechar modal: o closeModalId DECORADO de
+    // restaurant-page.js. Opcional porque este arquivo carrega depois dele e a
+    // ordem é o que garante a presença — ver closeAppModal() em
+    // payment-card-flow.js.
+    closeModalId?: (id: string) => void;
     RapidexTenant?: { resolveSlug?(): string };
     RapidexActions?: {
       register(actions: Record<string, (...args: any[]) => unknown>): unknown;

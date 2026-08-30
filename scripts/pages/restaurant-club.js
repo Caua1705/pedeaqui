@@ -52,40 +52,17 @@
       return clubLoadPromise;
     }
 
-    function fmtClubCurrency(value) {
-      const number = Number(value || 0);
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(number);
-    }
+    const fmtClubCurrency = (value) => window.PedeAquiCurrency.formatCurrency(value);
 
-    /**
-     * O rótulo grande do card ("10% OFF", "Frete grátis").
-     *
-     * Vem PRONTO em `title`. A versão anterior recalculava a partir de
-     * `discount_value`, que não existe em CustomerCouponResponse: `Number(
-     * undefined ?? ...)` dava 0 e todo cupom percentual da tela do Clube
-     * escrevia "0% OFF" — o desconto certo, anunciado como nenhum.
-     *
-     * `discount_value` não voltou nem vai voltar: ele é PARÂMETRO da conta, e
-     * quem faz a conta é o backend (ver CustomerCouponResponse no OpenAPI). O
-     * cálculo local abaixo é só para a vitrine pública do /menu, que é outro
-     * schema (PublicCouponResponse) e ainda manda o valor.
-     */
-    function getCouponLabel(coupon) {
-      const title = String(coupon.title || '').trim();
-      if (title) return title;
-      const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
-      const value = Number(coupon.discount_value ?? coupon.value ?? coupon.amount ?? 0);
-      if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
-      if (type === 'percent' || type === 'percentage') return `${value.toLocaleString('pt-BR')}% OFF`;
-      if (type === 'fixed' || type === 'fixed_amount' || value > 0) return `${fmtClubCurrency(value)} OFF`;
-      return coupon.name || 'Cupom';
-    }
+    // Rótulo do card: implementação única em
+    // scripts/services/coupon-format.js — esta cópia e a da folha de detalhe já
+    // tinham divergido (cupom fixo sem valor virava "R$ 0,00 OFF" aqui). O
+    // rótulo vem PRONTO em `title` no contrato do cliente; `discount_value` não
+    // existe em CustomerCouponResponse e não vai voltar.
+    const getCouponLabel = (coupon) => window.PedeAquiCouponFormat.couponLabel(coupon);
 
     /** "30.00" -> 30. Os valores do contrato novo são string decimal. */
-    function couponAmount(value) {
-      const number = Number(value);
-      return Number.isFinite(number) ? number : 0;
-    }
+    const couponAmount = (value) => window.PedeAquiCouponFormat.couponAmount(value);
 
     /**
      * O que o botão do card pode fazer com ESTA sacola — direto de `state`.

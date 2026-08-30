@@ -6,7 +6,10 @@
   const LIFECYCLE_SIGNAL = window.RapidexLifecycle?.signal;
   const onTeardown = (dispose) => window.RapidexLifecycle?.onTeardown(dispose);
 
-  const fmt = window.PedeAquiCurrency?.formatCurrency || ((val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+  // Apelido local das 45 chamadas. O formatador mora em scripts/utils/currency.js
+  // — o modulo que esta linha ja procurava e que nao existia: o `||` que estava
+  // aqui fazia o fallback rodar em 100% das chamadas, calado.
+  const fmt = (value) => window.PedeAquiCurrency.formatCurrency(value);
   const storageKeys = () => window.RapidexStorage;
   const STORAGE_ADDRESS = storageKeys()?.KEYS.customerAddress || 'rapidex.customerAddress';
   const readStorageKey = (key) => storageKeys()?.readWithMigration
@@ -1426,6 +1429,25 @@
     setTimeout(restore, durationMs + 20);
   }
 
+  /**
+   * A PORTA UNICA de fechar modal. Nao e uma segunda implementacao do
+   * closeModalId de restaurant-ui.js: e um decorador em volta dele.
+   *
+   *   restaurant-ui.closeModalId  -> a mecanica (classe, scroll do body, nav)
+   *   esta funcao                 -> as regras DESTA tela por cima
+   *
+   * As regras de cima existem porque o motivo delas nao cabe no arquivo de
+   * baixo: manter as categorias do cardapio paradas quando o login fecha, e
+   * devolver a sacola grudada quando o seletor de endereco veio do perfil.
+   *
+   * payment-card-flow.js chamava `PedeAquiRestaurantUi.closeModalId` DIRETO,
+   * isto e, entrava por baixo do decorador. Hoje nao muda nada — as regras
+   * acima olham `loginModal` e `addrPickerModal`, e o cartao fecha outros tres.
+   * Mas era uma segunda porta para a mesma coisa: no dia em que uma regra nova
+   * entrasse aqui, ela valeria para o app inteiro MENOS para a tela de cartao,
+   * e a falha apareceria longe da linha que a causou. Agora ha uma porta so,
+   * publicada em window.closeModalId.
+   */
   function closeModalId(id) {
     const keepMenuCatsStable = id === 'loginModal' && document.body.classList.contains('menu-tab');
     const returnsToProfile = id === 'addrPickerModal' && $('addrPickerModal')?.classList.contains('from-profile');
@@ -2091,7 +2113,10 @@
    * escolheu a loja.
    */
   function fetchMenuPayload(branchId) {
-    return window.PedeAquiRestaurantService.getRestaurantMenu(getRestaurantSlug(), branchId || null);
+    // Direto no MenuService — que e quem normaliza o payload. Antes esta linha
+    // chamava PedeAquiRestaurantService.getRestaurantMenu(), cujo corpo inteiro
+    // era `return window.PedeAquiMenuService.getRestaurantMenu(...)`.
+    return window.PedeAquiMenuService.getRestaurantMenu(getRestaurantSlug(), branchId || null);
   }
 
   /**
@@ -5380,13 +5405,18 @@
     return a ? `${a.street}, ${a.number} - ${a.neighborhood}` : '';
   }
 
-  function readLocalAddressList() {
-    return window.PedeAquiAddressService?.readLocalAddressList?.() || [];
-  }
-
-  function writeLocalAddressList(list) {
-    return window.PedeAquiAddressService?.writeLocalAddressList?.(list) || [];
-  }
+  // Apelidos locais das 16 chamadas. A lista de enderecos guardada tem UM dono,
+  // scripts/services/address-service.js — e so ele normaliza, le e grava.
+  //
+  // O que saiu daqui foi o `?.` com `|| []`: parecia defesa e nao era. Na
+  // leitura o servico ja devolve [] em qualquer falha, e na escrita ele sempre
+  // devolve array (e `[] || []` da `[]`, porque array vazio e truthy) — entao o
+  // fallback so podia disparar num caso: o modulo nao ter carregado. Nesse caso
+  // ele fazia a tela mostrar "nenhum endereco salvo" para quem tem enderecos
+  // salvos, calada. address-service.js esta na lista fixa do
+  // entry-restaurant.js; se sair de la, isto tem de quebrar, nao mentir.
+  const readLocalAddressList = () => window.PedeAquiAddressService.readLocalAddressList();
+  const writeLocalAddressList = (list) => window.PedeAquiAddressService.writeLocalAddressList(list);
 
   const ADDRESS_IMPORT_SIGNATURE_PREFIX = storageKeys()?.PREFIXES.addressImportSignature || 'rapidex.addressImportSignature.';
   let customerAddressesSyncPromise = null;
@@ -7550,19 +7580,11 @@
     btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
   }
 
-  function isValidCpf(digits) {
-    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
-    let sum = 0;
-    for (let i = 0; i < 9; i++) sum += parseInt(digits[i], 10) * (10 - i);
-    let d1 = (sum * 10) % 11;
-    if (d1 === 10) d1 = 0;
-    if (d1 !== parseInt(digits[9], 10)) return false;
-    sum = 0;
-    for (let i = 0; i < 10; i++) sum += parseInt(digits[i], 10) * (11 - i);
-    let d2 = (sum * 10) % 11;
-    if (d2 === 10) d2 = 0;
-    return d2 === parseInt(digits[10], 10);
-  }
+  // Digitos verificadores do CPF: implementacao unica em
+  // scripts/utils/validators.js. Havia uma copia aqui e outra identica em
+  // payment-card-flow.js — mesmo algoritmo, nomes de variavel diferentes.
+  const isValidCpf = (digits) => window.PedeAquiValidators.isValidCpf(digits);
+
 
   function isValidBirthDate(value) {
     const d = onlyDigits(value);
@@ -8848,22 +8870,11 @@
   //  cálculo quando ele falta — que é exatamente o caso da vitrine.
   // ============================================================
 
-  /** "30.00" e 30 chegam aqui pelos dois contratos. */
-  function couponAmount(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : 0;
-  }
-
-  function couponLabel(coupon) {
-    const title = String(coupon.title || '').trim();
-    if (title) return title;
-    const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
-    const value = couponAmount(coupon.discount_value ?? coupon.value ?? coupon.amount);
-    if (['percent', 'percentage'].includes(type)) return `${value.toLocaleString('pt-BR')}% OFF`;
-    if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
-    if (value > 0) return `${fmt(value)} OFF`;
-    return coupon.name || coupon.code || 'Cupom';
-  }
+  // Rótulo e valor do cupom: implementação única em
+  // scripts/services/coupon-format.js. A folha de detalhe e o card do Clube
+  // liam duas versões JÁ DIVERGENTES — o cabeçalho de lá conta em quê.
+  const couponAmount = (value) => window.PedeAquiCouponFormat.couponAmount(value);
+  const couponLabel = (coupon) => window.PedeAquiCouponFormat.couponLabel(coupon);
 
   /** "2099-12-31T23:59:59Z" -> "31/12/2099". */
   function couponValidUntil(value) {

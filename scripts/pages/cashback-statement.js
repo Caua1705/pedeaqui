@@ -1,7 +1,9 @@
 (function(){
   let requestVersion=0;
   const $=id=>document.getElementById(id);
-  const money=(value,currency='BRL')=>new Intl.NumberFormat('pt-BR',{style:'currency',currency}).format(Math.abs(Number(value)||0));
+  // O Math.abs e decisao DESTA tela, nao do formatador: a linha do extrato ja
+  // mostra o sinal como prefixo ("- R$ 10,00"), entao o numero vem sem ele.
+  const money=(value,currency)=>window.PedeAquiCurrency.formatCurrency(Math.abs(Number(value)||0),currency||'BRL');
   const date=value=>{if(!value)return '';const raw=String(value);const d=/^\d{4}-\d{2}-\d{2}$/.test(raw)?new Date(raw+'T12:00:00'):new Date(raw);return Number.isNaN(d.getTime())?'':d.toLocaleDateString('pt-BR')};
   const debit=item=>Number(item.amount)<0||['redeemed','used'].includes(String(item.type||'').toLowerCase());
   const fallback=type=>({earned:'Crédito de cashback',redeemed:'Uso de saldo',used:'Uso de saldo',adjustment:'Lançamento de crédito',expired:'Cashback expirado',refund:'Estorno de cashback'})[String(type||'').toLowerCase()]||'Movimentação de cashback';

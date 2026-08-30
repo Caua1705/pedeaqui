@@ -2,8 +2,21 @@
   const slugify = text => window.PedeAquiSlugify?.slugify(text) || String(text || '').toLowerCase().replace(/\s+/g, '-');
   const fallback = () => window.PedeAquiFallbackConfig || {};
 
+  /**
+   * Buscar o cardapio atravessava QUATRO camadas, e tres nao faziam nada:
+   *
+   *   restaurant-page  -> RestaurantService.getRestaurantMenu()   repasse puro
+   *                    -> MenuService.getRestaurantMenu()         normaliza
+   *                    -> Api.getRestaurantMenu()                 repasse puro
+   *                    -> ApiClient.get()                         faz a chamada
+   *
+   * Sobraram as duas que trabalham. Camada que so repassa nao e abstracao: e
+   * mais um lugar onde procurar quando a resposta vem errada, e mais um lugar
+   * onde alguem pode meter uma regra que a camada de cima nao ve.
+   */
   async function getRestaurantMenu(slug, branchId) {
-    return normalizeMenuPayload(await window.PedeAquiApi.getRestaurantMenu(slug, branchId));
+    const routes = window.PedeAquiApiRoutes;
+    return normalizeMenuPayload(await window.PedeAquiApiClient.get(routes.menu(slug, branchId)));
   }
 
   /**

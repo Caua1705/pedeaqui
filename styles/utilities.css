@@ -132,11 +132,11 @@
 .policy-section-label{
   margin:28px 0 18px!important;
   padding-top:20px!important;
-  border-top:1px solid #eeeeee!important;
-  font-size:13px!important;
-  line-height:1.55!important;
-  font-weight:700!important;
-  color:#111827!important;
+  border-top:1px solid #eeeeee;
+  font-size:13px;
+  line-height:1.55;
+  font-weight:700;
+  color:#111827;
 }
 .policy-content h1,
 .privacy-policy-content h1,
@@ -145,9 +145,9 @@
 .privacy-policy-content h2,
 .loyalty-policy-content h2{
   display:grid!important;
-  grid-template-columns:28px 1fr!important;
-  gap:8px!important;
-  align-items:start!important;
+  grid-template-columns:28px 1fr;
+  gap:8px;
+  align-items:start;
   margin:28px 0 18px!important;
   font-size:13px!important;
   font-weight:700!important;
@@ -4409,7 +4409,7 @@ body.home-tab .home-cart-pill #homeCartTotal{
 #infoModal[data-store-info-tab="payment"] .store-payment-card .store-payment-title{font-family:Inter,system-ui,sans-serif!important;
   font-size:var(--ref-text-sm)!important;
   line-height:16px!important;
-  -webkit-text-stroke:0!important;
+  -webkit-text-stroke:0;
   color:#7a7a7a!important;
   font-weight:600!important}
 

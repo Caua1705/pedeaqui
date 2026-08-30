@@ -58,7 +58,27 @@ const PROPS = [
   'borderTopStyle',
   'borderRadius', 'boxShadow', 'transform',
   'flexDirection', 'justifyContent', 'alignItems', 'flexGrow', 'flexShrink',
-  'gridTemplateColumns', 'gap'
+  'gridTemplateColumns', 'gap',
+
+  // ── O RESTO DAS QUATRO BORDAS, E O QUE NAO E COR NEM CAIXA ───────────────
+  //
+  // A lista cresce quando alguem mexe numa propriedade que ela nao le — essa
+  // e a REGRA, escrita depois do commit que trocou a divisoria de 239
+  // elementos e ouviu "Nenhuma diferenca". Um verificador que nao olha onde o
+  // app desenha e pior que nenhum: sem ele voce confere a mao; com ele voce
+  // para de conferir, e ele assina embaixo.
+  //
+  // Estas entraram em 30/08/2026, para o commit que tirou 51 marcadores
+  // `!important` sem adversario. Sem elas, `inset`, `background:linear-gradient`,
+  // `background-size`, `cursor` e `-webkit-text-fill-color` teriam mudado sem
+  // que a ferramenta tivesse como ver.
+  'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
+  'top', 'right', 'bottom', 'left',
+  'backgroundImage', 'backgroundSize', 'backgroundPosition',
+  'cursor', 'webkitTextFillColor', 'webkitTextStrokeWidth', 'webkitTextStrokeColor',
+  'scrollbarWidth', 'scrollPaddingBottom', 'overscrollBehaviorY',
+  'outlineColor', 'outlineWidth', 'fill', 'stroke',
+  'textDecorationLine', 'textDecorationColor', 'objectFit'
 ];
 
 const ready = (page) => page.waitForFunction(
@@ -1016,6 +1036,30 @@ export const SCREENS = [
       await page.locator('#assistantInput').fill('Me recomenda uma bebida');
       await page.locator('.assistant-ai-send').click();
       await esperar(page, '.assistant-chat-typing');
+      /*
+       * A FRASE DO BALAO DE ESPERA E SORTEADA.
+       *
+       * `Math.floor(Math.random() * ASSISTANT_TYPING_STATUSES.length)` escolhe
+       * qual dos textos aparece, e cada texto tem uma largura. A captura
+       * comparou duas builds e acusou 4 elementos com
+       * `width: 118,391px -> 210,094px` — nada a ver com o CSS que mudou entre
+       * elas: era "Pensando" contra uma frase mais longa.
+       *
+       * Duas rodadas seguidas tinham dado "Nenhuma diferenca", o que mostra o
+       * tamanho da armadilha: um sorteio de N frases acerta o mesmo valor com
+       * frequencia suficiente para parecer estavel, e so aparece no dia em que
+       * ele decide a favor de um falso positivo — que e o dia em que alguem
+       * esta usando a ferramenta para julgar um commit.
+       *
+       * O texto e fixado aqui, DEPOIS de a tela chegar ao estado: o sorteio
+       * continua sendo o do app, e o que se mede e o desenho do balao.
+       */
+      await page.evaluate(() => {
+        const rotulo = document.querySelector('#assistantTypingMessage .assistant-typing-label');
+        if (!rotulo) return;
+        rotulo.dataset.text = 'Pensando';
+        rotulo.textContent = 'Pensando';
+      });
       await page.waitForTimeout(900);
     }
   },

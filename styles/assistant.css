@@ -112,8 +112,8 @@ body:not(.assistant-nav-keep):has(.vfy-alert-overlay.active) {
 }
 
 body.policy-open {
-  position: fixed !important;
-  inset: 0 !important;
+  position: fixed;
+  inset: 0;
   width: 100% !important;
   height: 100dvh !important;
   overflow: hidden !important;
@@ -792,7 +792,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   gap: 8px !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch !important;
-  scrollbar-width: none !important;
+  scrollbar-width: none;
   padding-bottom: 0 !important;
   margin-bottom: 12px !important;
 }
@@ -802,8 +802,8 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 .assistant-suggest-chip {
   flex-shrink: 0 !important;
   display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: center;
+  justify-content: center;
   min-width: 227.52px !important;
   width: auto !important;
   height: 56px !important;
@@ -814,7 +814,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   font-size: 0.95rem !important;
   font-weight: 600 !important;
   color: #333333 !important;
-  cursor: pointer !important;
+  cursor: pointer;
   white-space: nowrap !important;
   line-height: 1.2 !important;
   text-align: center !important;
@@ -2195,10 +2195,10 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   height:auto!important;
   min-height:0!important;
   padding:0 0 112px!important;
-  scroll-padding-bottom:112px!important;
+  scroll-padding-bottom:112px;
   overflow-x:hidden!important;
   overflow-y:auto!important;
-  overscroll-behavior-y:contain!important;
+  overscroll-behavior-y:contain;
 }
 
 /* ============================================================
@@ -2978,7 +2978,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 }
 #mobViewAssistant .assistant-typing-label{
   color:var(--text-muted)!important;
-  -webkit-text-fill-color:var(--text-muted)!important;
+  -webkit-text-fill-color:var(--text-muted);
 }
 
 /* ── Cartões de produto ──
@@ -3079,7 +3079,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
        marcador. Sob movimento reduzido o vapor tem de parar num valor fixo, e
        a animacao que o move declara opacity com !important — sem o marcador
        aqui, a parada nao vence a animacao parada no meio. */
-    opacity:.82!important;
+    opacity:.82;
     transform:none!important;
   }
 }

@@ -85,6 +85,10 @@ import './pages/restaurant-address-flow.js';
 // modulo de endereco: publica window.PedeAquiPixFlow, que o restaurant-page
 // consome no corpo do proprio IIFE.
 import './pages/restaurant-pix-flow.js';
+// Entrar, cadastrar, verificar codigo e recuperar senha. Mesmo motivo de ordem
+// dos outros dois: publica window.PedeAquiAuthFlow, consumido pelo
+// restaurant-page no corpo do proprio IIFE.
+import './pages/restaurant-auth-flow.js';
 import './pages/restaurant-page.js';
 // A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
 // sacola com o meio de pagamento selecionado, portanto vem logo depois dela.

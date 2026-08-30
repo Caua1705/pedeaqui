@@ -76,6 +76,11 @@ import './pages/restaurant-assistant.js';
 import './pages/restaurant-assistant-voice.js';
 // O transporte se registra na tela por setDriver(), então vem DEPOIS dela.
 import './pages/restaurant-assistant-voice-session.js';
+// Fluxo de endereco (escolha, lista, Google Maps, formulario). Veio de dentro do
+// restaurant-page.js. Precisa carregar ANTES dele: e quem publica
+// window.PedeAquiAddressFlow, que o restaurant-page consome no proprio corpo do
+// IIFE, chamando init() com as dependencias que ficaram la.
+import './pages/restaurant-address-flow.js';
 import './pages/restaurant-page.js';
 // A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
 // sacola com o meio de pagamento selecionado, portanto vem logo depois dela.

@@ -2283,14 +2283,6 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   font-synthesis:none!important;
   text-shadow:none;
 }
-#mobViewAssistant .assistant-hdr-dot{
-  flex:0 0 6px!important;
-  width:6px!important;
-  height:6px!important;
-  border-radius:50%!important;
-  background:var(--state-success)!important;
-}
-
 #mobViewAssistant .assistant-hdr-actions{
   display:flex!important;
   align-items:center!important;
@@ -3079,7 +3071,7 @@ body:has(#mobViewAssistant.active) .assistant-toast{
        marcador. Sob movimento reduzido o vapor tem de parar num valor fixo, e
        a animacao que o move declara opacity com !important — sem o marcador
        aqui, a parada nao vence a animacao parada no meio. */
-    opacity:.82;
+    opacity:.82!important;
     transform:none!important;
   }
 }

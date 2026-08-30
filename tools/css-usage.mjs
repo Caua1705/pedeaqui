@@ -172,12 +172,39 @@ export function analisar() {
   for (const f of arquivos) rules.push(...parseCss(readFileSync(join(STYLES, f), 'utf8'), f));
 
   const corpus = walk(ROOT);
-  const texto = corpus.map(p => readFileSync(p, 'utf8')).join('\n');
+  /* O CORPUS TEM DUAS METADES, E ELAS PROVAM COISAS DIFERENTES.
+     Ate 30/08/2026 era um saco so, e uma classe que aparecia APENAS num spec
+     se provava viva. Nao e a mesma prova: um spec pode nomear uma classe
+     justamente para afirmar que ela NAO EXISTE — e era literalmente o caso de
+     `.prod-card` (`pwa.spec.js` exigia `toHaveCount(0)`) e de
+     `.assistant-hdr-dot` (`assistant-header.spec.js`, idem). Doze regras em
+     duas folhas pintavam um cartao de produto que o app parou de desenhar, e
+     a ferramenta respondia "viva" com a prova ao contrario na mao.
+     A morte passa a ser julgada SO pelo app — o que poe classe em elemento:
+     os dois .html e scripts/. `tests/` e `tools/` FALAM sobre o CSS, nao o
+     produzem, e por isso saem do corpus que julga.
 
-  const cache = new Map();
+     E `tools/` precisou sair pelo mesmo motivo que a saida da ferramenta ja
+     tinha saido: escrever o nome da classe no COMENTARIO deste arquivo, para
+     explicar o caso, fez o proprio arquivo entrar no corpus e a classe se
+     provar viva outra vez. A ferramenta que le a si mesma sempre concorda
+     consigo — dessa vez pela documentacao, e nao pelo relatorio.
+
+     O que so aparece em teste ou ferramenta sai numa lista propria, para
+     conferencia humana — nunca apagado direto, porque uma classe montada em
+     runtime tambem pode aparecer so no spec que a exercita. */
+  const foraDoApp = (caminho) => /(^|[\\/])(tests|tools)[\\/]/.test(caminho);
+  const textoApp = corpus.filter(c => !foraDoApp(c)).map(c => readFileSync(c, 'utf8')).join('\n');
+  const textoForaDoApp = corpus.filter(foraDoApp).map(c => readFileSync(c, 'utf8')).join('\n');
+
+  const cache = new Map(), cacheTeste = new Map();
   const existe = (tok) => {
-    if (!cache.has(tok)) cache.set(tok, texto.includes(tok));
+    if (!cache.has(tok)) cache.set(tok, textoApp.includes(tok));
     return cache.get(tok);
+  };
+  const existeEmTeste = (tok) => {
+    if (!cacheTeste.has(tok)) cacheTeste.set(tok, textoForaDoApp.includes(tok));
+    return cacheTeste.get(tok);
   };
 
   for (const r of rules) {
@@ -195,6 +222,10 @@ export function analisar() {
     });
     r.mortaEstatica = !r.atRule && partes.length > 0 &&
       r.partes.every(p => p.faltando.length > 0 && !p.dinamica);
+    // Morta para o app, mas com o nome citado em algum spec: nao apague sem
+    // abrir o spec. Pode ser um teste que AFIRMA a ausencia (e ai a regra e
+    // lixo com prova) ou um teste que exercita classe montada em runtime.
+    r.soPorTeste = r.mortaEstatica && r.partes.some(p => p.faltando.some(existeEmTeste));
   }
   return { rules, corpus };
 }
@@ -320,6 +351,11 @@ if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('css-usage.m
   console.log('');
   console.log('corpus (arquivos nao-CSS lidos): ' + corpus.length);
   console.log('regras: ' + vivas.length + ' | inalcancaveis por construcao: ' + vivas.filter(r => r.mortaEstatica).length);
+  const porTeste = vivas.filter(r => r.soPorTeste);
+  if (porTeste.length) {
+    console.log('  destas, ' + porTeste.length + ' tem o nome citado SO em tests/ ou tools/ (abra o arquivo antes de apagar):');
+    for (const r of porTeste) console.log('    ' + r.file + ':' + r.line + '  ' + r.selector.replace(/\s+/g, ' ').slice(0, 90));
+  }
   if (comRuntime) {
     console.log('regras que casam em alguma das ' + TELAS + ' telas: ' + vivas.filter(r => r.casouRuntime).length);
     const cores = coresDasFolhas();

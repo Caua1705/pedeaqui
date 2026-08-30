@@ -361,11 +361,6 @@ a{text-decoration:none;color:inherit}
 .menu-area{margin:0 auto}
 .products-grid{display:grid;grid-template-columns:1fr;}
 
-/* Product Card - Desktop Default */
-.prod-card{display:flex;flex-direction:row;align-items:stretch;justify-content:space-between;cursor:pointer;transition:.2s;}
-.prod-card:hover{border-color:var(--bd3);background:var(--s2)}
-
-
 @media(min-width:768px){
   .products-grid{gap:16px}
   .search-cat{top:56px}
@@ -648,17 +643,6 @@ a{text-decoration:none;color:inherit}
   }
   .products-grid{grid-template-columns:1fr !important;background:transparent;border-radius:0;overflow:visible;border:none;margin-bottom:14px}
 
-  /* ── PRODUCT CARDS (iFood-style horizontal list) ── */
-  .prod-card{
-    flex-direction:row;
-    align-items:stretch;
-    justify-content:space-between;
-    margin-bottom:0;
-    transition:border-color .15s;
-  }
-  .prod-card:active{background:#fafafa;border-color:#ddd}
-        
-        
   /* ── CART STICKY (flush full-width bar above bottom nav) ── */
         .btn-cart:hover{background:var(--brand-active)}
   .btn-cart:active{transform:none;background:var(--brand-active)}
@@ -1364,16 +1348,7 @@ a{text-decoration:none;color:inherit}
     margin-bottom:10px;
   }
   .products-grid{gap:10px}
-  .prod-card{
-    min-height:112px;
-    border:none;
-    border-radius:14px;
-    padding:13px;
-    background:#fff;
-    box-shadow:0 1px 0 rgba(0,0,0,.04);
-    gap:12px;
-  }
-                  .banner-carousel,.coupon-rail{
+  .banner-carousel,.coupon-rail{
     margin:0 -14px 12px;
     padding:0 14px 2px;
   }
@@ -1451,12 +1426,10 @@ a{text-decoration:none;color:inherit}
 .menu-section{padding-top:16px!important;margin-bottom:18px!important;scroll-margin-top:118px!important}
 .menu-section-title{margin-bottom:12px!important;font-size:1.08rem!important;font-weight:800!important;color:#2a2a2a!important;letter-spacing:0!important}
 .products-grid{gap:10px!important}
-.prod-card{border:1px solid #eee!important;border-radius:8px!important;background:#fff!important;box-shadow:0 8px 22px rgba(0,0,0,.035)!important;gap:16px!important}
 .mob-bottom-nav{height:calc(64px + var(--safe-bottom))!important;background:#fff!important;box-shadow:0 -2px 12px rgba(0,0,0,.06)!important;border-top:0!important;border-radius:0!important}
 .mob-nav-item.active{color:var(--brand)!important}
 .mobile-home,.search-cat,.menu-area,.promos-section{opacity:1!important;animation:none!important}
 .mob-rest-details{overflow:visible!important;min-width:0!important;max-width:calc(100% - 70px)!important}
-.prod-card{width:100%!important;overflow:hidden!important;padding:14px!important;min-height:118px!important}
 @media(max-width:767px){
   body{background:#f7f7f7!important;}
   .top-nav{display:none!important}

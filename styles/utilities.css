@@ -36,7 +36,6 @@
 
 /* Restaurant page final mobile layout fixes. */
 .mobile-home,.search-cat,.menu-area,.promos-section{opacity:1!important;animation:none!important}
-.prod-card{display:grid!important;grid-template-columns:minmax(0,1fr) 84px!important;width:100%!important;overflow:hidden!important;column-gap:10px!important}
 .products-grid{padding-right:28px!important}
 
 /* Store info modal and login screen based on the mobile references. */
@@ -704,19 +703,6 @@ body.prof-order-help-instant #profSubajuda{
   margin-bottom:0!important;padding:20px 16px 12px!important;
 }
 .products-grid{gap:0!important;background:#ffffff!important}
-.prod-card{
-  border:none!important;
-  border-bottom:1px solid #f0f0f0!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  padding:16px!important;
-  min-height:0!important;
-  background:#ffffff!important;
-  gap:12px!important;
-  align-items:center!important;
-}
-.prod-card:last-child{border-bottom:none!important}
-
 @media(max-width:767px){
     body.menu-tab .menu-area{padding-bottom:0!important}
   body:not(.menu-tab) .restaurant-app-shell{
@@ -2344,28 +2330,6 @@ body.menu-tab .menu-section-title{
 }
 
 /* Products grid: single column, no gap, no padding */
-
-/* Product card: flex row, 16px padding, no forced min-height */
-body.menu-tab .prod-card{
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-  box-sizing:border-box!important;
-  width:100%!important;
-  min-height:0!important;
-  padding:16px 20px!important;
-  gap:14px!important;
-  border:0!important;
-  border-bottom:1px solid #EFEFEF!important;
-  border-radius:0!important;
-  background:#ffffff!important;
-  box-shadow:none!important;
-  cursor:pointer!important;
-}
-body.menu-tab .prod-card:last-child{
-  border-bottom:none!important;
-}
 
 /* prod-info: column, tight stack — no space-between spreading */
 

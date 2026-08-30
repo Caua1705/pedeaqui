@@ -73,6 +73,30 @@ auditoria consertou. Se você for tentar, meça antes.
 A folha de detalhe do cupom (29 fios / 261 linhas) e o checkout da sacola
 (14 / 67) ficaram fora pelo mesmo motivo: mais fio que pano.
 
+Em 30/08/2026 o arquivo inteiro foi varrido de novo, procurando bloco que
+ninguém tivesse olhado. Os sete candidatos, medidos com a MESMA conta (nomes
+lidos de fora + nomes chamados de fora), contra a aferição do bloco já recusado:
+
+| Bloco | linhas | fios | linhas por fio |
+|---|---|---|---|
+| operação/filial (JÁ RECUSADO, aferição) | 316 | 87 | 3,6 |
+| Perfil: histórico de pedidos | 571 | 64 | **8,9** |
+| Dados do cliente / senha | 228 | 28 | 8,1 |
+| Informações da loja (modal + `info*`) | 250 | 34 | 7,4 |
+| Cupom: folha de detalhe + helpers | 240 | 41 | 5,9 |
+| Cashback | 81 | 16 | 5,1 |
+| Produto: modal e opções | 185 | 41 | 4,5 |
+| Confirmar pedido (folha) + submissão | 119 | 27 | 4,4 |
+
+Os três cortes que DERAM certo (endereço, Pix, auth) tinham ~1.100 linhas para
+~40 injeções — perto de 27 linhas por fio. O melhor candidato restante tem 8,9,
+que é pior que a folha do cupom (9,0) já recusada por "mais fio que pano".
+**Não sobrou bloco extraível.** Se você for tentar mesmo assim, meça antes e
+compare com esta tabela: `node tools/fios-do-corte.mjs` (com `--detalhe`, ele
+lista os nomes de cada lado). A aferição contra o bloco já recusado sai junto
+de propósito — um número de densidade só quer dizer alguma coisa ao lado de
+outro.
+
 ## 2.1 Como um módulo conversa com o `restaurant-page.js`
 
 Os três módulos saíram do MESMO fechamento, então precisaram de uma costura. Ela
@@ -128,10 +152,19 @@ unitários — nenhum deles executa o bundle.
    move dentro do mesmo arquivo — senão o módulo do Pix viraria dono do toast de
    tudo.
 
-**A prova de cada corte** é `node tools/capture-screens.mjs`: 14 telas, 41
+**A prova de cada corte** é `node tools/capture-screens.mjs`: 58 telas, 69
 propriedades computadas de todos os ~1.500 elementos, antes e depois. Foi ela que
 pegou a armadilha 1 — e só porque ela **lança** quando uma tela não abre, em vez
 de registrar vazio.
+
+Eram 14 telas até 30/08/2026, e por isso 1.628 declarações `!important` e 229
+cores nunca tinham produzido evidência nenhuma: o Pix, o cartão, o Clube com
+cupom desenhado, o extrato, a política, as subpáginas do perfil, o chat
+respondido, o modo voz, as duas telas de erro e a landing estavam TODOS fora.
+Cada tela declara um `setup(page)` opcional (token, rota sobreposta, outro
+contexto de operação), e as quatro ferramentas que abrem telas chamam o mesmo
+`prepararTela()` — repetir o preparo em cada laço vira divergência assim que
+uma tela precisa de preparo próprio.
 
 ## 3. As três regras que não se negociam
 
@@ -421,8 +454,9 @@ produto — foi levantado e deixado de propósito em 30/08/2026.
 
 ## 5.1 O CSS, e as quatro ferramentas que respondem por medida
 
-São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em
-30/08/2026, e escrito no cabeçalho de `styles/utilities.css`:
+São ~18.700 linhas em 20 folhas (19 no `restaurant.html`, mais `landing.css`),
+e o nome dos arquivos mente. Medido em 30/08/2026, e escrito no cabeçalho de
+`styles/utilities.css`:
 
 - **`utilities.css` não é folha de utilitários.** De 1.280 regras, UMA começava
   com `.u-` (foi para `markup.css`, a folha de utilitários de verdade). As
@@ -433,8 +467,14 @@ São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em
   markup. O comentário que dizia isso estava errado havia muito tempo.
 - **Por isso não dá para "levar cada regra para a folha certa".** 1.013 das
   1.280 (191 kB) tocam classes ou ids que outra folha também declara: estão numa
-  disputa de ordem, e mover inverte quem vence. Só 267 falam de tokens que mais
-  ninguém declara.
+  disputa de ordem, e mover inverte quem vence. Só 267 falavam de tokens que
+  mais ninguém declara — e **211 dessas já saíram**, em 30/08/2026, para
+  `store-info.css` (134), `club.css` (61) e `policy.css` (16). Sobraram 1.055
+  regras, 1.006 delas em disputa e 49 livres mas sem grupo (restos de
+  `.delivery-widget-tab`, `.home-cart-pill`, `.highlight-*`, `.prof-payment-*`,
+  `.payment-method-*`, espalhados entre as em disputa). O critério do recorte
+  em bloco se esgotou; o que sobra é uma regra por vez, com captura a cada
+  passo.
 - **E juntar blocos repetidos também não é de graça.** 136 seletores estão
   escritos mais de uma vez no arquivo; só 12 grupos podem ser juntados sem que
   algo no meio dispute a mesma propriedade.
@@ -444,11 +484,11 @@ São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente. Medido em
 | Esta regra pode pintar algo? | `tools/css-usage.mjs` | Metade **estática** (o nome não existe fora do CSS → morto por construção) e metade **runtime** (casa nas 14 telas → termômetro). Só a estática autoriza apagar. |
 | Este `!important` vence alguém? | `tools/css-important.mjs` | Adversário = outra regra declarando a mesma **família** de propriedade no mesmo elemento. Runtime + um **veto estático** grosseiro por token. |
 | Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
-| Nada mudou? | `tools/capture-screens.mjs` | 41 propriedades de ~1.500 elementos em 14 telas, antes e depois. |
+| Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **58 telas**, antes e depois. |
 
-### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 44 propriedades, nao todas
+### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 69 propriedades, nao todas
 
-`getComputedStyle` devolve ~340 nomes. A captura le 44, escolhidas a mao. Isso
+`getComputedStyle` devolve ~340 nomes. A captura le 69, escolhidas a mao. Isso
 e correto — ler tudo afogaria a diferenca que importa em ruido legitimo — mas
 tem uma consequencia que custou caro em 30/08/2026 e que voce precisa saber
 antes de citar a saida dela como prova:
@@ -476,10 +516,12 @@ foi sorte de ninguem ter mexido em `border-bottom`, nao garantia.
 **A regra que fica:** antes de aceitar um `Nenhuma diferenca` como prova de que
 uma mudanca especifica nao mudou nada, confira se a PROPRIEDADE que voce mexeu
 esta em `PROPS` (topo de `tools/capture-screens.mjs`). Se nao estiver,
-acrescente-a e recapture os dois lados — a lista e para crescer. O que ainda
-NAO esta la, e que alguem vai precisar um dia: `outlineColor`, `fill`,
-`stroke`, `textDecoration*`, `backgroundImage` (gradiente), `objectFit`,
-`gridTemplateRows`, `borderRadius` por canto.
+acrescente-a e recapture os dois lados — a lista e para crescer, e cresceu: em
+30/08/2026 entraram 22 nomes porque um commit ia tirar `!important` de `inset`,
+`background:linear-gradient`, `background-size`, `cursor` e
+`-webkit-text-fill-color`, e a ferramenta teria respondido "Nenhuma diferenca"
+sem ter olhado para nenhum deles. O que ainda NAO esta la:
+`gridTemplateRows` e `borderRadius` por canto.
 
 ### As armadilhas destas ferramentas (todas custaram uma rodada)
 
@@ -509,7 +551,38 @@ NAO esta la, e que alguem vai precisar um dia: `outlineColor`, `fill`,
    o TEXTO da regra e exige `opacity:.82!important` no bloco de movimento
    reduzido. Nenhuma varredura de folha acha esse adversário — ele está num
    teste. Foi o `npm run test` que barrou, e é por isso que os quatro portões
-   rodam mesmo num commit que "só mexe em CSS".
+   rodam mesmo num commit que "só mexe em CSS". Em 30/08/2026 esta exata
+   declaração entrou de novo numa lista de remoção e o marcador saiu; o
+   `npm run test` barrou **depois do commit**, porque a saída dos três portões
+   rápidos tinha sido engolida pelo shell (`&&` na mesma linha que jogava o
+   e2e para background) e o número foi escrito na mensagem assim mesmo. Duas
+   lições: **rode cada portão numa chamada própria e leia a saída**, e o veto
+   virou da ferramenta — `css-important.mjs` tem hoje `vetado-por-teste`, que
+   ignora qualquer declaração cuja propriedade apareça junto de `!important`
+   numa linha de `tests/`.
+
+7. **O corpus que se prova sozinho tem três camadas, não uma.** Já era conhecido
+   que `css-usage.json` na raiz fazia toda classe "se provar" viva (armadilha 2).
+   Faltavam duas: um **spec** que diz `expect(page.locator('.prod-card'))
+   .toHaveCount(0)` NOMEIA a classe — e num corpus único ela se prova viva com a
+   prova ao contrário na mão (12 regras pintavam um cartão de produto que o app
+   parou de desenhar); e o **próprio comentário da ferramenta**, ao explicar o
+   caso, recolocou o nome no corpus e ressuscitou a classe. Hoje `tests/` e
+   `tools/` ficam fora do corpus que julga morte, e o que só aparece neles sai
+   numa lista à parte, para conferência humana.
+
+8. **Tela que sorteia é ruído que às vezes some.** O balão de "pensando" do
+   assistente escolhe a frase com `Math.random`, e cada frase tem uma largura.
+   Duas capturas seguidas da mesma build disseram "Nenhuma diferença" antes de
+   a terceira acusar 4 elementos com `width: 118,391px -> 210,094px`. Um
+   sorteio entre poucas opções acerta o mesmo valor com frequência suficiente
+   para parecer estável — e só aparece no dia em que decide a favor de um falso
+   positivo, que é o dia em que alguém está julgando um commit. Outras duas da
+   mesma família, achadas na mesma rodada: o **carrossel do cabeçalho** anda por
+   `setInterval` (não é transição, e congelar transição pelo CSSOM não alcança),
+   e a **fonte chegando no meio da leitura** trocava a largura de 104 elementos
+   por fração de pixel. As três estão neutralizadas em `estabilizar()` e no
+   `go()` da tela.
 6. **Blocos repetidos não são redundância.** Juntar move declarações de cima
    para baixo. `body,button,input,textarea,select{font-family:...!important}` da
    linha 394 juntado ao bloco igual 1.500 linhas abaixo trocou a fonte de 934

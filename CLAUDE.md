@@ -34,11 +34,17 @@ os três verdes. Quem roda o app é o `test:e2e` — e, desde então,
 
 ## Não leia o `restaurant-page.js` inteiro
 
-São ~7.200 linhas. Ache a função (`grep -n "function nomeDaCoisa"`) e leia a
+São ~7.185 linhas. Ache a função (`grep -n "function nomeDaCoisa"`) e leia a
 vizinhança — ela pode estar num dos três módulos que saíram dele em 29/08/2026:
 `restaurant-address-flow.js`, `restaurant-pix-flow.js` e `restaurant-auth-flow.js`.
 Os comentários longos são histórico de defeito real — leia-os antes de
 "simplificar".
+
+Não procure o próximo corte sem medir: em 30/08/2026 os sete blocos restantes
+foram medidos pela mesma conta que reprovou operação/filial, e o melhor deles
+(histórico de pedidos do perfil, 571 linhas / 64 fios) é mais denso em fios que
+a folha do cupom já recusada. A tabela está na skill, e a medida é
+`node tools/fios-do-corte.mjs`.
 
 Os três recebem o que precisam por `init(deps)`. **O que muda de valor vai por
 acessor, não por valor**: uma cópia vira uma fotografia do boot, e o módulo passa
@@ -48,11 +54,13 @@ e unitários verdes.
 
 ## Se você vai mexer em CSS
 
-São ~18.700 linhas em 17 folhas, e o nome dos arquivos mente: `utilities.css`
-não é folha de utilitários (de 1.280 regras, **uma** começava com `.u-`) e não
-carrega por último. Leia o cabeçalho dela antes de mover qualquer coisa: 1.013
-das 1.280 regras disputam ordem com outra folha, e "levar para a folha certa"
-inverte quem vence.
+São ~18.700 linhas em 20 folhas (19 no `restaurant.html`), e o nome dos arquivos
+mente: `utilities.css` não é folha de utilitários (de 1.280 regras, **uma**
+começava com `.u-`) e não carrega por último. Leia o cabeçalho dela antes de
+mover qualquer coisa: das 1.055 regras que sobraram nela, **1.006 disputam
+ordem** com outra folha, e "levar para a folha certa" inverte quem vence. As
+211 que não disputavam já saíram (`store-info.css`, `club.css`, `policy.css`,
+em 30/08/2026) — esse era o critério, e ele se esgotou.
 
 Três ferramentas respondem por medida o que não dá para responder lendo:
 
@@ -62,17 +70,35 @@ Três ferramentas respondem por medida o que não dá para responder lendo:
 | Este `!important` está vencendo alguém? | `node tools/css-important.mjs` |
 | Quantos cabeçalhos/botões DIFERENTES existem? | `node tools/ui-inventory.mjs` |
 
+**Nenhuma das três julga morte por conta própria.** `css-usage` só autoriza
+apagar pela metade **estática** (o nome não existe no APP), e o corpus dela
+exclui `tests/` e `tools/` de propósito: um spec que exige
+`toHaveCount(0)` NOMEIA a classe, e num corpus único ela se provava viva com a
+prova ao contrário na mão. `css-important` tem três vetos — runtime, token
+estático e **um teste que exige o texto da regra** (o adversário nem sempre
+está no CSS).
+
 E a prova de que nada mudou continua sendo `node tools/capture-screens.mjs`
-(antes, depois, `--diff`) — mas ela le **44 propriedades**, não todas. Antes de
-citar um "Nenhuma diferença" como prova, confira se a propriedade que você
-mexeu está em `PROPS`: ela já leu `borderTopColor` sem as outras três e assinou
-embaixo de uma troca de divisória em 239 elementos. A skill tem o caso. Ela pegou os dois erros desta limpeza — uma junção
-de blocos que trocou a fonte de 934 elementos, e um `!important` removido que
-abriu 36px na barra de baixo. Nas duas vezes o erro estava na ferramenta de
-análise, não no CSS: **comentário colado na declaração** fazia o nome da
-propriedade chegar com o comentário inteiro grudado na frente, e um nome assim
-não casa com família nenhuma. Neste repositório o comentário colado na
-declaração é a regra, não a exceção — quem lê CSS aqui tira comentário antes.
+(antes, depois, `--diff`), hoje com **58 telas** e **69 propriedades** — não
+todas. Antes de citar um "Nenhuma diferença" como prova, confira se a
+propriedade que você mexeu está em `PROPS`: ela já leu `borderTopColor` sem as
+outras três e assinou embaixo de uma troca de divisória em 239 elementos, e em
+30/08/2026 quase assinou de novo embaixo de `inset`, `background-image`,
+`cursor` e `-webkit-text-fill-color`. A lista é para crescer.
+
+Ela pegou os dois erros de uma limpeza anterior — uma junção de blocos que
+trocou a fonte de 934 elementos, e um `!important` removido que abriu 36px na
+barra de baixo. Nas duas vezes o erro estava na ferramenta de análise, não no
+CSS: **comentário colado na declaração** fazia o nome da propriedade chegar com
+o comentário inteiro grudado na frente, e um nome assim não casa com família
+nenhuma. Neste repositório o comentário colado na declaração é a regra, não a
+exceção — quem lê CSS aqui tira comentário antes.
+
+E ela mente quando a tela sorteia: o balão de "pensando" do assistente escolhe
+a frase com `Math.random`, e cada frase tem uma largura. Duas capturas seguidas
+disseram "Nenhuma diferença" antes de a terceira acusar 4 elementos sem que uma
+linha de CSS tivesse mudado. Ruído que às vezes some é pior que ruído
+constante: dá para acreditar nele.
 
 ## Antes de mexer
 

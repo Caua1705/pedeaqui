@@ -13,8 +13,26 @@ Regras da rodada (do prompt do usuário, resumidas):
 
 Portões (cada um numa chamada própria, ler a saída — lição da skill):
 `npm run lint` · `npm run typecheck:cards` · `npm run test` · `npm run test:e2e`
-Flakes conhecidos E2E: assistant-voice-session:294 e :437, pix-payment:116
-(rodar isolado antes de arquivar como flake).
+Flakes conhecidos E2E: assistant-voice-session:294, :437 e **:668**,
+pix-payment:116 (rodar isolado antes de arquivar como flake).
+
+**NÃO canalize a saída do portão.** `npm run test:e2e | tail` devolve o exit
+code do `tail`: a suíte reportou **exit 0 com 2 testes vermelhos** (31/08/2026,
+no portão pré-merge). Terceira vez nesta rodada que o portão lido por atalho
+mente. Rode sem pipe e leia o rodapé.
+
+**Medições de 31/08/2026 (portão pré-merge), que corrigem o registro:**
+- `:668` ("a conversa é transcrita no console — e SÓ no console") é flake e
+  **não estava nesta lista** — entrou agora.
+- A afirmação **"23/23 isolado" NÃO se reproduz mais**. O arquivo
+  `assistant-voice-session.spec.js` isolado deu **21/23** (falharam :294 e
+  :668) e, na segunda rodada, **22/23** (falhou só :294).
+- Cada teste rodado **sozinho** (`spec.js:294`, `spec.js:668`) passa: 1/1 nos
+  dois. A falha é de CONCORRÊNCIA entre os irmãos do arquivo, não do teste.
+- `:294` falhou em **3 de 3** execuções acompanhadas — é o mais frequente dos
+  dois, e é o que mais ameaça o CI da main.
+- Suíte completa: 282 passed · 2 failed (:294, :668) · 3 skipped.
+- NÃO investigado nem consertado: decisão explícita do prompt desta sessão.
 E2E vermelhos HERDADOS: viraram letra morta — ver 4.3 (já estavam verdes).
 
 ## Ordem de execução e status
@@ -495,6 +513,20 @@ régua que a própria rodada usou para aprovar as seis que saíram.
 ### Bloqueados por backend
 - Places API (New) sem permissão na chave (403) → fallback automático ao
   legado; **VERIFICAR EM PREVIEW** (chave não libera localhost).
+  - 31/08/2026: o fallback era **ESTREITO** — só disparava no regex de
+    permissão, e cota/timeout/biblioteca/erro desconhecido eram relançados e
+    viravam mensagem de erro na busca de endereço. Regressão no caminho do
+    pedido, com deploy automático da main. Regra invertida: QUALQUER falha do
+    caminho novo cai para o legado; erro na tela só quando o LEGADO falha.
+    Acrescentado teto de 3s (`NEW_PLACES_TIMEOUT_MS`) porque o SDK do Google
+    não tem timeout próprio e uma promessa pendurada prendia o cliente no
+    esqueleto para sempre. 7 testes em `maps-autocomplete.spec.js`, os 4 novos
+    vistos vermelhos antes (`:171` falhou por `calls.legado` 0 em vez de 1).
+  - **São DOIS bloqueios diferentes, e o registro os misturava:** a restrição
+    de *referrer* é o que impede testar em localhost; a Places API (New) *não
+    habilitada* é o que causa o 403 — e essa vale em produção também. Se o
+    domínio de preview do Vercel não estiver na lista de referrers, o preview
+    **não** testa o caminho novo.
 - D10 old_price (preço riscado), D11 ChatResponse.options (chips de resposta),
   D13 recommendation_reason: campos que não existem — recursos mortos até a
   API publicá-los.

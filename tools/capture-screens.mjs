@@ -180,14 +180,28 @@ const comCupons = (page) => page.route(/\/coupons(?:\?|$)/, route => route.fulfi
  * negativa tem folha propria (`.cashback-statement-amount.negative` e o
  * `::before` da linha), entao o extrato precisa dos dois sinais.
  */
-const comExtrato = (page) => page.route('**/customers/me/cashback**', route => route.fulfill(json({
-  balance: 12.5,
-  currency: 'BRL',
-  transactions: [
-    { id: 't1', type: 'earned', amount: '8.40', description: 'Cashback do pedido #1042', created_at: '2026-08-20T18:12:00Z' },
-    { id: 't2', type: 'redeemed', amount: '-4.10', description: 'Usado no pedido #1051', created_at: '2026-08-24T20:03:00Z' }
-  ]
-})));
+const comExtrato = async (page) => {
+  // Duas rotas, dois shapes (o extrato NAO herda do saldo — ver o schema):
+  // o saldo com by_restaurant (e o global DISCORDANDO do da loja, de
+  // proposito), e as transacoes com credito E debito. A rota especifica vem
+  // por ultimo porque em page.route a ultima registrada vence.
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({
+    balance: 50,
+    currency: 'BRL',
+    by_restaurant: [
+      { restaurant_id: 'aaaa0000-0000-4000-8000-000000000001', restaurant_name: 'Junior da Picanha', restaurant_slug: SLUG, balance: 12.5, expires_at: null },
+      { restaurant_id: 'bbbb0000-0000-4000-8000-000000000002', restaurant_name: 'Outra Loja', restaurant_slug: 'outra-loja', balance: 37.5, expires_at: null }
+    ]
+  })));
+  await page.route('**/customers/me/cashback/transactions**', route => route.fulfill(json({
+    balance: 50,
+    currency: 'BRL',
+    transactions: [
+      { id: 't1', type: 'earned', amount: '8.40', description: 'Cashback do pedido #1042', created_at: '2026-08-20T18:12:00Z' },
+      { id: 't2', type: 'redeemed', amount: '-4.10', description: 'Usado no pedido #1051', created_at: '2026-08-24T20:03:00Z' }
+    ]
+  })));
+};
 
 /** O assistente respondendo com produtos — o que acende o trilho e o detalhe. */
 const comChat = (page) => page.route('**/chat', route => route.fulfill(json({

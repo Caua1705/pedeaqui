@@ -478,7 +478,11 @@
     const auth = window.PedeAquiCustomerAuth;
     if (!auth?.getToken?.()) return fmt(0);
     if (cashbackState?.status === 'loading' || cashbackState?.status === 'idle') return 'R$ --,--';
-    const balance = Number(cashbackState?.data?.balance);
+    // O saldo DESTA loja, não o da conta: CashbackBalanceResponse.balance soma
+    // todos os restaurantes do Rapidex, e o schema avisa que a soma não é
+    // gastável. Num app white-label, mostrar saldo de outra loja como se
+    // valesse aqui é prometer desconto que o pedido não vai ter.
+    const balance = Number(window.PedeAquiClubService?.restaurantCashbackBalance?.(getRestaurantSlug(), cashbackState?.data));
     return Number.isFinite(balance) ? fmt(balance) : fmt(0);
   }
 
@@ -486,7 +490,9 @@
     const text = cashbackValueText(state?.cashback);
     if ($('homeCartTotal')) $('homeCartTotal').textContent = text;
     if ($('clubCashbackBalance')) $('clubCashbackBalance').textContent = text;
-    if ($('cashbackStatementBalance')) $('cashbackStatementBalance').textContent = text;
+    // O saldo do EXTRATO não entra aqui: aquele modal é da conta inteira
+    // (linhas de todos os restaurantes) e o dono dele é cashback-statement.js,
+    // que escreve o balance da própria resposta de transações.
   }
 
   function initCashbackState() {

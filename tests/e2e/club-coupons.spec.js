@@ -35,8 +35,18 @@ async function seedLoggedSession(page) {
 }
 
 async function mockCustomerRoutes(page) {
+  // CashbackBalanceResponse do contrato. O balance da RAIZ (50) soma a conta
+  // inteira; o desta loja (12,50) mora em by_restaurant — os dois DISCORDAM de
+  // propósito: se a tela mostrar 50, ela está lendo o campo errado.
   await page.route(/\/customers\/me\/cashback(?:\?|$)/, (route) =>
-    route.fulfill(json({ balance: 12.5, transactions: [] }))
+    route.fulfill(json({
+      balance: 50,
+      currency: 'BRL',
+      by_restaurant: [
+        { restaurant_id: 'aaaa0000-0000-4000-8000-000000000001', restaurant_name: 'Júnior da Picanha', restaurant_slug: 'junior-da-picanha', balance: 12.5, expires_at: null },
+        { restaurant_id: 'bbbb0000-0000-4000-8000-000000000002', restaurant_name: 'Outra Loja', restaurant_slug: 'outra-loja', balance: 37.5, expires_at: null }
+      ]
+    }))
   );
   await page.route('**/customers/me/addresses**', (route) => route.fulfill(json([])));
   await page.route('**/customers/me/orders**', (route) => route.fulfill(json([])));
@@ -344,4 +354,17 @@ test('cupom aplicado sobrevive a abrir OUTRO cupom para leitura', async ({ page 
   await expect(page.locator('#csTotal'), 'o cupom aplicado continua aplicado').toContainText(
     '20,02'
   );
+});
+
+test('o saldo do Clube é o DESTA loja (by_restaurant), nunca a soma da conta', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  await mockApi(page);
+  await mockCustomerRoutes(page);
+  await openClub(page);
+
+  // O mock manda 50 na raiz (soma da conta) e 12,50 nesta loja. O schema da
+  // CashbackBalanceResponse avisa que a soma não é gastável — mostrar 50 aqui
+  // é prometer desconto de outra loja.
+  await expect(page.locator('#clubCashbackBalance')).toHaveText('R$ 12,50');
 });

@@ -85,6 +85,30 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       · D17 NÃO-DEFEITO: itens do Pix vêm da foto local (order-tracking), como
         o comentário do módulo já documenta; order?.items é o ramo morto
         intencional (sem foto o botão some).
+      · Conserto 4 (D8 cashback por loja): restaurantCashbackBalance(slug) no
+        club-service (by_restaurant[]); cashbackValueText da home/Clube usa o
+        saldo DESTA loja; renderSharedCashbackState parou de escrever no saldo
+        do extrato (dono: cashback-statement.js, saldo da CONTA). Fixtures
+        atualizados p/ contrato com global≠loja de propósito (50 vs 12,50):
+        club-coupons mockCustomerRoutes e comExtrato da captura (2 rotas, 2
+        shapes). Teste novo em club-coupons visto VERMELHO (mostrava 50) →
+        verde. Captura: extrato-cashback 1 elem (saldo da conta, intencional);
+        perfil-pedido-detalhe 3 elems = largura de "Realizado há X horas"
+        (RUÍDO DE RELÓGIO — a data virou durante a rodada; caso novo da
+        família do §5.1-8 da skill, anotar lá).
+      · D7 NÃO CONSERTADO (anotado): BranchResponse do /menu não tem accepts_*
+        por filial (só RestaurantSettingsResponse da filial SELECIONADA tem,
+        e ninguém lê settings.accepts_delivery/accepts_delivery_now/pause).
+        Gating do tipo de entrega mexe no bloco operação/filial (o mais
+        perigoso, skill §2) e exige UX p/ "entrega pausada" — fora desta
+        rodada; backend valida o pedido de qualquer forma (falha fechada no
+        servidor).
+      · D18 NÃO CONSERTADO (anotado): entry.payment_method nasce null (campo
+        não existe em CreateOrderResponse) mas NINGUÉM lê o campo — dado morto
+        sem leitor; update() aceita patch se um dia precisar.
+      · D10/D11/D13 → bloqueados por backend (campos que não existem:
+        old_price, ChatResponse.options, recommendation_reason). D12
+        (rapi_suggestions) morre no item 4.4.
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
 - [ ] 2.1 scripts/utils/screen-kit.js (14 ferramentas: esc, fmt, fallback, $,

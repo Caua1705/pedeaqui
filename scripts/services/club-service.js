@@ -77,6 +77,20 @@
     return { ...payload, balance: parseAmount(rawBalance) ?? 0 };
   }
 
+  /**
+   * O saldo GASTÁVEL NESTA loja. `CashbackBalanceResponse.balance` é a SOMA da
+   * conta inteira — todos os restaurantes do Rapidex — e o próprio schema
+   * avisa que a soma não é gastável. Quem responde pela loja é
+   * `by_restaurant[]`, filtrado pelo slug. Loja sem entrada = R$ 0,00 aqui,
+   * por mais que a conta tenha saldo em outra loja: mostrar saldo alheio como
+   * gastável é prometer desconto que o pedido não vai ter.
+   */
+  function restaurantCashbackBalance(restaurantSlug, payload = cashbackState.data) {
+    const porLoja = Array.isArray(payload?.by_restaurant) ? payload.by_restaurant : [];
+    const entry = porLoja.find(item => item?.restaurant_slug === restaurantSlug);
+    return parseAmount(entry?.balance) ?? 0;
+  }
+
   function normalizeTransaction(transaction = {}, index = 0) {
     return {
       ...transaction,
@@ -207,7 +221,9 @@
     return {
       restaurant_slug: restaurantSlug,
       coupons,
-      cashback_balance: cashback.data?.balance ?? null,
+      cashback_balance: cashback.status === 'success'
+        ? restaurantCashbackBalance(restaurantSlug, cashback.data)
+        : null,
       cashback_status: cashback.status,
       cashback_updated_at: cashback.updatedAt
     };
@@ -227,6 +243,7 @@
     getTransactions,
     getCustomerCoupons,
     previewCoupon,
-    getClubData
+    getClubData,
+    restaurantCashbackBalance
   };
 })();

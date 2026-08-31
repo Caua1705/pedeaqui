@@ -153,6 +153,13 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     Também neste commit: conserto do lint vermelho herdado da fase 2
     (module.exports no store-info-format — no-undef; a fase 2 foi commitada
     com 2 erros de lint que o tail -1 escondeu; lição: ler a saída inteira).
+    COMMIT: c5a41e7.
+  · TELA 2 Dados do cliente / senha: screens/customer-data-screen.js
+    (332 linhas), 9 ações, page 6720→6427. Fios --tela: 2 app + 11 shell = 13
+    (25,5 l/fio). Armadilha da extração repetida: spread `...fn()` escapa do
+    regex de substituição (o lookbehind vê o terceiro ponto) — no-undef pegou.
+    releaseFocusFrom saiu do page (últimos usuários migraram; kit é o dono).
+    Captura 60 telas: 'Nenhuma diferença'. AGUARDANDO suíte p/ commit.
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

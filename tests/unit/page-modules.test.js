@@ -51,7 +51,8 @@ const MODULOS = [
 // `carregar` é uma arrow com o caminho LITERAL: o import dinâmico do vitest
 // não resolve variável com subdiretório ("one level deep").
 const TELAS = [
-  { arquivo: 'screens/profile-screen', global: 'PedeAquiProfileScreen', carregar: () => import('../../scripts/pages/screens/profile-screen.js') }
+  { arquivo: 'screens/profile-screen', global: 'PedeAquiProfileScreen', carregar: () => import('../../scripts/pages/screens/profile-screen.js') },
+  { arquivo: 'screens/customer-data-screen', global: 'PedeAquiCustomerDataScreen', carregar: () => import('../../scripts/pages/screens/customer-data-screen.js') }
 ];
 
 describe('importar um módulo de tela não pode executar nada', () => {

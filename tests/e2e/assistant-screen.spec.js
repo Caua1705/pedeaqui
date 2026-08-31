@@ -390,7 +390,9 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
 
   const cards = page.locator('.assistant-starter-card:visible');
   const count = await cards.count();
-  expect(count, 'a tela voltou a abrir sem sugestões').toBeGreaterThanOrEqual(3);
+  // Dois fixos + um situacional (rodada de 31/08/2026): três com cardápio ou
+  // loja fechada; dois no pior caso (aberta e sem categoria elegível).
+  expect(count, 'a tela voltou a abrir sem sugestões').toBeGreaterThanOrEqual(2);
 
   // Régua horizontal: todas na MESMA linha, cada uma à direita da anterior.
   // offsetTop/offsetLeft e não getBoundingClientRect: a revelação escalonada
@@ -779,4 +781,40 @@ test('as sugestões somem na primeira mensagem e não voltam na mesma conversa',
   await page.locator('#assistantHdrMenuBtn').click();
   await page.locator('#assistantHdrMenu .assistant-hdr-menu-item').click();
   await expect(starter).toBeVisible();
+});
+
+
+test('as sugestões são dois botões fixos + um situacional do cardápio', async ({ page }) => {
+  await openAssistant(page);
+  await waitForIntro(page);
+
+  const labels = await page.locator('.assistant-starter-card-label').allTextContents();
+  // Regra dura da rodada: só botão que o assistente SABE responder. Os dois
+  // fixos, sempre; o terceiro sai do cardápio DESTE tenant (loja aberta).
+  expect(labels[0]).toBe('O que você recomenda?');
+  expect(labels[1]).toBe('Quanto tempo demora a entrega?');
+  expect(labels).toHaveLength(3);
+  expect(labels[2]).toMatch(/^Tem .+\?$/);
+  // "Quais são os mais pedidos?" saiu: o backend não publica ranking de
+  // vendas, e botão que promete dado que a resposta não tem é botão mentiroso.
+  expect(labels).not.toContain('Quais são os mais pedidos?');
+});
+
+test('com a loja fechada, o botão situacional pergunta o horário de abertura', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.route(/\/menu(\?|$)/, async route => {
+    const { menuForBranch } = await import('./helpers.js');
+    const body = menuForBranch(new URL(route.request().url()).searchParams.get('branch_id'));
+    body.settings = { ...body.settings, is_open: false };
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
+  await waitForIntro(page);
+
+  const labels = await page.locator('.assistant-starter-card-label').allTextContents();
+  expect(labels[2]).toBe('Que horas vocês abrem?');
 });

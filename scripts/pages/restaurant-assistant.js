@@ -18,9 +18,9 @@
  * desenhada em CSS a partir do primary_color do restaurante, que por construção
  * não pertence à plataforma.
  *
- * A ÚNICA exceção é `rapi_suggestions`, logo abaixo: é o nome do campo que a
- * API devolve, não um texto de tela. Renomear aqui não renomeia lá — só faria o
- * app parar de ler as sugestões que o lojista cadastrou.
+ * (`rapi_suggestions` já foi a exceção documentada aqui. A auditoria de
+ * contrato de 30/08/2026 provou que o campo nunca existiu na API — a leitura
+ * saiu, e com ela a exceção.)
  */
 (function () {
   'use strict';
@@ -771,29 +771,15 @@
       </div>`;
   }
 
-  // Sugestões iniciais. Vêm do restaurante quando ele as configura; o padrão é
-  // deliberadamente neutro — sem nome de prato, sem segmento e sem valor em
-  // reais, que era o caso de "Me recomenda um prato" / "Quero gastar até R$ 50"
-  // (essas frases só fazem sentido num restaurante de comida com esse ticket).
-  // As duas primeiras valem em qualquer vertical e são sempre estas.
+  // Sugestões iniciais: DOIS botões fixos e UM que troca com a situação.
+  // Regra dura (decisão de 31/08/2026): só entra botão cuja resposta o
+  // assistente TEM. Recomendação e prazo de entrega são o feijão-com-arroz do
+  // /chat; "Quais são os mais pedidos?" saiu porque o backend não publica
+  // ranking de vendas — o botão prometia um dado que a resposta não tinha.
   const ASSISTANT_SUGGESTION_HEAD = [
     'O que você recomenda?',
-    'Quais são os mais pedidos?'
+    'Quanto tempo demora a entrega?'
   ];
-  // As últimas saem do cardápio do tenant; estas só entram quando o cardápio
-  // ainda não chegou, para a tela nunca abrir com duas sozinhas.
-  const ASSISTANT_SUGGESTION_TAIL = [
-    'Quero uma sugestão para duas pessoas',
-    'Me surpreenda'
-  ];
-
-  // A régua rola na horizontal, então o número deixou de ser limite de layout —
-  // a lista da API entra inteira até aqui. O teto existe só para uma resposta
-  // absurda não virar uma régua de trinta pílulas.
-  const ASSISTANT_SUGGESTION_LIMIT = 8;
-  // Quantas geramos quando o lojista não configurou nada: duas neutras mais as
-  // categorias do cardápio.
-  const ASSISTANT_SUGGESTION_DEFAULTS = 4;
 
   /**
    * A última sugestão sai do CARDÁPIO do próprio tenant, não de uma lista
@@ -817,20 +803,23 @@
   }
 
   function assistantStarterSuggestions() {
+    // rapi_suggestions SAIU: a auditoria de contrato de 30/08/2026 provou que
+    // o campo nunca existiu em resposta nenhuma da API (nem em restaurant,
+    // nem em settings) — o ramo "configurado pelo lojista" leu undefined em
+    // 100% das cargas desde que nasceu. Se um dia o backend publicar sugestões
+    // por tenant, o campo novo entra AQUI, com o nome do contrato.
     const store = window.PedeAquiRestaurantStore?.get?.() || {};
-    // NOME DE CAMPO DA API, não texto de tela: quem escolheu foi o backend, e
-    // renomear aqui só faria o app deixar de ler o que o lojista cadastrou.
-    // Trocar o nome exige mudar a API primeiro — ver o cabeçalho do arquivo.
-    const configured = store.restaurant?.rapi_suggestions || store.settings?.rapi_suggestions;
-    const list = (Array.isArray(configured) ? configured : [])
-      .map(item => String(item?.label ?? item ?? '').trim())
-      .filter(Boolean);
-    if (list.length) return list.slice(0, ASSISTANT_SUGGESTION_LIMIT);
-    const openSlots = ASSISTANT_SUGGESTION_DEFAULTS - ASSISTANT_SUGGESTION_HEAD.length;
-    const fromMenu = assistantCategorySuggestions(openSlots);
-    return ASSISTANT_SUGGESTION_HEAD
-      .concat(fromMenu.length ? fromMenu : ASSISTANT_SUGGESTION_TAIL.slice(0, openSlots))
-      .slice(0, ASSISTANT_SUGGESTION_DEFAULTS);
+    // O terceiro botão muda com a situação da loja: fechada → a pergunta que o
+    // cliente de loja fechada tem ("Que horas vocês abrem?" — o /info tem o
+    // horário); aberta → a última categoria do cardápio DESTE tenant, que é
+    // resposta garantida por construção.
+    const closed = (store.settings?.is_open ?? store.restaurant?.is_open) === false;
+    const situational = closed
+      ? 'Que horas vocês abrem?'
+      : assistantCategorySuggestions(1)[0];
+    return situational
+      ? [...ASSISTANT_SUGGESTION_HEAD, situational]
+      : [...ASSISTANT_SUGGESTION_HEAD];
   }
 
   // O texto vem da API ou do nome de uma categoria, então ele NÃO pode ser

@@ -230,11 +230,35 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       flex!important). Spec novo cart-service-fee.spec.js (2 testes, visto
       vermelho). Suíte 280 passed. Captura: a linha aparecendo em todas as
       telas com sacola no DOM (intencional).
-- [ ] 4.2 Texto da saída do Pix → "Sair e pagar depois" (comportamento fica)
-- [ ] 4.3 Os 3 E2E vermelhos herdados (order-flow:42, pix-payment:576, :736)
-- [ ] 4.4 Assistente (só front): aviso prévio no botão de voz, motivo no login,
-      volta ao chat com mic pronto, menos cor (3 lugares), botões de sugestão
-      (2 fixos + 1 situacional; só o que o assistente SABE responder)
+- [x] 4.2 Saída do Pix: texto "Sair e pagar depois" + parágrafo honesto
+      ("fica aguardando... pagar por aqui"); comportamento intocado. O spec
+      afirmava a MENTIRA palavra a palavra (quebra de linha de "cancelado/
+      permanentemente") — reescrito, visto vermelho contra bundle velho,
+      23/23 depois. COMMIT: 221f90b.
+- [x] 4.3 LETRA MORTA, anotado: os 3 vermelhos herdados NÃO existem mais.
+      order-flow hoje afirma cartCount===1 (sacola persiste — regra nova já
+      incorporada); pix :576/:736 são linhas de testes verdes. 8+ rodadas
+      completas da suíte nesta rodada, todas exit 0 fora os 3 flakes
+      documentados (voice :294/:437, pix :116 — TODOS vistos verdes isolados
+      com --workers=1 quando caíram). Nada a consertar.
+- [x] 4.4 Assistente (só front):
+      a/b/c JÁ EXISTIAM (verificado, não refeito): botão de voz com cadeado
+      is-login-required + hint "Entre para usar a voz"; login com
+      #loginVoiceReason ("Entre para usar a conversa por voz..."); pós-login
+      resumeAssistantVoiceAfterAuth → volta ao chat e chama
+      RapidexAssistantVoice.request() (mic pronto).
+      d AUDITADO por screenshot (3 vistas): abertura = 2 lugares coloridos
+      (marca + botão de voz), resposta = 3 (balão do usuário + preço + voz),
+      modo voz = 1 (orbe). A de-decoração (moldura com degradê, crachá,
+      indicador online) saiu em rodadas anteriores — regra dos 3 atendida,
+      nada a mudar.
+      e IMPLEMENTADO: 2 fixos ('O que você recomenda?', 'Quanto tempo demora
+      a entrega?') + 1 situacional (fechada → 'Que horas vocês abrem?';
+      aberta → categoria do cardápio). 'Quais são os mais pedidos?' SAIU
+      (backend não publica ranking — regra dura). rapi_suggestions REMOVIDO
+      (D12: campo nunca existiu na API). 2 specs novos vistos vermelhos;
+      assistant-screen 21/21. Suíte 280 passed + 2 voice-session sob carga
+      (23/23 isolado). COMMIT: (a seguir)
 - [ ] 4.5 Maps: AutocompleteService → AutocompleteSuggestion (não testável em
       dev; marcar "verificar em preview")
 - [ ] 4.6 Registrar issue (sem consertar): chips de pagamento chumbados em

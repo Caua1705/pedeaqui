@@ -38,15 +38,15 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 - [x] 1.3 assistant-voice-session.spec.js:668 — MESMA CAUSA, mesmo commit
 - [~] 1.4 auth-screen-nav.spec.js:105 - NAO REPRODUZIU (ver abaixo)
 - [~] 1.5 order-flow.spec.js:163 - so reproduziu DENTRO de um travamento de maquina (ver abaixo)
-- [ ] 1.6 PORTÃO: suíte completa verde 3x seguidas (+ 20 execuções de prova)
+- [x] 1.6 PORTÃO FECHADO: 3 verdes seguidas (g2-1/2/3, e a 4ª também) · a contagem total de execuções está no relatório final
 
 ### Item 2 — limpeza que destrava
 - [x] 2.1 os defeitos recusados sob a régua do fallback defensivo — 19 régua correta, 4 defeito de verdade (sort_order), 2 precedência latente, 2 fantasma inofensiva, 1 prosa
 - [x] 2.2 deploy opção C (vercel.json + ci.yml + guarda) — INERTE até 3 secrets; passo a passo em docs/deploy-pelo-portao.md
 
 ### Item 3 — sacola, checkout e filial
-- [ ] 3.1 inventário do que resta no restaurant-page.js
-- [ ] 3.2 rede: unitários de cartTotals e da cadeia de preço COMO ESTÁ HOJE
+- [x] 3.1 inventário medido: nenhum bloco restante alcança 10 l/fio
+- [x] 3.2 rede do dinheiro: cart-money-chain.spec.js, 4 testes, 4 vermelhos vistos
 - [ ] 3.3 migração na ordem do inventário
 - [ ] 3.4 troca de filial (ÚLTIMA)
 - [ ] 3.5 folha de confirmação (escreve token de cartão — decidir por medida)
@@ -523,3 +523,157 @@ acusação falsa contra o CSS).
 
 Verificação: lint 0 errors/78 warnings · typecheck ok · 296 unitários ·
 **suíte completa exit 0 · 289 passed · 3 skipped · 6,3 min**.
+
+# PORTÃO DO ITEM 1 — FECHADO
+
+Três execuções da suíte completa **seguidas**, na mesma árvore, máquina limpa
+(0 node órfão, porta 4174 livre antes de começar), sem uma única edição durante
+o lote:
+
+| execução | resultado | tempo |
+|---|---|---|
+| g2-1 | exit 0 · **289 passed** · 3 skipped · 0 failed | 7,6 min |
+| g2-2 | exit 0 · **289 passed** · 3 skipped · 0 failed | 7,2 min |
+| g2-3 | exit 0 · **289 passed** · 3 skipped · 0 failed | 7,8 min |
+
+(Um lote anterior de 6 foi ABORTADO e não conta: editei um spec no meio dele,
+o que faz execuções da mesma sequência medirem árvores diferentes. Erro meu de
+higiene de medição, registrado aqui porque é fácil de repetir.)
+
+---
+
+# Item 3.1 — inventário do que resta no `restaurant-page.js`
+
+**5.629 linhas, 298 funções de topo.** Medido com a mesma conta do
+`tools/fios-do-corte.mjs` (nomes lidos de fora + nomes chamados de fora),
+com a aferição do bloco JÁ RECUSADO impressa junto — um número de densidade só
+quer dizer alguma coisa ao lado de outro.
+
+| bloco | linhas | fios | l/fio |
+|---|---|---|---|
+| Persistência da sacola | 69 | 8 | **8,6** |
+| Checkout: forma de pagamento | 324 | 39 | **8,3** |
+| Política + navegação de auth | 129 | 18 | 7,2 |
+| Perfil hub + navegação + logout | 264 | 51 | 5,2 |
+| Sacola: render + interação | 302 | 59 | 5,1 |
+| Folha de confirmação | 119 | 27 | 4,4 |
+| Pedido criado / sucesso / divergência | 146 | 34 | 4,3 |
+| *AFERIÇÃO — operação/filial (JÁ RECUSADO)* | *314* | *84* | *3,7* |
+| Submissão do pedido | 101 | 28 | 3,6 |
+| cartTotals + cadeia de preço | 46 | 16 | 2,9 |
+
+Referência: os três cortes que deram certo (endereço, Pix, auth) ficaram perto
+de **27 l/fio**. Abaixo de ~10 o corte é o mesmo fechamento com mais cerimônia.
+
+**Nenhum bloco restante alcança 10.** O melhor (8,6) é a persistência da sacola,
+com 69 linhas — módulo de 69 linhas é cerimônia, e é a mesma conclusão que
+matou o cashback na fase anterior.
+
+## Ordem, do mais isolado ao mais entrelaçado
+
+1. **Persistência da sacola** (69 l / 8 fios) — `persistCart`, `readStoredCart`,
+   `restoreCart`. Entrada: `CART_TTL_MS cart cartRestored cartStorageKey
+   newCartItemUid products`.
+2. **Checkout: forma de pagamento** (324 / 39) — da folha de métodos ao cartão
+   salvo. Entrada: 24 nomes, saída: 15.
+3. **Política + navegação de auth** (129 / 18).
+4. **Perfil hub + navegação + logout** (264 / 51).
+5. **Sacola: render + interação** (302 / 59).
+6. **Folha de confirmação** (119 / 27).
+7. **Pedido criado / sucesso / divergência de total** (146 / 34).
+8. **Submissão do pedido** (101 / 28).
+9. **cartTotals + cadeia de preço** (46 / 16) — o dono do dinheiro.
+10. **Operação / troca de filial** (314 / 84) — já recusado duas vezes.
+
+## O que sobra além dos blocos acima
+
+Boot e erros de app (143–520), helpers de imagem compartilhados (516–780),
+normalizadores de `/info` e de pagamento (783–1030 — lidos pelo checkout E pela
+tela de informações da loja), shell/tema/cardápio/busca (1031–1790), retries e
+o overlay do histórico (5252–5443), `appPort` + os seis `mount()` + o boot
+(5444–5629). Nada disso é tela: é a cola.
+
+## A conta da cadeia de preço, para o registro
+
+Ela é menor do que parece — **seis funções**, e três delas são de uma linha:
+
+| onde | o quê |
+|---|---|
+| `:177` | `serviceFee()` = `settings.service_fee_amount ?? fallback ?? 0` |
+| `:187` | `deliveryFee()` = entrega ? `currentDeliveryEstimateFee() ?? 0` : 0 |
+| `:228` | `cartItemUnitPrice(item)` = `visual_unit_price ?? unit_price ?? price ?? 0` |
+| `:1844` | `couponDiscountAmount()` |
+| `:1864` | `couponPreviewTotal()` — `total_after_coupon` primeiro |
+| `:1870` | **`cartTotals()`** — subtotal + svc + delivery, e o cupom por cima |
+
+**Cashback NÃO está nessa conta.** `cartTotals()` devolve
+`{subtotal, svc, delivery, discount, total}` — cashback não aparece, e não há
+linha de cashback na seção "Valores" da sacola. Quem aplica o saldo é o
+backend, no pedido (`cashback_redeemed_amount`). Isso é correto e agora está
+travado por teste.
+
+## ACHADO, não consertado: a sacola não mostra o desconto do cupom
+
+A seção "Valores" tem quatro linhas — Subtotal, Taxa de serviço, Taxa de
+entrega, Total. **Não há linha de desconto.** Com um cupom aplicado o cliente vê
+`68,60 + 0,99 + 7,40` e um total de `69,13`, com R$ 7,86 de diferença sem uma
+linha explicando.
+
+É exatamente o defeito que criou o `cart-service-fee.spec.js` ("num pedido de
+R$ 0,01 o cliente via Subtotal R$ 0,01 e Total R$ 1,00 — R$ 0,99 sem linha
+nenhuma explicando"), agora na linha do cupom em vez da taxa.
+
+**Por que fica para outra sessão, e não é improviso:** acrescentar a linha muda
+o markup da sacola e mexe numa tela do caminho do dinheiro. A regra desta seção
+é que nada aqui muda o que o cliente vê no mesmo commit de qualquer outra
+coisa, e a rede de dinheiro acabou de nascer — ela precisa ser a base ESTÁVEL
+contra a qual essa mudança seja verificada, não mudar junto. Fica registrado
+como escape pendente, com a linha exata onde entra (`restaurant.html:906`, ao
+lado de `#csDeliveryRow`) e o dado já disponível (`cartTotals().discount`).
+
+# Item 3.2 — a rede do dinheiro (`tests/e2e/cart-money-chain.spec.js`)
+
+**Quatro testes, e os quatro vistos vermelhos com o defeito reinjetado.**
+
+| defeito injetado | teste que caiu | mensagem |
+|---|---|---|
+| `cartTotals` refaz a conta do cupom (`beforeDiscount - discount` no lugar de `total_after_coupon`) | "o total é o total_after_coupon do backend" | Expected `R$ 69,13`, Received `R$ 71,99` |
+| `cartItemUnitPrice` volta a ler `item.price` (o adicional some) | "cada parcela entra no total" | Expected `R$ 68,60`, Received `R$ 60,00` |
+| `cartTotals` desconta o cashback do total | "o saldo de cashback NÃO desconta nada" | Expected `R$ 76,99`, Received `R$ 64,49` |
+| `buildOrderPayload` acrescenta `total` | "o pedido leva só INPUTS" | `o payload levou "total" — o front não calcula dinheiro` |
+
+## Por que é E2E e não unitário
+
+`cartTotals()` é o dono único do total e vive DENTRO do IIFE de
+`restaurant-page.js`: não vai para `window`, não está no `PedeAquiAppPort`, e a
+fase B2 tirou 141 nomes do escopo global de propósito. Dar-lhe uma porta só para
+o teste seria **mexer no caminho do dinheiro antes de a rede existir** — a ordem
+exata que esta rodada proíbe. Então a rede mede o que o cliente vê, que é a
+afirmação que interessa de qualquer jeito.
+
+## O fixture, e por que os números discordam
+
+```
+2 × (30,00 + 4,30 de adicional) = 68,60   subtotal
+                      +   0,99            taxa de serviço (do /menu)
+                      +   7,40            taxa de entrega (do /delivery/estimate)
+                      = 76,99             antes do cupom
+desconto ..............  5,00  →  76,99 - 5,00 = 71,99   (a subtração local)
+total_after_coupon ....           69,13   ← é ESTE que aparece
+```
+
+**71,99 não pode existir na tela**, e o teste afirma isso explicitamente. Se os
+dois lados coincidissem, a divergência ficaria invisível — é a armadilha do
+`3 × 7,05 + 0,99 = 22,14` que a skill registra, e por isso nenhuma soma aqui dá
+o mesmo resultado por dois caminhos.
+
+## Cobertura que NÃO existia antes
+
+- **A taxa de entrega nunca tinha entrado num total.** Nenhum spec da suíte
+  mocava `/delivery/estimate` (ele caía no catch-all 404 em todos os testes de
+  entrega) e nenhum afirmava sobre `#csDelivery`. Este é o primeiro.
+- **Produto com adicional.** Nenhum produto do `menu.json` tem `option_groups`;
+  o fixture do adicional é injetado por rota neste spec.
+- **Cashback junto da sacola.** O saldo positivo por loja entra no fixture só
+  para travar que ele NÃO mexe no total — quem aplica cashback é o backend.
+- **O payload sem dinheiro**, afirmado onde a regra vale: dez nomes proibidos.

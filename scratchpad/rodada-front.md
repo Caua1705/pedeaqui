@@ -43,7 +43,10 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       delivered c/ product_id NULL (produto saiu do cardápio). Números escolhidos
       para NÃO coincidir entre si (lição do fixture 22,14).
 - [ ] 1.4 Auditoria de contrato do APP INTEIRO → tabela nesta página
-- [~] 1.5 Consertar os achados de 1.4 (ordem na tabela). Progresso:
+- [x] 1.5 CONCLUÍDO: 4 consertos commitados (22eb6b7 cashback/extrato,
+      57a9070 verified, e8321bb Perfil+horários, 2488045 saldo por loja);
+      D7/D18 anotados não-conserto com motivo; D9/D17 reclassificados;
+      D10/D11/D13 bloqueados por backend; D12 morre no 4.4. Detalhe abaixo:
       · Conserto 1 (D14+D15) FEITO: bloco morto do extrato removido do page
         (7186→7055 linhas; sombreado por cashback-statement.js, que carrega
         depois e vence); labels do extrato agora são o enum do contrato
@@ -111,21 +114,27 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
         (rapi_suggestions) morre no item 4.4.
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
-- [ ] 2.1 scripts/utils/screen-kit.js (14 ferramentas: esc, fmt, fallback, $,
-      showEl, initials, onlyDigits, act, wait, setLoading, logAppError,
-      releaseFocusFrom, getRestaurantSlug, TAB_LOADER_MIN_MS — invólucro de global)
-- [ ] 2.2 appPort no restaurant-page.js — GETTERS sobre 13 estados (restaurant,
-      cart, customer, products, branches, settings, appState, operationContext,
-      isLogged, deliveryFee, restaurantInfoState, currentCustomerSnapshot,
-      persistCustomer). Getter, nunca valor.
-- [ ] 2.3 scripts/services/store-info-format.js — 8 formatadores puros de /info + unitários
-- [ ] 2.4 Contrato: screens/<nome>-screen.js, IIFE, importado ANTES do
-      restaurant-page.js no entry. Exporta mount(ctx) só. ctx={kit,app,shell}.
-      Ações via RapidexActions.register(). Estado dentro do IIFE.
-      Invariante: um estado = uma pergunta.
-- [ ] 2.5 Escrever o padrão na skill NO MESMO commit de 2.4
-- [ ] 2.6 fios-do-corte.mjs: contar CHAVES de ctx.app efetivamente lidas
-      (se não der, registrar aqui que a métrica morreu)
+- [~] TUDO IMPLEMENTADO, aguardando suíte completa p/ commit único:
+  · 2.1 scripts/utils/screen-kit.js — 14 ferramentas, invólucros LEEM o global
+    na chamada (teste prova: global definido DEPOIS do import ainda delega).
+    7 unitários em tests/unit/screen-kit.test.js.
+  · 2.2 window.PedeAquiAppPort no restaurant-page.js — 9 getters de estado +
+    4 funções estáveis (isLogged, deliveryFee, currentCustomerSnapshot,
+    persistCustomer). boot-smoke exige as 13 chaves E que estado seja ACESSOR
+    — visto VERMELHO com getter trocado por valor (defeito reinjetado) e verde.
+  · 2.3 scripts/services/store-info-format.js — 8 formatadores puros
+    (formatWeekday, formatTime, formatHoursLine, todayHours, formatFullAddress,
+    formatWhatsappHref, formatPaymentGroupLabel, formatBranchLabel).
+    16 unitários com fixture info.json. NÃO consumido ainda pelo page — a
+    troca acontece na migração da tela de informações (fase 3).
+    Nota: cnpj/social não existem em lugar nenhum do app — os 8 saíram do que
+    o /info realmente pinta.
+  · 2.4+2.5 Padrão mount(ctx) escrito na skill (§9), com as 7 regras e o
+    defeito que criou cada uma.
+  · 2.6 fios-do-corte.mjs ganhou --tela <arquivo>: conta CHAVES lidas de
+    app/shell (kit fora da conta, é commodity). Testado com tela fake.
+  · entry-restaurant.js: screen-kit após currency, store-info-format após
+    card-format. Build ok, boot-smoke 4/4.
 
 ### Fase 3 — telas
 - [ ] 3.1 Inventário de TODAS as telas ainda no restaurant-page.js (linhas +
@@ -259,8 +268,27 @@ status_history, accepts_delivery_now, by_restaurant[], email_verified.
 9. D18 payment_method no tracking (gravar null honesto ou tirar o campo)
 10. D10/D11/D12/D13 → anotar bloqueado-por-backend (D12 morre no 4.4)
 
-## Inventário de telas (item 3.1) — a preencher
-(pendente)
+## Inventário de telas (item 3.1) — medido com fios-do-corte (31/08/2026)
+
+restaurant-page.js: 7.102 linhas, 384 funções de topo (antes da fase 3).
+Régua: cortes bons ~27 l/fio; recusados <10. AS TELAS VÃO SAIR MESMO ASSIM —
+a decisão da rodada é o padrão mount(ctx) com appPort/kit, que muda a conta:
+o que era fio de fechamento vira chave de porta (medida nova: --tela).
+
+| ordem | tela | linhas | fios(bloco) | por quê nesta posição |
+|---|---|---|---|---|
+| 1 | Perfil: histórico de pedidos (prof*) | 563 | 63 | defeito de contrato D1 morava aqui; PERFIL é a primeira por ordem do prompt |
+| 2 | Dados do cliente / senha | 228 | 28 | subtela do perfil, mesmo vocabulário |
+| 3 | Informações da loja (modal + info*) | 249 | 36 | consome store-info-format (2.3) na migração |
+| 4 | Cashback (o que sobrou: 13 linhas) | 13 | 5 | quase nada restou após remover o gêmeo morto — avaliar se vira tela ou se funde no Clube |
+| 5 | Cupom: folha de detalhe | 240 | 41 | couponDetailCoupon vs selectedCoupon — NÃO unificar (skill §4) |
+| 6 | Produto: modal e opções | 185 | 41 | addToCart/buildCartItem FICAM no page (sacola) |
+| 7 | Confirmar pedido (folha) | 119 | 27 | confirmOrderSheet é obrigatório no E2E |
+| 8 | Início (renderBanners 1596, setHeroBanner 1665, renderHighlights 1900, renderWidget 5002, busca 6850+) | ~300 | — | ÚLTIMA: vizinha da troca transacional de filial; SÓ rendering sai, operationContext NÃO |
+
+NÃO-telas que ficam no page: sacola/checkout (cartTotals, dono único do
+dinheiro), operação/filial (recusado por medida, skill §2), boot/roteamento,
+cola init(deps) dos módulos antigos.
 
 ## Escapes pendentes (manter ≤ 8)
 (nenhum ainda)

@@ -634,3 +634,62 @@ contraste (`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária cru
 A mensagem de commit deste repo conta **o defeito**, não a mudança: o que a
 pessoa via, por que ninguém pegou, o que passa a valer, e a verificação com
 números no fim. Siga o formato — foi ele que tornou esta auditoria possível.
+
+## 9. O padrão de tela (fase de telas, 30/08/2026)
+
+A partir desta fase, tela nova ou migrada mora em
+`scripts/pages/screens/<nome>-screen.js` e segue UM contrato. Dois idiomas vão
+conviver enquanto a migração anda — **copie este, não o antigo** (o antigo é o
+`init(deps)` da §2.1, que continua valendo só para os módulos que já existem:
+address, pix, auth).
+
+```js
+// scripts/pages/screens/exemplo-screen.js
+(function () {
+  // Estado DA TELA mora aqui dentro. Sem acessor de volta para o page:
+  // se o page precisa ler o estado da tela, o corte está errado.
+  let aberto = null;
+
+  function mount(ctx) {
+    const { kit, app, shell } = ctx;
+    // kit  = window.PedeAquiScreenKit (esc, fmt, $, act, ...14 ferramentas)
+    // app  = window.PedeAquiAppPort  (GETTERS sobre os 13 estados do app)
+    // shell= o que o restaurant-page injeta desta tela em diante
+    window.RapidexActions.register({ abrirExemplo, fecharExemplo });
+  }
+
+  window.PedeAquiExemploScreen = { mount };  // mount, e NADA mais
+})();
+```
+
+As regras, cada uma com o defeito que a criou:
+
+1. **IIFE importada em `entry-restaurant.js` ANTES do `restaurant-page.js`.**
+   O page chama `mount(ctx)` no corpo dele; tela importada depois é
+   `undefined` no boot (mesma classe do "p is not a function" da §2.1).
+2. **Corpo do módulo não executa nada** além de definir e publicar.
+   `page-modules.test.js` barra (armadilha 1 da §2.1) — acrescente a tela à
+   lista `MODULOS` dele no MESMO commit da migração.
+3. **`app` é porta de GETTERS** (`window.PedeAquiAppPort`): `app.cart` chama o
+   getter a cada acesso. NUNCA copie no mount (`const cart = app.cart` no topo
+   congela a fotografia do boot — a armadilha mais cara da §2.1). Os 13
+   estados: restaurant, cart, customer, products, branches, settings,
+   appState, operationContext, isLogged, deliveryFee, restaurantInfoState,
+   currentCustomerSnapshot, persistCustomer.
+4. **Saídas vão por `RapidexActions.register()`** — o registro MESCLA, o HTML
+   não muda um byte (§2.1, "o markup não muda").
+5. **Um estado responde a UMA pergunta.** Se a mesma variável diz "o que a
+   lista mostra" E "qual item está aberto", separe — não conserte com clear
+   no fechar. Foi assim que o cupom grudou (§4).
+6. **Renderizador puro tem unitário com fixture montada do `api.d.ts`**, não
+   do que o código espera — o fixture de profile-order-tracking já codificou
+   o contrato ERRADO e confirmava a leitura errada por meses.
+7. **Medida**: `node tools/fios-do-corte.mjs --tela scripts/pages/screens/X.js`
+   conta CHAVES lidas de `app`/`shell` (kit é commodity e sai da conta). A
+   régua da §2 continua: compare com a tabela antes de acreditar num corte.
+
+Ferramentas da fase: `scripts/utils/screen-kit.js` (14 ferramentas, onze são
+invólucro de global existente — leem o global NA CHAMADA, nunca no import) e
+`scripts/services/store-info-format.js` (formatadores puros de /info, com
+unitários — o horário já mostrou "0" e deslocou a semana em um por ignorar
+`day_label` e usar um mapa 1..7 num contrato em que weekday é 0=SEGUNDA).

@@ -109,6 +109,51 @@ const CANDIDATOS = [
   ['Confirmar pedido (folha) + submissao', /^(syncOrderConfirmSheet|openOrderConfirm|closeOrderConfirm|setOrderConfirmLoading|confirmOrderFromSheet|orderConfirm|openConfirmBenefits)/]
 ];
 
+// ---------------------------------------------------------------------------
+//  --tela <arquivo>: mede um MODULO DE TELA (screens/*.js, contrato mount(ctx)).
+//
+//  A conta de blocos acima morre para uma tela migrada: ela le TUDO por
+//  ctx.app.X, entao a varredura de identificadores veria ~1 fio ("app") por
+//  mais acoplada que a tela fosse. O fio de uma tela e a CHAVE lida de cada
+//  porta do ctx — app (estado do app), shell (funcoes que ficaram no page) e
+//  kit (ferramentas de prateleira; sai em linha propria porque kit e
+//  commodity: 40 usos de esc() nao sao acoplamento, sao alfabeto).
+//
+//  Conta acesso por ponto (app.cart), por desestruturacao
+//  (const { cart } = app) e via ctx (ctx.app.cart). A mesma ressalva da conta
+//  de blocos vale: serve para comparar telas entre si, nao como lista de
+//  dependencias.
+// ---------------------------------------------------------------------------
+function medirTela(caminho) {
+  const texto = semComentario(readFileSync(join(ROOT, caminho), 'utf8'));
+  const chaves = { app: new Set(), shell: new Set(), kit: new Set() };
+  for (const porta of Object.keys(chaves)) {
+    const ponto = new RegExp(`(?:ctx\\.)?\\b${porta}\\.([A-Za-z_$][A-Za-z0-9_$]*)`, 'g');
+    for (const m of texto.matchAll(ponto)) chaves[porta].add(m[1]);
+    for (const m of texto.matchAll(new RegExp(`(?:const|let|var)\\s*\\{([^}]+)\\}\\s*=\\s*(?:ctx\\.)?${porta}\\b`, 'g'))) {
+      for (const parte of m[1].split(',')) {
+        const nome = parte.split(':')[0].trim().split('=')[0].trim();
+        if (nome) chaves[porta].add(nome);
+      }
+    }
+  }
+  const linhas = readFileSync(join(ROOT, caminho), 'utf8').split(/\r?\n/).length;
+  const fios = chaves.app.size + chaves.shell.size;
+  console.log(`${caminho}: ${linhas} linhas`);
+  console.log(`  app   (${chaves.app.size}): ${[...chaves.app].sort().join(' ')}`);
+  console.log(`  shell (${chaves.shell.size}): ${[...chaves.shell].sort().join(' ')}`);
+  console.log(`  kit   (${chaves.kit.size}): ${[...chaves.kit].sort().join(' ')} — commodity, fora da conta`);
+  console.log(`  fios (app+shell): ${fios} · ${(linhas / Math.max(1, fios)).toFixed(1)} linhas por fio`);
+}
+
+const telaIdx = process.argv.indexOf('--tela');
+if (telaIdx !== -1) {
+  const alvo = process.argv[telaIdx + 1];
+  if (!alvo) { console.error('uso: node tools/fios-do-corte.mjs --tela scripts/pages/screens/<nome>-screen.js'); process.exit(1); }
+  medirTela(alvo);
+  process.exit(0);
+}
+
 const detalhado = process.argv.includes('--detalhe');
 const medidos = CANDIDATOS.map(([rotulo, re]) => medir(rotulo, re)).filter(Boolean);
 

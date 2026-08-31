@@ -142,3 +142,52 @@ test('nenhuma tela chama rota que o mock não declara', async ({ page }) => {
     'o app chamou rotas que o mock não declara — confira se elas existem na API'
   ).toEqual([]);
 });
+
+// ============================================================================
+//  As duas portas da fase de telas (skill §9) estão de pé no bundle real.
+//
+//  O contrato mount(ctx) depende de: kit (as 14 ferramentas) e app (os 13
+//  estados por GETTER). O teste do getter é o que importa: uma tela que
+//  recebesse `cart` como VALOR funcionaria em todo teste curto e erraria em
+//  produção na primeira troca de filial — a fotografia do boot. Aqui se
+//  afirma que as chaves de estado são ACESSOR de verdade, e que uma delas
+//  devolve o dado VIVO (products, depois do cardápio carregado).
+// ============================================================================
+test('appPort e screen-kit: as portas das telas existem, e estado vai por getter', async ({ page }) => {
+  const { erros } = await bootar(page);
+  await expect(page.locator('body')).not.toHaveClass(/app-booting/, { timeout: 30_000 });
+
+  const resultado = await page.evaluate(() => {
+    const port = window.PedeAquiAppPort;
+    const kit = window.PedeAquiScreenKit;
+    if (!port) return { falha: 'PedeAquiAppPort não publicado' };
+    if (!kit) return { falha: 'PedeAquiScreenKit não publicado' };
+    const chavesPort = Object.keys(port).sort();
+    const chavesKit = Object.keys(kit).sort();
+    const acessores = ['restaurant', 'cart', 'customer', 'products', 'branches', 'settings', 'appState', 'operationContext', 'restaurantInfoState']
+      .filter(nome => !Object.getOwnPropertyDescriptor(port, nome)?.get);
+    return {
+      chavesPort,
+      chavesKit,
+      acessores,
+      produtosVivos: Array.isArray(port.products) && port.products.length > 0,
+      slugDoKit: kit.getRestaurantSlug()
+    };
+  });
+
+  expect(resultado.falha).toBeUndefined();
+  expect(resultado.chavesPort).toEqual([
+    'appState', 'branches', 'cart', 'currentCustomerSnapshot', 'customer',
+    'deliveryFee', 'isLogged', 'operationContext', 'persistCustomer',
+    'products', 'restaurant', 'restaurantInfoState', 'settings'
+  ]);
+  expect(resultado.chavesKit).toEqual([
+    'TAB_LOADER_MIN_MS', '$', 'act', 'esc', 'fallback', 'fmt',
+    'getRestaurantSlug', 'initials', 'logAppError', 'onlyDigits',
+    'releaseFocusFrom', 'setLoading', 'showEl', 'wait'
+  ].sort());
+  expect(resultado.acessores, 'estado como VALOR em vez de getter — fotografia do boot').toEqual([]);
+  expect(resultado.produtosVivos, 'port.products não devolve o cardápio vivo').toBe(true);
+  expect(resultado.slugDoKit).toBe('junior-da-picanha');
+  expect(erros).toEqual([]);
+});

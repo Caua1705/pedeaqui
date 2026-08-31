@@ -38,6 +38,9 @@ import './utils/image-cdn.js';
 // Formatador unico de dinheiro. Precisa vir ANTES das paginas: quatro delas o
 // chamam ao renderizar, e o modulo nao tem fallback de proposito.
 import './utils/currency.js';
+// As 14 ferramentas de tela (skill §9). Le os globais NA CHAMADA, entao a
+// posicao exata nao importa — só precisa vir antes das telas (screens/*).
+import './utils/screen-kit.js';
 import './utils/validators.js';
 // Leitura do `detail` de erro da API (string | array 422 | objeto estruturado).
 // Precisa vir antes do api-client, que o usa para montar a mensagem do erro.
@@ -65,6 +68,9 @@ import './services/coupon-format.js';
 // (payment-card-flow) e pela linha de pagamento da sacola (restaurant-page).
 // Nao depende de nada; so precisa vir antes dos dois.
 import './services/card-format.js';
+// Formatadores puros de /info (skill §9). Puros de verdade: nao dependem de
+// nada e nada aqui depende da posicao deles.
+import './services/store-info-format.js';
 import './content/privacy-policy.js';
 import './content/loyalty-policy.js';
 import './state/order-state.js';

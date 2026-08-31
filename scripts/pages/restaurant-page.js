@@ -7051,6 +7051,33 @@
 
   window.RapidexActions.register(ACTIONS);
 
+  // ── appPort: os 13 estados do app, por GETTER, para as telas (skill §9) ──
+  //
+  // Getter, nunca valor: `app.cart` chama o getter A CADA acesso e devolve a
+  // variável VIVA deste fechamento. Uma cópia no boot viraria fotografia — o
+  // módulo passaria a decidir com dado velho sem acusar nada, que é a
+  // armadilha mais cara da extração de módulos (skill §2.1). As quatro
+  // últimas já são funções: a REFERÊNCIA delas é estável, o que muda é o que
+  // elas leem — por isso vão como valor.
+  //
+  // boot-smoke.spec.js exige as 13 chaves e que as de estado sejam ACESSOR
+  // (getter de verdade), não propriedade de dado.
+  window.PedeAquiAppPort = {
+    get restaurant() { return restaurant; },
+    get cart() { return cart; },
+    get customer() { return customer; },
+    get products() { return products; },
+    get branches() { return branches; },
+    get settings() { return settings; },
+    get appState() { return appState; },
+    get operationContext() { return operationContext; },
+    get restaurantInfoState() { return restaurantInfoState; },
+    isLogged,
+    deliveryFee,
+    currentCustomerSnapshot,
+    persistCustomer
+  };
+
   // 152 nomes iam para window; 141 deles existiam SÓ para alimentar handlers
   // on*= inline e agora vivem apenas no registro de ações. Os 11 abaixo ficam
   // porque outro módulo ou a suíte E2E os chama pelo nome global — cada um foi

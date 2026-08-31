@@ -453,3 +453,34 @@ As outras duas opções foram descartadas com o motivo escrito no `ci.yml`:
 no instante do push, veria `pending`, pularia o deploy, e um CI que fica verde
 depois não dispara deploy nenhum); proteção de branch fecha pela raiz certa mas
 cobra PR para tudo e, em repositório privado, plano pago.
+
+### pix-payment.spec.js:116 — apareceu no portão, corrigido pelo que dá para provar
+
+**Vermelho** (portão 3): `cta.x - footer.x` deu **307,6** onde o assentado é 20,
+com a largura (374) e a altura (45) do botão JÁ corretas.
+
+**O que se mediu, e o que NÃO se explicou.** O CTA é `width:374px; margin:0
+auto` — CENTRADO no rodapé. Então 20 é `(414 - 374) / 2`, e 414 é o
+`max-width` do painel do Pix, que só vale ACIMA de 767px (abaixo disso um
+`@media` o solta para 100%). Um offset de 307,6 implica um rodapé de ~989 px, e
+essa largura não se reproduz: medido aqui, 1280 → 414 (offset 20), sem o teto →
+1280 (offset 453), 390 → 390 (offset 16).
+
+**A hipótese óbvia foi TESTADA E REPROVADA.** "Mediu no meio da animação de
+entrada" parecia certa. Com a transição alongada para 4 s pelo lado do teste, os
+dois braços (medir na hora / medir depois de assentar) deram **20** — porque
+rodapé e botão viajam na MESMA transformação, e a distância entre eles não muda
+enquanto o painel desliza. Sem o experimento eu teria escrito essa hipótese como
+causa.
+
+**O que foi corrigido, e é o que dá para defender:**
+1. **A viewport passou a ser declarada.** O teste afirmava um número que depende
+   da largura da tela e herdava a viewport padrão do projeto em silêncio. Um
+   número esperado preso a uma largura que o teste não escreve anda sozinho no
+   dia em que a largura mudar por qualquer motivo.
+2. **Espera de assentamento** antes de medir geometria — o irmão logo acima já
+   fazia, com o comentário escrito; este não fazia.
+
+**A causa exata continua sem explicação** (o artefato daquela execução foi
+sobrescrito pela execução seguinte). Está escrito assim no próprio teste. Ele
+segue na LISTA DE OBSERVAÇÃO, não como resolvido.

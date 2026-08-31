@@ -113,7 +113,42 @@ test('a cobrança ocupa a tela inteira, sem cara de pop-up sobre a loja', async 
   await expect(page.locator('#pixPaymentModal .sheet-drag')).toHaveCount(0);
 });
 
+/**
+ * Espera a caixa de um elemento PARAR de mudar — três quadros de animação com
+ * o mesmo retângulo. É a espera por CONDIÇÃO que uma medição de geometria
+ * precisa: um `waitForTimeout` chuta quanto dura a transição, e chutar contra
+ * a carga da máquina é o que produz um número que nunca existiu na tela.
+ */
+async function esperarAssentar(locator) {
+  await locator.evaluate(elemento => new Promise(resolve => {
+    let anterior = '';
+    let iguais = 0;
+    const olhar = () => {
+      const r = elemento.getBoundingClientRect();
+      const agora = `${r.x}|${r.y}|${r.width}|${r.height}`;
+      iguais = agora === anterior ? iguais + 1 : 0;
+      anterior = agora;
+      if (iguais >= 3) return resolve();
+      requestAnimationFrame(olhar);
+    };
+    requestAnimationFrame(olhar);
+  }));
+}
+
 test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', async ({ page }) => {
+  // A VIEWPORT ENTRA NA CONTA, e este teste não a declarava.
+  //
+  // `#pixPaymentModal .modal` tem `max-width: 414px` — mas só ACIMA de 767px,
+  // porque abaixo disso um `@media` a solta para 100%. E o CTA tem
+  // `width: 374px; margin: 0 auto`, ou seja é CENTRADO no rodapé: a distância
+  // de 20px que a linha abaixo afirma é `(414 - 374) / 2`, e ela só existe na
+  // largura em que o teto de 414 vale. Medido: a 1280 dá 20; sem o teto de 414
+  // dá 453; a 390 dá 16 (e o botão encolhe para 358).
+  //
+  // O teste vinha herdando a viewport padrão do projeto em silêncio. Um número
+  // esperado que depende de uma largura que o teste não escreve é um número que
+  // anda sozinho no dia em que a largura mudar por qualquer motivo.
+  await page.setViewportSize({ width: 1280, height: 720 });
   await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
@@ -122,6 +157,29 @@ test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', 
   const cta = page.locator('#pixCopyBtn');
   await expect(cta).toBeVisible();
   await expect(cta).toHaveText('Copiar código');
+
+  // Assentar antes de medir: a caixa parar de mudar de um quadro para o outro.
+  // O teste irmão logo acima ("a cobrança ocupa a tela inteira") espera por
+  // `x === 0`, que só vale na largura de celular que ele fixa; aqui a espera é
+  // a genérica.
+  //
+  // HONESTIDADE SOBRE ESTA CORREÇÃO. A falha observada em 31/08/2026 leu
+  // `cta.x - footer.x = 307,6` onde o assentado é 20 — e com a largura e a
+  // altura do botão JÁ corretas. Como o CTA é centrado no rodapé, isso implica
+  // um rodapé de ~989 px, largura que não se reproduz aqui de jeito nenhum:
+  // medido, 1280 dá 414 (e offset 20), sem o teto de 414 dá 1280 (offset 453),
+  // e 390 dá 390 (offset 16). A hipótese óbvia — medir no meio da animação de
+  // entrada — foi TESTADA e reprovada: com a transição alongada para 4 s pelo
+  // lado do teste, os dois braços (medir na hora e medir depois de assentar)
+  // deram 20, porque rodapé e botão viajam na MESMA transformação e a distância
+  // entre eles não muda enquanto o painel desliza.
+  //
+  // Ou seja: a causa exata continua sem explicação, e o artefato daquela
+  // execução já foi sobrescrito. As duas mudanças deste commit fecham os dois
+  // caminhos CONHECIDOS pelos quais o número podia andar — viewport não
+  // declarada e medição antes de a caixa parar — sem fingir que qualquer uma
+  // delas seja a causa provada. Este teste segue na lista de observação.
+  await esperarAssentar(page.locator('#pixPaymentModal .modal'));
 
   // Mesmo padrão dos CTAs da sacola e da confirmação do pedido.
   const ctaBox = await cta.boundingBox();

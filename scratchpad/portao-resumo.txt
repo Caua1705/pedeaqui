@@ -1,0 +1,8 @@
+PORTAO 1 EXIT=0
+  289 passed (6.8m)
+PORTAO 2 EXIT=0
+  289 passed (8.4m)
+PORTAO 3 EXIT=1
+  1 failed
+  288 passed (8.6m)
+  ✘  185 [chromium] › tests\e2e\pix-payment.spec.js:116:1 › o rodapé traz a ação principal no padrão dos CTAs e na cor da marca (8.1s)

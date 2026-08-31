@@ -79,15 +79,21 @@
   /**
    * Lê o erro estruturado da rota de pagamento.
    *
-   * ⚠️ O schema `PaymentErrorDetail` NÃO está publicado no OpenAPI da API
-   * (`GET /openapi.json` declara só 200 e 422/HTTPValidationError para
-   * `POST /orders/{token}/payment`). Os nomes dos campos vieram do backend, não
-   * do contrato, e a lista de `code` não é conhecida.
+   * O schema JÁ ESTÁ publicado (esta prosa dizia o contrário e ficou velha):
+   * `PaymentErrorResponse = { detail: PaymentErrorDetail }`, e
+   * `PaymentErrorDetail = { code: PaymentErrorCode, message, retryable,
+   * provider_error_code? }`. Os três campos que esta função lê são os do
+   * contrato, e `message` e `retryable` são obrigatórios.
    *
-   * Por isso aqui não há nenhuma tabela de códigos: um `code` que não
-   * conhecemos não pode virar mensagem errada nem tela quebrada. O que decide o
-   * que o cliente vê é o `retryable`, e o `code` só é exibido como referência
-   * para o cliente citar ao restaurante.
+   * Mesmo assim aqui NÃO há tabela de códigos, e agora por escolha e não por
+   * ignorância: `PaymentErrorCode` é um enum de sete valores hoje, e o backend
+   * pode acrescentar o oitavo sem avisar. Um `code` que não conhecemos não pode
+   * virar mensagem errada nem tela quebrada. Quem decide o que o cliente vê é o
+   * `retryable`; o `code` só é exibido como referência para ele citar ao
+   * restaurante.
+   *
+   * `provider_error_code` existe no contrato e ninguém o lê — é a referência do
+   * gateway para um chamado de suporte, e cabe numa melhoria da tela de recusa.
    *
    * @returns {{code: string, retryable: boolean, text: string, structured: boolean}}
    */

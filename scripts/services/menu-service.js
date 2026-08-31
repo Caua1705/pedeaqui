@@ -109,7 +109,12 @@
       id: String(category.id || category.slug || slugify(category.name || category.category || index)),
       name: category.name || category.category || fallback().categoryName || '',
       slug: category.slug || slugify(category.name || category.category || index),
-      sort_order: Number(category.sort_order || index)
+      // `??`, e nao `||`: `sort_order` vale 0 por PADRAO no contrato
+      // (CategoryResponse, ProductResponse e BannerResponse declaram os tres
+      // `sort_order: number | null` com `@default 0`). Com `||`, o item de
+      // MENOR ordem — o que tem de vir primeiro — era justamente o que perdia a
+      // propria ordem e herdava a posicao de chegada no array.
+      sort_order: Number(category.sort_order ?? index)
     })).sort((a, b) => a.sort_order - b.sort_order);
 
     const categoryById = new Map(categories.map(category => [String(category.id), category]));
@@ -158,7 +163,8 @@
         category: product.category || category?.name || '',
         is_active: product.is_active !== false,
         is_available: product.is_available !== false,
-        sort_order: Number(product.sort_order || index),
+        sort_order: Number(product.sort_order ?? index), // 0 e ordem, nao ausencia
+
         option_groups: optionGroups
       };
     }).sort((a, b) => a.sort_order - b.sort_order);
@@ -182,7 +188,7 @@
           subtitle: banner.subtitle || banner.description || '',
           image_url: banner.image_url || banner.imageUrl || banner.image || banner.image_path || '',
           image_path: banner.image_path || banner.image || banner.image_url || banner.imageUrl || '',
-          sort_order: Number(banner.sort_order || banner.order || index)
+          sort_order: Number(banner.sort_order ?? banner.order ?? index) // 0 e ordem
         }))
         .sort((a, b) => a.sort_order - b.sort_order),
       highlight_banners: sourceHighlightBanners
@@ -194,7 +200,7 @@
           subtitle: banner.subtitle || banner.description || '',
           image_url: banner.image_url || banner.imageUrl || banner.image || banner.image_path || '',
           image_path: banner.image_path || banner.image || banner.image_url || banner.imageUrl || '',
-          sort_order: Number(banner.sort_order || banner.order || index)
+          sort_order: Number(banner.sort_order ?? banner.order ?? index) // 0 e ordem
         }))
         .sort((a, b) => a.sort_order - b.sort_order),
       // Home keeps the legacy public menu feed as its source. Do not apply

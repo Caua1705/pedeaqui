@@ -41,7 +41,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 - [ ] 1.6 PORTÃO: suíte completa verde 3x seguidas (+ 20 execuções de prova)
 
 ### Item 2 — limpeza que destrava
-- [ ] 2.1 os 12 defeitos recusados sob a régua do fallback defensivo
+- [x] 2.1 os defeitos recusados sob a régua do fallback defensivo — 19 régua correta, 4 defeito de verdade (sort_order), 2 precedência latente, 2 fantasma inofensiva, 1 prosa
 - [ ] 2.2 deploy opção C (vercel.json + ci.yml)
 
 ### Item 3 — sacola, checkout e filial
@@ -274,3 +274,140 @@ primeira tentativa tirou o `conversar()` inteiro; o braço B ficou vermelho
 porque `montar()` NÃO abre a voz (quem clica no botão que a abre é o
 `conversar()`). Sem o experimento de dois braços isso teria virado um teste
 verde que não testava nada.
+
+# Item 2.1 — a régua do fallback defensivo, conferida cadeia por cadeia
+
+**A lista original dos 12 não é recuperável.** O `rodada-front.md` só registra
+"Lista completa no relatório do agente" e NOMEIA os arquivos: menu-service,
+club-service, address-service, delivery-service, branch-availability, as duas
+cadeias de cupom do `restaurant-page` (`:2668`/`:2688`, hoje `couponDiscountAmount`
+em `:1844` e `couponPreviewTotal` em `:1864`), restaurant-club e api-error. O
+relatório do agente não está no repositório. Então a enumeração abaixo foi
+**refeita do zero**, cadeia por cadeia, contra `scripts/types/api.d.ts` — e é
+por cadeia, não por arquivo, que ela conta.
+
+A régua sob julgamento: *"fallback defensivo com o nome certo em primeiro é
+limpeza sem teste possível"*. Ela vale quando o fallback é **inalcançável**, ou
+quando alcançá-lo dá o mesmo resultado. Ela NÃO vale quando o fallback pode
+vencer.
+
+## A. RÉGUA CORRETA — o fallback não muda nada (18 cadeias)
+
+Em todas, o primeiro nome é o do contrato e é **obrigatório** (`required` no
+schema), ou o resultado de cair no fallback é idêntico ao de não cair.
+
+| # | cadeia | por que o fallback não alcança |
+|---|---|---|
+| A1 | `address-service:12` `street \|\| street_name` | `CustomerAddressResponse.street` é obrigatório |
+| A2 | `address-service:17` `id \|\| address_id` | `id` obrigatório (uuid) |
+| A3 | `address-service:29` `is_default === true \|\| default \|\| isDefault` | `is_default` obrigatório; com `false` o resto dá `false` igual |
+| A4 | `address-service:26` `latitude ?? lat` | `latitude` existe; `lat` nunca existiu, e `null ?? undefined` → `null` |
+| A5 | `club-service:97` `transaction.id \|\| transaction_id` | `CashbackTransactionResponse.id` obrigatório |
+| A6 | `club-service:98` `type \|\| transaction_type \|\| kind` | `type` obrigatório e enum de 5 valores |
+| A7 | `club-service:103` `created_at \|\| date \|\| transaction_date` | `created_at` obrigatório |
+| A8 | `club-service:113` `balance ?? cashback_balance` | `CashbackTransactionsResponse.balance` obrigatório |
+| A9 | `club-service:101` `restaurant_name \|\| merchant_name` | o campo é `string \| null`: o fallback É alcançável, e dá `''` — exatamente o que `restaurant_name \|\| ''` daria |
+| A10 | `restaurant-club:85` `coupon.id ?? coupon_id ?? code ?? coupon_code` | `CustomerCouponResponse.id` obrigatório |
+| A11 | `restaurant-club:103` `discount_type \|\| type` | obrigatório e enum |
+| A12 | `restaurant-club:127` `min_order_value ?? minimum_order_value ?? min_subtotal` | obrigatório (string decimal) |
+| A13 | `restaurant-club:129` `valid_until \|\| expires_at \|\| end_date \|\| valid_to` | obrigatório (date-time) |
+| A14 | `delivery-service:27-31` — 5 cadeias `??` (delivery_fee, distance_km, travel_time_min, eta_min, eta_max) | todas opcionais; os nomes camelCase alternativos nunca existiram, e `numberOrNull(undefined)` → `null`, igual |
+| A15 | `branch-availability:10` `address.full_address \|\| branch.full_address \|\| [partes]` | `BranchAddressResponse.full_address` é obrigatório |
+| A16 | `branch-availability:42` `branch.id \|\| branch_id \|\| index` | `id` obrigatório |
+| A17 | `restaurant-page:1846` `discount_amount ?? total_discount ?? …` (7 nomes) | `CouponPreviewResponse.discount_amount` obrigatório |
+| A18 | `restaurant-page:1866` `total_after_coupon ?? final_total ?? …` (5 nomes) | `total_after_coupon` obrigatório. O comentário no código já conta essa história |
+| A19 | `api-error:23` `TEXT_KEYS = [message, msg, detail, description, error]` | `PaymentErrorDetail.message` é obrigatório e vem primeiro |
+
+## B. RÉGUA NÃO VALE — defeito de verdade, corrigido com teste visto vermelho
+
+**Quatro cadeias, uma causa só: `||` sobre um campo cujo valor legítimo é 0.**
+
+```js
+sort_order: Number(category.sort_order || index)    // categorias
+sort_order: Number(product.sort_order  || index)    // produtos
+sort_order: Number(banner.sort_order || banner.order || index)   // banners
+sort_order: Number(banner.sort_order || banner.order || index)   // destaques
+```
+
+O nome certo VEM em primeiro — a régua parecia valer. Mas o contrato declara,
+nos três schemas (`CategoryResponse`, `ProductResponse`, `BannerResponse`):
+
+```
+/** Sort Order  @default 0 */
+sort_order: number | null;
+```
+
+**0 é o valor PADRÃO**, ou seja a resposta normal de todo item que ninguém
+reordenou no painel. E `||` não distingue 0 de ausente. Resultado: o item de
+MENOR ordem — o que tem de aparecer primeiro — era exatamente o que perdia a
+própria ordem e herdava a posição de chegada no array.
+
+Quebra medida, com a lista chegando fora de ordem:
+`[alfa(1), beta(2), zero(0)]` → `zero` recebia `index` = 2, empatava com `beta`
+e a ordenação estável o deixava por ÚLTIMO. Esperado: `zero, alfa, beta`.
+
+Por que passou anos invisível: o backend costuma entregar a lista já ordenada, e
+aí a posição de chegada e a ordem coincidem. Não é garantia — o contrato não
+promete ordem de array em lugar nenhum. É a armadilha do "fixture cujos números
+coincidem" da skill §4, na versão de produção.
+
+**Correção:** `||` → `??` nos quatro sítios. O caso `null`/ausente continua
+caindo no índice, que era a única coisa que o `||` acertava.
+
+**Visto vermelho** (`tests/unit/menu-sort-order.test.js`, 5 casos):
+```
+AssertionError: expected [ 'alfa', 'beta', 'zero' ] to deeply equal [ 'zero', 'alfa', 'beta' ]   ×4
+Tests  4 failed | 1 passed (5)
+```
+O quinto caso (sem `sort_order` nenhum, e com `sort_order: null`) já passava
+antes e continua passando — é ele que trava a correção de não ir longe demais.
+Depois: 292 unitários, 0 vermelhos.
+
+## C. Nome certo NÃO vem em primeiro — hoje inofensivo, precedência invertida amanhã
+
+Não são defeitos hoje (o nome à frente nunca existe, então o certo vence), e não
+há teste que nasça vermelho. Ficam NOMEADOS porque, no dia em que o backend
+publicar o nome de cima, a precedência inverte sem ninguém tocar no front.
+
+| # | cadeia | o nome do contrato |
+|---|---|---|
+| C1 | `restaurant-club:146` `short_description \|\| description \|\| subtitle` | `description` (2º) |
+| C2 | `address-service:25` `postal_code \|\| zipcode \|\| zip_code \|\| cep` | `zipcode` (2º) — **e aqui é de propósito**: `normalizeAddress` normaliza DUAS formas, a da API e a que ele mesmo grava no localStorage (`postal_code`). Local em primeiro é a ordem certa. Documentado, não mexido |
+
+## D. Cadeia inteira fantasma — mas todo leitor tem queda real atrás
+
+| # | cadeia | leitura |
+|---|---|---|
+| D1 | `menu-service:181,193` `banner.title \|\| banner.name` | `BannerResponse` não tem `title` nem `name`. Sempre `''` |
+| D2 | `menu-service:182,194` `banner.subtitle \|\| banner.description` | idem. Sempre `''` |
+
+**Não consertado, e por medida.** Os dois só alimentam (a) o `alt` da imagem e
+(b) o bloco `highlight-fallback`, e nos dois lugares há queda para
+`app.restaurant.name` logo atrás (`home-screen.js:82,92,298,303`). Com `''` o
+comportamento já é o correto. Remover as cadeias não muda um pixel e não produz
+teste vermelho — é a régua valendo, mesmo sem nome certo nenhum na frente.
+Este é o resto do D9 da auditoria anterior; o que ele tinha de nocivo (a tarja
+"Cupom disponível" em 100% dos cards) já saiu.
+
+## E. Prosa velha — corrigida, sem mudança de comportamento
+
+`api-error.js:82-85` avisava que `PaymentErrorDetail` **não** estava publicado
+no OpenAPI e que a lista de `code` era desconhecida. Hoje o spec traz
+`PaymentErrorResponse = { detail: PaymentErrorDetail }` e
+`PaymentErrorCode` com sete valores. O comentário foi reescrito: a ausência de
+tabela de códigos passa a ser **escolha** (o oitavo valor pode chegar sem aviso)
+e não ignorância. Anotado junto que `provider_error_code` existe no contrato e
+ninguém o lê.
+
+## Contagem
+
+- **A (régua correta):** 19 cadeias em 8 arquivos.
+- **B (defeito de verdade):** 4 cadeias, uma causa, corrigidas com teste visto
+  vermelho.
+- **C (precedência latente):** 2, nomeadas, não mexidas.
+- **D (fantasma inofensiva):** 2, nomeadas, não mexidas.
+- **E (prosa):** 1, corrigida.
+
+A régua valeu em 19 de 25. As 4 em que ela não valeu não falharam por "nome
+ausente" — falharam por **valor falsy legítimo**, que é a mesma pergunta com
+outra roupa: o fallback podia vencer com o nome certo PRESENTE.

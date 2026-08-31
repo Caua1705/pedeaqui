@@ -211,6 +211,22 @@ Antes de ler um campo, ache-o em `scripts/types/api.d.ts`. `npm run
 typecheck:cards` é o único portão que pega renome no caminho do cartão antes do
 runtime — está no CI, mantenha assim.
 
+**E não é só o NOME: o VALOR PADRÃO também está no contrato.** A auditoria de
+30/08 dispensou as cadeias de fallback com "o nome certo vem em primeiro, logo
+o fallback é inalcançável". Isso vale quando o campo é obrigatório e não pode
+ser falsy — e `sort_order` é as duas coisas ao contrário. `CategoryResponse`,
+`ProductResponse` e `BannerResponse` declaram os três
+`sort_order: number | null` com **`@default 0`**, e `Number(x.sort_order ||
+index)` não distingue 0 de ausente: o item de MENOR ordem, o que tem de vir
+primeiro, era justamente o que perdia a própria ordem e herdava a posição de
+chegada no array. Passou invisível anos porque o backend costuma entregar a
+lista já ordenada — e o contrato não promete ordem de array em lugar nenhum.
+Corrigido em quatro sítios de `menu-service.js` (`??` no lugar de `||`), com
+`tests/unit/menu-sort-order.test.js` visto vermelho.
+
+A pergunta que fica: **`||` sobre número ou booleano do contrato é suspeito
+sempre.** `??` distingue "não veio" de "veio zero"; `||` não.
+
 ### 3.3 Teste que você não viu falhar não vale nada
 
 O procedimento, sem atalho:
@@ -344,9 +360,18 @@ de `mockApi()`.
 ```
 npm run lint
 npm run typecheck:cards      # o único portão que pega renome de campo no cartão
-npm run test                 # vitest, ~248 unitários
+npm run test                 # vitest, ~296 unitários
 npm run test:e2e             # playwright; constrói e serve o bundle real
 ```
+
+**Desde 31/08/2026 o portão manda no deploy.** Até essa data a integração Git da
+Vercel publicava a `main` no INSTANTE do push, sem esperar pelo `ci.yml` — nada
+impedia produção com o portão vermelho. Hoje `vercel.json` traz
+`git.deploymentEnabled.main = false` e o `ci.yml` tem um job `deploy` com
+`needs: verify`. **São duas metades, e meia trava é pior que nenhuma porque
+parece uma:** `tests/unit/deploy-gate.test.js` falha se qualquer uma sumir. O
+passo a passo dos três secrets está em `docs/deploy-pelo-portao.md`; enquanto
+eles não existirem o job falha de propósito, em vez de se pular em silêncio.
 
 Rode os quatro. O E2E leva minutos — rode em background e espere uma vez, não em
 laço.
@@ -404,18 +429,18 @@ cabe no CI é a parte SEM base ("toda tela abre"), e essa parte é o
 `boot-smoke.spec.js`. A comparação continua sendo ferramenta de refactor: rode-a
 à mão, antes e depois, quando o commit disser "só movi código".
 
-**Flakes conhecidos** (passam isolados, caem sob carga paralela; não são seus):
-`assistant-voice-session.spec.js:294`, `assistant-voice-session.spec.js:437`
-(o corte por silêncio — mede tempo de fala) e `pix-payment.spec.js:116`
-(geometria). Se falhou outra coisa, é sua.
+**A LISTA DE FLAKES CONHECIDOS ACABOU** (31/08/2026). Os cinco nomeados e mais
+quatro achados na caça foram investigados um a um; sete tinham causa e foram
+corrigidos, e os dois restantes estão nomeados na §11 com o que se sabe e o que
+não se sabe. **Se um teste falhou, trate como seu até provar o contrário** — a
+§11 tem a taxonomia que distingue, em dez segundos, corrida de teste, estouro
+de orçamento e máquina parada.
 
-Antes de arquivar um deles como flake, RODE ISOLADO
+Antes de arquivar qualquer coisa como flake, RODE ISOLADO
 (`npx playwright test <arquivo> --workers=1`) e confira que o que falhou não é
 o eixo que você mexeu — `pix-payment.spec.js:116` afirma sobre a geometria do
 CTA, e num commit que muda altura de botão "é o flake de sempre" é exatamente a
-frase que deixa passar a regressão. Em 30/08/2026 os três caíram na mesma
-rodada e os 46 testes dos dois arquivos passaram isolados; o :437 entrou nesta
-lista nessa ocasião.
+frase que deixa passar a regressão.
 
 `tenant-theme.spec.js:188` SAIU desta lista em 29/08/2026 — ele não era flaky de
 paralelismo: media tempo de parede e falhava até em série (`--workers=1`, 900
@@ -785,3 +810,149 @@ res.access_token no verify (VerifyEmailCodeResponse = {message, verified} —
 e 200 com verified:false é RECUSA). E o saldo gastável por loja é
 by_restaurant[] filtrado por slug — o balance da raiz soma a conta inteira e
 o schema avisa que a soma não é gastável.
+
+## 11. A caça aos flakes (31/08/2026) — e o que ela ensinou sobre o portão
+
+A lista de "flakes conhecidos" da §5 foi resolvida, e o resultado mais útil não
+é a lista de correções: é a **taxonomia**. Nove execuções da suíte completa em
+máquina limpa mostraram que "flake" era o nome de três coisas diferentes, e só
+uma delas se conserta no teste.
+
+### As três famílias, e como distinguir uma da outra em 10 segundos
+
+| família | assinatura no log | o que fazer |
+|---|---|---|
+| **A. corrida do teste** | o teste falha em segundos, com uma asserção de valor (`Expected X, Received Y`) | achar a causa e corrigir. Todas as sete desta rodada eram isto |
+| **B. estouro de orçamento** | duração **entre 31 e 40 s** e `Test timeout of 30000ms exceeded` | olhe a rodada INTEIRA antes de tocar no teste |
+| **C. máquina parada** | um ou mais testes com duração em **MINUTOS**, e uma dezena de irmãos estourando o teto juntos | **descarte a execução.** Não é medição |
+
+A rodada de 31/08/2026 teve uma execução de família C: quatro testes de
+`assistant-voice.spec.js` levaram **15 a 16 minutos cada**, simultaneamente, e
+os outros onze vermelhos eram estouros de 32–38 s. Nenhum valor de espera
+conserta uma máquina parada por 16 minutos, e tratar aquilo como bug de teste
+teria produzido correções contra fantasmas. A máquina desta sessão: 8 núcleos,
+**8 GB de RAM**, Edge e WSL residentes, memória livre em 340–430 MB durante a
+suíte, com `workers: undefined` = **4 Chromiums**.
+
+### A causa que estava em SEIS testes ao mesmo tempo
+
+**Esperar o COMEÇO do caminho e afirmar sobre o efeito do FIM dele.** Aparece em
+duas roupas:
+
+1. **`chamadas.X.length` cresce dentro do `page.route`** — ou seja, ANTES de o
+   mock responder, antes de o `fetch` do app resolver e antes de a consequência
+   acontecer. `expect.poll(() => chamadas.busca.length).toBe(1)` prova que o
+   pedido SAIU, não que a resposta voltou.
+2. **`emitir()` num RTCDataChannel de verdade** — mandar não é ter chegado.
+   O recibo de que o app PROCESSOU o evento é um efeito observável do handler
+   (no modo voz, o estado da tela: `response.created` → `is-speaking`,
+   `response.done` → `is-listening`).
+
+### As cinco armadilhas novas, cada uma com o teste que a revelou
+
+1. **Afirmar sobre um INSTANTE governado por um relógio de parede.**
+   `assistant-product-detail:4` fazia `waitForTimeout(120)` e perguntava o
+   `display` DE FORA, enquanto o app devolve o `hidden` num `setTimeout(540)`.
+   Sob carga a pergunta chegava depois. E `getAnimations()` tem o mesmo vício na
+   direção oposta: só responde `true` enquanto a transição AINDA corre.
+   **O padrão que substitui os dois:** uma sonda DENTRO da página que mede
+   contra o relógio da PRÓPRIA animação — no `transitionrun`, ler
+   `getComputedStyle(painel).transitionDuration` e contar em quadros quanto
+   tempo o elemento continuou desenhado. Máquina lenta só aumenta o número
+   medido, que é o lado seguro. De brinde, pega o defeito que o teste antigo não
+   pegava: alongar a transição no CSS sem alongar o temporizador do JS.
+
+2. **O teto sob teste matando o preparo do teste.**
+   `assistant-voice-session:491` armava um teto de sessão de 2 s e depois
+   chamava `conversar()`, que precisa de uma ida-e-volta pelo canal DEPOIS de o
+   teto começar a correr. Se o que você está testando é um limite, o preparo não
+   pode caber dentro dele.
+
+3. **Um temporizador do APP solto no meio do gesto do teste.**
+   `openVerifyScreen()` termina com `setTimeout(() => vfyDigits()[0].focus(), 60)`.
+   `verify-email-code:58` tomava o foco por um clique e digitava; com a máquina
+   ocupada o temporizador chegava NO MEIO da digitação, devolvia o foco ao
+   dígito 0, e os seis caracteres se atropelavam.
+   **A regra:** quando o app dá foco sozinho, ESPERE o foco dele
+   (`toBeFocused`) em vez de tomar o foco. Esperar o efeito é esperar o
+   temporizador ter corrido.
+
+4. **Um número esperado que depende de uma largura que o teste não declara.**
+   `pix-payment:116` afirma `cta.x - footer.x === 20`. Esse 20 é
+   `(414 - 374) / 2`, e 414 é o `max-width` do painel, que só vale ACIMA de
+   767 px. O teste herdava a viewport padrão do projeto em silêncio.
+   Medido: 1280 → 20; sem o teto de 414 → 453; 390 → 16.
+
+5. **Orçamento desigual por escolha de ferramenta.** Toda espera de boot da
+   suíte usa `waitForFunction`, cujo teto é o do teste (30 s).
+   `tenant-theme:161` precisou usar `expect` (o relógio da página está
+   congelado, e o rAF do `waitForFunction` congela junto) e herdou o padrão de
+   **5 s**. Quando um teto explícito é a correção certa, o argumento tem de ser
+   este: *o defeito que o teste guarda torna a espera INFINITA, não lenta* —
+   com o relógio congelado um piso de tempo nunca elapsa, então o teste falha
+   com 5 s ou com 15, e o número só decide quem é acusado.
+
+### "Não está mais subindo" NÃO é "subiu"
+
+A pior das seis, porque estava em **52 sítios de 40 arquivos**:
+
+```js
+await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+```
+
+Isto é satisfeito TAMBÉM quando o boot FALHA: `showAppError()`
+(`restaurant-page.js:390`) TIRA `app-booting` e põe `app-error`. E um boot que
+falha nunca chega a `applyTheme()` — a página fica pintada na cor da
+PLATAFORMA. Foi assim que `tenant-theme:229` acusou "cor de marca chumbada"
+num tenant azul: o CSS estava certo, o app é que não tinha subido.
+
+Medido com o `/menu` respondendo 500: a espera antiga passa direto e **24
+elementos** ficam no laranja do piloto (o scanner deduplica pela descrição, e as
+"quatro" da mensagem eram dezenas). Hoje quem espera é
+**`esperarAppPronto(page)`** (`tests/e2e/helpers.js`), que LANÇA com
+`o app NÃO subiu: caiu na tela de erro de boot (body.app-error)`. Use-a; não
+copie a espera crua.
+
+É a mesma lição do `boot-smoke.spec.js`: o problema nunca foi cobertura, foi
+**diagnóstico**.
+
+### O experimento de DOIS BRAÇOS, que é o que faz a correção valer
+
+Um flake de carga não se reinjeta como um bug comum: ele só aparece com a
+máquina ocupada. O que funciona é **magnificar a corrida pelo lado do teste** e
+rodar os dois braços lado a lado:
+
+- foco: temporizador do app 60 → 400 ms e digitação a 120 ms/tecla;
+- teto de sessão: 2 s → 50 ms;
+- boot: `/menu` respondendo 500;
+- animação: `transition-duration: 4s` por `addStyleTag`.
+
+Em cada um, o braço A (jeito antigo) falha com **o texto idêntico ao da suíte** e
+o braço B (jeito novo) passa. Sem isso não há prova, só esperança.
+
+**E ele reprova hipóteses, que é o mais valioso.** Duas vezes nesta rodada:
+- O primeiro remendo do `:491` tirava o `conversar()` inteiro — e o braço B
+  ficou VERMELHO, porque `montar()` não abre a voz (quem clica no botão é o
+  `conversar()`). Sem o experimento, isso teria virado um teste verde que não
+  testava nada.
+- Em `pix-payment:116`, "mediu no meio da animação" era a hipótese óbvia e
+  estava ERRADA: com a transição em 4 s, os dois braços deram 20 — rodapé e
+  botão viajam na MESMA transformação, e a distância entre eles não muda
+  enquanto o painel desliza. A causa daquele 307,6 continua sem explicação, e
+  está escrito assim no teste.
+
+### Higiene de medição — três erros que custaram medições inteiras
+
+1. **Matar node órfão e conferir a porta 4174 ANTES de medir.** Já registrado, e
+   continua valendo.
+2. **NÃO editar um spec no meio de um lote de execuções.** Um lote de 6 foi
+   perdido nesta rodada por isso: as execuções passam a medir árvores
+   diferentes e a sequência não quer dizer nada.
+3. **Ler o portão inteiro.** O `esperarAssentar` de `pix-payment` foi commitado
+   sem a CHAMADA numa das versões — quem pegou foi o `no-unused-vars` do lint,
+   na linha que um `| tail` teria engolido.
+4. **Não rode `npm run test` enquanto um lote de E2E está reconstruindo.** Um
+   unitário caiu uma vez nessa condição e passou na chamada seguinte, sem nada
+   ter mudado: `npm run test:e2e` roda `npm run build` a cada execução, e num
+   PC com 8 GB isso basta para esfomear o vitest. Um vermelho que some sozinho
+   é o pior tipo — ele ensina a repetir o comando em vez de ler.

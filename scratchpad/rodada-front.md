@@ -193,7 +193,32 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     recursão se a tela faltasse). Captura: 1ª rodada acusou 104 elementos
     de largura fracionária na tela produto = o ruído de FONTE da skill
     §5.1-8 (mesmo número!); recaptura: 'Nenhuma diferença'. Suíte completa:
-    277 passed + voice-session flake conhecido (23/23 isolado).
+    277 passed + voice-session flake conhecido (23/23 isolado). COMMIT: 972b0ce.
+  · TELA 7 (Confirmar pedido) NÃO MIGRA — decisão de medida, anotada: a folha
+    é CHECKOUT (lê paymentMethod/selectedSavedCard/pix-em-voo e ESCREVE
+    savedCardPaymentToken; confirmOrderFromSheet → submitOrder). Migrar
+    exigiria ~15 portas de shell incluindo escrita de token de cartão —
+    a mesma conta que recusou o checkout na skill (14 fios/67 linhas) e a
+    régua mediu 4,4 l/fio. A folha continua no page, ao lado do dono do
+    dinheiro. (Revisão do inventário 3.1: era otimista.)
+  · TELA 8 Início (rendering): screens/home-screen.js (389 linhas), 6 ações
+    (renderHomeContent barramento, setHeroBanner, handleBannerAction,
+    mobFocusSearch, closeSearch, couponArtImageFailed), page −~330 linhas.
+    Fios: 1 app + 15 shell = 16 (24,3 l/fio). Carrossel inteiro (autoplay +
+    swipe + assinaturas de render) mora na tela; a VIGILÂNCIA de
+    visibilidade/teardown foi para mount() — no corpo do módulo seria a
+    armadilha 1 (o exato defeito que criou o page-modules.test). Os três
+    call-sites de renderBanners+renderCoupons+renderHighlights viraram UM
+    barramento renderHomeContent. operationContext NÃO foi tocado.
+    Captura: só ruído de relógio. Suíte: 277 passed + pix:116 flake (verde
+    isolado). COMMIT: (a seguir)
+- [x] 3.4 Fase 3 ENCERRADA. page: 7.185 (início da rodada) → ~5.560 linhas.
+    Meta de ~800 NÃO alcançada e explicada: o que sobra não é tela — boot,
+    appPort, roteamento, sacola/checkout (cartTotals dono único + folha de
+    confirmação), operação/filial (recusada por medida), cola init(deps) dos
+    5 módulos antigos e helpers compartilhados. Extrair qualquer um deles
+    reprova na régua que a skill fixou. 6 telas migradas + 2 recusadas por
+    medida (cashback 13 linhas; confirmação = checkout).
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

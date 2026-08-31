@@ -82,11 +82,6 @@
   // e nada garantia que fossem o mesmo. Guardamos o primeiro para poder
   // COMPARAR com o segundo em vez de trocar de número na virada da tela.
   let confirmedTotalAtSubmit = null;
-  let heroBannerIndex = 0;
-  let heroBannerTimer = null;
-  let heroSwipeReady = false;
-  let heroDragStartX = 0;
-  let heroDragDeltaX = 0;
   const appState = {
     restaurant: null,
     homeLoaded: false,
@@ -116,10 +111,6 @@
   let pageRubberBandReady = false;
   let menuSectionsCache = [];
   let categoryButtonsCache = [];
-  let bannersRenderSignature = '';
-  let couponsRenderSignature = '';
-  let highlightsRenderSignature = '';
-  const HERO_BANNER_INTERVAL_MS = 5000;
   // NÃO existe piso de tempo para o loader do boot. Havia um (APP_LOADER_MIN_MS
   // = 900ms), para a volta dos três pontinhos não parecer um flash — ou seja,
   // toda primeira abertura pagava 0,9s de espera inventada. Loader que some
@@ -349,14 +340,9 @@
     selectedCouponPreview = null;
     couponPreviewPromise = null;
     couponPreviewKey = '';
-    heroBannerIndex = 0;
-    stopHeroAutoplay();
     menuLoadPromise = null;
     profileLoadPromise = null;
     menuRenderSignature = '';
-    bannersRenderSignature = '';
-    couponsRenderSignature = '';
-    highlightsRenderSignature = '';
     menuSectionsCache = [];
     categoryButtonsCache = [];
     appState.restaurant = null;
@@ -676,17 +662,11 @@
 
   // O herói é full-bleed (aspect-ratio 1080/500 — styles/utilities.css:652) e a
   // arte é autorada a 1080 de largura, então a grade para aí.
-  const HERO_FLUID = { widths: [480, 768, 1080, 1440], sizes: '(max-width: 1080px) 100vw, 1080px' };
   // .coupon-card tem 168px de largura (styles/utilities.css:1205) e a arte
   // dentro dela tem 90px de altura (.coupon-art — styles/utilities.css:768).
-  const RAIL_BOX = { w: 168, h: 90 };
   // .highlight-banner troca de regime por breakpoint: 290px fixos no desktop,
   // 65%/78% da viewport no mobile (styles/utilities.css:857/1260/1414). Como
   // não é largura fixa em todo lugar, vai de `w` + sizes.
-  const HIGHLIGHT_FLUID = {
-    widths: [290, 440, 580, 780, 870],
-    sizes: '(max-width: 900px) 78vw, 290px'
-  };
   // COUPON_DETAIL_FLUID mora na tela do cupom (coupon-detail-screen.js).
 
   // Versão para <img> que JÁ existe no DOM (o herói é atualizado por
@@ -1384,205 +1364,8 @@
     }
   }
 
-  function renderBanners() {
-    const img = $('restaurantHeroImg');
-    const cover = $('restaurantHeroCover');
-    const track = $('restaurantHeroTrack');
-    const dots = $('restaurantHeroDots');
-    const heroFallback = $('restaurantHeroFallback');
-    if (!img || !cover) return;
-    const nextSignature = JSON.stringify(banners.map(banner => [
-      banner.image_url || banner.image_path || '',
-      banner.title || '',
-      banner.subtitle || ''
-    ]));
-    if (bannersRenderSignature === nextSignature) return;
-    bannersRenderSignature = nextSignature;
-    stopHeroAutoplay();
-    heroBannerIndex = 1;
-    const visualBanners = banners.filter(banner => banner.image_url || banner.image_path);
-
-    if (!visualBanners.length) {
-      cover.classList.remove('has-carousel');
-      if (track) track.innerHTML = '';
-      img.removeAttribute('src');
-      img.removeAttribute('srcset');
-      img.removeAttribute('sizes');
-      img.alt = restaurant.name || fallback().restaurantName || '';
-      if (heroFallback) heroFallback.setAttribute('aria-hidden', 'false');
-      if (dots) dots.innerHTML = '';
-      return;
-    }
-
-    const first = visualBanners[0];
-    const firstImage = first.image_url || first.image_path || '';
-    img.src = firstImage;
-    applyResponsiveImage(img, firstImage, { fluid: HERO_FLUID });
-    img.alt = first.title || first.subtitle || restaurant.name || 'Banner promocional';
-    img.loading = 'eager';
-    img.decoding = 'async';
-    img.fetchPriority = 'high';
-    cover.classList.add('has-carousel');
-    if (heroFallback) heroFallback.setAttribute('aria-hidden', 'true');
-
-    if (track) {
-      const mkSlide = banner => {
-        const image = banner.image_url || banner.image_path || '';
-        const alt = banner.title || banner.subtitle || restaurant.name || 'Banner';
-        const responsive = responsiveImageAttrs(image, { fluid: HERO_FLUID });
-        return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}></div>`;
-      };
-      const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
-      const cloneFirst = mkSlide(visualBanners[0]);
-      track.innerHTML  = cloneLast + visualBanners.map(mkSlide).join('') + cloneFirst;
-      track.style.transition = 'none';
-      track.style.transform  = 'translateX(-100%)';
-      track.offsetHeight;
-      track.style.transition = '';
-      initHeroSwipe();
-    }
-
-    if (dots) {
-      dots.innerHTML = visualBanners.length > 1
-        ? visualBanners.map((_, index) => `<span class="${index === 0 ? 'active' : ''}" ${act('click', 'setHeroBanner', index)}></span>`).join('')
-        : '';
-    }
-
-    if (visualBanners.length > 1) {
-      startHeroAutoplay();
-    }
-  }
-
-  function setHeroBanner(realIndex) {
-    const track = $('restaurantHeroTrack');
-    if (!track) return;
-    const total = track.children.length;
-    heroBannerIndex = Math.min(Math.max(realIndex + 1, 1), total - 2);
-    updateHeroCarousel();
-    startHeroAutoplay();
-  }
-
-  function updateHeroCarousel() {
-    const track = $('restaurantHeroTrack');
-    if (!track) return;
-    track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
-    const realIndex = heroBannerIndex - 1;
-    document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
-      dot.classList.toggle('active', i === realIndex);
-    });
-  }
-
-  function stopHeroAutoplay() {
-    clearInterval(heroBannerTimer);
-    heroBannerTimer = null;
-  }
-
-  function startHeroAutoplay() {
-    const total = $('restaurantHeroTrack')?.children.length || 0;
-    stopHeroAutoplay();
-    if (total <= 3) return;
-    // Aba oculta não anima. Sem esta guarda o intervalo continuaria girando o
-    // carrossel — escrita no DOM e recálculo de estilo — numa página que
-    // ninguém está vendo, e o usuário voltaria para um banner que "andou
-    // sozinho" enquanto ele estava em outro lugar.
-    if (document.visibilityState === 'hidden') return;
-    heroBannerTimer = setInterval(() => {
-      const track = $('restaurantHeroTrack');
-      if (!track) return;
-      const total = track.children.length;
-      heroBannerIndex += 1;
-      updateHeroCarousel();
-      if (heroBannerIndex >= total - 1) {
-        setTimeout(() => {
-          heroBannerIndex = 1;
-          track.style.transition = 'none';
-          track.style.transform = 'translateX(-100%)';
-          track.offsetHeight;
-          track.style.transition = '';
-        }, 490);
-      }
-    }, HERO_BANNER_INTERVAL_MS);
-  }
-
-  // O par que fecha o intervalo do hero: pausa quando a aba sai de vista, volta
-  // quando ela retorna, e some de vez no teardown da página.
-  window.RapidexLifecycle?.onVisibility({
-    onHidden: stopHeroAutoplay,
-    onVisible: () => {
-      // Só reativa se o carrossel existe de fato — em restaurante sem banner o
-      // startHeroAutoplay já sai pelo total <= 3, mas checar aqui evita a
-      // chamada inteira a cada volta de aba.
-      if ($('restaurantHeroTrack')) startHeroAutoplay();
-    }
-  });
-  window.RapidexLifecycle?.onTeardown(stopHeroAutoplay);
-
-  function initHeroSwipe() {
-    const track = $('restaurantHeroTrack');
-    if (!track || heroSwipeReady) return;
-    heroSwipeReady = true;
-
-    track.addEventListener('transitionend', () => {
-      const total = track.children.length;
-      if (heroBannerIndex <= 0 || heroBannerIndex >= total - 1) {
-        track.style.transition = 'none';
-        heroBannerIndex = heroBannerIndex <= 0 ? total - 2 : 1;
-        track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
-        track.offsetHeight;
-        track.style.transition = '';
-        const realIndex = heroBannerIndex - 1;
-        document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
-          dot.classList.toggle('active', i === realIndex);
-        });
-      }
-    });
-
-    const endDrag = () => {
-      if (!track.classList.contains('is-dragging')) return;
-      const total = track.children.length;
-      track.classList.remove('is-dragging');
-      if (Math.abs(heroDragDeltaX) > 46) {
-        const next = heroBannerIndex + (heroDragDeltaX < 0 ? 1 : -1);
-        heroBannerIndex = Math.max(0, Math.min(next, total - 1));
-      }
-      heroDragDeltaX = 0;
-      updateHeroCarousel();
-      startHeroAutoplay();
-    };
-
-    track.addEventListener('pointerdown', event => {
-      const total = track.children.length;
-      if (total <= 3) return;
-      // Se ainda estiver num clone (transitionend ainda não disparou),
-      // faz o salto silencioso imediatamente antes de começar o novo drag
-      if (heroBannerIndex <= 0 || heroBannerIndex >= total - 1) {
-        track.style.transition = 'none';
-        heroBannerIndex = heroBannerIndex <= 0 ? total - 2 : 1;
-        track.style.transform = `translateX(-${heroBannerIndex * 100}%)`;
-        track.offsetHeight;
-        track.style.transition = '';
-        const realIndex = heroBannerIndex - 1;
-        document.querySelectorAll('#restaurantHeroDots span').forEach((dot, i) => {
-          dot.classList.toggle('active', i === realIndex);
-        });
-      }
-      stopHeroAutoplay();
-      heroDragStartX = event.clientX;
-      heroDragDeltaX = 0;
-      track.classList.add('is-dragging');
-      track.setPointerCapture?.(event.pointerId);
-    });
-
-    track.addEventListener('pointermove', event => {
-      if (!track.classList.contains('is-dragging')) return;
-      heroDragDeltaX = event.clientX - heroDragStartX;
-      track.style.transform = `translateX(calc(-${heroBannerIndex * 100}% + ${heroDragDeltaX}px))`;
-    });
-
-    track.addEventListener('pointerup', endDrag);
-    track.addEventListener('pointercancel', endDrag);
-    track.addEventListener('lostpointercapture', endDrag);
-  }
+  // O carrossel do hero (banners, autoplay, swipe) mora em
+  // screens/home-screen.js.
 
   function initMenuHeaderHide() {
     if (menuHeaderHideReady) return;
@@ -1644,96 +1427,8 @@
     document.addEventListener('touchcancel', snapBack, { passive: true, signal: LIFECYCLE_SIGNAL });
   }
 
-  function renderCoupons() {
-    const wrap = $('couponRail');
-    if (!wrap) return;
-    const section = $('homeCouponsSection');
-    if (section) section.style.display = coupons.length ? '' : 'none';
-    const nextSignature = JSON.stringify(coupons.map(coupon => [
-      coupon.code,
-      coupon.title || coupon.name || '',
-      couponImageUrl(coupon),
-      coupon.discount_type || '',
-      coupon.discount_value || ''
-    ]));
-    if (couponsRenderSignature === nextSignature && wrap.children.length) {
-      updateHomePromoVisibility();
-      return;
-    }
-    couponsRenderSignature = nextSignature;
-    wrap.innerHTML = coupons.map(coupon => {
-      const image = couponImageUrl(coupon);
-      const discountType = String(coupon.discount_type || '').toLowerCase();
-      const discount = ['percent', 'percentage'].includes(discountType)
-        ? `${Number(coupon.discount_value || 0)}% off`
-        : discountType === 'free_delivery'
-          ? 'Frete gratis'
-          : coupon.name || coupon.title || 'Cupom';
-      // Fixed template: backend supplies the coupon artwork (image) + title.
-      // The gradient + discount text is only a fallback when there's no image
-      // (or it fails to load — onerror reverts to the fallback).
-      return `
-        <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code, '$this')}>
-          <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
-            <span>Cupom</span>
-            <strong>${esc(discount)}</strong>
-          </div>
-          <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
-          <div class="coupon-dash"></div>
-          <button type="button" class="coupon-use-btn" ${actAll('click', [['$stop'], ['openCouponDetail', coupon.code, '$this']])}>Usar cupom</button>
-        </article>
-      `;
-    }).join('');
-    updateHomePromoVisibility();
-  }
-
-  function renderHighlights() {
-    const wrap = $('highlightRail');
-    if (!wrap) return;
-    const highlightItems = getHomeHighlightItems();
-    const section = $('homeHighlightsSection');
-    if (section) section.style.display = highlightItems.length ? '' : 'none';
-    const nextSignature = JSON.stringify(highlightItems.map(highlight => [
-      highlight.image_url || highlight.image_path || '',
-      highlight.title || '',
-      highlight.subtitle || ''
-    ]));
-    if (highlightsRenderSignature === nextSignature && wrap.children.length) {
-      updateHomePromoVisibility();
-      return;
-    }
-    highlightsRenderSignature = nextSignature;
-    wrap.innerHTML = highlightItems.map(highlight => {
-      const image = highlight.image_url || highlight.image_path || '';
-      const alt = highlight.title || highlight.subtitle || restaurant.name || 'Destaque';
-      return `
-        <article class="highlight-banner">
-          ${image
-            ? `<img src="${esc(image)}"${responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${imageAttrs({ lazy: true })}>`
-            : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || restaurant.name || '')}</span></div>`}
-        </article>
-      `;
-    }).join('');
-    updateHomePromoVisibility();
-  }
-
-  function getHomeHighlightItems() {
-    return highlightBanners;
-  }
-
-  function updateHomePromoVisibility() {
-    const hasCoupons = coupons.length > 0;
-    const hasHighlights = getHomeHighlightItems().length > 0;
-    const couponSection = $('homeCouponsSection');
-    const highlightsSection = $('homeHighlightsSection');
-    const heroSeparator = $('homeHeroSeparator');
-    const separator = $('homeSeparator');
-    showEl(couponSection, hasCoupons);
-    showEl(highlightsSection, hasHighlights);
-    showEl(heroSeparator, true);
-    showEl(separator, hasCoupons && hasHighlights);
-  }
+  // Vitrine de cupons, destaques e visibilidade das seções da home moram em
+  // screens/home-screen.js (ação-barramento renderHomeContent).
 
   function renderMenu() {
     const nav = $('catNav');
@@ -4528,9 +4223,7 @@
     // Depois do cardápio novo: é contra ELE que os itens são conferidos, e é
     // dele que sai o preço — a mesma picanha custa o que a loja nova cobra.
     restoreCart();
-    renderBanners();
-    renderCoupons();
-    renderHighlights();
+    window.RapidexActions.resolve('renderHomeContent')?.();
     updateCartUI();
     if (document.body.classList.contains('menu-tab')) ensureMenuLoaded();
     if (hadItems) {
@@ -4560,9 +4253,7 @@
     // O cardápio em memória volta a ser o da filial do contexto.
     appState.menuLoaded = true;
     restoreCart();
-    renderBanners();
-    renderCoupons();
-    renderHighlights();
+    window.RapidexActions.resolve('renderHomeContent')?.();
     updateCartUI();
     // A estimativa era da filial que não vingou.
     invalidateDeliveryEstimate();
@@ -5179,14 +4870,7 @@
     return window.RapidexActions.resolve('closeCouponDetail')?.(...args);
   }
 
-  function handleBannerAction(type, value) {
-    if (type === 'category' && value) {
-      scrollToMenu();
-      setTimeout(() => scrollToCategory(value, findCategoryButton(value)), 250);
-      return;
-    }
-    scrollToMenu();
-  }
+  // handleBannerAction mora em screens/home-screen.js.
 
   const MOB_VIEWS = ['mobViewClub', 'mobViewAssistant', 'mobViewProfile'];
 
@@ -5559,23 +5243,7 @@
     return window.RapidexActions.resolve('closeProfSub')?.(...args);
   }
 
-  function mobFocusSearch() {
-    closeMobViews();
-    showMenuTab();
-    ensureMenuLoaded();
-    $('searchCat')?.classList.add('search-open');
-    $('searchInput')?.focus();
-    const el = $('menu-area');
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 96, behavior: 'smooth' });
-  }
-
-  function closeSearch() {
-    $('searchCat')?.classList.remove('search-open');
-    if ($('searchInput')) {
-      $('searchInput').value = '';
-      $('searchInput').dispatchEvent(new Event('input'));
-    }
-  }
+  // mobFocusSearch/closeSearch moram em screens/home-screen.js.
 
   function openServiceFeeInfo() {
     openModal('serviceFeeModal');
@@ -5664,9 +5332,7 @@
     window.RapidexActions.resolve('initStoreInfoModal')?.();
     initCashbackState();
     renderRestaurantShell();
-    renderBanners();
-    renderCoupons();
-    renderHighlights();
+    window.RapidexActions.resolve('renderHomeContent')?.();
     renderProfileView();
     initSearch();
     setCartTab(operationContext?.order_type || 'delivery');
@@ -5728,13 +5394,9 @@
   // window. Ver a lista curta logo abaixo para o que continua global e por quê.
   // A arte do cupom não carregou: volta para o fundo de fallback. Era um
   // onerror inline mexendo em classList.
-  function couponArtImageFailed(image) {
-    image?.closest('.coupon-art')?.classList.remove('coupon-art--has-img');
-    image?.remove();
-  }
+  // couponArtImageFailed mora em screens/home-screen.js.
 
   const ACTIONS = {
-    couponArtImageFailed,
     // openProduct/toggleProductOption/changeQty/addToCart/editCartItem são
     // registradas por screens/product-screen.js — registrar o trampolim aqui
     // seria recursão se a tela faltasse.
@@ -5755,10 +5417,9 @@
     logout, confirmLogout, cancelLogout, closeLogoutConfirm,
     openOperationScreen, closeOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
-    // useCoupon/openCouponDetail/closeCouponDetail/confirmCouponDetail são
-    // registradas por screens/coupon-detail-screen.js (a tela vence: mount()
-    // roda depois deste register e o registro MESCLA).
-    handleBannerAction,
+    // useCoupon/openCouponDetail/closeCouponDetail/confirmCouponDetail são da
+    // coupon-detail-screen; handleBannerAction, setHeroBanner, mobFocusSearch,
+    // closeSearch e couponArtImageFailed são da home-screen.
     // setStoreInfoTab e openRestaurantInfo são registradas por
     // screens/store-info-screen.js.
     setProfilePaymentTab, selectSavedCardPayment, clearSavedCardPayment,
@@ -5768,7 +5429,7 @@
     // openProfOrderHelp) são registradas por screens/profile-screen.js.
     // As nove ações de dados/senha do cliente são registradas por
     // screens/customer-data-screen.js.
-    mobFocusSearch, closeSearch, openServiceFeeInfo, setHeroBanner,
+    openServiceFeeInfo,
     // As três ações do extrato (openCashbackStatement, retryCashbackStatement,
     // closeCashbackStatement) são registradas por cashback-statement.js.
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons
@@ -5887,6 +5548,29 @@
       renderDetailImage,
       openModal,
       menuBranchId: () => menuBranchId
+    }
+  });
+
+  window.PedeAquiHomeScreen.mount({
+    kit: window.PedeAquiScreenKit,
+    app: window.PedeAquiAppPort,
+    shell: {
+      // Acessores, nunca cópia: os três arrays são REATRIBUÍDOS a cada carga
+      // de cardápio — uma referência congelada mostraria a filial anterior.
+      getBanners: () => banners,
+      getHighlightBanners: () => highlightBanners,
+      getCoupons: () => coupons,
+      couponImageUrl,
+      responsiveImageAttrs,
+      applyResponsiveImage,
+      imageAttrs,
+      actAll,
+      closeMobViews,
+      showMenuTab,
+      ensureMenuLoaded,
+      scrollToMenu,
+      scrollToCategory,
+      findCategoryButton
     }
   });
 

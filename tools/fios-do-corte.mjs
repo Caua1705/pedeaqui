@@ -106,7 +106,8 @@ const CANDIDATOS = [
   ['Cupom: folha de detalhe + helpers', /^(coupon[A-Z]|showCouponNotice|openCouponDetail|closeCouponDetail|confirmCouponDetail|useCoupon|renderCoupons|refreshAvailableCoupons)/],
   ['Cashback', /^(initCashbackState|loadCashbackForHome|renderCashbackStatement|closeCashbackStatement|openCashbackStatement|retryCashbackStatement)/],
   ['Produto: modal e opcoes', /^(openProduct|renderProduct|initProduct|syncProduct|changeQty|toggleProductOption|addToCart|editCartItem)/],
-  ['Confirmar pedido (folha) + submissao', /^(syncOrderConfirmSheet|openOrderConfirm|closeOrderConfirm|setOrderConfirmLoading|confirmOrderFromSheet|orderConfirm|openConfirmBenefits)/]
+  ['Confirmar pedido (folha) + submissao', /^(syncOrderConfirmSheet|openOrderConfirm|closeOrderConfirm|setOrderConfirmLoading|confirmOrderFromSheet|orderConfirm|openConfirmBenefits)/],
+  ['Inicio: rendering da home', /^(renderBanners|setHeroBanner|renderHighlights|renderWidget|renderCoupons|renderHome|mobFocusSearch|closeSearch|handleBannerAction|renderCategories|scrollToCategory|findCategoryButton|scrollToMenu)/]
 ];
 
 // ---------------------------------------------------------------------------

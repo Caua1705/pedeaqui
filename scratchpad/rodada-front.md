@@ -271,8 +271,10 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       não insiste no caminho que falhou.
       (De carona: lint error 'MENU' unused que o commit 4.1 deixou — portão
       lido com grep curto DE NOVO; consertado aqui.)
-- [ ] 4.6 Registrar issue (sem consertar): chips de pagamento chumbados em
-      restaurant.html:462-470
+- [x] 4.6 Issue registrada: docs/issues/chips-pagamento-chumbados.md (seis
+      chips do tenant piloto no markup do #profSubpagamento; hoje
+      sobrescritos pelo /info, flash + corrida em falha; conserto = esqueleto
+      neutro). SEM consertar, por decisão do prompt.
 
 ### Relatório final
 - [ ] Relatório no fim deste arquivo + skill atualizada (padrão + armadilhas novas)

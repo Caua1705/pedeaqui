@@ -53,7 +53,8 @@ const MODULOS = [
 const TELAS = [
   { arquivo: 'screens/profile-screen', global: 'PedeAquiProfileScreen', carregar: () => import('../../scripts/pages/screens/profile-screen.js') },
   { arquivo: 'screens/customer-data-screen', global: 'PedeAquiCustomerDataScreen', carregar: () => import('../../scripts/pages/screens/customer-data-screen.js') },
-  { arquivo: 'screens/store-info-screen', global: 'PedeAquiStoreInfoScreen', carregar: () => import('../../scripts/pages/screens/store-info-screen.js') }
+  { arquivo: 'screens/store-info-screen', global: 'PedeAquiStoreInfoScreen', carregar: () => import('../../scripts/pages/screens/store-info-screen.js') },
+  { arquivo: 'screens/coupon-detail-screen', global: 'PedeAquiCouponDetailScreen', carregar: () => import('../../scripts/pages/screens/coupon-detail-screen.js') }
 ];
 
 describe('importar um módulo de tela não pode executar nada', () => {

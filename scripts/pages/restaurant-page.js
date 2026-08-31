@@ -71,13 +71,11 @@
   //
   //  Só confirmCouponDetail() promove um ao outro. Ler nunca aplica.
   // ------------------------------------------------------------
-  let couponDetailCoupon = null;
   let selectedCoupon = null;
   let selectedCouponPreview = null;
   let couponPreviewPromise = null;
   let couponPreviewKey = '';
   let pendingCartItemDeleteUid = null;
-  let couponDetailScrollY = 0;
   let customer = window.PedeAquiCustomerService?.getStoredCustomer?.() || readSessionCustomer();
   let customerAddress = window.PedeAquiAddressService?.readSelectedAddress?.() || JSON.parse(readStorageKey(STORAGE_ADDRESS) || 'null');
   // O total que estava NA TELA no instante em que o cliente confirmou.
@@ -355,7 +353,6 @@
     paymentScopeByKey.clear();
     currentProd = null;
     editingCartItemUid = null;
-    couponDetailCoupon = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewPromise = null;
@@ -698,11 +695,7 @@
     widths: [290, 440, 580, 780, 870],
     sizes: '(max-width: 900px) 78vw, 290px'
   };
-  // .coupon-detail-art — width:min(100%,414px) (styles/utilities.css:237).
-  const COUPON_DETAIL_FLUID = {
-    widths: [414, 620, 828, 1242],
-    sizes: '(max-width: 414px) 100vw, 414px'
-  };
+  // COUPON_DETAIL_FLUID mora na tela do cupom (coupon-detail-screen.js).
 
   // Versão para <img> que JÁ existe no DOM (o herói é atualizado por
   // propriedade, não recriado por template).
@@ -1091,9 +1084,9 @@
      em position:fixed com top = -scrollY, e restaurar ao fechar. */
   const {
     currentScrollY,
-    hasBlockingUiOpen,
+    // hasBlockingUiOpen e unlockBodyScroll saíram: o último usuário daqui era
+    // a folha do cupom, que agora os lê direto de PedeAquiRestaurantUi.
     lockBodyScroll,
-    unlockBodyScroll,
     unlockBodyScrollIfClear,
     openModal,
     openModalImmediately,
@@ -4709,7 +4702,9 @@
     paymentMethodKey = '';
     selectedSavedCard = null;
     savedCardPaymentToken = '';
-    couponDetailCoupon = null;
+    // A folha de leitura fecha junto: cupom de uma filial não fica aberto na
+    // tela enquanto a outra carrega (e o estado dela mora na própria tela).
+    window.RapidexActions.resolve('closeCouponDetail')?.();
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewKey = '';
@@ -5366,190 +5361,49 @@
     return couponPreviewPromise;
   }
 
-  // ============================================================
-  //  Esta tela de detalhe serve DOIS contratos, e é preciso saber disso.
+  // ── A folha de detalhe do cupom mora em screens/coupon-detail-screen.js ──
   //
-  //  Vitrine pública (`payload.coupons`, de GET /menu — PublicCouponResponse):
-  //    name, discount_type, discount_value (número), min_order_value (número).
-  //  Feed do cliente (clubController, de GET /coupons — CustomerCouponResponse):
-  //    title, state, label, discount_amount, missing_amount, valid_until,
-  //    min_order_value (string decimal). NÃO tem discount_value.
-  //
-  //  Por isso cada leitor abaixo prefere o campo já resolvido e só cai no
-  //  cálculo quando ele falta — que é exatamente o caso da vitrine.
-  // ============================================================
-
-  // Rótulo e valor do cupom: implementação única em
-  // scripts/services/coupon-format.js. A folha de detalhe e o card do Clube
-  // liam duas versões JÁ DIVERGENTES — o cabeçalho de lá conta em quê.
-  const couponAmount = (value) => window.PedeAquiCouponFormat.couponAmount(value);
-  const couponLabel = (coupon) => window.PedeAquiCouponFormat.couponLabel(coupon);
-
-  /** "2099-12-31T23:59:59Z" -> "31/12/2099". */
-  function couponValidUntil(value) {
-    if (!value) return '';
-    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? String(value)
-      : new Intl.DateTimeFormat('pt-BR').format(date);
-  }
-
-  function couponRules(coupon) {
-    const rules = [];
-    const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
-    const discount = couponAmount(coupon.discount_amount);
-    const missing = couponAmount(coupon.missing_amount);
-    // O desconto desta sacola, quando o backend já o decidiu. Vem antes do
-    // mínimo porque é a resposta à pergunta que traz a pessoa até aqui.
-    if (coupon.state === 'applicable' && discount > 0) {
-      rules.push(`Desconto de ${fmt(discount)} nesta sacola`);
-    }
-    if (coupon.state === 'missing_amount' && missing > 0) {
-      rules.push(`Faltam ${fmt(missing)} para este cupom valer`);
-    }
-    if (coupon.state === 'login_required') {
-      rules.push('Entre na sua conta para usar este cupom');
-    }
-    if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
-    // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
-    // vitrine o campo não vinha, então ninguém tinha visto ainda; o feed do
-    // cliente manda `valid_until` em todo cupom.
-    const validUntil = couponValidUntil(coupon.expires_at || coupon.valid_until);
-    if (validUntil) rules.push(`Válido até ${validUntil}`);
-    // `max_discount` saiu de propósito do contrato do cliente: teto é limite
-    // interno da campanha, e publicá-lo só serviria para refazer a conta.
-    if (coupon.description) rules.push(coupon.description);
-    return rules;
-  }
-
-  function openCouponDetail(code, source) {
-    const coupon = clubController.getCoupon(code)
+  // O que fica AQUI é o dinheiro: selectedCoupon/preview e as três portas que
+  // a folha usa para tocá-lo (armSelectedCoupon, restoreSelectedCoupon,
+  // persistCouponChoice). A folha lê e escreve o estado da SACOLA só por
+  // essas portas — a separação leitura/aplicação (couponDetailCoupon vs
+  // selectedCoupon) continua valendo, agora com o lado da leitura DENTRO da
+  // tela e o da aplicação aqui.
+  function getCouponForDetail(code) {
+    return clubController.getCoupon(code)
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
-    if (!coupon) return;
-    // ABRIR É LER. Só confirmCouponDetail() aplica — ver a nota em
-    // `couponDetailCoupon`, lá em cima.
-    couponDetailCoupon = coupon;
-    document.body.classList.add('coupon-nav-keep');
-    couponDetailScrollY = currentScrollY();
-    lockBodyScroll(couponDetailScrollY, 'soft');
-    const image = couponImageUrl(coupon);
-    const label = couponLabel(coupon);
-    const minText = Number(coupon.min_order_value) > 0 ? `Pedido mínimo ${fmt(coupon.min_order_value)}` : 'Sem mínimo informado';
-    const art = $('couponDetailArt');
-    if (art) {
-      const fallbackMarkup = `<div class="coupon-detail-art-fallback"><span>Cupom</span><strong>${esc(label)}</strong></div>`;
-      const preview = readyCardImage(source, '.coupon-card', '.coupon-art img')
-        || readyCardImage(source, '.club-available-coupon-card', '.club-available-coupon-image');
-      if (image) {
-        renderDetailImage(art, {
-          url: image,
-          alt: coupon.name || coupon.title || label,
-          className: 'coupon-detail-photo',
-          fluid: COUPON_DETAIL_FLUID,
-          preview,
-          fallbackMarkup
-        });
-      } else {
-        art.innerHTML = fallbackMarkup;
-      }
-    }
-    if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
-    if ($('couponDetailCode')) $('couponDetailCode').textContent = coupon.code || 'CUPOM';
-    if ($('couponDetailMin')) $('couponDetailMin').textContent = minText;
-    const rules = $('couponDetailRules');
-    if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
-    $('couponDetailOverlay')?.classList.add('active');
   }
 
-  function closeCouponDetail(event) {
-    if (event && event.currentTarget && event.target !== event.currentTarget) return;
-    const restoreY = couponDetailScrollY;
-    const overlay = $('couponDetailOverlay');
-    // A leitura acabou. `selectedCoupon` NÃO é tocado aqui de propósito: se um
-    // cupom já estava aplicado à sacola, abrir outro para ler e fechar não pode
-    // desaplicar o que estava valendo.
-    couponDetailCoupon = null;
-    overlay?.classList.remove('active');
-    document.body.classList.remove('coupon-nav-keep');
-    setTimeout(() => {
-      if (!hasBlockingUiOpen()) unlockBodyScroll(restoreY);
-    }, 560);
-  }
-
-  /**
-   * O ÚNICO caminho que aplica um cupom à sacola.
-   *
-   * Toca no `selectedCoupon` só depois de o cupom ter passado por todas as
-   * portas, e o desarma de novo se ele não passar — sair daqui com um cupom
-   * armado que o backend recusou é o mesmo defeito de antes, uma porta adiante.
-   */
-  async function confirmCouponDetail() {
-    const coupon = couponDetailCoupon;
-    if (!coupon) return;
-    // `requires_login` era do contrato antigo e sumiu junto com
-    // /coupons/available. Como o campo deixou de existir, a comparação
-    // `=== true` passou a ser sempre falsa: o cupom que exige conta seguia
-    // direto para o preview, que respondia 401, e o cliente via "Não foi
-    // possível aplicar este cupom" em vez da tela de login.
-    if (coupon.state === 'login_required' && !isLogged()) {
-      openLoginScreen('coupon');
-      return;
-    }
-    // O cupom que ainda não cabe nesta sacola não vira tentativa: o backend já
-    // disse quanto falta, e gastar uma requisição para ouvir a mesma coisa só
-    // adiaria o aviso.
-    if (coupon.state === 'missing_amount') {
-      const missing = couponAmount(coupon.missing_amount);
-      showCouponNotice(missing > 0
-        ? `Faltam ${fmt(missing)} na sacola para usar este cupom.`
-        : 'Este cupom ainda não vale para esta sacola.');
-      return;
-    }
-
-    const previousCoupon = selectedCoupon;
+  /** Arma o cupom na sacola e devolve o anterior (para rollback). */
+  function armSelectedCoupon(coupon) {
+    const previous = selectedCoupon;
     selectedCoupon = coupon;
     selectedCouponPreview = null;
     couponPreviewKey = '';
-
-    if (!cart.length) {
-      // Escolha explícita com a sacola vazia: fica guardado para quando houver
-      // itens. É o único caso em que armar sem preview é o que a pessoa pediu.
-      cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
-      closeCouponDetail();
-      await mobNavMenu();
-      showCouponNotice('Cupom selecionado. Adicione produtos à sacola para usar.');
-      return;
-    }
-
-    const button = document.querySelector('.coupon-detail-use');
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'Validando...';
-    }
-    const preview = await previewSelectedCoupon();
-    if (button) {
-      button.disabled = false;
-      button.textContent = 'Usar cupom';
-    }
-    if (!preview) {
-      // Recusado, inelegível ou falha de rede: a sacola volta EXATAMENTE ao que
-      // era. Antes o `return` seco deixava `selectedCoupon` apontando para um
-      // cupom que o backend não aceitou — a tela não mostrava desconto nenhum,
-      // mas o coupon_id seguia indo no pedido.
-      selectedCoupon = previousCoupon;
-      selectedCouponPreview = null;
-      couponPreviewKey = '';
-      updateCartUI();
-      return;
-    }
-    closeCouponDetail();
-    showCouponNotice(`Cupom aplicado. Desconto de ${fmt(couponDiscountAmount())}.`);
+    return previous;
   }
 
-  function useCoupon(code) {
-    openCouponDetail(code);
+  /** Rollback exato: recusado/inelegível/rede — a sacola volta ao que era. */
+  function restoreSelectedCoupon(previous) {
+    selectedCoupon = previous;
+    selectedCouponPreview = null;
+    couponPreviewKey = '';
+    updateCartUI();
+  }
+
+  /** Escolha com a sacola vazia: fica guardada para quando houver itens. */
+  function persistCouponChoice() {
+    cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
+  }
+
+  // Trampolins: o clube e o auth-flow chamam estes dois POR NOME (window e
+  // deps de init). DECLARAÇÃO de função — const aqui é TDZ, a lição do
+  // closeProfSub (o authFlow.init lá em cima os passa por valor).
+  function openCouponDetail(...args) {
+    return window.RapidexActions.resolve('openCouponDetail')?.(...args);
+  }
+  function closeCouponDetail(...args) {
+    return window.RapidexActions.resolve('closeCouponDetail')?.(...args);
   }
 
   function handleBannerAction(type, value) {
@@ -6125,7 +5979,10 @@
     logout, confirmLogout, cancelLogout, closeLogoutConfirm,
     openOperationScreen, closeOperationScreen, setOperationType, renderOperationBranches, selectBranch, confirmOperation,
     openPolicyScreen, closePolicyScreen,
-    useCoupon, openCouponDetail, closeCouponDetail, confirmCouponDetail, handleBannerAction,
+    // useCoupon/openCouponDetail/closeCouponDetail/confirmCouponDetail são
+    // registradas por screens/coupon-detail-screen.js (a tela vence: mount()
+    // roda depois deste register e o registro MESCLA).
+    handleBannerAction,
     // setStoreInfoTab e openRestaurantInfo são registradas por
     // screens/store-info-screen.js.
     setProfilePaymentTab, selectSavedCardPayment, clearSavedCardPayment,
@@ -6220,6 +6077,27 @@
       profilePaymentChips,
       ensureRestaurantInfo,
       openModal
+    }
+  });
+
+  window.PedeAquiCouponDetailScreen.mount({
+    kit: window.PedeAquiScreenKit,
+    app: window.PedeAquiAppPort,
+    shell: {
+      getCouponForDetail,
+      // As três portas do dinheiro: a folha nunca escreve selectedCoupon
+      // diretamente — arma, desfaz e persiste por aqui.
+      armSelectedCoupon,
+      restoreSelectedCoupon,
+      persistCouponChoice,
+      previewSelectedCoupon,
+      couponDiscountAmount,
+      couponImageUrl,
+      readyCardImage,
+      renderDetailImage,
+      openLoginScreen,
+      showCouponNotice,
+      mobNavMenu
     }
   });
 

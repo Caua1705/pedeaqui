@@ -168,8 +168,22 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     checkout, Ajuda e pagamento do perfil); normalizadores de pagamento idem,
     vão por shell. Formatadores agora vêm de store-info-format nos DOIS lados
     (2.3 consumido). infoWeekdayLabel/infoTime/infoHoursText/infoTodayHours
-    MORRERAM no page. Captura: 'Nenhuma diferença'. Portões rápidos verdes;
-    AGUARDANDO suíte completa p/ commit.
+    MORRERAM no page. Captura: 'Nenhuma diferença'. COMMIT: 917c531
+    (suíte 277 passed + pix:116 flake conhecido verde isolado 23/23).
+  · TELA 4 (Cashback) DESCARTADA como módulo: sobraram 13 linhas úteis após a
+    remoção do gêmeo morto — módulo de 13 linhas é cerimônia; ficam no page
+    (initCashbackState/loadCashbackForHome são da home). Anotado.
+  · TELA 5 Cupom folha de detalhe: screens/coupon-detail-screen.js (222
+    linhas), 4 ações, page −~200 linhas. Fios: 2 app + 12 shell = 15 (14,8
+    l/fio; a régua antiga media 5,9 — recusada). O DINHEIRO ficou no page:
+    selectedCoupon/preview atrás de armSelectedCoupon/restoreSelectedCoupon/
+    persistCouponChoice; a folha nunca escreve direto. couponDetailCoupon
+    (leitura) mora NA tela. Trampolins openCouponDetail/closeCouponDetail
+    (declaração, lição TDZ). Troca de filial agora FECHA a folha aberta via
+    barramento (antes só anulava a variável com a folha aberta). Scroll
+    helpers via PedeAquiRestaurantUi direto (hasBlockingUiOpen/
+    unlockBodyScroll saíram do destructure do page). Captura: só ruído de
+    relógio. Suíte completa: 278 passed/3 skipped. COMMIT: (a seguir)
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

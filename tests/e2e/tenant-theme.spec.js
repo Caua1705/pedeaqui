@@ -209,7 +209,21 @@ test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por
   // toHaveClass reavalia PELO PROTOCOLO, de fora da pagina — funciona com o
   // relogio parado. `waitForFunction`, que fazia polling por rAF DENTRO da
   // pagina, nao funcionaria: o rAF tambem esta congelado.
-  await expect(page.locator('body')).not.toHaveClass(/app-booting/);
+  //
+  // O teto explicito repara uma DESIGUALDADE que a escolha da ferramenta criou
+  // sem querer: toda outra espera de boot da suite usa `page.waitForFunction`,
+  // cujo orcamento e o do teste inteiro (30 s). Esta precisou usar `expect` por
+  // causa do relogio parado, e com isso herdou o padrao de 5 s — um quinto do
+  // que as irmas tem. Sob carga o boot desta pagina passou de 5 s e o teste
+  // reprovou um app correto (suite de 31/08/2026: `Received string:
+  // "app-booting"`, 6 tentativas).
+  //
+  // E o numero NAO enfraquece o que o teste prova: o defeito que ele guarda e
+  // um PISO DE TEMPO no boot, e com o relogio congelado um piso de tempo nunca
+  // elapsa. Ele falha por estouro de espera em qualquer maquina, com 5 s ou com
+  // 15 — a diferenca e so quanto tempo uma maquina lenta tem para nao ser
+  // acusada no lugar do codigo.
+  await expect(page.locator('body')).not.toHaveClass(/app-booting/, { timeout: 15_000 });
 });
 
 test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {

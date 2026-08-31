@@ -492,11 +492,27 @@ test('o teto de duração vem do servidor e encerra sozinho', async ({ page, con
   const chamadas = await montar(page, context, {
     emissao: emissaoOk({ duracao_maxima_s: 2, inatividade_s: 45, aviso_antes_s: 10 })
   });
-  await conversar(page);
 
-  await expect(page.locator('#assistantVoice')).not.toHaveClass(/is-open/, { timeout: 8000 });
-  await expect.poll(() => chamadas.ended.length).toBe(1);
+  // A VOZ SOBE, MAS O CICLO DA SAUDAÇÃO NÃO ENTRA AQUI — e o motivo é o próprio
+  // assunto do teste. O teto começa a correr no instante em que o áudio abre, e
+  // `conversar()` ainda precisa, DEPOIS desse instante, de uma ida-e-volta pelo
+  // canal de dados para ver o `response.create` da saudação. Sob carga essa
+  // ida-e-volta passou dos 2 s: a sessão encerrou no meio do preparo, o canal
+  // fechou, e a mensagem que o helper esperava nunca chegou. O teto sob teste
+  // matava o preparo do teste (suíte de 31/08/2026: `Received array: []`).
+  //
+  // Medido com o teto rebaixado a 50 ms, para a corrida acontecer sempre: o
+  // braço com `conversar()` falha com esse mesmo texto, o braço abaixo passa.
+  await page.locator('#mobViewAssistant .assistant-ai-send').click();
+  await expect(page.locator('#assistantVoice')).toHaveClass(/is-open/);
+
+  // E não se afirma nada sobre estado intermediário: quem encerra é o app,
+  // sozinho, e o /ended chega no route handler sem depender de o teste ter
+  // perguntado alguma coisa a tempo. Máquina lenta atrasa a chegada; não muda
+  // o que chega.
+  await expect.poll(() => chamadas.ended.length, { timeout: 20000 }).toBe(1);
   expect(chamadas.ended[0].motivo).toBe('teto de 2s atingido');
+  await expect(page.locator('#assistantVoice')).not.toHaveClass(/is-open/);
 });
 
 test('a aba escondida encerra a conversa', async ({ page, context }) => {

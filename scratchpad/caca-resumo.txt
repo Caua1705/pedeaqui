@@ -1,0 +1,36 @@
+CACA 1 EXIT=0
+  289 passed (6.1m)
+CACA 2 EXIT=1
+    Error: expect(locator).toHaveClass(expected) failed
+  15 failed
+  274 passed (36.5m)
+  ✘   50 [chromium] › tests\e2e\assistant-voice.spec.js:327:1 › a esfera se centra sem cartões e sobe quando eles chegam (15.1m)
+  ✘   48 [chromium] › tests\e2e\assistant-voice.spec.js:265:1 › os cartões da voz são os mesmos do chat, e abrem o mesmo detalhe (16.1m)
+  ✘   47 [chromium] › tests\e2e\assistant-voice.spec.js:248:1 › mudo diz que está mudo, com todas as letras (16.1m)
+  ✘   49 [chromium] › tests\e2e\assistant-voice.spec.js:301:1 › a saída é uma só, e devolve o chat inteiro (15.3m)
+  ✘   58 [chromium] › tests\e2e\auth-screen-nav.spec.js:36:1 › abrir a tela de login pelo caminho normal suprime a barra inferior (38.5s)
+  ✘   63 [chromium] › tests\e2e\auth-screen-nav.spec.js:60:3 › o observer ainda vê #loginScreen quando a classe muda por fora (35.0s)
+  ✘   83 [chromium] › tests\e2e\card-payment-flow.spec.js:138:1 › lista → cadastrar → formulário Secure Fields → salvar → sacola selecionada (33.6s)
+  ✘   84 [chromium] › tests\e2e\card-payment-flow.spec.js:380:1 › checkout com cartão salvo pede CVV e conclui o pagamento (32.3s)
+  ✘   99 [chromium] › tests\e2e\card-payment-flow.spec.js:559:1 › status_detail desconhecido cai na frase genérica, nunca num palpite errado (32.8s)
+  ✘  109 [chromium] › tests\e2e\club-coupons.spec.js:177:1 › confirmar o cupom aplica o desconto e o pedido leva o coupon_id (32.6s)
+  ✘  108 [chromium] › tests\e2e\club-coupons.spec.js:136:1 › abrir um cupom para LER não aplica nada e não vai no pedido (36.6s)
+  ✘  164 [chromium] › tests\e2e\order-flow.spec.js:163:1 › a retry after a network failure reuses the same Idempotency-Key (33.7s)
+  ✘  185 [chromium] › tests\e2e\pix-payment.spec.js:116:1 › o rodapé traz a ação principal no padrão dos CTAs e na cor da marca (18.3s)
+  ✘  275 [chromium] › tests\e2e\assistant-voice-session.spec.js:402:1 › o erro de resposta ativa não derruba a sessão: o pedido volta para a fila (25.7s)
+  ✘  277 [chromium] › tests\e2e\assistant-voice-session.spec.js:456:1 › o silêncio avisa por FALA antes de cortar, e falar cancela o corte (37.1s)
+CACA 3 EXIT=1
+    Error: expect(locator).toBeEnabled() failed
+  1 failed
+  288 passed (5.5m)
+  ✘  266 [chromium] › tests\e2e\verify-email-code.spec.js:58:1 › verified:true segue o caminho de sempre: a tela fecha e o app volta ao início (7.2s)
+CACA 4 EXIT=1
+    Error: expect(locator).not.toHaveClass(expected) failed
+  1 failed
+  288 passed (8.4m)
+  ✘  255 [chromium] › tests\e2e\tenant-theme.spec.js:161:1 › a tela aparece assim que os dados chegam, sem piso de tempo nem espera por imagem (6.3s)
+CACA 5 EXIT=1
+  1 failed
+  288 passed (10.7m)
+  ✘  278 [chromium] › tests\e2e\assistant-voice-session.spec.js:491:1 › o teto de duração vem do servidor e encerra sozinho (21.0s)
+FIM

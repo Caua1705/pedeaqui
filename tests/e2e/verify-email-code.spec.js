@@ -43,7 +43,18 @@ async function chegarNaVerificacao(page, verifyResponse) {
   await expect(page.locator('#verifyScreen')).toHaveClass(/active/);
   // Digitar pelo teclado, como um usuário: o handler de cada dígito move o
   // foco para o próximo, e um fill() por campo disputa com esse foco.
-  await page.locator('.vfy-digit').first().click();
+  //
+  // ESPERAR O FOCO QUE O APP DÁ, em vez de tomar o foco por um clique.
+  // `openVerifyScreen()` termina com `setTimeout(() => vfyDigits()[0].focus(), 60)`.
+  // Clicar e digitar sem esperar por ele deixa esse temporizador SOLTO: com a
+  // máquina ocupada ele chega no MEIO da digitação, devolve o foco ao dígito 0,
+  // e os seis caracteres se atropelam — o código fica com menos de seis e o
+  // botão nunca habilita. Foi assim na suíte de 31/08/2026: `Expected: enabled
+  // / Received: disabled`, treze tentativas, com o botão parado em disabled.
+  // Esperar o dígito estar focado é esperar aquele temporizador ter corrido —
+  // depois disso não há mais quem tire o foco do meio da digitação.
+  const primeiroDigito = page.locator('#vfyCode .vfy-digit').first();
+  await expect(primeiroDigito).toBeFocused();
   await page.keyboard.type('123456');
   await expect(page.locator('#vfySubmitBtn')).toBeEnabled();
   await page.locator('#vfySubmitBtn').click();

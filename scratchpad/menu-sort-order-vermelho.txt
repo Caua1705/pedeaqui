@@ -1,0 +1,7 @@
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected [ 'alfa', 'beta', 'zero' ] to deeply equal [ 'zero', 'alfa', 'beta' ]
+AssertionError: expected [ 'alfa', 'beta', 'zero' ] to deeply equal [ 'zero', 'alfa', 'beta' ]
+AssertionError: expected [ 'alfa', 'beta', 'zero' ] to deeply equal [ 'zero', 'alfa', 'beta' ]
+AssertionError: expected [ 'alfa', 'beta', 'zero' ] to deeply equal [ 'zero', 'alfa', 'beta' ]
+ Test Files  1 failed (1)
+      Tests  4 failed | 1 passed (5)

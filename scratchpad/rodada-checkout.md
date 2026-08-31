@@ -36,8 +36,8 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 - [x] 1.1 assistant-product-detail.spec.js:4 — CAUSA ACHADA E CORRIGIDA
 - [x] 1.2 assistant-voice-session.spec.js:294 — CAUSA ACHADA E CORRIGIDA
 - [x] 1.3 assistant-voice-session.spec.js:668 — MESMA CAUSA, mesmo commit
-- [ ] 1.4 auth-screen-nav.spec.js:105
-- [ ] 1.5 order-flow.spec.js:163
+- [~] 1.4 auth-screen-nav.spec.js:105 - NAO REPRODUZIU (ver abaixo)
+- [~] 1.5 order-flow.spec.js:163 - so reproduziu DENTRO de um travamento de maquina (ver abaixo)
 - [ ] 1.6 PORTÃO: suíte completa verde 3x seguidas (+ 20 execuções de prova)
 
 ### Item 2 — limpeza que destrava
@@ -163,3 +163,114 @@ preventivamente; anotado como tal, não como prova.
 
 **Prova depois:** 4/4 execuções do arquivo com 4 workers, 23/23 em cada
 (voz-fix-1..4.log). Portões: lint 0 errors · typecheck ok · 287 unitários.
+
+## A caça (5 execuções da suíte completa, 31/08/2026)
+
+Comando: `npm run test:e2e` sem pipe, 5 vezes, logs em `scratchpad/caca-1..5.log`.
+Higiene conferida antes: 0 node órfão, porta 4174 livre.
+
+| rodada | resultado | vermelho | tempo |
+|---|---|---|---|
+| baseline | 288p / 1f | assistant-product-detail:4 (CORRIGIDO) | 5,8 min |
+| caça 1 | **289p / 0f** | — | 6,1 min |
+| caça 2 | 274p / 15f | **TRAVAMENTO DE MÁQUINA — descartada** | 36,5 min |
+| caça 3 | 288p / 1f | verify-email-code:58 | 5,5 min |
+| caça 4 | 288p / 1f | tenant-theme:161 | 8,4 min |
+| caça 5 | 288p / 1f | assistant-voice-session:491 | 10,7 min |
+
+**A caça 2 não é medição, e por isso não conta.** Quatro testes de
+`assistant-voice.spec.js` levaram **15 a 16 MINUTOS cada**, simultaneamente, e
+os outros onze vermelhos são todos estouro do teto de 30 s por poucos segundos
+(32–38 s). Nenhum valor de espera conserta uma máquina parada por 16 minutos.
+A máquina: 8 núcleos, **8 GB de RAM**, com Edge e WSL residentes; durante a
+suíte a memória livre fica em 340–430 MB, e o Playwright roda **4 workers**
+(`workers: undefined` = metade dos núcleos). Registrado como risco da própria
+medição, não como defeito do código.
+
+### 1.4 `auth-screen-nav.spec.js:105` — NÃO REPRODUZIU
+Zero vermelhos em 5 execuções saudáveis + baseline. Na caça 2 (a travada) quem
+caiu de `auth-screen-nav` foi `:36` e `:60`, com 35–38 s de estouro de teto —
+não o `:105`. **Não há causa a achar sem um vermelho para ler.** Não vai para
+quarentena: `test.fixme` num teste que passou 6 vezes seguidas troca uma
+suspeita por uma perda real de cobertura (ele guarda o cabeçalho da Home
+durante a abertura do login). Fica NOMEADO aqui, sem correção.
+
+### 1.5 `order-flow.spec.js:163` — só dentro do travamento
+Único vermelho: caça 2, `Test timeout of 30000ms exceeded` em
+`confirmOrderSheet` (helpers.js:412), na MESMA execução em que quatro irmãos
+levaram 16 minutos. Saudável, ele leva 7,2 s. O log do Playwright mostra a
+espera de estabilidade do botão da folha (`element is not stable`) — o clique
+espera a animação de entrada terminar, e essa espera sai do orçamento do teste.
+Isso é real e vale anotar, mas **não é a causa do vermelho**: numa máquina
+parada por 16 minutos nenhum orçamento salva. Sem um vermelho fora do
+travamento, não há o que corrigir com honestidade. Também não vai para
+quarentena — ele é o único guardião da Idempotency-Key reaproveitada na
+retentativa, que é dinheiro.
+
+## Flakes NOVOS achados na caça (não estavam na lista do prompt)
+
+### verify-email-code.spec.js:58 — RESOLVIDO
+**Vermelho** (caça 3): `expect(#vfySubmitBtn).toBeEnabled()` — `Received:
+disabled`, 13 tentativas.
+
+**Causa.** `openVerifyScreen()` termina com
+`setTimeout(() => vfyDigits()[0]?.focus(), 60)`. O teste tomava o foco por um
+clique e digitava, deixando esse temporizador SOLTO. Com a máquina ocupada ele
+chega no MEIO da digitação, devolve o foco ao dígito 0, e os seis caracteres se
+atropelam: o código fica com menos de seis e o botão nunca habilita.
+
+**Correção.** Esperar o foco que o app dá (`toBeFocused` no primeiro dígito) em
+vez de tomá-lo — esperar o foco é esperar aquele temporizador ter corrido.
+O seletor também foi ancorado em `#vfyCode`, porque `.vfy-digit` também existe
+em `#recCode`.
+
+**Visto vermelho, com os dois braços medidos.** Temporizador do app rebaixado a
+400 ms e digitação a 120 ms/tecla, para a corrida acontecer sempre:
+- BRAÇO A (clica e digita, o jeito antigo): **falha**, com o texto idêntico ao
+  da suíte — `Expected: enabled / Received: disabled`.
+- BRAÇO B (espera o foco, o jeito novo): **passa**.
+
+### tenant-theme.spec.js:161 — RESOLVIDO
+**Vermelho** (caça 4): `expect(body).not.toHaveClass(/app-booting/)` —
+`Received string: "app-booting"`, 6 tentativas, teto de 5 s.
+
+**Causa.** Uma DESIGUALDADE de orçamento criada pela escolha da ferramenta.
+Toda outra espera de boot da suíte usa `page.waitForFunction`, cujo teto é o do
+teste inteiro (30 s). Esta precisou usar `expect` porque o relógio da página
+está congelado (`clock.install` + `pauseAt`) e o rAF do `waitForFunction`
+também congela — e com isso herdou o padrão de 5 s, um quinto do que as irmãs
+têm. Sob carga o boot passou de 5 s.
+
+**Correção.** `{ timeout: 15_000 }` explícito, com o motivo escrito na margem.
+**E o número não enfraquece o que o teste prova:** o defeito que ele guarda é
+um PISO DE TEMPO no boot, e com o relógio congelado um piso de tempo nunca
+elapsa — ele falha por estouro em qualquer máquina, com 5 s ou com 15. A
+diferença é só quanto tempo uma máquina lenta tem para não ser acusada no lugar
+do código.
+
+### assistant-voice-session.spec.js:491 — RESOLVIDO
+**Vermelho** (caça 5): dentro de `conversar()`, `toContain('response.create')`
+com `Received array: []`.
+
+**Causa, e é o assunto do próprio teste.** Ele arma um teto de sessão de
+**2 segundos** e depois chama `conversar()`. O teto começa a correr no instante
+em que o áudio abre; `conversar()` ainda precisa, DEPOIS desse instante, de uma
+ida-e-volta pelo canal de dados para ver o `response.create` da saudação. Sob
+carga essa ida-e-volta passou dos 2 s: a sessão encerrou no meio do preparo, o
+canal fechou, e a mensagem nunca chegou. **O teto sob teste matava o preparo do
+teste.**
+
+**Correção.** A voz sobe (clique + `is-open`, que não depende de nada depois do
+áudio abrir) e o teste passa a esperar só o `/ended` chegar no route handler —
+que não depende de o teste ter perguntado alguma coisa a tempo.
+
+**Visto vermelho, dois braços, teto rebaixado a 50 ms:**
+- BRAÇO A (com `conversar()`): **falha** com `Received array: []`, o texto
+  idêntico ao da suíte.
+- BRAÇO B (só `is-open` + esperar o `/ended`): **passa**.
+
+**E o primeiro remendo estava errado — o próprio experimento o reprovou.** A
+primeira tentativa tirou o `conversar()` inteiro; o braço B ficou vermelho
+porque `montar()` NÃO abre a voz (quem clica no botão que a abre é o
+`conversar()`). Sem o experimento de dois braços isso teria virado um teste
+verde que não testava nada.

@@ -329,6 +329,16 @@ test('a mesma tool call chega por dois eventos e a busca acontece uma vez só', 
     preco_maximo: 50
   });
 
+  // ESPERAR O FIM DO CAMINHO, NÃO O COMEÇO DELE. O poll acima só prova que a
+  // requisição ENTROU no route handler; a resposta ainda tem de voltar, ser
+  // lida e virar mensagem no canal de dados. Perguntar pelos `recebidos` no
+  // instante seguinte é perguntar se a carta chegou no momento em que ela foi
+  // postada — passa sozinho e falha com a máquina ocupada (skill §4). O marco
+  // do FIM é o `response.create`, que o app manda DEPOIS do
+  // function_call_output.
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
+    .toContain('response.create');
+
   // O modelo recebe o RESUMO, string, sem transformação — e recebe uma vez só.
   const saidas = (await recebidos(page)).filter(m => m.type === 'conversation.item.create');
   expect(saidas, 'a mesma chamada foi respondida duas vezes').toHaveLength(1);
@@ -337,8 +347,11 @@ test('a mesma tool call chega por dois eventos e a busca acontece uma vez só', 
     call_id: 'call_1',
     output: 'Produtos encontrados: Pudim - R$ 12,50; Brownie - R$ 15,00'
   });
-  // E um response.create depois dele, ou o modelo fica calado com o resultado.
-  expect((await recebidos(page)).map(m => m.type)).toContain('response.create');
+  // E o response.create veio DEPOIS dele — é o que a espera acima já provou:
+  // sem ele o modelo ficaria calado com o resultado na mão.
+  const tipos = (await recebidos(page)).map(m => m.type);
+  expect(tipos.indexOf('response.create'))
+    .toBeGreaterThan(tipos.indexOf('conversation.item.create'));
 
   // Os cartões saem de `produtos`, com o preço do banco — nunca do que o modelo
   // falou.
@@ -369,9 +382,15 @@ test('não se pede resposta com uma ativa: o pedido espera na fila', async ({ pa
   // O function_call_output pode ir na hora; o response.create NÃO, porque a
   // resposta ainda está aberta. Pedir agora devolveria
   // conversation_already_has_active_response.
-  await page.waitForTimeout(400);
+  //
+  // A metade POSITIVA espera por condição — ela depende da resposta da busca
+  // voltar, e 400 ms de relógio eram uma aposta. A metade NEGATIVA continua com
+  // uma janela de acomodação curta, e isso é honesto: uma janela curta demais
+  // num "não aconteceu" erra para o lado do verde, nunca do vermelho falso.
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
+    .toContain('conversation.item.create');
+  await page.waitForTimeout(200);
   const durante = (await recebidos(page)).map(m => m.type);
-  expect(durante).toContain('conversation.item.create');
   expect(durante, 'pediu resposta com uma ativa').not.toContain('response.create');
 
   // Fechada a resposta, a fila escoa.
@@ -567,18 +586,29 @@ test('o uso de tokens é somado na sessão e sai UMA vez, no /ended', async ({ p
   page.on('console', m => { if (m.type() === 'log') logs.push(m.text()); });
   await conversar(page);
 
+  const voz = page.locator('#assistantVoice');
   // Duas respostas com uso, para provar que ele ACUMULA em vez de sobrescrever.
+  //
+  // Cada `emitir` é uma mensagem no canal de dados REAL: mandar não é ter
+  // chegado. O recibo de que o app PROCESSOU cada uma é o estado da tela, que
+  // o mesmo `case` do handler troca — `response.created` põe em speaking,
+  // `response.done` (o que carrega o `usage`) devolve para listening. Os
+  // 300 ms de relógio que estavam aqui não eram suficientes sob carga: o
+  // /ended saía sem os contadores.
   await emitir(page, { type: 'response.created' });
+  await expect(voz).toHaveClass(/is-speaking/);
   await emitir(page, respostaComUso(
     { audio_tokens: 120, text_tokens: 30, cached_tokens: 64 },
     { audio_tokens: 200, text_tokens: 15 }
   ));
+  await expect(voz).toHaveClass(/is-listening/);
   await emitir(page, { type: 'response.created' });
+  await expect(voz).toHaveClass(/is-speaking/);
   await emitir(page, respostaComUso(
     { audio_tokens: 80, text_tokens: 10, cached_tokens: 32 },
     { audio_tokens: 50, text_tokens: 5 }
   ));
-  await page.waitForTimeout(300);
+  await expect(voz).toHaveClass(/is-listening/);
 
   await page.locator('#assistantVoiceEnd').click();
   await expect.poll(() => chamadas.ended.length).toBe(1);
@@ -614,9 +644,13 @@ test('campo que ninguém reportou fica AUSENTE, e não vira zero', async ({ page
   await conversar(page);
 
   // Só áudio de entrada. Texto e cache nunca foram mencionados por ninguém.
+  // O estado da tela é o recibo de que o `response.done` foi processado — ver
+  // a nota do teste do uso acumulado.
+  const voz = page.locator('#assistantVoice');
   await emitir(page, { type: 'response.created' });
+  await expect(voz).toHaveClass(/is-speaking/);
   await emitir(page, respostaComUso({ audio_tokens: 45 }, {}));
-  await page.waitForTimeout(300);
+  await expect(voz).toHaveClass(/is-listening/);
 
   await page.locator('#assistantVoiceEnd').click();
   await expect.poll(() => chamadas.ended.length).toBe(1);
@@ -691,7 +725,18 @@ test('a conversa é transcrita no console — e SÓ no console', async ({ page, 
     arguments: JSON.stringify({ consulta: 'sobremesa', preco_maximo: 40 })
   });
   await expect.poll(() => chamadas.busca.length, { timeout: 10000 }).toBe(1);
-  await page.waitForTimeout(300);
+
+  // As quatro linhas chegam por caminhos assíncronos diferentes — duas pelo
+  // canal de dados, e a consulta e o resumo dos dois lados de um round trip
+  // HTTP. Os 300 ms de relógio que estavam aqui eram uma aposta: sob carga o
+  // resumo ainda não tinha sido logado e o teste reprovava um app correto
+  // ("received value must be a string", 31/08/2026). A espera agora é por
+  // condição, e a mensagem de falha diz QUAL linha faltou.
+  const ESPERADAS = [DITO, RESPONDIDO, 'sobremesa (até R$ 40)', RESUMO];
+  await expect.poll(
+    () => ESPERADAS.filter(termo => !linhas.some(linha => linha.includes(termo))),
+    { timeout: 10000 }
+  ).toEqual([]);
 
   const achar = termo => linhas.find(linha => linha.includes(termo));
 

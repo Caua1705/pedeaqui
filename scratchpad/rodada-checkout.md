@@ -34,8 +34,8 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 
 ### Item 1 — os 5 flakes (BLOQUEANTE)
 - [x] 1.1 assistant-product-detail.spec.js:4 — CAUSA ACHADA E CORRIGIDA
-- [ ] 1.2 assistant-voice-session.spec.js:294
-- [ ] 1.3 assistant-voice-session.spec.js:668
+- [x] 1.2 assistant-voice-session.spec.js:294 — CAUSA ACHADA E CORRIGIDA
+- [x] 1.3 assistant-voice-session.spec.js:668 — MESMA CAUSA, mesmo commit
 - [ ] 1.4 auth-screen-nav.spec.js:105
 - [ ] 1.5 order-flow.spec.js:163
 - [ ] 1.6 PORTÃO: suíte completa verde 3x seguidas (+ 20 execuções de prova)
@@ -113,3 +113,53 @@ Portões: lint 0 errors/78 warnings (a linha de base) · typecheck ok ·
 
 ## Decisões tomadas sem o usuário
 (nenhuma ainda)
+
+### 1.2 e 1.3 `assistant-voice-session.spec.js:294` e `:668` — RESOLVIDOS
+
+**Reprodução** (o arquivo sozinho, 4 workers, máquina limpa, 3 rodadas):
+rodada 1 = 23/23; rodada 2 = **3 vermelhos**; rodada 3 = **2 vermelhos**.
+Logs: `scratchpad/voz-1.log`, `voz-2.log`, `voz-3.log`.
+
+**Uma causa só, e ela explica os cinco vermelhos observados no arquivo:**
+o teste espera pelo COMEÇO do caminho e afirma sobre o efeito do FIM dele.
+
+| teste | espera | afirma sobre |
+|---|---|---|
+| :294 | `chamadas.busca.length === 1` (o route handler ENTROU) | a mensagem que o app manda depois de a RESPOSTA voltar |
+| :668 | idem, + `waitForTimeout(300)` | as 4 linhas de console, duas delas do round trip HTTP |
+| :612 | `waitForTimeout(300)` | o `usage` do `response.done` no corpo do `/ended` |
+| :581 | `waitForTimeout(300)` | idem, com 4 eventos |
+| :372 | `waitForTimeout(400)` | o `conversation.item.create` da busca |
+
+`chamadas.busca.length` cresce dentro do `page.route`, ou seja **antes** de o
+mock responder, antes de o `fetch` do app resolver e antes de `enviar()` pôr o
+`function_call_output` no canal. E `emitir()` é uma mensagem num
+RTCDataChannel de verdade: mandar não é ter chegado. É exatamente a armadilha
+"Corridas no E2E" da skill §4 — esperar um efeito observável do FIM do
+caminho, nunca um `waitForTimeout`.
+
+As mensagens de falha batem com isso, uma a uma:
+- :294 — `Received array: []` no filtro de `conversation.item.create`.
+- :668 — `received value must be a string` (o resumo ainda não fora logado).
+- :612 — `corpo.input_audio_tokens` **Expected 45, Received undefined**.
+
+**Correções (todas por condição, nenhuma por relógio):**
+- :294 — espera o `response.create`, que o app manda DEPOIS do
+  `function_call_output`. E a afirmação "veio depois" virou comparação de
+  índices, em vez de um `toContain` que não diz nada sobre ordem.
+- :372 — a metade POSITIVA passou a esperar o `conversation.item.create`; a
+  NEGATIVA ficou com 200 ms de acomodação, e isso é honesto: janela curta num
+  "não aconteceu" erra para o verde, nunca para o vermelho falso.
+- :581 e :612 — o recibo de que o app PROCESSOU cada evento é o estado da
+  tela, trocado pelo MESMO `case` do handler que acumula o uso
+  (`response.created` → `is-speaking`; `response.done` → `is-listening`).
+- :668 — poll até que nenhuma das quatro linhas esperadas esteja faltando; a
+  mensagem de falha passa a dizer QUAL faltou.
+
+**Vermelho visto:** :294, :668 e :612 foram vistos falhando **antes** da
+correção, na própria suíte, com o texto acima (voz-2.log e voz-3.log). :372 e
+:581 **não** foram observados vermelhos — são a mesma classe, corrigidos
+preventivamente; anotado como tal, não como prova.
+
+**Prova depois:** 4/4 execuções do arquivo com 4 workers, 23/23 em cada
+(voz-fix-1..4.log). Portões: lint 0 errors · typecheck ok · 287 unitários.

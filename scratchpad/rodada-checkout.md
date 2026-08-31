@@ -105,14 +105,8 @@ os dois números.
 Portões: lint 0 errors/78 warnings (a linha de base) · typecheck ok ·
 287 unitários.
 
-## Escapes pendentes (manter ≤ 8)
-(nenhum ainda)
-
-## Bloqueados por backend
-(nenhum ainda)
-
-## Decisões tomadas sem o usuário
-(nenhuma ainda)
+## Escapes pendentes · Bloqueados por backend · Decisões sem o usuário
+→ estão no FIM deste arquivo, depois das seções dos itens.
 
 ### 1.2 e 1.3 `assistant-voice-session.spec.js:294` e `:668` — RESOLVIDOS
 
@@ -790,3 +784,85 @@ agora com a linha exata escrita.
    total pela primeira vez na suíte.
 2. O inventário medido, com a tabela que a próxima sessão não precisa refazer.
 3. A recusa de cada bloco com o motivo verificável, e não com uma impressão.
+
+# Escapes pendentes (8 — no limite, e por isso a rodada fecha aqui)
+
+1. **`auth-screen-nav.spec.js:105`** — nomeado, nunca reproduzido (0 em 6+
+   execuções saudáveis). Sem vermelho não há causa a ler. NÃO foi para
+   quarentena: ele guarda o cabeçalho da Home durante a abertura do login.
+2. **`order-flow.spec.js:163`** — caiu uma vez, dentro de um travamento de
+   máquina. Saudável leva 7,2 s. NÃO foi para quarentena: é o único guardião da
+   Idempotency-Key reaproveitada na retentativa, que é dinheiro. O log mostra o
+   clique na folha esperando a animação de entrada (`element is not stable`), e
+   essa espera sai do orçamento do teste — real, anotado, mas não é a causa do
+   vermelho observado.
+3. **`pix-payment.spec.js:116`** — os dois caminhos conhecidos de deriva foram
+   fechados (viewport declarada, espera de assentamento), mas o `307,6` medido
+   implica um rodapé de ~989 px que não se reproduz em nenhuma das três
+   configurações. Continua na lista de observação, e está escrito assim no
+   próprio teste.
+4. **A sacola não mostra a linha de desconto do cupom.** Com cupom aplicado o
+   cliente vê `68,60 + 0,99 + 7,40` e um total de `69,13`, com R$ 7,86 sem uma
+   linha explicando — o mesmo defeito que criou o `cart-service-fee.spec.js`, na
+   linha do cupom em vez da taxa. Entra em `restaurant.html:906`, ao lado de
+   `#csDeliveryRow`, e o dado já existe (`cartTotals().discount`). Não foi feito
+   nesta rodada porque muda o que o cliente vê numa tela do dinheiro, e a rede
+   acabou de nascer: ela precisa ser a base estável contra a qual essa mudança
+   seja verificada, não mudar junto.
+5. **`restaurant-club.js:146`** — `short_description || description || subtitle`:
+   o nome do contrato é o SEGUNDO. Hoje inofensivo (`short_description` não
+   existe), mas a precedência inverte sozinha no dia em que o backend o
+   publicar.
+6. **`address-service.js:25`** — `postal_code || zipcode || …`: o nome do
+   contrato também é o segundo, e aqui é DE PROPÓSITO (`normalizeAddress`
+   normaliza duas formas, a da API e a que ele mesmo grava no localStorage).
+   Documentado, não mexido.
+7. **`menu-service.js:181,193`** — `banner.title`/`banner.subtitle`: cadeias
+   inteiras fantasma (`BannerResponse` não tem os campos). Inofensivas porque
+   todo leitor tem queda para o nome do restaurante logo atrás. Não removidas:
+   remoção não muda nada e não produz teste vermelho.
+8. **`provider_error_code`** existe em `PaymentErrorDetail` e ninguém o lê — é a
+   referência do gateway para um chamado de suporte, e cabe numa melhoria da
+   tela de recusa de cartão.
+
+# Bloqueados por backend
+
+**Nenhum novo nesta rodada.** Os herdados continuam abertos, sem mudança:
+
+- `old_price` (preço riscado), `ChatResponse.options` (chips de resposta) e
+  `recommendation_reason`: campos que não existem: recursos mortos até a API
+  publicá-los.
+- **A mais cara, e continua aberta:** numa recusa de cartão o pedido já está
+  gravado e **não há rota de cliente para cancelá-lo**
+  (`docs/order-contract.md`, item 11).
+- Places API (New): dois bloqueios diferentes — a restrição de *referrer*
+  (impede testar em localhost) e a API *não habilitada* (causa o 403, e vale em
+  produção também). O fallback para o legado é hoje total (qualquer falha cai),
+  com teto de 3 s.
+
+# Decisões tomadas sem o usuário
+
+1. **A lista original dos 12 defeitos de contrato não existe no repositório** —
+   o `rodada-front.md` só nomeia os arquivos, e o relatório do agente não foi
+   commitado. Refiz a enumeração do zero, POR CADEIA em vez de por arquivo, e a
+   contagem que saiu foi 25 cadeias em 8 arquivos (19 régua correta, 4 defeito,
+   2 latentes, 2 fantasmas, 1 prosa).
+2. **`auth-screen-nav:105` e `order-flow:163` NÃO foram para `test.fixme`.** O
+   prompt oferece quarentena para causa não achável; recusei nos dois casos,
+   porque `fixme` num teste que passou seis vezes seguidas troca uma suspeita
+   por uma perda REAL de cobertura, e um deles guarda dinheiro. Ficam nomeados.
+3. **Corrigi três testes de voz que ninguém tinha nomeado** (`:372`, `:581`,
+   `:612`), da mesma classe dos dois do prompt. Dois foram vistos vermelhos; o
+   `:372` e o `:581` não, e isso está escrito como correção preventiva, não como
+   prova.
+4. **Migrei os 52 sítios da espera de boot**, e não só o que falhou. É uma
+   mudança larga, mas mecânica, e o experimento mostrou que a espera antiga
+   converte "o app não subiu" numa acusação falsa contra o CSS — deixar 51
+   sítios com esse comportamento seria deixar a mesma armadilha armada.
+5. **A rede do dinheiro é E2E, não unitária.** `cartTotals()` não tem porta, e
+   abrir uma só para o teste seria mexer no caminho do dinheiro ANTES de a rede
+   existir. O motivo está escrito no cabeçalho do spec.
+6. **A linha de desconto na sacola não foi feita** (escape 4 acima).
+7. **A CLI da Vercel vai sem pin de versão** no `ci.yml`. Um pin errado quebra o
+   deploy no dia em que for preciso publicar, e o job só roda depois de quatro
+   portões verdes. Escrito no próprio arquivo.

@@ -183,7 +183,17 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     barramento (antes só anulava a variável com a folha aberta). Scroll
     helpers via PedeAquiRestaurantUi direto (hasBlockingUiOpen/
     unlockBodyScroll saíram do destructure do page). Captura: só ruído de
-    relógio. Suíte completa: 278 passed/3 skipped. COMMIT: (a seguir)
+    relógio. Suíte completa: 278 passed/3 skipped. COMMIT: d0afee2.
+  · TELA 6 Produto (modal e opções): screens/product-screen.js (297 linhas),
+    5 ações (openProduct, toggleProductOption, changeQty, addToCart,
+    editCartItem), page −~270 linhas. Fios: 2 app + 6 shell = 9 (33 l/fio).
+    A sacola tem UMA porta: shell.addDraftToCart (a tela nunca escreve cart).
+    Trampolins window.openProduct/changeQty/addToCart (assistente + E2E) —
+    e REMOVIDOS do ACTIONS do page (trampolim registrado como ação seria
+    recursão se a tela faltasse). Captura: 1ª rodada acusou 104 elementos
+    de largura fracionária na tela produto = o ruído de FONTE da skill
+    §5.1-8 (mesmo número!); recaptura: 'Nenhuma diferença'. Suíte completa:
+    277 passed + voice-session flake conhecido (23/23 isolado).
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

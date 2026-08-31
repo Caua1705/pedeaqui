@@ -39,11 +39,6 @@
   let restaurantInfoPromise = null;
   let availableCheckoutPaymentKeys = new Set();
   let cart = [];
-  let currentProd = null;
-  let pmQty = 1;
-  let pmSelectedOptions = {};
-  let editingCartItemUid = null;
-  let productScrollIndicatorReady = false;
   let deliveryType = 'delivery';
   // paymentMethod = rótulo exibido ("Pix"); paymentMethodKey = chave da UI ("pix");
   // paymentApiTypeByKey mapeia a chave da UI para o method_type do backend
@@ -237,9 +232,8 @@
   const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || '';
   const restaurantStore = () => window.PedeAquiRestaurantStore;
   const cartStore = () => window.PedeAquiCartStore;
-  const productOptionGroups = (product) => Array.isArray(product?.option_groups) ? product.option_groups : [];
-  const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
-  const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
+  // productOptionGroups/optionGroupSelections/optionAdditionalPrice moram no
+  // product-screen — a escolha de opções é toda de lá.
   const cartItemUnitPrice = (item) => Number(item.visual_unit_price ?? item.unit_price ?? item.price ?? 0);
   // Delegates to the canonical uid generator in cart-service (Fase 1). Previously
   // this file called a bare newCartItemUid() that was never in scope here — a
@@ -351,8 +345,6 @@
     savedCardPaymentToken = '';
     paymentApiTypeByKey.clear();
     paymentScopeByKey.clear();
-    currentProd = null;
-    editingCartItemUid = null;
     selectedCoupon = null;
     selectedCouponPreview = null;
     couponPreviewPromise = null;
@@ -2100,202 +2092,8 @@
     });
   }
 
-  function openProduct(id, source) {
-    currentProd = products.find(p => String(p.id) === String(id));
-    // Id que não está no cardápio DESTA filial. O caminho que traz isso é um
-    // cartão do assistente montado sobre outra loja; o toque não podia
-    // simplesmente não fazer nada — falha muda é o que fez esse defeito
-    // demorar a aparecer.
-    if (!currentProd) {
-      console.warn('[PedeAqui] Produto fora do cardápio carregado.', { id, branch_id: menuBranchId });
-      window.RapidexAssistantChat?.toast?.('Esse item não está no cardápio desta unidade.');
-      return;
-    }
-    editingCartItemUid = null;
-    pmQty = 1;
-    pmSelectedOptions = {};
-    $('pmName').textContent = currentProd.name;
-    $('pmDesc').textContent = currentProd.description || '';
-    $('pmPrice').innerHTML = Number.isFinite(currentProd.price)
-      ? `<span class="pm-price-value">${esc(fmt(currentProd.price))}</span>`
-      : esc(fallback().productUnavailablePrice || '');
-    $('pmObs').value = '';
-    bindProductObservationCounter();
-    updateProductObservationCount();
-    const hero = $('pmHero');
-    // O herói do modal é a única foto FLUIDA: 100% da largura do modal, que no
-    // celular é a viewport inteira. Por isso `w` + sizes, e não descritores x.
-    if (hero) {
-      const image = currentProd.image_url || currentProd.image_path || '';
-      const sourceCard = source?.closest?.('.product-card')
-        || Array.from(document.querySelectorAll('.product-card')).find(card => String(card.dataset.productId) === String(id));
-      const preview = readyCardImage(sourceCard, '.product-card', '.product-image');
-      if (image) {
-        renderDetailImage(hero, {
-          url: image,
-          alt: currentProd.name,
-          className: 'pm-hero-photo',
-          fluid: { widths: [360, 480, 640, 960, 1280], sizes: '(max-width: 560px) 100vw, 560px' },
-          preview,
-          fallbackMarkup: `<div class="pm-hero-photo product-image--placeholder"><span>${esc(initials(currentProd.name))}</span></div>`
-        });
-      } else {
-        hero.innerHTML = productImage(currentProd, 'pm-hero-photo');
-      }
-    }
-    showEl($('pmWarning'), !Number.isFinite(currentProd.price));
-    $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
-    $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
-    renderProductOptions();
-    updatePmUI();
-    openModal('productModal');
-    initProductScrollIndicator();
-    const body = $('productModal')?.querySelector('.modal-body');
-    if (body) body.scrollTop = 0;
-    requestAnimationFrame(syncProductScrollIndicator);
-  }
-
-  function optionInstruction(group) {
-    const min = Number(group.min_select || 0);
-    const max = Math.max(1, Number(group.max_select || 1));
-    if (max === 1) return min > 0 ? 'Selecione 1' : 'Selecione at\u00e9 1';
-    if (min > 0 && min !== max) return `Selecione de ${min} a ${max}`;
-    if (min > 0 && min === max) return `Selecione ${max}`;
-    return `Selecione at\u00e9 ${max}`;
-  }
-
-  function renderProductOptions() {
-    const target = $('pmOptionGroups');
-    if (!target) return;
-    const groups = productOptionGroups(currentProd);
-    target.innerHTML = groups.map(group => renderProductOptionGroup(group)).join('');
-    requestAnimationFrame(syncProductScrollIndicator);
-  }
-
-  function initProductScrollIndicator() {
-    if (productScrollIndicatorReady) return;
-    const body = $('productModal')?.querySelector('.modal-body');
-    if (!body) return;
-    productScrollIndicatorReady = true;
-    body.addEventListener('scroll', syncProductScrollIndicator, { passive: true, signal: LIFECYCLE_SIGNAL });
-    window.addEventListener('resize', syncProductScrollIndicator, { signal: LIFECYCLE_SIGNAL });
-  }
-
-  function syncProductScrollIndicator() {
-    const modal = $('productModal')?.querySelector('.modal--product');
-    const body = $('productModal')?.querySelector('.modal-body');
-    if (!modal || !body) return;
-    const scrollable = body.scrollHeight - body.clientHeight;
-    const hasOverflow = scrollable > 1;
-    modal.classList.toggle('has-product-scroll', hasOverflow);
-    modal.classList.toggle('product-no-scroll', !hasOverflow);
-    body.style.overflowY = hasOverflow ? 'auto' : 'hidden';
-    if (!hasOverflow) body.scrollTop = 0;
-  }
-
-  function renderProductOptionGroup(group) {
-    const groupId = String(group.id);
-    const selections = optionGroupSelections(group);
-    const max = Math.max(1, Number(group.max_select || 1));
-    const isSingle = max === 1;
-    const options = Array.isArray(group.options) ? group.options : [];
-    return `
-      <section class="pm-option-group" data-option-group-id="${esc(groupId)}">
-        <div class="pm-option-head">
-          <div class="pm-option-title">${esc(group.name)}</div>
-          <div class="pm-option-meta">
-            <span>${esc(optionInstruction(group))}</span>
-            <span>${selections.length} selec</span>
-          </div>
-        </div>
-        <div class="pm-option-list">
-          ${options.map(option => renderProductOption(group, option, isSingle, selections)).join('')}
-        </div>
-      </section>
-    `;
-  }
-
-  function renderProductOption(group, option, isSingle, selections) {
-    const groupId = String(group.id);
-    const optionId = String(option.id);
-    const selected = selections.includes(optionId);
-    const price = optionAdditionalPrice(option);
-    return `
-      <button class="pm-option-row ${selected ? 'selected' : ''}" type="button" ${act('click', 'toggleProductOption', groupId, optionId)}>
-        <span class="pm-option-copy">
-          <span class="pm-option-name">${esc(option.name)}</span>
-          ${option.description ? `<span class="pm-option-desc">${esc(option.description)}</span>` : ''}
-          ${price > 0 ? `<span class="pm-option-price">${fmt(price)}</span>` : ''}
-        </span>
-        <span class="${isSingle ? 'pm-option-radio' : 'pm-option-toggle'}" aria-hidden="true">${isSingle ? '' : (selected ? '-' : '+')}</span>
-      </button>
-    `;
-  }
-
-  function toggleProductOption(groupId, optionId) {
-    const group = productOptionGroups(currentProd).find(item => String(item.id) === String(groupId));
-    if (!group) return;
-    const max = Math.max(1, Number(group.max_select || 1));
-    const current = [...(pmSelectedOptions[groupId] || [])];
-    if (max === 1) {
-      pmSelectedOptions[groupId] = current[0] === optionId ? [] : [optionId];
-    } else if (current.includes(optionId)) {
-      pmSelectedOptions[groupId] = current.filter(id => id !== optionId);
-    } else if (current.length < max) {
-      pmSelectedOptions[groupId] = [...current, optionId];
-    }
-    renderProductOptions();
-    updatePmUI();
-  }
-
-  function productOptionsValid() {
-    return productOptionGroups(currentProd).every(group => {
-      const selected = optionGroupSelections(group).length;
-      const min = Number(group.min_select || 0);
-      const max = Math.max(1, Number(group.max_select || 1));
-      const required = group.is_required === true || min > 0;
-      if (!required && selected === 0) return true;
-      return selected >= min && selected <= max;
-    });
-  }
-
-  function selectedOptionsSnapshot() {
-    return productOptionGroups(currentProd).flatMap(group => {
-      const options = Array.isArray(group.options) ? group.options : [];
-      return optionGroupSelections(group).map(optionId => {
-        const option = options.find(item => String(item.id) === String(optionId));
-        if (!option) return null;
-        return {
-          group_name: group.name || '',
-          option_name: option.name || '',
-          additional_price: optionAdditionalPrice(option)
-        };
-      }).filter(Boolean);
-    });
-  }
-
-  function selectedOptionsPayload() {
-    return productOptionGroups(currentProd).flatMap(group => optionGroupSelections(group).map(optionId => ({
-      option_group_id: String(group.id),
-      option_id: String(optionId)
-    })));
-  }
-
-  function productVisualUnitPrice() {
-    if (!currentProd || !Number.isFinite(currentProd.price)) return 0;
-    return Number(currentProd.price) + selectedOptionsSnapshot().reduce((sum, option) => sum + Number(option.additional_price || 0), 0);
-  }
-
-  function restoreSelectedOptions(item) {
-    pmSelectedOptions = {};
-    (item.selected_options || []).forEach(selection => {
-      const groupId = String(selection.option_group_id || '');
-      const optionId = String(selection.option_id || '');
-      if (!groupId || !optionId) return;
-      pmSelectedOptions[groupId] = [...(pmSelectedOptions[groupId] || []), optionId];
-    });
-    renderProductOptions();
-  }
+  // O modal de produto (abrir, opções, quantidade, observação) mora em
+  // screens/product-screen.js.
 
   function cartOptionsHtml(item) {
     const snapshot = Array.isArray(item.selected_options_snapshot) ? item.selected_options_snapshot : [];
@@ -2308,47 +2106,20 @@
     `).join('')}</div>`;
   }
 
-  function changeQty(delta) {
-    pmQty = Math.max(1, pmQty + delta);
-    updatePmUI();
-  }
 
-  function bindProductObservationCounter() {
-    const obs = $('pmObs');
-    if (!obs || obs.dataset.counterReady === 'true') return;
-    obs.dataset.counterReady = 'true';
-    obs.addEventListener('input', updateProductObservationCount);
-  }
-
-  function updateProductObservationCount() {
-    const obs = $('pmObs');
-    const count = $('pmObsCount');
-    if (!obs || !count) return;
-    if (obs.value.length > 128) obs.value = obs.value.slice(0, 128);
-    count.textContent = `${obs.value.length}/128`;
-  }
-
-  function updatePmUI() {
-    if ($('pmQty')) $('pmQty').textContent = pmQty;
-    if ($('pmAddBtn') && currentProd) {
-      $('pmAddBtn').textContent = `Adicionar (${fmt(productVisualUnitPrice() * pmQty)})`;
-      $('pmAddBtn').disabled = !Number.isFinite(currentProd.price) || !productOptionsValid();
-    }
-  }
-
-  function addToCart() {
-    if (!currentProd || !Number.isFinite(currentProd.price) || !productOptionsValid()) return;
-    const unitPrice = productVisualUnitPrice();
-    const selected_options = selectedOptionsPayload();
-    const selected_options_snapshot = selectedOptionsSnapshot();
-    const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(currentProd, pmQty, $('pmObs').value.trim())
-      || { ...currentProd, qty: pmQty, obs: $('pmObs').value.trim(), uid: newCartItemUid() };
-    if (editingCartItemUid) cart = cart.filter(item => item.uid !== editingCartItemUid);
-    editingCartItemUid = null;
+  // ── addDraftToCart: a ÚNICA porta pela qual o modal de produto escreve na
+  // sacola. O rascunho traz tudo decidido (produto, qty, obs, preço visual,
+  // opções em payload e em snapshot); aqui só se grava, no shape LOCAL da
+  // sacola (unit_price/selected_options_snapshot são deste lado — não são os
+  // nomes da API, ver a nota metodológica da auditoria no scratchpad).
+  function addDraftToCart({ product, qty, obs, unitPrice, selected_options, selected_options_snapshot, editingUid }) {
+    const cartItem = window.PedeAquiCartService?.normalizeCartItem?.(product, qty, obs)
+      || { ...product, qty, obs, uid: newCartItemUid() };
+    if (editingUid) cart = cart.filter(item => item.uid !== editingUid);
     cart.push({
       ...cartItem,
-      price: Number(currentProd.price),
-      base_price: Number(currentProd.price),
+      price: Number(product.price),
+      base_price: Number(product.price),
       unit_price: unitPrice,
       visual_unit_price: unitPrice,
       selected_options,
@@ -2356,6 +2127,18 @@
     });
     closeModalId('productModal');
     updateCartUI();
+  }
+
+  // Trampolins: o assistente chama window.openProduct e a suíte E2E dirige a
+  // sacola por window.changeQty/window.addToCart. DECLARAÇÃO de função (TDZ).
+  function openProduct(...args) {
+    return window.RapidexActions.resolve('openProduct')?.(...args);
+  }
+  function changeQty(...args) {
+    return window.RapidexActions.resolve('changeQty')?.(...args);
+  }
+  function addToCart(...args) {
+    return window.RapidexActions.resolve('addToCart')?.(...args);
   }
 
   function couponPreviewData() {
@@ -2875,17 +2658,7 @@
     updateCartUI();
   }
 
-  function editCartItem(uid) {
-    const item = cart.find(i => i.uid === uid);
-    if (!item) return;
-    openProduct(item.id);
-    editingCartItemUid = uid;
-    pmQty = item.qty;
-    restoreSelectedOptions(item);
-    $('pmObs').value = item.obs || '';
-    updateProductObservationCount();
-    updatePmUI();
-  }
+  // editCartItem é ação registrada por screens/product-screen.js.
 
   function setCartTab(type) {
     deliveryType = type;
@@ -5962,8 +5735,11 @@
 
   const ACTIONS = {
     couponArtImageFailed,
-    openModal, closeModalId, closeModal, openProduct, changeQty, addToCart, toggleProductOption, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
-    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, editCartItem, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
+    // openProduct/toggleProductOption/changeQty/addToCart/editCartItem são
+    // registradas por screens/product-screen.js — registrar o trampolim aqui
+    // seria recursão se a tela faltasse.
+    openModal, closeModalId, closeModal, handleHomeLoginPromptClick, handleHomeCartValueClick, openCartBenefits, scrollToCategory, findCategoryButton, scrollToMenu,
+    removeCartItem, openCartItemDeleteConfirm, closeCartItemDeleteConfirm, cancelCartItemDelete, confirmCartItemDelete, setCartTab, handleCartCta, openCheckout, backToCart, setDeliveryType, openPaymentMethodScreen, closePaymentMethodScreen, setPaymentScreenTab,
     submitOrder, closeOrderSuccess,
     openOrderConfirm, closeOrderConfirm, confirmOrderFromSheet, openConfirmBenefits,
     // As 13 acoes do fluxo de Pix sairam daqui: registram-se sozinhas em
@@ -6098,6 +5874,19 @@
       openLoginScreen,
       showCouponNotice,
       mobNavMenu
+    }
+  });
+
+  window.PedeAquiProductScreen.mount({
+    kit: window.PedeAquiScreenKit,
+    app: window.PedeAquiAppPort,
+    shell: {
+      addDraftToCart,
+      productImage,
+      readyCardImage,
+      renderDetailImage,
+      openModal,
+      menuBranchId: () => menuBranchId
     }
   });
 

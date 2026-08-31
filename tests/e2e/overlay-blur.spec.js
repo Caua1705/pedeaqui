@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 // O app inteiro apareceu desfocado em produção enquanto os modais por cima
 // ficavam nítidos. A causa não estava no JS: o minificador de CSS do build
@@ -57,7 +57,7 @@ async function boot(page) {
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 test('depois do boot nenhuma camada de tela cheia filtra o app', async ({ page }) => {

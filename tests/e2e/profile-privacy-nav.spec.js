@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 async function openPrivacyFromProfile(page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedPickupSession(page);
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
   await page.locator('#mobNavProfile').click();
   await expect(page.locator('#mobViewProfile')).toHaveClass(/active/);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, seedOnlineCardBranch } from './helpers.js';
+import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, seedOnlineCardBranch, esperarAppPronto } from './helpers.js';
 
 // Enquanto o SDK do Mercado Pago carrega o cliente vê CARREGANDO. Erro só
 // quando falha de verdade.
@@ -55,7 +55,7 @@ const fieldOverlayText = (page, id) => page.evaluate(
 async function openPaymentScreen(page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await addH2OToCart(page, 3);
   await page.evaluate(() => window.openModal('cartModal'));
   await page.locator('#cartCtaBtn').click();

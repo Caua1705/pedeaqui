@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { INFO, MENU, mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { INFO, MENU, mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 const ORDER_ID = '00000000-0000-4000-8000-000000011950';
 const HELP_INFO = {
@@ -101,7 +101,7 @@ async function openTrackedOrder(page, orderOverrides = {}) {
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
   await page.locator('#mobNavProfile').click();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus pedidos' }).click();

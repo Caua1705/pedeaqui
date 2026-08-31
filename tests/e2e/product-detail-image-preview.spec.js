@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { MENU, mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { MENU, mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 // Um WebP pequeno qualquer, só para o teste ter bytes de imagem de verdade.
 const LOCAL_WEBP = readFileSync(new URL('../../assets/brand/pedeaqui-logo@1x.webp', import.meta.url));
@@ -36,7 +36,7 @@ test('mantem a miniatura visivel ate a imagem grande do produto ficar pronta', a
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.mobNavMenu?.());
 
   const card = page.locator(`.product-card[data-product-id="${FIRST_PRODUCT.id}"]`);

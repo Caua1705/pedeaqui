@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, ORDERS, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, ORDERS, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  O detalhe do pedido do Perfil, alimentado pelos NOMES DO CONTRATO.
@@ -24,7 +24,7 @@ async function abrirPedidos(page) {
   });
   const mock = await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
   await page.locator('#mobNavProfile').click();
   await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus pedidos' }).click();

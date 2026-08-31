@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  O extrato de cashback, desenhado com os CINCO tipos do contrato.
@@ -55,7 +55,7 @@ async function abrirExtrato(page) {
     ]
   })));
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('openCashbackStatement')());
   await expect(page.locator('#cashbackStatementModal')).toHaveClass(/active/);

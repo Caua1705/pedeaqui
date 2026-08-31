@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -7,7 +7,7 @@ async function bootMenu(page) {
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.mobNavMenu?.());
   await page.waitForFunction(() => document.querySelectorAll('.product-card').length > 1);
 }

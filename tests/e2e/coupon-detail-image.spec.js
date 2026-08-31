@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Um WebP pequeno qualquer, só para o teste ter bytes de imagem de verdade —
@@ -50,7 +50,7 @@ test('detalhe mantem a miniatura pronta ate a foto grande terminar', async ({ pa
 
   try {
     await page.goto(RESTAURANT_URL);
-    await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+    await esperarAppPronto(page);
 
     const couponCard = page.locator('#couponRail .coupon-card').first();
     const cardImage = couponCard.locator('.coupon-art img');

@@ -1,13 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  seedPickupSession,
-  addH2OToCart,
-  confirmOrderSheet,
-  pixOrder,
-  COUPONS,
-  RESTAURANT_URL
-} from './helpers.js';
+import { mockApi, seedPickupSession, addH2OToCart, confirmOrderSheet, pixOrder, COUPONS, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  O cupom, da vitrine ao payload do pedido.
@@ -57,7 +49,7 @@ async function mockCustomerRoutes(page) {
 
 async function openClub(page) {
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
   await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
@@ -115,7 +107,7 @@ test('a lista leva o contexto da sacola, para o desconto ser o desta sacola', as
   await mockCustomerRoutes(page);
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await addH2OToCart(page, 3); // 21,15
   await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());

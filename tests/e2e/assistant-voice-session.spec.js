@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL, MENU, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, MENU, BRANCH_MATRIZ, esperarAppPronto } from './helpers.js';
 
 // O modo voz — o transporte.
 //
@@ -164,7 +164,7 @@ async function montar(page, context, {
 
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   // O id do restaurante sai da loja; o fixture não traz um UUID no lugar que o
   // transporte lê, e ele recusa qualquer coisa que não seja UUID.
   await page.evaluate(id => {

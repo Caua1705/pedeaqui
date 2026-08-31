@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { mockApi, SLUG } from './helpers.js';
+import { mockApi, SLUG, esperarAppPronto } from './helpers.js';
 
 // Fase 4, bloco B3: a CSP tem que valer no app REAL, não no papel.
 //
@@ -89,7 +89,7 @@ async function bootUnderCsp(page) {
   });
 
   await page.goto(`/restaurant.html?slug=${SLUG}`);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await aguardarSilencio(page);
 
   // A home sozinha exercita pouca coisa. Estas telas montam markup gerado em

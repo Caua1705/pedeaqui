@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 async function readNavGeometry(page) {
   return page.evaluate(() => {
@@ -54,7 +54,7 @@ test('logged-in Club and Profile keep every navbar icon fixed', async ({ page })
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
 
   const homeGeometry = await readNavGeometry(page);

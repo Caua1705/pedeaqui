@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 // As derivadas do Storage precisam chegar com a MESMA proporção do original.
 // Pedindo só `width`, o modo padrão (`cover`) usa a altura original como alvo e
@@ -20,7 +20,7 @@ async function boot(page) {
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 // Mede, para cada <img> transformada em tela, a proporção do candidato que o

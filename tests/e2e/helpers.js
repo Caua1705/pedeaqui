@@ -381,6 +381,34 @@ export function trackedOrder(overrides = {}) {
   };
 }
 
+/**
+ * O APP SUBIU — que não é a mesma coisa que "não está mais subindo".
+ *
+ * A espera que a suíte usava, `!document.body.classList.contains('app-booting')`,
+ * é satisfeita TAMBÉM quando o boot FALHA: `showAppError()`
+ * (restaurant-page.js:390) tira `app-booting` e põe `app-error`. O teste
+ * seguia em frente sobre a tela de erro — e como um boot falho nunca chega a
+ * `applyTheme()`, a página fica pintada na cor da PLATAFORMA.
+ *
+ * Foi assim que `tenant-theme.spec.js` acusou "cor de marca chumbada" em
+ * 31/08/2026: o CSS estava certo, o app é que não tinha subido. Medido com o
+ * /menu respondendo 500: a espera antiga passa direto e 24 elementos ficam no
+ * laranja do piloto — um diagnóstico que aponta para a folha de estilo quando o
+ * problema foi a rede.
+ *
+ * Esta espera falha na hora, com a frase certa. É a mesma lição do
+ * boot-smoke.spec.js: o problema nunca foi cobertura, foi diagnóstico.
+ */
+export async function esperarAppPronto(page) {
+  await page.waitForFunction(() => {
+    if (document.body.classList.contains('app-error')) {
+      const motivo = document.getElementById('appLoaderMessage')?.textContent || '';
+      throw new Error(`o app NÃO subiu: caiu na tela de erro de boot (body.app-error). ${motivo}`.trim());
+    }
+    return !document.body.classList.contains('app-booting');
+  });
+}
+
 // Seed a confirmed pickup context + a guest identity BEFORE the app boots, so
 // the test starts on the money path instead of the operation/address setup.
 export async function seedPickupSession(page) {
@@ -440,9 +468,8 @@ export async function selectPixAndReturnToCart(page, qty = 3) {
 // unknown DOM), then assert on real rendering and real network afterwards.
 export async function addH2OToCart(page, qty = 3) {
   // Boot finished => the menu payload (products array) is loaded and openProduct resolves it.
-  await page.waitForFunction(
-    () => typeof window.openProduct === 'function' && !document.body.classList.contains('app-booting')
-  );
+  await esperarAppPronto(page);
+  await page.waitForFunction(() => typeof window.openProduct === 'function');
   await page.evaluate(
     ({ productId, qty }) => {
       window.openProduct(productId);

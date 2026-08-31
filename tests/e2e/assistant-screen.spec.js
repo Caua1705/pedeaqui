@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O, esperarAppPronto } from './helpers.js';
 
 // A tela do assistente no app do consumidor.
 //
@@ -27,7 +27,7 @@ async function openAssistant(page, { chatDelay = 0, viewport, answer = CHAT_ANSW
   });
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
   await expect(page.locator('#mobViewAssistant .assistant-hdr')).toBeVisible();
 }
@@ -811,7 +811,7 @@ test('com a loja fechada, o botão situacional pergunta o horário de abertura',
   });
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
   await waitForIntro(page);
 

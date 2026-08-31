@@ -484,3 +484,42 @@ causa.
 **A causa exata continua sem explicação** (o artefato daquela execução foi
 sobrescrito pela execução seguinte). Está escrito assim no próprio teste. Ele
 segue na LISTA DE OBSERVAÇÃO, não como resolvido.
+
+### tenant-theme.spec.js:229 — o app não tinha subido, e a suíte inteira não sabia perguntar isso
+
+**Vermelho** (g2-5): `cor de marca chumbada encontrada:` com quatro descrições,
+todas lendo os **valores PADRÃO de `styles/tokens.css`** — `rgb(243,111,33)` e
+`#fcd7c1`, o laranja do piloto.
+
+**Causa, e ela é da suíte inteira, não deste teste.** A espera de boot que 40
+arquivos usavam é
+`page.waitForFunction(() => !document.body.classList.contains('app-booting'))`.
+Ela é satisfeita TAMBÉM quando o boot **falha**: `showAppError()`
+(`restaurant-page.js:390`) TIRA `app-booting` e põe `app-error`. E um boot que
+falha nunca chega a `applyTheme()` — a página fica pintada na cor da
+PLATAFORMA. O teste então acusa "cor chumbada", que aponta para o CSS quando o
+problema foi a rede.
+
+("Não está mais subindo" não é "subiu". As quatro descrições eram muitos
+elementos: o scanner deduplica pela descrição, e `button.ui-btn.ui-btn-primary`
+sozinho cobre dezenas.)
+
+**Visto vermelho, dois braços, com o `/menu` respondendo 500:**
+- BRAÇO A (espera antiga): **passa direto**, e 24 elementos estão no laranja do
+  piloto — exatamente a assinatura da falha observada.
+- BRAÇO B (espera nova): falha na hora, com
+  `o app NÃO subiu: caiu na tela de erro de boot (body.app-error)`.
+
+**Correção, e ela vale para a suíte inteira.** `esperarAppPronto(page)` em
+`tests/e2e/helpers.js`: lança com a frase certa se `app-error` aparecer, e só
+devolve quando o app SUBIU. Os **52 sítios** da espera cega em **40 arquivos**
+foram migrados, mais as duas variantes combinadas (`addH2OToCart` no helpers e
+`montarSacola` no branch-change-atomic).
+
+É a mesma lição do `boot-smoke.spec.js`, que existe por isto: o problema nunca
+foi cobertura, foi **diagnóstico**. Um app que não sobe já quebrava a suíte —
+o que faltava era uma linha dizendo isso em vez de 200 timeouts (ou, aqui, uma
+acusação falsa contra o CSS).
+
+Verificação: lint 0 errors/78 warnings · typecheck ok · 296 unitários ·
+**suíte completa exit 0 · 289 passed · 3 skipped · 6,3 min**.

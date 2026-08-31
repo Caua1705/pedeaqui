@@ -1,14 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  seedPickupSession,
-  addH2OToCart,
-  successOrder,
-  confirmOrderSheet,
-  pixOrder,
-  PRODUCT_H2O,
-  RESTAURANT_URL
-} from './helpers.js';
+import { mockApi, seedPickupSession, addH2OToCart, successOrder, confirmOrderSheet, pixOrder, PRODUCT_H2O, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // Drives product -> cart -> payment -> submit on the BUILT app, with every API
 // call mocked (no production traffic, no real orders). Also pins the Fase 1
@@ -242,7 +233,7 @@ test('guest adds one item, sees the bag, and is gated only by the cart CTA', asy
   );
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await expect(page.locator('#operationModal')).not.toHaveClass(/active/);
 

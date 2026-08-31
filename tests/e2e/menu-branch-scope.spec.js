@@ -1,15 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  seedPickupSession,
-  menuForBranch,
-  MENU,
-  SLUG,
-  BRANCH_MATRIZ,
-  BRANCH_VARJOTA,
-  PRODUCT_H2O,
-  RESTAURANT_URL
-} from './helpers.js';
+import { mockApi, seedPickupSession, menuForBranch, MENU, SLUG, BRANCH_MATRIZ, BRANCH_VARJOTA, PRODUCT_H2O, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // O cardápio é DA FILIAL.
 //
@@ -38,7 +28,7 @@ async function spyMenu(page, { menuFor = menuForBranch } = {}) {
 
 const boot = async (page) => {
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 };
 
 const trocarPara = (page, branchId) => page.evaluate(id => {

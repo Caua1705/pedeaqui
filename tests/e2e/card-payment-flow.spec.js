@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, pixOrder, seedOnlineCardBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, addH2OToCart, pixOrder, seedOnlineCardBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, esperarAppPronto } from './helpers.js';
 
 const json = (body, status = 200) => ({
   status,
@@ -400,7 +400,7 @@ test('card_enabled falso não desenha cartão nem inicializa o SDK', async ({ pa
   })));
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('openPaymentMethodScreen')());
 
   await expect(page.locator('#paymentOnlineCards')).toBeHidden();

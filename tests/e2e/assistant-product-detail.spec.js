@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O, esperarAppPronto } from './helpers.js';
 
 test('detalhe recomendado pelo Rapi anima ao abrir e ao voltar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -20,7 +20,7 @@ test('detalhe recomendado pelo Rapi anima ao abrir e ao voltar', async ({ page }
   }));
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
 
   await page.locator('#assistantInput').fill('Me recomenda um prato');

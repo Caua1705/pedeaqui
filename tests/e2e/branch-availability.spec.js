@@ -1,12 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  MENU,
-  SLUG,
-  BRANCH_MATRIZ,
-  BRANCH_VARJOTA,
-  RESTAURANT_URL
-} from './helpers.js';
+import { mockApi, MENU, SLUG, BRANCH_MATRIZ, BRANCH_VARJOTA, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 const BRANCH_SUL = '11111111-1111-4111-8111-111111111111';
 const json = body => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
@@ -107,7 +100,7 @@ test('com endereço mostra km e taxa, ordena e mantém a filial sem cobertura vi
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('openOperationScreen')());
   await expect.poll(() => availabilityBodies.length).toBe(1);
   await expect(page.locator('.op-branch-badge.metric')).toHaveCount(5);
@@ -180,7 +173,7 @@ test('pré-carrega a disponibilidade no boot e o widget abre a tela pronta sem l
 
   releaseResponse();
   await navigation;
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.locator('.delivery-widget').click();
   await expect(page.locator('#operationModal')).toHaveClass(/active/);
   await expect(page.locator('.op-branch-badge.metric')).toHaveCount(4);
@@ -217,7 +210,7 @@ test('Cardápio também abre unidades direto porque os dados já vieram no boot'
 
   releaseResponse();
   await navigation;
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.locator('#mobNavMenu').click();
   await expect(page.locator('#operationModal')).toHaveClass(/active/);
   await expect(page.locator('.op-branch-badge.metric')).toHaveCount(4);
@@ -285,7 +278,7 @@ test('ao confirmar o primeiro endereço mantém o seletor carregando e revela KM
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('openOperationScreen')());
   await page.locator('#opAddrCard').click();
   await expect(page.locator('#addrPickerModal')).toHaveClass(/active/);
@@ -324,7 +317,7 @@ test('sem endereço delivery null mantém as unidades selecionáveis e só mostr
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('openOperationScreen')());
   await expect.poll(() => requestBodies.length).toBeGreaterThan(0);
   await expect(page.locator('.op-branch-feedback')).toHaveCount(0);

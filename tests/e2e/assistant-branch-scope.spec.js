@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, MENU, BRANCH_MATRIZ, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, MENU, BRANCH_MATRIZ, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // O assistente de TEXTO fala do cardápio de UMA filial.
 //
@@ -41,7 +41,7 @@ async function montar(page, { semFilial = false } = {}) {
 
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
   await expect(page.locator('#mobViewAssistant .assistant-hdr')).toBeVisible();
 

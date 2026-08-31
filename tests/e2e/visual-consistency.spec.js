@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, addH2OToCart, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, addH2OToCart, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  Consistencia visual: o que a padronizacao nao pode desfazer.
@@ -82,7 +82,7 @@ test('toda seta de voltar do app tem a mesma caixa', async ({ page }) => {
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   const caixas = await page.evaluate(() =>
     [...document.querySelectorAll('.cart-hdr-back')].map((el) => {
@@ -119,7 +119,7 @@ test('nenhum peso de fonte pedido esta fora dos que o Inter carrega', async ({ p
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   const fora = await page.evaluate(() => {
     const CARREGADOS = new Set(['100', '300', '400', '500', '600', '700', '800']);

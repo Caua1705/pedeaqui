@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { MENU, mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { MENU, mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -27,7 +27,7 @@ async function boot(page, imageTag) {
   });
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 test('mostra o loader de tela inteira somente quando as fotos visíveis demoram', async ({

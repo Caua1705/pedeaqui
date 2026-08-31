@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
@@ -81,7 +81,7 @@ test('nenhuma arte da plataforma é baixada pelo app do consumidor', async ({ pa
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   await page.waitForFunction(() => Boolean(window.RapidexActions?.registry?.mobNavAssistant));
   await page.evaluate(() => window.RapidexActions.registry.mobNavAssistant());
@@ -96,7 +96,7 @@ test('as fotos do cardápio pedem miniatura, não a foto inteira', async ({ page
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   // A grade de produtos vive na aba cardápio.
   await page.waitForFunction(() => typeof window.mobNavMenu === 'function');

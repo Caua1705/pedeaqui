@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  Autocomplete de endereço: o caminho NOVO (AutocompleteSuggestion) é o
@@ -80,7 +80,7 @@ async function comSdkFalso(page, {
     };
   }, [modoNovo, legadoFalha, bibliotecaFalha]);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('openAddrSearch')());
   await expect(page.locator('#addrSearchModal')).toHaveClass(/active/);

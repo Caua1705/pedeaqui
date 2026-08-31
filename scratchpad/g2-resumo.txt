@@ -1,0 +1,13 @@
+G2 1 EXIT=0
+  289 passed (7.6m)
+G2 2 EXIT=0
+  289 passed (7.2m)
+G2 3 EXIT=0
+  289 passed (7.8m)
+G2 4 EXIT=0
+  289 passed (7.5m)
+G2 5 EXIT=1
+  1 failed
+  288 passed (6.4m)
+  ✘  256 [chromium] › tests\e2e\tenant-theme.spec.js:229:1 › nenhuma cor de marca chumbada sobrevive num tenant azul (3.5s)
+FIM

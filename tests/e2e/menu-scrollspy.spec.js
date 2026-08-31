@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, RESTAURANT_URL, seedPickupSession } from './helpers.js';
+import { mockApi, RESTAURANT_URL, seedPickupSession, esperarAppPronto } from './helpers.js';
 
 // Rolar o cardápio tem de (a) mover o destaque para a categoria da seção visível
 // e (b) trazer essa aba para dentro da barra horizontal.
@@ -18,7 +18,7 @@ async function bootMenu(page) {
   await mockApi(page);
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.mobNavMenu?.());
   await page.waitForFunction(() => document.querySelectorAll('.menu-section').length > 1);
   await page.waitForTimeout(500);

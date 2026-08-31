@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, BRANCH_MATRIZ, RESTAURANT_URL, SLUG } from './helpers.js';
+import { mockApi, BRANCH_MATRIZ, RESTAURANT_URL, SLUG, esperarAppPronto } from './helpers.js';
 
 test('o pin do endereco selecionado preserva a cor do white label', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -26,7 +26,7 @@ test('o pin do endereco selecionado preserva a cor do white label', async ({ pag
   );
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   await expect(page.locator('.home-sticky-header .address-strip')).toHaveClass(/has-address/);
 

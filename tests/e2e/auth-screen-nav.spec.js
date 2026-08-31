@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // Fase 5, bloco C2. A barra inferior some quando uma tela de autenticação abre.
 //
@@ -23,7 +23,7 @@ const AUTH_SCREENS = [
 async function boot(page) {
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   // As telas de auth são chamadas pelo REGISTRO de ações, não por window: a
   // fase B2 tirou 141 nomes do escopo global de propósito, e o teste não é

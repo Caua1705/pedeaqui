@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  A validação do código de e-mail lida pelo campo de VEREDITO, não pelo HTTP.
@@ -33,7 +33,7 @@ async function chegarNaVerificacao(page, verifyResponse) {
   })));
   await page.route('**/auth/verify-email-code', route => route.fulfill(json(verifyResponse)));
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('openSigninScreen')());
   await expect(page.locator('#loginScreen')).toHaveClass(/active/);

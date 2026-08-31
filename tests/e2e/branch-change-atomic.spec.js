@@ -1,12 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  menuForBranch,
-  RESTAURANT_URL,
-  SLUG,
-  BRANCH_MATRIZ,
-  BRANCH_VARJOTA
-} from './helpers.js';
+import { mockApi, menuForBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, BRANCH_VARJOTA, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  Trocar de loja e ou tudo muda, ou nada muda.
@@ -75,10 +68,8 @@ const sacolaGuardada = (page, branchId) =>
   }, branchId);
 
 async function montarSacola(page, qty = 2) {
-  await page.waitForFunction(
-    () =>
-      typeof window.openProduct === 'function' && !document.body.classList.contains('app-booting')
-  );
+  await esperarAppPronto(page);
+  await page.waitForFunction(() => typeof window.openProduct === 'function');
   await page.evaluate(
     ({ productId, qty }) => {
       window.openProduct(productId);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, PRODUCT_H2O, esperarAppPronto } from './helpers.js';
 
 // A tela do assistente era a ÚNICA do app sem cabeçalho: não havia como voltar
 // sem a barra de navegação e não havia como reiniciar a conversa de jeito nenhum.
@@ -39,7 +39,7 @@ async function openAssistant(page, { chat } = {}) {
   }
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
   await expect(page.locator('#mobViewAssistant .assistant-hdr')).toBeVisible();
 }

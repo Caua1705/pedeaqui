@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, MENU, SLUG, menuForBranch } from './helpers.js';
+import { mockApi, MENU, SLUG, menuForBranch, esperarAppPronto } from './helpers.js';
 
 // Fase 4, bloco A: a trava do white-label.
 //
@@ -68,7 +68,7 @@ async function bootWithPrimary(page, primaryColor) {
     });
   }
   await page.goto(`/restaurant.html?slug=${SLUG}`);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await freezeTransitions(page);
   return page;
 }

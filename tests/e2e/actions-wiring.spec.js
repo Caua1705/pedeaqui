@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, SLUG } from './helpers.js';
+import { mockApi, SLUG, esperarAppPronto } from './helpers.js';
 
 // Fase 4, bloco B2: a rede de segurança da migração dos handlers inline.
 //
@@ -12,7 +12,7 @@ import { mockApi, SLUG } from './helpers.js';
 async function boot(page) {
   await mockApi(page);
   await page.goto(`/restaurant.html?slug=${SLUG}`);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 test('nenhum handler inline on*= sobrou no documento', async ({ page }) => {

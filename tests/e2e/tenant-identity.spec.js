@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, MENU, SLUG, RESTAURANT_URL } from './helpers.js';
+import { mockApi, MENU, SLUG, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // O app é white-label DENTRO da página há tempo. Fora dela não era: a aba, o
 // ícone de tela inicial e o cartão de compartilhamento eram da plataforma.
@@ -28,7 +28,7 @@ function headIdentity(page) {
 
 async function boot(page, url = RESTAURANT_URL) {
   await page.goto(url);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   // applyTenantIcons roda dentro de applyTheme; espera o favicon existir.
   await expect.poll(() => page.getAttribute('link[rel="icon"]', 'href')).toBeTruthy();
 }

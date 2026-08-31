@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // Fase 5, bloco C3. O app registrava observers, intervalos e listeners em
 // document/window no boot e nunca desligava nada. Aqui se prova que:
@@ -15,7 +15,7 @@ async function boot(page) {
   // cima de tudo, e a aba do cardapio nunca chega a ser exibida.
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 /**

@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  BRANCH_MATRIZ,
-  RESTAURANT_URL,
-  SLUG
-} from './helpers.js';
+import { mockApi, BRANCH_MATRIZ, RESTAURANT_URL, SLUG, esperarAppPronto } from './helpers.js';
 
 const HOME_ADDRESS = {
   id: 'address-home',
@@ -64,7 +59,7 @@ test('enderecos existentes sao selecionados no perfil e em unidades sem abrir o 
   await mockApi(page);
   await seedLoggedCustomer(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(addresses => {
     window.PedeAquiCustomerAuth.setToken('e2e-customer-token');
     window.PedeAquiCustomerService.getCurrentCustomer = async () => ({

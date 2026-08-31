@@ -1,15 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  seedPickupSession,
-  pixOrder,
-  pixCharge,
-  trackedOrder,
-  selectPixAndReturnToCart,
-  confirmOrderSheet,
-  PIX_QR_CODE,
-  SLUG
-} from './helpers.js';
+import { mockApi, seedPickupSession, pixOrder, pixCharge, trackedOrder, selectPixAndReturnToCart, confirmOrderSheet, PIX_QR_CODE, SLUG, esperarAppPronto } from './helpers.js';
 
 // Fluxo Pix ponta a ponta no app CONSTRUÍDO, com toda a API interceptada:
 //
@@ -804,7 +794,7 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
 
   // Recarrega a loja como quem volta depois — a pendência sobrevive ao reload.
   await page.reload();
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   const bar = page.locator('#pendingPaymentBar');
   await expect(bar).toBeVisible();
   await expect(page.locator('#pendingPaymentTitle')).toContainText(`#${pixOrder(1).order_number}`);

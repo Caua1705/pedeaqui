@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // O modo voz — a interface.
 //
@@ -29,7 +29,7 @@ async function abrirChat(page, { logado = true } = {}) {
   }
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   // Estes testes são sobre a TELA. O transporte de verdade é trocado por um
   // dublê pelo mesmo `setDriver` que ele usa — o que também deixa cada teste

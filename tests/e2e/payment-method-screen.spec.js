@@ -1,13 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  mockApi,
-  MENU,
-  INFO,
-  seedPickupSession,
-  addH2OToCart,
-  confirmOrderSheet,
-  RESTAURANT_URL
-} from './helpers.js';
+import { mockApi, MENU, INFO, seedPickupSession, addH2OToCart, confirmOrderSheet, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // A tela de pagamento fala da FILIAL escolhida, e de mais nada.
 //
@@ -43,7 +35,7 @@ test('a tela de pagamento segue a filial escolhida, sem herdar a anterior', asyn
   });
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   // A Matriz tem PIX habilitado e o mostra.
   await page.evaluate(() => window.RapidexActions.resolve('openCheckout')());
@@ -92,7 +84,7 @@ test('pix continua disponivel quando a filial retorna payment_methods em lista',
   }));
 
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => {
     window.act = (name, ...args) => window.RapidexActions.resolve(name)(...args);
     window.act('closeOperationScreen');
@@ -115,7 +107,7 @@ test('pagamento na entrega replica os cartões e medidas da referência', async 
   await page.setViewportSize({ width: 414, height: 896 });
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => {
     window.act = (name, ...args) => window.RapidexActions.resolve(name)(...args);
     window.act('closeOperationScreen');

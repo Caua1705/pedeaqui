@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, SLUG, RESTAURANT_URL } from './helpers.js';
+import { mockApi, SLUG, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // Fase 5, bloco D. Dois contratos:
 //
@@ -34,7 +34,7 @@ async function bootControlled(page, url = RESTAURANT_URL) {
   await page.goto(url);
   await waitForController(page);
   await page.reload();
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 }
 
 /** Toda URL guardada em qualquer cache do worker. */
@@ -125,7 +125,7 @@ test('com o worker no ar, o cardápio continua vindo da rede a cada visita', asy
   });
 
   await page.reload();
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   expect(menuRequests.length, 'o cardápio foi servido de cache, sem revalidar').toBeGreaterThan(0);
 });
@@ -158,7 +158,7 @@ test('o casco e os assets hasheados SÃO cacheados — o worker precisa servir p
 test('o manifest é o do tenant, servido sob o diretório dele', async ({ page }) => {
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
 
   // Assim que a marca chega da API, o href vira um blob com nome e cor do
   // restaurante. Antes disso, é a URL estática por tenant.

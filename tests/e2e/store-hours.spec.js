@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, INFO, RESTAURANT_URL } from './helpers.js';
+import { mockApi, seedPickupSession, INFO, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  O horário de funcionamento, com os NOMES e a NUMERAÇÃO do contrato.
@@ -21,7 +21,7 @@ async function abrirInfoModal(page) {
   await seedPickupSession(page);
   await mockApi(page);
   await page.goto(RESTAURANT_URL);
-  await page.waitForFunction(() => !document.body.classList.contains('app-booting'));
+  await esperarAppPronto(page);
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('openRestaurantInfo')());
   await expect(page.locator('#infoModal')).toHaveClass(/active/);

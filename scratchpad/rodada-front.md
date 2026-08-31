@@ -15,7 +15,7 @@ Portões (cada um numa chamada própria, ler a saída — lição da skill):
 `npm run lint` · `npm run typecheck:cards` · `npm run test` · `npm run test:e2e`
 Flakes conhecidos E2E: assistant-voice-session:294 e :437, pix-payment:116
 (rodar isolado antes de arquivar como flake).
-E2E vermelhos HERDADOS (item 4.3 conserta): order-flow:42, pix-payment:576, :736.
+E2E vermelhos HERDADOS: viraram letra morta — ver 4.3 (já estavam verdes).
 
 ## Ordem de execução e status
 
@@ -42,7 +42,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       FILIAL (Varjota, pickup, cupom BEMVINDO10, strings decimais), #3003
       delivered c/ product_id NULL (produto saiu do cardápio). Números escolhidos
       para NÃO coincidir entre si (lição do fixture 22,14).
-- [ ] 1.4 Auditoria de contrato do APP INTEIRO → tabela nesta página
+- [x] 1.4 Auditoria de contrato do APP INTEIRO → tabela nesta página (commit 2330d51)
 - [x] 1.5 CONCLUÍDO: 4 consertos commitados (22eb6b7 cashback/extrato,
       57a9070 verified, e8321bb Perfil+horários, 2488045 saldo por loja);
       D7/D18 anotados não-conserto com motivo; D9/D17 reclassificados;
@@ -114,7 +114,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
         (rapi_suggestions) morre no item 4.4.
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
-- [~] TUDO IMPLEMENTADO, aguardando suíte completa p/ commit único:
+- [x] FEITO E COMMITADO (32ffed2; lint vermelho residual consertado em c5a41e7):
   · 2.1 scripts/utils/screen-kit.js — 14 ferramentas, invólucros LEEM o global
     na chamada (teste prova: global definido DEPOIS do import ainda delega).
     7 unitários em tests/unit/screen-kit.test.js.
@@ -138,7 +138,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 
 ### Fase 3 — telas
 - [x] 3.1 Inventário na tabela abaixo. PERFIL primeira, INÍCIO última.
-- [~] 3.2 Migrações:
+- [x] 3.2 Migrações (6 telas, 2 recusadas por medida):
   · TELA 1 Perfil/pedidos: screens/profile-screen.js (486 linhas), 6 ações
     registradas pela tela, page 7129→6719 linhas. Fios --tela: 5 app + 6
     shell = 11 (44 l/fio — o padrão mudou a economia). closeProfSub virou
@@ -417,3 +417,112 @@ cola init(deps) dos módulos antigos.
 
 ## Decisões tomadas sem o usuário
 (nenhuma ainda)
+
+═══════════════════════════════════════════════════════════════════
+## RELATÓRIO FINAL DA RODADA (30–31/08/2026, 21 commits em rodada/front-completo)
+═══════════════════════════════════════════════════════════════════
+
+### Telas migradas / restantes (linhas antes → depois)
+
+restaurant-page.js: **7.185 → 5.628** (−1.557, e mais 131 de código morto do
+extrato removido antes da fase de telas). Seis telas no contrato mount(ctx):
+
+| tela | arquivo | linhas | fios --tela |
+|---|---|---|---|
+| Perfil: pedidos + roteador | profile-screen.js | 485 | 11 (44 l/fio) |
+| Dados do cliente / senha | customer-data-screen.js | 331 | 13 (25) |
+| Informações da loja | store-info-screen.js | 239 | 8 (30) |
+| Cupom: folha de detalhe | coupon-detail-screen.js | 221 | 15 (15) |
+| Produto: modal e opções | product-screen.js | 296 | 9 (33) |
+| Início (rendering) | home-screen.js | 388 | 16 (24) |
+
+**Meta de ~800 linhas: NÃO alcançada, e o motivo está medido.** O que sobra
+não é tela: boot + appPort + roteamento; sacola/checkout (cartTotals é dono
+único do dinheiro e a folha de confirmação ESCREVE token de cartão — recusada
+com a régua na mão); operação/filial (87 fios/316 linhas, recusada na skill e
+reconfirmada); cola init(deps) dos 5 módulos antigos; helpers compartilhados
+(imagem responsiva, pagamento, endereço). Extrair qualquer um reprova na
+régua que a própria rodada usou para aprovar as seis que saíram.
+
+### Defeitos de contrato achados e consertados (nome por nome)
+- item.name → product_name_snapshot; item.unit_price → unit_price_snapshot
+  (sem re-somar adicionais); selected_options_snapshot →
+  option_groups[].options[].option_name_snapshot (apagava as opções
+  escolhidas de TODO pedido, em produção); line_total/subtotal → total.
+- Endereço do pedido: 9 candidatos inexistentes → address_street/_number/
+  _neighborhood/_city/_state (flat) + fallback pelo endereço salvo.
+- cancelled_at/refused_at/... → status_history[]; restaurant_logo_url → logo
+  local; imagem de item → só cardápio local (API não manda).
+- "Valores" do detalhe ganhou taxa de serviço, desconto (com código do
+  cupom) e cashback usado — a conta agora fecha na tela.
+- VerifyEmailCodeResponse: 200 com verified:false virava SUCESSO (8 nomes
+  fantasmas lidos, verified nunca) → recusa com a mensagem do backend.
+- Horários: day_label ignorado + mapa 1..7 num contrato 0=SEGUNDA → semana
+  DESLOCADA e "0" como dia; dia destacado errado. Rodapé: opening_hours_text
+  (nunca existiu) → "Hoje: HH:MM às HH:MM" dos periods. Formatadores únicos
+  em store-info-format.js (16 unitários).
+- Cashback: balance da CONTA inteira exibido como saldo da loja →
+  by_restaurant[] por slug (fixtures com global≠loja de propósito).
+- Extrato: enum earned|redeemed|expired|cancelled|adjustment ('used'/'refund'
+  nunca existiram; 'cancelled' faltava e caía no rótulo genérico).
+- rapi_suggestions (nunca existiu) → removido; sugestões da rodada 4.4.
+- mockApi/captura: /customers/me* respondia 401/[] a TUDO → mock espelha o
+  backend (Authorization), fixture orders.json do contrato, telas
+  perfil-pedidos e perfil-pedido-detalhe capturadas pela primeira vez.
+
+### Achados e NÃO consertados, com motivo
+- D7 accepts_pickup/delivery por filial: BranchResponse não tem os campos; o
+  gating da filial SELECIONADA (settings.accepts_*, accepts_delivery_now,
+  delivery_pause_*) existe e ninguém lê — mexe no bloco operação/filial e
+  exige UX de "entrega pausada"; backend valida o pedido de qualquer forma.
+- D18 payment_method no order-tracking nasce null (CreateOrderResponse não
+  tem) — sem leitor; inofensivo.
+- Fallbacks defensivos com o nome certo em primeiro (lista no relatório da
+  auditoria): remoção não muda comportamento, nenhum teste nasce vermelho.
+- Chips de pagamento chumbados: issue docs/issues/chips-pagamento-chumbados.md
+  (decisão do prompt). `.addr-delete-yes/-cancel`: decisão de produto (skill §4.1).
+
+### Escapes pendentes (4 ≤ 8)
+1. renderProfileView injetado nos flows de auth/address (pré-existente).
+2. buildInfoPaymentGroups/infoPaymentData & cia. ficam no page e entram na
+   store-info-screen por shell (checkout também lê).
+3. openServiceFeeInfo (ação da sacola) continua registrada pelo page — a
+   folha de info da taxa é da sacola, não do perfil.
+4. Registro de ações como barramento page→tela (renderStoreInfoState,
+   renderHomeContent, initStoreInfoModal, closeCouponDetail no
+   clearBranchScopedSelection): documentado na skill §9.1.
+
+### Bloqueados por backend
+- Places API (New) sem permissão na chave (403) → fallback automático ao
+  legado; **VERIFICAR EM PREVIEW** (chave não libera localhost).
+- D10 old_price (preço riscado), D11 ChatResponse.options (chips de resposta),
+  D13 recommendation_reason: campos que não existem — recursos mortos até a
+  API publicá-los.
+- Recusa de cartão: pedido já gravado, sem rota de cliente para cancelar
+  (docs/order-contract.md item 11 — pré-existente, continua a mais cara).
+
+### O que a captura continua sem pegar
+- gridTemplateRows e borderRadius por canto (fora de PROPS — skill §5.1).
+- Texto (ela mede estilo computado): a semana deslocada dos horários era
+  INVISÍVEL para ela — quem pegou foi E2E com asserção de texto.
+- Ruídos intermitentes novos catalogados: relógio de parede ("Realizado há X
+  horas", 3 elementos) e o retorno do ruído de fonte (104 elementos).
+- Estados que exigem gesto real (drag do carrossel, teclado virtual).
+
+### O que eu faria diferente
+1. **Um item por vez até no working tree.** Três vezes empilhei edições de
+   itens diferentes no mesmo arquivo não commitado e paguei com stash/revert
+   manual (D1+horários viraram um commit por isso).
+2. **Ler o portão inteiro, sempre.** Três commits saíram com erro de lint
+   porque li a saída por tail/grep curto — a lição da skill §5.1-5, sofrida
+   de novo, três vezes.
+3. **Suíte completa em foreground com timeout folgado.** Background foi
+   morto duas vezes sem diagnóstico; o padrão que funcionou foi foreground
+   600s + flake conhecido conferido isolado na hora.
+4. **A auditoria de contrato ANTES de qualquer fixture** foi a decisão mais
+   rentável da rodada — o orders.json nasceu certo porque a tabela existia.
+   Repetiria e ampliaria: o agente de varredura achou em 10 minutos o que
+   render-por-render levaria um dia.
+5. **Confiar menos no line-number do prompt.** 4.3 apontava vermelhos que já
+   não existiam; chequei tarde. Primeiro ato de qualquer item herdado:
+   reproduzir o vermelho.

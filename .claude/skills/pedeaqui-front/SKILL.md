@@ -693,3 +693,95 @@ invólucro de global existente — leem o global NA CHAMADA, nunca no import) e
 `scripts/services/store-info-format.js` (formatadores puros de /info, com
 unitários — o horário já mostrou "0" e deslocou a semana em um por ignorar
 `day_label` e usar um mapa 1..7 num contrato em que weekday é 0=SEGUNDA).
+
+
+## 9.1 A fase de telas, executada (31/08/2026) — e as armadilhas novas
+
+Seis telas saíram no contrato da §9, cada uma verificada com captura dos dois
+lados e suíte completa:
+
+| tela | arquivo | linhas | fios (--tela: app+shell) |
+|---|---|---|---|
+| Perfil: pedidos + roteador de subtelas | screens/profile-screen.js | 485 | 11 (44 l/fio) |
+| Dados do cliente / senha | screens/customer-data-screen.js | 331 | 13 (25) |
+| Informações da loja | screens/store-info-screen.js | 239 | 8 (30) |
+| Cupom: folha de detalhe | screens/coupon-detail-screen.js | 221 | 15 (15) |
+| Produto: modal e opções | screens/product-screen.js | 296 | 9 (33) |
+| Início (rendering; SEM operação) | screens/home-screen.js | 388 | 16 (24) |
+
+A régua antiga media 3,9–6,0 l/fio nesses blocos e os recusava. O que mudou a
+conta NÃO foi o bloco: foi o desenho das portas — appPort por getter, kit
+commodity fora da conta, e estado de tela morando NA tela. `node
+tools/fios-do-corte.mjs --tela <arquivo>` é a medida desta fase.
+
+**Dois blocos foram RECUSADOS de novo, com a régua nova na mão** — a medida
+continua vencendo a vontade:
+
+- **Confirmar pedido (folha)**: é CHECKOUT — lê forma de pagamento/cartão
+  salvo/Pix em voo e ESCREVE o token de uso único; migrar exigiria ~15 portas
+  de shell incluindo escrita de token. Fica ao lado do dono do dinheiro.
+- **Cashback**: sobraram 13 linhas depois que o gêmeo morto saiu — módulo de
+  13 linhas é cerimônia.
+
+O padrão de comunicação page→tela é o REGISTRO DE AÇÕES como barramento:
+o page anuncia (`resolve('renderStoreInfoState')?.(estado)`,
+`resolve('renderHomeContent')?.()`) e a tela desenha o que é dela. O page não
+importa nada de tela.
+
+### Armadilhas NOVAS desta fase (todas sofridas aqui)
+
+1. **Trampolim como `const` é TDZ.** Quando um nome migrado continua sendo
+   chamado POR NOME no page (closeProfSub no authFlow.init, openCouponDetail
+   no window), o page ganha um trampolim que resolve pelo registro NA
+   CHAMADA. Ele TEM de ser `function` declarada: o `authFlow.init()` roda no
+   MEIO do IIFE e passa o nome por valor — um `const` 1.100 linhas abaixo é
+   Temporal Dead Zone, e o app inteiro morreu no boot com "Cannot access 'Vc'
+   before initialization", com lint e unitários verdes. Quem deu a frase em
+   segundos foi o boot-smoke.
+2. **Trampolim NÃO entra no register do page.** Registrar o trampolim como
+   ação e deixar a tela sobrescrever funciona… até a tela faltar — aí o
+   trampolim resolve para si mesmo e vira recursão infinita muda. Falha
+   barulhenta (ação ausente) vence loop.
+3. **Extração por regex + spread.** O lookbehind `(?<![\w.$])` que protege
+   `restaurant.name` de virar `app.restaurant.name` em `restaurant_name`
+   TAMBÉM casa o terceiro ponto de `...fn()` — a chamada dentro de spread
+   escapa da reescrita. O no-undef do lint pega (é a especialidade dele);
+   rode-o antes de qualquer outra coisa após extração mecânica.
+4. **Vigilância de lifecycle vai para mount().** `onVisibility`/`onTeardown`
+   no corpo do módulo executam no import (armadilha 1 da §2.1, de novo). No
+   mount() rodam no fim do IIFE do page — o mesmo instante de antes.
+5. **Portão lido por `tail -1` não foi lido.** TRÊS commits desta rodada
+   carregaram erro de lint porque a linha de erro ficou fora do recorte do
+   pipe. `page-modules.test.js` e o hábito não bastam: leia a linha
+   "N problems (N errors)" INTEIRA, sempre.
+
+### Ruído novo da captura: o relógio de parede
+
+"Realizado há X horas" (detalhe do pedido do Perfil) muda de largura quando a
+hora vira — 3 elementos, fração de pixel, na MESMA tela, rodada após rodada.
+É da família do §5.1-8 (ruído que às vezes some): reconheça o trio de
+elementos antes de caçar fantasma. O fixture usa created_at fixo; a idade
+relativa é que anda. E o ruído de FONTE do §5.1-8 reapareceu na rodada com a
+mesma assinatura de sempre: 104 elementos, largura fracionária — recapturar
+resolve.
+
+## 10. O mock logado e o contrato dos pedidos (31/08/2026)
+
+`mockApi()` responde `/customers/me*` como o backend: SEM header
+Authorization → 401; COM → fixtures DO CONTRATO (`CUSTOMER`, `ORDERS` de
+tests/fixtures/orders.json, `orderDetail()` com endereço FLAT e
+status_history). Subrota não declarada cai no catch-all 404. Specs que
+sobrepõem rotas depois de mockApi() continuam vencendo.
+
+Nomes que a auditoria de 30-31/08 provou NUNCA terem existido em resposta
+nenhuma (todos já consertados; não os recoloque): item.name / item.unit_price
+/ selected_options_snapshot NO PEDIDO (o certo: product_name_snapshot,
+unit_price_snapshot — que JÁ inclui adicionais — e
+option_groups[].options[].option_name_snapshot); cancelled_at/refused_at
+(status_history); endereço por objetos aninhados (address_street/_number/...
+FLAT); display_name/day_name nos horários (day_label pronto; weekday é
+0=SEGUNDA); opening_hours_text/closing_time; rapi_suggestions; res.customer/
+res.access_token no verify (VerifyEmailCodeResponse = {message, verified} —
+e 200 com verified:false é RECUSA). E o saldo gastável por loja é
+by_restaurant[] filtrado por slug — o balance da raiz soma a conta inteira e
+o schema avisa que a soma não é gastável.

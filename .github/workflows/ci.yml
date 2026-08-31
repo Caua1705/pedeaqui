@@ -81,3 +81,79 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  O DEPLOY DE PRODUCAO SAI DAQUI, E SO DAQUI.
+  #
+  #  Ate 31/08/2026 a integracao Git da Vercel publicava a main no INSTANTE do
+  #  push. O job `verify` acima roda `on: push: branches: [main]` — ele confere,
+  #  ele nao publica, e a Vercel nao esperava por ele. O site subia e o portao
+  #  ficava vermelho depois. Isso quase custou caro na rodada anterior: o portao
+  #  pre-merge reportou `exit 0` com dois testes vermelhos por causa de um
+  #  `| tail`, e se o merge tivesse saido ali o deploy teria ido junto.
+  #
+  #  A trava tem DUAS metades, e meia trava e pior que nenhuma porque parece uma:
+  #    1. `vercel.json` traz `git.deploymentEnabled.main = false`.
+  #    2. este job publica, com `needs: verify`.
+  #  `tests/unit/deploy-gate.test.js` falha se qualquer uma das duas sumir.
+  #
+  #  Por que este caminho e nao os outros dois que foram avaliados:
+  #  - `ignoreCommand` no vercel.json consultando a Checks API e uma CORRIDA — a
+  #    Vercel comeca o build no instante do push, veria `pending` e pularia o
+  #    deploy, e um CI que fica verde depois NAO dispara deploy nenhum.
+  #  - protecao de branch exigindo o check tambem fecha, e pela raiz certa, mas
+  #    cobra PR para tudo (o fluxo aqui e merge local + push) e, em repositorio
+  #    privado, plano pago.
+  #
+  #  Os previews de branch CONTINUAM automaticos: `deploymentEnabled` desliga so
+  #  a branch nomeada, e preview e o que a migracao do Maps ainda precisa (a
+  #  chave do Google nao libera localhost).
+  #
+  #  `vercel pull` traz as variaveis de ambiente de PRODUCAO do projeto (as
+  #  VITE_* e a chave do Maps), entao o build daqui e o mesmo que a Vercel faria
+  #  sozinha. Sem ele, o bundle subiria apontando para a base padrao.
+  #
+  #  A CLI vai sem pin de versao de proposito: um pin errado quebra o deploy no
+  #  dia em que for preciso publicar, e este job so roda depois de quatro
+  #  portoes verdes.
+  # ═══════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: Deploy de producao (Vercel)
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Falha BARULHENTA, e nao silenciosa. Sem o segredo, um `if` que apenas
+      # pulasse o passo deixaria o job VERDE sem ter publicado — a producao
+      # parada no commit anterior, sem uma linha dizendo por que. E exatamente o
+      # modo de falha que este job existe para acabar.
+      - name: Conferir o segredo do deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          faltando=""
+          [ -z "$VERCEL_TOKEN" ] && faltando="$faltando VERCEL_TOKEN"
+          [ -z "$VERCEL_ORG_ID" ] && faltando="$faltando VERCEL_ORG_ID"
+          [ -z "$VERCEL_PROJECT_ID" ] && faltando="$faltando VERCEL_PROJECT_ID"
+          if [ -n "$faltando" ]; then
+            echo "::error::Faltam secrets do repositorio:$faltando. Sem eles o deploy nao acontece, e o vercel.json ja desligou o automatico da main — a producao fica no commit anterior."
+            exit 1
+          fi
+
+      - name: Publicar na Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

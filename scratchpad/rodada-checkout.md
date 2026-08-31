@@ -42,7 +42,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 
 ### Item 2 — limpeza que destrava
 - [x] 2.1 os defeitos recusados sob a régua do fallback defensivo — 19 régua correta, 4 defeito de verdade (sort_order), 2 precedência latente, 2 fantasma inofensiva, 1 prosa
-- [ ] 2.2 deploy opção C (vercel.json + ci.yml)
+- [x] 2.2 deploy opção C (vercel.json + ci.yml + guarda) — INERTE até 3 secrets; passo a passo em docs/deploy-pelo-portao.md
 
 ### Item 3 — sacola, checkout e filial
 - [ ] 3.1 inventário do que resta no restaurant-page.js
@@ -411,3 +411,45 @@ ninguém o lê.
 A régua valeu em 19 de 25. As 4 em que ela não valeu não falharam por "nome
 ausente" — falharam por **valor falsy legítimo**, que é a mesma pergunta com
 outra roupa: o fallback podia vencer com o nome certo PRESENTE.
+
+# Item 2.2 — o deploy passa a esperar o portão (opção C)
+
+**Implementado, e INERTE até os secrets existirem.** As duas metades:
+
+1. `vercel.json` → `"git": { "deploymentEnabled": { "main": false } }`.
+   Só a `main`; os previews das outras branches continuam automáticos, e é
+   deles que a verificação do Maps depende.
+2. `.github/workflows/ci.yml` → job `deploy`, com `needs: verify` e
+   `if: push && refs/heads/main`. Publica com
+   `vercel pull --environment=production` (traz as VITE_* de produção, senão o
+   bundle subiria apontando para a base padrão), `vercel build --prod` e
+   `vercel deploy --prebuilt --prod`.
+
+**Meia trava é pior que nenhuma, porque parece uma** — por isso
+`tests/unit/deploy-gate.test.js` (4 casos) falha se qualquer uma das duas
+metades sumir, e também se o job deixar de depender do `verify` ou deixar de
+estar preso à `main`. Visto vermelho antes: `expected undefined to be false`,
+`não há job de deploy`, `expected ... to match /VERCEL_TOKEN/`.
+
+**Sem o segredo o job FALHA, e não se pula.** Um deploy que se pula em silêncio
+devolve o buraco inteiro por outro caminho: CI verde, ninguém olha, produção
+parada no commit anterior sem uma linha dizendo por quê. O passo confere os três
+secrets e sai com `::error::` nomeando o que falta.
+
+**NÃO consegui criar o secret daqui:** não há `gh` nem `vercel` CLI nesta
+máquina, e não existe `.vercel/`. O que o dono do repositório precisa criar
+está escrito, passo a passo e com os nomes exatos, em
+`docs/deploy-pelo-portao.md`:
+
+| Onde | O quê |
+|---|---|
+| Vercel → Account Settings → Tokens | um token com escopo do time dono do projeto |
+| Vercel → projeto → Settings → General | copiar **Project ID** e **Team ID** |
+| GitHub → Settings → Secrets → Actions | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| Vercel → Settings → Git | CONFERIR que a `main` aparece como *deployment disabled* — quem decide de fato é o painel, e ele não foi consultado daqui |
+
+As outras duas opções foram descartadas com o motivo escrito no `ci.yml`:
+`ignoreCommand` é uma corrida perdida por construção (a Vercel começa o build
+no instante do push, veria `pending`, pularia o deploy, e um CI que fica verde
+depois não dispara deploy nenhum); proteção de branch fecha pela raiz certa mas
+cobra PR para tudo e, em repositório privado, plano pago.

@@ -104,6 +104,7 @@ import './pages/restaurant-auth-flow.js';
 // dele — por isso TODA tela precisa vir antes dele.
 import './pages/screens/profile-screen.js';
 import './pages/screens/customer-data-screen.js';
+import './pages/screens/store-info-screen.js';
 import './pages/restaurant-page.js';
 // A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
 // sacola com o meio de pagamento selecionado, portanto vem logo depois dela.

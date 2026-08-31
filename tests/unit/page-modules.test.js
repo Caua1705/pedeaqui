@@ -52,7 +52,8 @@ const MODULOS = [
 // não resolve variável com subdiretório ("one level deep").
 const TELAS = [
   { arquivo: 'screens/profile-screen', global: 'PedeAquiProfileScreen', carregar: () => import('../../scripts/pages/screens/profile-screen.js') },
-  { arquivo: 'screens/customer-data-screen', global: 'PedeAquiCustomerDataScreen', carregar: () => import('../../scripts/pages/screens/customer-data-screen.js') }
+  { arquivo: 'screens/customer-data-screen', global: 'PedeAquiCustomerDataScreen', carregar: () => import('../../scripts/pages/screens/customer-data-screen.js') },
+  { arquivo: 'screens/store-info-screen', global: 'PedeAquiStoreInfoScreen', carregar: () => import('../../scripts/pages/screens/store-info-screen.js') }
 ];
 
 describe('importar um módulo de tela não pode executar nada', () => {

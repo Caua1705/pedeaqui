@@ -159,7 +159,17 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     (25,5 l/fio). Armadilha da extração repetida: spread `...fn()` escapa do
     regex de substituição (o lookbehind vê o terceiro ponto) — no-undef pegou.
     releaseFocusFrom saiu do page (últimos usuários migraram; kit é o dono).
-    Captura 60 telas: 'Nenhuma diferença'. AGUARDANDO suíte p/ commit.
+    Captura 60 telas: 'Nenhuma diferença'. COMMIT: e3b1e44.
+  · TELA 3 Informações da loja: screens/store-info-screen.js (240 linhas),
+    4 ações (setStoreInfoTab, initStoreInfoModal, openRestaurantInfo,
+    renderStoreInfoState — as duas últimas são BARRAMENTO: o page anuncia o
+    estado do /info e a tela desenha o que é dela). page 6427→6247 (aprox).
+    ensureRestaurantInfo/fan-out FICAM no page (o /info alimenta rodapé,
+    checkout, Ajuda e pagamento do perfil); normalizadores de pagamento idem,
+    vão por shell. Formatadores agora vêm de store-info-format nos DOIS lados
+    (2.3 consumido). infoWeekdayLabel/infoTime/infoHoursText/infoTodayHours
+    MORRERAM no page. Captura: 'Nenhuma diferença'. Portões rápidos verdes;
+    AGUARDANDO suíte completa p/ commit.
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

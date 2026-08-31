@@ -99,6 +99,10 @@ import './pages/restaurant-pix-flow.js';
 // dos outros dois: publica window.PedeAquiAuthFlow, consumido pelo
 // restaurant-page no corpo do proprio IIFE.
 import './pages/restaurant-auth-flow.js';
+// Telas do contrato mount(ctx) (skill §9). Publicam window.PedeAqui*Screen e
+// NAO executam nada no import; o restaurant-page chama mount() no fim do IIFE
+// dele — por isso TODA tela precisa vir antes dele.
+import './pages/screens/profile-screen.js';
 import './pages/restaurant-page.js';
 // A tela de cartao usa as acoes publicadas por restaurant-page para voltar a
 // sacola com o meio de pagamento selecionado, portanto vem logo depois dela.

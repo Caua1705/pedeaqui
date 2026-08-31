@@ -41,6 +41,19 @@ const MODULOS = [
   { arquivo: 'restaurant-auth-flow', global: 'PedeAquiAuthFlow', chamada: 'authFlow.init({' }
 ];
 
+/**
+ * As TELAS do contrato mount(ctx) (skill §9). Mesmas duas primeiras
+ * verificações dos módulos (importar não executa; corpo só declara). A
+ * terceira é diferente: em vez de lista de injeções + init(), o contrato é
+ * publicar `mount` e nada mais — quem confere as chaves do ctx em runtime é o
+ * próprio mount(), que recusa shell incompleto, e o boot-smoke.
+ */
+// `carregar` é uma arrow com o caminho LITERAL: o import dinâmico do vitest
+// não resolve variável com subdiretório ("one level deep").
+const TELAS = [
+  { arquivo: 'screens/profile-screen', global: 'PedeAquiProfileScreen', carregar: () => import('../../scripts/pages/screens/profile-screen.js') }
+];
+
 describe('importar um módulo de tela não pode executar nada', () => {
   // Este é o teste que teria pegado o defeito. Importar o arquivo roda o corpo
   // do IIFE; se houver ali uma instrução que use uma dependência injetada, ela
@@ -53,6 +66,17 @@ describe('importar um módulo de tela não pode executar nada', () => {
       expect(globalThis.window[global].init).toBeTypeOf('function');
     });
   }
+
+  for (const { arquivo, global, carregar } of TELAS) {
+    it(`${arquivo} importa limpo e publica ${global}.mount — e nada mais`, async () => {
+      await carregar();
+      expect(globalThis.window[global], `${global} não foi publicado`).toBeTruthy();
+      expect(globalThis.window[global].mount).toBeTypeOf('function');
+      // O contrato é mount e NADA mais: uma segunda porta é acessor de volta
+      // para o estado da tela, e estado de tela não se lê de fora.
+      expect(Object.keys(globalThis.window[global])).toEqual(['mount']);
+    });
+  }
 });
 
 describe('nenhuma instrução executável no corpo do módulo', () => {
@@ -62,7 +86,7 @@ describe('nenhuma instrução executável no corpo do módulo', () => {
   // errada. Efeito de carga vai para init(), sem exceção.
   const executavel = /^(?:[A-Za-z_$][\w$]*\s*[.(]|new\s|await\s|delete\s|if\s*\(|for\s*\(|while\s*\()/;
 
-  for (const { arquivo } of MODULOS) {
+  for (const { arquivo } of [...MODULOS, ...TELAS]) {
     it(`${arquivo} só declara — não roda`, () => {
       const linhas = ler(`scripts/pages/${arquivo}.js`).split('\n');
       const infratoras = [];

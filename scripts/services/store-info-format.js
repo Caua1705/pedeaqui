@@ -104,6 +104,8 @@
     formatBranchLabel
   };
 
+  // Só window: o vitest importa este arquivo e lê window.PedeAquiStoreInfoFormat
+  // (o setup dos unitários fornece o global). Um module.exports aqui era
+  // no-undef no lint do browser — e ninguém o consumia.
   if (typeof window !== 'undefined') window.PedeAquiStoreInfoFormat = api;
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

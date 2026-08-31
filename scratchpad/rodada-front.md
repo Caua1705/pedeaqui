@@ -137,11 +137,22 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
     card-format. Build ok, boot-smoke 4/4.
 
 ### Fase 3 — telas
-- [ ] 3.1 Inventário de TODAS as telas ainda no restaurant-page.js (linhas +
-      dependências), ordem gravada aqui. PERFIL primeira, INÍCIO última.
-- [ ] 3.2 Migrar cada tela (a→g do prompt: mover, ações, MODULOS no
-      page-modules.test.js, unitários com fixture do api.d.ts, captura dos
-      dois lados, 4 portões, scratchpad+commit+push)
+- [x] 3.1 Inventário na tabela abaixo. PERFIL primeira, INÍCIO última.
+- [~] 3.2 Migrações:
+  · TELA 1 Perfil/pedidos: screens/profile-screen.js (486 linhas), 6 ações
+    registradas pela tela, page 7129→6719 linhas. Fios --tela: 5 app + 6
+    shell = 11 (44 l/fio — o padrão mudou a economia). closeProfSub virou
+    trampolim NO PAGE (função declarada, resolve pelo registro na chamada) —
+    ARMADILHA NOVA sofrida e corrigida: trampolim como `const` deu TDZ
+    (authFlow.init lá em cima o passa por valor) e derrubou o app no boot
+    ("Cannot access 'Vc' before initialization") com lint/unit verdes; o
+    boot-smoke pegou em segundos com frase. Anotar na skill ao fim.
+    page-modules.test.js ganhou TELAS (import limpo + corpo só declara +
+    mount é a ÚNICA chave). Captura: só o ruído de relógio conhecido.
+    AGUARDANDO suíte completa p/ commit.
+    Também neste commit: conserto do lint vermelho herdado da fase 2
+    (module.exports no store-info-format — no-undef; a fase 2 foi commitada
+    com 2 erros de lint que o tail -1 escondeu; lição: ler a saída inteira).
 - [ ] 3.4 Meta: restaurant-page.js → casca (boot, appPort, roteamento).
       Se sobrar >800 linhas, explicar no relatório.
 

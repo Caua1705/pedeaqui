@@ -1054,31 +1054,43 @@
     box.innerHTML = sections.length ? sections.join('') : '<p>Formas de pagamento não informadas.</p>';
   }
 
+  // O contrato manda o rótulo PRONTO: BusinessHourDayResponse.day_label
+  // ("Segunda-feira"). Este helper lia display_name/day_name/label — nomes que
+  // nunca existiram — e caía num mapa 1..7 que NÃO é o do contrato (weekday é
+  // 0=SEGUNDA, o datetime.weekday() do Python). Resultado em produção: a
+  // primeira linha do horário dizia "0", e todos os outros dias saíam
+  // deslocados em um (o weekday 1, que é terça, virava "Segunda-feira").
+  // O mapa local fica só para day_label ausente, com a numeração DO CONTRATO.
   function infoWeekdayLabel(item) {
-    if (item.display_name || item.day_name || item.label) return item.display_name || item.day_name || item.label;
-    const labels = {
-      monday: 'Segunda-feira', tuesday: 'Terça-feira', wednesday: 'Quarta-feira', thursday: 'Quinta-feira', friday: 'Sexta-feira', saturday: 'Sábado', sunday: 'Domingo',
-      segunda: 'Segunda-feira', terca: 'Terça-feira', quarta: 'Quarta-feira', quinta: 'Quinta-feira', sexta: 'Sexta-feira', sabado: 'Sábado', domingo: 'Domingo'
-    };
-    const normalized = normalizeAddressPart(item.weekday);
-    const isoLabels = { 1: 'Segunda-feira', 2: 'Terça-feira', 3: 'Quarta-feira', 4: 'Quinta-feira', 5: 'Sexta-feira', 6: 'Sábado', 7: 'Domingo' };
-    return labels[normalized] || isoLabels[Number(item.weekday)] || String(item.weekday ?? '');
+    if (nonEmptyString(item.day_label)) return item.day_label;
+    const contractLabels = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+    return contractLabels[Number(item.weekday)] || String(item.weekday ?? '');
   }
 
   function infoTime(value) {
     return nonEmptyString(value)?.slice(0, 5) || '';
   }
 
+  // BusinessHourDayResponse.periods[].{opens_at, closes_at} — os outros nomes
+  // que já moraram aqui (open_time, intervals, start/end...) nunca existiram.
   function infoHoursText(item) {
     if (item.is_closed === true) return 'Fechado';
-    const periods = item.periods || item.intervals || item.ranges || [];
-    const normalized = Array.isArray(periods) && periods.length ? periods : [item];
-    const text = normalized.map(period => {
-      const start = infoTime(period.open_time || period.opens_at || period.start || period.from);
-      const end = infoTime(period.close_time || period.closes_at || period.end || period.to);
+    const periods = Array.isArray(item.periods) ? item.periods : [];
+    const text = periods.map(period => {
+      const start = infoTime(period.opens_at);
+      const end = infoTime(period.closes_at);
       return start && end ? `${start} às ${end}` : '';
     }).filter(Boolean);
     return text.length ? text.join(' - ') : 'Fechado';
+  }
+
+  // O dia de HOJE, pelo par que o /info publica para isso: current_weekday
+  // (número, 0=segunda) casando com business_hours[].weekday — também número.
+  // A comparação antiga passava os dois por normalizeAddressPart, um helper de
+  // ENDEREÇO, para casar texto com número por coincidência de String().
+  function infoTodayHours(data) {
+    const hours = Array.isArray(data?.business_hours) ? data.business_hours : [];
+    return hours.find(item => Number(item.weekday) === Number(data?.current_weekday)) || null;
   }
 
   function renderInfoLogo(url, name) {
@@ -1158,13 +1170,14 @@
       if (phone) element.href = `https://wa.me/${phone.startsWith('55') ? phone : `55${phone}`}`;
       else element.removeAttribute('href');
     });
-    const currentWeekday = String(data?.current_weekday ?? '');
-    const hours = Array.isArray(data?.business_hours) ? data.business_hours : (Array.isArray(branch.business_hours) ? branch.business_hours : []);
+    const currentWeekday = Number(data?.current_weekday);
+    const hours = Array.isArray(data?.business_hours) ? data.business_hours : [];
     const hoursCard = document.querySelector('#infoModal .store-hours-card');
     if (hoursCard) hoursCard.innerHTML = hours.length
-      ? hours.map(item => `<div class='store-hours-row${normalizeAddressPart(item.weekday) === normalizeAddressPart(currentWeekday) ? ' active' : ''}'><span>${esc(infoWeekdayLabel(item))}</span><strong>${esc(infoHoursText(item))}</strong></div>`).join('')
+      ? hours.map(item => `<div class='store-hours-row${Number(item.weekday) === currentWeekday ? ' active' : ''}'><span>${esc(infoWeekdayLabel(item))}</span><strong>${esc(infoHoursText(item))}</strong></div>`).join('')
       : '<div class="store-info-load-state">Horários não informados.</div>';
     if ($('storeInfoAddress')) $('storeInfoAddress').textContent = infoFullAddress(branch) || 'Endereço não informado';
+    renderFooterInfo(data);
     renderRestaurantInfoPayment(data);
     renderProfileRestaurantInfo(data);
     renderProfilePaymentScreen(data);
@@ -1439,7 +1452,10 @@
     document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
     document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
-    document.querySelectorAll('.store-info-email').forEach(el => el.textContent = restaurant.email || settings.email || 'E-mail não informado');
+    // O e-mail não vem no /menu (restaurant.email/settings.email nunca
+    // existiram): quem o tem é o branch do /info, e renderRestaurantInfo
+    // sobrescreve quando ele chega.
+    document.querySelectorAll('.store-info-email').forEach(el => el.textContent = 'E-mail não informado');
     document.querySelectorAll('.store-info-whatsapp').forEach(el => el.textContent = branch.whatsapp || 'WhatsApp não informado');
     document.querySelectorAll('.store-contact-row--wa').forEach(el => {
       const phone = onlyDigits(branch.whatsapp || branch.phone || '');
@@ -1466,12 +1482,13 @@
     if ($('footerContactSecondary')) $('footerContactSecondary').textContent = branches[1]?.whatsapp || branches[1]?.phone || '';
     renderFooterInfo();
     renderProfileHelpContacts();
-    const closeTime = restaurant.closing_time || settings.closing_time || settings.close_time || '';
-    const closeEl = $('mobCloseTime');
-    if (closeEl) {
-      closeEl.style.display = isOpen === false || !closeTime ? 'none' : '';
-      closeEl.textContent = closeTime ? `fecha às ${closeTime}` : '';
-    }
+    // O chip "fecha às HH:MM" (#mobCloseTime) NÃO EXISTE no markup — o id não
+    // aparece em restaurant.html (só uma regra órfã de .mob-close-time no
+    // utilities.css). O código que o alimentava lia closing_time/close_time do
+    // /menu, campos que também nunca existiram: fantasma escrevendo em
+    // fantasma. Saiu. Se o produto quiser o chip de volta, a hora certa mora
+    // em /info (business_hours[current_weekday].periods[].closes_at) — ver
+    // infoTodayHours().
     renderWidget();
     const highlightsTitle = $('homeHighlightsTitle');
     if (highlightsTitle) highlightsTitle.textContent = `Destaques ${restName}`;
@@ -1508,7 +1525,7 @@
     const logoUrl = infoRestaurant.logo_url || infoRestaurant.logo_path || restaurant.logo_url || restaurant.logo_path || '';
     const phone = branch.phone || branch.whatsapp || '';
     const whatsapp = branch.whatsapp || branch.phone || '';
-    const email = branch.email || infoRestaurant.email || restaurant.email || settings.email || '';
+    const email = branch.email || '';
     const whatsappDigits = helpWhatsAppDigits(whatsapp);
     const phoneHref = onlyDigits(phone);
     const emailLabel = email ? String(email).toUpperCase() : 'E-MAIL NÃO INFORMADO';
@@ -1546,23 +1563,25 @@
 
   // Coluna "Informações" do rodapé. Era markup fixo com o horário e o couvert de
   // um restaurante só; agora sai da API, e o que a API não informa não aparece.
-  function renderFooterInfo() {
+  function renderFooterInfo(infoData = null) {
     const hoursEl = $('footerHours');
     if (hoursEl) {
-      const hours = restaurant.opening_hours_text
-        || settings.opening_hours_text
-        || settings.business_hours_text
-        || '';
-      hoursEl.textContent = hours;
-      hoursEl.hidden = !hours;
+      // opening_hours_text/business_hours_text nunca existiram em resposta
+      // nenhuma — a linha de horário do rodapé ficou escondida desde que o
+      // markup fixo saiu. O que a API tem é business_hours no /info; o rodapé
+      // responde a pergunta de hoje.
+      const info = infoData || (restaurantInfoState.status === 'success' ? restaurantInfoState.data : null);
+      const today = infoTodayHours(info);
+      const text = today ? `Hoje: ${infoHoursText(today)}` : '';
+      hoursEl.textContent = text;
+      hoursEl.hidden = !text;
     }
     const feeEl = $('footerServiceFee');
     if (feeEl) {
       const feeAmount = asFiniteNumber(settings.service_fee_amount);
-      const feeNote = settings.service_fee_description || settings.service_fee_note || '';
+      // service_fee_description/service_fee_note não existem no contrato.
       const parts = [];
       if (feeAmount != null && feeAmount > 0) parts.push(`Taxa de serviço: ${fmt(feeAmount)}`);
-      if (feeNote) parts.push(feeNote);
       feeEl.textContent = parts.join(' · ');
       feeEl.hidden = !parts.length;
     }
@@ -6530,75 +6549,71 @@
     return `${part('day')}/${part('month')}/${part('year')} - ${part('hour')}:${part('minute')}`;
   }
 
+  // O contrato só conhece UMA forma de endereço no pedido: os campos FLAT do
+  // OrderDetailResponse (address_street, address_number, address_neighborhood,
+  // address_city, address_state). A LISTA (CustomerOrderHistoryItem) não traz
+  // endereço nenhum — ele chega na segunda chamada (GET do detalhe) e o merge
+  // de openProfOrderDetails o acrescenta. Antes disto, NOVE candidatos que a
+  // API nunca teve (delivery_address_snapshot, customer_address, shipping_
+  // address...) eram testados um a um — todos undefined — e a tela dizia
+  // "Endereço não informado" para TODO pedido de entrega, em produção. O
+  // fallback pelo endereço salvo fica: o detalhe guarda customer_address_id,
+  // e os campos de CustomerAddressResponse têm os MESMOS nomes.
   function profOrderAddress(order) {
-    const addressId = order.customer_address_id || order.delivery_address_id || order.address_id || '';
-    const savedAddress = (appState.customerAddresses || []).find(address =>
-      String(address.id || address.address_id || '') === String(addressId)
-    );
-    const candidates = [
-      order.delivery_address_snapshot,
-      order.customer_address_snapshot,
-      order.address_snapshot,
-      order.delivery_address,
-      order.customer_address,
-      order.shipping_address,
-      order.address,
-      order.delivery?.address,
-      savedAddress
-    ];
-    const hasAddressContent = candidate => {
-      if (typeof candidate === 'string') return Boolean(candidate.trim());
-      if (!candidate || typeof candidate !== 'object') return false;
-      const nested = candidate.address && typeof candidate.address === 'object' ? candidate.address : candidate;
-      return ['street', 'street_name', 'logradouro', 'address_line', 'line1', 'formatted_address', 'full_address']
-        .some(key => Boolean(nested[key]));
+    const linhas = source => {
+      const firstLine = [source.street, source.number].filter(Boolean).join(', ');
+      const cityState = [source.city, source.state].filter(Boolean).join(' / ');
+      return { firstLine, secondLine: [source.neighborhood, cityState].filter(Boolean).join(' - ') };
     };
-    let source = candidates.find(hasAddressContent) || {};
-    if (typeof source === 'string') {
-      try {
-        source = JSON.parse(source);
-      } catch {
-        return { firstLine: source.trim(), secondLine: '' };
-      }
+    if (order.address_street || order.address_number || order.address_neighborhood || order.address_city) {
+      return linhas({
+        street: order.address_street,
+        number: order.address_number,
+        neighborhood: order.address_neighborhood,
+        city: order.address_city,
+        state: order.address_state
+      });
     }
-    source = source.address && typeof source.address === 'object' ? source.address : source;
-    const street = source.street || source.street_name || source.logradouro || source.address_line || source.line1 || order.delivery_street || '';
-    const number = source.number || source.street_number || source.numero || order.delivery_number || '';
-    const neighborhood = source.neighborhood || source.district || source.bairro || order.delivery_neighborhood || '';
-    const city = source.city || source.cidade || order.delivery_city || '';
-    const state = source.state || source.uf || order.delivery_state || '';
-    const formatted = source.formatted_address || source.full_address || '';
-    const firstLine = [street, number].filter(Boolean).join(', ');
-    const cityState = [city, state].filter(Boolean).join(' / ');
-    const secondLine = [neighborhood, cityState].filter(Boolean).join(' - ');
-    return { firstLine: firstLine || formatted, secondLine };
+    const savedAddress = (appState.customerAddresses || []).find(address =>
+      String(address.id || '') === String(order.customer_address_id || ''));
+    if (savedAddress) return linhas(savedAddress);
+    return { firstLine: '', secondLine: '' };
   }
 
+  // Um item da comanda é OrderItemResponse, e os adicionais chegam AGRUPADOS:
+  // option_groups[].{option_group_name_snapshot, options[].option_name_snapshot}.
+  // O nome antigo aqui (selected_options_snapshot) é o shape da SACOLA local —
+  // nunca existiu em resposta de API — então todo pedido abria sem NENHUMA
+  // opção escolhida no detalhe, em produção, e ninguém via porque nenhum
+  // fixture tinha adicionais.
   function profOrderSelectedOptions(item) {
-    const options = Array.isArray(item.selected_options_snapshot)
-      ? item.selected_options_snapshot
-      : (Array.isArray(item.selected_options) ? item.selected_options : []);
-    return options.map(option => {
-      const group = option.group_name || option.option_group_name || option.group?.name || option.option_group?.name || '';
-      const name = option.option_name || option.name || option.label || option.option?.name || '';
-      const quantity = Number(option.quantity ?? option.qty ?? 1) || 1;
-      return { group, name, quantity };
-    }).filter(option => option.group || option.name);
+    const groups = Array.isArray(item.option_groups) ? item.option_groups : [];
+    return groups.flatMap(group => (Array.isArray(group.options) ? group.options : [])
+      .map(option => ({
+        group: group.option_group_name_snapshot || '',
+        name: option.option_name_snapshot || ''
+      }))
+    ).filter(option => option.group || option.name);
   }
 
-  function profOrderItemTotal(item, quantity) {
-    const direct = item.total ?? item.line_total ?? item.subtotal ?? item.total_price;
-    if (direct != null && direct !== '' && Number.isFinite(Number(direct))) return Number(direct);
-    const unit = item.unit_price ?? item.price ?? item.product_price;
-    return Number.isFinite(Number(unit)) ? Number(unit) * quantity : null;
+  // `total` é obrigatório no contrato e JÁ vem com adicionais dentro (assim
+  // como unit_price_snapshot). Não refazemos a conta aqui: o front não calcula
+  // dinheiro — se o campo faltar, o preço não aparece, em vez de aparecer
+  // errado.
+  function profOrderItemTotal(item) {
+    const total = Number(item.total);
+    return Number.isFinite(total) && item.total != null ? total : null;
   }
 
   function profOrderItemMarkup(item) {
-    const quantity = Number(item.quantity ?? item.qty ?? 1) || 1;
-    const menuProduct = products.find(product => String(product.id) === String(item.product_id || item.product?.id || ''));
-    const name = item.name || item.product_name || item.product?.name || menuProduct?.name || 'Item';
-    const imageUrl = item.image_url || item.image_path || item.product_image_url || item.product?.image_url || item.product?.image_path || menuProduct?.image_url || menuProduct?.image_path || '';
-    const total = profOrderItemTotal(item, quantity);
+    const quantity = Number(item.quantity ?? 1) || 1;
+    // product_id é anulável DE PROPÓSITO: o produto pode ter saído do
+    // cardápio, e o pedido antigo continua existindo. A API não manda imagem
+    // de item — a foto é a do cardápio local, quando o produto ainda está lá.
+    const menuProduct = products.find(product => String(product.id) === String(item.product_id || ''));
+    const name = item.product_name_snapshot || 'Item';
+    const imageUrl = menuProduct?.image_url || menuProduct?.image_path || '';
+    const total = profOrderItemTotal(item);
     const options = profOrderSelectedOptions(item);
     return `
       <div class="order-details__item">
@@ -6610,7 +6625,7 @@
           ${options.map(option => `
             <div class="order-details__item-option">
               ${option.group ? `<strong>${esc(option.group)}</strong>` : ''}
-              ${option.name ? `<span>${option.quantity}x ${esc(option.name)}</span>` : ''}
+              ${option.name ? `<span>${esc(option.name)}</span>` : ''}
             </div>
           `).join('')}
           ${total == null ? '' : `<strong class="order-details__item-price">${fmt(total)}</strong>`}
@@ -6634,9 +6649,14 @@
 
   function profOrderCancelledMarkup(order, status) {
     if (!PROF_ORDER_DANGER_STATUSES.has(status.status)) return '';
-    const cancelledAt = order.cancelled_at || order.canceled_at || order.refused_at || order.rejected_at
-      || order.status_updated_at || order.updated_at || order.created_at;
-    const dateTime = profOrderDateTime(cancelledAt);
+    // O contrato não tem cancelled_at/refused_at: o instante da recusa mora em
+    // status_history[] (OrderDetailResponse), na entrada cujo status é o de
+    // recusa. updated_at é o fallback — na lista, antes do detalhe chegar,
+    // nem ele existe, e a data some em vez de mentir.
+    const historico = Array.isArray(order.status_history) ? order.status_history : [];
+    const recusa = historico.filter(entry =>
+      PROF_ORDER_DANGER_STATUSES.has(String(entry.status || '').trim().toLowerCase())).pop();
+    const dateTime = profOrderDateTime(recusa?.created_at || order.updated_at || '');
     return `
       <section class="order-details__finishedOrder" aria-label="Pedido recusado">
         <div class="order-details__finished-header">
@@ -6661,9 +6681,17 @@
     const address = profOrderAddress(order);
     const orderNumber = order.order_number ?? '';
     const restaurantName = order.restaurant_name || restaurant.name || fallback().restaurantName || 'Restaurante';
-    const restaurantLogo = order.restaurant_logo_url || order.restaurant_logo || restaurant.logo_url || restaurant.logo_path || '';
+    // A API não manda logo no pedido; a marca é a do restaurante carregado.
+    const restaurantLogo = restaurant.logo_url || restaurant.logo_path || '';
     const subtotal = Number(order.subtotal) || 0;
     const deliveryFee = Number(order.delivery_fee) || 0;
+    // Os quatro abaixo EXISTEM no contrato (lista e detalhe) e não apareciam:
+    // com taxa de serviço ou desconto, Subtotal + Entrega não fechava com o
+    // Total na tela — e o cliente confere essa conta. Só exibição: os valores
+    // vêm prontos (os descontos como string decimal, por isso o Number()).
+    const orderServiceFee = Number(order.service_fee) || 0;
+    const discountTotal = Number(order.discount_total) || Number(order.coupon_discount_amount) || 0;
+    const cashbackRedeemed = Number(order.cashback_redeemed_amount) || 0;
     const total = Number(order.total) || 0;
     const isPickup = String(order.order_type || '').toLowerCase() === 'pickup';
     const addressTitle = isPickup ? 'Local de retirada' : 'Endereço de entrega';
@@ -6706,6 +6734,9 @@
         <dl>
           <div><dt>Subtotal</dt><dd>${fmt(subtotal)}</dd></div>
           <div><dt>Taxa de entrega</dt><dd>${fmt(deliveryFee)}</dd></div>
+          ${orderServiceFee > 0 ? `<div><dt>Taxa de serviço</dt><dd>${fmt(orderServiceFee)}</dd></div>` : ''}
+          ${discountTotal > 0 ? `<div><dt>Desconto${order.coupon_code ? ` (${esc(order.coupon_code)})` : ''}</dt><dd>-${fmt(discountTotal)}</dd></div>` : ''}
+          ${cashbackRedeemed > 0 ? `<div><dt>Cashback usado</dt><dd>-${fmt(cashbackRedeemed)}</dd></div>` : ''}
           <div class="order-details__total"><dt>Total</dt><dd>${fmt(total)}</dd></div>
         </dl>
       </section>

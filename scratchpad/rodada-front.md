@@ -57,6 +57,34 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
         fechava como sucesso) e verde 6/6 (--repeat-each=3) após o conserto.
         Lição de spec: dígito com auto-avanço de foco não aceita fill() por
         campo — digitar pelo teclado (page.keyboard.type).
+      · Conserto 3 (D1 Perfil + D3/D4/D6/D16 horários+email, UM commit — os
+        dois lotes se misturaram no working tree; decisão anotada):
+        - D1: profOrderAddress → address_* flat + fallback endereço salvo;
+          option_groups[].options[].option_name_snapshot; product_name_snapshot;
+          item.total só (sem re-somar); imagem só do cardápio local;
+          status_history p/ data da recusa; logo local; Valores ganhou taxa de
+          serviço/desconto/cashback (exibição, valores prontos).
+          Specs: profile-order-contract.spec.js (5 novos, mock logado padrão),
+          profile-order-tracking.spec.js reescrito p/ contrato (fixture era o
+          contrato ERRADO). 6 vermelhos vistos contra dist velho → 18/18 verde.
+          Suíte completa exit 0. Captura: só perfil-pedido-detalhe (29 elems).
+        - D3/D4: day_label + weekday 0=SEGUNDA (mapa 1..7 mostrava "0" e
+          deslocava TODOS os dias; dia destacado errado — visto no teste:
+          'Quinta' onde devia 'Sexta'). infoTodayHours() novo.
+        - D5 RECLASSIFICADO: #mobCloseTime NEM EXISTE no markup (só regra órfã
+          .mob-close-time no utilities.css) — fantasma escrevendo em fantasma;
+          código removido, chip de volta = decisão de produto (anotado).
+        - D6: footerHours mostra 'Hoje: HH:MM às HH:MM' dos periods do /info
+          (decisão: linha de hoje, não a semana). D16: cadeias mortas de email/
+          service_fee_description removidas.
+          store-hours.spec.js: 3 testes vistos vermelhos → 6/6 verde (2x).
+          Captura: 10 telas, TODAS só footerHours display none→block.
+      · D9 RECLASSIFICADO fallback-morto: image_url||...||image_path resolve
+        sempre (ambos existem no contrato); title/subtitle são alt/fallback
+        cosmético morto. Sem conserto.
+      · D17 NÃO-DEFEITO: itens do Pix vêm da foto local (order-tracking), como
+        o comentário do módulo já documenta; order?.items é o ramo morto
+        intencional (sem foto o botão some).
 
 ### Fase 2 — o padrão de tela (pré-requisito da fase 3)
 - [ ] 2.1 scripts/utils/screen-kit.js (14 ferramentas: esc, fmt, fallback, $,

@@ -28,16 +28,33 @@ function orderFixture(overrides = {}) {
     delivery_fee: 6.99,
     total: 51.79,
     customer_address_id: 'address-e2e-1',
+    // Os nomes são OS DO CONTRATO (OrderItemResponse): este fixture já esteve
+    // escrito com os que o código esperava (product_name, selected_options com
+    // option_group_name/option_name) — nomes que nenhuma resposta da API tem —
+    // e por isso o spec confirmava a leitura errada em vez de acusá-la.
     items: [{
+      id: 'e2e-item-11950-1',
+      product_id: null,
       quantity: 1,
-      product_name: 'Combo Quinta',
+      product_name_snapshot: 'Combo Quinta',
+      unit_price_snapshot: 44.8,
       total: 44.8,
-      selected_options: [
-        { option_group_name: 'Tamanho', option_name: 'Tamanho único' },
-        { option_group_name: 'Escolha seu panini', option_name: 'Carde de Sol Chipotle' },
-        { option_group_name: 'Escolha seu pão', option_name: 'Tradicional com ervas' },
-        { option_group_name: 'Escolha seu blend', option_name: 'Moranja 400 ml' },
-        { option_group_name: 'Forma de adoçar', option_name: 'Adoçante stevia' }
+      option_groups: [
+        { option_group_id: 'g1', option_group_name_snapshot: 'Tamanho', options: [
+          { id: 'og1', option_id: 'o1', option_name_snapshot: 'Tamanho único', additional_price_snapshot: 0 }
+        ] },
+        { option_group_id: 'g2', option_group_name_snapshot: 'Escolha seu panini', options: [
+          { id: 'og2', option_id: 'o2', option_name_snapshot: 'Carde de Sol Chipotle', additional_price_snapshot: 0 }
+        ] },
+        { option_group_id: 'g3', option_group_name_snapshot: 'Escolha seu pão', options: [
+          { id: 'og3', option_id: 'o3', option_name_snapshot: 'Tradicional com ervas', additional_price_snapshot: 0 }
+        ] },
+        { option_group_id: 'g4', option_group_name_snapshot: 'Escolha seu blend', options: [
+          { id: 'og4', option_id: 'o4', option_name_snapshot: 'Moranja 400 ml', additional_price_snapshot: 0 }
+        ] },
+        { option_group_id: 'g5', option_group_name_snapshot: 'Forma de adoçar', options: [
+          { id: 'og5', option_id: 'o5', option_name_snapshot: 'Adoçante stevia', additional_price_snapshot: 0 }
+        ] }
       ]
     }],
     ...overrides
@@ -183,9 +200,15 @@ for (const orderCase of [
 }
 
 test('pedido cancelado segue a composição da referência e oferece Ajuda no aviso', async ({ page }) => {
+  // O instante da recusa mora em status_history (o contrato não tem
+  // cancelled_at) — este fixture já usou cancelled_at e confirmava a leitura
+  // de um campo fantasma.
   await openTrackedOrder(page, {
     status: 'cancelled',
-    cancelled_at: '2026-08-13T18:03:00'
+    status_history: [
+      { id: 'h1', status: 'pending', created_at: '2026-08-13T17:40:00', changed_by: null, note: null },
+      { id: 'h2', status: 'cancelled', created_at: '2026-08-13T18:03:00', changed_by: null, note: null }
+    ]
   });
 
   const finishedOrder = page.locator('.order-details__finishedOrder');

@@ -259,8 +259,18 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       (D12: campo nunca existiu na API). 2 specs novos vistos vermelhos;
       assistant-screen 21/21. Suíte 280 passed + 2 voice-session sob carga
       (23/23 isolado). COMMIT: (a seguir)
-- [ ] 4.5 Maps: AutocompleteService → AutocompleteSuggestion (não testável em
-      dev; marcar "verificar em preview")
+- [x] 4.5 Maps migrado: o caminho NOVO (AutocompleteSuggestion) já estava
+      implementado atrás de USE_LEGACY_PLACES_AUTOCOMPLETE=true (por um 403
+      de permissão da chave). Agora: novo é o PADRÃO; legado virou fallback
+      AUTOMÁTICO de sessão (_newPlacesUnavailable) — 403 de permissão cai
+      para o legado NA MESMA digitação, sem erro na tela.
+      ⚠ VERIFICAR EM PREVIEW: a chave não libera localhost; o caminho novo
+      contra o Google real não é testável em dev. O que está provado (E2E
+      maps-autocomplete.spec.js, SDK falso, 2 testes vistos vermelhos): novo
+      responde sem tocar o legado; 403 → legado na mesma digitação; sessão
+      não insiste no caminho que falhou.
+      (De carona: lint error 'MENU' unused que o commit 4.1 deixou — portão
+      lido com grep curto DE NOVO; consertado aqui.)
 - [ ] 4.6 Registrar issue (sem consertar): chips de pagamento chumbados em
       restaurant.html:462-470
 

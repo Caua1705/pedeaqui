@@ -35,7 +35,7 @@ test('restaurante sem taxa de serviço não ganha uma linha de R$ 0,00', async (
   await mockApi(page);
   // O /menu com a taxa desligada: settings é a fonte (service_fee_enabled).
   await page.route(/\/menu(\?|$)/, async (route) => {
-    const { MENU, menuForBranch } = await import('./helpers.js');
+    const { menuForBranch } = await import('./helpers.js');
     const body = menuForBranch(new URL(route.request().url()).searchParams.get('branch_id'));
     body.settings = { ...body.settings, service_fee_enabled: false, service_fee_amount: 0 };
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });

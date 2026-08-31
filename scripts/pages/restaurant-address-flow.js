@@ -527,16 +527,27 @@
   // ----------------------------------------------------------------
   //  Places autocomplete: implementation switch + debug
   // ----------------------------------------------------------------
-  // TEMPORARY ISOLATION FLAG.
-  //   true  -> legacy google.maps.places.AutocompleteService
-  //            (routes through maps.googleapis.com / "Places API")
-  //   false -> new AutocompleteSuggestion.fetchAutocompleteSuggestions
-  //            (routes through places.googleapis.com / "Places API (New)")
-  // The 403 "caller does not have permission" comes from the NEW path
-  // (AutocompletePlaces RPC). Keeping this true lets address search work
-  // through the legacy/JS endpoint while the Places API (New) key
-  // permission is sorted out in Google Cloud. Flip to false to retest New.
-  const USE_LEGACY_PLACES_AUTOCOMPLETE = true;
+  // MIGRADO em 31/08/2026: o caminho NOVO (AutocompleteSuggestion, "Places
+  // API (New)") é o padrão — o AutocompleteService legado está descontinuado
+  // para clientes novos desde mar/2025 e é questão de tempo até parar.
+  //
+  // O legado NÃO morreu: ele é o fallback AUTOMÁTICO de sessão. Se o caminho
+  // novo falhar por permissão/ativação (o 403 "caller does not have
+  // permission" do AutocompletePlaces, de chave sem a Places API New
+  // liberada no Google Cloud), a busca cai para o legado NA MESMA digitação
+  // e segue funcionando — o cliente não vê nada além dos resultados.
+  //
+  // ⚠ NÃO TESTÁVEL EM DEV: a chave do Maps não libera localhost. O caminho
+  // novo contra o Google real precisa ser VERIFICADO EM PREVIEW (scratchpad
+  // da rodada: "verificar em preview"). O E2E cobre a troca com SDK falso.
+  const USE_LEGACY_PLACES_AUTOCOMPLETE = false;
+  // 403/ativação na sessão corrente: a partir daí, direto no legado.
+  let _newPlacesUnavailable = false;
+
+  function _isNewPlacesPermissionError(err) {
+    const msg = String((err && err.message) || err || '');
+    return /caller does not have permission|PERMISSION_DENIED|REQUEST_DENIED|ApiNotActivated|not.*enabled|disabled|403/i.test(msg);
+  }
 
   // Verbose, key-safe diagnostics in the console. Set to false to silence.
   const MAPS_DEBUG = true;
@@ -746,9 +757,24 @@
     const currentValue = ($('addrSearchInput') || {}).value?.trim() || '';
     if (query !== currentValue) return;
     try {
-      const normalized = USE_LEGACY_PLACES_AUTOCOMPLETE
-        ? await _fetchLegacySuggestions(query)
-        : await _fetchNewSuggestions(query);
+      let normalized;
+      if (USE_LEGACY_PLACES_AUTOCOMPLETE || _newPlacesUnavailable) {
+        normalized = await _fetchLegacySuggestions(query);
+      } else {
+        try {
+          normalized = await _fetchNewSuggestions(query);
+        } catch (err) {
+          if (!_isNewPlacesPermissionError(err)) throw err;
+          // Chave sem a Places API (New): registra, marca a sessão e responde
+          // a MESMA digitação pelo legado — sem mensagem de erro no meio.
+          _newPlacesUnavailable = true;
+          if (MAPS_DEBUG) _logMapsDebug('autocomplete-fallback-legacy', {
+            rawError: String((err && err.message) || err),
+            diagnosis: 'Places API (New) sem permissão na chave — sessão caiu para o AutocompleteService legado.'
+          });
+          normalized = await _fetchLegacySuggestions(query);
+        }
+      }
       if (query !== (($('addrSearchInput') || {}).value?.trim() || '')) return;
       _renderAddrSuggestions(normalized);
     } catch (err) {

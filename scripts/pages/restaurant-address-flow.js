@@ -541,12 +541,43 @@
   // novo contra o Google real precisa ser VERIFICADO EM PREVIEW (scratchpad
   // da rodada: "verificar em preview"). O E2E cobre a troca com SDK falso.
   const USE_LEGACY_PLACES_AUTOCOMPLETE = false;
-  // 403/ativação na sessão corrente: a partir daí, direto no legado.
+  // Caminho novo já falhou nesta sessão (por QUALQUER motivo): daqui em
+  // diante, direto no legado. Ver o bloco de fallback em _fetchAddrSuggestions.
   let _newPlacesUnavailable = false;
+
+  // Teto de espera do caminho novo. O SDK do Google NÃO tem timeout próprio:
+  // uma promessa pendurada deixa o cliente olhando o esqueleto para sempre, e
+  // "para sempre" na busca de endereço é um pedido que não acontece. O
+  // debounce da digitação é 350ms; um autocomplete que passa de 3s já não
+  // serve para quem está digitando, e o legado responde em seguida.
+  const NEW_PLACES_TIMEOUT_MS = 3000;
+
+  function _withTimeout(promise, ms, label) {
+    let t;
+    const limite = new Promise((_, reject) => {
+      t = setTimeout(() => reject(new Error(`TIMEOUT_${label}_${ms}ms`)), ms);
+    });
+    return Promise.race([promise, limite]).finally(() => clearTimeout(t));
+  }
 
   function _isNewPlacesPermissionError(err) {
     const msg = String((err && err.message) || err || '');
     return /caller does not have permission|PERMISSION_DENIED|REQUEST_DENIED|ApiNotActivated|not.*enabled|disabled|403/i.test(msg);
+  }
+
+  // Só para o diagnóstico no console — NÃO decide mais se cai para o legado.
+  // Essa decisão virou incondicional de propósito; ver o bloco de fallback.
+  function _diagnoseNewPlacesFailure(err) {
+    const msg = String((err && err.message) || err || '');
+    if (_isNewPlacesPermissionError(err))
+      return 'Places API (New) sem permissão/ativação na chave — sessão caiu para o legado.';
+    if (/^TIMEOUT_/.test(msg))
+      return `Caminho novo não respondeu em ${NEW_PLACES_TIMEOUT_MS}ms — sessão caiu para o legado.`;
+    if (/OVER_QUERY_LIMIT|RESOURCE_EXHAUSTED|quota/i.test(msg))
+      return 'Cota da Places API (New) estourada — sessão caiu para o legado.';
+    if (/Falha ao carregar a biblioteca|Chave do Google Maps/i.test(msg))
+      return 'A biblioteca places do Maps não carregou. O legado usa a MESMA biblioteca, então ele deve falhar igual — e o erro na tela vem DELE, não daqui.';
+    return 'Falha DESCONHECIDA no caminho novo — sessão caiu para o legado. Se isto se repetir, pode ser defeito NOSSO escondido atrás do fallback: leia o rawError.';
   }
 
   // Verbose, key-safe diagnostics in the console. Set to false to silence.
@@ -762,15 +793,42 @@
         normalized = await _fetchLegacySuggestions(query);
       } else {
         try {
-          normalized = await _fetchNewSuggestions(query);
+          normalized = await _withTimeout(
+            _fetchNewSuggestions(query), NEW_PLACES_TIMEOUT_MS, 'AUTOCOMPLETE_NEW'
+          );
         } catch (err) {
-          if (!_isNewPlacesPermissionError(err)) throw err;
-          // Chave sem a Places API (New): registra, marca a sessão e responde
-          // a MESMA digitação pelo legado — sem mensagem de erro no meio.
+          // QUALQUER falha do caminho novo cai para o legado. O novo é a
+          // OTIMIZAÇÃO; o legado é a REDE — é ele que serviu este app por
+          // anos, e é ele quem responde enquanto a Places API (New) não
+          // estiver liberada na chave.
+          //
+          // A regra ANTERIOR era estreita: só caía para o legado se o erro
+          // casasse o regex de permissão. Cota estourada, timeout, biblioteca
+          // que não carrega e erro desconhecido eram RELANÇADOS e viravam
+          // mensagem de erro na busca de endereço — regressão no caminho do
+          // pedido, num lugar onde o legado teria respondido normalmente. E o
+          // deploy sai automático da main, então isso iria ao ar sem escala.
+          //
+          // A sessão fica PRESA no legado de propósito: se o caminho novo já
+          // falhou uma vez, insistir cobra o preço da falha (até
+          // NEW_PLACES_TIMEOUT_MS) a CADA tecla, e o legado responde igual.
+          //
+          // Caso especial que NÃO existe aqui de propósito: quando a falha é a
+          // biblioteca, o legado também vai falhar (os dois chamam o mesmo
+          // _loadPlacesLibrary(), cuja promessa rejeitada fica em cache). O
+          // fallback é inútil nesse caso, não errado — rejeita na hora e o
+          // catch de fora mostra a mensagem, que é o desfecho certo. Uma
+          // segunda regra aqui só daria uma segunda regra para errar.
           _newPlacesUnavailable = true;
+          const bruto = String((err && err.message) || err);
+          // console.warn INCONDICIONAL: com MAPS_DEBUG desligado, este é o
+          // único rastro de que o caminho novo caiu. O fallback esconde
+          // defeito nosso atrás de um legado que funciona — o preço aceito
+          // por não mostrar erro ao cliente é que o sinal não pode sumir.
+          console.warn('[PedeAqui] Autocomplete novo falhou; caindo para o legado:', bruto);
           if (MAPS_DEBUG) _logMapsDebug('autocomplete-fallback-legacy', {
-            rawError: String((err && err.message) || err),
-            diagnosis: 'Places API (New) sem permissão na chave — sessão caiu para o AutocompleteService legado.'
+            rawError: bruto,
+            diagnosis: _diagnoseNewPlacesFailure(err)
           });
           normalized = await _fetchLegacySuggestions(query);
         }
@@ -779,11 +837,13 @@
       _renderAddrSuggestions(normalized);
     } catch (err) {
       console.warn('[PedeAqui] Places autocomplete failed:', err);
+      // Chegar AQUI significa que o LEGADO falhou. O caminho novo não termina
+      // mais nesta mensagem: qualquer falha dele cai para o legado antes. Ou
+      // seja, esta é a única mensagem de erro que o cliente vê — e ela custa
+      // a busca de endereço inteira.
       if (MAPS_DEBUG) _logMapsDebug('autocomplete-error', {
         rawError: String((err && err.message) || err),
-        diagnosis: USE_LEGACY_PLACES_AUTOCOMPLETE
-          ? 'Legacy path failed — likely "Places API" (old) not enabled or key referrer/restriction issue.'
-          : 'New path failed — likely "Places API (New)" permission/restriction on the key (the AutocompletePlaces 403).'
+        diagnosis: 'O caminho LEGADO falhou (é o último recurso; o novo já caiu para ele antes). Suspeitas: "Places API" (a antiga) não habilitada na chave, restrição de referrer, ou a biblioteca places não ter carregado.'
       });
       _showAddrSearchMessage(_mapPlacesError(err));
     }

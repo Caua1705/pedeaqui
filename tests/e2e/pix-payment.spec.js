@@ -344,20 +344,13 @@ test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nad
         })
       ).toEqual({ background: 'rgb(247, 245, 243)', radius: '12px' });
 
-      const words = await confirm.locator('.pix-sheet-text').evaluate((element) => {
-        const node = element.firstChild;
-        const text = node.textContent;
-        return Array.from(text.matchAll(/\S+/g), match => {
-          const range = document.createRange();
-          range.setStart(node, match.index);
-          range.setEnd(node, match.index + match[0].length);
-          return { word: match[0], top: Math.round(range.getBoundingClientRect().top) };
-        });
-      });
-      const lineTops = [...new Set(words.map(({ top }) => top))];
-      expect(lineTops).toHaveLength(2);
-      expect(words.find(({ word }) => word === 'cancelado').top).toBe(lineTops[0]);
-      expect(words.find(({ word }) => word === 'permanentemente').top).toBe(lineTops[1]);
+      // O texto diz o que ACONTECE: sair não cancela nada (não há rota de
+      // cliente para cancelar pedido não pago) — o pedido fica aguardando e a
+      // barra de retomada traz de volta. O texto antigo prometia "cancelado
+      // permanentemente", uma ação que o botão nunca executou.
+      await expect(confirm.locator('.pix-sheet-text')).toHaveText(
+        'Seu pedido fica aguardando o pagamento. Você pode voltar e pagar por aqui enquanto o código valer.'
+      );
     }
 
     // "Voltar para PIX" só desce a folha: a tela continua na cobrança e
@@ -371,14 +364,14 @@ test('sair da cobrança pede confirmação, e "Voltar para PIX" não cancela nad
   expect(paymentRequests).toHaveLength(1);
 });
 
-test('"Cancelar pedido" volta lateralmente à sacola sem criar outro pedido', async ({ page }) => {
+test('"Sair e pagar depois" volta lateralmente à sacola sem criar outro pedido', async ({ page }) => {
   const { orderRequests, paymentRequests } = await mockApi(page, { orderResponse: pixOrder });
 
   await submitPixOrder(page);
   await expect(page.locator('[data-pix-state=ready]')).toBeVisible();
 
   await page.locator('#pixPaymentModal .cart-hdr [aria-label="Fechar"]').click();
-  await page.getByRole('button', { name: 'Cancelar pedido' }).click();
+  await page.getByRole('button', { name: 'Sair e pagar depois' }).click();
 
   await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
   await expect(page.locator('#pixExitConfirm')).toBeHidden();
@@ -748,7 +741,7 @@ test('o visitante reencontra o pagamento pendente ao voltar na loja', async ({ p
   // Sai da tela pela confirmação: o pedido e o tracking_token continuam
   // guardados — sair da cobrança não apaga a pendência.
   await page.locator('#pixPaymentModal .cart-hdr [aria-label="Voltar"]').click();
-  await page.getByRole('button', { name: 'Cancelar pedido' }).click();
+  await page.getByRole('button', { name: 'Sair e pagar depois' }).click();
   await expect(page.locator('#pendingPaymentBar')).toBeVisible();
 
   // Recarrega a loja como quem volta depois — a pendência sobrevive ao reload.

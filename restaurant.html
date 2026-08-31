@@ -1222,9 +1222,15 @@
       <div class="pix-sheet-scrim" data-act-click='closePixExitConfirm'></div>
       <div class="pix-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="pixExitTitle">
         <h3 class="pix-sheet-title" id="pixExitTitle">Atenção</h3>
-        <p class="pix-sheet-text">Ao confirmar esta ação, o seu pedido será cancelado permanentemente</p>
+        <!-- O botão NÃO cancela nada (não existe rota de cliente para cancelar
+             pedido não pago — docs/order-contract.md, item 11), e o texto
+             antigo dizia "será cancelado permanentemente": prometia uma ação
+             que o app não executa. O texto agora diz o que acontece de
+             verdade: o pedido fica aguardando e a barra de retomada traz de
+             volta. -->
+        <p class="pix-sheet-text">Seu pedido fica aguardando o pagamento. Você pode voltar e pagar por aqui enquanto o código valer.</p>
         <button class="pix-sheet-primary" type="button" data-act-click='closePixExitConfirm'>Voltar para PIX</button>
-        <button class="pix-sheet-ghost" type="button" data-act-click='confirmPixExit'>Cancelar pedido</button>
+        <button class="pix-sheet-ghost" type="button" data-act-click='confirmPixExit'>Sair e pagar depois</button>
       </div>
     </div>
   </div>

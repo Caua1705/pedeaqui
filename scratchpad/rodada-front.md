@@ -223,7 +223,13 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       Se sobrar >800 linhas, explicar no relatório.
 
 ### Fase 4 — pendências decididas (um commit cada, depois das telas)
-- [ ] 4.1 Taxa de serviço R$ 0,99 visível na seção "Valores" da sacola
+- [x] 4.1 Taxa de serviço visível: a linha EXISTIA e o CSS a escondia
+      (restaurant.css `.cps-row:has(.fee-info-btn){display:none!important}`).
+      Regra removida; linha ganhou id csSvcFeeRow; JS decide visibilidade
+      (taxa 0 = linha fora, setProperty important porque a folha declara
+      flex!important). Spec novo cart-service-fee.spec.js (2 testes, visto
+      vermelho). Suíte 280 passed. Captura: a linha aparecendo em todas as
+      telas com sacola no DOM (intencional).
 - [ ] 4.2 Texto da saída do Pix → "Sair e pagar depois" (comportamento fica)
 - [ ] 4.3 Os 3 E2E vermelhos herdados (order-flow:42, pix-payment:576, :736)
 - [ ] 4.4 Assistente (só front): aviso prévio no botão de voz, motivo no login,

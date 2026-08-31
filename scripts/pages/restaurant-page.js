@@ -2299,6 +2299,10 @@
     `).join('');
     $('csSub').textContent = fmt(totals.subtotal);
     $('csSvcFeeBtn').textContent = fmt(totals.svc);
+    // A linha da taxa aparece quando há taxa; some quando não há — nunca um
+    // "R$ 0,00" solto. setProperty com important porque a folha declara
+    // display:flex!important na .cps-row e um style inline comum perderia.
+    $('csSvcFeeRow')?.style.setProperty('display', totals.svc > 0 ? 'flex' : 'none', 'important');
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
     $('csTotal').textContent = fmt(totals.total);
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });

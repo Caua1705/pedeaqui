@@ -285,9 +285,10 @@
     line-height:16px!important;
     font-weight:500!important;
   }
-  #cartModal .cart-price-summary .cps-row:has(.fee-info-btn){
-    display:none!important;
-  }
+  /* A linha da taxa de serviço APARECE: escondê-la deixava um pedido de
+     R$ 0,01 com Total R$ 1,00 sem nenhuma linha explicando os R$ 0,99, e o
+     cliente não fechava a conta. Quem decide a visibilidade é o JS
+     (renderização da sacola): taxa zero = linha fora, sem R$ 0,00 solto. */
   #cartModal .cart-price-summary .fee-info-btn,
   #cartModal .cart-price-summary .cps-divider{
     display:none!important;

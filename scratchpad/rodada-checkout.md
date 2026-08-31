@@ -47,9 +47,9 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 ### Item 3 — sacola, checkout e filial
 - [x] 3.1 inventário medido: nenhum bloco restante alcança 10 l/fio
 - [x] 3.2 rede do dinheiro: cart-money-chain.spec.js, 4 testes, 4 vermelhos vistos
-- [ ] 3.3 migração na ordem do inventário
-- [ ] 3.4 troca de filial (ÚLTIMA)
-- [ ] 3.5 folha de confirmação (escreve token de cartão — decidir por medida)
+- [x] 3.3 migração: TODOS os blocos RECUSADOS por medida, com o motivo escrito
+- [x] 3.4 troca de filial: não tocada; a leitura confirma a recusa e acrescenta um motivo (ela zera o estado do checkout)
+- [x] 3.5 folha de confirmação: RECUSADA — ela escreve o token do cartão em restaurant-page.js:2134
 
 ## Medições
 
@@ -677,3 +677,116 @@ o mesmo resultado por dois caminhos.
 - **Cashback junto da sacola.** O saldo positivo por loja entra no fixture só
   para travar que ele NÃO mexe no total — quem aplica cashback é o backend.
 - **O payload sem dinheiro**, afirmado onde a regra vale: dez nomes proibidos.
+
+# Itens 3.3, 3.4 e 3.5 — RECUSA POR MEDIDA, com a régua nova na mão
+
+A skill avisa (§9.1) que o número de fios do BLOCO subestima um corte feito no
+contrato `mount(ctx)`: as seis telas que saíram mediam 3,9–6,0 pela régua antiga
+e 15–44 pela nova. Então a medida de bloco **não basta para recusar** — é
+preciso aplicar a régua nova. Foi o que se fez, e ela recusa por um motivo mais
+duro que o número.
+
+## O critério que decide: DE QUEM É O ESTADO
+
+A regra 3 da §9 é: *"`app` é porta de GETTERS"*, e a regra do §9 sobre estado é
+*"Estado DA TELA mora aqui dentro. **Sem acessor de volta para o page**: se o
+page precisa ler o estado da tela, o corte está errado."*
+
+Quatro variáveis decidem o pagamento:
+
+```js
+let paymentMethod = '';          // :46  rótulo exibido ("Pix")
+let paymentMethodKey = '';       // :47  chave da UI ("pix", "credit:<id>")
+let selectedSavedCard = null;    // :48
+let savedCardPaymentToken = '';  // :49  TOKEN DE USO ÚNICO DO GATEWAY
+```
+
+Quem **escreve** nelas, medido por leitura do arquivo:
+
+| bloco | onde | o quê |
+|---|---|---|
+| boot | `:333-336` | zera as quatro |
+| checkout (forma de pagamento) | `:2656, :2662-2679, :2741-2742, :2760-2763` | escreve as quatro |
+| **folha de confirmação** | **`:2134`** | **escreve `savedCardPaymentToken`** |
+| pedido criado | `:3118-3119` | zera |
+| **troca de filial** | **`:4173-4176`** | zera as quatro, transacionalmente |
+
+Quem **lê**: a sacola (`handleCartCta`, `syncCartLocationState`, `updateCartUI`,
+`cartStore().set`), a folha (`syncOrderConfirmSheet`, `confirmOrderFromSheet`),
+o checkout, a submissão (`orderPaymentMethodForApi :2772`,
+`currentCardPaymentPayload :2779`, `submitOrder :3039`).
+
+**Cinco blocos escrevem e cinco leem.** Isto não é estado de tela: é estado do
+APP no caminho do dinheiro. Qualquer corte que ponha essas quatro variáveis
+dentro de uma tela precisa de acessor de VOLTA para o page — a armadilha que a
+§9 nomeia como "o corte está errado", e que na §2.1 é a mais cara de todas
+(a fotografia do boot).
+
+## 3.3 — a migração, bloco a bloco
+
+| bloco | l/fio | recusa |
+|---|---|---|
+| Persistência da sacola | 8,6 | **69 linhas.** Módulo de 69 linhas é cerimônia — o mesmo motivo que matou o cashback (13 linhas) na fase anterior. E `persistCart` escreve `cartRestored`, estado que o boot e a troca de filial leem: acessor de volta de novo. |
+| Checkout: forma de pagamento | 8,3 | as quatro variáveis acima. É o bloco onde elas nascem, e cinco outros blocos as leem e escrevem |
+| Política + auth nav | 7,2 | não é tela: é uma rede de segurança (MutationObserver) sobre SEIS telas de auth que moram noutro módulo. Extrair espalha a vigilância |
+| Perfil hub + navegação | 5,2 | é o ROTEADOR entre as telas já migradas. O roteador é a cola, e cola extraída vira cola indireta |
+| Sacola: render + interação | 5,1 | lê `cartTotals()` e escreve `cart` — o dono do dinheiro |
+| Folha de confirmação | 4,4 | ver 3.5 |
+| Pedido criado / sucesso | 4,3 | lê `orderTracking`, `pixSession`, e a comparação de total presa ao id do pedido |
+| Submissão | 3,6 | é o `POST /orders` — fica ao lado do dono do total |
+| cartTotals + cadeia de preço | 2,9 | **é o dono do dinheiro.** Não sai |
+| Operação / troca de filial | 3,7 | ver 3.4 |
+
+**Nenhum alcança o piso de 10, e os dois melhores falham a regra de estado da
+§9 antes mesmo de chegar ao número.** Não sobrou bloco extraível — é a mesma
+conclusão da fase anterior, agora reconfirmada com os blocos que restaram e com
+a régua nova aplicada, não só com a antiga.
+
+## 3.4 — a troca de filial: NÃO foi tocada, e por quê
+
+Era para ser a última, e a regra do prompt era parar e escrever se ela exigisse
+mexer em algo já migrado. Ela não chegou a ser tentada porque os blocos
+anteriores foram todos recusados — mas a leitura dela confirma a recusa
+anterior, e acrescenta um motivo novo:
+
+`clearBranchScopedSelection()` (`:4172`) zera **as quatro variáveis de
+pagamento** junto com o cupom, na mesma transação. O comentário do código já
+diz por quê: *"O token do cartão é de uso único no gateway; deixá-lo vivo só
+produziria uma recusa mais adiante."* Ou seja: a troca de filial é dona de um
+pedaço do estado do checkout. Migrar o checkout sem migrar a troca de filial
+quebra a transação; migrar os dois juntos é um corte de ~640 linhas com as
+quatro variáveis do dinheiro atravessando a fronteira nos dois sentidos.
+
+## 3.5 — a folha de confirmação: RECUSADA, e a medida é uma linha
+
+A folha mede 119 linhas / 27 fios = **4,4 l/fio**, contra 8,9 do melhor
+candidato já recusado na fase anterior. Mas o que decide não é isso:
+
+```js
+// restaurant-page.js:2134, dentro de confirmOrderFromSheet()
+savedCardPaymentToken = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard) || '';
+```
+
+**A folha ESCREVE o token de uso único do cartão.** E o token é lido, depois
+dela, por `currentCardPaymentPayload()` (`:2779`) e conferido por `submitOrder()`
+(`:3039`) — que é a rede embaixo dela: *"um pedido de cartão que a rota de
+cobrança receberia SEM cartão — ou seja, exatamente o pedido sem pagamento que
+este fluxo existe para impedir."*
+
+Migrar a folha exigiria uma porta de ESCRITA do token, de uma tela para o
+fechamento. É a única coisa neste app que o contrato de telas proíbe
+explicitamente, e é a que menos se pode dar ao luxo de errar: um token escrito
+no lugar errado é um pedido criado sem cobrança, e o `docs/order-contract.md`
+já registra que **numa recusa de cartão o pedido já está gravado e não há rota
+de cliente para cancelá-lo.**
+
+Fica onde está, ao lado do dono do dinheiro. Mesma recusa da fase anterior,
+agora com a linha exata escrita.
+
+## O que esta seção ENTREGOU, já que não moveu código
+
+1. A rede do dinheiro que não existia (item 3.2), com quatro vermelhos vistos —
+   e com a taxa de entrega, o produto com adicional e o cashback entrando num
+   total pela primeira vez na suíte.
+2. O inventário medido, com a tabela que a próxima sessão não precisa refazer.
+3. A recusa de cada bloco com o motivo verificável, e não com uma impressão.

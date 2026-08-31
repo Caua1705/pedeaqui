@@ -558,3 +558,125 @@ régua que a própria rodada usou para aprovar as seis que saíram.
 5. **Confiar menos no line-number do prompt.** 4.3 apontava vermelhos que já
    não existiam; chequei tarde. Primeiro ato de qualquer item herdado:
    reproduzir o vermelho.
+
+## BURACO DE PROCESSO: o deploy não espera o portão (31/08/2026)
+
+**Não é defeito desta rodada. É do repositório, e é o mais grave achado hoje.**
+
+O que foi verificado, lendo o repositório:
+
+- O projeto é Vercel com integração Git (`vercel.json` na raiz; o app é
+  estático na Vercel — `docs/white-label-identidade.md`; o domínio está atrás
+  do Cloudflare na frente do Vercel — `docs/csp-mercado-pago.md`).
+- `vercel.json` **não** tem `git.deploymentEnabled` nem `ignoreCommand`. Nada
+  desliga o padrão da integração: **push na main = deploy de produção**.
+- `.github/workflows/ci.yml` roda `on: push: branches: [main]`. Ele **verifica**;
+  ele **não publica**. E o Vercel **não espera por ele**.
+
+**Consequência:** hoje nada impede um deploy de produção com o portão vermelho.
+O CI pode ficar vermelho depois que o site já subiu. Isto quase custou caro
+nesta própria rodada: o portão pré-merge reportou *exit 0 com 2 testes
+vermelhos* por causa de um `| tail`, e se o merge tivesse saído ali, o deploy
+teria ido junto.
+
+⚠ Ressalva: tudo acima foi lido do REPOSITÓRIO. Quem decide de fato é o painel
+do Vercel (Settings → Git), que não foi consultado — não há `gh` CLI nem
+`.vercel/` local nesta máquina. Confirmar lá antes de agir.
+
+### Opções para fechar, com o custo de cada uma
+
+**NÃO IMPLEMENTADAS — decisão do dono do repositório.**
+
+**A) `ignoreCommand` no `vercel.json` consultando o resultado do CI**
+O comando roda no contêiner de build da Vercel; `exit 0` = pula o build,
+`exit 1` = constrói. Consultaria a Checks API do GitHub pelo SHA.
+- Custo: exige um token do GitHub como env var na Vercel (mais um segredo).
+- **Problema sério, e é o que desqualifica a opção sozinha:** é uma CORRIDA. A
+  Vercel começa o build no instante do push, normalmente ANTES de o CI
+  terminar. O comando veria `pending` e pularia o deploy — e um CI que fica
+  verde depois **não** dispara deploy nenhum. Ficaria dependendo de redeploy
+  manual, que é pior que o problema. Para evitar isso, o `ignoreCommand`
+  teria de ficar em POLLING, queimando minutos de build a cada push.
+- Fecha o buraco? Parcialmente, e ao custo de deploys que não acontecem.
+
+**B) Proteção de branch exigindo o check do CI**
+Regra em `main`: "Require status checks to pass" com o job `verify`, mais
+"Require a pull request before merging".
+- Custo: **muda o fluxo de trabalho.** Hoje o merge é local + push direto na
+  main (foi exatamente assim nesta rodada). Passaria a exigir PR para tudo.
+- Custo: proteção de branch em repositório PRIVADO exige plano pago no GitHub
+  (Pro/Team). Confirmar o plano deste repo antes de contar com isso.
+- Fecha o buraco? **Sim, e pela raiz certa:** se nada entra na main sem CI
+  verde, todo push da main é verde por construção, e o deploy automático deixa
+  de ser perigoso. É a opção padrão da indústria.
+- Não protege contra `--force` de quem tem permissão, salvo se bloqueado junto.
+
+**C) Desligar o deploy automático e publicar a partir do CI**
+`{"git": {"deploymentEnabled": {"main": false}}}` no `vercel.json` (ou o
+equivalente no painel), e um passo final no `ci.yml` rodando `vercel deploy
+--prod` só depois de todos os checks passarem.
+- Custo: um token da Vercel como secret do GitHub; o CI passa a ser o dono do
+  deploy; o passo novo precisa de manutenção.
+- Custo: os previews de branch continuam se `deploymentEnabled` desligar só a
+  `main` — conferir, porque preview é o que a migração do Maps ainda precisa.
+- Fecha o buraco? **Sim, e é o acoplamento mais forte:** o deploy fisicamente
+  não acontece se o CI não chegou até o fim. Não exige plano pago nem PR.
+
+**Leitura de quem escreveu isto:** (B) e (C) fecham de verdade; (A) não fecha
+sozinha e introduz um modo de falha novo. (B) é o padrão e protege a main
+inteira, mas cobra PR e talvez plano pago. (C) não muda o fluxo local nem
+exige plano, e é a mais barata de ligar — mas move a chave do deploy para um
+secret no GitHub. Se o fluxo "merge local + push" for para ficar, (C) é a que
+menos atrita.
+
+## PENDÊNCIA NOMEADA: a suíte E2E tem flake demais para ser portão (31/08/2026)
+
+**Precisa de uma sessão própria. NÃO investigado nesta.**
+
+Quatro testes falham **só sob carga** — todos passam isolados, e todos já
+passaram na suíte completa em execuções do MESMO commit (`4984736`). O
+problema não é cada teste: é que a suíte, como portão, dá respostas
+diferentes para o mesmo código.
+
+| Teste | O que se mediu | Documentado antes? |
+|---|---|---|
+| `assistant-voice-session.spec.js:294` | falhou em **3 de 3** execuções acompanhadas; passa sozinho (1/1) | sim, lista de flakes |
+| `assistant-voice-session.spec.js:668` | falhou 2 de 3; passa sozinho (1/1) | **não** — entrou hoje |
+| `assistant-product-detail.spec.js:4` | falhou 1 vez (portão da main); passa isolado | **não** |
+| `auth-screen-nav.spec.js:105` | falhou 1 vez (portão da main); passa isolado | **não** |
+| `order-flow.spec.js:163` (Idempotency-Key) | falhou 1 vez (portão da main); passa isolado. A falha foi **timeout dentro de `selectPixAndReturnToCart`** (helper), não asserção de lógica | **não** |
+
+Evidência de que é carga e não código:
+- `main` e `rodada/front-completo` eram **o mesmo commit** (`4984736`), árvore
+  idêntica confirmada por `git diff --stat` vazio.
+- Esse commit deu **289 passed / 0 failed / exit 0** na branch, e **285 passed
+  / 4 failed / exit 1** na main ~20 min depois.
+- As 4 rodadas juntas isoladas: **4 passed em 11s**.
+- Tempo da suíte crescendo na sessão: 6,2 min → 7,5 min → uma execução passou
+  de 10 min e foi morta. Havia 4 processos node órfãos (npm `test:e2e`,
+  playwright cli, npm `preview`, vite `preview`) segurando a máquina.
+- **SEGUNDO PONTO DE MEDIÇÃO, máquina limpa (órfãos mortos, porta 4174 livre),
+  mesmo commit `4984736`: exit 0 · 289 passed · 3 skipped · 0 failed · 418 s
+  (6,9 min).** As MESMAS 4 que falharam no portão anterior passaram. Isto
+  fecha a pergunta: **é carga, não regressão.** O commit é o mesmo nas três
+  execuções; o que mudou foi só o estado da máquina.
+
+**A conclusão que importa para o portão:** a suíte responde 289/0 ou 285/4
+para o MESMO código conforme a máquina. Como portão, ela hoje dá falso
+vermelho — e um falso vermelho ensina a ignorar vermelho, que é como um
+verdadeiro passa batido. É por isso que isto virou pendência nomeada em vez
+de nota de rodapé.
+
+**Higiene obrigatória antes de medir a suíte** (custou uma medição errada
+hoje): matar node órfão e conferir a porta 4174 livre. No PowerShell:
+`Get-CimInstance Win32_Process -Filter "Name='node.exe'"` para ver o que
+sobrou, e `Get-NetTCPConnection -LocalPort 4174 -State Listen` para a porta.
+
+O que uma sessão dedicada precisaria olhar (hipóteses, não conclusões):
+- `workers` no `playwright.config.js` e se a suíte assume isolamento que não tem.
+- Estado compartilhado entre irmãos do mesmo arquivo — `:294`/`:668` só falham
+  acompanhados, o que cheira a listener de console ou mock global vazando.
+- `selectPixAndReturnToCart` como helper com timeout curto demais para máquina
+  carregada.
+- Higiene de processo: matar órfãos antes de medir. A medição limpa desta
+  sessão está registrada no relatório do dia.

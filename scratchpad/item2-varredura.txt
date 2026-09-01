@@ -1,0 +1,143 @@
+scripts/pages/restaurant-address-flow.js:293  campo=current  [fallback]
+    : current && (sameAddress(addr, current) || id === '__current__');
+    contrato: MetricComparison
+scripts/pages/restaurant-auth-flow.js:469  campo=success  [fallback]
+    if (msg) el.classList.add('show', type === 'success' ? 'is-success' : 'is-error');
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-auth-flow.js:936  campo=success  [fallback]
+    if (msg) el.classList.add('show', type === 'success' ? 'is-success' : 'is-error');
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-auth-flow.js:1155  campo=requires_email_verification  [guarda]
+    if (res?.requires_email_verification) {
+    contrato: LoginResponse @default false | RegisterCustomerResponse
+scripts/pages/restaurant-page.js:184  campo=success  [fallback]
+    if (deliveryEstimate.status !== 'success' || deliveryEstimate.data?.serviceable === false) return null;
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-page.js:301  campo=fallback  [fallback]
+    return window.PedeAquiApiError?.errorMessage?.(error, fallback) || fallback;
+    contrato: DeliveryEstimateResponse @default false
+scripts/pages/restaurant-page.js:1032  campo=price  [fallback]
+    const currentPrice = Number.isFinite(product.price) ? fmt(product.price) : fallback().productUnavailablePrice || '';
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/restaurant-page.js:1041  campo=price  [fallback]
+    <span class="product-price">${Number.isFinite(product.price) ? `A partir de ${currentPrice}` : currentPrice}</span>
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/restaurant-page.js:1224  campo=min_order_value  [fallback]
+    document.querySelectorAll('.mob-pedido-min').forEach(el => el.textContent = `Mín ${fmt(settings.min_order_value || 0)}`);
+    contrato: AdminBranchOperationEffective | AdminBranchOperationOverrides | AdminBranchSettingsUpdate
+scripts/pages/restaurant-page.js:1226  campo=fallback  [filter-boolean]
+    if (loc) loc.textContent = [branch.neighborhood, branch.city].filter(Boolean).join(' - ') || fallback().mainBranchText || 'Unidade principal';
+    contrato: DeliveryEstimateResponse @default false
+scripts/pages/restaurant-page.js:1349  campo=success  [fallback]
+    const info = infoData || (restaurantInfoState.status === 'success' ? restaurantInfoState.data : null);
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-page.js:1799  campo=additional_price  [fallback]
+    ${Number(option.additional_price || 0) > 0 ? `<small>+ ${fmt(option.additional_price)}</small>` : ''}
+    contrato: AdminOptionCreate @default "0.00" | AdminOptionResponse | AdminOptionUpdate
+scripts/pages/restaurant-page.js:2936  campo=additional_price  [fallback]
+    .reduce((sum, option) => sum + Number(option.additional_price || 0), 0);
+    contrato: AdminOptionCreate @default "0.00" | AdminOptionResponse | AdminOptionUpdate
+scripts/pages/restaurant-page.js:3984  campo=success  [fallback]
+    return available || (branchAvailability.status === 'success' ? null : branchById(id));
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-page.js:4004  campo=is_open  [fallback]
+    const group = branch => branchDeliveryBlocked(branch, orderType) ? 2 : (branch.is_open ? 0 : 1);
+    contrato: AdminBranchOperationResponse | RestaurantSettingsResponse @default true | StoreStatusRequest
+scripts/pages/restaurant-page.js:4078  campo=is_open  [fallback]
+    return list.find(b => b.is_open) || list[0] || branches[0] || null;
+    contrato: AdminBranchOperationResponse | RestaurantSettingsResponse @default true | StoreStatusRequest
+scripts/pages/restaurant-page.js:4322  campo=success  [fallback]
+    && (branchAvailability.status === 'success' || branchAvailability.status === 'error');
+    contrato: AIFeedbackResponse
+scripts/pages/restaurant-page.js:4911  campo=count  [fallback]
+    const renderedCartCount = Number($('cartCountSticky')?.dataset.count || $('cartCountSticky')?.textContent || 0);
+    contrato: AdminOrderStatusCount
+scripts/pages/restaurant-pix-flow.js:310  campo=retryable  [guarda]
+    if (info.retryable) {
+    contrato: PaymentErrorDetail
+scripts/pages/screens/customer-data-screen.js:118  campo=valid  [fallback]
+    return valid ? { name, email, phone, birth_date: customerBirthDateToIso(birth) } : null;
+    contrato: CouponPreviewResponse
+scripts/pages/screens/home-screen.js:246  campo=discount_value  [fallback]
+    coupon.discount_value || ''
+    contrato: CouponAdminResponse | CouponCreate | CouponUpdate
+scripts/pages/screens/home-screen.js:257  campo=discount_value  [fallback]
+    ? `${Number(coupon.discount_value || 0)}% off`
+    contrato: CouponAdminResponse | CouponCreate | CouponUpdate
+scripts/pages/screens/product-screen.js:22  campo=additional_price  [fallback]
+    const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
+    contrato: AdminOptionCreate @default "0.00" | AdminOptionResponse | AdminOptionUpdate
+scripts/pages/screens/product-screen.js:68  campo=price  [fallback]
+    $('pmForm').style.display = Number.isFinite(currentProd.price) ? 'block' : 'none';
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/screens/product-screen.js:69  campo=price  [fallback]
+    $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/screens/product-screen.js:80  campo=min_select  [fallback]
+    const min = Number(group.min_select || 0);
+    contrato: AdminOptionGroupCreate @default 0 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:81  campo=max_select  [fallback]
+    const max = Math.max(1, Number(group.max_select || 1));
+    contrato: AdminOptionGroupCreate @default 1 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:120  campo=max_select  [fallback]
+    const max = Math.max(1, Number(group.max_select || 1));
+    contrato: AdminOptionGroupCreate @default 1 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:159  campo=max_select  [fallback]
+    const max = Math.max(1, Number(group.max_select || 1));
+    contrato: AdminOptionGroupCreate @default 1 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:175  campo=min_select  [fallback]
+    const min = Number(group.min_select || 0);
+    contrato: AdminOptionGroupCreate @default 0 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:176  campo=max_select  [fallback]
+    const max = Math.max(1, Number(group.max_select || 1));
+    contrato: AdminOptionGroupCreate @default 1 | AdminOptionGroupResponse | AdminOptionGroupUpdate
+scripts/pages/screens/product-screen.js:207  campo=additional_price  [fallback]
+    return Number(currentProd.price) + selectedOptionsSnapshot().reduce((sum, option) => sum + Number(option.additional_price || 0), 0);
+    contrato: AdminOptionCreate @default "0.00" | AdminOptionResponse | AdminOptionUpdate
+scripts/pages/screens/product-screen.js:245  campo=price  [fallback]
+    $('pmAddBtn').disabled = !Number.isFinite(currentProd.price) || !productOptionsValid();
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/screens/product-screen.js:250  campo=price  [fallback]
+    if (!currentProd || !Number.isFinite(currentProd.price) || !productOptionsValid()) return;
+    contrato: AdminProductCreate | AdminProductDetailResponse | AdminProductResponse
+scripts/pages/screens/profile-screen.js:309  campo=subtotal  [fallback]
+    const subtotal = Number(order.subtotal) || 0;
+    contrato: CommissionReportItem | CouponPreviewRequest | CouponPreviewResponse
+scripts/pages/screens/profile-screen.js:310  campo=delivery_fee  [fallback]
+    const deliveryFee = Number(order.delivery_fee) || 0;
+    contrato: BranchDeliveryResponse | CouponPreviewRequest @default "0.00" | CouponPreviewResponse
+scripts/pages/screens/profile-screen.js:315  campo=service_fee  [fallback]
+    const orderServiceFee = Number(order.service_fee) || 0;
+    contrato: CreateOrderResponse | CustomerOrderHistoryItem | OrderDetailResponse
+scripts/pages/screens/profile-screen.js:316  campo=coupon_discount_amount  [fallback]
+    const discountTotal = Number(order.discount_total) || Number(order.coupon_discount_amount) || 0;
+    contrato: CommissionReportItem | CreateOrderResponse @default "0.00" | CustomerOrderHistoryItem @default "0.00"
+scripts/pages/screens/profile-screen.js:316  campo=discount_total  [fallback]
+    const discountTotal = Number(order.discount_total) || Number(order.coupon_discount_amount) || 0;
+    contrato: CreateOrderResponse @default "0.00" | CustomerOrderHistoryItem @default "0.00" | OrderDetailResponse @default "0.00"
+scripts/pages/screens/profile-screen.js:317  campo=cashback_redeemed_amount  [fallback]
+    const cashbackRedeemed = Number(order.cashback_redeemed_amount) || 0;
+    contrato: CommissionReportItem | CreateOrderResponse @default "0.00" | CustomerOrderHistoryItem @default "0.00"
+scripts/pages/screens/profile-screen.js:318  campo=total  [fallback]
+    const total = Number(order.total) || 0;
+    contrato: AdminCustomerListResponse | AdminOrderListItem | AdminOrderListResponse
+scripts/pages/screens/profile-screen.js:435  campo=success  [fallback]
+    shell.renderProfileHelpContacts(app.restaurantInfoState.status === 'success' ? app.restaurantInfoState.data : null);
+    contrato: AIFeedbackResponse
+scripts/services/coupon-format.js:44  campo=percent  [fallback]
+    if (type === 'percent' || type === 'percentage') return `${value.toLocaleString('pt-BR')}% OFF`;
+    contrato: CashbackWeekdayInput | CashbackWeekdayResponse
+scripts/services/menu-service.js:81  campo=is_main  [fallback]
+    sort_order: Number(branch.sort_order ?? (branch.is_main ? -1 : index))
+    contrato: AdminBranchResponse @default false | BranchAvailabilityItem @default false | BranchResponse @default false
+scripts/services/store-info-format.js:27  campo=weekday  [fallback]
+    return DIAS_DO_CONTRATO[Number(day?.weekday)] || String(day?.weekday ?? '');
+    contrato: BranchOpenPeriodResponse | BusinessHourDayResponse | BusinessHourInput
+scripts/state/order-tracking.js:124  campo=total  [fallback]
+    total: Number.isFinite(Number(order?.total)) ? Number(order.total) : null,
+    contrato: AdminCustomerListResponse | AdminOrderListItem | AdminOrderListResponse
+
+141 campos numéricos/booleanos no contrato.
+46 sítios os leem de um jeito que PODE engolir o falsy (fallback: 43 · negacao: 0 · guarda: 2 · filter-boolean: 1).
+Nenhum deles é defeito por estar aqui: a pergunta da conferência é
+se cair no fallback dá um resultado DIFERENTE de não cair.

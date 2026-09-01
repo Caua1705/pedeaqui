@@ -30,8 +30,10 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       cupom. NÃO corrigido — depende de uma resposta do backend (escape novo)
 
 ### Item 2 — o falsy legítimo (a régua tinha um buraco)
-- [ ] 2.1 varredura de `||` / `??` / ternário sobre valor da API
-- [ ] 2.2 correção dos que mudam comportamento alcançável, com teste
+- [x] 2.1 varredura: 141 campos do contrato x 4 famílias -> 46 sítios, com a
+      régua validada contra o defeito conhecido antes de acreditar nela
+- [x] 2.2 NENHUM dos 46 muda comportamento alcançável. O que a varredura achou
+      foi um buraco na REDE: dois sítios de sort_order sem teste nenhum
 
 ### Item 3 — sacola e checkout
 - [ ] 3.1 ampliar a rede do dinheiro (cupom %, cupom fixo, taxa de serviço,
@@ -209,3 +211,124 @@ restava a pergunta de se, ANTES da primeira renderização, ela apareceria escri
 telas**, inclusive a `home` (o cliente nem abriu a sacola) e a `sacola` sem
 cupom. `updateCartUI()` já roda no boot; não há instante em que a linha vazia
 seja desenhada.
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 2 — O FALSY LEGÍTIMO
+═══════════════════════════════════════════════════════════════════
+
+## A régua, e a validação dela ANTES de acreditar na resposta
+
+`node tools/falsy-do-contrato.mjs`. Ela lê o `openapi.json`, separa **todo**
+campo cujo tipo inclui `number`, `integer`, `boolean` — ou uma string decimal,
+porque `"0.00"` é truthy mas `Number("0.00") || y` engole o zero igual — e
+procura no `scripts/` cada leitura desses campos em quatro formas:
+
+| família | forma | por que ela conta |
+|---|---|---|
+| fallback | `campo \|\| padrão`, `campo ? a : b` | a forma do defeito conhecido |
+| negação | `!campo` | "não veio" e "veio zero" viram a mesma coisa, e não há operador para desconfiar |
+| guarda | `if (campo)`, `&& campo` | a mesma troca, do lado positivo |
+| filter(Boolean) | numa linha que cita o campo | numa lista de números, APAGA o zero — a mais silenciosa das quatro |
+
+**A régua foi conferida contra o defeito conhecido antes de eu acreditar em
+qualquer resposta dela.** Com o `??` de `menu-service.js:117` trocado de volta
+por `||`, ela aponta:
+
+```
+scripts/services/menu-service.js:117  campo=sort_order
+    sort_order: Number(category.sort_order || index)
+    contrato: AdminCategoryCreate @default 0 | AdminCategoryResponse @default 0
+```
+
+E a primeira versão dela **não** teria apontado o caso mais comum daqui: sem
+atravessar `)` e `]`, `Number(x.campo) || y` escapava, e com ele os sete sítios
+do bloco de dinheiro do perfil. Isso está escrito no cabeçalho da ferramenta,
+junto das duas cegueiras que ela ainda tem (desestruturação, e campo que o
+`api.d.ts` não conhece).
+
+## O resultado: 46 sítios, e nenhum muda comportamento alcançável
+
+141 campos numéricos/booleanos no contrato · 46 sítios
+(fallback 43 · negação 0 · guarda 2 · filter(Boolean) 1).
+Lista bruta em `scratchpad/item2-varredura.txt`. A conferência, por grupo:
+
+| grupo | sítios | por que cair no fallback dá o MESMO resultado |
+|---|---|---|
+| `Number(campo \|\| 0)` — `additional_price` (4×), `min_select` (2×), `min_order_value`, `discount_value` | 8 | o fallback é **o próprio 0**. Com 0 o `\|\|` dispara e devolve 0; com `??` devolveria 0. Idênticos |
+| `Math.max(1, Number(group.max_select \|\| 1))` (4×) | 4 | com `max_select: 0` o `\|\|` devolve 1 e o `??` devolveria 0 — mas o `Math.max(1, …)` iguala os dois em 1. **É o `Math.max` que salva**, não o operador |
+| bloco de dinheiro do perfil: `Number(order.subtotal) \|\| 0` e os cinco irmãos | 6 | mesmo caso do primeiro grupo. O único com dois nomes (`discount_total \|\| coupon_discount_amount`) só divergiria com `discount_total: "0.00"` e `coupon_discount_amount > 0` ao mesmo tempo — dados que se contradizem, não um zero legítimo |
+| `Number.isFinite(product.price) ? … : …` (6×) e `order-tracking:124` | 7 | são o **jeito certo** já escrito: perguntam se é número finito antes de decidir, e por isso o 0 passa |
+| `branch.is_open ? 0 : 1` e `list.find(b => b.is_open)` | 2 | `is_open` chega **normalizado** de `branch-availability-service.js:48` (`is_open_now === true`): é booleano de verdade quando chega aqui |
+| `status === 'success' ? …` (6×) | 6 | falso positivo da régua: `success` é campo de `AIFeedbackResponse`, mas aqui é uma **string de estado local**, não um campo da API |
+| `DIAS_DO_CONTRATO[Number(day?.weekday)] \|\| String(…)` | 1 | `weekday: 0` é SEGUNDA, e `DIAS_DO_CONTRATO[0]` é `'Segunda-feira'` — **truthy**. O `\|\|` só dispara fora da faixa. (É o sítio que já errou uma vez; hoje está certo) |
+| guardas `if (res?.requires_email_verification)`, `if (info.retryable)` | 2 | booleanos em que `false` significa exatamente "não faça" — pular é a leitura certa |
+| o resto (`fallback().x \|\| ''`, `filter(Boolean)` sobre bairro/cidade, `is_main ? -1 : index`, `dataset.count`) | 10 | strings, config local ou DOM — não são campo numérico da API |
+
+**Conclusão honesta: a família estava fechada.** As quatro cadeias de
+`sort_order` corrigidas em 31/08/2026 eram todas as que existiam nessa forma —
+não uma amostra. O que sobra são fallbacks que devolvem o mesmo número, e sete
+sítios que já perguntam `Number.isFinite` antes de decidir, que é a forma certa.
+
+## O que a varredura ACHOU, e não era um defeito: um buraco na REDE
+
+`sort_order` vale `@default 0` em **seis** schemas do contrato, e a rede de
+31/08 cobria **quatro**:
+
+| schema | normalizado em | tinha teste? |
+|---|---|---|
+| `CategoryResponse` | `menu-service:117` | sim |
+| `ProductResponse` | `menu-service:166` | sim |
+| `BannerResponse` (banner) | `menu-service:191` | sim |
+| `BannerResponse` (destaque) | `menu-service:203` | sim |
+| **`ProductOptionGroupResponse`** | **`menu-service:137`** | **não** |
+| **`ProductOptionResponse`** | **`menu-service:145`** | **não** |
+
+Os dois usam `??` e estão **certos hoje**. O que faltava era a rede: um `||` de
+volta ali passa por lint, por typecheck e pelos 296 unitários sem uma palavra —
+e o cliente veria a opção de menor ordem, que costuma ser o "sem nada", o mais
+barato, o que abre a lista de adicionais, cair para o fim dela.
+
+Três casos novos em `tests/unit/menu-sort-order.test.js`, com a lista chegando
+fora de ordem de propósito (fixture que já vem ordenado passa com `||` também e
+não prova nada — skill §4).
+
+**Vistos vermelhos**, com `??` → `||` nos dois sítios:
+
+```
+× o grupo de ordem 0 vem primeiro, mesmo chegando por último
+  expected [ 'ponto', 'bebida', 'tamanho' ] to deeply equal [ 'tamanho', 'ponto', 'bebida' ]
+× a opção de ordem 0 vem primeira — é ela que abre a lista de adicionais
+  expected [ 'farofa', 'vinagrete', 'nada' ] to deeply equal [ 'nada', 'farofa', 'vinagrete' ]
+  Tests  2 failed | 6 passed (8)
+```
+
+O terceiro caso (`sort_order` ausente e `null`) ficou **verde nos dois lados**,
+de propósito: ele é o freio contra a correção ir longe demais — cair no índice
+quando não há ordem é a única coisa que o `||` acertava.
+
+## Observações que ficam nomeadas (não são desta rodada)
+
+1. **Seis campos de `RestaurantSettingsResponse` que o front nunca lê:**
+   `accepts_delivery_now`, `delivery_paused_until`, `delivery_pause_reason`,
+   `delivery_time_bands`, `free_delivery_enabled`, `free_delivery_min_order_value`.
+   Os dois de frete grátis é CERTO não ler — quem aplica é o backend, no
+   `/delivery/estimate`, e lê-los aqui seria a segunda cópia da regra. Os de
+   pausa de entrega são recurso não construído.
+2. **`accepts_delivery` / `accepts_pickup` / `is_open` são lidos do BRANCH, e
+   `BranchResponse` não tem nenhum dos três.** `menu-service:79-80` os
+   normaliza com `!== false`, ou seja **sempre `true`**, e os dois filtros que
+   os usam (`restaurant-page:3934` e `:4100`) nunca filtram. Hoje é inerte e
+   falha ABERTO; quem decide de verdade é `/branches/availability`
+   (`is_open_now` + `delivery.delivers_to_address`). Cadeia fantasma da mesma
+   família do D1/D2 da rodada anterior.
+3. **`PublicCouponResponse.sort_order` existe e ninguém o lê** — a vitrine de
+   cupons sai na ordem do array.
+
+## Verificação do item 2
+
+| portão | resultado |
+|---|---|
+| `npm run lint` | **0 errors**, 78 warnings |
+| `npm run typecheck:cards` | ok |
+| `npm run test` | **299 unitários** (eram 296), 27 arquivos, 0 vermelhos |
+| `npm run test:e2e` | **não re-executado, e o motivo é verificável:** `git diff b1bb106 -- scripts restaurant.html styles index.html` é VAZIO. Nenhum byte de produção mudou desde o commit cujo E2E fechou 296/0 |

@@ -59,11 +59,12 @@ const ENDERECO = {
 };
 
 /** O cardápio com UM produto que tem adicional — o fixture não tem nenhum. */
-function menuComAdicional(branchId) {
+function menuComAdicional(branchId, settingsOverrides = {}) {
   const base = JSON.parse(JSON.stringify(MENU));
   const categoria = base.categories[0];
   return {
     ...base,
+    settings: { ...base.settings, ...settingsOverrides },
     branch_id: branchId || base.branch_id,
     products: [
       {
@@ -116,7 +117,7 @@ const PREVIEW_PADRAO = {
   valid: true
 };
 
-async function montarSacola(page, { comCupom = false, previewOverrides = {} } = {}) {
+async function montarSacola(page, { comCupom = false, previewOverrides = {}, settingsOverrides = {} } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const chamadas = await mockApi(page, {
@@ -126,7 +127,7 @@ async function montarSacola(page, { comCupom = false, previewOverrides = {} } = 
 
   // Depois do mockApi de propósito: a última rota registrada vence.
   await page.route(/\/menu(\?|$)/, route => route.fulfill(
-    json(menuComAdicional(new URL(route.request().url()).searchParams.get('branch_id')))));
+    json(menuComAdicional(new URL(route.request().url()).searchParams.get('branch_id'), settingsOverrides))));
 
   // O /delivery/estimate NÃO é atendido pelo mockApi — cai no catch-all 404, e
   // por isso NENHUM teste da suíte tinha até hoje uma taxa de entrega de
@@ -274,6 +275,168 @@ test('com o preview fechando a conta, as linhas da sacola fecham junto', async (
   expect(Number((sub + svc + entrega - desconto).toFixed(2)),
     'as linhas de "Valores" têm de somar o Total — senão sobra dinheiro sem explicação')
     .toBe(total);
+});
+
+// ============================================================================
+//  OS TIPOS DE CUPOM — os três do enum, e o que cada um trava.
+//
+//  `CouponPreviewResponse.discount_type` é `"fixed" | "percent" |
+//  "free_delivery"`. O front NÃO calcula nenhum dos três: ele exibe o
+//  `discount_amount` e o `total_after_coupon` que vieram. O jeito de provar
+//  isso é dar um fixture em que a conta óbvia dá OUTRO número — se os dois
+//  coincidirem, o teste não distingue exibir de recalcular.
+// ============================================================================
+
+test('cupom PERCENTUAL com teto: a porcentagem da tela nunca é calculada aqui', async ({ page }) => {
+  // "10% off" sobre 68,60 daria 6,86. O backend aplica um TETO de R$ 4,00 e
+  // manda 4,00 — e é o 4,00 que vale. Este é o caso que o CLAUDE.md nomeia:
+  // "com teto de desconto ou arredondamento os números divergem e a tela
+  // mente". 6,86 não pode existir em lugar nenhum da sacola.
+  await montarSacola(page, {
+    comCupom: true,
+    previewOverrides: {
+      discount_type: 'percent',
+      discount_amount: '4.00',
+      // NAO e 76,99 - 4,00 = 72,99. O backend arredonda por conta dele, e os
+      // dois numeros TEM de discordar: se coincidissem, este teste nao
+      // distinguiria exibir de recalcular (skill 4, o fixture cujos numeros
+      // coincidem).
+      total_after_coupon: '73.49'
+    }
+  });
+
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 4,00');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 73,49');
+  await expect(page.locator('#cartModal'), 'a porcentagem recalculada aqui seria 6,86')
+    .not.toContainText('6,86');
+  await expect(page.locator('#csTotal'), 'a subtracao local daria 72,99')
+    .not.toHaveText('R$ 72,99');
+});
+
+test('cupom FIXO que zera a sacola: total R$ 0,00, e o desconto é o do backend', async ({ page }) => {
+  // O desconto cobre a conta inteira. O que se trava aqui é que o total não
+  // vira negativo nem "R$ -0,00", e que a linha de desconto continua dizendo
+  // o número do backend em vez de uma subtração local.
+  await montarSacola(page, {
+    comCupom: true,
+    previewOverrides: {
+      discount_type: 'fixed',
+      discount_amount: '76.99',
+      total_after_coupon: '0.00'
+    }
+  });
+
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 76,99');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 0,00');
+  await expect(page.locator('#cartModal')).not.toContainText('-R$');
+});
+
+test('cupom de FRETE GRÁTIS: a taxa de entrega continua na linha dela', async ({ page }) => {
+  // free_delivery desconta a entrega, e o cliente precisa ver as DUAS coisas:
+  // a taxa que existe (7,40) e o desconto que a anula. Esconder a linha da
+  // entrega faria o desconto parecer maior do que é.
+  await montarSacola(page, {
+    comCupom: true,
+    previewOverrides: {
+      discount_type: 'free_delivery',
+      discount_amount: '7.40',
+      // Um centavo de diferenca da subtracao local (76,99 - 7,40 = 69,59), e
+      // ele e de proposito: um arredondamento do backend e exatamente o que a
+      // tolerancia de um centavo do submitOrder existe para tratar, e sem essa
+      // diferenca o teste nao saberia dizer de onde veio o numero.
+      total_after_coupon: '69.60'
+    }
+  });
+
+  await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 7,40');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 69,60');
+  await expect(page.locator('#csTotal'), 'a subtracao local daria 69,59')
+    .not.toHaveText('R$ 69,59');
+});
+
+// ============================================================================
+//  O PEDIDO MÍNIMO — e contra QUAL número ele é comparado.
+//
+//  `minimumOrderValue()` é comparado com `totals.subtotal`, não com o total.
+//  A diferença é dinheiro em duas direções, e nenhuma das duas tinha teste:
+//
+//   - para BAIXO: as taxas não podem empurrar o cliente por cima do mínimo.
+//     Ele pediu R$ 68,60 de comida; a taxa de entrega não é comida.
+//   - para CIMA: um cupom não pode empurrá-lo por baixo do mínimo depois de
+//     ele já ter alcançado. O desconto é do restaurante, não do cliente.
+// ============================================================================
+
+test('pedido mínimo é medido pelo SUBTOTAL: as taxas não empurram o cliente por cima', async ({ page }) => {
+  // Mínimo R$ 72,00, escolhido no meio: o subtotal (68,60) fica ABAIXO e o
+  // total com as taxas (76,99) fica ACIMA. Se a comparação usasse o total, o
+  // botão liberaria — e o backend recusaria o pedido do outro lado.
+  await montarSacola(page, { settingsOverrides: { min_order_value: 72 } });
+
+  const cta = page.locator('#cartCtaBtn');
+  await expect(cta).toContainText('Valor abaixo do pedido mínimo');
+  await expect(cta).toContainText('R$ 72,00');
+  await expect(cta).toBeDisabled();
+});
+
+test('o cupom não empurra o cliente por BAIXO do mínimo que ele já alcançou', async ({ page }) => {
+  // Mínimo R$ 60,00: o subtotal de 68,60 passa. O cupom derruba o total para
+  // 21,99 — bem abaixo do mínimo — e o botão TEM de continuar liberado. Quem
+  // decide é o subtotal, e o cupom não mexe nele.
+  await montarSacola(page, {
+    comCupom: true,
+    settingsOverrides: { min_order_value: 60 },
+    previewOverrides: { discount_amount: '55.00', total_after_coupon: '21.99' }
+  });
+
+  await expect(page.locator('#csTotal')).toHaveText('R$ 21,99');
+  const cta = page.locator('#cartCtaBtn');
+  await expect(cta).not.toContainText('pedido mínimo');
+  await expect(cta).toBeEnabled();
+});
+
+// ============================================================================
+//  TUDO AO MESMO TEMPO — a conta inteira, numa sacola só.
+//
+//  Cada teste acima isola uma parcela. Este junta as cinco (item com adicional,
+//  quantidade, taxa de serviço, taxa de entrega e cupom percentual com teto),
+//  com saldo de cashback na conta e um pedido mínimo alcançado, e afirma as
+//  cinco linhas E a soma delas. É a asserção que pega o defeito que só aparece
+//  na combinação — uma parcela que some quando outra entra.
+// ============================================================================
+
+test('todas as parcelas juntas: cinco linhas, e a soma delas é o total', async ({ page }) => {
+  await montarSacola(page, {
+    comCupom: true,
+    settingsOverrides: { min_order_value: 60 },
+    previewOverrides: {
+      discount_type: 'percent',
+      discount_amount: '6.86',
+      // 76,99 - 6,86. Aqui o backend FECHA a conta de propósito: o objetivo
+      // deste teste é a soma das linhas, e para isso os dois lados precisam
+      // concordar. Que a tela obedece a um total_after_coupon que NÃO fecha
+      // já está travado no segundo teste deste arquivo.
+      total_after_coupon: '70.13'
+    }
+  });
+
+  await expect(page.locator('#csSub')).toHaveText('R$ 68,60');
+  await expect(page.locator('#csSvcFeeBtn')).toHaveText('R$ 0,99');
+  await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 6,86');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 70,13');
+  await expect(page.locator('#cartCtaBtn')).not.toContainText('pedido mínimo');
+
+  const lido = (seletor) => page.locator(seletor).textContent()
+    .then(texto => Number(texto.replace(/[^\d,]/g, '').replace(',', '.')));
+  const [sub, svc, entrega, desconto, total] = await Promise.all(
+    ['#csSub', '#csSvcFeeBtn', '#csDelivery', '#csDiscount', '#csTotal'].map(lido));
+  expect(Number((sub + svc + entrega - desconto).toFixed(2)),
+    'com as cinco parcelas na tela, nenhuma pode sumir da soma').toBe(total);
+
+  // E o saldo de cashback (R$ 12,50 nesta loja) continua fora da conta, mesmo
+  // com todo o resto presente — quem o aplica é o backend, no pedido.
+  await expect(page.locator('#cartModal')).not.toContainText('12,50');
 });
 
 test('o saldo de cashback da loja NÃO desconta nada da sacola', async ({ page }) => {

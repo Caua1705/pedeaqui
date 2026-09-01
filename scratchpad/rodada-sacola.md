@@ -36,9 +36,8 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
       foi um buraco na REDE: dois sítios de sort_order sem teste nenhum
 
 ### Item 3 — sacola e checkout
-- [ ] 3.1 ampliar a rede do dinheiro (cupom %, cupom fixo, taxa de serviço,
-      pedido mínimo, e a combinação de todos)
-- [ ] 3.2 documentar as 4 variáveis de pagamento e os 5 blocos que escrevem
+- [x] 3.1 rede ampliada: 4 -> 13 testes, com 3 injecoes vistas vermelhas
+- [x] 3.2 documentado: 8 funções escrevem, 12 leem, em 6 blocos + 1 módulo
 - [ ] 3.3 migração por `mount(ctx)`, do mais isolado ao mais entrelaçado
 - [ ] 3.4 folha de confirmação: migrar ou recusar por medida
 - [ ] 3.5 troca de filial: a ÚLTIMA
@@ -332,3 +331,162 @@ quando não há ordem é a única coisa que o `||` acertava.
 | `npm run typecheck:cards` | ok |
 | `npm run test` | **299 unitários** (eram 296), 27 arquivos, 0 vermelhos |
 | `npm run test:e2e` | **não re-executado, e o motivo é verificável:** `git diff b1bb106 -- scripts restaurant.html styles index.html` é VAZIO. Nenhum byte de produção mudou desde o commit cujo E2E fechou 296/0 |
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 3.1 — A REDE DO DINHEIRO, AMPLIADA
+═══════════════════════════════════════════════════════════════════
+
+A rede de 31/08 tinha 4 testes (taxa de entrega, adicional, cashback, payload
+sem dinheiro). Hoje tem **13**, e as seis parcelas que faltavam entraram.
+
+| teste | o que ele trava |
+|---|---|
+| cupom PERCENTUAL com teto | "10% de 68,60" daria 6,86; o backend aplica um teto e manda 4,00. 6,86 não pode existir na sacola, e o total é 73,49 — que **não** é 76,99 − 4,00 |
+| cupom FIXO que zera a sacola | total `R$ 0,00`, sem `-R$` em lugar nenhum, e a linha de desconto continua com o número do backend |
+| cupom de FRETE GRÁTIS | a linha da entrega **continua mostrando 7,40**. Escondê-la faria o desconto parecer maior do que é |
+| pedido mínimo pelo SUBTOTAL (para cima) | mínimo 72,00 entre o subtotal (68,60) e o total (76,99): as taxas não podem liberar o botão que o backend vai recusar |
+| pedido mínimo pelo SUBTOTAL (para baixo) | o cupom derruba o total para 21,99 com o mínimo em 60,00, e o botão continua liberado — o desconto é do restaurante, não do cliente |
+| **todas as parcelas juntas** | as cinco linhas na tela E a soma delas: `sub + svc + entrega − desconto === total`, com o cashback ainda fora |
+
+## Os números discordam de propósito — inclusive nos testes novos
+
+Duas das minhas fixtures nasceram com os dois caminhos coincidindo, que é
+exatamente a armadilha que o cabeçalho deste arquivo denuncia
+(`3 × 7,05 + 0,99 = 22,14`): no cupom percentual `76,99 − 4,00` dava os mesmos
+`72,99` que o backend mandava, e no frete grátis `76,99 − 7,40` dava os mesmos
+`69,59`. **As duas passavam com a subtração local no lugar do
+`total_after_coupon`.** Corrigidas antes de qualquer injeção: hoje o backend
+responde `73,49` e `69,60`, um deles com um centavo de diferença — que é
+justamente a ordem de grandeza que a tolerância de um centavo do `submitOrder`
+existe para tratar.
+
+Foi o experimento que achou isso, não a leitura: a injeção A passou verde na
+primeira tentativa, e passar verde com o defeito dentro é o que obriga a olhar
+para o fixture.
+
+## As três injeções, e o que cada uma acordou
+
+**Injeção A — o front refaz a conta do cupom** (`Math.max(0, beforeDiscount −
+discount)` no lugar do `total_after_coupon`): 3 vermelhos.
+```
+Expected: "R$ 69,13"  Received: "R$ 71,99"
+Expected: "R$ 73,49"  Received: "R$ 72,99"
+Expected: "R$ 69,60"  Received: "R$ 69,59"
+```
+
+**Injeção B — o mínimo comparado com o TOTAL** e não com o subtotal: 2
+vermelhos, **um em cada direção**, que é o ponto do par:
+```
+Expected substring: "Valor abaixo do pedido mínimo"  Received: "Escolher forma de pagamento"
+Expected substring: not "pedido mínimo"              Received: "Valor abaixo do pedido mínimo (R$ 60,00)"
+```
+
+**Injeção C — a taxa de serviço sai do total quando entra cupom** (o escape do
+item 1, injetado de propósito para medir se a rede o pegaria): **7 dos 13
+vermelhos**, cada um nomeando o centavo exato.
+```
+Expected: "R$ 69,13"  Received: "R$ 68,14"
+Expected: "R$ 71,99"  Received: "R$ 71,00"
+Expected: "R$ 73,49"  Received: "R$ 72,50"
+Expected: "R$ 0,00"   Received: "-R$ 0,99"
+Expected: "R$ 69,60"  Received: "R$ 68,61"
+Expected: "R$ 21,99"  Received: "R$ 21,00"
+Expected: "R$ 70,13"  Received: "R$ 69,14"
+```
+Isto responde a metade da dúvida do item 1 que **dava** para responder daqui:
+se algum dia o backend confirmar que `total_after_coupon` não inclui a taxa de
+serviço, a correção não vai ser feita no escuro — sete testes falam do assunto,
+com precisão de um centavo.
+
+## O ERRO DE MEDIÇÃO desta seção, registrado porque é fácil de repetir
+
+A injeção A **passou verde na primeira execução**, com os 13 testes. Não era o
+teste: era a medição. Eu tinha deixado um `npm run preview` de pé desde a
+captura de telas do item 1, e `playwright.config.js` tem
+`reuseExistingServer: !process.env.CI` — o Playwright reaproveitou aquele
+servidor e **nunca reconstruiu o bundle**. Todas as execuções desde a captura
+mediram a árvore da captura.
+
+É a regra de higiene do `rodada-checkout.md` ("matar node órfão e conferir a
+porta 4174 ANTES de medir") valendo para o caso que ela não nomeava: o problema
+não é só a porta ocupada atrapalhar o servidor novo — é o servidor VELHO
+atender e a medição inteira falar de outro código. Um `npm run preview` de pé é
+mais perigoso que uma porta ocupada, porque a suíte não reclama de nada.
+
+Depois de matar os dois processos e conferir a porta, a injeção A ficou
+vermelha com as três mensagens acima.
+
+## Verificação do item 3.1
+
+lint **0 errors**/78 warnings · typecheck ok · **299 unitários** ·
+`test:e2e` **exit 0 · 302 passed · 3 skipped · 6,5 min** (eram 296).
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 3.2 — AS QUATRO VARIÁVEIS DE PAGAMENTO, E QUEM AS TOCA
+═══════════════════════════════════════════════════════════════════
+
+Conferido linha a linha na árvore de hoje (`b858745`), não copiado da rodada
+anterior — os números mudaram com a linha de desconto do item 1.
+
+## As quatro
+
+| # | variável | linha | o que é |
+|---|---|---|---|
+| 1 | `paymentMethod` | `:46` | o RÓTULO exibido ("Pix", "Visa •••• 2508") |
+| 2 | `paymentMethodKey` | `:47` | a CHAVE da UI (`"pix"`, `"credit:<id>"`) |
+| 3 | `selectedSavedCard` | `:48` | o cartão salvo escolhido (objeto) |
+| 4 | `savedCardPaymentToken` | `:49` | **o token de uso único do gateway** |
+
+## Quem ESCREVE — oito funções, em sete blocos diferentes
+
+| ordem no tempo | função | linha | escreve |
+|---|---|---|---|
+| boot | `resetRuntimeStateForPageLoad()` | `:333-336` | zera as **quatro** |
+| checkout, ao desenhar | `renderCheckoutPaymentMethods()` | `:2662-2663`, `:2669-2670` | limpa as quatro quando o método selecionado não está mais na lista da filial |
+| checkout, ao escolher | `commitPaymentMethod()` | `:2682-2686` | escreve rótulo e chave; limpa cartão e token |
+| checkout, cartão salvo | `selectSavedCardPayment()` | `:2748-2749` | escreve o cartão, **zera o token** |
+| checkout, cartão apagado | `clearSavedCardPayment()` | `:2767-2770` | zera as quatro, só se o cartão apagado era o escolhido |
+| **folha de confirmação** | `confirmOrderFromSheet()` | **`:2134`** | **escreve o token** (`requestSavedCardToken`) |
+| recusa do cartão | `failCardCheckout()` | `:3242` | zera o token — ele já foi gasto |
+| pedido criado | `leaveCartAfterOrder()` | `:3124-3127` | zera as quatro |
+| **troca de filial** | `clearBranchScopedSelection()` | **`:4180-4183`** | zera as quatro, na MESMA transação do cupom |
+
+## Quem LÊ — onze funções, em cinco blocos
+
+| bloco | função | linha | lê |
+|---|---|---|---|
+| sacola | `syncCartLocationState()` | `:2201-2242` | `paymentMethod` (rótulo do CTA e do cartão de pagamento) |
+| sacola | `updateCartUI()` | `:2257` | `paymentMethod` (vai para o `cartStore`) |
+| sacola | `handleCartCta()` | `:2004` | `paymentMethod` (decide entre escolher pagamento e confirmar) |
+| rótulo | `selectedPaymentSummary()` | `:1960-1977` | `paymentMethodKey`, `paymentMethod` |
+| folha | `syncOrderConfirmSheet()` | `:2040-2041` | `paymentMethod` |
+| folha | `confirmOrderFromSheet()` | `:2127-2135` | as **quatro** |
+| checkout | `openPaymentMethodScreen()` | `:2492-2503` | `paymentMethodKey`, `paymentMethod` |
+| checkout | `renderCheckoutPaymentMethods()` | `:2645-2677` | `selectedSavedCard`, `paymentMethodKey`, `paymentMethod` |
+| submissão | `orderPaymentMethodForApi()` | `:2779` | `paymentMethodKey`, `paymentMethod` |
+| submissão | `currentCardPaymentPayload()` | `:2786-2789` | `selectedSavedCard`, `savedCardPaymentToken` |
+| submissão | `submitOrder()` | `:3046` | `selectedSavedCard`, `savedCardPaymentToken` (a rede que barra um pedido de cartão SEM cartão) |
+| Pix (outro arquivo) | `retryPixPayment()` | `pix-flow:913` | `selectedSavedCard` — **e é aqui que estava o defeito do item 3.3** |
+
+## A ordem, num pedido de cartão salvo
+
+```
+boot                     zera as quatro
+ → commitPaymentMethod   paymentMethod/Key = "credit:<id>"
+ → selectSavedCardPayment  selectedSavedCard = card ; token = ''
+ → confirmOrderFromSheet   token = requestSavedCardToken(card)     ← escrita
+ → currentCardPaymentPayload  { saved_card_id, token }             ← leitura
+ → submitOrder             confere que os dois existem
+ → leaveCartAfterOrder     zera as quatro
+```
+
+E em qualquer ponto, **transversalmente**: `clearBranchScopedSelection()` zera
+as quatro junto com o cupom. É a razão pela qual a troca de filial é dona de um
+pedaço do estado do checkout, e a razão pela qual os dois não se separam.
+
+**Conclusão que a tabela sustenta, e é a mesma da rodada anterior com os
+números conferidos:** oito funções escrevem e doze leem, em SEIS blocos
+distintos mais um módulo. Isto não é estado de tela — é estado do app no
+caminho do dinheiro. A §9 da skill diz que se o page precisa ler o estado da
+tela, o corte está errado; aqui o page **escreve** o estado que a tela leria, em
+oito lugares.

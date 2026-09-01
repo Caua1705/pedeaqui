@@ -1007,9 +1007,12 @@ descarte a execução, não é medição."*
 O que confirma que era a máquina e não a árvore: depois de matar os processos e
 esperar, a memória livre voltou de **442 MB para 1.445 MB**, e a execução
 seguinte, na mesma árvore, fechou **302/302 com 6 testes lentos** — o melhor
-número do lote inteiro. Fica guardada em
-`scratchpad/conf-sacola-3-DESCARTADA.log`, porque descartar sem deixar o
-artefato é pedir para a próxima pessoa duvidar.
+número do lote inteiro. O registro dela fica em
+`scratchpad/conf-sacola-resumo.txt` — o log bruto NÃO, porque `*.log` é
+gitignored aqui e a convenção do repositório é o `-resumo.txt` (foi assim em
+caça, g2, portão, prova e conf). Descartar sem deixar registro é pedir para a
+próxima pessoa duvidar; deixá-lo onde a convenção o coloca é o que faz o
+registro ser encontrado.
 
 ### O vermelho da conf 1 não é dos três tipos conhecidos — é um QUARTO
 

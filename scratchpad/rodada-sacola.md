@@ -786,3 +786,269 @@ O que a seção 3 entregou, já que não moveu código:
    classe inteira de voltar.
 4. **Três recusas por medida**, cada uma com a linha do motivo e, agora, com o
    custo do erro demonstrado em vez de suposto.
+
+═══════════════════════════════════════════════════════════════════
+# RELATÓRIO FINAL DA RODADA DA SACOLA (01/09/2026)
+`rodada/sacola`, a partir de `89ed3a1` · 7 commits · 11 arquivos ·
++1.540 / −25
+═══════════════════════════════════════════════════════════════════
+
+## 1. O desconto que some: era DEFEITO, e o cálculo
+
+**Era defeito, não texto.** A seção "Valores" da sacola tinha quatro linhas —
+Subtotal, Taxa de serviço, Taxa de entrega, Total — e nenhuma de desconto:
+
+```
+Subtotal            68,60
+Taxa de serviço      0,99
+Taxa de entrega      7,40
+                  ───────
+soma das linhas     76,99
+Total               69,13     ← 7,86 sem uma linha explicando
+```
+
+E o dado já estava pronto: `cartTotals()` devolve `{subtotal, svc, delivery,
+discount, total}` desde sempre — **`discount` era devolvido e nunca desenhado.**
+Não faltava conta, faltava linha. É o mesmo defeito que criou o
+`cart-service-fee.spec.js` ("Subtotal R$ 0,01, Total R$ 1,00, R$ 0,99 sem linha
+nenhuma"), agora na linha do cupom.
+
+Por que a suíte não pegou: todos os testes afirmavam sobre `#csTotal` e nenhum
+sobre a SOMA das linhas de cima. Um número certo embaixo passa em todo teste que
+só olha para ele.
+
+Corrigido com quatro vermelhos vistos, e com um teste-fantasma consertado antes
+de entrar (`toBeHidden()` sozinho é satisfeito por um elemento que não existe).
+
+## 2. Os falsy encontrados: 46, e NENHUM muda comportamento
+
+`node tools/falsy-do-contrato.mjs` — 141 campos numéricos/booleanos do
+contrato × 4 famílias (`campo || padrão` e ternário; `!campo`; `if (campo)`;
+`filter(Boolean)`) = **46 sítios**. Conferidos um a um:
+
+| resultado | quantos |
+|---|---|
+| o fallback é **o próprio 0** → mesmo número dos dois jeitos | 8 |
+| `Number(order.X) || 0` no bloco de dinheiro do perfil — idem | 7 |
+| `Math.max(1, Number(max_select \|\| 1))` — é o `Math.max` que iguala os dois lados, não o operador | 4 |
+| já perguntam `Number.isFinite` antes de decidir — **a forma certa** | 7 |
+| `is_open`, que chega normalizado a booleano de verdade | 2 |
+| booleano em que `false` significa exatamente "não faça" | 2 |
+| `weekday: 0` → `DIAS_DO_CONTRATO[0]` = `Segunda-feira`, truthy | 1 |
+| falso positivo da régua (variável local, string de estado, DOM, config) | 15 |
+| **mudam comportamento alcançável** | **0** |
+
+**A família estava fechada.** As quatro cadeias de `sort_order` corrigidas em
+31/08 eram todas as que existiam nessa forma — não uma amostra. A régua foi
+validada contra o defeito conhecido antes de eu acreditar na resposta dela, e a
+primeira versão dela era cega ao caso mais comum daqui (`Number(x.campo) || y`).
+
+**O que ela achou não foi defeito, foi buraco na rede:** `sort_order` vale
+`@default 0` em SEIS schemas e a rede cobria QUATRO. `ProductOptionGroupResponse`
+e `ProductOptionResponse` estavam certos e sem teste — um `||` de volta ali
+passaria por tudo, e a opção de menor ordem (o "sem nada", o mais barato, o que
+abre a lista) cairia para o fim. Três casos novos, dois vistos vermelhos.
+
+## 3. Linhas do `restaurant-page.js`: 5.628 → 5.643
+
+**+15, e nenhuma de movimento.** São a linha de desconto do item 1, o comentário
+dela, e o comentário do acessor do Pix. Zero código migrado — ver o item 4.
+
+## 4. Recusado por medida, com o motivo
+
+| o quê | medida | motivo |
+|---|---|---|
+| **Folha de confirmação** | 119 l / 27 fios = **4,4 l/fio** (piso 10) | ela ESCREVE o token de uso único do gateway (`:2134`), mais `orderSubmitInFlight` e `confirmedTotalAtSubmit`. Migrar exige porta de ESCRITA de uma tela para o fechamento — a única coisa que o contrato de telas proíbe |
+| **Troca de filial** | 314 l / 84 fios = **3,7 l/fio** (a aferição) | `clearBranchScopedSelection()` zera as quatro variáveis de pagamento na MESMA transação do cupom. Ela é dona de um pedaço do estado do checkout |
+| Os outros seis blocos | 2,4 a 6,0 l/fio | nenhum alcança o piso; a tabela está no item 3.4 |
+| **A régua nova, aplicada** | — | a §9.1 avisa que a medida de bloco subestima um corte `mount(ctx)`. Aplicada, ela recusa por um motivo mais duro que o número: **de quem é o estado** |
+
+E o que mudou nesta rodada não foi a conclusão, foi a prova: o custo de errar
+uma travessia deixou de ser suposto. `selectedSavedCard` — uma das quatro que a
+folha teria de atravessar — cruzou a fronteira de UM módulo por valor, uma vez,
+e virou uma condição permanentemente falsa no caminho do pagamento, invisível a
+lint, typecheck, 299 unitários e 302 E2E.
+
+## 5. Números de dinheiro que mudaram: NENHUM
+
+O total, o subtotal, a taxa de serviço, a taxa de entrega e o desconto que o
+cliente paga são exatamente os mesmos. O que mudou foi o que ele **vê**:
+
+- uma linha que já existia no dado (`cartTotals().discount`) passou a ser
+  desenhada. Nenhum valor foi recalculado, e o número é `discount_amount` do
+  contrato;
+- o cartão do pedido na tela de pagamento passou a dizer o nome da LOJA em vez
+  do nome da plataforma. É nome, não dinheiro.
+
+Producao inteira nesta rodada: **3 arquivos, 50 linhas** —
+`restaurant.html` (a linha de desconto),
+`scripts/pages/restaurant-page.js` (+19: a linha de desconto e os dois
+acessores) e `scripts/pages/restaurant-pix-flow.js` (+39: o `S`, o
+`ESTADO_OBRIGATORIO` e tres leituras com prefixo). O resto sao testes,
+ferramentas e prosa.
+
+## 6. Escapes e bloqueados por backend
+
+### Escapes pendentes (8 — dos 8 anteriores, 1 fechou e 1 entrou)
+
+| # | escape | estado |
+|---|---|---|
+| 1 | `auth-screen-nav.spec.js:105` | herdado, nunca reproduzido |
+| 2 | `order-flow.spec.js:163` | herdado, só dentro de travamento de máquina |
+| 3 | `pix-payment.spec.js:116` | herdado, o `307,6` continua sem explicação |
+| ~~4~~ | ~~a sacola não mostra a linha de desconto~~ | **FECHADO nesta rodada (item 1)** |
+| 5 | `restaurant-club.js:146` precedência latente | herdado |
+| 6 | `address-service.js:25` precedência DE PROPÓSITO | herdado, documentado |
+| 7 | `menu-service.js:181,193` cadeias fantasma inofensivas | herdado |
+| 8 | `provider_error_code` existe e ninguém lê | herdado |
+| **9** | **`assistant-voice-session.spec.js:472`** | **NOVO.** O teto de inatividade sob teste é **8 s** e o preparo (`conversar()`) tem direito a **15 s + 10 s = 25 s**, contados de depois que o contador já começou. É o `:491` de novo, com números três vezes piores. Não corrigido: subir o teto leva o teste de ~13 s para ~35 s e exige `test.setTimeout` próprio, e mudar orçamento de relógio sem medir os dois braços é palpite |
+
+**A conta bate em 8 e está NO LIMITE.** Se a dúvida da taxa de serviço abaixo
+for contada como escape em vez de bloqueio de backend, são **9** — que é a
+condição de parada do prompt. A rodada para aqui de qualquer forma, com os cinco
+itens fechados.
+
+### Bloqueados por backend
+
+**UM NOVO, e é o mais importante desta rodada:**
+
+**A taxa de serviço pode estar saindo do total quando um cupom entra.**
+`CouponPreviewRequest` tem `additionalProperties: false` e cinco campos, nenhum
+de taxa de serviço — o front **não pode** enviá-la. E `cartTotals()` troca o
+total INTEIRO pelo `total_after_coupon`. As duas leituras possíveis:
+
+| leitura | a favor dela |
+|---|---|
+| **a resposta NÃO inclui a taxa** | ela devolve `subtotal` e `delivery_fee` como `required` e **não** devolve `service_fee`, ao contrário do `CreateOrderResponse`; e a requisição EXIGE que o cliente informe o `delivery_fee`, ou seja o preview orça o que recebe |
+| **inclui** | a rota é por slug, o backend sabe o `service_fee_amount`; e todos os fixtures deste repositório assumem isso (`club-coupons:181` só fecha somando a taxa) |
+
+Os fixtures são a assunção de quem os escreveu, não uma resposta capturada.
+**Não mexi no número**, e o motivo é a regra da rodada: número de dinheiro não
+muda por aposta.
+
+**E a pergunta já está instrumentada — não falta código, falta ler o log.**
+`evaluateTotalMismatch()` (`:3337`) chama `logAppError` com
+`confirmado=X pedido=Y`. Se a primeira leitura estiver certa, **todo pedido com
+cupom e taxa de serviço já está registrando**:
+
+```
+Total divergente entre a confirmação e o pedido criado
+confirmado=71.00 pedido=71.99      → diferença = +0,99 = service_fee_amount
+```
+
+e o cliente já está vendo *"O total ficou R$ 71,99, acima dos R$ 71,00 que você
+confirmou."* Uma diferença constante, igual à taxa de serviço, só em pedidos com
+cupom, **prova** a primeira leitura. Nenhuma ocorrência prova a segunda.
+
+E a rede já está pronta para a correção: a injeção C do item 3.1 mostrou que
+**7 dos 13 testes** acordam se a taxa sair do total, cada um com o centavo
+exato. A correção, se vier, não será feita no escuro.
+
+### Herdados, sem mudança
+
+`old_price`, `ChatResponse.options`, `recommendation_reason`; a recusa de cartão
+sem rota de cancelamento (`docs/order-contract.md`, item 11); Places API (New)
+com os dois bloqueios.
+
+## 7. O que eu faria diferente
+
+1. **Matar o `npm run preview` depois de usar a captura de telas.** Deixei um de
+   pé e `reuseExistingServer` fez o Playwright medir a árvore da captura por
+   várias execuções — a injeção A do item 3.1 passou VERDE com o defeito dentro.
+   A regra de higiene falava em porta ocupada; o perigo maior é o servidor velho
+   **atender calado**.
+2. **Escrever o fixture pensando na injeção, não na asserção.** Duas das minhas
+   fixtures novas nasceram com os dois caminhos coincidindo — a armadilha que o
+   cabeçalho daquele arquivo denuncia, cometida dentro dele. Quem as pegou foi a
+   injeção, não a revisão.
+3. **Desconfiar do próprio verde de uma varredura nova.** A varredura das
+   fotografias acusou ONZE na primeira versão e DOIS na correta; a do falsy
+   achava 25 sítios e perdia justamente os sete do bloco de dinheiro. Nas duas
+   vezes o conserto veio de rodar a régua contra um caso cuja resposta eu já
+   sabia — e é por isso que a guarda que ficou tem sonda contra passar por
+   vacuidade.
+4. **Ler a duração antes da mensagem, de novo.** Os dois vermelhos de voz eram
+   de carga, e eu li a asserção antes de olhar para os 22,2 s e para o
+   `--workers=1` isolado. A taxonomia da §11 existe para gastar dez segundos
+   nisso — e o número que decide é a DISTRIBUIÇÃO, não o tempo total: a
+   execução verde tinha **7** testes acima de 10 s e a suja tinha **43**, na
+   mesma árvore.
+5. **Corrigir a FAMÍLIA, não a instância — e eu já tinha lido a lição.**
+   Consertei o teto herdado de um poll (`:381`) e deixei três irmãos idênticos
+   de pé; um deles (`:724`) caiu na execução seguinte com a mensagem
+   **idêntica, caractere por caractere**. A rodada anterior escreveu isso com
+   todas as letras ("migrei os 52 sítios da espera de boot, e não só o que
+   falhou") e eu li antes de começar. Quando a causa é do FORMATO e não do
+   teste, ou se corrige a família inteira ou ela volta pelo irmão. Custou duas
+   execuções da suíte para reaprender.
+
+## O lote de confirmação (árvore final)
+
+Higiene antes de cada execução: node órfão morto, porta 4174 conferida livre.
+
+| execução | resultado | tempo | testes acima de 10 s |
+|---|---|---|---|
+| conf 1 | 301 passed · **1 failed** | 6,8 min | 11 |
+| conf 2 | **302 passed** · 0 failed | 6,4 min | 9 |
+| *(descartada — família C)* | *279 de 305, travada* | *>10 min* | ***141*** |
+| conf 3 | **302 passed** · 0 failed | 6,3 min | **6** |
+
+**Duas limpas de duas medições válidas**, mais uma execução descartada e um
+vermelho que não é do código. A contagem honesta está abaixo.
+
+### A descartada, e por que descartar foi medida e não conveniência
+
+Ela travou em 279 de 305, com **141 testes acima de 10 s** (contra 6 a 11 nas
+saudáveis, na MESMA árvore), um deles com **1,5 minuto**, e a memória livre da
+máquina em **442 MB**. É a família C da §11 ao pé da letra: *"um ou mais testes
+com duração em MINUTOS, e uma dezena de irmãos estourando o teto juntos —
+descarte a execução, não é medição."*
+
+O que confirma que era a máquina e não a árvore: depois de matar os processos e
+esperar, a memória livre voltou de **442 MB para 1.445 MB**, e a execução
+seguinte, na mesma árvore, fechou **302/302 com 6 testes lentos** — o melhor
+número do lote inteiro. Fica guardada em
+`scratchpad/conf-sacola-3-DESCARTADA.log`, porque descartar sem deixar o
+artefato é pedir para a próxima pessoa duvidar.
+
+### O vermelho da conf 1 não é dos três tipos conhecidos — é um QUARTO
+
+```
+Error: write UNKNOWN
+   at helpers.js:403   (o waitForFunction de esperarAppPronto)
+```
+
+Aos **5,9 s**, sem `Expected`, sem `Received`, sem `Test timeout`. `write
+UNKNOWN` é erro de libuv escrevendo num handle morto: o processo do Chromium
+caiu ou o pipe do driver quebrou. A pilha aponta para o `esperarAppPronto` e a
+tentação é mexer no helper — mas ele não afirma nada ali, só estava esperando
+quando o cano fechou.
+
+Entrou na taxonomia da skill como **família D — "o cano quebrou"**, com a regra
+que a separa da família A em dez segundos: **A tem `Expected`/`Received`, D não
+tem.** As duas execuções seguintes fecharam 302/302 sem que uma linha fosse
+tocada.
+
+### A família de polls, corrigida entre um lote e outro
+
+O lote ANTERIOR foi encerrado de propósito — eu ia mudar a árvore, e uma
+sequência que mede árvores diferentes não quer dizer nada. Antes de encerrar,
+ele entregou o que importava: `:724` caiu com a mensagem **idêntica caractere
+por caractere** à do `:381` que eu tinha consertado uma execução antes.
+
+Havia **três** irmãos com a mesma forma — `:442`, `:458` e `:742` — todos
+esperando um `response.create` VOLTAR pelo canal de dados depois de um
+`emitir()`, todos herdando os 5 s do `expect` enquanto os irmãos do MESMO teste
+carregam `{ timeout: 10000 }` escrito e esperam menos. Os três ganharam o mesmo
+teto, com o comentário de família escrito uma vez.
+
+E a distribuição, que é o número que decide se uma execução presta:
+
+| execução | tempo | testes acima de 10 s |
+|---|---|---|
+| a limpa | 6,3 min | **6** |
+| a suja (o lote anterior) | 9,0 min | **43** |
+| a travada (descartada) | >10 min | **141** |
+
+Um `grep` de um segundo separa "achei um flake" de "medi uma máquina ocupada".
+Essa conta e a lição da família entraram na §11 da skill.

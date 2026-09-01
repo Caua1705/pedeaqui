@@ -11,6 +11,20 @@ existem no schema. O total pós-cupom vem pronto, no campo `total_after_coupon`.
 Existe **um** dono do total: `cartTotals()` (`scripts/pages/restaurant-page.js`).
 Somar preço fora dele é bug.
 
+E **toda parcela do total tem LINHA na sacola** — subtotal, taxa de serviço,
+taxa de entrega, desconto, total. Parcela sem linha é dinheiro sumindo: o
+cliente com cupom lia `68,60 + 0,99 + 7,40` e um total de `69,13`, R$ 7,86 sem
+explicação, até 01/09/2026. Parcela zerada é linha FORA, nunca um "R$ 0,00"
+solto. A rede que trava a conta inteira é `tests/e2e/cart-money-chain.spec.js`
+(13 testes); **antes de mexer em qualquer número da sacola, rode-a.**
+
+**EM ABERTO, e é a pergunta mais cara aqui:** o front não envia `service_fee` no
+`/coupons/preview` e não pode (`additionalProperties: false`), mas `cartTotals()`
+troca o total INTEIRO pelo `total_after_coupon`. Se o backend orça só as duas
+parcelas que recebeu, aplicar um cupom apaga a taxa de serviço do total. **Não
+mude o número por aposta** — a §3.1 da skill tem as duas leituras e a assinatura
+de log que resolve a dúvida em produção.
+
 **2. Contrato é lido, não lembrado.** Antes de ler um campo da API, ache-o em
 `scripts/types/api.d.ts` (gerado por `npm run api:generate`; não edite à mão).
 Campo renomeado é a falha mais silenciosa daqui — já houve campo procurado por
@@ -69,6 +83,11 @@ Três ferramentas respondem por medida o que não dá para responder lendo:
 | Esta regra pode pintar alguma coisa? | `node tools/css-usage.mjs [--runtime]` |
 | Este `!important` está vencendo alguém? | `node tools/css-important.mjs` |
 | Quantos cabeçalhos/botões DIFERENTES existem? | `node tools/ui-inventory.mjs` |
+
+E, fora do CSS, duas que respondem por medida o que dá para errar lendo:
+`node tools/fios-do-corte.mjs` (vale a pena extrair este bloco?) e
+`node tools/falsy-do-contrato.mjs` (onde um `0` ou um `false` legítimo do
+contrato pode ser engolido por um fallback?). Nenhuma das duas julga sozinha.
 
 **Nenhuma das três julga morte por conta própria.** `css-usage` só autoriza
 apagar pela metade **estática** (o nome não existe no APP), e o corpus dela

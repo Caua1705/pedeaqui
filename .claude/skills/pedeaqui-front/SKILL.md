@@ -119,6 +119,35 @@ acessor leva getter **e** setter.
 
 `init()` recusa acessor faltando, em vez de seguir com `undefined`.
 
+**E a fotografia do boot tem preco medido, nao suposto — e uma guarda.** Em
+01/09/2026 dois nomes ainda chegavam ao modulo do Pix por VALOR: `restaurant`
+(reatribuido 3x) e `selectedSavedCard` (7x). `pixFlow.init()` roda no corpo do
+IIFE, ANTES do boot, entao as duas copias eram `{}` e `null` **para sempre**. O
+que isso custou:
+
+- `pixStoreLabel()` lia `restaurant.name` de um `{}`, caia em
+  `fallback().restaurantName`, e o cartao do pedido na TELA DE PAGAMENTO dizia
+  `"Restaurante - MATRIZ"` em vez de `"Junior da Picanha - MATRIZ"`. Num app
+  white-label, na ultima tela antes de o cliente pagar. O E2E que existia
+  afirmava `not.toBeEmpty()` sobre esse elemento: passava com o nome errado.
+- em `retryPixPayment()`, `selectedSavedCard?.id` era permanentemente FALSO —
+  uma condicao morta no caminho do pagamento.
+
+**A guarda e o quarto `describe` de `tests/unit/page-modules.test.js`**, e ela
+existe porque as tres verificacoes anteriores NAO veem esta classe: o nome
+existe dos dois lados, com o tipo certo, e o modulo importa sem estourar. Ela le
+o `restaurant-page.js`, monta a lista de `let` REATRIBUIDOS e a lista de
+TAQUIGRAFIA de cada `init()`, e exige intersecao vazia.
+
+Duas licoes de como escrever essa varredura, as duas sofridas:
+1. **So taquigrafia conta.** `nome: () => nome` e `{ get: () => nome }` sao o
+   jeito CERTO, e a expressao `=> nome,` casa com qualquer padrao ingenuo de
+   "nome seguido de virgula". A primeira versao acusou ONZE onde havia DOIS.
+2. **A varredura precisa de sonda propria.** Se ela parar de casar (mudou a
+   indentacao, o `let` virou `const`), a lista fica vazia e o teste passa por
+   VACUIDADE, que e a pior forma de passar. A guarda exige
+   `reatribuidos.size > 10` antes de afirmar qualquer coisa.
+
 **O markup não muda.** `RapidexActions.register()` MESCLA num registro
 compartilhado, então cada módulo registra as ações dele e os `data-act-*` do HTML
 continuam iguais. Foi assim que 82 ações mudaram de arquivo sem uma linha de HTML.
@@ -183,6 +212,25 @@ cupom, forma de pagamento) — valores nem existem no schema.
   já divergente do dono vivo — conta de dinheiro em dois lugares é divergência
   esperando acontecer, e com testes só no lado morto é divergência com álibi.
   Se você se pegar somando preço fora de `cartTotals()`, pare.
+- **Toda parcela do total tem LINHA na sacola.** Subtotal, taxa de servico,
+  taxa de entrega, desconto e total. A linha de desconto entrou em 01/09/2026:
+  ate ali o cliente com cupom lia `68,60 + 0,99 + 7,40 = 76,99` nas linhas de
+  cima e um total de `69,13` embaixo, com R$ 7,86 sem explicacao. E o mesmo
+  defeito do `cart-service-fee.spec.js`, na linha do cupom. Parcela zerada e
+  linha FORA, nunca um "R$ 0,00" solto.
+- **EM ABERTO, e vale dinheiro: a taxa de servico entra no `total_after_coupon`?**
+  O front NAO envia `service_fee` no `/coupons/preview` e nao pode
+  (`CouponPreviewRequest` tem `additionalProperties: false`), e `cartTotals()`
+  troca o total INTEIRO pelo `total_after_coupon`. A resposta devolve `subtotal`
+  e `delivery_fee` como `required` e **nao** devolve `service_fee` — ao
+  contrario do `CreateOrderResponse`. Se ela orca so as duas parcelas que
+  recebeu, aplicar um cupom apaga a taxa de servico do total exibido. Os
+  fixtures deste repo assumem o contrario, mas eles sao a assuncao de quem os
+  escreveu, nao uma resposta capturada. **Nao mude o numero por aposta.** A
+  pergunta ja esta instrumentada: `evaluateTotalMismatch()` registra
+  `confirmado=X pedido=Y` — uma diferenca constante e igual a taxa de servico,
+  so em pedidos com cupom, prova a primeira leitura. E `cart-money-chain.spec.js`
+  tem 7 testes que acordam se a taxa sair do total, com o centavo exato.
 - **Não existe rota que orce um pedido.** Conferido no OpenAPI:
   `/coupons/preview` só responde com cupom aplicado e `/delivery/estimate` só
   devolve a taxa. Quando o total do servidor chega, o pedido **já existe** e o
@@ -226,6 +274,27 @@ Corrigido em quatro sítios de `menu-service.js` (`??` no lugar de `||`), com
 
 A pergunta que fica: **`||` sobre número ou booleano do contrato é suspeito
 sempre.** `??` distingue "não veio" de "veio zero"; `||` não.
+
+**E hoje ela se responde por medida:** `node tools/falsy-do-contrato.mjs` cruza
+os 141 campos numericos/booleanos do `openapi.json` (string decimal inclusa —
+`"0.00"` e truthy, mas `Number("0.00") || y` engole o zero igual) com quatro
+formas de leitura no `scripts/`: fallback (`campo ||`, ternario), negacao
+(`!campo`), guarda (`if (campo)`) e `filter(Boolean)`. Ela **nao julga**: a
+pergunta da conferencia continua sendo *cair no fallback da um resultado
+DIFERENTE de nao cair?* — e na varredura de 01/09/2026 a resposta foi NAO nos
+46 sitios, porque na maioria o fallback e o proprio 0.
+
+Duas coisas que essa varredura ensinou:
+- **A regua precisa atravessar `)` e `]`.** Sem isso ela nao ve
+  `Number(x.campo) || y`, que e a forma mais comum daqui — perdia os sete
+  sitios do bloco de dinheiro do perfil.
+- **Valide a regua contra o defeito conhecido antes de acreditar nela.** Com o
+  `??` de `menu-service:117` trocado de volta por `||`, ela tem de apontar
+  aquela linha. Se nao apontar, a resposta "nenhum defeito" nao vale nada.
+
+E `sort_order` vale `@default 0` em **SEIS** schemas, nao quatro:
+`ProductOptionGroupResponse` e `ProductOptionResponse` tambem. Os seis estao
+cobertos por `tests/unit/menu-sort-order.test.js` desde 01/09/2026.
 
 ### 3.3 Teste que você não viu falhar não vale nada
 
@@ -825,6 +894,14 @@ uma delas se conserta no teste.
 | **A. corrida do teste** | o teste falha em segundos, com uma asserção de valor (`Expected X, Received Y`) | achar a causa e corrigir. Todas as sete desta rodada eram isto |
 | **B. estouro de orçamento** | duração **entre 31 e 40 s** e `Test timeout of 30000ms exceeded` | olhe a rodada INTEIRA antes de tocar no teste |
 | **C. máquina parada** | um ou mais testes com duração em **MINUTOS**, e uma dezena de irmãos estourando o teto juntos | **descarte a execução.** Não é medição |
+| **D. o cano quebrou** | um `Error:` que **não é asserção nem timeout**, em poucos segundos, vindo do transporte do Playwright — `write UNKNOWN`, `Target closed`, `browserContext.close` | **não é seu.** O processo do Chromium morreu ou o pipe do driver caiu. Rode de novo; se repetir no MESMO teste, aí sim investigue |
+
+A família D foi vista em 01/09/2026: `Error: write UNKNOWN` em
+`pix-payment.spec.js:545`, aos 5,9 s, dentro do `waitForFunction` do
+`esperarAppPronto`. A pilha aponta para o helper e a tentação é mexer nele —
+mas `write UNKNOWN` é erro de libuv escrevendo num handle morto, não uma
+afirmação sobre a página. A execução seguinte fechou 302/302 sem tocar em nada.
+**A regra que separa D de A: A tem `Expected`/`Received`, D não tem.**
 
 A rodada de 31/08/2026 teve uma execução de família C: quatro testes de
 `assistant-voice.spec.js` levaram **15 a 16 minutos cada**, simultaneamente, e
@@ -944,7 +1021,16 @@ o braço B (jeito novo) passa. Sem isso não há prova, só esperança.
 ### Higiene de medição — três erros que custaram medições inteiras
 
 1. **Matar node órfão e conferir a porta 4174 ANTES de medir.** Já registrado, e
-   continua valendo.
+   continua valendo — mas o perigo maior não é a porta ocupada atrapalhar o
+   servidor novo: é o servidor VELHO **atender calado**.
+   `playwright.config.js` tem `reuseExistingServer: !process.env.CI`, e o
+   `webServer.command` é `npm run build && npm run preview`. Com um
+   `npm run preview` de pé (por exemplo, deixado pela `capture-screens.mjs`), o
+   Playwright reaproveita aquele servidor e **NUNCA RECONSTRÓI**: todas as
+   execuções passam a medir a árvore de quando aquele servidor subiu. Em
+   01/09/2026 isso fez um defeito reinjetado de propósito passar VERDE em 13
+   testes. A suíte não reclama de nada — o sintoma é um experimento que não
+   reprova o que deveria.
 2. **NÃO editar um spec no meio de um lote de execuções.** Um lote de 6 foi
    perdido nesta rodada por isso: as execuções passam a medir árvores
    diferentes e a sequência não quer dizer nada.
@@ -956,3 +1042,15 @@ o braço B (jeito novo) passa. Sem isso não há prova, só esperança.
    ter mudado: `npm run test:e2e` roda `npm run build` a cada execução, e num
    PC com 8 GB isso basta para esfomear o vitest. Um vermelho que some sozinho
    é o pior tipo — ele ensina a repetir o comando em vez de ler.
+5. **A DISTRIBUIÇÃO diz se a execução presta, não o tempo total.** Conte os
+   testes acima de 10 s: em 01/09/2026 a execução limpa tinha **7** e a suja
+   tinha **43**, na MESMA árvore (6,3 min contra 9,0). Um `grep -oE
+   "\(([0-9.]+)s\)" log | tr -d '()s' | awk '$1>10' | wc -l` responde em um
+   segundo, e é o que separa "achei um flake" de "medi uma máquina ocupada".
+6. **Corrigido o sítio, varra a FAMÍLIA — senão ela volta pelo irmão.** Um poll
+   sem teto explícito (`:381`) foi consertado sozinho, e na execução seguinte
+   um irmão idêntico (`:724`) caiu com a mensagem **igual caractere por
+   caractere**. Havia três com a mesma forma. É a mesma lição dos 52 sítios da
+   espera de boot, e ela se aprende de novo toda vez que se conserta o teste em
+   vez do FORMATO do teste. Depois de achar a causa, `grep` pela forma antes de
+   comemorar.

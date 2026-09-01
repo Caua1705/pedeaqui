@@ -428,6 +428,25 @@ test('não se pede resposta com uma ativa: o pedido espera na fila', async ({ pa
     .toContain('response.create');
 });
 
+// TETO EXPLICITO em todo poll que espera um `response.create` VOLTAR pelo canal.
+//
+// Sao os polls do caminho mais longo do arquivo: depois do emitir() ainda falta
+// a ida-e-volta pelo canal de dados ate o app escoar a fila. Sem teto proprio
+// eles herdavam o padrao de 5 s do expect — enquanto os irmaos do MESMO teste
+// carregam { timeout: 10000 } escrito, e esperam menos.
+//
+// Dois deles cairam na suite (01/09/2026), com a mensagem identica:
+//     Timeout 5000ms exceeded while waiting on the predicate
+//     Expected value: "response.create"
+//     Received array: ["conversation.item.create"]
+// — a fila tinha escoado a PRIMEIRA metade e a segunda chegou depois do teto.
+// O primeiro foi corrigido sozinho, e o segundo caiu na execucao seguinte: a
+// licao e a mesma dos 52 sitios da espera de boot — quando a causa e do
+// FORMATO e nao do teste, corrija a familia inteira ou ela volta pelo irmao.
+//
+// E o numero nao enfraquece o que eles provam: o defeito que guardam e a fila
+// NAO escoar, o que torna a espera infinita, nao lenta. 5 s ou 10 s so decide
+// se a maquina ocupada e acusada no lugar do codigo.
 test('o erro de resposta ativa não derruba a sessão: o pedido volta para a fila', async ({ page, context }) => {
   await montar(page, context, { busca: { produtos: [], resumo: 'Nada.' } });
   await conversar(page);
@@ -439,7 +458,7 @@ test('o erro de resposta ativa não derruba a sessão: o pedido volta para a fil
     call_id: 'call_erro', name: 'buscar_no_cardapio',
     arguments: JSON.stringify({ consulta: 'x' })
   });
-  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
     .toContain('response.create');
   await page.evaluate(() => { window.__recebidos.length = 0; });
 
@@ -455,7 +474,7 @@ test('o erro de resposta ativa não derruba a sessão: o pedido volta para a fil
 
   // E o pedido perdido sai no próximo response.done.
   await emitir(page, { type: 'response.done' });
-  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
     .toContain('response.create');
 });
 
@@ -739,7 +758,7 @@ test('a medição não muda o rumo da conversa', async ({ page, context }) => {
   await expect.poll(() => chamadas.busca.length, { timeout: 10000 }).toBe(1);
 
   await emitir(page, { type: 'response.done', response: { usage: 'lixo' } });
-  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
     .toContain('response.create');
   await expect(page.locator('#assistantVoice')).toHaveClass(/is-listening/);
 });

@@ -300,3 +300,46 @@ mensagem pode levar o cliente a refazê-lo.
    online` cuja cobrança de cartão voltou `failed`. Enquanto isso não existir, uma recusa
    de cartão deixa um pedido registrado e não pago. Uma rota de cancelamento pelo
    `tracking_token` também resolveria, e aí o front a chamaria em `failCardCheckout`.
+14. **⚠️ `/coupons/preview` ORÇA A TAXA DE SERVIÇO, OU NÃO? — pendência de backend,
+   e é dinheiro que o cliente vê.** O front manda `subtotal` e `delivery_fee`, e
+   **só isso**: `CouponPreviewRequest` tem `additionalProperties: false` e cinco
+   campos, nenhum de taxa de serviço. Mas `cartTotals()` troca o total INTEIRO
+   pelo `total_after_coupon` da resposta. Então:
+
+   - se `total_after_coupon = subtotal + delivery_fee − discount_amount`, ou seja
+     **só as duas parcelas que ele recebeu**, aplicar um cupom **apaga a taxa de
+     serviço do total exibido** — R$ 0,99 no restaurante piloto, em todo pedido
+     com cupom;
+   - se a rota olha o `service_fee_amount` do restaurante (ela é endereçada por
+     slug, então pode), o total está certo e não há nada a fazer.
+
+   **A favor da primeira leitura:** a resposta devolve `subtotal` e
+   `delivery_fee` como `required` e **não** devolve `service_fee` — ao contrário
+   do `CreateOrderResponse`, que devolve os três; e a requisição EXIGE que o
+   cliente informe o `delivery_fee`, ou seja o preview orça o que recebe, não o
+   que descobre sozinho. **A favor da segunda:** os fixtures de teste deste repo
+   a assumem (`club-coupons.spec.js` responde `total_after_coupon: "20.02"` para
+   `subtotal "21.15" + delivery "0.00" − discount "2.12"`, e 20,02 só sai
+   somando a taxa de 0,99) — mas fixture é a assunção de quem o escreveu, não uma
+   resposta capturada.
+
+   **O front NÃO foi alterado**, porque mudar um total por aposta é o oposto da
+   regra 1. E a pergunta **já está instrumentada em produção**:
+   `evaluateTotalMismatch()` compara o total confirmado com o `order.total` e
+   registra `confirmado=X pedido=Y` via `logAppError`. Se a primeira leitura
+   estiver certa, todo pedido com cupom e taxa de serviço já está gravando
+
+       Total divergente entre a confirmação e o pedido criado
+       confirmado=71.00 pedido=71.99      → diferença = +0,99 = service_fee_amount
+
+   e o cliente já está vendo *"O total ficou R$ 71,99, acima dos R$ 71,00 que
+   você confirmou. Confira com o restaurante antes de pagar."* **Uma diferença
+   constante e igual à taxa de serviço, só em pedidos com cupom, resolve a
+   dúvida.** Nenhuma ocorrência prova a segunda leitura.
+
+   **Pendência de backend:** dizer o que compõe `total_after_coupon`. Se for a
+   primeira leitura, há dois consertos possíveis — o backend passar a somar a
+   taxa (e devolvê-la, para a resposta continuar conferível), ou o front somar
+   `svc` por cima do `total_after_coupon`. A rede para verificar já existe:
+   `cart-money-chain.spec.js` tem 7 testes que acusam a taxa saindo do total,
+   cada um com o centavo exato.

@@ -410,8 +410,21 @@ test('não se pede resposta com uma ativa: o pedido espera na fila', async ({ pa
   expect(durante, 'pediu resposta com uma ativa').not.toContain('response.create');
 
   // Fechada a resposta, a fila escoa.
+  //
+  // TETO EXPLICITO, igual ao dos dois irmaos acima. Sem ele este poll herdava
+  // o padrao de 5 s do expect enquanto os outros dois deste mesmo teste tinham
+  // 10 000 — e ele e o que MAIS espera: depois do emitir() ainda falta a
+  // ida-e-volta pelo canal de dados ate o app escoar a fila. Foi assim que ele
+  // caiu na suite de 01/09/2026, com `Timeout 5000ms exceeded while waiting on
+  // the predicate` e `Received array: ["conversation.item.create"]` — a fila
+  // tinha escoado a primeira metade e a segunda chegou depois do teto.
+  //
+  // E o numero nao enfraquece o que ele prova: o defeito que ele guarda e a
+  // fila NAO escoar, o que torna a espera infinita, nao lenta. 5 s ou 10 s so
+  // decide se a maquina ocupada e acusada no lugar do codigo. (Skill 11,
+  // "orcamento desigual por escolha de ferramenta" — o mesmo do tenant-theme:161.)
   await emitir(page, { type: 'response.done' });
-  await expect.poll(async () => (await recebidos(page)).map(m => m.type))
+  await expect.poll(async () => (await recebidos(page)).map(m => m.type), { timeout: 10000 })
     .toContain('response.create');
 });
 

@@ -1,0 +1,17 @@
+CONF 1 EXIT=0
+  293 passed (6.1m)
+CONF 2 EXIT=0
+  293 passed (6.3m)
+CONF 3 EXIT=0
+  293 passed (6.4m)
+CONF 4 EXIT=0
+  293 passed (6.5m)
+CONF 5 EXIT=0
+  293 passed (6.4m)
+CONF 6 EXIT=0
+  293 passed (6.6m)
+CONF 7 EXIT=0
+  293 passed (6.7m)
+CONF 8 EXIT=0
+  293 passed (6.6m)
+FIM

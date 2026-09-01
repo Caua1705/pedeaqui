@@ -904,3 +904,162 @@ sairia sem candidato e o app ficaria em is-connecting`.
 
 Este é o tipo de correção que a §11 da skill chama de mais valiosa: ela não faz
 o teste passar mais vezes, faz a próxima falha **dizer o que aconteceu**.
+
+═══════════════════════════════════════════════════════════════════
+# RELATÓRIO FINAL DA RODADA DE FECHAMENTO (31/08/2026)
+`rodada/checkout`, a partir de `bd325f7` · 12 commits · 56 arquivos ·
++2.043 / −209
+═══════════════════════════════════════════════════════════════════
+
+## 1. Os flakes — causa, correção e execuções limpas
+
+Os cinco do prompt viraram **nove testes investigados**: a caça achou quatro que
+ninguém tinha nomeado, e um deles estava em 52 sítios ao mesmo tempo.
+
+| teste | causa | prova |
+|---|---|---|
+| `assistant-product-detail:4` | afirmava sobre um INSTANTE governado por relógio de parede: `waitForTimeout(120)` + `display` lido DE FORA, contra um `setTimeout(540)` do app | 2 defeitos reinjetados, ambos vermelhos (temporizador 540→200; `hidden` imediato) |
+| `assistant-voice-session:294` | esperava o COMEÇO do caminho (`chamadas.busca.length`, que cresce dentro do `page.route`) e afirmava sobre o efeito da RESPOSTA | visto vermelho na suíte: `Received array: []` |
+| `assistant-voice-session:668` | idem, + `waitForTimeout(300)` para quatro linhas de console que dependem de dois round trips | visto vermelho: `received value must be a string` |
+| `assistant-voice-session:612` | `waitForTimeout(300)` no lugar do recibo de que o `response.done` foi PROCESSADO | visto vermelho: `Expected 45, Received undefined` |
+| `assistant-voice-session:581` e `:372` | mesma classe | **não** vistos vermelhos — correção preventiva, e está escrito assim |
+| `assistant-voice-session:491` | o teto de sessão de 2 s sob teste matava o preparo do teste (`conversar()` precisa de uma ida-e-volta DEPOIS de o teto começar) | dois braços com o teto em 50 ms: A falha com o texto idêntico, B passa |
+| `verify-email-code:58` | o `setTimeout(60)` que o APP usa para focar o primeiro dígito chegava no MEIO da digitação e devolvia o foco ao dígito 0 | dois braços (timer 400 ms, digitação 120 ms/tecla): A falha com `Expected: enabled / Received: disabled`, B passa |
+| `tenant-theme:161` | orçamento desigual por escolha de ferramenta: 5 s do `expect` contra os 30 s que toda outra espera de boot tem | o número não enfraquece o teste — com o relógio congelado, o defeito que ele guarda torna a espera INFINITA |
+| `tenant-theme:229` | **o app não tinha subido.** A espera crua de `app-booting` é satisfeita quando o boot FALHA, e um boot falho nunca chega a `applyTheme()` | dois braços com `/menu` 500: A passa direto com 24 elementos no laranja do piloto, B falha com "o app NÃO subiu" |
+| `pix-payment:116` | **não explicada.** Dois caminhos de deriva fechados (viewport não declarada; medição antes de a caixa parar) | a hipótese óbvia foi TESTADA E REPROVADA (com a transição em 4 s os dois braços deram 20) |
+| `auth-screen-nav:105` | **não reproduziu** em nenhuma execução saudável | — |
+| `order-flow:163` | só dentro de um travamento de máquina (a execução em que quatro irmãos levaram 16 minutos) | — |
+
+**Uma causa explicava seis deles:** esperar o COMEÇO do caminho e afirmar sobre
+o efeito do FIM.
+
+### As execuções
+
+**A prova pedida era "20 execuções da suíte completa sem uma falha". Não foi
+alcançada nesses termos, e o número honesto é este:**
+
+| lote | árvore | limpas |
+|---|---|---|
+| caça (hunting) | antes das correções | 3 de 5 (+1 descartada por travamento de máquina) |
+| portão do item 1 | pós-flakes 1–5 | **4 seguidas**, depois 1 vermelha (`tenant-theme:229`) |
+| prova | pós-rede do dinheiro | **13 de 15** |
+| confirmação | árvore final | **8 de 8** |
+
+**Total: 39 execuções da suíte completa nesta sessão.** As duas que caíram no
+lote de prova tinham UM vermelho cada, os dois com causa achada e corrigida
+(`assistant-voice:221` e o teto de ICE do dublê da OpenAI). O lote de
+confirmação, na árvore final, fechou **8 de 8**.
+
+Por que 20 seguidas não é alcançável nesta máquina: 8 GB de RAM com Edge e WSL
+residentes, memória livre em 340–430 MB durante a suíte, e 4 Chromiums em
+paralelo. Uma das 39 execuções foi um travamento de máquina de 36 minutos com
+quatro testes de 16 minutos cada — nenhuma correção de teste sobrevive a isso.
+O que dá para afirmar com número é que **as últimas 8 execuções seguidas
+fecharam limpas**, e que cada correção foi provada individualmente com o
+defeito reinjetado.
+
+## 2. Os defeitos de contrato
+
+A lista original dos 12 **não existe no repositório** — o `rodada-front.md` só
+nomeia os arquivos. Refiz a enumeração do zero, por CADEIA:
+
+- **19 eram régua correta**: o primeiro nome é obrigatório no schema, ou cair no
+  fallback dá o mesmo resultado. Limpeza sem teste possível, como a auditoria
+  anterior dizia.
+- **4 eram defeito de verdade**, e a régua falhou por um motivo que ela não
+  previa: não "nome ausente", e sim **valor falsy legítimo**. `sort_order` vale
+  **0 por padrão** nos três schemas, e `||` não distingue 0 de ausente — o item
+  de MENOR ordem perdia a própria ordem e herdava a posição de chegada no array.
+  Corrigido com `??`, com cinco casos vistos vermelhos.
+- **2 de precedência latente** (o nome do contrato vem em SEGUNDO), **2 cadeias
+  fantasma inofensivas** e **1 de prosa velha** (`api-error.js` dizia que
+  `PaymentErrorDetail` não estava publicado; está).
+
+## 3. Linhas do `restaurant-page.js`: 5.628 → 5.628
+
+**Nenhuma linha movida, e é o resultado correto.** Os dez blocos restantes foram
+medidos com a régua antiga E com a nova (a skill avisa que a de bloco
+subestima), e o critério que decide não é o número:
+
+Quatro variáveis decidem o pagamento — `paymentMethod`, `paymentMethodKey`,
+`selectedSavedCard`, `savedCardPaymentToken` — e **cinco blocos escrevem nelas**
+(boot `:333-336`, checkout `:2656-2763`, folha de confirmação `:2134`, pedido
+criado `:3118`, troca de filial `:4173-4176`); outros cinco leem. Isso não é
+estado de tela: é estado do app no caminho do dinheiro, e a §9 diz que se o page
+precisa ler o estado da tela, o corte está errado.
+
+Nenhum bloco alcança o piso de 10 linhas por fio; o melhor é a persistência da
+sacola, com **8,6** e 69 linhas.
+
+## 4. Recusado por medida, com o motivo
+
+- **A folha de confirmação (3.5).** `confirmOrderFromSheet()` **escreve o token
+  de uso único do cartão** em `restaurant-page.js:2134`, e ele é lido depois por
+  `currentCardPaymentPayload()` e conferido por `submitOrder()`. Migrá-la
+  exigiria uma porta de ESCRITA de token de uma tela para o fechamento — a única
+  coisa que o contrato de telas proíbe, e a que menos se pode errar: numa recusa
+  de cartão o pedido já está gravado e não há rota de cliente para cancelá-lo.
+- **A troca de filial (3.4).** Não tocada. `clearBranchScopedSelection()` zera as
+  quatro variáveis de pagamento junto com o cupom, na mesma transação: migrar o
+  checkout sem ela quebra a transação, e os dois juntos são ~640 linhas com o
+  dinheiro atravessando a fronteira nos dois sentidos.
+- **Os outros oito blocos**, cada um com a linha do motivo na tabela do
+  scratchpad.
+- **A linha de desconto na sacola**, achada e NÃO feita: muda o que o cliente vê
+  numa tela do dinheiro, e a rede acabou de nascer.
+
+## 5. Números de dinheiro que mudaram
+
+**Nenhum.** O único commit que tocou código de produção no caminho de exibição
+foi o `sort_order` (`menu-service.js`), que muda a ORDEM de produtos, categorias
+e banners — não um valor. `scripts/` inteiro mudou 24 linhas nesta rodada, em
+dois arquivos (`menu-service.js` e um comentário em `api-error.js`).
+
+E a rede que passa a impedir uma mudança silenciosa não existia: nenhum spec da
+suíte tinha uma taxa de ENTREGA num total (`/delivery/estimate` caía no
+catch-all 404 em todos os testes de entrega), nenhum produto do fixture tem
+adicional, e o cashback nunca tinha sido posto ao lado da sacola para provar que
+NÃO desconta nada.
+
+## 6. O que eu faria diferente
+
+1. **Não editar um spec no meio de um lote de execuções.** Perdi um lote de 6 —
+   as execuções passaram a medir árvores diferentes e a sequência deixou de
+   querer dizer qualquer coisa. Foi o erro mais caro da sessão em tempo de
+   parede.
+2. **Montar o experimento de dois braços ANTES de escrever a correção.** Duas
+   vezes ele reprovou uma hipótese minha, e nas duas eu já tinha escrito a
+   correção (uma delas era um teste verde que não testava nada). A ordem certa é
+   magnificar a corrida, medir os dois braços, e só então corrigir.
+3. **Ler a duração do teste antes da mensagem de erro.** Uma execução com
+   quatro testes de 16 minutos não é medição, e eu levei alguns minutos lendo
+   asserções de uma rodada que devia ter descartado na primeira olhada. A
+   taxonomia da §11 da skill existe para que a próxima pessoa gaste dez
+   segundos nisso.
+4. **Não rodar o vitest enquanto o lote de E2E reconstrói.** Um unitário caiu
+   uma vez nessa condição e passou na chamada seguinte, sem nada ter mudado.
+5. **Procurar a causa no NÚMERO antes de procurar no tempo.** No
+   `pix-payment:116`, "mediu no meio da animação" me pareceu óbvio e estava
+   errado; o que dava a resposta era decompor o 307,6 (`(largura - 374) / 2`) e
+   perguntar que largura produz aquilo. Cheguei nisso depois de gastar uma
+   rodada de experimento na hipótese errada.
+
+## Lote de confirmação (árvore final, 8 execuções)
+
+`293 passed · 3 skipped · exit 0` nas oito, 6,1–6,7 min cada. A suíte também
+ficou mais RÁPIDA (era 7,0–7,8 min antes das correções): as esperas por
+condição devolvem na hora em que o efeito acontece, enquanto os
+`waitForTimeout` gastavam o tempo inteiro sempre.
+
+## PARA A PRÓXIMA SESSÃO
+
+- O merge na `main` é uma sessão à parte, com o portão na mão (fora desta
+  rodada, por decisão do prompt).
+- **Antes do merge**, criar os três secrets do deploy: `VERCEL_TOKEN`,
+  `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` — passo a passo em
+  `docs/deploy-pelo-portao.md`. Sem eles o job de deploy falha de propósito, e
+  a `main` já não publica sozinha depois do merge.
+- O primeiro item de trabalho da fila é a **linha de desconto na sacola**
+  (escape 4): o dado já existe (`cartTotals().discount`), o lugar é
+  `restaurant.html:906`, e agora existe uma rede de dinheiro para verificá-la.

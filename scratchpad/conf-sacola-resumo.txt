@@ -1,0 +1,29 @@
+LOTE DE CONFIRMACAO — rodada/sacola, arvore final (01/09/2026)
+Higiene antes de cada execucao: 0 node orfao, porta 4174 livre.
+"lentos" = testes com duracao acima de 10 s. E ele, nao o tempo total, que
+diz se a execucao presta.
+
+CONF 1 EXIT=1   lentos: 11
+  1 failed
+  301 passed (6.8m)
+  x 209 pix-payment.spec.js:545 (5.9s) — Error: write UNKNOWN
+    FAMILIA D ("o cano quebrou"): nao e asserção nem timeout, e erro de libuv
+    escrevendo num handle morto. Nao e do codigo. As duas execucoes seguintes
+    fecharam 302/302 sem que uma linha fosse tocada.
+
+CONF 2 EXIT=0   lentos: 9
+  302 passed (6.4m)
+
+DESCARTADA      lentos: 141    <-- NAO E MEDICAO
+  travou em 279 de 305, um teste com 1,5 min, memoria livre em 442 MB.
+  Familia C da secao 11 da skill. Depois de matar os processos a memoria
+  voltou para 1.445 MB e a MESMA arvore fechou 302/302 com 6 lentos.
+  (o log bruto e local: *.log e gitignored neste repositorio)
+
+CONF 3 EXIT=0   lentos: 6      <-- o melhor numero do lote
+  302 passed (6.3m)
+
+DUAS LIMPAS DE DUAS MEDICOES VALIDAS.
+Portoes rapidos na mesma arvore: lint 0 errors/78 warnings · typecheck ok ·
+303 unitarios.
+FIM

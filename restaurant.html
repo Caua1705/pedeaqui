@@ -907,6 +907,16 @@
             <span>Taxa de entrega</span>
             <span id="csDelivery">A definir</span>
           </div>
+          <!-- O desconto do cupom TEM linha. Sem ela o cliente lia
+               68,60 + 0,99 + 7,40 nas linhas de cima e um Total menor embaixo,
+               com o desconto inteiro sumindo sem uma palavra — o mesmo defeito
+               que a linha da taxa de serviço já tinha custado. Quem decide a
+               visibilidade é o JS (updateCartUI): desconto zero = linha fora,
+               sem "R$ 0,00" solto. -->
+          <div class="cps-row" id="csDiscountRow">
+            <span>Desconto</span>
+            <span id="csDiscount">R$ 0,00</span>
+          </div>
           <div class="cps-divider"></div>
           <div class="cps-total">
             <span>Total</span>

@@ -2304,6 +2304,13 @@
     // display:flex!important na .cps-row e um style inline comum perderia.
     $('csSvcFeeRow')?.style.setProperty('display', totals.svc > 0 ? 'flex' : 'none', 'important');
     $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
+    // O desconto do cupom, com o sinal que ele tem na conta. Sem esta linha as
+    // parcelas de cima somavam mais do que o Total de baixo e o cliente via
+    // dinheiro sumir sem explicação — mesma classe do R$ 0,99 da taxa de
+    // serviço, que já tinha custado um defeito. O valor é `discount_amount`,
+    // do contrato (CouponPreviewResponse), e NÃO uma subtração feita aqui.
+    $('csDiscount').textContent = `- ${fmt(totals.discount)}`;
+    $('csDiscountRow')?.style.setProperty('display', totals.discount > 0 ? 'flex' : 'none', 'important');
     $('csTotal').textContent = fmt(totals.total);
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }

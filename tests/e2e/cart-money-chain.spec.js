@@ -98,22 +98,30 @@ function menuComAdicional(branchId) {
   };
 }
 
-async function montarSacola(page, { comCupom = false } = {}) {
+/**
+ * O preview do cupom, como o backend responde.
+ *
+ * `total_after_coupon` PADRÃO é 69,13 de propósito: ele NÃO é 76,99 - 5,00, e
+ * é ele que a tela tem de mostrar (é a asserção do segundo teste). Quem quer
+ * uma resposta em que as linhas FECHEM a conta passa `previewOverrides`.
+ */
+const PREVIEW_PADRAO = {
+  coupon_id: '0d6e7327-6637-48fb-ad67-fdc362d32ace',
+  coupon_code: 'JP5',
+  discount_type: 'fixed',
+  subtotal: '68.60',
+  delivery_fee: '7.40',
+  discount_amount: '5.00',
+  total_after_coupon: '69.13',
+  valid: true
+};
+
+async function montarSacola(page, { comCupom = false, previewOverrides = {} } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const chamadas = await mockApi(page, {
     orderResponse: pixOrder,
-    onPreviewCoupon: (route) => route.fulfill(json({
-      coupon_id: '0d6e7327-6637-48fb-ad67-fdc362d32ace',
-      coupon_code: 'JP5',
-      discount_type: 'fixed',
-      subtotal: '68.60',
-      delivery_fee: '7.40',
-      discount_amount: '5.00',
-      // NÃO é 76,99 - 5,00. É o número do backend, e é ele que a tela mostra.
-      total_after_coupon: '69.13',
-      valid: true
-    }))
+    onPreviewCoupon: (route) => route.fulfill(json({ ...PREVIEW_PADRAO, ...previewOverrides }))
   });
 
   // Depois do mockApi de propósito: a última rota registrada vence.
@@ -204,6 +212,68 @@ test('com cupom, o total é o total_after_coupon do backend — nunca a nossa su
 
   // 76,99 - 5,00 = 71,99. Este número não pode existir em lugar nenhum da tela.
   await expect(page.locator('#cartModal')).not.toContainText('71,99');
+});
+
+// ============================================================================
+//  A LINHA DE DESCONTO — o defeito que o cliente via como dinheiro sumindo.
+//
+//  A seção "Valores" tinha QUATRO linhas: Subtotal, Taxa de serviço, Taxa de
+//  entrega e Total. Nenhuma de desconto. Com um cupom aplicado o cliente lia
+//  68,60 + 0,99 + 7,40 = 76,99 nas linhas de cima e um Total de 69,13 embaixo,
+//  com R$ 7,86 de diferença e nada explicando.
+//
+//  É o MESMO defeito que criou o cart-service-fee.spec.js ("num pedido de
+//  R$ 0,01 o cliente via Subtotal R$ 0,01 e Total R$ 1,00 — R$ 0,99 sem uma
+//  linha nenhuma"), agora na linha do cupom em vez da taxa. A regra que os dois
+//  guardam é a mesma: NENHUMA parcela do total pode ficar sem linha.
+// ============================================================================
+
+test('o desconto do cupom tem linha própria: nada some da sacola sem explicação', async ({ page }) => {
+  await montarSacola(page, { comCupom: true });
+
+  // O número é o do contrato (`discount_amount`), com o sinal que ele tem na
+  // conta: uma linha que diz "R$ 5,00" no meio de somas leria como mais uma
+  // parcela SOMANDO.
+  await expect(page.locator('#csDiscountRow')).toBeVisible();
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 5,00');
+});
+
+test('sem cupom não há linha de desconto — nem um "R$ 0,00" solto', async ({ page }) => {
+  // Mesma regra da taxa de serviço: parcela zerada é linha FORA, não um
+  // "R$ 0,00" que o cliente tem de interpretar.
+  await montarSacola(page);
+  // toBeHidden() SOZINHO passa com o elemento inexistente — e foi exatamente
+  // isso que ele fez na execução em que os dois irmãos ficaram vermelhos, antes
+  // de a linha existir. Exigir a contagem primeiro é o que faz este teste
+  // afirmar "existe e está escondida" em vez de "não achei nada".
+  await expect(page.locator('#csDiscountRow')).toHaveCount(1);
+  await expect(page.locator('#csDiscountRow')).toBeHidden();
+});
+
+test('com o preview fechando a conta, as linhas da sacola fecham junto', async ({ page }) => {
+  // O fixture PADRÃO tem um total_after_coupon que não fecha (69,13), de
+  // propósito — é assim que se prova que a tela não refaz a subtração. Este
+  // teste é o outro lado: quando o backend manda um total que FECHA
+  // (76,99 - 5,00), as quatro linhas da sacola têm de somar exatamente ele.
+  //
+  // O que ele trava é a RENDERIZAÇÃO: dadas as parcelas e o desconto do
+  // backend, a tela mostra uma conta que o cliente consegue conferir de cabeça.
+  await montarSacola(page, { comCupom: true, previewOverrides: { total_after_coupon: '71.99' } });
+
+  await expect(page.locator('#csSub')).toHaveText('R$ 68,60');
+  await expect(page.locator('#csSvcFeeBtn')).toHaveText('R$ 0,99');
+  await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 5,00');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 71,99');
+
+  // A conta, feita aqui do jeito que o cliente faria: 68,60 + 0,99 + 7,40 - 5,00.
+  const lido = (seletor) => page.locator(seletor).textContent()
+    .then(texto => Number(texto.replace(/[^\d,]/g, '').replace(',', '.')));
+  const [sub, svc, entrega, desconto, total] = await Promise.all(
+    ['#csSub', '#csSvcFeeBtn', '#csDelivery', '#csDiscount', '#csTotal'].map(lido));
+  expect(Number((sub + svc + entrega - desconto).toFixed(2)),
+    'as linhas de "Valores" têm de somar o Total — senão sobra dinheiro sem explicação')
+    .toBe(total);
 });
 
 test('o saldo de cashback da loja NÃO desconta nada da sacola', async ({ page }) => {

@@ -3446,8 +3446,16 @@
     // do Pix quebraria no primeiro clique com o lint verde.
     $, checkoutTrace, closeModalId, closeModalImmediately, currentCartBranchLabel, detailText,
     errorTrace, esc, failCardCheckout, fallback, fmt, getRestaurantSlug, jumpToTop,
-    leaveCartAfterOrder, logAppError, openModal, orderAmount, renderTotalMismatch, restaurant,
-    selectedSavedCard, showHomeTab, showOrderSuccess
+    leaveCartAfterOrder, logAppError, openModal, orderAmount, renderTotalMismatch,
+    showHomeTab, showOrderSuccess,
+    // Lidos a cada acesso, nunca copiados: estes DOIS sao reatribuidos neste
+    // arquivo depois do init() — `restaurant` 3 vezes (boot, cardapio, troca de
+    // filial) e `selectedSavedCard` 7. Por valor eles chegavam como a
+    // fotografia do boot (`{}` e `null`) e nunca mais mudavam: a tela de
+    // pagamento anunciava o nome da PLATAFORMA no lugar do da loja, e a
+    // retentativa de cartao nunca pedia um token novo.
+    restaurant: () => restaurant,
+    selectedSavedCard: () => selectedSavedCard
   });
 
   // As portas que o resto deste arquivo ainda chama pelo nome.

@@ -156,3 +156,75 @@ describe('toda injeção declarada é realmente passada no init()', () => {
     });
   }
 });
+
+describe('nenhuma FOTOGRAFIA DO BOOT: o que muda de valor vai por acessor', () => {
+  // A quarta metade do mesmo buraco, e a única que não deixa rastro nenhum.
+  //
+  // Um `let` que o restaurant-page REATRIBUI, passado por valor num init(),
+  // chega ao módulo como uma fotografia do instante do boot — e a partir da
+  // primeira reatribuição o módulo decide com dado velho. Não estoura, não
+  // avisa, não aparece no lint: o nome existe dos dois lados, com o tipo certo,
+  // e as três verificações acima deste arquivo passam.
+  //
+  // O que ela custou, medido em 01/09/2026: `restaurant` e `selectedSavedCard`
+  // chegavam ao módulo do Pix por valor, e o init() dele roda ANTES do boot.
+  // As duas cópias eram `{}` e `null`, para sempre. Efeito na tela: o cartão do
+  // pedido na tela de pagamento dizia "Restaurante - MATRIZ" — o
+  // `fallback().restaurantName` da PLATAFORMA — em vez de
+  // "Júnior da Picanha - MATRIZ". Num app white-label, na última tela antes de
+  // o cliente pagar. E `retryPixPayment()` nunca pedia um token novo do cartão,
+  // porque `selectedSavedCard?.id` era sempre falso.
+  //
+  // O E2E que existia afirmava `not.toBeEmpty()` sobre esse elemento: passava
+  // com o nome errado. Este teste custa milissegundos e não depende de alguém
+  // ter escrito a asserção forte na tela certa.
+  const pagina = ler('scripts/pages/restaurant-page.js');
+  const linhas = pagina.split('\n');
+
+  /** Os `let` de topo do IIFE (dois espaços) que são REATRIBUÍDOS depois. */
+  const reatribuidos = new Set();
+  linhas.forEach((linha, i) => {
+    const m = linha.match(/^ {2}let ([A-Za-z_$][\w$]*)/);
+    if (!m) return;
+    const nome = m[1];
+    const re = new RegExp(`(^|[^\\w$.])${nome.replace(/\$/g, '\\$')}\\s*=(?!=|>)`);
+    const outra = linhas.some((outraLinha, j) =>
+      j !== i && !/^\s*(\/\/|\*)/.test(outraLinha) && re.test(outraLinha.replace(/\/\/.*$/, '')));
+    if (outra) reatribuidos.add(nome);
+  });
+
+  it('a lista de reatribuídos não pode estar vazia (senão o teste não prova nada)', () => {
+    // A sonda. Se a varredura acima parar de casar — o arquivo ganhou outra
+    // indentação, o `let` virou `const` — o conjunto fica vazio e as
+    // verificações abaixo passam por vacuidade, que é a pior forma de passar.
+    expect(reatribuidos.size).toBeGreaterThan(10);
+    expect(reatribuidos.has('cart'), 'cart é reatribuído: a varredura tem de vê-lo').toBe(true);
+  });
+
+  for (const { arquivo, chamada } of MODULOS) {
+    it(`${arquivo}: nenhum nome que muda de valor chega por cópia`, () => {
+      const inicio = pagina.indexOf(chamada);
+      expect(inicio, `não achei "${chamada}"`).toBeGreaterThan(-1);
+      const corpo = pagina.slice(inicio, pagina.indexOf('\n  });', inicio));
+
+      // SÓ taquigrafia. `nome: () => nome` e `{ get: () => nome }` são o jeito
+      // CERTO, e contá-los aqui daria falso positivo nos três módulos — foi o
+      // primeiro resultado errado da varredura que achou o defeito (acusou 11
+      // onde havia 2). Uma linha de taquigrafia neste arquivo é só
+      // identificadores e vírgulas.
+      const porValor = [];
+      for (const bruta of corpo.split('\n')) {
+        const limpa = bruta.replace(/\/\/[^\n]*/g, '').trim();
+        if (!/^[A-Za-z_$][\w$]*(\s*,\s*[A-Za-z_$][\w$]*)*,?$/.test(limpa)) continue;
+        for (const nome of limpa.split(',')) if (nome.trim()) porValor.push(nome.trim());
+      }
+      expect(porValor.length, 'não achei nome nenhum passado por valor').toBeGreaterThan(0);
+
+      const fotografias = porValor.filter(nome => reatribuidos.has(nome));
+      expect(fotografias,
+        `${chamada} leva por valor um nome que o restaurant-page reatribui: `
+        + 'o módulo ficaria com a fotografia do boot. Passe como getter '
+        + '(`nome: () => nome`), como os outros.').toEqual([]);
+    });
+  }
+});

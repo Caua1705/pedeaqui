@@ -65,7 +65,16 @@ test('cria o pedido, gera a cobrança e mostra código, prazo, pedido e checkout
   await expect(page.locator('#pixCountdown')).toHaveText(/^\d{2}:\d{2}$/);
 
   // Cartão do pedido: loja, número e total em destaque.
-  await expect(page.locator('#pixOrderStore')).not.toBeEmpty();
+  //
+  // O NOME DA LOJA, e não `not.toBeEmpty()`. A asserção fraca passava com
+  // "Restaurante" — o `fallback().restaurantName` da PLATAFORMA — e foi
+  // exatamente isso que a tela mostrou por todo o tempo em que `restaurant`
+  // chegou ao módulo do Pix por VALOR, congelado no `{}` do boot. Num app
+  // white-label, um nome de plataforma na tela de pagamento é o defeito, não
+  // um detalhe: é a última tela que o cliente vê antes de pagar.
+  await expect(page.locator('#pixOrderStore')).toContainText('Júnior da Picanha');
+  await expect(page.locator('#pixOrderStore'), 'o nome da plataforma não pode aparecer no lugar do da loja')
+    .not.toHaveText('Restaurante');
   await expect(page.locator('#pixOrderNumber')).toContainText(String(pixOrder(1).order_number));
   await expect(page.locator('#pixOrderTotal')).toContainText('22,14');
 

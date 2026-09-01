@@ -38,7 +38,8 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 ### Item 3 — sacola e checkout
 - [x] 3.1 rede ampliada: 4 -> 13 testes, com 3 injecoes vistas vermelhas
 - [x] 3.2 documentado: 8 funções escrevem, 12 leem, em 6 blocos + 1 módulo
-- [ ] 3.3 migração por `mount(ctx)`, do mais isolado ao mais entrelaçado
+- [x] 3.3 medir a costura ANTES de mover achou DOIS defeitos vivos no módulo
+      do Pix (fotografia do boot). Migração não começou — motivo escrito
 - [ ] 3.4 folha de confirmação: migrar ou recusar por medida
 - [ ] 3.5 troca de filial: a ÚLTIMA
 
@@ -490,3 +491,185 @@ distintos mais um módulo. Isto não é estado de tela — é estado do app no
 caminho do dinheiro. A §9 da skill diz que se o page precisa ler o estado da
 tela, o corte está errado; aqui o page **escreve** o estado que a tela leria, em
 oito lugares.
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 3.3 — A MIGRAÇÃO: o que eu achei ANTES de mover a primeira linha
+═══════════════════════════════════════════════════════════════════
+
+A ordem do item 3.3 é "do mais isolado ao mais entrelaçado", e o primeiro passo
+de cada corte é medir como o bloco conversa com o resto. Medir isso nos blocos
+que JÁ saíram — para saber o que estava certo antes de copiar o idioma — achou
+**dois defeitos vivos** no módulo do Pix.
+
+## A régua: `let` reatribuído + passado por VALOR = fotografia do boot
+
+A §2.1 da skill nomeia esta como a armadilha mais cara, e diz por quê: ela não
+produz erro nenhum na tela. A varredura cruza três listas do
+`restaurant-page.js`:
+
+1. os `let` de topo do IIFE;
+2. quais deles são **reatribuídos** depois da declaração;
+3. os nomes passados como **taquigrafia** (por valor) em cada `X.init({...})`.
+
+A interseção das três é a lista de fotografias. Resultado:
+
+```
+pixFlow.init      FOTOGRAFIA  restaurant         (declarado :23, reatribuído em 3 lugares)
+pixFlow.init      FOTOGRAFIA  selectedSavedCard  (declarado :48, reatribuído em 7 lugares)
+addressFlow.init  nenhuma
+authFlow.init     nenhuma
+```
+
+**A primeira versão da varredura acusou ONZE**, incluindo os quatro do
+`addressFlow` e os cinco do `authFlow`. Estava errada: aqueles chegam como
+`nome: () => nome` e `{ get, set }`, que é o jeito CERTO, e a expressão
+`=> operationContext,` casava com o padrão. A régua só vale contando
+**taquigrafia pura** — uma linha só de identificadores e vírgulas. Onze viraram
+dois, e é por isso que o teste que ficou dessa varredura tem uma sonda que
+falha se a lista de reatribuídos vier vazia.
+
+## Defeito 1 — VIVO, e na última tela antes de o cliente pagar
+
+`pixFlow.init()` roda no corpo do IIFE do `restaurant-page`, **antes do boot**.
+Nesse instante `restaurant` vale `{}`. E `applyMenuPayload()` **reatribui**
+(`restaurant = payload.restaurant || …`) em vez de mutar — então a cópia que o
+módulo do Pix guardou continua `{}` para sempre.
+
+`pixStoreLabel()` (`pix-flow:367`) lê `restaurant.name`, não acha, e cai em
+`fallback().restaurantName`, que é a string `'Restaurante'`
+(`scripts/config/fallback-config.js:6`) — o nome genérico da PLATAFORMA.
+
+**Medido**, com a asserção forte no lugar da fraca:
+```
+Locator: locator('#pixOrderStore')
+Expected substring: "Júnior da Picanha"
+Received string:    "Restaurante - MATRIZ"
+14 × locator resolved to <strong id="pixOrderStore">Restaurante - MATRIZ</strong>
+```
+
+Num app **white-label**, um nome de plataforma no cartão do pedido da tela de
+pagamento é o defeito que a §7 da skill descreve com outras palavras ("todo
+restaurante novo nascia parcialmente laranja do piloto") — e este está na
+última tela que o cliente vê antes de pagar.
+
+**Por que a suíte não pegou:** `pix-payment.spec.js:68` afirmava
+`await expect(page.locator('#pixOrderStore')).not.toBeEmpty()`. Ela passa com
+`"Restaurante - MATRIZ"`, com `"—"`, com qualquer coisa. É um teste que prova
+que o elemento tem texto, não que tem o texto CERTO.
+
+## Defeito 2 — LATENTE, e é honesto dizer que é latente
+
+`retryPixPayment()` (`pix-flow:913`) tem:
+
+```js
+if (pixSession.cardPayment && selectedSavedCard?.id) {
+  const token = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard);
+```
+
+`selectedSavedCard` é a fotografia do boot: **`null`, sempre**. A condição nunca
+é verdadeira, e a retentativa sairia com o token de uso único **já gasto** — a
+recusa que o comentário do `clearBranchScopedSelection()` descreve ("o token do
+cartão é de uso único no gateway; deixá-lo vivo só produziria uma recusa mais
+adiante").
+
+**Mas o ramo é INALCANÇÁVEL hoje**, e conferi antes de chamá-lo de defeito
+vivo: `#pixRetryBtn` só aparece por `showPixError()`, e `startPixCharge()` tem
+`if (isCard) { session.cardDeclined = …; return; }` **antes** dela. Um cartão
+recusado volta para a sacola por `failCardCheckout()`, que zera a `pixSession`.
+Nenhum caminho leva um cartão à tela de erro do Pix.
+
+Então: a condição está permanentemente falsa por dois motivos independentes, e
+o dia em que um deles for removido o outro continua. Corrigido junto porque é a
+mesma causa e a mesma linha — e porque **uma condição permanentemente falsa no
+caminho do pagamento é precisamente o que este repositório mais paga caro**
+(`api.d.ts`: campos procurados por anos que nunca existiram).
+
+## A correção
+
+O idioma do `S` de `restaurant-address-flow.js`, copiado, não inventado:
+
+- `restaurant-pix-flow.js`: os dois saem da lista de estáveis; entram
+  `const S = {}` e `ESTADO_OBRIGATORIO = ['restaurant', 'selectedSavedCard']`;
+  `init()` recusa getter faltando **com o nome**, em vez de seguir com
+  `undefined`. Três leituras ganham o prefixo `S.` — e nada mais.
+- `restaurant-page.js`: `restaurant: () => restaurant` e
+  `selectedSavedCard: () => selectedSavedCard`, no grupo comentado.
+
+Depois: `0 fotografia(s) do boot` nos três módulos.
+
+## A GUARDA, que é o que sobra depois
+
+`tests/unit/page-modules.test.js` ganhou um quarto `describe`. As três
+verificações que já existiam não veem esta classe: o nome existe dos dois
+lados, com o tipo certo, e o módulo importa sem estourar. Esta lê o
+`restaurant-page.js`, monta a lista de `let` reatribuídos, monta a lista de
+taquigrafia de cada `init()`, e exige interseção vazia.
+
+**Vista vermelha**, com a passagem por valor de volta:
+```
+× restaurant-pix-flow: nenhum nome que muda de valor chega por cópia
+AssertionError: pixFlow.init({ leva por valor um nome que o restaurant-page
+reatribui: o módulo ficaria com a fotografia do boot. Passe como getter
+(`nome: () => nome`), como os outros.:
+expected [ 'restaurant', 'selectedSavedCard' ] to deeply equal []
+```
+Ela **nomeia os dois**. E tem uma sonda própria (`reatribuidos.size > 10` e
+`reatribuidos.has('cart')`) para não passar por vacuidade no dia em que a
+varredura parar de casar — passar por vacuidade é a pior forma de passar.
+
+## A migração propriamente dita: NÃO começou, e o motivo
+
+Encontrar dois defeitos vivos na costura dos módulos que **já saíram** muda a
+ordem das coisas. A regra desta rodada é que nada se move sem a rede; a rede da
+costura acabou de nascer (a guarda acima) e ela precisa ser a base ESTÁVEL
+contra a qual um corte novo seja verificado, não mudar junto.
+
+E a medida da rodada anterior continua valendo, agora reconfirmada com os
+números conferidos no item 3.2: oito funções escrevem as quatro variáveis de
+pagamento e doze as leem, em seis blocos mais um módulo. Ver 3.4 e 3.5.
+
+## Verificação do item 3.3
+
+lint **0 errors**/78 warnings · typecheck ok · **303 unitários** (eram 299) ·
+`test:e2e` **exit 0 · 302 passed · 3 skipped · 6,3 min**.
+Higiene: 0 node órfão, porta 4174 livre antes de medir.
+
+### Os dois vermelhos da execução anterior, e o que eram
+
+A execução ANTES desta fechou `300 passed / 2 failed`, e os dois eram de
+`assistant-voice-session.spec.js` — fora do eixo que mexi. Isolados,
+`--workers=1`: **23/23**. Diagnóstico de cada um, pela taxonomia da §11:
+
+**`:381`** — `Timeout 5000ms exceeded while waiting on the predicate`,
+`Received array: ["conversation.item.create"]`. Família 5 da §11, "orçamento
+desigual por escolha de ferramenta": o último `expect.poll` do teste herdava o
+padrão de **5 s** enquanto os **dois irmãos do mesmo teste** têm
+`{ timeout: 10000 }` explícito — e ele é o que mais espera, porque depois do
+`emitir()` ainda falta a ida-e-volta pelo canal. Corrigido com o teto
+explícito, e o argumento é o do `tenant-theme:161`: o defeito que ele guarda é
+a fila NÃO escoar, o que torna a espera infinita, não lenta.
+
+**`:472`** — `InvalidStateError: RTCDataChannel.readyState is not 'open'` no
+PRIMEIRO `emitir()` depois do preparo. **NÃO corrigido, e a razão é uma conta
+que dá para conferir lendo duas linhas do mesmo arquivo:**
+
+| o quê | quanto | onde |
+|---|---|---|
+| teto de inatividade da sessão SOB TESTE | **8 s** | `:478` `inatividade_s: 8` |
+| tempo que o preparo tem direito de levar | **15 s** (conexão) **+ 10 s** (saudação) = **25 s** | `conversar()`, `:209` e `:211` |
+
+O contador de inatividade começa quando o áudio abre, ou seja **antes** de
+`conversar()` terminar. O preparo tem direito a 25 s dentro de um limite de
+8 s — é a mesma armadilha do `:491` que a rodada anterior corrigiu ("o teto sob
+teste matando o preparo do teste"), com números três vezes piores. O próprio
+comentário do teste previu: *"um orçamento apertado aqui vira teste instável
+quando a suíte roda em paralelo"*.
+
+**Por que fica nomeado e não corrigido:** a correção é subir `inatividade_s`
+acima dos 25 s do preparo, o que leva o teste de ~13 s para ~35 s e exige um
+`test.setTimeout` próprio. Mudar orçamento de relógio sem medir os dois braços
+é palpite, e a rodada proíbe palpite — a conta acima é a prova de que o teste
+está errado, não a prova de qual número o conserta. Vai para os escapes com os
+dois valores escritos.
+
+Na execução seguinte (a desta verificação) ele passou.

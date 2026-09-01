@@ -57,10 +57,29 @@
     openModal,
     orderAmount,
     renderTotalMismatch,
-    restaurant,
-    selectedSavedCard,
     showHomeTab,
     showOrderSuccess;
+
+  // ------------------------------------------------------------
+  //  O que MUDA de valor no restaurant-page, lido a cada acesso.
+  //
+  //  `restaurant` e `selectedSavedCard` vinham na lista de cima, POR VALOR — e
+  //  os dois sao reatribuidos la (3 e 7 vezes). O init() deste modulo roda no
+  //  corpo do IIFE do page, ANTES do boot: as duas copias que chegavam aqui
+  //  eram `{}` e `null`, e continuavam sendo `{}` e `null` para sempre. E a
+  //  FOTOGRAFIA DO BOOT da secao 2.1 da skill, a armadilha que ela chama de
+  //  mais cara — a que nao produz erro nenhum na tela.
+  //
+  //  O que ela custou, medido: `pixStoreLabel()` lia `restaurant.name` de um
+  //  `{}`, caia no `fallback().restaurantName`, e o cartao do pedido na tela de
+  //  pagamento dizia "Restaurante - MATRIZ" em vez de
+  //  "Junior da Picanha - MATRIZ". Num app white-label, na ULTIMA tela antes de
+  //  o cliente pagar.
+  //
+  //  Mesmo idioma do `S` de restaurant-address-flow.js, e pelo mesmo motivo.
+  // ------------------------------------------------------------
+  const S = {};
+  const ESTADO_OBRIGATORIO = ['restaurant', 'selectedSavedCard'];
 
   // Estado desta cobrança. Dono: este arquivo. Ver `compartilhado`, no fim.
   let trackedOrder = null;
@@ -365,7 +384,7 @@
    * para só o nome.
    */
   function pixStoreLabel() {
-    const name = String(restaurant.name || fallback().restaurantName || '').trim();
+    const name = String(S.restaurant?.name || fallback().restaurantName || '').trim();
     const branch = currentCartBranchLabel();
     if (!branch || branch === name.toUpperCase()) return name || 'Seu pedido';
     return name ? `${name} - ${branch}` : branch;
@@ -910,8 +929,8 @@
   async function retryPixPayment() {
     if (!pixSession) return;
     pixSession.stopped = false;
-    if (pixSession.cardPayment && selectedSavedCard?.id) {
-      const token = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard);
+    if (pixSession.cardPayment && S.selectedSavedCard?.id) {
+      const token = await window.PedeAquiCardFlow?.requestSavedCardToken?.(S.selectedSavedCard);
       if (!token) return;
       pixSession.cardPayment = { ...pixSession.cardPayment, token };
     }
@@ -1152,6 +1171,14 @@
    * Chamado UMA vez, por restaurant-page.js, no ponto onde este bloco morava.
    */
   function init(deps) {
+    // Getter faltando para em init(), com o nome — em vez de o modulo seguir
+    // decidindo com `undefined`, que e como esta classe de defeito se esconde.
+    for (const nome of ESTADO_OBRIGATORIO) {
+      if (typeof deps?.[nome] !== 'function') {
+        throw new Error(`PedeAquiPixFlow.init: falta o getter de ${nome}`);
+      }
+      Object.defineProperty(S, nome, { get: deps[nome], configurable: true });
+    }
     ({
       $,
       checkoutTrace,
@@ -1171,8 +1198,6 @@
       openModal,
       orderAmount,
       renderTotalMismatch,
-      restaurant,
-      selectedSavedCard,
       showHomeTab,
       showOrderSuccess
     } = deps);

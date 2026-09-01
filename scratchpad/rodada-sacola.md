@@ -40,8 +40,8 @@ Legenda: [ ] pendente · [~] em andamento · [x] feito+commitado+push · [!] blo
 - [x] 3.2 documentado: 8 funções escrevem, 12 leem, em 6 blocos + 1 módulo
 - [x] 3.3 medir a costura ANTES de mover achou DOIS defeitos vivos no módulo
       do Pix (fotografia do boot). Migração não começou — motivo escrito
-- [ ] 3.4 folha de confirmação: migrar ou recusar por medida
-- [ ] 3.5 troca de filial: a ÚLTIMA
+- [x] 3.4 folha de confirmação: RECUSADA — escreve o token de uso único em :2134
+- [x] 3.5 troca de filial: NÃO TOCADA — ela é dona de parte do estado do checkout
 
 ## Estado inicial medido
 
@@ -673,3 +673,116 @@ está errado, não a prova de qual número o conserta. Vai para os escapes com o
 dois valores escritos.
 
 Na execução seguinte (a desta verificação) ele passou.
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 3.4 — A FOLHA DE CONFIRMAÇÃO: RECUSADA, e agora com a prova medida
+═══════════════════════════════════════════════════════════════════
+
+## Primeiro, a medida — porque medida sozinha não decide, mas é onde se começa
+
+`node tools/fios-do-corte.mjs`, na árvore de hoje (5.644 linhas, 298 funções):
+
+```
+bloco                                       linhas   fios   l/fio
+Informacoes da loja (modal + info*)            143     24     6.0
+Produto: modal e opcoes                         26      5     5.2
+Confirmar pedido (folha) + submissao           119     27     4.4
+Perfil: historico de pedidos                   157     40     3.9
+Cupom: folha de detalhe + helpers               46     12     3.8
+AFERICAO — operacao/filial (JA RECUSADO)       314     84     3.7
+Cashback                                        13      5     2.6
+Inicio: rendering da home                       53     22     2.4
+```
+
+**4,4 l/fio contra um piso de 10**, e a três décimos do bloco que já foi
+recusado duas vezes. Mas a §9.1 da skill avisa, com razão, que essa régua
+SUBESTIMA um corte feito no contrato `mount(ctx)` — as seis telas que saíram
+mediam 3,9–6,0 pela régua antiga e 15–44 pela nova. Então o número não basta
+para recusar, e não é ele que recusa.
+
+## O que recusa: a folha precisaria de uma porta de ESCRITA de token
+
+```js
+// restaurant-page.js:2134, dentro de confirmOrderFromSheet()
+savedCardPaymentToken = await window.PedeAquiCardFlow?.requestSavedCardToken?.(selectedSavedCard) || '';
+```
+
+A folha **escreve o token de uso único do gateway**. Depois dela, quem o lê é
+`currentCardPaymentPayload()` (`:2786`) e quem o confere é `submitOrder()`
+(`:3053`) — a rede que impede um pedido de cartão de sair SEM cartão. E ela
+escreve mais dois: `orderSubmitInFlight` (`:2988`) e, na submissão que sai
+junto, `confirmedTotalAtSubmit` (`:3059`), que é o total congelado contra o
+qual `evaluateTotalMismatch()` compara o `order.total`.
+
+A §9 da skill é explícita nos dois sentidos:
+
+> `app` é porta de GETTERS.
+> Estado DA TELA mora aqui dentro. **Sem acessor de volta para o page**: se o
+> page precisa ler o estado da tela, o corte está errado.
+
+Aqui não é "o page precisa ler o estado da tela": é a tela precisando **gravar**
+três estados do app, um deles um token de uso único que vale dinheiro.
+
+## E agora o custo desse erro está MEDIDO, não suposto
+
+Na rodada anterior esta recusa terminava em "é a que menos se pode dar ao luxo
+de errar". Hoje ela termina com um número, e o número saiu do item 3.3 desta
+mesma rodada:
+
+**`selectedSavedCard` atravessou a fronteira de UM módulo, por valor, uma vez —
+e virou uma condição permanentemente falsa no caminho do pagamento, invisível a
+lint, a typecheck, a 299 unitários e a 302 E2E.** É uma das quatro variáveis
+que a folha teria de atravessar, e o modo mais simples de atravessar (por
+valor) foi o que falhou. Uma porta de ESCRITA é mais difícil que uma de leitura,
+e o preço do erro está no `docs/order-contract.md`, item 11: **numa recusa de
+cartão o pedido já está gravado e não há rota de cliente para cancelá-lo.**
+
+**RECUSADA.** Fica ao lado do dono do dinheiro. Mesma conclusão da rodada
+anterior, agora com a medida da régua nova ao lado e com o custo do erro
+demonstrado nesta sessão em vez de temido.
+
+═══════════════════════════════════════════════════════════════════
+# ITEM 3.5 — A TROCA DE FILIAL: NÃO TOCADA
+═══════════════════════════════════════════════════════════════════
+
+Era para ser a última, e a regra do prompt era **parar e escrever** se ela
+exigisse mexer em algo já migrado. Não cheguei a tentá-la, porque os blocos
+anteriores foram todos recusados — mas a leitura confirma a recusa e o motivo é
+o mesmo do 3.4, visto do outro lado:
+
+`clearBranchScopedSelection()` (`restaurant-page.js:4179`) zera **as quatro
+variáveis de pagamento** (`:4180-4183`) na MESMA transação em que zera o cupom.
+O comentário do código já diz por quê: *"O token do cartão é de uso único no
+gateway; deixá-lo vivo só produziria uma recusa mais adiante."*
+
+Ou seja: **a troca de filial é dona de um pedaço do estado do checkout.**
+Migrar o checkout sem ela quebra a transação — e "trocar de filial é
+transacional" é o defeito mais caro que a auditoria consertou (b3c03ec: a
+sacola do cliente sumia por uma falha de rede, sem uma palavra na tela).
+Migrar os dois juntos é um corte de ~640 linhas com as quatro variáveis do
+dinheiro atravessando a fronteira nos DOIS sentidos.
+
+Ela mede 314 linhas / 84 fios = **3,7 l/fio**, e é a aferição impressa pela
+própria ferramenta — o bloco contra o qual todos os outros são comparados.
+
+**NÃO TOCADA.** Terceira recusa, e a primeira em que o custo do erro na
+travessia foi medido nesta mesma sessão.
+
+## Conclusão do item 3, inteira
+
+**Nenhuma linha do `restaurant-page.js` foi movida, e é o resultado correto.**
+5.628 → 5.644 linhas (+16), e as 16 são a linha de desconto do item 1 mais os
+comentários dela e do acessor do Pix. Zero de movimento.
+
+O que a seção 3 entregou, já que não moveu código:
+
+1. **A rede do dinheiro passou de 4 para 13 testes**, com as três injeções
+   vistas vermelhas — e uma delas é o escape do item 1, medido a fundo: sete
+   testes acordam se a taxa de serviço sair do total.
+2. **O mapa das quatro variáveis de pagamento**, conferido na árvore de hoje:
+   oito funções escrevem, doze leem, em seis blocos mais um módulo.
+3. **Dois defeitos vivos achados na costura dos módulos que JÁ saíram**, um
+   deles visível na última tela antes do pagamento — e a guarda que impede a
+   classe inteira de voltar.
+4. **Três recusas por medida**, cada uma com a linha do motivo e, agora, com o
+   custo do erro demonstrado em vez de suposto.

@@ -866,3 +866,41 @@ agora com a linha exata escrita.
 7. **A CLI da Vercel vai sem pin de versão** no `ci.yml`. Um pin errado quebra o
    deploy no dia em que for preciso publicar, e o job só roda depois de quatro
    portões verdes. Escrito no próprio arquivo.
+
+# As 15 execuções de prova (árvore final) — e as duas que caíram
+
+Comando: `npm run test:e2e` sem pipe, 15 vezes seguidas, sem uma edição durante
+o lote. Higiene conferida antes: 0 node órfão, porta 4174 livre.
+
+**13 limpas de 15** (`293 passed · 3 skipped · exit 0`, 6,5–7,8 min cada).
+As duas que caíram tinham UM vermelho cada, e as duas eram da mesma família das
+outras — relógio de parede no lugar de condição:
+
+### `assistant-voice.spec.js:221` (prova 7)
+`waitForTimeout(250)` apostando que a transição da esfera
+(`transform .09s linear`) já progrediu. `parado` e `falando` leram os dois `1`.
+→ passou a esperar por condição (`expect.poll` até a escala subir).
+**O mecanismo por trás daquela leitura única não está provado** — está escrito
+assim; o que a correção tira é a aposta no relógio, que é errada de qualquer
+forma.
+
+### `assistant-voice-session.spec.js:365` (prova 11)
+`Received string: "assistant-voice is-connecting is-open"` — a conexão WebRTC
+não subiu em 15 s. A causa estava no **dublê da OpenAI do próprio teste**:
+
+```js
+setTimeout(resolve, 4000);   // <- teto de RELÓGIO na coleta de ICE
+```
+
+Passados 4 s a promessa resolvia e a resposta SDP ia embora **com os candidatos
+que houvesse — possivelmente nenhum**. O app então nunca conectava, ficava em
+`is-connecting`, e o teste morria 15 s depois numa asserção de classe que não
+diz uma palavra sobre ICE.
+
+→ o teto agora **falha alto**, com a frase certa, e com folga (15 s).
+**Visto vermelho** com o teto rebaixado a 0 ms:
+`Error: a coleta de ICE do par-OpenAI não terminou em 15 s — a resposta SDP
+sairia sem candidato e o app ficaria em is-connecting`.
+
+Este é o tipo de correção que a §11 da skill chama de mais valiosa: ela não faz
+o teste passar mais vezes, faz a próxima falha **dizer o que aconteceu**.

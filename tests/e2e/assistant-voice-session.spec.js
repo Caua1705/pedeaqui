@@ -142,12 +142,28 @@ async function montar(page, context, {
       // funciona porque quem tem endereço alcançável é o outro lado. Então a
       // resposta daqui precisa levar os candidatos dela, e para isso é preciso
       // esperar a coleta terminar antes de devolver o SDP.
-      await new Promise(resolve => {
+      //
+      // O TETO AQUI FALHA ALTO, e não em silêncio. Antes ele era
+      // `setTimeout(resolve, 4000)` puro: passados 4 s de RELÓGIO a promessa
+      // resolvia e a resposta ia embora com os candidatos que houvesse —
+      // possivelmente NENHUM. O app então nunca conectava, ficava em
+      // `is-connecting`, e o teste morria 15 s depois numa asserção de classe
+      // que não diz uma palavra sobre ICE. Foi assim na execução 11 de 15 desta
+      // rodada: `Received string: "assistant-voice is-connecting is-open"`.
+      //
+      // Com host-only e loopback liberado a coleta termina em milissegundos; o
+      // teto existe para não pendurar o teste, e 15 s dá folga para uma máquina
+      // ocupada sem mascarar uma coleta que de fato não terminou.
+      await new Promise((resolve, reject) => {
         if (par.iceGatheringState === 'complete') return resolve();
         par.addEventListener('icegatheringstatechange', () => {
           if (par.iceGatheringState === 'complete') resolve();
         });
-        setTimeout(resolve, 4000);
+        setTimeout(
+          () => reject(new Error('a coleta de ICE do par-OpenAI não terminou em 15 s — '
+            + 'a resposta SDP sairia sem candidato e o app ficaria em is-connecting')),
+          15000
+        );
       });
       return par.localDescription.sdp;
     }, oferta);

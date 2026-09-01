@@ -1,0 +1,36 @@
+PROVA 1 EXIT=0
+  293 passed (7.5m)
+PROVA 2 EXIT=0
+  293 passed (7.0m)
+PROVA 3 EXIT=0
+  293 passed (7.1m)
+PROVA 4 EXIT=0
+  293 passed (7.8m)
+PROVA 5 EXIT=0
+  293 passed (7.6m)
+PROVA 6 EXIT=0
+  293 passed (7.4m)
+PROVA 7 EXIT=1
+  1 failed
+  292 passed (7.4m)
+  ✘   46 [chromium] › tests\e2e\assistant-voice.spec.js:221:1 › a esfera reage à fala pelo nível de áudio, sem mexer no layout (5.8s)
+PROVA 8 EXIT=0
+  293 passed (7.1m)
+PROVA 9 EXIT=0
+  293 passed (6.5m)
+PROVA 10 EXIT=0
+  293 passed (6.6m)
+PROVA 11 EXIT=1
+    Error: expect(locator).toHaveClass(expected) failed
+  1 failed
+  292 passed (8.4m)
+  ✘  278 [chromium] › tests\e2e\assistant-voice-session.spec.js:365:1 › não se pede resposta com uma ativa: o pedido espera na fila (21.9s)
+PROVA 12 EXIT=0
+  293 passed (7.3m)
+PROVA 13 EXIT=0
+  293 passed (6.8m)
+PROVA 14 EXIT=0
+  293 passed (6.6m)
+PROVA 15 EXIT=0
+  293 passed (7.0m)
+FIM

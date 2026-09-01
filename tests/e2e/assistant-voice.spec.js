@@ -236,7 +236,13 @@ test('a esfera reage à fala pelo nível de áudio, sem mexer no layout', async 
   const parado = await medir();
 
   await page.evaluate(() => window.RapidexAssistantVoice.setLevel(1));
-  await page.waitForTimeout(250);
+  // A escala sobe por TRANSIÇÃO (`transform .09s linear`), e esperar 250 ms de
+  // relógio é apostar que ela já progrediu quando a leitura chegar. Sob carga a
+  // aposta se perde: na execução 7 de 15 desta rodada, `parado` e `falando`
+  // leram os dois 1. Esperar por CONDIÇÃO não muda o que o teste afirma — muda
+  // só quem paga a lentidão da máquina.
+  await expect.poll(async () => (await medir()).escala,
+    { timeout: 5000 }).toBeGreaterThan(parado.escala);
   const falando = await medir();
 
   expect(falando.escala, 'a esfera não reagiu à fala').toBeGreaterThan(parado.escala);

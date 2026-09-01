@@ -1055,3 +1055,119 @@ E a distribuição, que é o número que decide se uma execução presta:
 
 Um `grep` de um segundo separa "achei um flake" de "medi uma máquina ocupada".
 Essa conta e a lição da família entraram na §11 da skill.
+
+═══════════════════════════════════════════════════════════════════
+# PENDÊNCIA DE BACKEND NOMEADA — não some sozinha, e é dinheiro
+# `/coupons/preview`: a taxa de serviço entra no orçamento do cupom?
+# Aberta em 01/09/2026 · também em `docs/order-contract.md`, item 14
+═══════════════════════════════════════════════════════════════════
+
+## A pergunta, em uma frase
+
+`CouponPreviewResponse.total_after_coupon` cobre **subtotal + entrega −
+desconto**, ou cobre **subtotal + entrega + taxa de serviço − desconto**?
+
+O front não pode descobrir isso sozinho, e a resposta muda o que o cliente vê
+na sacola em todo pedido com cupom.
+
+## Por que ela existe
+
+O front manda **duas** parcelas e recebe um total que substitui **três**.
+
+```js
+// previewSelectedCoupon() — restaurant-page.js:4788
+window.PedeAquiClubService.previewCoupon({
+  subtotal:    totals.subtotal,   // só os itens
+  deliveryFee: totals.delivery,
+  orderType:   deliveryType
+});                               // a taxa de serviço NÃO vai — e não pode ir:
+                                  // CouponPreviewRequest tem
+                                  // additionalProperties: false e cinco campos
+
+// cartTotals() — restaurant-page.js:1870
+const beforeDiscount = subtotal + svc + delivery;   // as TRÊS parcelas
+const total = selectedCouponPreview
+  ? (previewTotal ?? Math.max(0, beforeDiscount - discount))   // ← troca o total INTEIRO
+  : beforeDiscount;
+```
+
+Repare que os dois ramos do mesmo `?:` discordam entre si: o fallback
+(`beforeDiscount - discount`) **inclui** a taxa de serviço, e o caminho
+principal (`previewTotal`) só a inclui se o backend a tiver somado. Um dos dois
+está errado, e daqui não dá para saber qual.
+
+## As duas leituras, e a evidência de cada uma
+
+| | **Leitura A — o preview NÃO orça a taxa** | **Leitura B — orça** |
+|---|---|---|
+| a conta | `total_after_coupon = subtotal + delivery_fee − discount_amount` | `… + service_fee` |
+| a favor | a resposta devolve `subtotal` e `delivery_fee` como **`required`** e **não** devolve `service_fee` — ao contrário de `CreateOrderResponse`, que devolve os três. Uma resposta que embutisse uma parcela sem declará-la seria inconferível pelo cliente | a rota é `/restaurants/{slug}/coupons/preview`: o backend **sabe** qual é o restaurante e pode ler `service_fee_amount` sozinho |
+| a favor | a requisição **exige** que o cliente informe o `delivery_fee` (`@default "0.00"`): o preview orça o que **recebe**, não o que descobre | **todos** os fixtures deste repositório assumem B. `club-coupons.spec.js:181` responde `total_after_coupon: "20.02"` para `subtotal "21.15" + delivery "0.00" − discount "2.12"`, e 20,02 só sai somando a taxa de 0,99 |
+| contra | — | fixture é a **assunção de quem o escreveu**, não uma resposta capturada. Nenhuma resposta real do backend foi registrada neste repositório |
+
+**Nada foi alterado no front.** Mudar um total apostando numa leitura é o oposto
+da regra 1, e é a condição de parada da rodada.
+
+## O que `evaluateTotalMismatch()` registra EM CADA LEITURA
+
+`evaluateTotalMismatch()` (`restaurant-page.js:3337`) roda uma vez por pedido,
+em `handleOrderCreated`. Ela compara o total que o cliente **aprovou**
+(`confirmedTotalAtSubmit`, congelado em `:3059`) com o `order.total` que o
+backend devolveu, com tolerância de **meio centavo**
+(`TOTAL_MISMATCH_TOLERANCE = 0.005`, `:3303`).
+
+Sacola de exemplo — a do `cart-money-chain.spec.js`, com os números de
+produção (`service_fee_amount: 0.99`):
+`subtotal 68,60 · taxa de serviço 0,99 · entrega 7,40 · desconto 5,00`.
+E a identidade que o próprio contrato declara em `SalesBreakdown`:
+`revenue_total = subtotal + delivery_fee + service_fee − discount`, ou seja
+`order.total = 71,99` nas duas leituras.
+
+### Sob a LEITURA A — uma linha por pedido com cupom, sempre igual
+
+```
+Total divergente entre a confirmação e o pedido criado
+confirmado=71.00 pedido=71.99
+```
+
+e, no `checkoutTrace`, `diferenca: 0.99`. **`0,99` é exatamente
+`service_fee_amount`.** O cliente também vê, depois de o pedido já existir:
+
+> "O total ficou R$ 71,99, acima dos R$ 71,00 que você confirmou. Confira com o
+> restaurante antes de pagar."
+
+### Sob a LEITURA B — silêncio
+
+`confirmado = 71,99`, `pedido = 71,99`, diferença `0,00` ≤ tolerância → a função
+**retorna antes de registrar qualquer coisa**. Nenhuma linha no log, nenhum
+aviso na tela.
+
+## Como resolver a dúvida sem perguntar a ninguém
+
+Ler os `logAppError` de produção. As três assinaturas, e o que cada uma decide:
+
+| o que o log mostra | conclusão |
+|---|---|
+| divergência **constante**, sempre `= service_fee_amount`, **só** em pedidos com cupom, e **nenhuma** em pedidos sem cupom | **Leitura A confirmada.** É este defeito |
+| nenhuma divergência em pedidos com cupom | **Leitura B confirmada.** Nada a fazer |
+| divergências **variáveis**, ou também em pedidos **sem** cupom | não é esta pendência — é outra coisa, e esta continua aberta |
+
+A terceira linha existe de propósito: sem ela, qualquer divergência viraria
+"prova" da leitura A, e o número que prova é a **constância**, não a presença.
+
+## Se a leitura A se confirmar
+
+Dois consertos possíveis, e o primeiro é melhor:
+
+1. **No backend:** somar a taxa e **devolvê-la** na resposta
+   (`service_fee`, como `CreateOrderResponse` já faz). Sem devolvê-la o cliente
+   volta a não conseguir conferir a conta, que é o problema de origem.
+2. **No front:** `total = previewTotal + svc`. Custa uma linha, mas cimenta no
+   front uma suposição sobre o backend — exatamente o que a regra 2 proíbe
+   ("contrato é lido, não lembrado").
+
+**A rede para verificar o conserto já existe e já foi medida.** A injeção C do
+item 3.1 tirou a taxa de serviço do total de propósito: **7 dos 13 testes** de
+`cart-money-chain.spec.js` ficaram vermelhos, cada um nomeando o centavo exato
+(`Expected "R$ 70,13" / Received "R$ 69,14"`). Seja qual for o lado que mude, a
+correção não será feita no escuro.

@@ -352,7 +352,18 @@
         </div>
         <svg class="prof-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <button class="prof-option-row" data-act-click='["openProfSub","cupons"]'>
+      <!-- LEVA AO CLUBE, e nao a uma subtela propria.
+
+           Ate 02/09/2026 esta linha abria #profSubcupons, uma tela com markup
+           ESTATICO dizendo "Nenhum cupom disponivel" e nenhum codigo que a
+           preenchesse: ela respondia isso para quem tinha cupons e para quem
+           nao tinha, sempre, desde que existe.
+
+           A lista de cupons do cliente tem UM dono, o Clube — e ele desenha os
+           tres estados do contrato com as etiquetas e as regras. Uma segunda
+           superficie para o mesmo dado e a figura que esta rodada passou a
+           noite removendo. -->
+      <button class="prof-option-row" data-act-click='mobNavClub'>
         <div class="prof-option-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </div>
@@ -467,23 +478,17 @@
   </div><!-- /profSubpagamento -->
 
   <!-- -- SUB: Cupons -- -->
-  <div class="prof-sub" id="profSubcupons">
-    <div class="prof-sub-header">
-      <button class="prof-sub-back" data-act-click='closeProfSub' aria-label="Voltar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
-      </button>
-      <span class="prof-sub-title">Cupons</span>
-    </div>
-    <div class="prof-sub-body">
-      <div class="prof-empty">
-        <div class="prof-empty-icon">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        </div>
-        <div class="prof-empty-title">Nenhum cupom disponível</div>
-        <div class="prof-empty-text">Fique atento às promoções e ofertas especiais do restaurante.</div>
-      </div>
-    </div>
-  </div><!-- /profSubcupons -->
+  <!-- #profSubcupons MORREU em 02/09/2026, e o buraco e proposital.
+
+       Era uma subtela do Perfil com markup estatico dizendo "Nenhum cupom
+       disponivel" e NENHUM codigo que a preenchesse: ela respondia isso para
+       quem tinha cupons e para quem nao tinha, sempre. A linha "Cupons" do
+       Perfil leva ao Clube, que e o dono unico da lista.
+
+       Nao recoloque uma tela de cupons aqui sem mover a lista inteira para
+       ela: duas superficies desenhando o mesmo dado e como o rotulo do cupom
+       chegou a ter duas implementacoes que anunciavam descontos diferentes
+       para o MESMO cupom (ver services/coupon-format.js). -->
 
   <!-- -- SUB: Ajuda -- -->
   <div class="prof-sub prof-help" id="profSubajuda">

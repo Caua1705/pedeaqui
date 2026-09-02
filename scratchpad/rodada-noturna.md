@@ -700,3 +700,33 @@ motivo da anterior deixa de valer.
 **Nenhum número de dinheiro mudou.** O que entrou é um caminho NOVO para um
 cupom chegar ao mesmo `POST /coupons/preview` que já existia, e o total exibido
 continua sendo o `total_after_coupon` que o backend devolve.
+
+### 5.F CONSTRUÍDO — a tela de cupons tem UM dono
+
+`#profSubcupons` (a subtela "Cupons" do Perfil) era markup **estático** dizendo
+"Nenhum cupom disponível", sem nenhum código que a preenchesse. Ela respondia
+isso para quem tinha cupons e para quem não tinha, sempre, desde que existe.
+
+**E a sonda mostrou que ela era inalcançável por um motivo mais forte do que se
+supunha.** O Perfil é SEMPRE remontado em JS (`prof-account-page`,
+`restaurant-page.js:5286`) — para o visitante e para quem está logado — e a
+lista estática de `.prof-option-row` do `restaurant.html`, inclusive a linha
+"Cupons", **NUNCA renderiza**. Medido com o Perfil aberto:
+
+    document.querySelectorAll('.prof-option-row').length === 0
+
+Some-se a trava de login (`screens/profile-screen.js:419`, que joga `cupons`
+para a tela de entrar) e o resultado é que aquela subtela nunca foi vista por
+ninguém.
+
+A subtela saiu, com o buraco comentado, e a linha estática passou a apontar
+para `mobNavClub` — o Clube é o dono único da lista, e é ele que desenha os três
+estados com as etiquetas e as regras. Guardado por E2E: `#profSubcupons` não
+existe nem escondida, e o texto "Nenhum cupom disponível" não está no documento.
+
+**ACHADO NOVO, e maior que este item:** o bloco estático inteiro de
+`.prof-option-row` no `restaurant.html` é markup morto — o Perfil é sempre
+desenhado por JS. É a mesma família dos seis chips do item 4, e vale uma
+varredura própria. **Não removido nesta rodada**: são ~7 linhas de opção com
+ícones, e apagá-las sem entender o que mais depende daquele bloco é maior que o
+item 5.

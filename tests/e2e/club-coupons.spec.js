@@ -159,6 +159,41 @@ test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ 
   await expect(page.locator('.club-cashback-icon')).toHaveCount(1);
 });
 
+test('a linha "Cupons" do Perfil leva ao Clube, e não a uma tela que mente', async ({ page }) => {
+  // Até 02/09/2026 ela abria #profSubcupons: markup ESTÁTICO dizendo "Nenhum
+  // cupom disponível", sem nenhum código que a preenchesse. Ela respondia isso
+  // para quem tinha cupons e para quem não tinha, sempre, desde que existe.
+  //
+  // A lista tem UM dono. Duas superfícies desenhando o mesmo dado é como o
+  // rótulo do cupom chegou a ter duas implementações anunciando descontos
+  // diferentes para o MESMO cupom (ver services/coupon-format.js).
+  // #profSubcupons ERA INALCANÇÁVEL DOS DOIS LADOS, e a sonda de 02/09/2026
+  // mostrou que por um motivo mais forte do que se supunha: o Perfil é SEMPRE
+  // remontado em JS (`prof-account-page`, restaurant-page.js:5286), tanto para
+  // o visitante quanto para quem está logado, e a lista estática de
+  // `.prof-option-row` do restaurant.html — inclusive a linha "Cupons" —
+  // NUNCA renderiza. Medido: `document.querySelectorAll('.prof-option-row')
+  // .length === 0` com o Perfil aberto.
+  //
+  // Some-se a trava de login de screens/profile-screen.js:419 e o resultado é
+  // que aquela tela respondia "Nenhum cupom disponível" para ninguém, desde
+  // sempre. O que este teste guarda é que ela não voltou.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedPickupSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+
+  // A tela morta não existe mais no documento — nem escondida.
+  await expect(page.locator('#profSubcupons')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('Nenhum cupom disponível');
+
+  // E o Clube — o dono único da lista — continua desenhando os três estados.
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+});
+
 test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page }) => {
   // O par do teste acima. Os dois juntos provam que quem decide o rótulo é o
   // estado do backend MAIS a sacola — e que a sacola entra por acessor, não

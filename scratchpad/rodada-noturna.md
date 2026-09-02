@@ -36,7 +36,7 @@ com push. Portão sem pipe (`| tail` engole o exit code — §5.1 armadilha 5 e
 |---|---|---|
 | 0 | scratchpad + branch | **feito** |
 | 1 | os 8 escapes pendentes | **feito** — 2 fechados (#5 e #7), 5 mantidos com motivo, 1 virou o item 2 |
-| 2 | `pix-payment:116` | não começou |
+| 2 | `pix-payment:116` | **feito** — mecanismo PROVADO por reprodução, gatilho aberto; sem quarentena |
 | 3 | testes dependentes da hora | varredura feita, correções não |
 | 4 | chips chumbados `restaurant.html:462-470` | não começou |
 | 5 | fluxo de cupons | contrato lido, nada construído |
@@ -145,3 +145,77 @@ conferidos à mão em 02/09/2026 e os três já têm o nome do contrato na frent
   **6 testes acima de 10 s** (a linha de base limpa tem 6–9; a suja tinha 43)
 
 Nenhum número de dinheiro mudou: as 30 trocas removem nome que lia `undefined`.
+
+---
+
+## Item 2 — `pix-payment.spec.js:116`, o `307,6`
+
+### Não reproduz, e isso foi MEDIDO
+
+20 execuções isoladas do teste, `--repeat-each=20 --workers=4` (contenção de
+propósito): **20 de 20 verdes**, com durações subindo de 7 s a 17 s — ou seja
+com a máquina de fato ocupada. Mais duas suítes completas verdes na rodada.
+
+### A lei, por sonda em quatro larguras
+
+Uma sonda temporária (`_sonda-pix116.spec.js`, apagada depois) mediu painel,
+rodapé e CTA a 1280, 989, 767 e 390 px:
+
+| viewport | painel | offset `cta.x − footer.x` |
+|---|---|---|
+| 1280 | 414 | **20** |
+| 989 | 414 | **20** |
+| 767 | 767 | 196,5 |
+| 390 | 390 | 16 |
+
+    offset = (larguraDoPainel − 374) / 2
+
+(rodapé com 16px de padding + CTA `width:374px; margin:0 auto`, `pix.css:682`.)
+
+### 307,6 é ARITMETICAMENTE INALCANÇÁVEL neste CSS
+
+São três regimes, e só três:
+
+| regime | painel | offset |
+|---|---|---|
+| `pix.css` valendo, viewport ≥ 768 | 414 | 20 |
+| `pix.css` valendo, viewport ≤ 767 (`@media`, `pix.css:55`) | viewport | ≤ 196,5 |
+| `pix.css` ausente (`.modal` de `restaurant.css:380`, `max-width:600px`) | 600 | 113 |
+
+307,6 exige painel de **989,2 px**. Acima de 767 o teto de 414 é absoluto;
+abaixo dele o máximo é `(767−374)/2 = 196,5`. Conferido folha por folha: não há
+`@media`, `zoom` nem regra de `.modal--fs` neste repositório que solte o teto
+numa largura de ~989.
+
+### E o mecanismo foi REPRODUZIDO
+
+Com `#pixPaymentModal .modal{max-width:989.2px!important}` injetado por
+`addStyleTag`, o Chromium arredonda para **989,1875** e a linha lê
+**307,59375** — o mesmo número, até a última casa, do vermelho de 31/08/2026.
+Largura (374) e altura (45) do CTA seguem corretas na injeção, exatamente como
+estavam naquela falha.
+
+**O QUE aconteceu está provado: o painel ficou com 989,19 px. O POR QUE
+continua aberto.**
+
+### O que mudou no teste, e por que NÃO houve quarentena
+
+A afirmação do offset sozinha embute TRÊS fatos — painel 414, CTA 374, CTA
+centrado — e, ao falhar, não nomeava nenhum. Entrou uma linha ANTES dela:
+
+```js
+expect(footerBox.width, 'o painel do Pix perdeu o teto de 414px').toBeCloseTo(414, 1);
+```
+
+Vista vermelha com a injeção: `Expected: 414 / Received: 989.1875`. Se o
+vermelho voltar, ele diz o que procurar.
+
+Quarentena foi recusada: o teste passa 20/20 sob contenção e duas suítes
+inteiras, e é ele quem guarda a geometria do CTA, o peso de fonte que o Inter
+realmente carrega (700, não 650) e a cor da marca em três elementos. `fixme`
+aqui trocaria uma dúvida por uma perda real. Timeout não foi tocado.
+
+### Verificação do item 2
+
+`lint 78 problems (0 errors)` · `test:e2e 302 passed · 3 skipped`, exit 0,
+3,9 min, **4 testes acima de 10 s** · 20/20 isoladas sob contenção.

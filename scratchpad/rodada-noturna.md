@@ -39,7 +39,7 @@ com push. Portão sem pipe (`| tail` engole o exit code — §5.1 armadilha 5 e
 | 2 | `pix-payment:116` | **feito** — mecanismo PROVADO por reprodução, gatilho aberto; sem quarentena |
 | 3 | testes dependentes da hora | **feito** — 1 bomba de data desarmada, 4 esperas convertidas, 1 conversão revertida por medida |
 | 4 | chips chumbados `restaurant.html:462-470` | **feito** — markup fora, guarda de markup vermelha antes |
-| 5 | fluxo de cupons | contrato lido, nada construído |
+| 5 | fluxo de cupons | **feito no que dá** — 8 entregas; 3 bloqueadas por backend e 2 por ordem técnica, todas com motivo escrito |
 
 ## AMBIENTE — leia antes de rodar portão
 
@@ -730,3 +730,170 @@ desenhado por JS. É a mesma família dos seis chips do item 4, e vale uma
 varredura própria. **Não removido nesta rodada**: são ~7 linhas de opção com
 ícones, e apagá-las sem entender o que mais depende daquele bloco é maior que o
 item 5.
+
+---
+
+# RELATÓRIO FINAL — rodada noturna de 02/09/2026
+
+Branch `rodada/noturna`, 9 commits, todos verdes e empurrados. Nada na `main`.
+
+| commit | item |
+|---|---|
+| `445a73c` | o scratchpad que retoma sozinho |
+| `1a5fb86` | 1 — o nome fantasma que vence o nome certo |
+| `9ad48fb` | 2 — `pix-payment:116`, o 307,6 reproduzido |
+| `53dffc3` | 3 — a validade que vence em 2031, e as esperas que apostam no relógio |
+| `97b016a` | 4 — as formas de pagamento de UM restaurante no HTML |
+| `f5c5433` | 5A/5B — o cupom armado sem preview, e a etiqueta |
+| `13a2b5f` | 5C/5D — o Clube pelos cupons, a Home só divulga, o relógio da suíte |
+| `6771664` | 5E — o campo único do checkout e a rota de resgate |
+| `0043744` | 5F — a tela que dizia "Nenhum cupom disponível" para todo mundo |
+
+## 1. Escapes: de 8 para 6
+
+**Fechados (2):**
+
+- **#5** `restaurant-club.js:146` — e com ele a FAMÍLIA inteira: 30 sítios em 6
+  arquivos, três nunca nomeados. Guarda nova
+  `tests/unit/contract-field-names.test.js` (14 testes), vista vermelha em 6
+  alvos com as 6 sondas verdes.
+- **#7** cadeias fantasma dos banners (`menu-service`) — `BannerResponse`
+  declara sete campos e **nenhum é texto**.
+
+**Mantidos (6), com o motivo:**
+
+| # | escape | motivo |
+|---|---|---|
+| 1 | `auth-screen-nav.spec.js:105` | nunca reproduzido, 0 em 12+ execuções saudáveis nesta rodada. `fixme` num teste que passa troca suspeita por perda REAL |
+| 2 | `order-flow.spec.js:163` | idem, e guarda a Idempotency-Key reaproveitada na retentativa, que é dinheiro |
+| 3 | `pix-payment.spec.js:116` | mecanismo PROVADO, gatilho aberto — ver item 2 |
+| 6 | `address-service.js:25` | precedência DE PROPÓSITO (dois contratos), agora documentada nas duas pontas |
+| 8 | `provider_error_code` | a tela dele é a recusa de cartão — checkout, fora da rodada |
+| 9 | `assistant-voice-session.spec.js:472` | voz, fora da rodada |
+
+## 2. `pix-payment:116` — causa parcial, sem quarentena
+
+20/20 verdes isoladas sob contenção de 4 workers (7 a 17 s por execução).
+
+Sonda em quatro larguras deu a lei `offset = (larguraDoPainel − 374) / 2`, e com
+ela os três regimes possíveis dão 20, ≤196,5 e 113. **307,6 exige um painel de
+989,2 px, que nenhum deles produz.** Injetando `max-width:989.2px`, a linha lê
+**307,59375** — o número da falha, até a última casa.
+
+O QUE aconteceu está provado; o POR QUE não. O teste passa a afirmar a largura
+do rodapé ANTES do offset, então uma recorrência diz `Expected 414, Received
+989.1875` em vez de um número sem dono. **Sem quarentena e sem tocar em
+timeout.**
+
+## 3. Testes dependentes da hora
+
+**Achados e corrigidos:**
+
+| sítio | classe | correção |
+|---|---|---|
+| `card-payment-flow:230`, `mercado-pago-secure-fields:117,118,183` | validade `11/31` conferida contra o relógio REAL | `validadeFutura()` — quebraria em **01/12/2031**. Visto vermelho com `11/24` |
+| `maps-autocomplete:156` | `Date.now()-t1 < 3000`, direção INSEGURA | removido; `calls.novo === 1` já provava melhor. Dois braços: antigo `Received: 4033`, novo passa |
+| **`tenant-theme:198`** | `install`+`pauseAt` no MESMO instante | `pauseAt(INSTANTE + 60s)`. **Eu tinha classificado como resolvido; quem achou foi a suíte** |
+| `menu-scrollspy` (boot e `:118`) | tempo no lugar de condição | `.cat.active` existir; afirmação com retentativa |
+| `image-framing:67,75` | 2500 ms ×2 | 4 derivadas `complete && naturalWidth > 0` |
+| `overlay-blur:119` | 700 ms sobre timer de 560 ms do app | afirmação com retentativa, teto de 2 s |
+
+**Uma conversão foi REVERTIDA pela medida** (`scrollToSection`): a afirmação que
+aquelas esperas alimentam compara duas leituras do MESMO instante e nunca
+dependeu de assentamento. Ver §3.4 do scratchpad.
+
+**Sobram 24 `waitForTimeout`**, cada um com motivo escrito: asserção negativa
+(6), intervalo de amostragem (2), tempo real de propósito (2), voz/assistente
+fora da rodada (10), checkout/cartão fora da rodada (2), `scrollToSection` (2).
+
+**Negativo útil:** o horário da loja NÃO lê relógio — `is_open` e
+`current_weekday` vêm do backend, e por isso `store-hours.spec.js` passa em
+qualquer dia da semana.
+
+## 4. Os chips chumbados
+
+Markup fora, container vazio, `tests/unit/white-label-markup.test.js` vista
+vermelha em 3 de 4 (a quarta é a sonda). Rede em
+`tests/e2e/profile-payment-methods.spec.js`, com os rótulos vindos da fixture.
+
+**A premissa do prompt (um flash na tela) não se confirmou** — `openProfSub`
+já cobria os chips antes de a subtela aparecer. O E2E que afirmava o flash
+falhou, e isso foi a sorte da rodada: ele teria passado pelo motivo errado. O
+defeito real é outro e continua real: os chips estavam no DOM de toda loja.
+
+## 5. O fluxo de cupons
+
+**Pronto:**
+
+1. **Nada aplica sem sacola.** O decisor único `services/coupon-cta.js` (11
+   unitários) governa o rótulo e o destino em duas superfícies.
+2. **`persistCouponChoice()` removida** — era ela que armava um cupom sem
+   preview com a sacola vazia, gravava na sacola guardada e o mandava no
+   `coupon_id` do pedido. Num cupom de uso único, o backend o queima.
+3. **Etiqueta**: `selected_for_you` ou nada. Saíram "Cupom disponível" (que
+   todo card tinha) e "Frete grátis" (que repetia o `title`).
+4. **Home só divulga**: o botão "Usar cupom" saiu do trilho.
+5. **Clube abre pelos cupons**; o saldo de cashback desceu para depois da lista
+   (não foi apagado: o extrato só tem aquela porta).
+6. **O campo único de código no checkout**, com 5 E2E.
+7. **`POST /coupons/claim` ligado** (6 unitários) — a rota existia no contrato
+   desde sempre e o front nunca a chamou.
+8. **`#profSubcupons` removida** — dizia "Nenhum cupom disponível" para todo
+   mundo, e era inalcançável dos dois lados.
+
+**Bloqueado por backend:**
+
+| o que | falta |
+|---|---|
+| etiqueta "para todos" no público | `visibility` em `CustomerCouponResponse` |
+| "sem código aplica automaticamente" | uma regra de QUAL cupom escolher quando mais de um cabe — escolher pelo maior desconto é decisão de dinheiro tomada no front |
+| restrição por forma de pagamento / horário / item | **não existem no contrato** — conferido em `CouponCreate` |
+
+**Não construído, com o motivo técnico:** o card da Home levar ao cardápio. Ele
+é o único caminho testado do repasse miniatura→foto grande, e a superfície que
+o substituiria (a tela dedicada de "usar cupom") não existe. A ordem certa é
+construir a tela, mover a leitura de regras para lá, e só então virar o destino.
+
+**A tela dedicada de "usar cupom" não foi construída**, e a razão é de produto:
+o Clube JÁ é a lista com etiquetas e regras, alcançável da Home pela barra de
+navegação. Uma terceira superfície para o mesmo dado é a figura que esta rodada
+passou a noite removendo. Se ela for mesmo separada do Clube, falta escrito o
+que ela mostra que o Clube não mostra.
+
+## 6. Números de dinheiro que mudaram
+
+**Nenhum.** Todas as mudanças de cupom ou removem um caminho que armava sem
+preview, ou acrescentam um caminho novo para o MESMO `POST /coupons/preview`.
+`cartTotals()` não foi aberto. As 30 trocas de nome do item 1 removem nomes que
+liam `undefined` em 100% das chamadas.
+
+O que mudou de comportamento, e está guardado por teste:
+
+- confirmar cupom com a sacola vazia **não arma mais nada** (antes armava);
+- código recusado no checkout **não entra no pedido** (visto vermelho: sem o
+  rollback, `coupon_code: "PANFLETO10"` vai no `POST /orders`).
+
+## 7. O que eu faria diferente
+
+1. **Ler a semântica da API, não o comentário do arquivo.** O comentário de
+   `tenant-theme` explicava METADE da armadilha do `pauseAt` e encerrou minha
+   investigação. Custou um vermelho numa suíte completa horas depois. Comentário
+   é pista, não conclusão.
+2. **Sondar antes de escrever o teste.** Duas vezes escrevi um teste sobre um
+   comportamento que eu supunha (o flash dos chips; a linha "Cupons" do Perfil)
+   e o teste falhou porque a premissa estava errada. A sonda de 20 segundos
+   teria dado a resposta certa antes, e nas duas vezes a resposta era mais
+   interessante que a hipótese.
+3. **Nunca usar `git checkout <arquivo>` para desfazer uma injeção.** Apagou
+   duas mudanças não commitadas de `restaurant-club.js` e custou refazê-las. O
+   jeito certo é copiar o arquivo para o scratchpad antes e restaurar pela
+   cópia — que é o que passei a fazer no resto da noite.
+4. **Commitar cada estágio antes da próxima injeção.** Consequência do erro
+   acima: passei a fechar o estágio em commit assim que ficava verde.
+5. **Não escalar o estrangulamento de CPU depois que ele deixa de discriminar.**
+   Gastei três lotes a 14x e 20x descobrindo que ali o teto de 30 s domina os
+   dois braços. O sinal de parada era claro no primeiro lote em que os DOIS
+   falharam.
+6. **Desconfiar de um portão que responde rápido demais.** O
+   `typecheck:cards` passou "verde" (exit 0) por não ter `tsc` instalado, e eu
+   só percebi porque o PowerShell reportou diferente do Bash.

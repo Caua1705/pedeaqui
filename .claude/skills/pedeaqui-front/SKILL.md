@@ -511,6 +511,11 @@ o eixo que você mexeu — `pix-payment.spec.js:116` afirma sobre a geometria do
 CTA, e num commit que muda altura de botão "é o flake de sempre" é exatamente a
 frase que deixa passar a regressão.
 
+**O `pix-payment:116` foi medido até o fim em 02/09/2026 — leia a §12.5 antes
+de tocar nele.** O mecanismo está PROVADO (painel de 989,19 px) e reproduzido; o
+gatilho segue aberto, e o teste hoje nomeia a largura do rodapé em vez de deixar
+um número sem dono.
+
 `tenant-theme.spec.js:188` SAIU desta lista em 29/08/2026 — ele não era flaky de
 paralelismo: media tempo de parede e falhava até em série (`--workers=1`, 900
 contra um teto de `< 900`), com o `retries: 1` do CI escondendo. Hoje ele congela
@@ -894,7 +899,7 @@ uma delas se conserta no teste.
 | **A. corrida do teste** | o teste falha em segundos, com uma asserção de valor (`Expected X, Received Y`) | achar a causa e corrigir. Todas as sete desta rodada eram isto |
 | **B. estouro de orçamento** | duração **entre 31 e 40 s** e `Test timeout of 30000ms exceeded` | olhe a rodada INTEIRA antes de tocar no teste |
 | **C. máquina parada** | um ou mais testes com duração em **MINUTOS**, e uma dezena de irmãos estourando o teto juntos | **descarte a execução.** Não é medição |
-| **D. o cano quebrou** | um `Error:` que **não é asserção nem timeout**, em poucos segundos, vindo do transporte do Playwright — `write UNKNOWN`, `Target closed`, `browserContext.close` | **não é seu.** O processo do Chromium morreu ou o pipe do driver caiu. Rode de novo; se repetir no MESMO teste, aí sim investigue |
+| **D. o cano quebrou** | um `Error:` que **não é asserção nem timeout**, em poucos segundos, vindo do transporte do Playwright — `write UNKNOWN`, `Target closed`, `browserContext.close`, `net::ERR_NO_BUFFER_SPACE` | **não é seu.** O processo do Chromium morreu, o pipe do driver caiu, ou o SO ficou sem socket (§12.4: 676 em TIME_WAIT). Rode de novo; se repetir no MESMO teste, aí sim investigue |
 
 A família D foi vista em 01/09/2026: `Error: write UNKNOWN` em
 `pix-payment.spec.js:545`, aos 5,9 s, dentro do `waitForFunction` do
@@ -1054,3 +1059,204 @@ o braço B (jeito novo) passa. Sem isso não há prova, só esperança.
    espera de boot, e ela se aprende de novo toda vez que se conserta o teste em
    vez do FORMATO do teste. Depois de achar a causa, `grep` pela forma antes de
    comemorar.
+
+## 12. A rodada noturna de 02/09/2026 — o que ela ensinou
+
+### 12.1 Nome fantasma: a família é maior que o sítio, e uma regra única a quebra
+
+O escape herdado era UM sítio (`restaurant-club.js:146`,
+`short_description || description`, com o nome do contrato em segundo). Varrida
+a família, eram **30 sítios em 6 arquivos**, e três nunca tinham sido nomeados.
+
+Nenhum mudava um pixel — fantasma lê `undefined` sempre. Os dois preços são
+código que MENTE para quem lê, e a inversão silenciosa no dia em que o backend
+publicar aquele nome.
+
+**A armadilha que quase virou um conserto errado:** `name` e `title` são o
+MESMO campo em dois esquemas.
+
+| esquema | o rótulo do cupom | quem lê |
+|---|---|---|
+| `PublicCouponResponse` | **`name`** | o trilho da Home (feed do `/menu`) |
+| `CustomerCouponResponse` | **`title`** | o card do Clube (`/coupons`) |
+
+E a folha de detalhe recebe os DOIS (`getCouponForDetail()` procura na lista do
+Clube e cai para o feed). Lá `coupon.name || coupon.title` **não é defeito** —
+é normalização deliberada de dois contratos, a mesma figura de
+`address-service.js:25`. "Sempre prefira `title`" teria quebrado a Home.
+
+Guarda: `tests/unit/contract-field-names.test.js`, **por arquivo**, com os
+esquemas declarados e uma **sonda contra vacuidade** em cada alvo. Ela já provou
+o valor: quando `missing_amount` mudou de arquivo, a sonda apontou na hora.
+
+Duas lições de escrever essa varredura:
+- **Comentário de bloco sai preservando as QUEBRAS.** Trocar por um espaço
+  colapsa o arquivo e a linha relatada aponta para outro lugar — uma mensagem
+  que erra o endereço faz consertar o sítio errado.
+- **A variável do primeiro elemento também é uma leitura.** `first.title` (o
+  banner de abertura do carrossel) escapou da primeira varredura, que só
+  olhava `banner` e `highlight` — e é o único banner que o cliente vê antes de
+  o carrossel andar.
+
+### 12.2 `clock.install` + `pauseAt` com o MESMO instante é um flake de carga
+
+`tenant-theme:161` caiu numa suíte completa com
+
+    Error: clock.pauseAt: Error: Cannot fast-forward to the past
+
+`pauseAt` só anda para a frente, e **entre `install()` e `pauseAt()` o relógio
+falso AINDA ANDA**: são duas idas ao browser pelo protocolo, e o tempo real
+entre elas avança a hora da página. Com os dois recebendo o mesmo instante, o
+teste vivia de a diferença ser zero. Hoje o `pauseAt` recebe `INSTANTE + 60 s`.
+
+**A lição não é sobre o teste, é sobre a varredura.** O comentário do próprio
+arquivo dizia a metade certa ("uma data anterior a de instalacao e erro"), e foi
+ela que encerrou a investigação na varredura de horas antes. **Um comentário
+que explica METADE de uma armadilha é mais perigoso que nenhum.**
+
+### 12.3 Nem toda espera por tempo é a espera ruim — e o experimento reprovou a troca
+
+`menu-scrollspy.scrollToSection` faz cinco rolagens de 350 ms mais 400 ms.
+Parecia o vício clássico. Trocado por um laço que reaplica até o topo da seção
+parar de andar, e medido com a CPU estrangulada por CDP:
+
+| taxa | braço antigo | braço novo |
+|---|---|---|
+| 4x | 3 verdes | 3 verdes |
+| 14x | **3 de 3 execuções verdes** | 2 verdes, 1 com dois vermelhos |
+| 20x | estoura o teto de 30 s | estoura o teto de 30 s |
+
+Duas conclusões:
+
+1. **Estrangular acima de ~14x não discrimina**: ali o teste inteiro já está
+   perto do teto de 30 s nos dois braços, e o que falha é o orçamento.
+2. **A troca era errada por desenho.** A afirmação que aquelas esperas
+   alimentam compara `expectedSlug` com `activeSlug` **lidos no mesmo
+   instante** — ela nunca dependeu de onde a rolagem parou. "Esperar assentar"
+   ACRESCENTA uma dependência que a afirmação não tinha, e sob carga, com fotos
+   entrando por lazy-load, o assentamento pode não chegar. A mesma armadilha
+   derrubou a primeira espera de `image-framing`, que exigia TODAS as imagens
+   `complete` e estourou 30 s no cardápio.
+
+**A regra:** espera por tempo que alimenta uma comparação de duas leituras do
+MESMO instante não é a espera ruim. A ruim é a que aposta em quando um efeito
+terá acontecido. Pergunte de que a AFIRMAÇÃO depende, não de que a tela depende.
+
+O que VALE converter, e foi convertido: uma medição de parede na direção
+insegura (`maps-autocomplete:156`, `Date.now() - t1 < 3000`, com o mecanismo já
+afirmado duas linhas abaixo por `calls.novo === 1`), uma espera por um estado
+DEFINIDO (`.cat.active` existir; N imagens `complete && naturalWidth > 0`) e
+uma afirmação com retentativa no lugar de um sleep sobre um temporizador do app.
+
+### 12.4 Família D tem assinatura nova: `ERR_NO_BUFFER_SPACE`
+
+    Error: page.goto: net::ERR_NO_BUFFER_SPACE
+
+em 1,4 s, no `goto`. Não é asserção e não é timeout: é o Windows sem buffer de
+socket depois de horas de Playwright. `netstat -an | grep -c TIME_WAIT`
+respondeu **676** no instante seguinte, e o arquivo passou 7/7 isolado. Entra na
+tabela da §11 ao lado de `write UNKNOWN` e `Target closed`.
+
+### 12.5 `pix-payment:116` — o 307,6, reproduzido
+
+A lei do offset, medida por sonda em quatro larguras:
+
+    offset = (larguraDoPainel - 374) / 2
+
+Os três regimes que este repositório sabe produzir: `pix.css` valendo acima de
+767 → painel 414 → **20**; `pix.css` valendo abaixo de 768 (o `@media` de
+`pix.css:55`) → painel = viewport → no máximo **196,5**; `pix.css` ausente → o
+`.modal` de `restaurant.css:380` com `max-width:600px` → **113**.
+
+**307,6 exige um painel de 989,2 px, e nenhum dos três chega lá.** Com
+`max-width:989.2px` injetado, o Chromium arredonda para 989,1875 e a linha lê
+**307,59375** — o mesmo número, até a última casa. O QUE aconteceu está provado;
+o POR QUE segue aberto.
+
+**O padrão que ficou:** uma afirmação que embute vários fatos (o painel tem 414,
+o CTA tem 374, o CTA é centrado) não nomeia nenhum quando falha. Afirme o fato
+mais externo ANTES dela — aqui, a largura do rodapé. O teste passou 20/20 sob
+contenção de 4 workers e NÃO foi para quarentena: ele guarda a geometria do CTA,
+o peso de fonte que o Inter de fato carrega e a cor da marca em três elementos.
+
+### 12.6 Markup de um tenant no HTML compartilhado, e a premissa que a sonda derrubou
+
+A §7 já dizia isso das CORES. Vale igual para DADOS DE LOJA: `#profSubpagamento`
+trazia seis chips de forma de pagamento escritos à mão, e a filial deste
+repositório não aceita vale nem dinheiro.
+
+**A premissa com que se entra costuma estar errada — a sonda é mais barata que o
+teste.** A hipótese era um flash (app sobe, `/info` em voo, a pessoa abre a
+tela). O E2E que afirmava ver esse flash FALHOU: `openProfSub('pagamento')`
+(`screens/profile-screen.js:440`) já troca o corpo por "Carregando..." antes de
+a subtela aparecer. Um teste que "visse" aquele flash teria passado pelo motivo
+errado. O que sobra é real e é outro: os chips estão no DOM de toda loja.
+
+**E há mais markup morto do mesmo tipo.** Medido com o Perfil aberto:
+`document.querySelectorAll('.prof-option-row').length === 0` — o Perfil é SEMPRE
+remontado em JS (`restaurant-page.js:5286`), e a lista estática de opções do
+`restaurant.html` nunca renderiza. `#profSubcupons` vivia atrás dela dizendo
+"Nenhum cupom disponível" para ninguém, desde sempre. Guardas novas:
+`tests/unit/white-label-markup.test.js` e
+`tests/e2e/profile-payment-methods.spec.js`.
+
+### 12.7 O fluxo de cupons, como ele ficou
+
+**A regra dura:** quem decide se cabe é o backend, com a MESMA função na lista e
+no checkout — `GET /coupons` aceita `subtotal`/`delivery_fee`/`order_type`
+OPCIONAIS, e o `@description` da rota diz: sem eles responde a tela do Clube,
+com eles a do checkout.
+
+**O decisor único é `scripts/services/coupon-cta.js`** (rótulo + destino), lido
+pelo card do Clube e pela folha de detalhe. Duas decisões que precisaram ser
+tomadas:
+
+- `login_required` **vence** a sacola vazia (sem conta o cupom não volta nem na
+  lista, então "Ver cardápio" mandaria a pessoa ao lugar errado);
+- **ausência de `state` NÃO é estado desconhecido.** `PublicCouponResponse` não
+  tem `state`, e recusar esses cupons abriria um buraco de capacidade — aplicar
+  continua passando pelo backend uma porta adiante, no `POST /coupons/preview`.
+
+**O defeito mais caro que a rodada fechou:** confirmar um cupom com a sacola
+VAZIA fazia `armSelectedCoupon()` + `persistCouponChoice()` e dizia "Cupom
+selecionado. Adicione produtos à sacola para usar". Cupom aplicado sem preview
+nenhum, gravado na sacola guardada, que voltava armado no boot seguinte e seguia
+no `coupon_id` do pedido. **Num cupom de uso único o backend o queima ali.**
+`persistCouponChoice()` foi removida e o buraco tem comentário — deixá-la de pé
+é deixar o mecanismo armado para quem for religar.
+
+**O campo de código do checkout** (`#cartCouponInput`) não precisou de NADA no
+caminho do dinheiro: `CouponPreviewRequest` já aceita `coupon_code` e
+`buildOrderPayload` já o manda quando não há id (`order-payload.js:132`).
+
+**E ele achou um defeito no código velho:**
+`previewSelectedCoupon({silent:true})` não pinta mensagem, e o campo lia o
+motivo de uma variável — mas o ramo `valid:false` chama `updateCartUI()`, que
+**chama `previewSelectedCoupon()` de novo** (o cupom ainda está armado), e a
+reentrada zerava a frase antes de quem pediu em silêncio conseguir lê-la. A
+correção não é guarda de reentrância: o motivo morre em `armSelectedCoupon()`,
+que é o instante em que uma tentativa nova começa. **Estado compartilhado limpo
+no início da LEITURA quebra quando a leitura reentra; limpe no início da AÇÃO.**
+
+`POST /coupons/claim` estava no contrato desde sempre e o front nunca a chamou.
+Resgate NÃO é uso: o backend grava em `coupon_claims` (sem pedido, sem valor) e
+o teto da campanha conta `coupon_redemptions`.
+
+### 12.8 Bloqueado por backend (cupons)
+
+| o que | por quê |
+|---|---|
+| etiqueta "para todos" no cupom público | `CustomerCouponResponse` **não publica `visibility`** — o campo só existe em `CouponCreate`/`CouponAdminResponse` |
+| "sem código aplica automaticamente" | o contrato permite `code: null`, mas **ninguém diz QUAL escolher** quando mais de um cabe. Escolher pelo maior `discount_amount` é decisão de DINHEIRO tomada no front |
+| restrição por forma de pagamento, horário do dia ou item | **não existem.** `CouponCreate` tem mínimo, primeira compra, segmento/visibilidade, validade, tetos de uso, cooldown e teto de desconto — e mais nada |
+
+### 12.9 Duas armadilhas de FERRAMENTA que custaram trabalho nesta rodada
+
+1. **`npm run typecheck:cards` pode se pular em SILÊNCIO.** A árvore chegou sem
+   `typescript`, e pelo Bash o `'tsc' não é reconhecido` saía com **exit 0** — o
+   portão parecia verde. Confira `ls node_modules/.bin/ | grep tsc` se ele
+   responder instantaneamente.
+2. **`git checkout <arquivo>` para desfazer uma injeção apaga o trabalho não
+   commitado daquele arquivo.** Aconteceu com `restaurant-club.js` no meio do
+   item 5 e custou refazer duas mudanças. Para injetar e reverter, **copie o
+   arquivo para o scratchpad antes** e restaure pela cópia.

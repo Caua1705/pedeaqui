@@ -5166,6 +5166,8 @@ export interface components {
              * Format: uuid
              */
             restaurant_id: string;
+            /** Sort Order */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5244,6 +5246,11 @@ export interface components {
              * @default 0.00
              */
             min_order_value: number | string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5360,6 +5367,8 @@ export interface components {
             max_discount_amount?: number | string | null;
             /** Min Order Value */
             min_order_value?: number | string | null;
+            /** Sort Order */
+            sort_order?: number | null;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title?: string | null;

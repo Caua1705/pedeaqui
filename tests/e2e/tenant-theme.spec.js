@@ -193,11 +193,26 @@ test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por
   // 900ms injetado de proposito no boot, a versao com so `install()` passou.
   // Um teste-fantasma no lugar do flaky teria sido troca ruim. Quem para o
   // relogio e `pauseAt`.
-  // O instante e fixo e o mesmo nos dois: `pauseAt` so anda para a frente, e
-  // uma data anterior a de instalacao e erro ("Cannot fast-forward to the past").
+  // O INSTANTE DA PAUSA E DEPOIS DO DA INSTALACAO, e a diferenca nao e estilo.
+  //
+  // `pauseAt` SO ANDA PARA A FRENTE: uma data anterior a atual do relogio e
+  // erro ("Cannot fast-forward to the past"). E entre `install()` e
+  // `pauseAt()` o relogio falso AINDA ANDA — sao duas idas ao browser pelo
+  // protocolo, e o tempo real que passa entre elas avanca a hora da pagina.
+  //
+  // Com os dois recebendo o MESMO instante, o teste vivia de a diferenca ser
+  // zero, o que depende da maquina estar livre. Em 02/09/2026 ele caiu numa
+  // suite completa com exatamente essa mensagem, e o experimento confirmou:
+  // com 300ms injetados entre as duas chamadas, o braco antigo falha sempre e
+  // este passa sempre.
+  //
+  // O minuto de folga e arbitrario e nao e medido por ninguem — ele so precisa
+  // ser maior que qualquer atraso de protocolo. Nada acontece nesse salto: as
+  // duas chamadas rodam ANTES do `goto`, entao nao ha temporizador da pagina
+  // para disparar no caminho.
   const INSTANTE = new Date('2026-08-29T12:00:00Z');
   await page.clock.install({ time: INSTANTE });
-  await page.clock.pauseAt(INSTANTE);
+  await page.clock.pauseAt(new Date(INSTANTE.getTime() + 60_000));
 
   // `commit` porque as imagens ficam pendentes de propósito: o evento `load`
   // da página nunca chegaria, e não é dele que este teste trata.

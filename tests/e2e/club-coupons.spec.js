@@ -117,6 +117,48 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   await expect(aplicavel.locator('h3')).toHaveCount(0);
 });
 
+test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ page }) => {
+  // Duas decisões do fluxo de cupons, guardadas juntas porque as duas dizem a
+  // mesma coisa: cupom não se usa fora do checkout, e o Clube É a lista.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+
+  // A FAIXA DA HOME DIVULGA. Ela lê `menu.coupons` (PublicCouponResponse), que
+  // não tem `state` — o backend nunca julgou aquele cupom contra esta pessoa —
+  // e do lado da Home a sacola quase sempre está vazia, que é o caso em que
+  // aplicar armava um cupom sem preview nenhum.
+  await expect(page.locator('#couponRail .coupon-card').first()).toBeVisible();
+  await expect(
+    page.locator('#couponRail .coupon-use-btn'),
+    'a faixa da Home não pode oferecer usar um cupom que ninguém avaliou'
+  ).toHaveCount(0);
+
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+  await expect(page.locator('.club-available-coupon-card').first()).toBeVisible();
+
+  // A LISTA VEM ANTES DO SALDO. Comparação por posição no documento, e não por
+  // coordenada: `compareDocumentPosition` responde sobre a ORDEM, que é o que
+  // a decisão diz, sem depender de a tela ter assentado num pixel.
+  const cuponsAntesDoSaldo = await page.evaluate(() => {
+    const cupons = document.querySelector('.club-coupons-section');
+    const saldo = document.querySelector('.club-cashback-panel');
+    if (!cupons || !saldo) return null;
+    // Node.DOCUMENT_POSITION_FOLLOWING = 4: o saldo vem DEPOIS dos cupons.
+    return (cupons.compareDocumentPosition(saldo) & 4) === 4;
+  });
+  expect(cuponsAntesDoSaldo, 'o saldo de cashback voltou para o topo do Clube').toBe(true);
+
+  // E o saldo continua ALCANÇÁVEL: o extrato só tem esta porta, e apagar o
+  // cartão deixaria aquela tela sem entrada nenhuma.
+  await expect(page.locator('.club-cashback-icon')).toHaveCount(1);
+});
+
 test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page }) => {
   // O par do teste acima. Os dois juntos provam que quem decide o rótulo é o
   // estado do backend MAIS a sacola — e que a sacola entra por acessor, não

@@ -237,7 +237,7 @@ Varridos `tests/` e `scripts/`. O que existe, e o veredito de cada um:
 | `csp:40,42` | `Date.now()+15_000` como teto de um laço de amostragem | fica: teto de laço, não afirmação |
 | `profile-order-tracking:26` | `created_at = agora − 2 min` | fica: relativo a agora, e `profOrderRelativeDate` (`profile-screen:153`) não tem ramo "hoje/ontem" — não há penhasco de meia-noite |
 | `assistant-voice-session:35` | `expires_at` relativo a agora | fica: relativo |
-| `tenant-theme:198` | `new Date('2026-08-29T12:00:00Z')` com `clock.install` + `pauseAt` | fica: relógio congelado, já corrigido em rodada anterior |
+| `tenant-theme:198` | `new Date('2026-08-29T12:00:00Z')` com `clock.install` + `pauseAt` | **EU CLASSIFIQUEI ERRADO. Corrigido depois — ver §3.6** |
 | `order-tracking.test:173,177` e `service-caches.test:18` | `vi.setSystemTime` | fica: relógio injetado, que é o certo |
 | `restaurant-auth-flow:185` | validade de data de nascimento contra `new Date()` | fica: é a regra de produto (não aceitar nascimento futuro), e as fixtures usam `1990-04-12` |
 | `cashback-statement.js:7` | `toLocaleDateString('pt-BR')` converte para o fuso LOCAL | fica: nenhum teste afirma a data, e mostrar a data local é o comportamento certo. **Anotado**: num fuso a leste de UTC uma transação de madrugada mostra o dia seguinte |
@@ -545,3 +545,98 @@ a função antiga reinjetada (`Expected: 0 / Received: 1`).
 
 **Nenhum número de dinheiro mudou.** O que mudou é QUANDO um cupom pode ser
 armado — e a mudança só REMOVE um caminho que armava sem preview.
+
+### 3.6 O que a varredura do item 3 DEIXOU PASSAR, e quem achou foi a suíte
+
+Na varredura eu olhei `tenant-theme:198` — `const INSTANTE =
+new Date('2026-08-29T12:00:00Z')` com `clock.install` + `pauseAt` — e escrevi
+"fica: relógio congelado, já corrigido em rodada anterior". **Errado.**
+
+Ele caiu numa suíte completa em 02/09/2026 com
+
+    Error: clock.pauseAt: Error: Cannot fast-forward to the past
+
+A causa, e ela é exatamente a classe que o item 3 caçava: **`pauseAt` só anda
+para a frente, e entre `install()` e `pauseAt()` o relógio falso AINDA ANDA.**
+São duas idas ao browser pelo protocolo, e o tempo real que passa entre elas
+avança a hora da página. Com os dois recebendo o MESMO instante, o teste vivia
+de a diferença ser zero — o que depende de a máquina estar livre.
+
+O comentário do próprio arquivo já dizia a metade certa ("uma data anterior a
+de instalacao e erro"), e foi ela que me fez concluir que estava resolvido. A
+metade que faltava é que a hora de instalação NÃO fica parada.
+
+Dois braços, com 300 ms injetados entre as duas chamadas: o braço antigo falha
+**sempre** com a mensagem idêntica à da suíte; o novo (`pauseAt` em
+`INSTANTE + 60 s`) passa **sempre**. O minuto de folga não é medido por
+ninguém — só precisa ser maior que qualquer atraso de protocolo — e nada
+dispara no salto, porque as duas chamadas acontecem antes do `goto`.
+
+**A lição, e ela é sobre a varredura, não sobre o teste:** eu li o comentário
+do arquivo em vez de ler a semântica da API. Um comentário que explica metade
+de uma armadilha é mais perigoso que nenhum — ele encerra a investigação.
+
+### 3.7 Uma assinatura NOVA de família D (o cano quebrou)
+
+Na mesma noite, outra suíte completa deu **um** vermelho em
+`maps-autocomplete:143`:
+
+    Error: page.goto: net::ERR_NO_BUFFER_SPACE
+
+em **1,4 s**, no `goto`. Não é asserção e não é timeout: é o Windows sem buffer
+de socket depois de horas de Playwright — `netstat -an | grep -c TIME_WAIT`
+respondeu **676** no instante seguinte. O arquivo passou 7/7 isolado logo
+depois.
+
+É família **D** da §11 da skill, com uma assinatura que a tabela dela ainda não
+tinha. Vai para a skill.
+
+### 5.C CONSTRUÍDO (em parte) — a faixa da Home
+
+**Feito:** o botão "Usar cupom" saiu do card do trilho da Home, e a divisória
+pontilhada com ele (ela existia para separar o corpo do card do botão). O
+trilho lê `menu.coupons` = `PublicCouponResponse`, **sem `state`** — o backend
+nunca julgou aquele cupom contra esta pessoa — e do lado da Home a sacola quase
+sempre está vazia, que é justamente o caso em que aplicar armava um cupom sem
+preview. O prompt lista esse botão como FORA, e ele é.
+
+**NÃO feito, e o motivo é técnico:** "a faixa ... leva ao cardápio", isto é o
+card deixar de abrir a folha de detalhe. O card da Home é **o único caminho
+testado** do repasse miniatura→foto grande (`coupon-detail-image.spec.js`: a
+miniatura de 168px do trilho segura o lugar até a variante ≥414 terminar). O
+card do Clube tem o mesmo gancho no código (`readyCardImage`), mas a imagem
+dele é `src` cru, sem variante — retargetar o teste não preservaria o assunto.
+
+Mudar o destino agora apaga uma funcionalidade real e o único teste dela, **sem
+substituto**, porque a superfície que passa a ser o lugar de ler regras é a tela
+"usar cupom" (5.E), que não existe ainda. A ordem certa é: construir a tela,
+mover a leitura para lá, e só então virar o destino do card.
+
+### 5.D CONSTRUÍDO — o Clube abre pelos cupons
+
+A lista de cupons subiu para o topo e o cartão de saldo de cashback desceu para
+depois dela. O Clube **é** a lista — é para isso que a pessoa entra — e o saldo
+empurrava os cupons para baixo da dobra num aparelho de 390px.
+
+**O cartão não foi apagado, e isso é deliberado.** O extrato de cashback só tem
+uma porta (`openCashbackStatement`, no ícone desse cartão); apagá-lo deixaria a
+tela do extrato sem entrada nenhuma. A decisão escrita era "sem saldo de
+cashback **no topo**", e é isso que está feito. Guardado por teste, inclusive a
+existência do ícone.
+
+"Sem cupom aplicado" no Clube: **não havia nada a remover** — conferido, a tela
+nunca teve indicação de cupom aplicado.
+
+### Verificação do estágio C+D
+
+`lint 78 problems (0 errors)` · `test 332 passed` · `test:e2e 306 passed ·
+3 skipped`, exit 0, 4,4 min, **3 acima de 10 s**.
+
+Vermelhos vistos, os dois por injeção: o botão de volta na Home
+(`Expected: 0 / Received: 3`) e a ordem invertida no Clube
+(`o saldo de cashback voltou para o topo do Clube: Expected true, Received
+false`).
+
+**Duas execuções foram descartadas no caminho, e as duas por motivo escrito:**
+uma com `ERR_NO_BUFFER_SPACE` (família D, §3.7) e uma com o
+`clock.pauseAt` (defeito real, corrigido — §3.6).

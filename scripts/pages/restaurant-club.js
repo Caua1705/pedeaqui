@@ -218,9 +218,25 @@
       const cashbackText = clubData.cashback_status === 'error' && cashback == null
         ? 'R$ --,--'
         : fmtClubCurrency(cashback ?? 0);
+      // A ORDEM DA TELA MUDOU EM 02/09/2026: os cupons vêm primeiro.
+      //
+      // O Clube É a lista de cupons — é para isso que a pessoa entra nele, e a
+      // decisão do fluxo é que essa lista, com as etiquetas e as regras, é o
+      // conteúdo da tela. O saldo de cashback ocupava o topo e empurrava os
+      // cupons para baixo da dobra num aparelho de 390px.
+      //
+      // Ele NÃO foi apagado, e isso é deliberado: o extrato de cashback só é
+      // alcançável pelo ícone deste cartão (`openCashbackStatement`), e apagar
+      // o cartão deixaria a tela do extrato sem nenhuma porta. Ele desceu para
+      // depois da lista. A decisão escrita era "sem saldo de cashback NO TOPO".
       body.innerHTML = `
         <section class="club-page" aria-label="Clube">
           ${buildClubLocationWidget()}
+          <div class="club-section-divider" aria-hidden="true"></div>
+          <section class="club-coupons-section" aria-label="Meus cupons">
+            <h2 class="club-coupons-title">Meus cupons</h2>
+            ${renderClubCoupons(clubData)}
+          </section>
           <div class="club-section-divider" aria-hidden="true"></div>
           <section class="club-cashback-panel${hasCashbackBalance ? '' : ' club-cashback-panel--no-balance'}" aria-label="Saldo de cashback">
             <div class="club-cashback-card">
@@ -236,11 +252,6 @@
                  cashback = 0, então oferecer o resgate criaria divergência entre o
                  total exibido e o cobrado. Saldo e extrato seguem visíveis.
                  Reativar junto com o suporte de resgate no backend. -->
-          </section>
-          <div class="club-section-divider" aria-hidden="true"></div>
-          <section class="club-coupons-section" aria-label="Meus cupons">
-            <h2 class="club-coupons-title">Meus cupons</h2>
-            ${renderClubCoupons(clubData)}
           </section>
         </section>`;
       body.querySelectorAll('.club-available-coupon-card').forEach(card => {

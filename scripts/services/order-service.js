@@ -123,6 +123,32 @@
     );
   }
 
+  /**
+   * O MESMO cancelamento, pela porta do cliente LOGADO.
+   *
+   * Publicada pelo backend em 02/09/2026, depois de esta limitação ter sido
+   * escrita como pedido: o `tracking_token` só vive no `localStorage` do
+   * aparelho que fez o pedido, então quem pedia pelo celular e abria o app no
+   * computador via o pedido em `accepted` e não tinha como desistir.
+   *
+   * Aqui o vínculo sai de `orders.customer_id` e quem autoriza é o Bearer —
+   * por isso, ao contrário de `cancelOrder`, esta manda `authOptions()`.
+   *
+   * As duas convivem de propósito: a do token é a única saída do convidado.
+   */
+  async function cancelCustomerOrder(orderId, options = {}) {
+    const reason = String(options.reason ?? '').trim();
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.cancelCustomerOrder(orderId),
+      {
+        method: 'POST',
+        ...(reason ? { body: JSON.stringify({ reason: reason.slice(0, 150) }) } : {}),
+        timeout: 15000,
+        ...authOptions()
+      }
+    );
+  }
+
   async function getCustomerOrders() {
     const result = await window.PedeAquiCustomerAuth?.getCustomerOrders?.();
     return Array.isArray(result) ? result : (result?.orders || result?.items || result?.data || []);
@@ -141,6 +167,7 @@
     trackOrder,
     startOrderPayment,
     cancelOrder,
+    cancelCustomerOrder,
     getCustomerOrders,
     getCustomerOrder
   };

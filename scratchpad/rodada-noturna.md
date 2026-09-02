@@ -2033,3 +2033,57 @@ forma pelo `validateOrderPayload`.
 recuperação de senha — e é o portão que o próprio app usa para barrar o
 visitante ("Entre ou cadastre-se") antes de deixá-lo pagar. Sete rotas de
 escrita, nenhuma exercitada.
+
+---
+
+# Q. O backend entregou o §B.5 no mesmo dia
+
+O `api-contract.test.js` ficou vermelho de novo por conta própria — e desta vez
+com uma rota **nova**:
+
+    POST /customers/me/orders/{order_id}/cancel
+
+É exatamente a alternativa que a §B.5 pedia: cancelamento por `order_id`,
+autorizado pelo **Bearer**, sem o `tracking_token` aparecer em resposta nenhuma.
+Mesma janela (`pending`/`accepted`), mesmo 409, mesmo corpo opcional. O
+`@description` dela cita o problema com as palavras do pedido: *"O
+`tracking_token` so vive no `localStorage` do aparelho que fez o pedido — quem
+pediu pelo celular e abriu o app no computador nao alcancava o proprio pedido."*
+
+## Q.1 O que mudou no front
+
+Ligada em `orderService.cancelCustomerOrder(orderId)` — e esta **manda** o
+Bearer, ao contrário da irmã.
+
+**O Perfil passou a usar SÓ a porta do Bearer.** A primeira versão escolhia
+entre as duas, e isso estava errado: `openProfSub('pedidos')` **exige login**,
+então quem chega ao detalhe do pedido sempre tem conta. O ramo do token era um
+caminho que nunca se toma — código que mente para quem lê, que é o que esta
+rodada passou removendo.
+
+A porta do `tracking_token` continua viva em `orderService.cancelOrder`, com os
+seus oito unitários: ela é a única saída do CONVIDADO, e serve à tela de
+acompanhamento que ainda não existe.
+
+## Q.2 O que os testes cobram agora
+
+- **Teste novo**: cliente logado cancela **sem `tracking_token` nenhum** no
+  aparelho — o botão aparece e a chamada vai para `/customers/me/orders/{id}/cancel`
+  **com** Authorization.
+- **Teste removido**: "sem o token deste aparelho o botão não aparece". Ele
+  afirmava a limitação, e a limitação acabou. Mantê-lo seria travar o defeito.
+- O teste principal passou a afirmar a porta do Bearer, com o motivo escrito.
+- A entrada local de `orderTracking` continua sendo atualizada quando existe —
+  não para autorizar, mas porque é ela que a **barra de pagamento pendente** da
+  Home lê; sem isso a barra seguiria oferecendo pagar um pedido cancelado.
+
+## Q.3 O ciclo que isto fechou, e o que ele mostra
+
+    a varredura das escritas  →  achou a rota de cancelamento esquecida
+    o cancelamento construído →  achou a limitação do tracking_token
+    a limitação escrita na §B →  o backend publicou a rota por Bearer
+    a rota nova               →  o api-contract acusou no minuto seguinte
+    o ramo do token           →  virou código morto, e saiu
+
+**Nenhum passo desse ciclo foi planejado.** O que o produziu foi ter um portão
+que grita quando o contrato anda, e escrever a limitação em vez de contorná-la.

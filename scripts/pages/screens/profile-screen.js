@@ -315,23 +315,40 @@
   //     gravado quando ESTE aparelho criou o pedido (`state/order-tracking.js`).
   //     Um pedido feito no celular não pode ser cancelado pelo computador.
   //
-  //  A segunda é uma limitação real e está registrada como pedido de backend:
-  //  publicar o `tracking_token` no detalhe do pedido do cliente logado, ou uma
-  //  rota de cancelamento por `order_id` que autorize pelo Bearer. Sem uma das
-  //  duas, este botão só aparece no aparelho que fez o pedido.
+  //  A segunda condição FOI RESOLVIDA no mesmo dia, e vale escrever como:
+  //  a primeira versão desta tela procurava o `tracking_token` no
+  //  `localStorage`, porque ele era a única autorização existente — e por isso
+  //  o botão só aparecia no aparelho que fez o pedido. Isso virou pedido de
+  //  backend, e o backend publicou
+  //  `POST /customers/me/orders/{order_id}/cancel`, que autoriza pelo Bearer.
+  //
+  //  **Aqui usamos SÓ a porta do Bearer, e o motivo é que a outra é
+  //  inalcançável desta tela:** `openProfSub('pedidos')` exige login
+  //  (`:566`), então quem chega ao detalhe do pedido SEMPRE tem conta. Um ramo
+  //  que escolhesse o token quando ele existisse seria um caminho que nunca se
+  //  toma — código que mente para quem lê.
+  //
+  //  A porta do `tracking_token` continua viva em `orderService.cancelOrder`,
+  //  com unitários próprios: ela é a única saída do CONVIDADO, e serve à tela
+  //  de acompanhamento que ainda não existe.
   // ==========================================================================
   const PROF_ORDER_CANCELAVEL = new Set(['pending', 'accepted']);
 
-  /** O token deste pedido, se ESTE aparelho o criou. */
-  function profOrderTrackingToken(order) {
-    const id = String(order?.id || '').trim();
-    if (!id) return '';
-    const entradas = window.RapidexOrderTracking?.list?.(getRestaurantSlug()) || [];
-    return entradas.find(entrada => String(entrada.order_id || '') === id)?.tracking_token || '';
-  }
-
+  /**
+   * Cancelavel = dentro da janela E com alguma porta para autorizar.
+   *
+   * SÃO DUAS PORTAS, e a segunda chegou em 02/09/2026: o cliente LOGADO
+   * cancela por `order_id` com o Bearer, de qualquer aparelho; o convidado
+   * continua cancelando pelo `tracking_token`, que só existe no aparelho que
+   * fez o pedido.
+   *
+   * Até a segunda existir, quem pedia pelo celular e abria o app no computador
+   * via o pedido em `accepted` e não tinha como desistir — a única saída era
+   * ligar para o restaurante, que é o custo que esta tela existe para eliminar.
+   */
   function profOrderCancelavel(order, status) {
-    return PROF_ORDER_CANCELAVEL.has(status.status) && Boolean(profOrderTrackingToken(order));
+    if (!PROF_ORDER_CANCELAVEL.has(status.status)) return false;
+    return Boolean(order?.id && window.PedeAquiCustomerAuth?.getToken?.());
   }
 
   /**
@@ -394,21 +411,25 @@
 
   async function confirmOrderCancel() {
     const order = profOrderCancelAlvo;
-    const token = profOrderTrackingToken(order);
     const botao = $('orderCancelGo');
-    if (!order || !token) {
-      profOrderCancelErro('Não foi possível identificar este pedido neste aparelho.');
+    if (!order?.id || !window.PedeAquiCustomerAuth?.getToken?.()) {
+      profOrderCancelErro('Entre na sua conta para cancelar este pedido.');
       return;
     }
     if (botao) { botao.disabled = true; botao.textContent = 'Cancelando...'; }
     profOrderCancelErro('');
     try {
-      const cancelado = await window.PedeAquiOrderService.cancelOrder(getRestaurantSlug(), token);
+      const cancelado = await window.PedeAquiOrderService.cancelCustomerOrder(order.id);
       // A resposta É o pedido atualizado (OrderDetailResponse). Redesenhar com
       // ela evita uma segunda ida ao servidor só para descobrir o que já veio.
       const atualizado = { ...order, ...(cancelado || {}), status: cancelado?.status || 'cancelled' };
       profOrderCancelAlvo = atualizado;
-      window.RapidexOrderTracking?.update?.(getRestaurantSlug(), token, { status: atualizado.status });
+      // Se ESTE aparelho fez o pedido, a entrada local sabe o status antigo —
+      // sem isto a barra de "pagamento pendente" da Home continuaria oferecendo
+      // pagar um pedido que acabou de ser cancelado.
+      const local = (window.RapidexOrderTracking?.list?.(getRestaurantSlug()) || [])
+        .find(entrada => String(entrada.order_id || '') === String(order.id));
+      if (local) window.RapidexOrderTracking?.update?.(getRestaurantSlug(), local.tracking_token, { status: atualizado.status });
       closeOrderCancelConfirm();
       renderProfOrderDetails(atualizado);
       // A LISTA tambem: sem isto o cartão de trás continua dizendo "Aceito", e

@@ -14,10 +14,19 @@ import { mockApi, seedPickupSession, RESTAURANT_URL, SLUG, ORDERS, orderDetail, 
 //     `preparing` em diante responde 409. Um botão fora da janela é a oferta
 //     que falha depois — o mesmo defeito que o fluxo do cupom passou a rodada
 //     consertando.
-//  2. **O TOKEN.** Quem autoriza é o `tracking_token`, e ele NÃO vem no
-//     `OrderDetailResponse`: só existe no localStorage do aparelho que criou o
-//     pedido. Sem ele o botão não aparece, porque não haveria com o que
-//     cancelar.
+//  2. **A AUTORIZAÇÃO.** São DUAS portas, e a segunda chegou no mesmo dia.
+//     A primeira versão desta tela usava o `tracking_token`, que só existe no
+//     localStorage do aparelho que fez o pedido — quem pedia pelo celular e
+//     abria no computador via o pedido em `accepted` sem poder desistir. Isso
+//     virou pedido de backend, e o backend publicou
+//     `POST /customers/me/orders/{order_id}/cancel`, autorizada pelo Bearer.
+//
+//     **O Perfil usa SÓ a do Bearer**, porque a outra é inalcançável daqui:
+//     `openProfSub('pedidos')` exige login, então quem chega ao detalhe sempre
+//     tem conta. Um ramo que escolhesse o token seria caminho que nunca se
+//     toma. A porta do token segue viva em `orderService.cancelOrder`, com
+//     unitários — ela é a saída do CONVIDADO, para a tela de acompanhamento
+//     que ainda não existe.
 //
 //  ## A folha de confirmação diz o que acontece com o DINHEIRO
 //
@@ -32,6 +41,10 @@ const json = (body, status = 200) => ({
   body: JSON.stringify(body)
 });
 
+// O token local ainda é semeado nos testes: ele NÃO autoriza mais o
+// cancelamento (quem faz isso é o Bearer), mas é o que a barra de pagamento
+// pendente da Home lê — e o app precisa atualizá-lo ao cancelar, senão ela
+// segue oferecendo pagar um pedido que acabou de morrer.
 const TOKEN = 'trk_e2e_cancelamento_0000';
 const PEDIDO_BASE = ORDERS[0];
 
@@ -78,8 +91,8 @@ async function prepararPedidoCancelavel(page, {
   await page.route(/\/customers\/me\/orders(\?|$)/, (route) =>
     route.fulfill(json([{ ...PEDIDO_BASE, status }]))
   );
-  await page.route(/\/customers\/me\/orders\/[^/?]+/, (route) => route.fulfill(json(pedido)));
-  await page.route(/\/orders\/track\/[^/]+\/cancel$/, async (route) => {
+  await page.route(/\/customers\/me\/orders\/[^/?]+$/, (route) => route.fulfill(json(pedido)));
+  await page.route(/\/customers\/me\/orders\/[^/?]+\/cancel$/, async (route) => {
     cancelamentos.push({
       url: route.request().url(),
       headers: route.request().headers(),
@@ -122,10 +135,13 @@ test('na janela e com o token, a tela oferece cancelar — e só depois de confi
   await page.locator('#orderCancelGo').click();
   await expect.poll(() => cancelamentos.length).toBe(1);
 
-  // O token do PATH é quem autoriza, e o Bearer NÃO vai junto: a rota não pede,
-  // e mandar um header que a rota não pede é vazar credencial de graça.
-  expect(cancelamentos[0].url).toContain(`/orders/track/${TOKEN}/cancel`);
-  expect(cancelamentos[0].headers.authorization, 'a rota não pede Bearer').toBeUndefined();
+  // QUEM AUTORIZA AQUI É O BEARER, e não o `tracking_token`: o Perfil exige
+  // login para abrir o detalhe do pedido, então um ramo que escolhesse o token
+  // seria um caminho que nunca se toma. A porta do token continua viva no
+  // serviço, com unitários próprios — ela é a saída do CONVIDADO.
+  expect(cancelamentos[0].url).toContain('/customers/me/orders/');
+  expect(cancelamentos[0].url).toContain('/cancel');
+  expect(cancelamentos[0].headers.authorization, 'esta rota autoriza pelo Bearer').toBeTruthy();
   // Sem motivo digitado, sem corpo.
   expect(cancelamentos[0].body).toBeFalsy();
 
@@ -175,21 +191,32 @@ test('fora da janela o botão NEM APARECE — não se oferece o que vai falhar',
   await expect(botaoCancelar(page), '`preparing` está fora da janela do backend').toHaveCount(0);
 });
 
-test('sem o token deste aparelho o botão não aparece, mesmo na janela', async ({ page }) => {
-  // O token não vem no OrderDetailResponse: ele é do aparelho que fez o pedido.
-  // Sem ele não há com o que autorizar, e um botão que erra 404 é pior que
-  // botão nenhum.
+test('cliente LOGADO cancela SEM o token deste aparelho, pela porta do Bearer', async ({ page }) => {
+  // A limitação que existia até 02/09/2026 e que virou pedido de backend: o
+  // `tracking_token` só vive no localStorage do aparelho que fez o pedido,
+  // então quem pedia pelo celular e abria o app no computador via o pedido em
+  // `accepted` e não tinha como desistir. A única saída era ligar para o
+  // restaurante — o custo que esta tela existe para eliminar.
+  //
+  // O backend publicou `POST /customers/me/orders/{order_id}/cancel`, que
+  // autoriza pelo Bearer. Este teste roda SEM gravar `tracking_token` nenhum:
+  // o botão tem de aparecer e funcionar assim mesmo.
   await seedPickupSession(page);
   await page.addInitScript(() => {
     localStorage.setItem('rapidex.customer.token', 'e2e-cancel-token');
   });
   await mockApi(page);
+
+  const pedido = { ...orderDetail(PEDIDO_BASE), status: 'accepted' };
+  const porConta = [];
   await page.route(/\/customers\/me\/orders(\?|$)/, (route) =>
     route.fulfill(json([{ ...PEDIDO_BASE, status: 'accepted' }]))
   );
-  await page.route(/\/customers\/me\/orders\/[^/?]+/, (route) =>
-    route.fulfill(json({ ...orderDetail(PEDIDO_BASE), status: 'accepted' }))
-  );
+  await page.route(/\/customers\/me\/orders\/[^/?]+\/cancel$/, (route) => {
+    porConta.push({ url: route.request().url(), auth: route.request().headers().authorization });
+    return route.fulfill(json({ ...pedido, status: 'cancelled' }));
+  });
+  await page.route(/\/customers\/me\/orders\/[^/?]+$/, (route) => route.fulfill(json(pedido)));
 
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);
@@ -199,7 +226,20 @@ test('sem o token deste aparelho o botão não aparece, mesmo na janela', async 
   await page.evaluate(() => window.RapidexActions.resolve('openProfOrderDetails')(0));
   await expect(page.locator('#profOrderDetail')).toHaveClass(/active/);
 
-  await expect(botaoCancelar(page)).toHaveCount(0);
+  await expect(
+    botaoCancelar(page),
+    'sem token local, a porta do Bearer sustenta o botão'
+  ).toBeVisible();
+  await botaoCancelar(page).click();
+  await page.locator('#orderCancelGo').click();
+  await expect.poll(() => porConta.length).toBe(1);
+
+  // Aqui o Bearer VAI — ao contrário da rota do token, esta o exige.
+  expect(porConta[0].url).toContain('/customers/me/orders/');
+  expect(porConta[0].url).toContain('/cancel');
+  expect(porConta[0].auth, 'esta rota autoriza pelo Bearer').toBeTruthy();
+
+  await expect(page.locator('#profOrderDetailBody')).toContainText('Pedido recusado');
 });
 
 test('409 diz que o restaurante já começou, e NÃO oferece tentar de novo', async ({ page }) => {

@@ -90,6 +90,19 @@
     cancelOrder: (restaurantSlug, trackingToken) =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders/track/${routeSlug(trackingToken)}/cancel`,
 
+    // A CONTRAPARTIDA AUTENTICADA da de cima, publicada pelo backend em
+    // 02/09/2026 — o cliente logado cancelando de QUALQUER aparelho.
+    //
+    // O vínculo aqui sai de `orders.customer_id`, então não há token nenhum
+    // para guardar nem para vazar. A do `tracking_token` continua existindo e
+    // NÃO é redundância: ela é a única saída do convidado, que não tem conta
+    // para autenticar.
+    //
+    // Mesma janela (`pending`/`accepted`), mesmo 409 a partir de `preparing`,
+    // mesmo corpo opcional. O que muda é quem autoriza.
+    cancelCustomerOrder: orderId =>
+      `/customers/me/orders/${routeSlug(orderId)}/cancel`,
+
     // ---- Assistente por texto ----
     //
     // Estas duas estavam escritas LITERALMENTE dentro do

@@ -155,10 +155,20 @@ jobs:
       # O `pull` falhava com "Could not retrieve Project Settings" com os tres
       # secrets corretos: o CLI 59.x ignora o VERCEL_ORG_ID do ambiente quando o
       # projeto esta num TIME, procura o projeto na conta pessoal do dono do
-      # token, e la ele nao existe. `build` e `deploy` leem os dois IDs do
-      # ambiente normalmente — por isso o caminho direto funciona onde o `pull`
-      # nao funciona. `--scope` vai EXPLICITO nos dois, com o proprio
-      # VERCEL_ORG_ID, para o CLI nao ter de deduzir o time a partir do token.
+      # token, e la ele nao existe.
+      #
+      # Tirar o `pull` NAO BASTOU: o `vercel build` tambem exige o
+      # `.vercel/project.json`, e parava com "No Project Settings found
+      # locally. Run `vercel pull --yes` to retrieve them." Mas esse arquivo e
+      # so o par de IDs que ja esta nos secrets — entao o job o ESCREVE, em vez
+      # de pedir a Vercel para baixa-lo. Com ele no lugar, `build` e `deploy`
+      # acham o projeto no time sem `--scope`: o orgId sai do arquivo.
+      #
+      # O arquivo nao esta e nao pode estar no repositorio — `.vercel` e
+      # gitignored e os dois IDs so existem em tempo de execucao. Se um dia o
+      # `--scope` voltar a ser preciso, o valor e o SLUG do time
+      # (cauas-projects-3c9f6aea), e nao o VERCEL_ORG_ID: passar o ID nesse
+      # papel foi justamente o que ja falhou aqui.
       #
       # O QUE O `pull` TRAZIA E AGORA NAO VEM: as variaveis de ambiente de
       # producao do projeto na Vercel. Este build le TRES, todas em tempo de
@@ -189,5 +199,9 @@ jobs:
           if [ -z "$VITE_MAPS_KEY" ]; then
             echo "::warning::Sem o secret VITE_MAPS_KEY: o bundle vai subir com a chave do Google Maps VAZIA e o mapa do endereco nao carrega. Copie o valor de Vercel > Project > Settings > Environment Variables > Production."
           fi
-          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID"
-          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID"
+          mkdir -p .vercel
+          cat > .vercel/project.json <<EOF
+          {"projectId":"$VERCEL_PROJECT_ID","orgId":"$VERCEL_ORG_ID"}
+          EOF
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -213,6 +213,34 @@
     return window.PedeAquiApi.previewCoupon(options);
   }
 
+  /**
+   * Resgatar um cupom pelo CÓDIGO — a porta de quem recebeu um código de fora.
+   *
+   * RESGATE NÃO É USO, e o front não pode borrar essa linha: o backend grava em
+   * `coupon_claims` (sem pedido, sem valor) e o teto da campanha continua
+   * contando `coupon_redemptions`. Quem aplica é o checkout.
+   *
+   * A resposta vem no MESMO formato da lista, então ela passa pelo MESMO
+   * filtro: sem `id` não há como abrir o detalhe, e com `state` desconhecido
+   * não há botão que faça sentido. Um cupom resgatado que não passe nesse
+   * filtro é um cupom que a tela não consegue desenhar — devolver `null` aqui
+   * é melhor que empurrar uma linha quebrada para dentro da lista.
+   *
+   * ERRO NÃO É ENGOLIDO. Código inexistente, cupom de outro segmento ou fora da
+   * validade voltam como falha HTTP, e quem chama precisa da mensagem para
+   * dizer à pessoa o que aconteceu — por isso este método deixa a exceção subir
+   * em vez de devolver `null` para tudo. A única coisa que ele resolve é a
+   * forma da resposta.
+   */
+  async function claimCoupon({ restaurantSlug, code } = {}) {
+    const limpo = String(code ?? '').trim();
+    if (!limpo) return null;
+    const response = await window.PedeAquiApi.claimCoupon({ restaurantSlug, code: limpo });
+    const payload = response?.data ?? response ?? {};
+    const coupon = payload.coupon ?? payload;
+    return coupon?.id && COUPON_STATES.has(coupon?.state) ? coupon : null;
+  }
+
   async function getClubData(restaurantSlug, context = {}) {
     const [cashback, coupons] = await Promise.all([
       getCashback(),
@@ -243,6 +271,7 @@
     getTransactions,
     getCustomerCoupons,
     previewCoupon,
+    claimCoupon,
     getClubData,
     restaurantCashbackBalance
   };

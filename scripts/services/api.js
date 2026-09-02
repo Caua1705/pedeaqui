@@ -58,12 +58,34 @@
     });
   }
 
+  /**
+   * Resgata um cupom pelo CÓDIGO. Sem sacola, sem valores.
+   *
+   * `CouponClaimRequest` tem UM campo (`code`) e a resposta vem no MESMO
+   * formato da lista (`CouponClaimResponse.coupon` é um CustomerCouponResponse),
+   * para o app inserir o card resgatado sem uma segunda chamada — e para não
+   * existirem duas descrições de cupom que precisem concordar.
+   *
+   * O `state` que volta é calculado sobre uma sacola VAZIA, porque o resgate
+   * acontece fora do checkout: um cupom com pedido mínimo volta
+   * `missing_amount` com o mínimo inteiro faltando. Isso é o certo — ele foi
+   * resgatado, ele é do cliente, e ainda não cabe.
+   */
+  async function claimCoupon({ restaurantSlug, code } = {}) {
+    return window.PedeAquiApiClient.request(routes().claimCoupon(restaurantSlug), {
+      method: 'POST',
+      body: JSON.stringify({ code: String(code ?? '').trim() }),
+      ...authOptions()
+    });
+  }
+
   // A busca de pedido por telefone foi REMOVIDA da API. O acompanhamento passa
   // pelo tracking_token (window.PedeAquiOrderService.trackOrder) e o histórico
   // do cliente logado por /customers/me/orders — não há substituto aqui.
 
   window.PedeAquiApi = {
     getCustomerCoupons,
-    previewCoupon
+    previewCoupon,
+    claimCoupon
   };
 })();

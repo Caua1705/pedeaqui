@@ -640,3 +640,63 @@ false`).
 **Duas execuções foram descartadas no caminho, e as duas por motivo escrito:**
 uma com `ERR_NO_BUFFER_SPACE` (família D, §3.7) e uma com o
 `clock.pauseAt` (defeito real, corrigido — §3.6).
+
+### 5.E CONSTRUÍDO — o campo único de código, no checkout
+
+**Duas coisas, e a primeira é uma rota que o backend tinha e o front nunca
+chamou.**
+
+**`POST /coupons/claim` ligado.** `api-routes.claimCoupon`, `api.claimCoupon` e
+`clubService.claimCoupon`, com 6 unitários. Quem recebia um código de fora —
+panfleto, mensagem, embalagem — não tinha onde digitá-lo. O serviço:
+
+- apara o código (colar de uma mensagem traz espaço em volta com frequência);
+- código vazio não vira requisição;
+- passa o cupom devolvido pelo **mesmo filtro da lista** (sem `id` não há
+  detalhe, `state` desconhecido não tem botão que faça sentido);
+- **deixa a recusa do backend SUBIR.** Um `null` para tudo faria a tela
+  responder a um código correto e a um errado com a mesma cara.
+
+**O campo do checkout**, na sacola, logo acima de "Valores". Ele NÃO calcula e
+NÃO julga: monta `{ code }` e passa pelas MESMAS três portas da folha de
+detalhe (`armSelectedCoupon` → `previewSelectedCoupon` → `restoreSelectedCoupon`
+na recusa).
+
+**Nada no caminho do dinheiro precisou mudar para ele existir:**
+`CouponPreviewRequest` já aceita `coupon_code` no lugar de `coupon_id`, e
+`buildOrderPayload` já manda `coupon_code` quando não há id
+(`order-payload.js:132`). `cartTotals()` não foi tocado.
+
+Sem sacola a seção **sai da tela** (não fica desabilitada — um campo cinza
+convida a tentar). É a mesma regra do decisor do botão.
+
+#### O defeito que o teste novo achou no código VELHO
+
+`previewSelectedCoupon({ silent: true })` não pintava a mensagem, e o campo lia
+o motivo de uma variável. Só que o ramo `valid: false` chama `updateCartUI()`,
+que **chama `previewSelectedCoupon()` de novo** (o cupom ainda está armado
+nesse instante) — e a reentrada zerava a frase no topo, antes de quem pediu em
+silêncio conseguir lê-la. O campo exibia "Não foi possível aplicar este cupom"
+no lugar de *"Este cupom é válido apenas na primeira compra"*.
+
+A correção não é uma guarda de reentrância: o motivo passa a morrer em
+`armSelectedCoupon()`, que é o instante em que uma tentativa nova começa e o
+motivo da anterior deixa de valer.
+
+#### Vermelhos vistos
+
+- Os 6 unitários do claim, escritos antes do serviço.
+- 2 dos 5 E2E falharam na primeira execução, e um deles era o defeito acima.
+- **Injeção**: tirando `restoreSelectedCoupon(anterior)`, o teste do cupom
+  recusado falha com `Received: "PANFLETO10"` — ou seja o código que o backend
+  recusou ENTRA no `POST /orders`. É o ponto caro do arquivo.
+
+#### Verificação do estágio E
+
+`lint 78 problems (0 errors)` · `typecheck:cards` exit 0 · `test 338 passed`
+(30 arquivos) · `test:e2e 311 passed · 3 skipped`, exit 0, 4,2 min,
+**3 acima de 10 s**.
+
+**Nenhum número de dinheiro mudou.** O que entrou é um caminho NOVO para um
+cupom chegar ao mesmo `POST /coupons/preview` que já existia, e o total exibido
+continua sendo o `total_after_coupon` que o backend devolve.

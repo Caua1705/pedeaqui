@@ -128,3 +128,80 @@ describe('normalização da lista', () => {
     expect(await service.getCustomerCoupons({ restaurantSlug: 'x' })).toEqual([]);
   });
 });
+
+// ============================================================================
+//  Resgatar um cupom pelo CÓDIGO — `POST /coupons/claim`.
+//
+//  A rota existe no contrato desde sempre e o front NUNCA a chamou: quem
+//  recebia um código de fora (panfleto, mensagem, embalagem) não tinha onde
+//  digitá-lo. Ligada em 02/09/2026.
+//
+//  A distinção que estes testes guardam é a do próprio backend: RESGATE NÃO É
+//  USO. O resgate grava em `coupon_claims`, que não tem pedido nem valor e só
+//  concede visibilidade; o teto da campanha continua contando
+//  `coupon_redemptions`. Se o front tratasse resgate como aplicação, um cupom
+//  de 100 usos se esgotaria com gente que só digitou o código.
+// ============================================================================
+
+const CUPOM_RESGATADO = {
+  ...CUPOM_LOGIN,
+  id: 'f3a4c1e2-0000-4000-8000-000000000009',
+  code: 'PANFLETO10',
+  state: 'missing_amount',
+  missing_amount: '30.00'
+};
+
+describe('resgatar por código', () => {
+  it('manda o código no corpo, para a rota de claim', async () => {
+    respostaAtual = { coupon: CUPOM_RESGATADO };
+    await service.claimCoupon({ restaurantSlug: 'junior-da-picanha', code: 'PANFLETO10' });
+
+    expect(pedidos).toHaveLength(1);
+    expect(pedidos[0].path).toBe('/restaurants/junior-da-picanha/coupons/claim');
+    expect(pedidos[0].options.method).toBe('POST');
+    expect(JSON.parse(pedidos[0].options.body)).toEqual({ code: 'PANFLETO10' });
+  });
+
+  it('apara o código antes de mandar', async () => {
+    // Colar um código de uma mensagem traz espaço em volta com frequência.
+    respostaAtual = { coupon: CUPOM_RESGATADO };
+    await service.claimCoupon({ restaurantSlug: 'x', code: '  PANFLETO10 ' });
+    expect(JSON.parse(pedidos[0].options.body)).toEqual({ code: 'PANFLETO10' });
+  });
+
+  it('código vazio não vira requisição', async () => {
+    expect(await service.claimCoupon({ restaurantSlug: 'x', code: '   ' })).toBeNull();
+    expect(await service.claimCoupon({ restaurantSlug: 'x' })).toBeNull();
+    expect(pedidos).toHaveLength(0);
+  });
+
+  it('devolve o cupom no mesmo formato da lista', async () => {
+    // `CouponClaimResponse.coupon` é um CustomerCouponResponse — de propósito,
+    // para o app inserir o card resgatado sem uma segunda chamada e para não
+    // existirem duas descrições de cupom que precisem concordar.
+    respostaAtual = { coupon: CUPOM_RESGATADO };
+    const cupom = await service.claimCoupon({ restaurantSlug: 'x', code: 'PANFLETO10' });
+    expect(cupom.id).toBe(CUPOM_RESGATADO.id);
+    expect(cupom.state).toBe('missing_amount');
+  });
+
+  it('o cupom resgatado passa pelo MESMO filtro da lista', async () => {
+    // Sem `id` não há como abrir o detalhe, e com `state` desconhecido não há
+    // botão que faça sentido. Empurrar uma linha quebrada para dentro da lista
+    // é pior que não inserir nada.
+    respostaAtual = { coupon: { ...CUPOM_RESGATADO, id: null } };
+    expect(await service.claimCoupon({ restaurantSlug: 'x', code: 'A' })).toBeNull();
+    respostaAtual = { coupon: { ...CUPOM_RESGATADO, state: 'expired' } };
+    expect(await service.claimCoupon({ restaurantSlug: 'x', code: 'A' })).toBeNull();
+  });
+
+  it('a recusa do backend SOBE, em vez de virar um null mudo', async () => {
+    // Código inexistente, cupom de outro segmento ou fora da validade voltam
+    // como falha HTTP. Quem chama precisa da mensagem para dizer à pessoa o que
+    // aconteceu — um `null` para tudo faria a tela responder "não deu" a um
+    // código correto e a um código errado com a mesma cara.
+    const recusa = Object.assign(new Error('Cupom não encontrado'), { status: 404 });
+    window.PedeAquiApiClient = { request: () => Promise.reject(recusa) };
+    await expect(service.claimCoupon({ restaurantSlug: 'x', code: 'NAOEXISTE' })).rejects.toBe(recusa);
+  });
+});

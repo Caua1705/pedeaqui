@@ -2317,6 +2317,13 @@
     $('csDiscount').textContent = `- ${fmt(totals.discount)}`;
     $('csDiscountRow')?.style.setProperty('display', totals.discount > 0 ? 'flex' : 'none', 'important');
     $('csTotal').textContent = fmt(totals.total);
+    // O CAMPO DE CUPOM SÓ EXISTE COM SACOLA. É a mesma regra do decisor do
+    // botão (services/coupon-cta.js): cupom só se aplica quando existe sacola,
+    // e um campo que aceita um código para depois recusá-lo por falta de itens
+    // é a definição de "aplicar para depois falhar". A seção sai da tela, e
+    // não fica desabilitada — um campo cinza convida a tentar.
+    const secaoCupom = $('cartCouponSection');
+    if (secaoCupom) secaoCupom.hidden = qty === 0;
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }
 
@@ -4797,6 +4804,17 @@
     return String(coupon?.id ?? coupon?.coupon_id ?? coupon?.code ?? coupon?.coupon_code ?? '');
   }
 
+  /**
+   * O motivo da ULTIMA recusa de cupom, nas palavras do backend.
+   *
+   * Existe porque `previewSelectedCoupon({ silent: true })` nao pinta nada, e
+   * quem pediu em silencio precisa da mesma frase para responder no proprio
+   * lugar. Ler `ineligibility_reason` de novo do outro lado seria a segunda
+   * copia de uma frase do backend — e duas copias de uma frase de cupom ja
+   * divergiram neste repositorio (ver coupon-format.js).
+   */
+  let ultimoMotivoDeCupom = '';
+
   async function previewSelectedCoupon({ silent = false } = {}) {
     if (!selectedCoupon || !cart.length) return null;
     const totals = cartTotals();
@@ -4823,11 +4841,16 @@
       const payload = preview.preview ?? preview;
       if (payload.valid === false) {
         selectedCouponPreview = null;
+        // O MOTIVO FICA GUARDADO mesmo em modo silencioso. Quem chama com
+        // `silent` (o campo do checkout) responde na propria secao, e sem isto
+        // teria de repetir a leitura de `ineligibility_reason` — a segunda
+        // copia de uma frase que o backend escreveu, pronta para divergir.
+        ultimoMotivoDeCupom = detailText(payload.ineligibility_reason)
+          || String(payload.ineligibility_reason || '').trim()
+          || 'Este cupom não vale para esta sacola.';
         // A razão vem do backend em português e é específica ("primeira compra",
         // "fora do período"). Ela ganha da nossa frase genérica sempre que existe.
-        if (!silent) showCouponNotice(detailText(payload.ineligibility_reason)
-          || String(payload.ineligibility_reason || '').trim()
-          || 'Este cupom não vale para esta sacola.');
+          if (!silent) showCouponNotice(ultimoMotivoDeCupom);
         updateCartUI();
         return null;
       }
@@ -4837,10 +4860,12 @@
     }).catch(async error => {
       if (couponPreviewKey === requestKey) selectedCouponPreview = null;
       if (error?.status === 401) {
+        ultimoMotivoDeCupom = 'Entre na sua conta para usar este cupom.';
         await syncCustomerSession();
         if (!silent) openLoginScreen('coupon');
-      } else if (!silent) {
-        showCouponNotice('Não foi possível aplicar este cupom. Tente novamente.');
+      } else {
+        ultimoMotivoDeCupom = 'Não foi possível aplicar este cupom. Tente novamente.';
+        if (!silent) showCouponNotice(ultimoMotivoDeCupom);
       }
       return null;
     }).finally(() => {
@@ -4862,8 +4887,89 @@
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
   }
 
+  // ==========================================================================
+  //  O CAMPO DE CUPOM DO CHECKOUT — digitar um código que veio de fora.
+  //
+  //  É AQUI que um cupom se aplica, e é o único campo: sem escolher entre
+  //  escanear e digitar, sem um segundo caminho que faça a mesma coisa.
+  //
+  //  Ele NÃO calcula nada e não julga nada. Monta `{ code }`, passa pelas
+  //  MESMAS três portas que a folha de detalhe usa (armSelectedCoupon →
+  //  previewSelectedCoupon → restoreSelectedCoupon em caso de recusa) e exibe
+  //  o veredito que voltou. O `POST /coupons/preview` aceita `coupon_code` em
+  //  vez de `coupon_id` (CouponPreviewRequest), e `buildOrderPayload` já manda
+  //  `coupon_code` quando não há id (order-payload.js:132) — nenhum dos dois
+  //  precisou mudar para este campo existir.
+  //
+  //  Sacola vazia não chega aqui: a seção inteira sai da tela em updateCartUI.
+  //  É a mesma regra do decisor do botão (services/coupon-cta.js) — cupom só se
+  //  aplica quando existe sacola, nunca aplicar para depois falhar.
+  // ==========================================================================
+  function setCartCouponMsg(texto, tom) {
+    const alvo = $('cartCouponMsg');
+    if (!alvo) return;
+    alvo.textContent = texto || '';
+    alvo.hidden = !texto;
+    if (tom) alvo.dataset.tom = tom;
+    else delete alvo.dataset.tom;
+  }
+
+  async function applyTypedCoupon() {
+    const campo = $('cartCouponInput');
+    const botao = $('cartCouponApply');
+    const codigo = String(campo?.value || '').trim();
+    if (!codigo) {
+      setCartCouponMsg('Digite o código do cupom.', 'erro');
+      campo?.focus();
+      return;
+    }
+    if (!cart.length) {
+      // Rede de baixo: a seção já sai da tela com a sacola vazia.
+      setCartCouponMsg('Adicione itens à sacola para usar um cupom.', 'erro');
+      return;
+    }
+
+    const anterior = armSelectedCoupon({ code: codigo });
+    if (botao) { botao.disabled = true; botao.textContent = 'Validando...'; }
+    setCartCouponMsg('');
+    // `silent` porque a resposta é DESTA seção: o aviso flutuante do app diria
+    // a mesma coisa num segundo lugar, e duas mensagens para um toque é o
+    // caminho de elas divergirem.
+    const preview = await previewSelectedCoupon({ silent: true });
+    if (botao) { botao.disabled = false; botao.textContent = 'Aplicar'; }
+
+    if (!preview) {
+      // Recusado, inelegível ou falha de rede: a sacola volta EXATAMENTE ao que
+      // era. Sem isto, `selectedCoupon` ficaria apontando para um código que o
+      // backend não aceitou — a tela não mostraria desconto, mas o
+      // `coupon_code` seguiria indo no pedido.
+      restoreSelectedCoupon(anterior);
+      setCartCouponMsg(ultimoMotivoDeCupom || 'Não foi possível aplicar este cupom.', 'erro');
+      return;
+    }
+    if (campo) campo.value = '';
+    setCartCouponMsg(`Cupom aplicado. Desconto de ${fmt(couponDiscountAmount())}.`);
+  }
+
+  function applyTypedCouponOnEnter(event) {
+    if (event?.key !== 'Enter') return;
+    event.preventDefault();
+    applyTypedCoupon();
+  }
+
   /** Arma o cupom na sacola e devolve o anterior (para rollback). */
   function armSelectedCoupon(coupon) {
+    // O motivo da recusa anterior morre AQUI, e nao no topo de
+    // previewSelectedCoupon — foi onde ele estava, e nao funcionava: o ramo
+    // `valid: false` chama updateCartUI(), que chama previewSelectedCoupon()
+    // de novo (o cupom ainda esta armado nesse instante), e a reentrada zerava
+    // a frase antes de quem pediu em silencio conseguir le-la. O campo do
+    // checkout exibia "Nao foi possivel aplicar este cupom" no lugar do motivo
+    // que o backend tinha escrito.
+    //
+    // Armar e o comeco de uma tentativa nova; e esse o instante em que o motivo
+    // da anterior deixa de valer.
+    ultimoMotivoDeCupom = '';
     const previous = selectedCoupon;
     selectedCoupon = coupon;
     selectedCouponPreview = null;
@@ -5459,6 +5565,8 @@
     // As nove ações de dados/senha do cliente são registradas por
     // screens/customer-data-screen.js.
     openServiceFeeInfo,
+    // O campo de cupom do checkout — o lugar onde um cupom se aplica.
+    applyTypedCoupon, applyTypedCouponOnEnter,
     // As três ações do extrato (openCashbackStatement, retryCashbackStatement,
     // closeCashbackStatement) são registradas por cashback-statement.js.
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons

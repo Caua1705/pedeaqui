@@ -34,6 +34,19 @@
       `/restaurants/${routeSlug(restaurantSlug)}/coupons`,
     previewCoupon: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/coupons/preview`,
+    // DIGITAR UM CÓDIGO SEM SACOLA. É o par de `customerCoupons`: resgatado
+    // aqui, o cupom passa a ser do cliente e aparece na lista; APLICAR continua
+    // sendo outra coisa, no checkout.
+    //
+    // Resgate NÃO é uso, e a diferença é da campanha: o backend grava em
+    // `coupon_claims`, que não tem pedido nem valor, e `coupon_redemptions`
+    // continua sendo o registro de uso — é ela que conta no teto. Gravar
+    // resgate lá faria um cupom de 100 usos se esgotar com gente que só digitou
+    // o código.
+    //
+    // Idempotente: resgatar de novo devolve o mesmo cupom, 201, sem erro.
+    claimCoupon: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/coupons/claim`,
     deliveryEstimate: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/delivery/estimate`,
 

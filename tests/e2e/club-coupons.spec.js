@@ -194,6 +194,34 @@ test('a linha "Cupons" do Perfil leva ao Clube, e não a uma tela que mente', as
   await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
 });
 
+test('cupom SEM prazo (valid_until null) não desenha "Válido até" vazio', async ({ page }) => {
+  // O backend tornou `valid_until` ANULÁVEL em 02/09/2026 — antes era
+  // `required`, string, sempre presente. Um cupom sem prazo passou a ser
+  // possível, e o `api-contract.test.js` é quem cobrou a sincronização.
+  //
+  // O front já tolerava (`formatCouponDate`/`couponValidUntil` devolvem '' para
+  // valor vazio, e a linha só entra se houver texto), mas "já tolerava" sem
+  // teste é uma afirmação sobre código lido, não sobre comportamento medido —
+  // e a fixture do repositório tem prazo em todos os três cupons, então nada
+  // exercitava esse caminho.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  const semPrazo = { coupons: COUPONS.coupons.map((c) => ({ ...c, valid_until: null })) };
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(semPrazo)) });
+  await mockCustomerRoutes(page);
+
+  await openClub(page);
+  const cards = page.locator('.club-available-coupon-card');
+  await expect(cards).toHaveCount(3);
+
+  // Nenhum card anuncia validade, e nenhum deixa a frase pela metade.
+  await expect(page.locator('#mobViewClub')).not.toContainText('Válido até');
+
+  // E o resto do card continua inteiro: sem prazo não é sem cupom.
+  await expect(cards.nth(0).locator('.club-available-coupon-discount')).toHaveText('5% OFF');
+  await expect(cards.nth(0).locator('.club-available-coupon-meta')).toContainText('Em pedidos a partir de');
+});
+
 test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page }) => {
   // O par do teste acima. Os dois juntos provam que quem decide o rótulo é o
   // estado do backend MAIS a sacola — e que a sacola entra por acessor, não

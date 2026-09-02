@@ -1214,3 +1214,97 @@ Na produção:
 | 9 | `assistant-voice-session.spec.js:472` | **voz continua fora desta branch**. Números medidos: teto de inatividade de 8 s contra um preparo com direito a 25 s |
 
 **Contagem: 5 escapes abertos** (eram 8 no início da noite).
+
+---
+
+# E. A família do defeito do endereço, varrida — e a guarda que fica
+
+## E.1 Os OUTROS payloads de esquema fechado: conferidos um a um, todos certos
+
+O contrato tem **18 esquemas `additionalProperties: false`**. Destes, os que o
+front envia:
+
+| rota | esquema | veredito |
+|---|---|---|
+| `POST /customers/me/addresses` | `CreateCustomerAddressRequest` | **era o defeito** — corrigido |
+| `PATCH /customers/me/addresses/{id}` | `UpdateCustomerAddressRequest` | mesmo payload, mesma correção |
+| `PATCH /customers/me` | `UpdateCurrentCustomerRequest` | ✅ `validateCustomerDataForm` devolve exatamente `{name, email, phone, birth_date}`, os quatro obrigatórios |
+| `POST /delivery/estimate` | `DeliveryEstimateRequest` | ✅ `{branch_id, address_id}` ou `{branch_id, address}` |
+| `POST /branches/availability` | `BranchAvailabilityRequest` | ✅ `{address_id}` ou `{address}` |
+| (aninhado nos dois de cima) | `DeliveryAddressInput` | ✅ `deliveryAddressPayload` produz exatamente os 8 campos |
+| `POST /customers/me/addresses/import` | `ImportCustomerAddressRequest` | ✅ `importAddressPayload` usa `zipcode`, `label`, `client_reference` |
+| `POST /coupons/preview` | `CouponPreviewRequest` | ✅ os 5 campos, e nada mais |
+| `POST /coupons/claim` | `CouponClaimRequest` | ✅ `{code}` |
+
+`CreateOrderRequest` **não** é fechado — o pedido aceita campo extra sem 422.
+
+## E.2 A guarda: `mockApi()` passa a recusar como o backend recusa
+
+Um mock que responde 200 a qualquer corpo não tem opinião sobre o corpo, e foi
+por essa fresta que os três nomes passaram. Agora, **antes de qualquer rota**,
+`mockApi()` confere o corpo contra o esquema declarado no `openapi.json` e
+responde **422** quando há campo fora do contrato ou obrigatório ausente.
+
+**A tabela vem do CONTRATO, não de uma lista escrita no helper.** Ela é montada
+percorrendo `paths`: todo caminho+método com corpo `$ref` entra, e rota nova
+entra sozinha. Uma lista à mão seria a segunda cópia do contrato, e divergiria
+na direção do que o código manda hoje — que é justamente o defeito.
+
+Confere **nome de campo** e **obrigatório ausente**, com um nível de
+aninhamento (o `address` do estimate é um `DeliveryAddressInput`, também
+fechado). **Não** confere tipo, formato nem faixa: reimplementar o Pydantic aqui
+seria a terceira cópia do contrato, e o que custou dinheiro neste repositório
+foi sempre o NOME, não o tipo.
+
+**Sonda contra vacuidade** (a lição da noite): com `campo_inventado` injetado no
+corpo de `previewCoupon`, `club-coupons` cai — o mock recusa, o cupom não
+aplica, a folha não fecha. A guarda está viva.
+
+Custo: **zero**. A suíte inteira passou na primeira execução com o mock estrito
+— o que também é a confirmação independente da §E.1.
+
+## E.3 Uma armadilha de FERRAMENTA nova, que custou uma reescrita
+
+Inserir o bloco novo no `helpers.js` com
+`String.prototype.replace(de, textoComTemplateLiteral)` **corrompeu o arquivo**:
+o texto continha `` `^${...}$` ``, e num argumento de substituição a sequência
+`` $` `` significa "tudo o que vem ANTES do casamento". O resultado foi o
+começo do `helpers.js` injetado no meio de uma template string, e o erro que
+apareceu (`Unexpected token $ref`, dez linhas adiante) não apontava para a
+causa.
+
+**A regra:** ao inserir código por script, use a forma de FUNÇÃO
+(`s.replace(de, () => bloco)`). Ela não interpreta `$&`, `` $` ``, `$'` nem
+`$1`. E `node --check <arquivo>` depois de toda edição mecânica — ele dá a
+linha certa, que o lint não deu.
+
+---
+
+# F. O contrato do backend mudou NO MEIO da rodada
+
+`npm run test` ficou vermelho num teste que **não é meu**:
+
+    api-contract.test.js > o spec versionado é o do backend
+    O backend mudou o contrato desde a última sincronização.
+
+É exatamente o incidente que criou esse teste (a troca de `/coupons/available`
+por `/coupons`, que deixou a tela do Clube quebrada com todos os portões
+verdes), pego desta vez **no minuto em que aconteceu**.
+
+**O que mudou:** `valid_until` deixou de ser obrigatório e passou a ser
+anulável, em `CustomerCouponResponse`, `CouponCreate` e `CouponAdminResponse`.
+Nenhuma rota, nenhum esquema, nenhum outro campo. Ou seja: **cupom sem prazo de
+validade passou a existir.**
+
+**O front já tolerava** — `formatCouponDate` e `couponValidUntil` devolvem `''`
+para valor vazio, e a linha só entra se houver texto. Mas "já tolerava" sem
+teste é afirmação sobre código lido, não sobre comportamento medido, e as três
+fixtures do repositório têm prazo — nada exercitava esse caminho.
+
+Sincronizado (`npm run api:generate`, os dois arquivos juntos) e coberto por
+teste novo, **visto vermelho**: tirando a guarda `if (!value) return ''` de
+`formatCouponDate`, o card passa a anunciar `Válido até 01/01` (o epoch), e o
+teste acusa.
+
+**Só a `main` do backend mudou; nada foi pedido por mim.** Este item está aqui
+porque o próximo a retomar precisa saber que o contrato andou.

@@ -897,3 +897,225 @@ O que mudou de comportamento, e está guardado por teste:
 6. **Desconfiar de um portão que responde rápido demais.** O
    `typecheck:cards` passou "verde" (exit 0) por não ter `tsc` instalado, e eu
    só percebi porque o PowerShell reportou diferente do Bash.
+
+---
+
+# A. Varredura de BOMBAS-RELÓGIO (02/09/2026)
+
+Pergunta da varredura: **existe lógica que compare uma data contra o relógio
+REAL e tenha uma data limite embutida?** Feita sobre `scripts/`, `tests/`,
+`tools/`, `public/`, `index.html` e `restaurant.html`.
+
+## A.1 O universo: só CINCO sítios comparam com o relógio real
+
+    grep -rnE "(<=?|>=?)\s*new Date\(\)|new Date\(\)\s*(<=?|>=?)|getFullYear|getMonth\(\)|getDay\(\)|getHours\(\)"
+
+| sítio | o que compara | veredito |
+|---|---|---|
+| `scripts/pages/restaurant-auth-flow.js:185` | data de nascimento `<= new Date()` | **regra de produto, sem limite embutido.** Não aceitar nascimento futuro é o comportamento certo, e os testes usam `1990-04-12` — passado que segue passado |
+| `tests/e2e/card-payment-flow.spec.js:67` | validade do cartão vs `now.getFullYear()` | **era a bomba. CORRIGIDA** — ver A.2 |
+| `tests/e2e/payment-card-validation-timing.spec.js:65` | idem | **seguro**: só digita `01/20` (jan/2020), e um passado continua passado. É o teste de "Informe uma data de validade futura" |
+| `tests/e2e/helpers.js:330` | `validadeFutura()` = `11/<ano+5>` | a correção |
+| `tests/e2e/tenant-theme.spec.js:213` | `clock.install`/`pauseAt` | **era bomba de outra forma. CORRIGIDA** — ver A.3 |
+
+Todo o resto que lê o relógio (`Date.now()`) é **relativo**: TTL de cache
+(`ttl-cache`, `payment-config-service`, `delivery-service`, `club-service`), TTL
+da sacola (`restaurant-page:2920`), poda de `order-tracking`, idade relativa do
+pedido no Perfil (`profile-screen:156`) e a janela do Pix. Relativo não tem
+limite embutido: ele anda com o relógio, não contra ele.
+
+## A.2 A bomba fechada: `11/31` (estouraria em **01/12/2031**)
+
+Três sítios digitavam a validade `11/31` num cartão de teste, e quem confere é o
+relógio REAL nos dois lados — o SDK falso e, em `mercado-pago-secure-fields`, o
+SDK de verdade. Vista vermelha com `11/24`: o `#creditCardModal` não fecha.
+Hoje é `validadeFutura()`.
+
+## A.3 A segunda bomba, de outra forma: `clock.pauseAt` (já estourou)
+
+`tenant-theme:198` passava o MESMO instante para `install()` e `pauseAt()`.
+`pauseAt` só anda para a frente, e o relógio falso avança entre as duas chamadas
+— o teste vivia de a diferença ser zero. Caiu numa suíte completa desta rodada
+com `Cannot fast-forward to the past`. Hoje o `pauseAt` recebe `INSTANTE + 60 s`.
+
+## A.4 Datas literais que NÃO são bombas, e por quê
+
+Cada uma foi conferida contra a pergunta "alguém compara isto com o relógio?".
+
+| sítio | data | por que não é bomba |
+|---|---|---|
+| `tests/fixtures/coupons.json:11,25,39` e `customer-coupons.test.js:25` | `2099-12-31` (`valid_until`) | o front **nunca compara** validade de cupom com o relógio — quem filtra cupom vencido é o backend (`CustomerCouponState` não tem estado para "vencido" justamente porque ele não entra na lista). O front só **formata** (`couponValidUntil`, `formatCouponDate`) |
+| `tests/fixtures/orders.json` (3 datas) | 12/07 a 30/08/2026 | os três já passam de 24 h, e `profOrderRelativeDate` só troca de formato NESSA fronteira. Eles só envelhecem — direção segura. **Nenhum teste afirma "Realizado…"** |
+| `tests/e2e/profile-order-tracking.spec.js:26` | `agora − 2 min` | relativo. E `profOrderRelativeDate` não tem ramo "hoje/ontem", então não há penhasco de meia-noite |
+| `tests/e2e/card-payment-flow.spec.js:153…` | `expiration_year: 2030` do cartão salvo | **nenhum código de produção lê `expiration_year`/`expiration_month`** (conferido por grep). O cartão salvo não é filtrado por validade no front |
+| `cashback-statement.spec.js:32`, `profile-order-tracking.spec.js:209-210`, `tools/capture-screens.mjs:200,201,790` | 2026 | só exibição; nenhuma asserção sobre a data |
+| `tests/unit/order-tracking.test.js:173,177`, `service-caches.test.js:18` | 2026 | `vi.setSystemTime` — relógio INJETADO, que é o jeito certo |
+| `public/sw.js:24` | `VERSION = 'v2'` | versão de cache sem data |
+
+## A.5 O horário de funcionamento NÃO lê o relógio — e isso está certo
+
+Era o candidato mais óbvio da lista do prompt. Conferido: **"está aberto?" vem
+de `is_open` e "que dia é hoje?" vem de `current_weekday`**, os dois do backend
+(`store-info-format.js:54`, `store-info-screen.js:184`, `restaurant-page:1218`).
+Por isso `store-hours.spec.js` compara a linha destacada com o
+`INFO.current_weekday` da própria fixture e passa em qualquer dia da semana.
+
+Não há promoção, banner ou cupom filtrado por data no front.
+
+## A.6 DUAS coisas que a varredura achou e que não são bomba-relógio
+
+**1. `index.html:425` — `© 2025 Rapidex`.** Não quebra nada, mas já está
+**errado hoje** (é 2026) e está na landing, visível para todo visitante. Não
+corrigido nesta rodada porque a landing está fora do escopo desta branch;
+anotado aqui para não se perder.
+
+**2. O contador do Pix conta pelo relógio DO CLIENTE, e o backend não manda
+prazo.** `restaurant-pix-flow.js:749` faz `pollUntil = Date.now() +
+PIX_POLL_WINDOW_MS`, e a tela promete "Você tem até 10 minutos". Conferido no
+contrato: **`StartPaymentResponse` tem `checkout_url`, `payment_status`,
+`provider`, `provider_payment_id`, `qr_code` e `status_detail` — e NENHUM campo
+de expiração.** O front não tem como saber o prazo real da cobrança; ele conta o
+próprio. Relógio adiantado, aparelho suspenso ou aba em segundo plano fazem o
+contador divergir do gateway.
+
+Não é defeito do front — é lacuna de contrato. Entra na lista de pedidos ao
+backend (§B.4).
+
+---
+
+# B. O QUE O BACKEND PRECISA ENTREGAR — texto para colar no agente do backend
+
+> Colar a partir daqui. Contexto: front white-label de pedidos
+> (`pedeaqui_front`), consumindo a API do Rapidex. Cada item diz o que o front
+> precisa RECEBER e por que ele não pode resolver do lado dele.
+
+## B.1 `visibility` em `CustomerCouponResponse`
+
+**Pedido:** publicar o campo `visibility` (`public` | `segment` | `private`) em
+`CustomerCouponResponse`, o mesmo enum `CouponVisibility` que já existe em
+`CouponCreate` e `CouponAdminResponse`.
+
+**Por que o front precisa.** A regra de produto da etiqueta do card é:
+
+- cupom com `label = "selected_for_you"` → tarja **"Selecionado para você"**;
+- cupom **público** → tarja **"para todos"**;
+- cupom de **segmento** sem label → **nenhuma tarja**.
+
+Hoje `CustomerCouponResponse` publica `label`, mas não publica `visibility`.
+Sem ele o front consegue distinguir só o primeiro caso, e os outros dois ficam
+indistinguíveis — os dois viram "nenhuma tarja".
+
+**Por que o front não resolve sozinho.** Não há como inferir audiência a partir
+dos campos que chegam. Inferir por ausência de `label` juntaria "público" e
+"segmento" numa coisa só, que é exatamente a distinção pedida. E anunciar
+audiência por chute num app white-label é anunciar errado para o restaurante
+inteiro.
+
+**Não estamos pedindo `target_segment`** — o segmento em si é interno da
+campanha e não deve sair. O que falta é só o discriminador de audiência.
+
+## B.2 Qual cupom aplicar quando existe mais de um automático
+
+**Pedido:** uma das duas formas, e a primeira é a preferida.
+
+**(a)** Um campo em `CustomerCouponResponse` marcando o cupom que o backend
+aplicaria a esta sacola — por exemplo `auto_apply: boolean`, verdadeiro em **no
+máximo um** cupom da lista, calculado com o mesmo `subtotal`/`delivery_fee`/
+`order_type` que a chamada informou.
+
+**(b)** Ou, se preferirem manter a resposta só descritiva: a regra de desempate
+escrita no `@description` da rota (ex.: "maior `discount_amount`; empate,
+menor `min_order_value`; empate, o de `valid_until` mais próximo"), para o front
+implementá-la.
+
+**Por que o front precisa.** A regra de produto é: cupom **sem código**
+(`code: null`) aplica **automaticamente** quando a sacola permite; cupom **com
+código** a pessoa digita. Hoje o contrato permite `code: null` e a rota devolve
+vários cupons `applicable` ao mesmo tempo — mas nada diz qual deles aplicar.
+
+**Por que o front não resolve sozinho.** Escolher "o de maior
+`discount_amount`" é uma **decisão de dinheiro tomada no cliente**, e a regra
+número 1 deste front é que o front não calcula nem decide dinheiro. Duas
+implementações da mesma escolha (a nossa e a de vocês, na criação do pedido)
+divergem no dia em que entrar teto de desconto, cooldown ou empate — e a
+divergência aparece onde mais custa: o app aplica o cupom A, o pedido nasce com
+o cupom B, e o cliente vê o desconto mudar entre a sacola e a confirmação.
+
+**Observação:** a opção (a) é melhor também porque é a mesma função que já
+decide `state`, `discount_amount` e `missing_amount` — não é conta nova, é um
+campo a mais na conta que já roda.
+
+## B.3 As três restrições que não existem no contrato
+
+Conferido em `CouponCreate` / `CouponAdminResponse`. Os campos de regra hoje
+são: `min_order_value`, `first_order_only`, `target_segment`, `visibility`,
+`valid_from`, `valid_until`, `total_usage_limit`, `usage_limit_per_customer`,
+`cooldown_days`, `max_discount_amount`, `discount_type`, `discount_value`.
+
+**Não existe restrição por forma de pagamento, por horário do dia, nem por
+item.** O front não construiu nada para elas — construir seria inventar regra
+que o backend não sabe aplicar, e a tela prometeria uma coisa que a criação do
+pedido não cumpre.
+
+Se essas restrições forem entrar, o que o front precisa é:
+
+**(i) Forma de pagamento.** Um campo na campanha (ex.: `allowed_payment_methods:
+string[] | null`, `null` = todas) e, principalmente, **o reflexo dele no estado
+do cliente**: com a forma de pagamento ainda não escolhida no momento da lista,
+o cupom restrito precisa vir com `state` que diga isso. Sugestão: um valor novo
+em `CustomerCouponState`, por exemplo `payment_method_required`, mais um campo
+com as formas aceitas para o card escrever a frase ("Só no PIX").
+
+Sem um estado próprio, o cupom restrito a PIX apareceria como `applicable` para
+quem vai pagar no cartão, e a recusa só chegaria na criação do pedido — que é
+exatamente o "aplicar para depois falhar" que este fluxo existe para não fazer.
+
+**(ii) Horário do dia.** Campos na campanha (ex.: `valid_weekdays: int[]`,
+`valid_time_start` / `valid_time_end`) e o mesmo cuidado no estado: **quem
+decide se está dentro da janela tem de ser o backend**, porque o relógio do
+cliente não é confiável e o fuso da loja não é o do aparelho. O front precisa
+receber ou `state = "applicable"` (está na janela agora) ou um estado que diga
+que não está, mais o texto da janela para o card ("Válido das 18h às 22h").
+
+Este ponto é importante e é a razão de não termos construído nada: **hoje o
+front não compara NENHUMA data ou hora contra o relógio** — nem validade de
+cupom, nem horário de funcionamento (que vem resolvido em `is_open` e
+`current_weekday`). Manter essa propriedade é o que faz o app funcionar igual em
+qualquer fuso e com qualquer relógio errado.
+
+**(iii) Itens específicos.** Campos na campanha (ex.: `applicable_product_ids` /
+`applicable_category_ids`) e, no cliente, a mesma coisa: o `state` já calculado
+contra a sacola enviada, mais o texto para o card ("Válido em pizzas"). O front
+manda a sacola no `POST /coupons/preview`, então vocês já têm o que precisam
+para decidir — o que falta é o campo que diz o resultado.
+
+**O padrão dos três é o mesmo, e é o que já funciona hoje:** o front manda o
+contexto, o backend devolve o veredito e a frase. Toda vez que o front precisa
+reconstruir a regra para saber se um cupom cabe, ele vira uma segunda
+implementação da regra de cupom — e é aí que o card promete R$ 15 e o checkout
+tira R$ 10.
+
+## B.4 Fora de cupom, mas do mesmo tipo: o prazo da cobrança Pix
+
+**Pedido:** um campo de expiração absoluta em `StartPaymentResponse` — por
+exemplo `expires_at` (ISO 8601, com fuso).
+
+**Por que o front precisa.** A tela do Pix mostra um contador e diz "Você tem
+até 10 minutos para fazer o pagamento. Após esse tempo, o pedido será
+cancelado". Hoje esse prazo é **do front**: ele faz `Date.now() + 10 min` e
+conta no relógio do aparelho. `StartPaymentResponse` traz `checkout_url`,
+`payment_status`, `provider`, `provider_payment_id`, `qr_code` e
+`status_detail` — nenhum prazo.
+
+**O que isso custa.** Relógio do aparelho adiantado/atrasado, celular suspenso
+no bolso ou aba em segundo plano fazem o contador divergir do prazo real do
+gateway. O cliente pode ver "faltam 4 minutos" numa cobrança que já expirou, ou
+o contrário. Com `expires_at` o front conta contra um instante do servidor e
+para de adivinhar.
+
+---
+
+# C. Não mergeado, e por quê
+
+A branch `rodada/noturna` fica onde está. O `ci.yml` não foi tocado em nenhum
+commit desta rodada — conferido: `git log --stat` não mostra o arquivo.

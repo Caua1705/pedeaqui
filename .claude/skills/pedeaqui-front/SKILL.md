@@ -1260,3 +1260,81 @@ o teto da campanha conta `coupon_redemptions`.
    commitado daquele arquivo.** Aconteceu com `restaurant-club.js` no meio do
    item 5 e custou refazer duas mudanças. Para injetar e reverter, **copie o
    arquivo para o scratchpad antes** e restaure pela cópia.
+
+### 12.10 O payload de SAÍDA também tem contrato — e 18 esquemas são FECHADOS
+
+A §3.2 fala de LER campo que não existe. A outra metade é ESCREVER, e ela é mais
+brutal: **18 esquemas de requisição têm `additionalProperties: false`**, e num
+modelo `extra=forbid` do FastAPI um nome fora do contrato não é campo ignorado —
+é a requisição inteira recusada com 422.
+
+Foi assim que, até 02/09/2026, **nenhum cliente logado conseguia salvar endereço
+na conta**: `addressApiPayload()` mandava `postal_code`, `place_id` e `alias`
+para um esquema que declara `zipcode`, `label` e não tem `place_id`. O cliente
+via o `alert("Não foi possível salvar o endereço na sua conta...")` toda vez, e
+o endereço ficava só naquele aparelho.
+
+O `postal_code` não era um erro: é o nome INTERNO do front, que
+`normalizeAddress` produz de propósito para ter uma forma só entre a API, o
+localStorage e o resultado do Google — e `order-payload.js:70` já mapeava de
+volta para `zipcode` ao criar o pedido. **O defeito era uma borda que esqueceu
+de mapear.** Quando o front tem vocabulário próprio, TODA saída precisa
+traduzir, e a lista de saídas tem de ser conferida inteira.
+
+**Nenhum portão pegou porque nenhum teste salvava endereço.** O `mockApi()` só
+atendia o GET; o POST caía no catch-all, e quem lê `rotasDesconhecidas` é o
+`boot-smoke`, que percorre as dez telas principais — o formulário de endereço
+não é uma delas.
+
+**Hoje o `mockApi()` recusa como o backend recusa.** Antes de qualquer rota ele
+confere o corpo contra o esquema do `openapi.json` e responde 422 para campo
+fora do contrato ou obrigatório ausente, com um nível de aninhamento (o
+`address` do estimate é um `DeliveryAddressInput`, também fechado). A tabela é
+montada percorrendo `paths` — rota nova entra sozinha, e uma lista de campos
+escrita no helper seria a segunda cópia do contrato, que divergiria na direção
+do que o código manda hoje.
+
+Ele confere **nome**, não tipo: reimplementar o Pydantic ali seria a terceira
+cópia, e o que custou dinheiro aqui foi sempre o nome.
+
+Os outros oito payloads de esquema fechado foram conferidos um a um e estão
+certos — `addressApiPayload` era o único.
+
+### 12.11 Editar código por script: use a forma de FUNÇÃO no `replace`
+
+Inserir um bloco no `helpers.js` com
+`s.replace(de, textoQueContemUmaTemplateString)` **corrompeu o arquivo**: o
+texto tinha `` `^${...}$` ``, e num argumento de substituição a sequência
+`` $` `` significa *"tudo o que vem ANTES do casamento"*. O começo do
+`helpers.js` foi injetado no meio de uma template string, e o erro que apareceu
+(`Unexpected token $ref`) ficava dez linhas adiante da causa.
+
+Duas regras, as duas baratas:
+
+1. `s.replace(de, () => bloco)` — a forma de função não interpreta `$&`,
+   `` $` ``, `$'` nem `$1`.
+2. **`node --check <arquivo>` depois de toda edição mecânica.** Ele deu a linha
+   e a coluna certas; o `eslint` apontou dez linhas adiante.
+
+### 12.12 O contrato pode mudar NO MEIO da rodada, e o alarme funciona
+
+Em 02/09/2026 o `npm run test` ficou vermelho num teste que não era da mudança
+em curso:
+
+    api-contract.test.js > o spec versionado é o do backend
+
+`valid_until` deixou de ser obrigatório e virou anulável em
+`CustomerCouponResponse`, `CouponCreate` e `CouponAdminResponse` — **cupom sem
+prazo passou a existir**. É o mesmo incidente que criou aquele teste (a troca de
+`/coupons/available` por `/coupons`), agora pego no minuto em que aconteceu.
+
+O caminho certo é o que o próprio teste manda: `npm run api:generate`, commitar
+os dois arquivos, e **cobrir o campo novo com teste** — o front já tolerava
+`null`, mas "já tolerava" sem teste é afirmação sobre código lido, não sobre
+comportamento medido, e as fixtures do repositório tinham prazo em todos os
+cupons. Visto vermelho tirando a guarda de `formatCouponDate`: o card passa a
+anunciar `Válido até 01/01`, que é o epoch.
+
+**Este teste só roda onde `../pedeaqui_back` existe.** No CI ele se pula — então
+um contrato dessincronizado passa pelo `verify` e só aparece na máquina de quem
+tem os dois repositórios. Se você tem, rode `npm run test` ANTES de começar.

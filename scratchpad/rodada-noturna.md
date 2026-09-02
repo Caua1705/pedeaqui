@@ -38,7 +38,7 @@ com push. Portão sem pipe (`| tail` engole o exit code — §5.1 armadilha 5 e
 | 1 | os 8 escapes pendentes | **feito** — 2 fechados (#5 e #7), 5 mantidos com motivo, 1 virou o item 2 |
 | 2 | `pix-payment:116` | **feito** — mecanismo PROVADO por reprodução, gatilho aberto; sem quarentena |
 | 3 | testes dependentes da hora | **feito** — 1 bomba de data desarmada, 4 esperas convertidas, 1 conversão revertida por medida |
-| 4 | chips chumbados `restaurant.html:462-470` | não começou |
+| 4 | chips chumbados `restaurant.html:462-470` | **feito** — markup fora, guarda de markup vermelha antes |
 | 5 | fluxo de cupons | contrato lido, nada construído |
 
 ## AMBIENTE — leia antes de rodar portão
@@ -337,3 +337,68 @@ voo dá `naturalWidth 0`, a proporção vira `NaN`, e `Math.abs(NaN - x) > 0.04`
 o passe silencioso nesta máquina**: sem espera nenhuma, os dois braços passaram
 (7,2 s e 6,5 s), porque aqui as derivadas chegam rápido demais. A correção está
 justificada por construção, não por vermelho observado.
+
+---
+
+## Item 4 — os seis chips chumbados
+
+### O que era
+
+`restaurant.html:458-471`, dentro de `#profSubpagamento`: um cartão afirmando
+"O pagamento é realizado diretamente no estabelecimento" mais **seis chips**
+escritos à mão — Pix, cartão de crédito, cartão de débito, vale-refeição,
+vale-alimentação e dinheiro. A lista de UM restaurante servindo de esqueleto
+para todos, num app white-label. `tests/fixtures/info.json` (cópia fiel da
+produção) mostra que ESTA filial aceita PIX no grupo online e só crédito/débito
+no de entrega: **nada de vale, nada de dinheiro**. E "pago no estabelecimento" é
+falso para quem paga PIX online.
+
+### A premissa que a sonda CORRIGIU
+
+Entrei supondo um flash: app sobe, /info em voo, a pessoa abre Perfil →
+Pagamento e lê a lista errada. **Medido: esse flash não existe.**
+`openProfSub('pagamento')` (`screens/profile-screen.js:440`) troca o corpo por
+"Carregando formas de pagamento..." sempre que `restaurantInfoState.status !==
+'success'` — ou seja ele já cobria os seis chips antes de a subtela aparecer.
+
+Escrevi um E2E que afirmava ver o flash e ele **falhou**, o que foi a sorte da
+rodada: um teste assim passaria pelo motivo errado (§3.3 da skill). A sonda
+mostrou o que de fato acontece — `document.querySelectorAll('.prof-pay-chip')
+.length === 6` logo depois do boot, mas o corpo trocado ao abrir.
+
+O que sobra é real: os chips **estão no DOM de toda loja**, alcançáveis por
+leitor de tela e busca na página, e servem de esqueleto para quem mexer nessa
+tela.
+
+### O que ficou
+
+- **Vermelho visto**: `tests/unit/white-label-markup.test.js`, 3 de 4 falhando
+  (a quarta é a sonda contra vacuidade, que passou). Guarda que o
+  `#profSubpagamento` não escreve chip, não afirma onde o pagamento acontece e
+  não nomeia forma de pagamento nenhuma.
+- Markup removido; `<div class="prof-sub-body"></div>` com o motivo escrito ao
+  lado.
+- **Rede**: `tests/e2e/profile-payment-methods.spec.js`, 2 testes. O primeiro
+  prova que a tela desenha exatamente o que o `/info` da filial devolveu, com
+  os rótulos vindos da FIXTURE (uma lista à mão no teste seria o mesmo defeito
+  um andar acima). O segundo segura o `/info` e prova que o estado sem resposta
+  é "Carregando", nunca uma lista.
+- Nenhum dos dois E2E foi visto vermelho, e está dito assim: eles são rede de
+  regressão, não a prova do defeito. A prova é a guarda de markup.
+
+### Anotado, fora da rodada
+
+`#paymentMethodModal` (`restaurant.html:1341`) também tem um botão de **PIX**
+escrito à mão. É a tela de CHECKOUT — fora desta rodada — e o caso é diferente:
+o app mostra ou esconde aquele botão conforme `/payment-config` e `/info`, em
+vez de ignorá-lo. Fica na lista.
+
+`#profSubcupons` (`restaurant.html:477`) é uma subtela do Perfil que diz
+**sempre** "Nenhum cupom disponível", com markup estático e nenhum código que a
+preencha — e é alcançável pela linha "Cupons" do Perfil. Vai para o item 5.
+
+### Verificação do item 4
+
+`lint 78 problems (0 errors)` · `typecheck:cards` exit 0 · `test 319 passed`
+(29 arquivos) · `test:e2e 304 passed · 3 skipped`, exit 0, 5,4 min,
+**3 testes acima de 10 s**.

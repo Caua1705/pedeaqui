@@ -454,22 +454,16 @@
       </button>
       <span class="prof-sub-title">Pagamento</span>
     </div>
-    <div class="prof-sub-body">
-      <div class="prof-placeholder-card">
-        <div class="prof-placeholder-title">Formas de pagamento aceitas</div>
-        <div class="prof-placeholder-text">O pagamento é realizado diretamente no estabelecimento, na retirada ou na entrega. Aceitamos as seguintes formas:</div>
-      </div>
-      <div class="prof-info-card">
-        <div class="prof-pay-chips">
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Pix</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de crédito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Cartão de débito</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-refeição</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Vale-alimentação</div>
-          <div class="prof-pay-chip"><div class="prof-pay-chip-dot"></div>Dinheiro</div>
-        </div>
-      </div>
-    </div>
+    <!-- VAZIO DE PROPÓSITO. As formas de pagamento são do /info DAQUELA
+         FILIAL, e quem as desenha é renderProfilePaymentScreen()
+         (restaurant-page.js:2444); enquanto o /info não chega,
+         openProfSub('pagamento') (screens/profile-screen.js:440) escreve o
+         "Carregando...". Até 02/09/2026 havia aqui seis chips escritos à mão
+         — Pix, crédito, débito, vale-refeição, vale-alimentação e dinheiro —
+         que eram a lista de UM restaurante servindo de esqueleto para todos,
+         num app white-label. A filial deste repositório não aceita vale nem
+         dinheiro. Guardado por tests/unit/white-label-markup.test.js. -->
+    <div class="prof-sub-body"></div>
   </div><!-- /profSubpagamento -->
 
   <!-- -- SUB: Cupons -- -->

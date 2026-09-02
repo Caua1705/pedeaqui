@@ -203,5 +203,17 @@ jobs:
           cat > .vercel/project.json <<EOF
           {"projectId":"$VERCEL_PROJECT_ID","orgId":"$VERCEL_ORG_ID"}
           EOF
+          # INSTRUMENTACAO — 02/09/2026. O `build` continuou dizendo "No Project
+          # Settings found locally" com o heredoc acima ja no lugar. Antes de
+          # tentar outra correcao, o log tem de mostrar o fato: se o arquivo
+          # existe, EM QUE PASTA, e com que conteudo.
+          # O `cat` nao vaza os IDs: o Actions substitui todo valor de secret
+          # por `***` no log. E por isso mesmo ele ainda serve de medida —
+          # `***` e secret com valor, `""` e secret vazio.
+          echo "--- onde estamos e o que foi escrito ---"
+          pwd
+          ls -la .vercel/
+          cat .vercel/project.json
+          echo "--- fim ---"
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
           npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -9,3 +9,8 @@
       card.addEventListener('mouseleave', () => { card.style.transform = ''; });
     });
   }
+
+  // O ano do rodape vem do relogio, sempre. O numero no index.html e apenas o
+  // que aparece sem JS; quem manda e esta linha. Ver o comentario la.
+  const anoDoRodape = document.getElementById('landingCopyYear');
+  if (anoDoRodape) anoDoRodape.textContent = String(new Date().getFullYear());

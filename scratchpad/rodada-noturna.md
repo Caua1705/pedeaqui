@@ -1308,3 +1308,219 @@ teste acusa.
 
 **Só a `main` do backend mudou; nada foi pedido por mim.** Este item está aqui
 porque o próximo a retomar precisa saber que o contrato andou.
+
+---
+
+# G. TODA ESCRITA DO FRONT, e qual delas tem teste de verdade
+
+Levantamento de 02/09/2026. A coluna "exercitada" **não é leitura de código**: é
+medição. O `mockApi()` foi instrumentado para registrar toda requisição não-GET
+que chega até ele, e a suíte inteira rodou. O que não apareceu, não passou por
+ali.
+
+## G.1 A tabela
+
+`fechado?` = o esquema do corpo é `additionalProperties: false`, ou seja um nome
+fora do contrato derruba a requisição com 422 — a bomba do #6.
+
+| método | rota | esquema | fechado? | exercitada? | mock recusa como o backend? |
+|---|---|---|---|---|---|
+| POST | `/restaurants/{slug}/branches/availability` | `BranchAvailabilityRequest` | **SIM** | **SIM**, 307× | **SIM** |
+| POST | `/restaurants/{slug}/orders` | `CreateOrderRequest` | não | **SIM**, 61× | sim (só obrigatórios) |
+| POST | `/restaurants/{slug}/orders/{token}/payment` | `StartPaymentRequest` | não | **SIM**, 47× | sim (desde o conserto do `anyOf`, §G.3) |
+| POST | `/restaurants/{slug}/delivery/estimate` | `DeliveryEstimateRequest` | **SIM** | **SIM**, 34× | **SIM** |
+| POST | `/restaurants/{slug}/coupons/preview` | `CouponPreviewRequest` | **SIM** | **SIM**, 17× | **SIM** |
+| POST | `/customers/me/addresses` | `CreateCustomerAddressRequest` | **SIM** | **SIM** (spec novo desta rodada) | **SIM** (validador próprio, lendo o mesmo `openapi.json`) |
+| POST | `/customers/me/cards` | `SaveCardRequest` | não | sim, 4 specs | **NÃO** — rota própria do spec, sem conferência |
+| DELETE | `/customers/me/cards/{id}` | (sem corpo) | — | sim | — |
+| POST | `/auth/login` | `LoginRequest` | não | sim, 2 specs | **NÃO** — rota própria |
+| POST | `/auth/verify-email-code` | `VerifyEmailCodeRequest` | não | sim, 1 spec | **NÃO** — rota própria |
+| POST | `/voice/session`, `/voice/search` | fora do spec | — | sim | — (fora do contrato, por decisão) |
+| **PATCH** | **`/customers/me`** | **`UpdateCurrentCustomerRequest`** | **SIM** | **NÃO** | **NÃO** |
+| **PATCH** | **`/customers/me/addresses/{id}`** | **`UpdateCustomerAddressRequest`** | **SIM** | **NÃO** | **NÃO** |
+| **POST** | **`/customers/me/addresses/import`** | **`ImportCustomerAddressesRequest`** | **SIM** | **NÃO** | **NÃO** |
+| PATCH | `/customers/me/password` | `ChangeCustomerPasswordRequest` | não | **NÃO** | — |
+| DELETE | `/customers/me/addresses/{id}` | (sem corpo) | — | **NÃO** | — |
+| PATCH | `/customers/me/addresses/{id}/default` | (sem corpo) | — | **NÃO** | — |
+| POST | `/auth/register` | `RegisterCustomerRequest` | não | **NÃO** | — |
+| POST | `/auth/resend-email-code` | `ResendEmailCodeRequest` | não | **NÃO** | — |
+| POST | `/auth/forgot-password` | `ForgotPasswordRequest` | não | **NÃO** | — |
+| POST | `/auth/verify-reset-code` | `VerifyResetCodeRequest` | não | **NÃO** | — |
+| POST | `/auth/reset-password` | `ResetPasswordRequest` | não | **NÃO** | — |
+| POST | `/restaurants/{slug}/coupons/claim` | `CouponClaimRequest` | **SIM** | **NÃO em E2E** (só unitário, com ApiClient falso) | **NÃO** |
+
+## G.2 A RESPOSTA CURTA: são TRÊS a mesma bomba do #6 esperando
+
+Escrita com **esquema fechado** e **nenhum teste que a exercite**:
+
+1. **`PATCH /customers/me`** — "meus dados" do Perfil.
+2. **`PATCH /customers/me/addresses/{id}`** — editar endereço.
+3. **`POST /customers/me/addresses/import`** — importar endereços locais na
+   primeira entrada na conta.
+
+**Nenhuma das três está quebrada HOJE** — conferi os três payloads campo a campo
+contra o esquema e estão certos:
+
+- `validateCustomerDataForm` devolve exatamente `{name, email, phone,
+  birth_date}`, que são os quatro obrigatórios de `UpdateCurrentCustomerRequest`;
+- a #2 usa o **mesmo** `addressApiPayload` da #1 da tabela, que foi corrigido
+  nesta rodada — ela está certa *por carona*, e é a que mais assusta: o defeito
+  do #6 valia para ela também, e ela continua sem teste próprio;
+- `importAddressPayload` usa `zipcode`, `label` e `client_reference`.
+
+O que falta nas três é a **prova**. Foi exatamente essa combinação — payload
+certo por leitura, nenhum teste que o exercite — que deixou o 422 do endereço
+vivo por quanto tempo ninguém sabe.
+
+**Quarta da lista, mais fraca:** `POST /coupons/claim` tem esquema fechado
+(`{code}`), tem seis unitários com `ApiClient` falso, mas **nenhum E2E**. O
+corpo é um campo só, então o risco é pequeno — mas a rota que eu liguei nesta
+rodada é a única escrita nova sem exercício de ponta a ponta.
+
+**E há uma quinta categoria, sem esquema fechado mas sem conferência nenhuma:**
+`/customers/me/cards`, `/auth/login` e `/auth/verify-email-code` são exercitadas
+por specs que registram **rota própria** — e rota própria vence o `mockApi()`,
+então o validador de contrato nunca as vê. Como os esquemas delas são abertos,
+não há risco de 422; o que se perde é a conferência de **obrigatório ausente**.
+
+## G.3 Um buraco do validador que EU deixei, e fechei
+
+O validador montava a tabela lendo `schema.$ref` do corpo. **Duas rotas do
+contrato declaram o corpo como `anyOf: [{$ref}, {type: null}]`** — a forma que o
+FastAPI gera para corpo OPCIONAL — e ficavam de fora sem dizer nada:
+
+- `POST /restaurants/{slug}/orders/{tracking_token}/payment`
+- `POST /restaurants/{slug}/orders/track/{tracking_token}/cancel`
+
+Corrigido: a tabela passou de **64 para 66** rotas. **Não consegui ver este
+conserto vermelho**, e está dito assim: `StartPaymentRequest` é aberto e tem
+`required: []`, então nenhum corpo daquela rota consegue violar nada hoje; e a
+rota de cancelamento o front ainda não chama. É correção por construção.
+
+## G.4 ACHADO GRANDE, e não era o que eu procurava
+
+**A rota de cancelamento pelo cliente EXISTE**, e é a pendência que a §8 da
+skill e o `docs/order-contract.md` (item 11) chamam de *"a mais cara, e continua
+aberta: numa recusa de cartão o pedido já está gravado e não há rota de cliente
+para cancelá-lo"*.
+
+    POST /restaurants/{restaurant_slug}/orders/track/{tracking_token}/cancel
+
+Do `@description` do contrato:
+
+- vale em **`pending` e `accepted`**; a partir de `preparing` responde **409** e
+  o app manda falar com o restaurante;
+- **sem login, de propósito** — quem autoriza é o `tracking_token` da URL, o
+  mesmo do acompanhamento; pedido de convidado é caso normal;
+- corpo **opcional**, e o motivo dentro dele também;
+- **estorna o pagamento online**, devolve o cupom e devolve o cashback
+  resgatado — "um pix pago e cancelado em seguida volta sem ninguém ligar para
+  o restaurante";
+- sem `Idempotency-Key`: o segundo clique leva 409 da máquina de estados.
+
+**O front não a chama.** E o motivo de ninguém ter notado é estrutural:
+`api-contract.test.js` confere que toda rota **que o front chama** existe no
+spec — nunca o contrário. Uma capacidade nova que o backend publica não tem
+alarme nenhum.
+
+**Não implementado nesta rodada**: é feature nova no caminho do pedido/pagamento,
+que continua fora desta branch. Mas a pendência mais cara do repositório
+**deixou de ser bloqueada por backend** e passou a ser trabalho de front.
+
+---
+
+# H. Fazer o `api-contract.test.js` valer no CI — plano e custo
+
+## H.1 O problema, exato
+
+`tests/unit/api-contract.test.js` tem três verificações. As duas primeiras
+rodam em qualquer lugar. **A terceira — "o spec versionado é o do backend" —
+só roda onde `../pedeaqui_back` existe**, e o CI só faz checkout deste
+repositório. Ela se pula em silêncio.
+
+Foi essa terceira que pegou, nesta madrugada, o `valid_until` virando anulável.
+Na máquina de quem tem os dois repositórios. **No portão, um contrato
+dessincronizado passa.**
+
+E o que a dessincronização custa está documentado: foi assim que
+`/coupons/available` virou `/coupons`, a tela do Clube quebrou para todo cliente,
+e lint + 253 unitários + 243 E2E ficaram verdes.
+
+## H.2 As três formas, com o custo de cada uma
+
+### (a) O backend publica o `openapi.json` numa URL, e o CI baixa
+
+O job `verify` busca `https://api.pederapidex.com/openapi.json` e compara com
+`scripts/types/openapi.json`.
+
+- **Custo de implementação:** baixo — um passo no `ci.yml` e uma variante do
+  teste que aceita a origem por variável de ambiente.
+- **Custo corrente:** o portão passa a depender da API estar **de pé**. Uma
+  janela de instabilidade do backend vira CI vermelho num PR que não tem nada a
+  ver. Mitigável com "não achou a URL → pula", mas aí volta a se pular em
+  silêncio — só que agora de forma **intermitente**, que é pior: um portão que
+  às vezes confere é um portão em que se aprende a não confiar.
+- **Efeito colateral bom:** pega divergência contra o que está EM PRODUÇÃO, e
+  não contra o que está no disco de alguém.
+- **Risco:** a URL pública precisa expor o spec. Se ela exigir credencial, o
+  segredo entra no CI.
+
+### (b) O backend commita o `openapi.json` num lugar que o CI alcança
+
+Um repositório de contrato, ou um artefato versionado que o CI do front baixa
+por tag.
+
+- **Custo de implementação:** médio, e **atravessa dois times** — é a única
+  opção que exige mudança do lado do backend.
+- **Custo corrente:** praticamente zero, e é determinístico (não depende de
+  serviço no ar).
+- **Efeito:** o contrato passa a ter versão própria, e "o front está na v12 e o
+  backend na v13" vira uma frase que se pode dizer.
+- **É a melhor de longe se o backend topar.**
+
+### (c) O CI faz checkout dos DOIS repositórios
+
+Um passo `actions/checkout` extra com `repository: <org>/pedeaqui_back`.
+
+- **Custo de implementação:** o menor de todos — três linhas no `ci.yml`.
+- **Custo corrente:** clonar o backend inteiro em todo push do front (segundos,
+  mas cresce), **e um token com acesso de leitura ao repositório do backend
+  guardado nos secrets do front**. É esse o preço real: um segredo a mais, e um
+  acoplamento de permissão entre os dois repositórios.
+- **Efeito:** compara contra a `main` do backend, que é o que a máquina local já
+  faz — mesma semântica, sem surpresa.
+
+## H.3 Recomendação
+
+**(b) se o backend topar; (c) enquanto ele não topa.** A (a) é a que parece mais
+simples e é a que tem o pior custo corrente — ela troca um portão que se pula
+por um portão que oscila.
+
+E, em qualquer uma das três, uma coisa muda no teste e é a mais importante:
+**ele não pode mais se pular em silêncio**. Hoje a ausência do backend é
+indistinguível de "conferido e igual". Com a fonte definida por configuração, o
+caso "não consegui conferir" tem de **falhar**, ou no mínimo emitir uma linha
+que o log do CI mostre.
+
+**NÃO IMPLEMENTADO** — o `ci.yml` está fora desta rodada, e a escolha entre (b)
+e (c) é decisão de infraestrutura, não de front.
+
+---
+
+# I. O `©` da landing — consertado
+
+`index.html` dizia **`© 2025`**, errado desde 1º de janeiro, na landing, para
+todo visitante. Nada quebrava e nenhum teste caía: quem percebe um ano velho no
+rodapé é quem está avaliando a empresa.
+
+O ano passa a sair do relógio (`landing-page.js`), e o número no HTML é só o que
+aparece com o JS desligado.
+
+**O teste NÃO é uma bomba-relógio, e a diferença importa:** ele não tem ano
+embutido — compara o ano da página com o ano de quem está rodando, e os dois
+andam juntos. É o mesmo padrão de `validadeFutura()`. Visto vermelho com o
+`2025` recolocado: `Expected: "2026" / Received: "2025"`.
+
+O contador do Pix **não** foi mexido: ele é pedido de backend (`expires_at` em
+`StartPaymentResponse`, §B.4) e conta pelo relógio do cliente porque o contrato
+não manda prazo nenhum.

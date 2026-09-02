@@ -46,14 +46,20 @@ const SPEC_API = JSON.parse(
 const ESQUEMAS_DE_CORPO = Object.entries(SPEC_API.paths || {}).flatMap(([caminho, operacoes]) =>
   Object.entries(operacoes || {})
     .map(([metodo, operacao]) => {
-      const ref = operacao?.requestBody?.content?.['application/json']?.schema?.$ref;
-      if (!ref) return null;
+      // O corpo pode vir por $ref DIRETO ou dentro de um anyOf — e o segundo
+      // caso e o do corpo OPCIONAL, que o FastAPI gera como
+      // `anyOf: [{$ref}, {type: null}]`. Duas rotas do contrato sao assim (a
+      // cobranca do pedido e o cancelamento pelo cliente), e ler so o $ref
+      // direto as deixava de fora da conferencia sem dizer nada.
+      const esquemaDoCorpo = operacao?.requestBody?.content?.['application/json']?.schema;
+      const nomeDoEsquema = refsDe(esquemaDoCorpo)[0];
+      if (!nomeDoEsquema) return null;
       return {
         metodo: metodo.toUpperCase(),
         // `{restaurant_slug}` -> `[^/]+`. A âncora no fim impede que
         // `/coupons/preview` case com o caminho de `/coupons`.
         regex: new RegExp(`^${caminho.replace(/\{[^}]+\}/g, '[^/]+')}$`),
-        esquema: ref.split('/').pop()
+        esquema: nomeDoEsquema
       };
     })
     .filter(Boolean)

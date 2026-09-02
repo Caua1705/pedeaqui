@@ -109,9 +109,11 @@ jobs:
   #  a branch nomeada, e preview e o que a migracao do Maps ainda precisa (a
   #  chave do Google nao libera localhost).
   #
-  #  `vercel pull` traz as variaveis de ambiente de PRODUCAO do projeto (as
-  #  VITE_* e a chave do Maps), entao o build daqui e o mesmo que a Vercel faria
-  #  sozinha. Sem ele, o bundle subiria apontando para a base padrao.
+  #  O `vercel pull` SAIU deste job em 02/09/2026 (ver o passo "Publicar na
+  #  Vercel"): ele falhava com "Could not retrieve Project Settings" mesmo com
+  #  os tres secrets certos. Com ele foram embora as variaveis de ambiente de
+  #  PRODUCAO do projeto — o passo abaixo diz quais o build le e o que acontece
+  #  com cada uma sem o `pull`.
   #
   #  A CLI vai sem pin de versao de proposito: um pin errado quebra o deploy no
   #  dia em que for preciso publicar, e este job so roda depois de quatro
@@ -148,12 +150,44 @@ jobs:
             exit 1
           fi
 
+      # SEM `vercel pull`, DE PROPOSITO — 02/09/2026.
+      #
+      # O `pull` falhava com "Could not retrieve Project Settings" com os tres
+      # secrets corretos: o CLI 59.x ignora o VERCEL_ORG_ID do ambiente quando o
+      # projeto esta num TIME, procura o projeto na conta pessoal do dono do
+      # token, e la ele nao existe. `build` e `deploy` leem os dois IDs do
+      # ambiente normalmente — por isso o caminho direto funciona onde o `pull`
+      # nao funciona. `--scope` vai EXPLICITO nos dois, com o proprio
+      # VERCEL_ORG_ID, para o CLI nao ter de deduzir o time a partir do token.
+      #
+      # O QUE O `pull` TRAZIA E AGORA NAO VEM: as variaveis de ambiente de
+      # producao do projeto na Vercel. Este build le TRES, todas em tempo de
+      # build (o Vite inlina `import.meta.env` no bundle; nao adianta configurar
+      # no painel depois):
+      #
+      #   VITE_API_BASE_URL        fallback em scripts/config/app-config.js e
+      #                            'https://api.pederapidex.com' — o MESMO valor
+      #                            de producao. Ausente nao muda o bundle.
+      #   VITE_TENANT_ROOT_DOMAINS fallback ['rapidex.com','pederapidex.com'],
+      #                            tambem igual ao de producao. Idem.
+      #   VITE_MAPS_KEY            NAO TEM FALLBACK. scripts/config/maps-config.js
+      #                            resolve para '' e o mapa do endereco morre em
+      #                            SILENCIO no bundle publicado.
+      #
+      # Por isso so a terceira precisa vir de secret do repositorio, com o mesmo
+      # valor que esta em Vercel > Project > Settings > Environment Variables >
+      # Production. Nenhum valor e inventado aqui: se o secret nao existir, o
+      # passo AVISA e o bundle sobe sem chave — que e exatamente o que ja
+      # acontecia com o `pull` quebrado, so que agora escrito no log.
       - name: Publicar na Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_MAPS_KEY: ${{ secrets.VITE_MAPS_KEY }}
         run: |
-          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          if [ -z "$VITE_MAPS_KEY" ]; then
+            echo "::warning::Sem o secret VITE_MAPS_KEY: o bundle vai subir com a chave do Google Maps VAZIA e o mapa do endereco nao carrega. Copie o valor de Vercel > Project > Settings > Environment Variables > Production."
+          fi
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID"

@@ -47,3 +47,6 @@ css-cores.json
 ui-inventory.json
 captura*.json
 css-important.json
+
+.vercel
+.env*

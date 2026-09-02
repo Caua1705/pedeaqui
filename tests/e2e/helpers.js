@@ -101,8 +101,16 @@ function violacoesDoCorpo(corpo, nomeDoEsquema, caminhoDoCampo = 'body') {
   return erros;
 }
 
-/** Devolve a lista de violações do corpo desta requisição, ou `[]`. */
-function violacoesDaRequisicao(metodo, caminho, textoDoCorpo) {
+/**
+ * Devolve a lista de violações do corpo desta requisição, ou `[]`.
+ *
+ * EXPORTADA para os specs que registram rota própria: uma rota própria vence o
+ * `mockApi()` (a última registrada ganha), e com ela o corpo deixaria de ser
+ * conferido. Reusar esta função é o que impede que cada spec escreva a SUA
+ * cópia da regra do contrato — que divergiria na direção do que o código manda
+ * hoje, que é justamente o que se quer pegar.
+ */
+export function violacoesDaRequisicao(metodo, caminho, textoDoCorpo) {
   const alvo = ESQUEMAS_DE_CORPO.find(item => item.metodo === metodo && item.regex.test(caminho));
   if (!alvo) return [];
   let corpo;

@@ -728,7 +728,12 @@ contraste (`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária cru
       nada sobre ordem de carga nem sobre código movido entre arquivos.
 - [ ] Nenhum valor de dinheiro calculado fora de `cartTotals()`; nenhum campo lido sem estar em `api.d.ts`.
 - [ ] Rota nova? Ela existe no spec (`api-contract.test.js` prova) e o mock **não** a atende por acidente pelo catch-all.
-- [ ] Pendência de backend virou texto. `docs/order-contract.md` tem a lista, e a mais cara continua aberta: **numa recusa de cartão o pedido já está gravado e não há rota de cliente para cancelá-lo.**
+- [ ] Pendência de backend virou texto. `docs/order-contract.md` tem a lista.
+      A que era "a mais cara" — o pedido gravado numa recusa de cartão, sem rota
+      de cliente para cancelá-lo — **DEIXOU de ser pendência**: a rota existe, e
+      o cancelamento pelo cliente foi construído em 02/09/2026 (§12.13). O que
+      resta dela é o `tracking_token` não vir no pedido do cliente logado, o que
+      limita o botão ao aparelho que fez o pedido.
 
 A mensagem de commit deste repo conta **o defeito**, não a mudança: o que a
 pessoa via, por que ninguém pegou, o que passa a valer, e a verificação com
@@ -1338,3 +1343,73 @@ anunciar `Válido até 01/01`, que é o epoch.
 **Este teste só roda onde `../pedeaqui_back` existe.** No CI ele se pula — então
 um contrato dessincronizado passa pelo `verify` e só aparece na máquina de quem
 tem os dois repositórios. Se você tem, rode `npm run test` ANTES de começar.
+
+### 12.13 O contrato tem DOIS sentidos, e o segundo ficou meses sem olho
+
+`api-contract.test.js` conferia um só: *toda rota que o front CHAMA existe no
+spec*. Isso pega rota morta (o `/coupons/available` do incidente). **Não pega o
+contrário** — capacidade que o backend publicou e o front ignora.
+
+E o contrário custou a pendência mais cara do repositório.
+`POST /restaurants/{slug}/orders/track/{token}/cancel` — o cliente cancelando o
+próprio pedido, com estorno do pagamento, devolução do cupom e do cashback —
+entrou no contrato e ficou **invisível**, enquanto o `docs/order-contract.md`
+seguia listando "não há rota de cliente para cancelar" como pendência aberta.
+
+Hoje o mesmo arquivo IMPRIME, em toda execução, as rotas de cliente que o front
+não usa. **É aviso, não falha**, e o motivo importa: a maioria das rotas do spec
+não é do app (`/admin/*` é o painel, `/payments/webhooks/*` é o gateway,
+`/health` é infra). Um teste que exigisse consumo de todas nasceria vermelho — e
+portão que nasce vermelho é portão que se aprende a ignorar.
+
+Três coisas que a primeira execução dele ensinou:
+
+1. **`console.warn` NÃO APARECE no vitest** quando o teste passa: ele intercepta
+   o console. O aviso ficou verde e invisível, que é o defeito que ele existe
+   para corrigir. Use `process.stdout.write`.
+2. **O falso positivo é informação.** `/chat` e `/chat/feedback` saem na lista e
+   o app usa as duas — elas não estão em `api-routes.js`, o assistente monta a
+   URL literal. A lista denunciou uma rota que escapou do ponto único. Não
+   silencie: o conserto é mover a rota, e aí ela some sozinha.
+3. **Sonda contra vacuidade.** Se a varredura de rotas do front parar de casar,
+   a lista vira o spec inteiro e o aviso deixa de significar nada.
+
+### 12.14 `[hidden]` perde para o CSS, e o Playwright diz isso de um jeito difícil
+
+Uma folha que dá `display` a um elemento por seletor de **id** vence o
+`[hidden]{display:none}` do agente de usuário — atributo puro perde por
+especificidade. O elemento fica com o atributo `hidden` **e visível**: o DOM diz
+uma coisa e o olho vê outra.
+
+A mensagem do Playwright é `resolved to <div hidden="">` seguida de "Received:
+visible", e ela é fácil de ler como bug do teste.
+
+**A regra:** toda vez que uma folha der `display` a um elemento que o JS esconde
+por `hidden`, a linha `[hidden]{display:none}` vai junto, no mesmo bloco.
+
+### 12.15 O `git checkout <arquivo>` de novo — e por que escrever não bastou
+
+A §12.9-2 já registrava que `git checkout <arquivo>` para desfazer uma injeção
+apaga o trabalho não commitado daquele arquivo. **Aconteceu de novo no mesmo
+dia**, com o markup da folha de cancelamento (23 linhas), horas depois de eu ter
+escrito a advertência.
+
+O que faltava não era o aviso, era o HÁBITO. O que funciona:
+
+    cp <arquivo> "$SCRATCH/<nome>.antes"   # ANTES de injetar
+    ... injeta, roda, lê o vermelho ...
+    cp "$SCRATCH/<nome>.antes" <arquivo>   # restaura pela CÓPIA
+
+E o mesmo vale para editar por script: `s.replace(de, () => bloco)` na forma de
+FUNÇÃO, porque num argumento de substituição `` $` `` significa "tudo o que vem
+antes do casamento" (§12.11).
+
+### 12.16 A ordem das rotas de novo: espião registrado ANTES do mock não vê nada
+
+`page.route` — a última registrada vence. Um spec que registra o espião **antes**
+de `mockApi()` não intercepta coisa nenhuma, e o sintoma é
+`expected 1, received 0` requisições: **indistinguível de "o app não chamou"**.
+
+Custou uma leitura errada do vermelho (fui procurar ação inexistente) até uma
+sonda das ações registradas mostrar que estavam todas lá. Quando um espião não
+vê nada, confira a ORDEM antes de duvidar do app.

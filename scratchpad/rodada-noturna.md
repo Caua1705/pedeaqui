@@ -1660,3 +1660,88 @@ corrigir. Hoje usa `process.stdout.write`.
 E ele tem **sonda contra vacuidade**: se `frontRoutes()`/`toSpecShape()`
 pararem de casar, `usadas` fica vazia e a lista vira o spec inteiro. Duas rotas
 que o front comprovadamente chama são afirmadas antes.
+
+---
+
+# L. As três escritas sem cobertura — cobertas
+
+`tests/e2e/customer-writes-contract.spec.js`, três testes, um por escrita de
+esquema fechado que a varredura da §G.2 achou sem exercício nenhum:
+
+| escrita | o que o teste prende |
+|---|---|
+| `PATCH /customers/me` | manda **exatamente** `{name, email, phone, birth_date}` — os quatro `required` — e nada mais; e o `birth_date` sai em ISO |
+| `PATCH /customers/me/addresses/{id}` | os nomes do contrato: `zipcode`, `label`, sem `place_id`. É o **mesmo** `addressApiPayload` que estava quebrado no POST |
+| `POST /customers/me/addresses/import` | `{addresses: [...]}`, e o item de DENTRO (`ImportCustomerAddressRequest`, também fechado) com `zipcode`/`label`/`client_reference` |
+
+**O validador vem do `helpers.js`, exportado.** Estes specs registram rota
+própria — e rota própria vence o `mockApi()`, então o corpo deixaria de ser
+conferido. `violacoesDaRequisicao` é a MESMA função que o mock usa, lendo o
+`openapi.json`. Uma cópia da regra escrita no spec divergiria na direção do que
+o código manda hoje, que é exatamente o que se quer pegar.
+
+**Vermelhos vistos**, reinjetando os nomes antigos no `addressApiPayload` e um
+campo fora do contrato na importação:
+
+    Error: o backend recusaria este payload
+    + "body.postal_code: campo fora do contrato (UpdateCustomerAddressRequest é additionalProperties:false)"
+    + "body.place_id:    campo fora do contrato (...)"
+    + "body.alias:       campo fora do contrato (...)"
+
+**E o erro que eu cometi escrevendo:** registrei os espiões ANTES do
+`mockApi()`. No Playwright a última rota registrada vence, então o `mockApi`
+respondia por tudo e os três testes falhavam com "nenhuma requisição" — que é
+indistinguível de "o app não chamou". A primeira leitura do vermelho apontou
+para o lugar errado (achei que as ações não existiam) e só uma sonda das ações
+registradas desfez a confusão. Está escrito no cabeçalho do arquivo.
+
+## L.1 O que a §G.2 listava e o que sobrou
+
+| escrita | antes | agora |
+|---|---|---|
+| `PATCH /customers/me` | sem teste | **coberta** |
+| `PATCH /customers/me/addresses/{id}` | sem teste | **coberta** |
+| `POST /customers/me/addresses/import` | sem teste | **coberta** |
+| `POST /coupons/claim` | só unitário | continua só unitário — corpo de UM campo, risco pequeno, e a rota nasceu nesta rodada |
+| `/customers/me/cards`, `/auth/login`, `/auth/verify-email-code` | rota própria, sem conferência | continuam — esquemas ABERTOS, sem risco de 422; o que se perde é a conferência de obrigatório ausente |
+| `/auth/register`, `resend`, `forgot`, `verify-reset`, `reset-password`, `PATCH /customers/me/password` | sem teste | continuam sem teste — esquemas abertos, e o fluxo de autenticação inteiro está fora desta branch |
+
+---
+
+# M. O que o backend ainda precisa entregar — dois itens NOVOS
+
+Somam-se aos de §B.
+
+## B.5 O `tracking_token` no pedido do cliente logado
+
+**Pedido:** publicar `tracking_token` em `OrderDetailResponse` (e/ou em
+`CustomerOrderResponse`, da lista), **ou** uma rota de cancelamento por
+`order_id` que autorize pelo Bearer.
+
+**Por que.** O cancelamento pelo cliente já está construído e funciona — mas só
+**no aparelho que fez o pedido**. Quem autoriza é o `tracking_token`, e ele não
+vem em nenhuma resposta do cliente logado: o front só o tem porque o guarda no
+`localStorage` quando o `POST /orders` responde.
+
+Consequência prática: pedido feito no celular não pode ser cancelado pelo
+computador, nem depois de limpar os dados do navegador, nem passados 7 dias (o
+TTL local). O cliente logado vê o pedido, vê que ele está em `accepted`, e não
+tem o botão.
+
+**Não estamos pedindo para afrouxar a autorização.** O `tracking_token` continua
+sendo a chave do convidado. O que falta é o cliente **autenticado** poder
+alcançar o próprio pedido pelo Bearer, que é o que ele já faz para LER
+(`GET /customers/me/orders/{id}`) e não faz para cancelar.
+
+## B.6 Duas capacidades publicadas que o app não oferece
+
+Achadas pelo aviso novo do `api-contract.test.js` (§K). Não são pedidos de
+mudança no backend — são **avisos de que o front está devendo**:
+
+- **`GET /customers/me/export`** — o pacote da LGPD (direito de acesso e
+  portabilidade). O app não tem tela para isso.
+- **`PUT /restaurants/{slug}/orders/track/{token}/review`** — avaliar o pedido.
+  O app não pede avaliação nenhuma.
+
+Ficam nomeadas aqui para não repetirem a história do cancelamento, que passou
+meses invisível.

@@ -37,7 +37,7 @@ com push. Portão sem pipe (`| tail` engole o exit code — §5.1 armadilha 5 e
 | 0 | scratchpad + branch | **feito** |
 | 1 | os 8 escapes pendentes | **feito** — 2 fechados (#5 e #7), 5 mantidos com motivo, 1 virou o item 2 |
 | 2 | `pix-payment:116` | **feito** — mecanismo PROVADO por reprodução, gatilho aberto; sem quarentena |
-| 3 | testes dependentes da hora | varredura feita, correções não |
+| 3 | testes dependentes da hora | **feito** — 1 bomba de data desarmada, 4 esperas convertidas, 1 conversão revertida por medida |
 | 4 | chips chumbados `restaurant.html:462-470` | não começou |
 | 5 | fluxo de cupons | contrato lido, nada construído |
 
@@ -219,3 +219,121 @@ aqui trocaria uma dúvida por uma perda real. Timeout não foi tocado.
 
 `lint 78 problems (0 errors)` · `test:e2e 302 passed · 3 skipped`, exit 0,
 3,9 min, **4 testes acima de 10 s** · 20/20 isoladas sob contenção.
+
+---
+
+## Item 3 — testes que dependem da hora
+
+### 3.1 Leitura de relógio REAL (`new Date()` / `Date.now()` sem injeção)
+
+Varridos `tests/` e `scripts/`. O que existe, e o veredito de cada um:
+
+| sítio | o que faz | veredito |
+|---|---|---|
+| `card-payment-flow:65` e `payment-card-validation-timing:63` | o SDK falso do Mercado Pago valida a validade do cartão contra `new Date()` | **CORRIGIDO** — ver 3.2 |
+| `mercado-pago-secure-fields:117,118,183` | o SDK REAL valida contra o relógio de verdade | **CORRIGIDO** — ver 3.2 |
+| `maps-autocomplete:150` | `expect(Date.now()-t0).toBeGreaterThanOrEqual(3000)` | fica: direção SEGURA (máquina lenta só aumenta o medido) |
+| `maps-autocomplete:156` | `expect(Date.now()-t1).toBeLessThan(3000)` | **CORRIGIDO** — direção insegura |
+| `csp:40,42` | `Date.now()+15_000` como teto de um laço de amostragem | fica: teto de laço, não afirmação |
+| `profile-order-tracking:26` | `created_at = agora − 2 min` | fica: relativo a agora, e `profOrderRelativeDate` (`profile-screen:153`) não tem ramo "hoje/ontem" — não há penhasco de meia-noite |
+| `assistant-voice-session:35` | `expires_at` relativo a agora | fica: relativo |
+| `tenant-theme:198` | `new Date('2026-08-29T12:00:00Z')` com `clock.install` + `pauseAt` | fica: relógio congelado, já corrigido em rodada anterior |
+| `order-tracking.test:173,177` e `service-caches.test:18` | `vi.setSystemTime` | fica: relógio injetado, que é o certo |
+| `restaurant-auth-flow:185` | validade de data de nascimento contra `new Date()` | fica: é a regra de produto (não aceitar nascimento futuro), e as fixtures usam `1990-04-12` |
+| `cashback-statement.js:7` | `toLocaleDateString('pt-BR')` converte para o fuso LOCAL | fica: nenhum teste afirma a data, e mostrar a data local é o comportamento certo. **Anotado**: num fuso a leste de UTC uma transação de madrugada mostra o dia seguinte |
+
+**E um negativo que vale escrever: o horário da loja NÃO lê o relógio.** "Está
+aberto?" vem de `is_open` e "que dia é hoje?" vem de `current_weekday`, os dois
+do backend (`store-info-format.js:54`, `store-info-screen.js:184`). Por isso
+`store-hours.spec.js` compara a linha destacada com `INFO.current_weekday` da
+própria fixture, e passa em qualquer dia da semana. Era o candidato mais óbvio
+da varredura e está certo.
+
+### 3.2 A bomba de data: `11/31`
+
+Três sítios digitavam a validade `11/31` num cartão de teste, e quem confere é
+o relógio REAL nos dois lados (o mock e, em `mercado-pago-secure-fields`, o SDK
+de verdade). **Em 01/12/2031 os três passariam a recusar o cartão** e a suíte
+ficaria vermelha sem uma linha de código ter mudado — a mesma classe do teste
+que só quebrava entre 00:00 e 01:30, com a virada em anos em vez de em horas, e
+por isso pior: quando estourar, ninguém vai lembrar deste literal.
+
+**Visto vermelho:** com `11/24` (já vencida) no lugar, `card-payment-flow` cai
+— `#creditCardModal` não fecha, 14 tentativas. É exatamente o que acontecerá em
+01/12/2031.
+
+Passa a valer `validadeFutura()` em `tests/e2e/helpers.js`: `11/<ano+5>`.
+
+### 3.3 Espera por tempo em vez de espera por condição
+
+Eram 28 sítios. **Quatro corrigidos, e um quinto REVERTIDO depois de medido.**
+
+| sítio | o que virou |
+|---|---|
+| `maps-autocomplete:156` | a medição de parede saiu; `calls.novo === 1` já provava o mesmo, melhor |
+| `menu-scrollspy` (`bootMenu`) | `waitForTimeout(500)` → `waitForFunction(() => .cat.active)` |
+| `menu-scrollspy:118` | `waitForTimeout(600)` → `expect.poll(activeSlug).toBe(slugs[0])` |
+| `image-framing:67,75` | `waitForTimeout(2500)` ×2 → espera por 4 derivadas `complete && naturalWidth > 0` |
+| `overlay-blur:119` | `waitForTimeout(700)` → afirmação com retentativa, teto explícito de 2 s |
+| ~~`menu-scrollspy` `scrollToSection`~~ | **REVERTIDO** — ver abaixo |
+
+Sobram **24** `waitForTimeout`, e cada um tem motivo escrito:
+
+- **Asserção NEGATIVA** (não há condição a esperar; só se pode dar tempo para
+  algo *não* acontecer): `club-coupons:145`, `order-flow:286`,
+  `menu-image-loader:82`, `lifecycle:91`, `boot-smoke:103,137`.
+  A forma que os melhoraria é a *requisição-sentinela* — disparar uma chamada
+  conhecida e esperar por ela, já que qualquer coisa que a tela tenha disparado
+  saiu antes. Não feito nesta rodada; anotado.
+- **Intervalo de amostragem dentro de um laço por condição**: `csp:50`
+  (comentado no próprio arquivo), `lifecycle:145`.
+- **Tempo real de propósito**: `pix-payment:809` (comentado), `pix-payment:560`
+  (atravessar a janela de 10 min é o próprio teste).
+- **Fora desta rodada** (voz e assistente, item 6 do prompt): `assistant-screen`
+  ×2, `assistant-voice` ×1, `assistant-voice-session` ×7.
+- **Fora desta rodada** (checkout / cartão): `order-flow:251`,
+  `mercado-pago-secure-fields:180`. Anotado que `order-flow:251` é redundante —
+  a linha seguinte já é uma afirmação com retentativa.
+- **`menu-scrollspy:60,62`**: ver abaixo. Ficam por MEDIDA.
+
+### 3.4 O experimento que REPROVOU minha própria correção
+
+`scrollToSection` faz cinco rolagens de 350ms mais 400ms de sobra, e parecia o
+vício clássico. Troquei por um laço que reaplica a rolagem até o topo da seção
+parar de andar por três quadros. O experimento de dois braços, com a CPU
+estrangulada por CDP (`Emulation.setCPUThrottlingRate`):
+
+| taxa | braço A (antigo) | braço B (novo) |
+|---|---|---|
+| 4× | 3 passed | 3 passed |
+| 8× | 3 passed | — |
+| 14× | **3 de 3 execuções verdes** | 2 verdes, **1 com dois vermelhos** (2,2 min contra 1,1 min) |
+| 20× | estoura o teto de 30 s | estoura o teto de 30 s |
+
+Duas conclusões, e a segunda é a que importa:
+
+1. **O experimento não discrimina acima de 14×**, porque ali o teste inteiro já
+   está perto do teto de 30 s nos dois braços — o que falha é o orçamento, não
+   a espera. Estrangular mais não é medir melhor.
+2. **A troca era ERRADA por desenho.** A afirmação que essas esperas alimentam
+   compara `expectedSlug` com `activeSlug` **lidos no mesmo instante** — ela não
+   depende de onde a rolagem parou, e o comentário de `expectedSlug` já dizia
+   isso. "Esperar assentar" ACRESCENTA uma dependência que a afirmação nunca
+   teve; sob carga, com as fotos entrando por lazy-load, o assentamento pode não
+   chegar nunca. A mesma armadilha derrubou a primeira versão da espera de
+   `image-framing` (exigia TODAS as imagens `complete`, e no cardápio isso
+   estourou 30 s).
+
+**A regra que fica:** espera por tempo que alimenta uma comparação de duas
+leituras do MESMO instante **não é a espera ruim**. A ruim é a que aposta em
+quando um efeito terá acontecido. Antes de trocar, pergunte de que a afirmação
+depende — não de que a tela depende.
+
+### 3.5 O que NÃO foi visto vermelho, e está dito assim
+
+O filtro `naturalWidth > 0` de `image-framing` fecha um buraco real (imagem em
+voo dá `naturalWidth 0`, a proporção vira `NaN`, e `Math.abs(NaN - x) > 0.04` é
+**falso** — ela passava como se estivesse certa). Mas **não consegui reproduzir
+o passe silencioso nesta máquina**: sem espera nenhuma, os dois braços passaram
+(7,2 s e 6,5 s), porque aqui as derivadas chegam rápido demais. A correção está
+justificada por construção, não por vermelho observado.

@@ -150,10 +150,21 @@ test('caminho novo PENDURADO cai para o legado pelo teto de tempo, e a sessão n
   expect(Date.now() - t0).toBeGreaterThanOrEqual(TETO_NOVO_MS);
 
   // E a digitação seguinte NÃO paga o teto de novo: a sessão está no legado.
+  //
+  // A PROVA É O MECANISMO, NÃO O CRONÔMETRO. Aqui havia
+  // `expect(Date.now() - t1).toBeLessThan(TETO_NOVO_MS)`, e essa é a direção
+  // INSEGURA de uma medição de tempo de parede: máquina ocupada faz o teste
+  // falhar sem que exista defeito — o mesmo vício de `tenant-theme:188`, que
+  // media parede e caía até em série. Medido pelos dois braços, com a resposta
+  // do legado atrasada em 3,5 s (o que a carga faria): o braço antigo falha com
+  // `Received: 4033`, o novo passa.
+  //
+  // E não se perde nada: `calls.novo === 1` abaixo diz a MESMA coisa, e melhor
+  // — se o caminho novo não foi chamado de novo, não há teto a pagar. É
+  // exatamente como o teste irmão do 403 (`:102`) prova a mesma propriedade,
+  // sem cronômetro nenhum.
   await page.locator('#addrSearchInput').fill('');
-  const t1 = Date.now();
   await digitar(page, 'Avenida Beira');
-  expect(Date.now() - t1).toBeLessThan(TETO_NOVO_MS);
   const calls = await page.evaluate(() => window.__mapsCalls);
   expect(calls.novo).toBe(1);
   expect(calls.legado).toBe(2);

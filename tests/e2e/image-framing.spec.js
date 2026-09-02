@@ -16,6 +16,36 @@ test.use({ viewport: { width: 390, height: 844 } });
 // Quanto a proporção da derivada pode fugir da do original.
 const TOLERANCIA = 0.04;
 
+// Espera haver DERIVADA CARREGADA SUFICIENTE para medir — condição, não relógio.
+//
+// Aqui havia `waitForTimeout(2500)` em dois testes. Este spec bate na REDE de
+// verdade (as fixtures apontam para o bucket real), então 2,5 s é uma aposta
+// sobre a rede da máquina que estiver rodando — e a aposta errada NÃO FALHA:
+// ela media naturalWidth 0, a proporção virava NaN e a imagem passava como se
+// estivesse certa.
+//
+// A primeira versão desta espera exigia que TODAS as candidatas estivessem
+// `complete`, e ela estourou o teto de 30 s na tela do cardápio: as fotos
+// entram por lazy-load conforme o layout assenta, então sempre há uma em voo e
+// o "todas" nunca fecha. É a mesma lição do `scrollToSection` desta rodada —
+// não peça à página um estado de repouso que a afirmação nunca precisou.
+//
+// O que a afirmação precisa é de amostra: se a derivada vier achatada, ela vem
+// achatada em TODAS as imagens daquele tipo. Quatro carregadas bastam, e o
+// filtro de `measure` (naturalWidth > 0) garante que nenhuma das medidas seja
+// uma imagem em voo.
+const MINIMO_MEDIVEL = 4;
+
+async function esperarDerivadasCarregadas(page) {
+  await page.waitForFunction((minimo) => {
+    const prontas = [...document.querySelectorAll('img')].filter(
+      (img) => img.currentSrc.includes('/render/image/public/') && img.clientWidth > 20
+        && img.complete && img.naturalWidth > 0
+    );
+    return prontas.length >= minimo;
+  }, MINIMO_MEDIVEL, { timeout: 20000 });
+}
+
 async function boot(page) {
   await mockApi(page);
   await seedPickupSession(page);
@@ -28,7 +58,11 @@ async function boot(page) {
 const measure = () =>
   Promise.all(
     [...document.querySelectorAll('img')]
-      .filter((img) => img.currentSrc.includes('/render/image/public/') && img.clientWidth > 20)
+      // `naturalWidth > 0` não é zelo: uma imagem ainda não carregada dá
+      // naturalWidth 0, a proporção vira NaN, e `Math.abs(NaN - x) > 0.04` é
+      // FALSO — ela passaria como se estivesse certa. Sem isso, o teste ficava
+      // dependendo de a espera ter sido longa o bastante para não mentir.
+      .filter((img) => img.currentSrc.includes('/render/image/public/') && img.clientWidth > 20 && img.naturalWidth > 0)
       .slice(0, 12)
       .map(
         (img) =>
@@ -60,11 +94,7 @@ function assertProporcional(rows) {
 
 test('cupons e banners da home mantêm a proporção do original', async ({ page }) => {
   await boot(page);
-  await page.waitForFunction(
-    () => [...document.querySelectorAll('img')].some((i) => i.currentSrc.includes('/render/image/public/')),
-    { timeout: 20000 }
-  );
-  await page.waitForTimeout(2500);
+  await esperarDerivadasCarregadas(page);
   assertProporcional(await page.evaluate(measure));
 });
 
@@ -72,7 +102,7 @@ test('as fotos do cardápio mantêm a proporção do original', async ({ page })
   await boot(page);
   await page.evaluate(() => window.mobNavMenu?.());
   await page.waitForFunction(() => document.querySelectorAll('.product-image').length > 0);
-  await page.waitForTimeout(2500);
+  await esperarDerivadasCarregadas(page);
 
   const rows = await page.evaluate(measure);
   assertProporcional(rows);

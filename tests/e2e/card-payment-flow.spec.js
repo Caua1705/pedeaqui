@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, addH2OToCart, pixOrder, seedOnlineCardBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, esperarAppPronto } from './helpers.js';
+import { mockApi, addH2OToCart, pixOrder, seedOnlineCardBranch, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, esperarAppPronto, validadeFutura } from './helpers.js';
 
 const json = (body, status = 200) => ({
   status,
@@ -227,7 +227,7 @@ test('lista → cadastrar → formulário Secure Fields → salvar → sacola se
   await page.locator('[data-secure-field="cardNumber"]').click();
   await page.keyboard.type('5031433215406351');
   await page.locator('[data-secure-field="expirationDate"]').click();
-  await page.keyboard.type('11/31');
+  await page.keyboard.type(validadeFutura());
   await page.locator('[data-secure-field="securityCode"]').click();
   await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');

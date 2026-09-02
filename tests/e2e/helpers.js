@@ -308,6 +308,28 @@ export async function mockApi(page, {
 
 export const TRACKING_TOKEN = 'trk_e2e_0000000000000000';
 
+/**
+ * Uma validade de cartão que ainda é FUTURA quando o teste rodar.
+ *
+ * Aqui havia o literal `11/31` em três sítios, e ele não era inofensivo: quem
+ * confere a validade é o relógio REAL nos dois lados — o SDK falso do
+ * Mercado Pago (`new Date()` dentro do mock de `card-payment-flow` e de
+ * `payment-card-validation-timing`) e, em `mercado-pago-secure-fields`, o SDK
+ * de verdade. Em 01/12/2031 os três testes passariam a recusar o cartão e a
+ * suíte ficaria vermelha sem uma linha de código ter mudado.
+ *
+ * É a mesma classe do teste que só quebrava entre 00:00 e 01:30 por ler a hora
+ * real, só que com a virada em anos em vez de em horas — e por isso ainda mais
+ * cara: quando estourar, ninguém vai lembrar deste literal.
+ *
+ * Cinco anos à frente porque o cartão de teste tem de ser aceito hoje e daqui
+ * a muito tempo, e porque um mês fixo (novembro) mantém a string com dois
+ * dígitos sempre.
+ */
+export function validadeFutura() {
+  return `11/${String((new Date().getFullYear() + 5) % 100).padStart(2, '0')}`;
+}
+
 // Payload EMV de Pix (copia e cola), no formato que o gateway devolve.
 export const PIX_QR_CODE =
   '00020126580014BR.GOV.BCB.PIX0136123e4567-e12b-12d1-a456-42665544000052040000530398654041.005802BR5913Fulano de Tal6008BRASILIA62070503***63041D3D';

@@ -114,11 +114,16 @@ test('fechar cada overlay não deixa filtro preso na tela', async ({ page }) => 
     if (!opened) continue;
 
     await page.evaluate((modalId) => window.PedeAquiRestaurantUi.closeModalId(modalId), id);
-    // closeModalId agenda a liberação do scroll em até 560ms; espera o estado
-    // assentar antes de medir, senão o teste mede a transição e não o repouso.
-    await page.waitForTimeout(700);
-
-    const hits = await page.evaluate(collectFullscreenFilters, { ratio: FULLSCREEN_RATIO });
-    expect(describeHits(hits), `blur preso depois de fechar #${id}`).toEqual([]);
+    // closeModalId agenda a liberação do scroll em até 560ms (restaurant-ui.js:220).
+    // Aqui havia `waitForTimeout(700)` — 140ms de folga sobre um temporizador do
+    // APP, que é o tipo de aposta que a máquina ocupada ganha. A afirmação COM
+    // retentativa é a espera por condição: na máquina livre ela fecha na
+    // primeira leitura, na ocupada ela espera o quanto precisar. O teto de 2s é
+    // explícito para que um blur de fato preso falhe rápido, e não custe o
+    // orçamento do teste vezes o número de modais.
+    await expect
+      .poll(async () => describeHits(await page.evaluate(collectFullscreenFilters, { ratio: FULLSCREEN_RATIO })),
+        { timeout: 2000, message: `blur preso depois de fechar #${id}` })
+      .toEqual([]);
   }
 });

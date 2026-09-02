@@ -117,7 +117,7 @@ const PREVIEW_PADRAO = {
   valid: true
 };
 
-async function montarSacola(page, { comCupom = false, previewOverrides = {}, settingsOverrides = {} } = {}) {
+async function montarSacola(page, { comCupom = false, previewOverrides = {}, settingsOverrides = {}, estimateFalha = false } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const chamadas = await mockApi(page, {
@@ -129,18 +129,25 @@ async function montarSacola(page, { comCupom = false, previewOverrides = {}, set
   await page.route(/\/menu(\?|$)/, route => route.fulfill(
     json(menuComAdicional(new URL(route.request().url()).searchParams.get('branch_id'), settingsOverrides))));
 
-  // O /delivery/estimate NÃO é atendido pelo mockApi — cai no catch-all 404, e
-  // por isso NENHUM teste da suíte tinha até hoje uma taxa de entrega de
-  // verdade no total. Esta é a primeira.
-  await page.route(/\/delivery\/estimate(\?|$)/, route => route.fulfill(json({
-    serviceable: true,
-    provider: 'e2e',
-    fallback: false,
-    delivery_fee: 7.4,
-    distance_km: 3.2,
-    eta_min: 40,
-    eta_max: 55
-  })));
+  // A taxa de entrega de verdade no total — este foi o primeiro arquivo da
+  // suíte a ter uma. (O comentário anterior dizia que o `mockApi()` não atendia
+  // o /delivery/estimate; hoje ele atende, com uma taxa fixa de 5,00. Esta rota
+  // o sobrepõe com o 7,40 que a conta deste arquivo usa.)
+  //
+  // Com `estimateFalha`, ela devolve o 422 que a rota declara no contrato — e
+  // é o único jeito de exercitar a metade da conta que trata a AUSÊNCIA da
+  // taxa.
+  await page.route(/\/delivery\/estimate(\?|$)/, route => estimateFalha
+    ? route.fulfill(json({ detail: 'Endereco fora da area de entrega' }, 422))
+    : route.fulfill(json({
+      serviceable: true,
+      provider: 'e2e',
+      fallback: false,
+      delivery_fee: 7.4,
+      distance_km: 3.2,
+      eta_min: 40,
+      eta_max: 55
+    })));
 
   // Saldo de cashback POSITIVO nesta loja: ele não pode mexer no total.
   await page.route(/\/customers\/me\/cashback(\?|$)/, route => route.fulfill(json({
@@ -175,8 +182,11 @@ async function montarSacola(page, { comCupom = false, previewOverrides = {}, set
 
   await page.evaluate(() => window.openModal('cartModal'));
   // A taxa de entrega chega por rede: esperar a LINHA parar de dizer "A definir"
-  // é esperar o fim do caminho, não um relógio.
-  await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
+  // é esperar o fim do caminho, não um relógio. Quando a estimativa FALHA, o
+  // fim do caminho é a outra frase — e esperar por ela é a mesma espera por
+  // condição, não um sleep.
+  if (estimateFalha) await expect(page.locator('#cartDeliveryFeeText')).toHaveText(/indispon/i);
+  else await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
 
   if (comCupom) {
     await page.evaluate(() => window.openCouponDetail('JP5'));
@@ -476,4 +486,54 @@ test('o pedido leva só INPUTS: nenhum valor de dinheiro no payload', async ({ p
   expect(corpo.coupon_id).toBe('0d6e7327-6637-48fb-ad67-fdc362d32ace');
   expect(corpo.order_type).toBe('delivery');
   expect(corpo.items[0].quantity).toBe(2);
+});
+
+// ============================================================================
+//  A TAXA DE ENTREGA QUE NÃO VEIO.
+//
+//  Medido em 02/09/2026: `POST /delivery/estimate` era exercitado 34 vezes na
+//  suíte e SEMPRE com 200. A falha dele nunca tinha sido testada — e ela mexe
+//  no total, porque `deliveryFee()` (restaurant-page.js:187) devolve
+//  `currentDeliveryEstimateFee() ?? 0`: sem estimativa, a entrega entra como
+//  ZERO na conta.
+//
+//  Zero na conta seria um total mentiroso, e o que impede o estrago é uma
+//  segunda peça: `hasValidDeliveryEstimateFee()` fica falso e
+//  `validateOrderPayload` BARRA a criação do pedido.
+//
+//  O unitário de `order-payload` já provava o validador com
+//  `hasValidDeliveryFee: false`. O que ninguém provava era a FIAÇÃO: que uma
+//  falha de verdade da rota chega até aquele estado. Um validador certo ligado
+//  ao lugar errado passa nos dois testes separados e deixa o pedido sair com o
+//  frete zerado.
+// ============================================================================
+test('estimativa que FALHA: o total sai SEM o frete, e por isso o pedido é barrado', async ({ page }) => {
+  const chamadas = await montarSacola(page, { estimateFalha: true });
+
+  // A tela NÃO inventa "R$ 0,00" para a taxa: ela diz que não tem o número.
+  await expect(page.locator('#cartDeliveryFeeText')).toHaveText(/indispon/i);
+
+  // E O TOTAL SAI SEM O FRETE — 68,60 + 0,99 + 0. Isto não é um defeito
+  // escondido, é o que `deliveryFee()` faz por construção
+  // (`currentDeliveryEstimateFee() ?? 0`), e escrever o número aqui é o que
+  // torna visível o tamanho do que a guarda de baixo está segurando: 7,40 a
+  // menos do que o restaurante receberia.
+  await expect(page.locator('#csTotal')).toHaveText('R$ 69,59');
+
+  // A GUARDA. Sem ela o cliente confirmaria 69,59 e o pedido nasceria com um
+  // frete que ninguém apurou.
+  const cta = page.locator('#cartCtaBtn');
+  await cta.click();
+  await expect(page.locator('#paymentMethodModal')).toHaveClass(/active/);
+  await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+  await page.locator('.payment-method-confirm').click();
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await cta.click();
+  // A validacao roda na CONFIRMACAO, nao no botao da sacola: um spec que clique
+  // so no CTA nunca ve o POST /orders — nem a recusa dele (skill §4).
+  await confirmOrderSheet(page);
+
+  await expect(page.locator('#cartOrderError')).toBeVisible();
+  await expect(page.locator('#cartOrderError')).toContainText(/taxa de entrega/i);
+  expect(chamadas.orderRequests, 'nenhum pedido pode nascer sem a taxa apurada').toHaveLength(0);
 });

@@ -90,6 +90,22 @@
     cancelOrder: (restaurantSlug, trackingToken) =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders/track/${routeSlug(trackingToken)}/cancel`,
 
+    // ---- Assistente por texto ----
+    //
+    // Estas duas estavam escritas LITERALMENTE dentro do
+    // `restaurant-assistant.js` ('/chat' e '/chat/feedback'), fora do ponto
+    // único de rotas. Quem as denunciou foi o aviso novo do
+    // `api-contract.test.js`, em 02/09/2026: elas saíram na lista de "rotas que
+    // a API oferece e o front não usa" — o app usava as duas, mas nenhuma delas
+    // passava por aqui, então a varredura não as via.
+    //
+    // O preço de estar fora não era teórico: rota literal não é conferida
+    // contra o spec pelo teste que existe justamente para isso. Se o backend
+    // renomeasse `/chat`, o app quebraria como a tela do Clube quebrou quando
+    // `/coupons/available` virou `/coupons` — com todos os portões verdes.
+    chat: () => '/chat',
+    chatFeedback: () => '/chat/feedback',
+
     // ---- Atendimento por voz ----
     // Só a emissão exige Bearer; as outras três são abertas. Quando a voz está
     // desligada na plataforma, TODAS respondem 404 — a rota deixa de existir.

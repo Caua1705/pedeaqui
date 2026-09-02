@@ -1745,3 +1745,186 @@ mudança no backend — são **avisos de que o front está devendo**:
 
 Ficam nomeadas aqui para não repetirem a história do cancelamento, que passou
 meses invisível.
+
+---
+
+# §B.5 — O `tracking_token` no pedido do cliente logado
+
+> **Texto para colar no agente do backend.** É a continuação da seção B (o que
+> o backend precisa entregar). Contexto: front white-label de pedidos
+> (`pedeaqui_front`), consumindo a API do Rapidex.
+
+## O pedido
+
+**Publicar o `tracking_token` em `OrderDetailResponse`** — a resposta de
+`GET /customers/me/orders/{order_id}`, do cliente autenticado.
+
+Se publicá-lo na lista (`GET /customers/me/orders`) for barato, melhor ainda: o
+botão de cancelar aparece no card sem esperar o detalhe carregar. Mas o detalhe
+é o que resolve.
+
+**Alternativa equivalente, se preferirem não expor o token:** uma rota de
+cancelamento endereçada por `order_id` e autorizada pelo **Bearer** —
+`POST /customers/me/orders/{order_id}/cancel` —, com exatamente a mesma
+semântica da que já existe (janela `pending`/`accepted`, 409 a partir de
+`preparing`, estorno do pagamento online, devolução do cupom e do cashback).
+
+Qualquer uma das duas resolve. Não precisamos das duas.
+
+## Por que o front precisa
+
+O cancelamento pelo cliente **já está construído e funcionando**
+(`POST /restaurants/{slug}/orders/track/{tracking_token}/cancel`). O botão
+aparece no detalhe do pedido, dentro da janela, com confirmação e com o texto
+do que acontece com pagamento, cupom e cashback.
+
+Só que quem autoriza aquela rota é o `tracking_token`, e **ele não vem em
+nenhuma resposta do cliente logado**. O front só o tem porque o guarda no
+`localStorage` no instante em que o `POST /orders` responde
+(`scripts/state/order-tracking.js`).
+
+Consequência prática, e ela é grande:
+
+| situação | o cliente consegue cancelar? |
+|---|---|
+| pediu no celular, cancela no celular | **sim** |
+| pediu no celular, abre no computador | **não** — o botão nem aparece |
+| pediu, limpou os dados do navegador | **não** |
+| pediu há mais de 7 dias (nosso TTL local) | **não** |
+| pediu no app, entrou depois em outro navegador | **não** |
+
+Nos quatro casos de "não", o cliente **vê o pedido** (o histórico vem pelo
+Bearer, normalmente), vê que ele está em `accepted`, e não tem como desistir. A
+única saída é ligar para o restaurante — que é exatamente o custo que a rota de
+cancelamento existe para eliminar.
+
+## Por que o front não resolve sozinho
+
+Não há de onde tirar o token. Ele não está em `OrderDetailResponse`, não está em
+`CustomerOrderResponse`, e não há rota que o devolva a partir do `order_id`. O
+`localStorage` é a única fonte, e ele é por aparelho e por navegador — não é uma
+propriedade do pedido, é uma propriedade de onde o pedido foi feito.
+
+E **não queremos afrouxar a autorização**: o `tracking_token` continua sendo a
+chave do convidado, e é ele que mantém o Pix de quem não tem conta funcionando.
+O que falta é o cliente **autenticado** poder alcançar o próprio pedido pelo
+Bearer para CANCELAR — que é o que ele já faz para LER, em
+`GET /customers/me/orders/{order_id}`.
+
+## Sobre expor o token na resposta
+
+Se a preocupação for vazamento: o `tracking_token` já viaja na URL de toda
+consulta de acompanhamento e já é guardado no `localStorage` do cliente. Publicá-lo
+numa resposta que **exige Bearer e é do próprio dono do pedido** não amplia a
+superfície — quem pode ler aquela resposta já é quem poderia cancelar.
+
+Se ainda assim preferirem não expor, a alternativa da rota por `order_id` +
+Bearer entrega o mesmo resultado sem o token aparecer em lugar nenhum. É a nossa
+preferência se houver dúvida.
+
+## O que muda no front quando chegar
+
+Uma linha: a busca do token deixa de ser só no `localStorage` e passa a cair
+para o campo da resposta (ou a chamada troca de rota). O resto — a janela de
+status, a confirmação, o texto das consequências, o tratamento do 409 — já está
+pronto e testado (`tests/e2e/order-cancel.spec.js`).
+
+---
+
+# N. O `/chat` voltou para o ponto único
+
+`'/chat'` e `'/chat/feedback'` estavam escritas **literalmente** dentro do
+`restaurant-assistant.js`. Quem as denunciou foi o aviso novo do
+`api-contract.test.js`: elas saíram na lista de "rotas que a API oferece e o
+front não usa" — o app usava as duas, mas nenhuma passava por `api-routes.js`,
+então a varredura não as via.
+
+**O preço de estar fora não era teórico:** rota literal não é conferida contra o
+spec pelo teste que existe justamente para isso. Um renome no backend a
+quebraria como a tela do Clube quebrou quando `/coupons/available` virou
+`/coupons` — com todos os portões verdes.
+
+Agora são `routes.chat()` e `routes.chatFeedback()`. **O aviso caiu de 4 para 2
+linhas sozinho**, e as duas que sobraram são reais:
+
+    [contrato] 2 rota(s) de cliente que a API oferece e o front NÃO usa:
+      GET    /customers/me/export
+      PUT    /restaurants/{restaurant_slug}/orders/track/{tracking_token}/review
+
+Foi o comportamento certo do aviso: o falso positivo era o sintoma de uma rota
+que escapou, e consertar a rota apagou o sintoma — que é diferente de silenciá-lo.
+
+---
+
+# O. As escritas que só tinham caminho feliz — dinheiro primeiro
+
+Medido em 02/09/2026 instrumentando o `mockApi()`. Destas, três estavam **só**
+no caminho feliz, e as três são dinheiro.
+
+## O.1 Salvar cartão — nenhum mock da suíte devolvia erro
+
+**TODO** mock de `/customers/me/cards` respondia 200. O contrato declara
+`201, 401, 409, 422, 502, 503`.
+
+O que a falha protege: **um cartão que a tela mostra e o gateway não tem é um
+cartão que o cliente escolhe no checkout e que recusa na hora de pagar** — com a
+sacola montada. O teste novo prende que a falha não coloca o cartão na lista,
+que a tela não fecha sobre o erro, que a mensagem do BACKEND chega ao cliente
+(não uma frase genérica nossa) e que o botão volta a funcionar.
+
+**Vermelho visto**, tornando o salvamento otimista (o cartão entra na lista
+antes de o backend responder): `Expected: 0 / Received: 1`.
+
+## O.2 Remover cartão — a falha PRECISA deixar o cartão na lista
+
+Aqui o contrato é explícito, e o front acerta: *"Se ele [o gateway] estiver fora
+do ar a remoção falha inteira (502) e o cartão continua na lista — o cliente
+tenta de novo."* Sumir com ele da tela faria a pessoa acreditar que apagou um
+cartão que continua na conta do lojista.
+
+**Vermelho visto**, tornando a remoção otimista: `Expected: 1 / Received: 0`.
+
+## O.3 A taxa de entrega que não veio — e o total que sai sem ela
+
+`POST /delivery/estimate` era exercitado **34 vezes** na suíte, sempre com 200.
+
+E a falha dele mexe no total: `deliveryFee()` (`restaurant-page.js:187`) devolve
+`currentDeliveryEstimateFee() ?? 0`. Medido no teste novo, com o 422 que a rota
+declara:
+
+| linha | valor |
+|---|---|
+| Subtotal | R$ 68,60 |
+| Taxa de serviço | R$ 0,99 |
+| Taxa de entrega | **"Taxa indisponivel"** |
+| **Total** | **R$ 69,59** |
+
+O total sai **7,40 mais barato** do que o pedido custaria. Isso não é defeito
+escondido — é o que a função faz por construção. O que impede o estrago é uma
+segunda peça: `hasValidDeliveryEstimateFee()` fica falso e
+`validateOrderPayload` **barra a criação do pedido**.
+
+**O buraco era de FIAÇÃO, não de lógica.** O unitário de `order-payload` já
+provava o validador com `hasValidDeliveryFee: false`; ninguém provava que uma
+falha de verdade da rota chega até aquele estado. Um validador certo ligado no
+lugar errado passa nos dois testes separados e deixa o pedido sair com frete
+zerado.
+
+**Vermelho visto**, trocando `hasValidDeliveryFee: hasValidDeliveryEstimateFee()`
+por `true`: o erro some da sacola e o pedido nasce.
+
+## O.4 Um comentário desatualizado, corrigido de passagem
+
+`cart-money-chain.spec.js` dizia que *"o /delivery/estimate NÃO é atendido pelo
+mockApi — cai no catch-all 404"*. **Hoje ele é atendido** (taxa fixa de 5,00), e
+a instrumentação mostrou as 34 chamadas chegando lá. O comentário virou o que
+ele é: esta rota sobrepõe o mock com o 7,40 que a conta deste arquivo usa.
+
+## O.5 O que continua só no caminho feliz, e por quê
+
+| escrita | por que fica |
+|---|---|
+| `POST /coupons/claim` | corpo de UM campo (`{code}`), com seis unitários que cobrem recusa, código vazio e filtro. Sem E2E — o risco é pequeno e a rota nasceu nesta rodada |
+| `/auth/login`, `/auth/verify-email-code` | esquemas ABERTOS: nome fora do contrato não vira 422. Perde-se só a conferência de obrigatório ausente. E o fluxo de autenticação inteiro está fora desta branch |
+| `/auth/register`, `resend`, `forgot`, `verify-reset`, `reset-password`, `PATCH /customers/me/password` | sem teste nenhum, e sem tela coberta por E2E. Mesmo motivo acima; é a próxima frente |
+| `POST /orders` e `POST /orders/{token}/payment` | **já tinham** caminho de falha: 409, `detail` em três formas, abort de rede com Idempotency-Key reaproveitada, duplo clique, recusa de cartão, 409 do gateway, cobrança sem QR |

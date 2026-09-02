@@ -704,3 +704,141 @@ test('pedido de cartão que volta payment_flow=delivery avisa que o cartão NÃO
   // Nenhuma cobrança foi tentada: não havia fluxo online para cobrar.
   expect(paymentCalls).toHaveLength(0);
 });
+
+// ============================================================================
+//  AS DUAS ESCRITAS DE CARTÃO QUE SÓ TINHAM CAMINHO FELIZ.
+//
+//  Medido em 02/09/2026: TODO mock de `/customers/me/cards` da suíte devolvia
+//  200. Salvar cartão e remover cartão nunca tinham falhado num teste — e as
+//  duas rotas declaram falha no contrato:
+//
+//    POST   /customers/me/cards            201, 401, 409, 422, 502, 503
+//    DELETE /customers/me/cards/{card_id}  200, 401, 404, 422, 502
+//
+//  O que cada uma protege é diferente, e as duas são dinheiro:
+//
+//  - SALVAR que falha não pode deixar o cartão na lista. Um cartão que a tela
+//    mostra e o gateway não tem é um cartão que o cliente escolhe no checkout e
+//    que recusa na hora de pagar — com a sacola montada e a fome no lugar.
+//  - REMOVER que falha PRECISA deixar o cartão na lista. É o próprio contrato
+//    que diz: com 502 "a remoção falha inteira e o cartão continua na lista — o
+//    cliente tenta de novo". Sumir com ele da tela faria a pessoa acreditar que
+//    apagou um cartão que continua na conta do lojista.
+// ============================================================================
+
+/** A tela do formulário de cartão, com a lista de cartões que o teste mandar. */
+async function abrirFormularioDeCartao(page, { cartoes = [], onSaveCard = null } = {}) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
+  await installMercadoPagoSecureFieldsMock(page);
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-e2e', name: 'Cliente Teste', phone: '85999999999', email: 'cliente.e2e@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true
+  })));
+  const chamadas = [];
+  await page.route('**/customers/me/cards**', route => {
+    const metodo = route.request().method();
+    chamadas.push({ metodo, url: route.request().url() });
+    if (metodo === 'GET') return route.fulfill(json(cartoes));
+    if (metodo === 'POST' && onSaveCard) return onSaveCard(route);
+    if (metodo === 'DELETE') return route.fulfill(json({ ok: true }));
+    return route.fulfill(json({ id: 'card-novo' }, 201));
+  });
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  return chamadas;
+}
+
+test('salvar cartão que o backend RECUSA não coloca o cartão na lista', async ({ page }) => {
+  // 409 é uma das falhas que o contrato declara para esta rota. O ponto não é
+  // o número: é que uma falha qualquer não pode virar um cartão na tela.
+  await abrirFormularioDeCartao(page, {
+    onSaveCard: route => route.fulfill(json({ detail: 'Cartão já cadastrado nesta conta.' }, 409))
+  });
+
+  await page.locator('#paymentAddCard').click();
+  await page.locator('#addCreditCardOption').click();
+  // 5031433215406351 passa no Luhn. O ...352 do teste vizinho e invalido DE
+  // PROPOSITO — copiar de la sem conferir fez o formulario parar na validacao e
+  // o POST nunca sair, com o erro de tela vazio.
+  await page.locator('[data-secure-field="cardNumber"]').fill('5031433215406351');
+  await page.locator('[data-secure-field="expirationDate"]').fill(validadeFutura());
+  await page.locator('[data-secure-field="securityCode"]').fill('123');
+  await page.locator('#cardholderName').fill('APRO');
+  // 52998224725 passa no validador de CPF. O 12345678900 do teste vizinho e
+  // INVALIDO de proposito — com ele o formulario para na validacao e o POST
+  // nunca sai, e o erro de tela fica vazio em vez de trazer a frase do backend.
+  await page.locator('#cardholderCpf').fill('52998224725');
+  await page.locator('#saveCreditCardButton').click();
+
+  // A mensagem do BACKEND chega ao cliente. Uma frase genérica nossa esconderia
+  // a única informação acionável ("já cadastrado" vs "tente de novo").
+  await expect(page.locator('#creditCardFormError')).toContainText('já cadastrado');
+
+  // O CARTÃO NÃO ENTRA NA LISTA. É o ponto do teste: um cartão que a tela
+  // mostra e o gateway não tem recusa no checkout, com a sacola montada.
+  await expect(page.locator('.payment-saved-card')).toHaveCount(0);
+  // E a tela NÃO fecha: fechar sobre um erro esconde o erro.
+  await expect(page.locator('#creditCardModal')).toHaveClass(/active/);
+  // O botão volta: sem isto a pessoa fica com um formulário preenchido e morto.
+  await expect(page.locator('#saveCreditCardButton')).toBeEnabled();
+});
+
+test('remover cartão que falha DEIXA o cartão na lista — o contrato manda', async ({ page }) => {
+  const cartao = {
+    id: 'card-e2e-1',
+    provider_card_id: '1562188766181',
+    brand: 'visa',
+    last_four_digits: '2508',
+    expiration_month: 12,
+    expiration_year: 2030,
+    created_at: '2026-08-25T12:00:00Z'
+  };
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await seedLoggedDelivery(page);
+  await seedOnlineCardBranch(page);
+  await installMercadoPagoSecureFieldsMock(page);
+  await page.route('**/customers/me/addresses**', route => route.fulfill(json([])));
+  await page.route('**/customers/me/cashback**', route => route.fulfill(json({ balance: 0, transactions: [] })));
+  await page.route(/\/customers\/me(?:\?|$)/, route => route.fulfill(json({
+    id: 'customer-e2e', name: 'Cliente Teste', phone: '85999999999', email: 'cliente.e2e@example.com'
+  })));
+  await page.route('**/payment-config', route => route.fulfill(json({
+    provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true
+  })));
+  // 502 é o caso que o `@description` da rota descreve: o gateway respondeu
+  // primeiro e caiu, então a remoção não aconteceu em lado nenhum.
+  // UMA rota so, decidindo pelo metodo. Duas rotas aninhadas nao funcionam
+  // aqui: a ultima registrada vence para TODAS as URLs que ela casa, e a
+  // generica respondia 200 ao DELETE — o cartao sumia e o teste media o
+  // caminho feliz achando que media a falha.
+  await page.route('**/customers/me/cards**', route =>
+    route.request().method() === 'DELETE'
+      ? route.fulfill(json({ detail: 'Gateway indisponível' }, 502))
+      : route.fulfill(json([cartao]))
+  );
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartCtaBtn').click();
+  await expect(page.locator('.payment-saved-card')).toHaveCount(1);
+
+  await page.evaluate((id) => window.RapidexActions.resolve('deleteSavedCard')?.(id), cartao.id);
+
+  // O CARTÃO CONTINUA. "A remoção falha inteira e o cartão continua na lista —
+  // o cliente tenta de novo" é o texto do contrato, e é o comportamento certo:
+  // sumir com ele faria a pessoa acreditar que apagou o que continua lá.
+  await expect(page.locator('.payment-saved-card')).toHaveCount(1);
+  await expect(page.locator('#paymentSavedCards')).toContainText(/não foi possível remover|indisponível/i);
+});

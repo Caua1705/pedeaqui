@@ -215,18 +215,23 @@ describe('toda rota que o front chama existe na API', () => {
   //  lista curta que alguém precisa editar de propósito, e não um filtro
   //  esperto que silencia sozinho.
   //
-  //  ## A LISTA TEM UM FALSO POSITIVO, e ele é informação
+  //  ## O PRIMEIRO FALSO POSITIVO JÁ RENDEU UM CONSERTO
   //
-  //  `/chat` e `/chat/feedback` aparecem como não usadas, e o app USA as duas.
-  //  Elas não estão em `api-routes.js`: o assistente monta a URL literal
-  //  (`restaurant-assistant.js:658`). Ou seja o falso positivo denuncia uma
-  //  rota que escapou do ponto único de rotas — e é por isso que ela NÃO foi
-  //  silenciada aqui. Silenciar seria apagar o sintoma; o conserto é mover as
-  //  duas para `api-routes.js`, e aí elas somem desta lista sozinhas.
+  //  Na estreia, em 02/09/2026, a lista tinha QUATRO linhas e duas eram falso
+  //  positivo: `/chat` e `/chat/feedback` apareciam como não usadas, e o app
+  //  usava as duas — elas estavam escritas LITERALMENTE dentro do
+  //  `restaurant-assistant.js`, fora do ponto único de rotas.
   //
-  //  Em 02/09/2026 as outras duas eram reais: `GET /customers/me/export` (o
-  //  pacote da LGPD) e `PUT .../orders/track/{token}/review` (avaliar o pedido)
-  //  — duas capacidades publicadas que o app do cliente não oferece.
+  //  O falso positivo era informação: rota literal não passa pelo teste que
+  //  confere as rotas do front contra o spec, então um renome no backend a
+  //  quebraria em silêncio — que é o incidente do `/coupons/available`. As duas
+  //  foram para `api-routes.js` e sumiram desta lista sozinhas, que é o
+  //  comportamento certo. **Não silencie um falso positivo daqui**: ele é o
+  //  sintoma de uma rota que escapou.
+  //
+  //  As outras duas eram reais e continuam na lista: `GET /customers/me/export`
+  //  (o pacote da LGPD) e `PUT .../orders/track/{token}/review` (avaliar o
+  //  pedido) — capacidades publicadas que o app do cliente não oferece.
   // ============================================================================
   describe('rotas que a API oferece e o front não usa (AVISO, não falha)', () => {
     const PREFIXOS_FORA = [

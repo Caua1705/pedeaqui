@@ -82,11 +82,11 @@
     }
 
     function getCouponCode(coupon, index) {
-      return String(coupon.id ?? coupon.coupon_id ?? coupon.code ?? coupon.coupon_code ?? `club-coupon-${index}`);
+      return String(coupon.id ?? coupon.code ?? `club-coupon-${index}`);
     }
 
     function getCouponImage(coupon) {
-      return coupon.image_url || coupon.image || coupon.image_path || coupon.banner_url || coupon.cover_url || '';
+      return coupon.image_url || '';
     }
 
     /**
@@ -100,7 +100,7 @@
      */
     function getCouponBadge(coupon) {
       if (coupon.label === 'selected_for_you') return 'Selecionado para você';
-      const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
+      const type = String(coupon.discount_type || '').toLowerCase();
       if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
       return 'Cupom disponível';
     }
@@ -124,9 +124,9 @@
      */
     function renderCouponMeta(coupon) {
       const rows = [];
-      const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
+      const minimum = couponAmount(coupon.min_order_value);
       const discount = couponAmount(coupon.discount_amount);
-      const validUntil = formatCouponDate(coupon.valid_until || coupon.expires_at || coupon.end_date || coupon.valid_to);
+      const validUntil = formatCouponDate(coupon.valid_until);
       // Só quando o cupom de fato aplica agora: com `missing_amount` ou
       // `login_required` o desconto vem 0,00, e escrever "Desconto de R$ 0,00"
       // seria anunciar a ausência como se fosse o benefício.
@@ -142,8 +142,12 @@
       const code = getCouponCode(coupon, index);
       const label = getCouponLabel(coupon);
       const image = getCouponImage(coupon);
-      const title = coupon.title || coupon.name || coupon.code || coupon.coupon_code || 'Cupom';
-      const description = coupon.short_description || coupon.description || coupon.subtitle || '';
+      const title = coupon.title || coupon.code || 'Cupom';
+      // `short_description` vinha NA FRENTE de `description`, e só `description`
+      // existe em CustomerCouponResponse. Enquanto o backend não publica aquele
+      // nome, isto lê `undefined` e cai no campo certo; no dia em que publicar,
+      // a regra do cupom troca de campo sozinha, sem uma linha mudar aqui.
+      const description = coupon.description || '';
       // No contrato do cliente `title` JÁ É o rótulo do desconto ("10% OFF") —
       // não existe um nome de campanha separado como havia no contrato antigo.
       // Repetir os dois deixaria o card com a mesma frase duas vezes, empilhada.

@@ -54,7 +54,7 @@
 
   function couponRules(coupon) {
     const rules = [];
-    const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
+    const minimum = couponAmount(coupon.min_order_value);
     const discount = couponAmount(coupon.discount_amount);
     const missing = couponAmount(coupon.missing_amount);
     // O desconto desta sacola, quando o backend já o decidiu. Vem antes do
@@ -71,8 +71,10 @@
     if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
     // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
     // vitrine o campo não vinha, então ninguém tinha visto ainda; o feed do
-    // cliente manda `valid_until` em todo cupom.
-    const validUntil = couponValidUntil(coupon.expires_at || coupon.valid_until);
+    // cliente manda `valid_until` em todo cupom. `expires_at` estava NA FRENTE
+    // dele e não existe em contrato nenhum: lia `undefined` sempre, e no dia em
+    // que o backend publicasse esse nome venceria o campo certo.
+    const validUntil = couponValidUntil(coupon.valid_until);
     if (validUntil) rules.push(`Válido até ${validUntil}`);
     // `max_discount` saiu de propósito do contrato do cliente: teto é limite
     // interno da campanha, e publicá-lo só serviria para refazer a conta.

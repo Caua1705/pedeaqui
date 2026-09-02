@@ -35,11 +35,20 @@ com push. Portão sem pipe (`| tail` engole o exit code — §5.1 armadilha 5 e
 | item | assunto | estado |
 |---|---|---|
 | 0 | scratchpad + branch | **feito** |
-| 1 | os 8 escapes pendentes | em curso |
+| 1 | os 8 escapes pendentes | **feito** — 2 fechados (#5 e #7), 5 mantidos com motivo, 1 virou o item 2 |
 | 2 | `pix-payment:116` | não começou |
-| 3 | testes dependentes da hora | não começou |
+| 3 | testes dependentes da hora | varredura feita, correções não |
 | 4 | chips chumbados `restaurant.html:462-470` | não começou |
-| 5 | fluxo de cupons | não começou |
+| 5 | fluxo de cupons | contrato lido, nada construído |
+
+## AMBIENTE — leia antes de rodar portão
+
+`node_modules` chegou nesta sessão **sem `typescript`, `openapi-typescript` e
+`@types/node`**: `npm run typecheck:cards` respondia `'tsc' não é reconhecido`
+e — ATENÇÃO — pelo Bash isso saía com **exit 0**, ou seja o portão se pulava em
+silêncio. `npm install` (02/09/2026) resolveu, **sem tocar no
+`package-lock.json`**. Se o typecheck voltar a "passar" instantaneamente,
+confira `ls node_modules/.bin/ | grep tsc` antes de acreditar.
 
 ---
 
@@ -60,4 +69,79 @@ Lista de partida (de `rodada-sacola.md` §6, que já fechou o antigo #4):
 
 (Numeração preservada de propósito — o antigo #4 fechou na rodada da sacola.)
 
-_(análise item a item abaixo, à medida que sai)_
+### O que saiu: 2 fechados, e a família era MAIOR que o escape
+
+O escape #5 estava escrito como UM sítio (`restaurant-club.js:146`,
+`short_description || description`). Ao varrer a família — a lição da §11 da
+skill, "corrigido o sítio, varra a FAMÍLIA, senão ela volta pelo irmão" —
+apareceram **30 sítios em 6 arquivos**, e três deles ninguém tinha nomeado:
+
+| arquivo | o fantasma | vencia quem |
+|---|---|---|
+| `restaurant-club.js:146` | `short_description` | `description` (o escape #5) |
+| `coupon-detail-screen.js:75` | `expires_at` | `valid_until` — **novo** |
+| `screens/home-screen.js:243` | `title` em cupom PÚBLICO | `name` — **novo** |
+| `coupon-format.js:42-43` | `type`, `value`, `amount` | `discount_type`, `discount_value` — **novo** |
+| `menu-service.js:186-191,198-203` | `uuid`,`title`,`name`,`subtitle`,`description`,`imageUrl`,`image`,`order` | ninguém: o escape #7 |
+| + fallbacks mortos em club e detalhe | `coupon_id`,`coupon_code`,`min_subtotal`,`minimum_order_value`,`end_date`,`valid_to`,`banner_url`,`cover_url`,`image`,`image_path` | — |
+
+**Nenhum deles mudava um pixel hoje**: fantasma lê `undefined` sempre. Os dois
+preços são (1) código que MENTE para quem lê e (2) a inversão silenciosa no dia
+em que o backend publicar aquele nome.
+
+### A armadilha que essa varredura descobriu, e que uma regra única quebraria
+
+`name` e `title` são o **mesmo campo em dois esquemas**, e qual é o certo
+depende de QUEM está lendo:
+
+| esquema | o rótulo do cupom se chama | quem lê |
+|---|---|---|
+| `PublicCouponResponse` | **`name`** | o trilho da Home (feed do `/menu`) |
+| `CustomerCouponResponse` | **`title`** | o card do Clube (`/coupons`) |
+
+E a **folha de detalhe recebe os DOIS**: `getCouponForDetail()`
+(`restaurant-page.js:4855`) procura primeiro na lista do Clube e cai para o feed
+do cardápio. Lá `coupon.name || coupon.title` **não é defeito** — é normalização
+deliberada de dois contratos, a mesma figura do escape #6
+(`address-service.js:25`). Uma regra do tipo "sempre prefira `title`" quebraria
+o trilho da Home; por isso a guarda é por ARQUIVO, com os esquemas declarados.
+
+### A guarda: `tests/unit/contract-field-names.test.js`
+
+12 testes. Para cada alvo, dois: uma **sonda contra vacuidade** (a varredura
+ainda enxerga nomes que sabidamente existem — sem ela, uma regex que parasse de
+casar faria a afirmação passar sem olhar para nada) e a afirmação em si.
+
+Vista vermelha ANTES da correção: **6 falharam, 6 sondas passaram**, nomeando os
+30 sítios com arquivo:linha. Uma correção intermediária foi necessária no
+próprio stripper — o `replace` do comentário de bloco por um espaço colapsava o
+arquivo e a linha relatada apontava para outro lugar; hoje ele preserva as
+quebras.
+
+Fora da guarda **de propósito**: `restaurant-page.js` (o arquivo do dinheiro,
+não aberto para isto nesta rodada). Os três sítios de cupom dele foram
+conferidos à mão em 02/09/2026 e os três já têm o nome do contrato na frente:
+`:712`, `:4805`, `:4806`.
+
+### Os que ficam, com o motivo
+
+| # | escape | por que fica |
+|---|---|---|
+| 1 | `auth-screen-nav.spec.js:105` | nunca reproduzido (0 em 7+ execuções saudáveis, incluindo a desta rodada). Sem vermelho não há causa a ler, e `fixme` num teste que passa troca suspeita por perda REAL de cobertura |
+| 2 | `order-flow.spec.js:163` | idem, e é o único guardião da Idempotency-Key reaproveitada na retentativa — que é dinheiro |
+| 3 | `pix-payment.spec.js:116` | **é o item 2 desta rodada** |
+| 6 | `address-service.js:25` | precedência DE PROPÓSITO: `normalizeAddress` normaliza a forma da API e a que ele mesmo grava no localStorage. É a MESMA figura da folha de detalhe do cupom, agora documentada nas duas pontas |
+| 8 | `provider_error_code` | a tela onde ele cabe é a de recusa de cartão — **checkout de pagamento, fora desta rodada** (item 6 do prompt) |
+| 9 | `assistant-voice-session.spec.js:472` | **voz no app está fora desta rodada** (item 6 do prompt). Continua com os números medidos: teto de 8 s, preparo com direito a 25 s |
+
+**Contagem: 6 escapes abertos** (era 8). Abaixo do limite.
+
+### Verificação do item 1
+
+- `npm run lint` — `78 problems (0 errors, 78 warnings)`, todos herdados
+- `npm run typecheck:cards` — exit 0 (depois do `npm install`, ver AMBIENTE)
+- `npm run test` — **315 passed** (28 arquivos); eram 303 + 12 da guarda nova
+- `npm run test:e2e` — **302 passed · 3 skipped**, exit 0, 4,9 min,
+  **6 testes acima de 10 s** (a linha de base limpa tem 6–9; a suja tinha 43)
+
+Nenhum número de dinheiro mudou: as 30 trocas removem nome que lia `undefined`.

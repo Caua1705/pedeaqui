@@ -53,9 +53,7 @@
     const heroFallback = $('restaurantHeroFallback');
     if (!img || !cover) return;
     const nextSignature = JSON.stringify(shell.getBanners().map(banner => [
-      banner.image_url || banner.image_path || '',
-      banner.title || '',
-      banner.subtitle || ''
+      banner.image_url || banner.image_path || ''
     ]));
     if (bannersRenderSignature === nextSignature) return;
     bannersRenderSignature = nextSignature;
@@ -75,11 +73,13 @@
       return;
     }
 
+    // O alt sai do nome do restaurante porque BannerResponse nao tem texto
+    // nenhum (nem title, nem subtitle) — ver a nota em menu-service.js.
     const first = visualBanners[0];
     const firstImage = first.image_url || first.image_path || '';
     img.src = firstImage;
     shell.applyResponsiveImage(img, firstImage, { fluid: HERO_FLUID });
-    img.alt = first.title || first.subtitle || app.restaurant.name || 'Banner promocional';
+    img.alt = app.restaurant.name || 'Banner promocional';
     img.loading = 'eager';
     img.decoding = 'async';
     img.fetchPriority = 'high';
@@ -89,7 +89,7 @@
     if (track) {
       const mkSlide = banner => {
         const image = banner.image_url || banner.image_path || '';
-        const alt = banner.title || banner.subtitle || app.restaurant.name || 'Banner';
+        const alt = app.restaurant.name || 'Banner';
         const responsive = shell.responsiveImageAttrs(image, { fluid: HERO_FLUID });
         return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })}></div>`;
       };
@@ -240,7 +240,7 @@
     if (section) section.style.display = shell.getCoupons().length ? '' : 'none';
     const nextSignature = JSON.stringify(shell.getCoupons().map(coupon => [
       coupon.code,
-      coupon.title || coupon.name || '',
+      coupon.name || '',
       shell.couponImageUrl(coupon),
       coupon.discount_type || '',
       coupon.discount_value || ''
@@ -257,18 +257,18 @@
         ? `${Number(coupon.discount_value || 0)}% off`
         : discountType === 'free_delivery'
           ? 'Frete gratis'
-          : coupon.name || coupon.title || 'Cupom';
+          : coupon.name || 'Cupom';
       // Fixed template: backend supplies the coupon artwork (image) + title.
       // The gradient + discount text is only a fallback when there's no image
       // (or it fails to load — onerror reverts to the fallback).
       return `
         <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code, '$this')}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || coupon.title || 'Cupom')}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
+            ${image ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || 'Cupom')}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
-          <div class="coupon-title">${esc(coupon.title || coupon.name || coupon.code || 'Cupom')}</div>
+          <div class="coupon-title">${esc(coupon.name || coupon.code || 'Cupom')}</div>
           <div class="coupon-dash"></div>
           <button type="button" class="coupon-use-btn" ${shell.actAll('click', [['$stop'], ['openCouponDetail', coupon.code, '$this']])}>Usar cupom</button>
         </article>
@@ -284,9 +284,7 @@
     const section = $('homeHighlightsSection');
     if (section) section.style.display = highlightItems.length ? '' : 'none';
     const nextSignature = JSON.stringify(highlightItems.map(highlight => [
-      highlight.image_url || highlight.image_path || '',
-      highlight.title || '',
-      highlight.subtitle || ''
+      highlight.image_url || highlight.image_path || ''
     ]));
     if (highlightsRenderSignature === nextSignature && wrap.children.length) {
       updateHomePromoVisibility();
@@ -295,12 +293,12 @@
     highlightsRenderSignature = nextSignature;
     wrap.innerHTML = highlightItems.map(highlight => {
       const image = highlight.image_url || highlight.image_path || '';
-      const alt = highlight.title || highlight.subtitle || app.restaurant.name || 'Destaque';
+      const alt = app.restaurant.name || 'Destaque';
       return `
         <article class="highlight-banner">
           ${image
             ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })}>`
-            : `<div class="highlight-fallback"><strong>${esc(highlight.title || 'Destaque')}</strong><span>${esc(highlight.subtitle || app.restaurant.name || '')}</span></div>`}
+            : `<div class="highlight-fallback"><strong>Destaque</strong><span>${esc(app.restaurant.name || '')}</span></div>`}
         </article>
       `;
     }).join('');

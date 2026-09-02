@@ -157,12 +157,35 @@ jobs:
       # projeto esta num TIME, procura o projeto na conta pessoal do dono do
       # token, e la ele nao existe.
       #
-      # Tirar o `pull` NAO BASTOU: o `vercel build` tambem exige o
-      # `.vercel/project.json`, e parava com "No Project Settings found
-      # locally. Run `vercel pull --yes` to retrieve them." Mas esse arquivo e
-      # so o par de IDs que ja esta nos secrets — entao o job o ESCREVE, em vez
-      # de pedir a Vercel para baixa-lo. Com ele no lugar, `build` e `deploy`
-      # acham o projeto no time sem `--scope`: o orgId sai do arquivo.
+      # Tirar o `pull` NAO BASTOU, e escrever o arquivo com o par de IDs
+      # TAMBEM NAO: o `vercel build` continuou parando em "No project settings
+      # found locally". O que ele cobra do `.vercel/project.json` nao sao os
+      # IDs — e a chave `settings`, e a falta DELA da exatamente a mesma
+      # mensagem que a falta do arquivo inteiro. Foi o que custou a segunda
+      # tentativa: a mensagem manda rodar o `pull`, e o `pull` nao era o
+      # problema.
+      #
+      # Medido em 02/09/2026 fora deste repositorio, com IDs FALSOS e SEM
+      # token: com `settings` o `build --prod` completa, sem ela ele para.
+      # Quer dizer que o `build` nao fala com a Vercel — a checagem e local,
+      # e por isso o par de IDs sozinho nunca ia passar por ela.
+      #
+      # A chave aceita ate `{}`: o CLI detecta o resto. Aqui ela nomeia o
+      # framework porque `vite` e o que o package.json diz, e porque e ele
+      # que decide que a saida publicada e `dist/` e nao a arvore de fontes.
+      # As duas formas foram rodadas contra o build DE VERDADE deste
+      # repositorio, e as duas publicam o `index.html` que chama
+      # `/assets/main-<hash>.js` — nao o `/scripts/entry-landing.js` da fonte.
+      # Nenhum outro campo entra aqui: `nodeVersion` ou `buildCommand`
+      # inventados calam por cima do painel sem ninguem ver.
+      #
+      # NAO troque isto por `vercel build --yes`, que a propria CLI sugere na
+      # mensagem de erro: o `--yes` pula direto para o `pull`, e o `pull` e
+      # justamente o que falha aqui — "Could not retrieve Project Settings",
+      # o mesmo erro da primeira tentativa.
+      #
+      # Com o arquivo no lugar, `build` e `deploy` acham o projeto no time
+      # sem `--scope`: o orgId sai do arquivo.
       #
       # O arquivo nao esta e nao pode estar no repositorio — `.vercel` e
       # gitignored e os dois IDs so existem em tempo de execucao. Se um dia o
@@ -201,19 +224,16 @@ jobs:
           fi
           mkdir -p .vercel
           cat > .vercel/project.json <<EOF
-          {"projectId":"$VERCEL_PROJECT_ID","orgId":"$VERCEL_ORG_ID"}
+          {"projectId":"$VERCEL_PROJECT_ID","orgId":"$VERCEL_ORG_ID","settings":{"framework":"vite"}}
           EOF
-          # INSTRUMENTACAO — 02/09/2026. O `build` continuou dizendo "No Project
-          # Settings found locally" com o heredoc acima ja no lugar. Antes de
-          # tentar outra correcao, o log tem de mostrar o fato: se o arquivo
-          # existe, EM QUE PASTA, e com que conteudo.
-          # O `cat` nao vaza os IDs: o Actions substitui todo valor de secret
-          # por `***` no log. E por isso mesmo ele ainda serve de medida —
-          # `***` e secret com valor, `""` e secret vazio.
-          echo "--- onde estamos e o que foi escrito ---"
-          pwd
-          ls -la .vercel/
+          # Este passo nao tem `working-directory`, e o job tambem nao: o
+          # heredoc escreve e o `build` le a MESMA pasta, a raiz do checkout.
+          # O `pwd` fica para que isso seja um fato no log, e nao uma leitura
+          # do yaml. O `cat` nao vaza os IDs: o Actions troca todo valor de
+          # secret por `***`. E por isso mesmo ele serve de medida — `***` e
+          # secret com valor, `""` e secret VAZIO, que e a outra maneira de
+          # este arquivo sair errado sem ninguem ver.
+          echo "--- .vercel/project.json entregue ao build, em $(pwd) ---"
           cat .vercel/project.json
-          echo "--- fim ---"
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
           npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

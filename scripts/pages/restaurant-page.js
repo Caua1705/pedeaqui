@@ -3612,7 +3612,12 @@
     const neighborhood = normalizeAddressPart(address.neighborhood);
     const city = normalizeAddressPart(address.city);
     if (!street || !number || !neighborhood) return '';
-    const postalCode = onlyDigits(address.postal_code || address.zip_code || address.cep || '');
+    // `zipcode` PRIMEIRO: e o nome do contrato (CustomerAddressResponse), e um
+    // endereco que venha CRU do `GET /customers/me/addresses` — sem passar por
+    // normalizeAddress — nao tem `postal_code` nenhum. Sem isto, o mesmo
+    // endereco gera impressoes digitais diferentes conforme o caminho por onde
+    // chegou, e o app o trata como dois.
+    const postalCode = onlyDigits(address.zipcode || address.postal_code || address.zip_code || address.cep || '');
     return [street, number, postalCode, neighborhood, city, normalizeAddressPart(address.state)].join('|');
   }
 
@@ -3814,13 +3819,48 @@
     return Boolean(id && !id.startsWith('local_') && id !== '__current__');
   }
 
+  /**
+   * O CORPO DE `POST/PUT /customers/me/addresses` — e ele e FECHADO.
+   *
+   * `CreateCustomerAddressRequest` e `UpdateCustomerAddressRequest` tem
+   * `additionalProperties: false`, entao um nome que a API nao declara nao e
+   * ignorado: ele derruba a requisicao inteira com 422.
+   *
+   * Ate 02/09/2026 esta funcao mandava TRES nomes que nao existem la —
+   * `postal_code`, `place_id` e `alias` — e o resultado era que NENHUM cliente
+   * logado conseguia salvar endereco na conta. O que ele via era o
+   * `alert("Nao foi possivel salvar o endereco na sua conta. Ele continuara
+   * disponivel neste aparelho...")` de finishAddressDetails, toda vez, e o
+   * endereco ficava so naquele aparelho.
+   *
+   * Ninguem pegou porque NENHUM teste salvava endereco: o `mockApi()` so
+   * atende o GET, o POST caia no catch-all, e o boot-smoke — que e quem le
+   * `rotasDesconhecidas` — nao passa pelo formulario de endereco.
+   *
+   * Os tres nomes certos, e por que os errados existiam:
+   *
+   * - `zipcode`: `postal_code` e o nome INTERNO do front (quem o produz e
+   *   `address-service.normalizeAddress`, de proposito, para ter uma forma so
+   *   entre a API e o que ele mesmo grava no localStorage). Mapear de volta na
+   *   borda ja era o que `order-payload.js:70` fazia ao criar o pedido; era
+   *   esta borda que nao fazia.
+   * - `label`: `alias` e o nome do campo no formulario, nao o do contrato.
+   * - `place_id` SAI. Ele e do Google, nao da nossa API, e nao esta em esquema
+   *   de endereco nenhum. O front continua guardando-o localmente (o
+   *   `addressFingerprint` o usa); o que ele nao faz mais e manda-lo.
+   *
+   * Guardado por `tests/e2e/customer-address-contract.spec.js`, cujo mock
+   * recusa como o backend recusa — lendo o `openapi.json`, e nao uma lista de
+   * campos copiada a mao, que seria a segunda copia do contrato.
+   */
   function addressApiPayload(address) {
     return {
       street: address?.street || '', number: address?.number || '', neighborhood: address?.neighborhood || '',
       city: address?.city || '', state: address?.state || '', complement: address?.complement || '',
-      reference: address?.reference || '', postal_code: onlyDigits(address?.postal_code || address?.zip_code || address?.cep || ''),
-      latitude: address?.latitude ?? null, longitude: address?.longitude ?? null, place_id: address?.place_id || '',
-      alias: address?.alias || address?.label || ''
+      reference: address?.reference || '',
+      zipcode: onlyDigits(address?.zipcode || address?.postal_code || address?.zip_code || address?.cep || ''),
+      latitude: address?.latitude ?? null, longitude: address?.longitude ?? null,
+      label: address?.label || address?.alias || ''
     };
   }
 

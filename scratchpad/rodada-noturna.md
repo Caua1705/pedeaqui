@@ -1119,3 +1119,98 @@ para de adivinhar.
 
 A branch `rodada/noturna` fica onde está. O `ci.yml` não foi tocado em nenhum
 commit desta rodada — conferido: `git log --stat` não mostra o arquivo.
+
+---
+
+# D. Escapes, segunda passada — o #6 fechou, e cobrou caro
+
+## D.1 O escape apontava para o LEITOR; o defeito estava no ESCRITOR
+
+O escape #6 era `address-service.js:25`,
+`postal_code || zipcode || zip_code || cep`, arquivado como "precedência DE
+PROPÓSITO, documentado". Fui conferir **qual é o nome do contrato** e:
+
+- `CustomerAddressResponse` declara **`zipcode`**;
+- **`postal_code` não existe em esquema de endereço NENHUM** da API.
+
+Até aí o escape estava certo: `postal_code` é o nome **interno** do front, que
+`normalizeAddress` produz de propósito para ter uma forma só entre a API, o
+localStorage e o resultado do Google. E `order-payload.js:70` já mapeava de
+volta para `zipcode` ao criar o pedido.
+
+**Mas nem toda borda mapeava de volta.**
+
+## D.2 O defeito: nenhum cliente logado conseguia salvar endereço na conta
+
+`addressApiPayload()` (`restaurant-page.js:3817`) vai **direto** para
+`createCustomerAddress` / `updateCustomerAddress`
+(`restaurant-address-flow.js:1171-1172`), e mandava:
+
+    street, number, neighborhood, city, state, complement, reference,
+    postal_code,  place_id,  alias,  latitude, longitude
+
+`CreateCustomerAddressRequest` e `UpdateCustomerAddressRequest` declaram
+`city, complement, is_default, label, latitude, longitude, neighborhood,
+number, reference, state, street, zipcode` — e os dois são
+**`additionalProperties: false`**.
+
+**Três nomes fora do contrato num modelo `extra=forbid` = 422 na requisição
+inteira.** Não é campo ignorado: é a requisição recusada.
+
+O que o cliente via: o `alert("Não foi possível salvar o endereço na sua conta.
+Ele continuará disponível neste aparelho para você tentar novamente.")` de
+`finishAddressDetails`, **toda vez**, e o endereço gravado localmente com
+`sync_error: true`. Em outro aparelho, nada.
+
+## D.3 Por que nenhum portão pegou
+
+**Nenhum teste do repositório salvava um endereço.** `mockApi()` só atende
+`GET /customers/me/addresses`; o POST caía no catch-all — que hoje responde 404
+e anota a rota, mas quem lê `rotasDesconhecidas` é o `boot-smoke`, e ele
+percorre as **dez telas principais**, entre as quais não está o formulário de
+endereço.
+
+É o buraco exato que a §4 da skill descreve por outro lado: *"um mock que só
+aceita é um teste que só concorda"* — aqui não havia nem mock, e o silêncio deu
+no mesmo.
+
+## D.4 A correção, e o teste que lê o CONTRATO
+
+`tests/e2e/customer-address-contract.spec.js`, **os dois testes vistos
+vermelhos** antes da correção, com os três nomes na mensagem:
+
+    Error: o backend recusaria este payload
+    + { loc: ["body","postal_code"], type: "extra_forbidden" }
+    + { loc: ["body","place_id"],    type: "extra_forbidden" }
+    + { loc: ["body","alias"],       type: "extra_forbidden" }
+
+    Error: o endereço ficou marcado como não sincronizado
+
+**O mock recusa lendo o `openapi.json`**, e não uma lista de campos copiada à
+mão: uma lista à mão aqui seria a segunda cópia do contrato, e ela divergiria —
+provavelmente na direção do que o código manda hoje, que é o defeito.
+
+Na produção:
+
+- `postal_code` → **`zipcode`** (com `zipcode` primeiro na cadeia);
+- `alias` → **`label`**;
+- `place_id` **sai** do payload (é do Google, não da nossa API; o front continua
+  guardando-o localmente, e o `addressFingerprint` o usa);
+- `addressFingerprint` (`:3615`) passa a ler **`zipcode` primeiro**. Um endereço
+  vindo cru do `GET /customers/me/addresses` não tem `postal_code`, e sem isso o
+  mesmo endereço gerava impressões digitais diferentes conforme o caminho por
+  onde chegou — o app o trataria como dois.
+
+**Escape #6: FECHADO.**
+
+## D.5 Os que ficam, e por quê
+
+| # | escape | por que fica |
+|---|---|---|
+| 1 | `auth-screen-nav.spec.js:105` | nunca reproduzido em 15+ execuções saudáveis. **Hipótese nova, escrita para quem vir o próximo vermelho:** o `after = await header.boundingBox()` é uma leitura ÚNICA de geometria logo depois de o login entrar deslizando (`from-bottom-nav`), e as afirmações que a precedem esperam o fundo e a trava de rolagem, mas não a caixa. É a mesma forma que o `pix-payment:116` tinha antes do `esperarAssentar`. **Não mexi**: sem vermelho não dá para provar, e trocar um teste que passa por uma correção especulativa é como se cria teste-fantasma |
+| 2 | `order-flow.spec.js:163` | idem, e é o único guardião da Idempotency-Key reaproveitada na retentativa, que é dinheiro |
+| 3 | `pix-payment.spec.js:116` | mecanismo provado (painel de 989,19 px) e reproduzido; o gatilho continua aberto. O teste hoje NOMEIA a largura, então a próxima recorrência diz o que procurar |
+| 8 | `provider_error_code` | a tela dele é a de recusa de cartão — **checkout de pagamento, que continua fora desta branch**. É melhoria de mensagem, não defeito |
+| 9 | `assistant-voice-session.spec.js:472` | **voz continua fora desta branch**. Números medidos: teto de inatividade de 8 s contra um preparo com direito a 25 s |
+
+**Contagem: 5 escapes abertos** (eram 8 no início da noite).

@@ -2308,7 +2308,27 @@
     // "R$ 0,00" solto. setProperty com important porque a folha declara
     // display:flex!important na .cps-row e um style inline comum perderia.
     $('csSvcFeeRow')?.style.setProperty('display', totals.svc > 0 ? 'flex' : 'none', 'important');
-    $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
+    // TAXA DESCONHECIDA NÃO É TAXA ZERO, e esta linha dizia que era.
+    //
+    // `deliveryFee()` devolve `currentDeliveryEstimateFee() ?? 0` — quando a
+    // estimativa falha (422 da rota) ou nem é pedida (endereço incompleto: o
+    // `deliveryEstimateKey()` devolve null), o total sai SEM o frete. Isso é
+    // por construção, e quem impede o estrago é `hasValidDeliveryEstimateFee()`
+    // barrando a criação do pedido.
+    //
+    // O que estava errado era a LINHA: ela escrevia `R$ 0,00`, afirmando que a
+    // entrega é de graça. O cliente lia 68,60 + 0,99 + 0,00 = 69,59 e a conta
+    // FECHAVA — uma tela internamente coerente e mentirosa, que é pior do que
+    // uma que não fecha. O CLAUDE.md já dizia a regra pela outra ponta:
+    // "parcela zerada é linha FORA, nunca um R$ 0,00 solto".
+    //
+    // "A definir" é o mesmo texto que o markup traz por padrão
+    // (restaurant.html:956) e o mesmo que o resto da tela usa enquanto a taxa
+    // não chegou. O total continua sem o frete — mudá-lo é outra conversa, e o
+    // pedido está barrado de qualquer forma.
+    $('csDelivery').textContent = deliveryType === 'delivery'
+      ? (hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir')
+      : 'Grátis';
     // O desconto do cupom, com o sinal que ele tem na conta. Sem esta linha as
     // parcelas de cima somavam mais do que o Total de baixo e o cliente via
     // dinheiro sumir sem explicação — mesma classe do R$ 0,99 da taxa de

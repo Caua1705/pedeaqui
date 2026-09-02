@@ -1928,3 +1928,108 @@ ele é: esta rota sobrepõe o mock com o 7,40 que a conta deste arquivo usa.
 | `/auth/login`, `/auth/verify-email-code` | esquemas ABERTOS: nome fora do contrato não vira 422. Perde-se só a conferência de obrigatório ausente. E o fluxo de autenticação inteiro está fora desta branch |
 | `/auth/register`, `resend`, `forgot`, `verify-reset`, `reset-password`, `PATCH /customers/me/password` | sem teste nenhum, e sem tela coberta por E2E. Mesmo motivo acima; é a próxima frente |
 | `POST /orders` e `POST /orders/{token}/payment` | **já tinham** caminho de falha: 409, `detail` em três formas, abort de rede com Idempotency-Key reaproveitada, duplo clique, recusa de cartão, 409 do gateway, cobrança sem QR |
+
+---
+
+# P. Validador certo, fiação não exercitada — a varredura da classe
+
+**A pergunta:** onde existe um guarda cujo CONTEXTO é calculado por quem chama,
+com unitário que entrega o contexto pronto e nenhum teste que dirija o estado
+real até ele? O unitário passa, o fluxo passa, e o caminho entre os dois é o que
+ninguém percorre.
+
+## P.1 O resultado que mais surpreendeu
+
+`validateOrderPayload` tem **SEIS regras**. Medido, buscando a mensagem de cada
+uma nos E2E:
+
+| regra | mensagem | alcançada num E2E? |
+|---|---|---|
+| filial ausente | "Escolha a unidade da loja..." | **não** |
+| carrinho vazio | "Seu carrinho está vazio." | **não** |
+| forma de pagamento ausente | "Escolha a forma de pagamento." | **não** |
+| endereço ausente (delivery) | "Informe o endereço de entrega." | **não** |
+| **taxa de entrega não apurada** | "Não foi possível calcular a taxa..." | **SIM — e só desde hoje** |
+| visitante sem nome/telefone | "Informe seu nome e telefone..." | **não** |
+
+**Uma de seis**, e é a que estava descoberta até esta rodada.
+
+## P.2 E o motivo disso NÃO é descuido — é onde os portões de verdade moram
+
+Sondado: um visitante **sem perfil** (sem nome e telefone gravados) não chega
+nem perto do validador.
+
+| estado | CTA da sacola | tela de pagamento | PIX |
+|---|---|---|---|
+| com perfil | "Escolher forma de pagamento" | abre | selecionável |
+| **sem perfil** | **"Entre ou cadastre-se"** | **não abre** | **desabilitado** |
+
+Ou seja: cinco das seis regras são **segunda linha** — a UI barra antes, e o
+validador existe para o caso de a UI mudar. Isso é bom desenho, e explica por
+que ninguém as alcançava.
+
+**E dá a regra para procurar a próxima:** a única regra alcançável era a que
+depende da REDE. A UI consegue exigir uma escolha do cliente antes do botão; ela
+não consegue exigir que uma resposta que ainda não chegou esteja certa. **Guarda
+que depende de resposta de rede é guarda de primeira linha, e é onde a fiação
+precisa de teste.**
+
+## P.3 A mesma falta de taxa tem DUAS causas, e só uma estava coberta
+
+`hasValidDeliveryEstimateFee()` fica falso por dois caminhos independentes:
+
+1. **A rota falha** (422) — coberto ontem.
+2. **A rota nem é chamada.** `deliveryEstimateKey()` (`restaurant-page.js:3703`)
+   devolve `null` quando `validAddressForApi()` é falso, e aí não há 422 para
+   ler, não há erro no console, e o estado final é idêntico. **Coberto agora** —
+   e esta é a causa mais provável em produção: basta um endereço guardado sem
+   número, salvo antes de o campo virar obrigatório ou vindo de importação
+   antiga.
+
+O teste novo distingue as duas afirmando que a rota **não** foi chamada.
+
+## P.4 O DEFEITO que a segunda causa revelou: a linha que fechava a conta mentindo
+
+Com a taxa ausente, a seção "Valores" mostrava:
+
+    Subtotal          R$ 68,60
+    Taxa de serviço   R$  0,99
+    Taxa de entrega   R$  0,00   ← a mentira
+    Total             R$ 69,59
+
+**A conta FECHAVA.** É pior do que uma conta que não fecha: uma tela
+internamente coerente não levanta suspeita nenhuma, e ela afirmava que a entrega
+é de graça. O CLAUDE.md já dizia a regra pela outra ponta — *"parcela zerada é
+linha FORA, nunca um 'R$ 0,00' solto"* — e aqui a parcela não era zero, era
+**desconhecida**, exibida como zero.
+
+Hoje a linha diz **"A definir"**, que é o texto que o próprio markup traz por
+padrão (`restaurant.html:956`) e o que o resto da tela já usava. O total continua
+sem o frete — mudá-lo é outra conversa, e o pedido está barrado de qualquer
+forma pelo `validateOrderPayload`.
+
+**Vermelho visto** nos dois testes, recolocando o `fmt(totals.delivery)`:
+`Expected "A definir" / Received "R$ 0,00"`.
+
+## P.5 O resto da classe, conferido um a um
+
+| guarda | contexto calculado por quem chama | fiação exercitada? |
+|---|---|---|
+| `pixChargeErrorOutcome(error, {card})` | `card` = `Boolean(session.cardPayment)` | **sim**, nos dois sentidos (falha da cobrança no Pix e no cartão) |
+| `cardChargeKind` **vs** `paymentStatusKind` | a ESCOLHA do classificador por caminho — "não sei" é *espere* no Pix e *não pago* no cartão | **sim** ("cartão com status sem payment_status não confirma o pedido") |
+| `couponCta(coupon, {sacolaVazia})` | `sacolaVazia` do carrinho vivo | **sim**, nos dois sentidos (com e sem sacola) |
+| `getClubData(slug, context)` | subtotal/taxa/modalidade da sacola | **sim** — o E2E afirma `subtotal=21.15` na URL |
+| `validateOrderPayload` — `hasValidDeliveryFee` | `hasValidDeliveryEstimateFee()` | **sim, desde hoje**, pelas duas causas |
+| `validateOrderPayload` — `isAuthenticated` + `customer` | `isLoggedIn()` + `currentCustomerSnapshot()` | **não**, e é inalcançável pela UI (§P.2) |
+| `isValidCpf` / `isValidBirthDate` | valor do formulário | **cartão: sim**; **cadastro: NÃO — não há E2E de auth nenhum** |
+| `availableCheckoutPaymentKeys` | grupos do `/info` + cartão salvo + filial | parcialmente (`payment-method-screen.spec.js`) |
+| `branchDeliveryBlocked(branch, orderType)` | filial + modalidade | **sim** (`branch-availability.spec.js`) |
+| `todayHours(info)` | `current_weekday` do backend | **sim** (`store-hours.spec.js`) |
+
+## P.6 O que fica, e é a frente seguinte
+
+**O fluxo de autenticação inteiro não tem E2E.** É onde moram `isValidCpf`,
+`isValidBirthDate`, a máscara de telefone, o código de verificação e a
+recuperação de senha — e é o portão que o próprio app usa para barrar o
+visitante ("Entre ou cadastre-se") antes de deixá-lo pagar. Sete rotas de
+escrita, nenhuma exercitada.

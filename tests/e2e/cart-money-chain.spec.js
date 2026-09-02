@@ -117,7 +117,7 @@ const PREVIEW_PADRAO = {
   valid: true
 };
 
-async function montarSacola(page, { comCupom = false, previewOverrides = {}, settingsOverrides = {}, estimateFalha = false } = {}) {
+async function montarSacola(page, { comCupom = false, previewOverrides = {}, settingsOverrides = {}, estimateFalha = false, enderecoIncompleto = false } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const chamadas = await mockApi(page, {
@@ -166,7 +166,7 @@ async function montarSacola(page, { comCupom = false, previewOverrides = {}, set
       order_type: 'delivery', branch_id: branchId, branch_label: 'Matriz',
       address: endereco, confirmed: true
     }));
-  }, { slug: SLUG, branchId: BRANCH_MATRIZ, endereco: ENDERECO });
+  }, { slug: SLUG, branchId: BRANCH_MATRIZ, endereco: enderecoIncompleto ? { ...ENDERECO, number: '' } : ENDERECO });
 
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);
@@ -185,7 +185,7 @@ async function montarSacola(page, { comCupom = false, previewOverrides = {}, set
   // é esperar o fim do caminho, não um relógio. Quando a estimativa FALHA, o
   // fim do caminho é a outra frase — e esperar por ela é a mesma espera por
   // condição, não um sleep.
-  if (estimateFalha) await expect(page.locator('#cartDeliveryFeeText')).toHaveText(/indispon/i);
+  if (estimateFalha || enderecoIncompleto) await expect(page.locator('#csDelivery')).toHaveText('A definir');
   else await expect(page.locator('#csDelivery')).toHaveText('R$ 7,40');
 
   if (comCupom) {
@@ -510,7 +510,11 @@ test('o pedido leva só INPUTS: nenhum valor de dinheiro no payload', async ({ p
 test('estimativa que FALHA: o total sai SEM o frete, e por isso o pedido é barrado', async ({ page }) => {
   const chamadas = await montarSacola(page, { estimateFalha: true });
 
-  // A tela NÃO inventa "R$ 0,00" para a taxa: ela diz que não tem o número.
+  // A LINHA DE VALORES não inventa "R$ 0,00": ela diz que a taxa ainda não
+  // existe. Até 02/09/2026 escrevia R$ 0,00, e a conta FECHAVA na tela —
+  // 68,60 + 0,99 + 0,00 = 69,59 —, o que é pior que uma conta que não fecha:
+  // uma tela coerente e mentirosa não levanta suspeita nenhuma.
+  await expect(page.locator('#csDelivery')).toHaveText('A definir');
   await expect(page.locator('#cartDeliveryFeeText')).toHaveText(/indispon/i);
 
   // E O TOTAL SAI SEM O FRETE — 68,60 + 0,99 + 0. Isto não é um defeito
@@ -534,6 +538,36 @@ test('estimativa que FALHA: o total sai SEM o frete, e por isso o pedido é barr
   await confirmOrderSheet(page);
 
   await expect(page.locator('#cartOrderError')).toBeVisible();
+  await expect(page.locator('#cartOrderError')).toContainText(/taxa de entrega/i);
+  expect(chamadas.orderRequests, 'nenhum pedido pode nascer sem a taxa apurada').toHaveLength(0);
+});
+
+test('endereço INCOMPLETO: a estimativa nem é pedida, e o pedido é barrado igual', async ({ page }) => {
+  // A MESMA falta de taxa, por OUTRA causa — e esta é a mais provável em
+  // produção. `deliveryEstimateKey()` (restaurant-page.js:3703) devolve `null`
+  // quando `validAddressForApi()` é falso, então a rota nem chega a ser
+  // chamada: não há 422 para ler, não há erro no console, e o estado final é o
+  // mesmo do teste acima — taxa ausente, total sem frete.
+  //
+  // Um endereço guardado sem número é reachável de verdade: basta ele ter sido
+  // salvo antes de o campo virar obrigatório, ou vir de uma importação antiga.
+  const chamadas = await montarSacola(page, { enderecoIncompleto: true });
+
+  await expect(page.locator('#csDelivery')).toHaveText('A definir');
+  await expect(page.locator('#csTotal')).toHaveText('R$ 69,59');
+
+  // E a rota NÃO foi chamada — é o que distingue esta causa da outra.
+  expect(chamadas.estimateRequests ?? [], 'sem endereço válido não se pergunta a taxa').toHaveLength(0);
+
+  const cta = page.locator('#cartCtaBtn');
+  await cta.click();
+  await expect(page.locator('#paymentMethodModal')).toHaveClass(/active/);
+  await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+  await page.locator('.payment-method-confirm').click();
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await cta.click();
+  await confirmOrderSheet(page);
+
   await expect(page.locator('#cartOrderError')).toContainText(/taxa de entrega/i);
   expect(chamadas.orderRequests, 'nenhum pedido pode nascer sem a taxa apurada').toHaveLength(0);
 });

@@ -296,6 +296,145 @@
     `;
   }
 
+  // ==========================================================================
+  //  CANCELAR O PRÓPRIO PEDIDO — a janela, o token e o que a tela promete.
+  //
+  //  A rota (`POST .../orders/track/{token}/cancel`) existia no contrato e o
+  //  front nunca a chamou. Ela é a pendência que o `docs/order-contract.md`
+  //  chama de "a mais cara": numa recusa de cartão o pedido já está gravado, e
+  //  até 02/09/2026 não havia como o cliente desfazê-lo.
+  //
+  //  ## Duas condições, e as duas são necessárias
+  //
+  //  1. **A JANELA.** O backend só aceita em `pending` e `accepted`; de
+  //     `preparing` em diante o insumo saiu do estoque e ele responde 409.
+  //     Mostrar o botão fora da janela seria oferecer o que vai falhar — o
+  //     mesmo defeito que o fluxo do cupom passou a rodada consertando.
+  //  2. **O TOKEN.** Quem autoriza é o `tracking_token`, e ele **não vem no
+  //     `OrderDetailResponse`**: só existe no `localStorage` deste aparelho,
+  //     gravado quando ESTE aparelho criou o pedido (`state/order-tracking.js`).
+  //     Um pedido feito no celular não pode ser cancelado pelo computador.
+  //
+  //  A segunda é uma limitação real e está registrada como pedido de backend:
+  //  publicar o `tracking_token` no detalhe do pedido do cliente logado, ou uma
+  //  rota de cancelamento por `order_id` que autorize pelo Bearer. Sem uma das
+  //  duas, este botão só aparece no aparelho que fez o pedido.
+  // ==========================================================================
+  const PROF_ORDER_CANCELAVEL = new Set(['pending', 'accepted']);
+
+  /** O token deste pedido, se ESTE aparelho o criou. */
+  function profOrderTrackingToken(order) {
+    const id = String(order?.id || '').trim();
+    if (!id) return '';
+    const entradas = window.RapidexOrderTracking?.list?.(getRestaurantSlug()) || [];
+    return entradas.find(entrada => String(entrada.order_id || '') === id)?.tracking_token || '';
+  }
+
+  function profOrderCancelavel(order, status) {
+    return PROF_ORDER_CANCELAVEL.has(status.status) && Boolean(profOrderTrackingToken(order));
+  }
+
+  /**
+   * O que o cancelamento faz com o dinheiro, o cupom e o cashback DESTE pedido.
+   *
+   * Sai do pedido, e não de uma lista fixa: prometer estorno num pedido que se
+   * paga na entrega é mentir para quem nunca pagou, e omitir o estorno num Pix
+   * já pago é esconder a única informação que faz a pessoa clicar sem medo.
+   */
+  function profOrderCancelConsequencias(order) {
+    const linhas = [];
+    const fluxo = String(order?.payment_flow || '').trim().toLowerCase();
+    const pago = String(order?.payment_status || '').trim().toLowerCase() === 'paid';
+    if (fluxo === 'online') {
+      linhas.push(pago
+        ? 'O valor pago é estornado para você.'
+        : 'A cobrança é cancelada e nada é debitado.');
+    } else {
+      linhas.push('Nada foi cobrado: este pedido seria pago na entrega.');
+    }
+    if (String(order?.coupon_code || '').trim()) {
+      linhas.push(`O cupom ${String(order.coupon_code).trim()} volta a ficar disponível.`);
+    }
+    if (Number(order?.cashback_redeemed_amount) > 0) {
+      linhas.push(`O cashback usado (${fmt(Number(order.cashback_redeemed_amount))}) volta para o seu saldo.`);
+    }
+    return linhas;
+  }
+
+  /** O pedido que a folha de confirmação está mirando. */
+  let profOrderCancelAlvo = null;
+
+  function profOrderCancelErro(mensagem) {
+    const alvo = $('orderCancelError');
+    if (!alvo) return;
+    alvo.textContent = mensagem || '';
+    alvo.hidden = !mensagem;
+  }
+
+  function openOrderCancelConfirm() {
+    const order = profOrderCancelAlvo;
+    const overlay = $('orderCancelConfirm');
+    if (!order || !overlay) return;
+    const lista = $('orderCancelConsequences');
+    if (lista) {
+      lista.innerHTML = profOrderCancelConsequencias(order)
+        .map(linha => `<li>${esc(linha)}</li>`).join('');
+    }
+    profOrderCancelErro('');
+    const botao = $('orderCancelGo');
+    if (botao) { botao.disabled = false; botao.textContent = 'Sim, cancelar pedido'; }
+    overlay.hidden = false;
+  }
+
+  function closeOrderCancelConfirm(event) {
+    if (event && event.currentTarget && event.target !== event.currentTarget) return;
+    const overlay = $('orderCancelConfirm');
+    if (overlay) overlay.hidden = true;
+  }
+
+  async function confirmOrderCancel() {
+    const order = profOrderCancelAlvo;
+    const token = profOrderTrackingToken(order);
+    const botao = $('orderCancelGo');
+    if (!order || !token) {
+      profOrderCancelErro('Não foi possível identificar este pedido neste aparelho.');
+      return;
+    }
+    if (botao) { botao.disabled = true; botao.textContent = 'Cancelando...'; }
+    profOrderCancelErro('');
+    try {
+      const cancelado = await window.PedeAquiOrderService.cancelOrder(getRestaurantSlug(), token);
+      // A resposta É o pedido atualizado (OrderDetailResponse). Redesenhar com
+      // ela evita uma segunda ida ao servidor só para descobrir o que já veio.
+      const atualizado = { ...order, ...(cancelado || {}), status: cancelado?.status || 'cancelled' };
+      profOrderCancelAlvo = atualizado;
+      window.RapidexOrderTracking?.update?.(getRestaurantSlug(), token, { status: atualizado.status });
+      closeOrderCancelConfirm();
+      renderProfOrderDetails(atualizado);
+      // A LISTA tambem: sem isto o cartão de trás continua dizendo "Aceito", e
+      // a pessoa volta do detalhe para uma tela que discorda dele.
+      const indice = profOrdersView.findIndex(item => String(item?.id || '') === String(order.id || ''));
+      if (indice >= 0) {
+        profOrdersView[indice] = { ...profOrdersView[indice], status: atualizado.status };
+        renderProfPedidos(profOrdersView);
+      }
+    } catch (error) {
+      if (botao) { botao.disabled = false; botao.textContent = 'Sim, cancelar pedido'; }
+      // 409 NÃO é "tente de novo": é o pedido tendo saído da janela. Oferecer
+      // retentativa aqui é oferecer o que nunca mais vai dar certo.
+      if (error?.status === 409) {
+        profOrderCancelErro('O restaurante já começou a preparar este pedido. Fale com ele pela Ajuda.');
+        return;
+      }
+      if (error?.status === 404) {
+        profOrderCancelErro('Não encontramos este pedido. Ele pode já ter sido cancelado.');
+        return;
+      }
+      logAppError('Falha ao cancelar pedido', error);
+      profOrderCancelErro('Não foi possível cancelar agora. Tente de novo em instantes.');
+    }
+  }
+
   function renderProfOrderDetails(order) {
     const body = $('profOrderDetailBody');
     if (!body) return;
@@ -366,7 +505,16 @@
       ${PROF_ORDER_DANGER_STATUSES.has(status.status)
         ? ''
         : `<button class="order-details__help" type="button" ${act('click', 'openProfOrderHelp')}>Ajuda</button>`}
+      ${profOrderCancelavel(order, status)
+        ? `<button class="order-details__cancel" type="button" ${act('click', 'openOrderCancelConfirm')}>Cancelar pedido</button>`
+        : ''}
     `;
+    // O alvo da folha de confirmação é o pedido que está desenhado AGORA. Ele é
+    // gravado no render, e não no clique, porque `openProfOrderDetails` redesenha
+    // quando o detalhe completo chega do servidor — e é o completo que traz
+    // `payment_flow`, `coupon_code` e `cashback_redeemed_amount`, que são as três
+    // coisas que a confirmação promete.
+    profOrderCancelAlvo = order;
   }
 
   async function openProfOrderDetails(index) {
@@ -477,7 +625,10 @@
       loadProfPedidos,
       openProfOrderDetails,
       closeProfOrderDetails,
-      openProfOrderHelp
+      openProfOrderHelp,
+      openOrderCancelConfirm,
+      closeOrderCancelConfirm,
+      confirmOrderCancel
     });
   }
 

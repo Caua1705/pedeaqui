@@ -454,6 +454,29 @@
         <span class="prof-manage-header-spacer" aria-hidden="true"></span>
       </div>
       <div class="prof-order-detail-body" id="profOrderDetailBody"></div>
+
+      <!-- CONFIRMAÇÃO DE CANCELAMENTO. Irreversível, então pergunta antes.
+
+           As classes de PAPEL vêm de styles/components.css (.ui-btn-danger e
+           .ui-btn-secondary) de propósito. Não se reusa aqui `.addr-delete-yes`
+           / `.addr-delete-cancel`: aqueles dois nomes marcam a POSIÇÃO no par,
+           não a função, e já trocam de papel entre as três telas que os usam —
+           no #logoutConfirm quem tem "yes" no nome é o botão de FICAR. Herdar
+           essa confusão numa tela que cancela pedido é herdar a pior parte
+           dela. Ver §4.1 da skill.
+
+           A lista de consequências é preenchida pelo JS a partir do PEDIDO:
+           prometer estorno num pedido que se paga na entrega seria mentir. -->
+      <div class="order-cancel-confirm" id="orderCancelConfirm" hidden data-act-click='["closeOrderCancelConfirm","$event"]'>
+        <div class="order-cancel-panel" role="dialog" aria-modal="true" aria-labelledby="orderCancelTitle" data-act-click='["$stop"]'>
+          <h3 class="order-cancel-title" id="orderCancelTitle">Cancelar este pedido?</h3>
+          <p class="order-cancel-text">Não dá para desfazer. Para pedir de novo, você monta a sacola outra vez.</p>
+          <ul class="order-cancel-consequences" id="orderCancelConsequences"></ul>
+          <div class="order-cancel-error" id="orderCancelError" hidden role="alert"></div>
+          <button class="ui-btn ui-btn-danger order-cancel-go" id="orderCancelGo" type="button" data-act-click='confirmOrderCancel'>Sim, cancelar pedido</button>
+          <button class="ui-btn ui-btn-secondary order-cancel-keep" type="button" data-act-click='closeOrderCancelConfirm'>Manter o pedido</button>
+        </div>
+      </div>
     </section>
   </div><!-- /profSubpedidos -->
 

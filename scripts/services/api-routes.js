@@ -69,6 +69,27 @@
     startOrderPayment: (restaurantSlug, trackingToken) =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(trackingToken)}/payment`,
 
+    // CANCELAR O PRÓPRIO PEDIDO, pelo cliente.
+    //
+    // Autoriza pelo `tracking_token` da URL — o MESMO do acompanhamento, e
+    // **sem login, de propósito**: pedido de convidado é caso normal, e exigir
+    // conta aqui deixaria justamente o convidado sem saída.
+    //
+    // O backend só aceita em `pending` e `accepted`. A partir de `preparing` o
+    // insumo já saiu do estoque, quem come o prejuízo passa a ser o lojista, e
+    // a rota responde **409** — o app manda falar com o restaurante.
+    //
+    // Ela faz três coisas junto, e é por isso que a tela precisa dizê-las: o
+    // pagamento online é ESTORNADO, o cupom volta a ficar disponível e o
+    // cashback resgatado volta para o saldo. O estorno acontece depois do
+    // commit e não derruba a resposta — gateway fora do ar não impede o
+    // cancelamento, uma varredura devolve o dinheiro depois.
+    //
+    // Sem `Idempotency-Key`, e ela não faz falta: o segundo clique chega com o
+    // pedido já em `cancelled` e leva 409 da máquina de estados.
+    cancelOrder: (restaurantSlug, trackingToken) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/orders/track/${routeSlug(trackingToken)}/cancel`,
+
     // ---- Atendimento por voz ----
     // Só a emissão exige Bearer; as outras três são abertas. Quando a voz está
     // desligada na plataforma, TODAS respondem 404 — a rota deixa de existir.

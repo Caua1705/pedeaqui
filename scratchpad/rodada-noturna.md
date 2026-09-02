@@ -1524,3 +1524,139 @@ andam juntos. É o mesmo padrão de `validadeFutura()`. Visto vermelho com o
 O contador do Pix **não** foi mexido: ele é pedido de backend (`expires_at` em
 `StartPaymentResponse`, §B.4) e conta pelo relógio do cliente porque o contrato
 não manda prazo nenhum.
+
+---
+
+# J. Cancelamento pelo cliente — construído
+
+A rota estava no contrato e o front nunca a chamou. É a pendência que o
+`docs/order-contract.md` (item 11) e a §8 da skill chamam de **"a mais cara"**:
+numa recusa de cartão o pedido já está gravado, e não havia como o cliente
+desfazê-lo.
+
+## J.1 As duas condições para o botão aparecer, e as duas são necessárias
+
+**1. A JANELA.** `pending` e `accepted`. De `preparing` em diante o insumo saiu
+do estoque, quem come o prejuízo passa a ser o lojista, e o backend responde
+**409**. Mostrar o botão fora da janela é oferecer o que vai falhar — o mesmo
+defeito que o fluxo do cupom passou esta rodada consertando.
+
+**2. O TOKEN.** Quem autoriza é o `tracking_token`, e ele **não vem no
+`OrderDetailResponse`**: só existe no `localStorage` do aparelho que criou o
+pedido (`state/order-tracking.js`). Sem ele não há com o que cancelar, e um
+botão que erra 404 é pior que botão nenhum.
+
+**A segunda é uma limitação real**, e vai para os pedidos ao backend (§B.5):
+um pedido feito no celular não pode ser cancelado pelo computador.
+
+## J.2 A folha de confirmação lê o PEDIDO, não uma lista fixa
+
+Cancelar é irreversível, então pergunta antes. E a folha diz o que acontece com
+o dinheiro — montado a partir do pedido:
+
+| condição no pedido | frase |
+|---|---|
+| `payment_flow: online` + `payment_status: paid` | "O valor pago é estornado para você." |
+| `payment_flow: online`, não pago | "A cobrança é cancelada e nada é debitado." |
+| pagamento na entrega | "Nada foi cobrado: este pedido seria pago na entrega." |
+| `coupon_code` presente | "O cupom X volta a ficar disponível." |
+| `cashback_redeemed_amount > 0` | "O cashback usado (R$ Y) volta para o seu saldo." |
+
+Prometer estorno num pedido que se paga na entrega é mentir para quem nunca
+pagou; omitir o estorno num Pix já pago é esconder a informação que faz a
+pessoa decidir sem medo. Tem E2E para os dois lados.
+
+## J.3 Decisões do serviço
+
+- **Sem Bearer.** A rota não declara `security` (conferido no spec, e há um
+  unitário que trava essa premissa). Mandar o header do cliente numa chamada
+  que não o pede é vazar credencial de graça — e quebraria o convidado, que é
+  o caso que a rota existe para atender.
+- **Corpo opcional de verdade**: sem motivo, sem corpo.
+- **O `reason` é cortado em 150**, que é o `maxLength` do contrato — e o teste
+  lê esse número DO SPEC, não de um literal.
+- **O 409 sobe com o status** e vira outra frase na tela: *"O restaurante já
+  começou a preparar este pedido"*, **sem** oferecer tentar de novo. Retentativa
+  ali é oferecer o que nunca mais vai dar certo.
+
+## J.4 Duas armadilhas que apareceram construindo
+
+**1. `[hidden]` perdendo para o CSS.** A folha tem `display:flex` por um seletor
+de id; o `[hidden]{display:none}` do agente de usuário é atributo puro e perde
+por especificidade. O elemento ficava com o atributo `hidden` **e visível** — o
+DOM dizendo uma coisa e o olho outra. O Playwright relatou
+`resolved to <div hidden="">` como VISÍVEL, que é uma mensagem difícil de ler
+sem saber disso. A regra que fica: **toda vez que uma folha der `display` a um
+elemento que o JS esconde por `hidden`, a linha `[hidden]{display:none}` vai
+junto.**
+
+**2. Reusei o `git checkout <arquivo>` para desfazer uma injeção, DE NOVO** — e
+perdi o markup da folha de confirmação, 23 linhas. Eu tinha escrito essa exata
+armadilha na skill (§12.11) horas antes. Escrever não basta: o hábito é copiar
+o arquivo para o scratchpad ANTES de injetar, e restaurar pela cópia.
+
+## J.5 Classes de PAPEL, não de posição
+
+A folha usa `.ui-btn-danger` e `.ui-btn-secondary` de `components.css`, e **não**
+`.addr-delete-yes`/`.addr-delete-cancel`. Aqueles dois nomes marcam a POSIÇÃO no
+par, não a função, e já trocam de papel entre as três telas que os usam — no
+`#logoutConfirm` quem tem "yes" no nome é o botão de FICAR (§4.1 da skill).
+Herdar essa confusão numa tela que cancela pedido é herdar a pior parte dela.
+
+## J.6 Verificação
+
+`lint 79 problems (0 errors)` — o warning novo é o `innerHTML` da lista de
+consequências, que usa `esc()` · `typecheck:cards` exit 0 · `test 347 passed`
+(31 arquivos) · `test:e2e 322 passed · 3 skipped`, exit 0, 6,0 min.
+
+**Vermelhos vistos**, por injeção:
+- tirando a janela (`PROF_ORDER_CANCELAVEL`), o botão aparece em `preparing`:
+  `Expected: 0 / Received: 1`;
+- ligando o botão direto no `confirmOrderCancel` (sem confirmação), a folha não
+  abre e o teste cai na linha que exige zero cancelamentos;
+- no serviço, três unitários caem ao injetar o Bearer e o `reason` sem corte.
+
+---
+
+# K. O `api-contract.test.js` passa a olhar os DOIS sentidos
+
+Ele conferia um só: *"toda rota que o front chama existe no spec"*. Isso pega
+rota MORTA — o `/coupons/available` do incidente. **Não pega o contrário**:
+capacidade que o backend publicou e o front ignora. Foi assim que o
+cancelamento ficou invisível enquanto o `order-contract.md` seguia listando
+"não há rota de cliente para cancelar" como a pendência mais cara.
+
+**É AVISO, não falha**, e o motivo é que a maioria das rotas do spec não é do
+app do cliente: `/admin/*` é o painel do lojista, `/payments/webhooks/*` é o
+gateway falando com o backend, `/health` é infraestrutura. Um teste que exigisse
+consumo de todas nasceria vermelho — e portão que nasce vermelho é portão que se
+aprende a ignorar.
+
+Saída de 02/09/2026:
+
+    [contrato] 4 rota(s) de cliente que a API oferece e o front NÃO usa:
+      POST   /chat
+      POST   /chat/feedback
+      GET    /customers/me/export
+      PUT    /restaurants/{restaurant_slug}/orders/track/{tracking_token}/review
+
+**Duas descobertas nessas quatro linhas:**
+
+- `GET /customers/me/export` (o pacote da LGPD) e `PUT .../review` (avaliar o
+  pedido) são **capacidades publicadas que o app não oferece**. Nenhuma foi
+  construída aqui; ficam na lista, que é o ponto.
+- `/chat` e `/chat/feedback` são **falso positivo — e o falso positivo é
+  informação**. O app usa as duas, mas elas não estão em `api-routes.js`: o
+  assistente monta a URL literal (`restaurant-assistant.js:658`). Ou seja, a
+  lista denunciou uma rota que escapou do ponto único de rotas. **Não
+  silenciei**: silenciar apagaria o sintoma. O conserto é mover as duas para
+  `api-routes.js`, e aí elas somem da lista sozinhas.
+
+**Uma armadilha de ferramenta:** a primeira versão usava `console.warn`, e o
+vitest **intercepta o console e não imprime a saída de teste que passa**. O
+aviso ficou verde e invisível — exatamente o defeito que ele existe para
+corrigir. Hoje usa `process.stdout.write`.
+
+E ele tem **sonda contra vacuidade**: se `frontRoutes()`/`toSpecShape()`
+pararem de casar, `usadas` fica vazia e a lista vira o spec inteiro. Duas rotas
+que o front comprovadamente chama são afirmadas antes.

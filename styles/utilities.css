@@ -6726,3 +6726,106 @@ body.menu-tab.menu-search-active .menu-section-title{
 body.menu-tab.menu-search-active .product-card.is-search-hidden{
   display:none!important;
 }
+
+/* ============================================================================
+   CANCELAR O PRÓPRIO PEDIDO — o botão no detalhe e a folha de confirmação.
+
+   Mora aqui, ao lado das outras regras `.order-details__*`, e não numa folha
+   nova: os nomes abaixo são TODOS novos e nenhuma outra folha os declara, então
+   não há disputa de ordem a inverter — que é o critério do cabeçalho deste
+   arquivo. Uma folha nova para vinte regras custaria um <link> e uma posição
+   nova na cascata, e isso, sim, mexeria em quem vence o quê.
+
+   Sem `!important` em lugar nenhum, pelo mesmo motivo: não há adversário.
+
+   As cores saem de token. Cor chumbada aqui faria a folha de cancelamento
+   nascer laranja numa loja azul (skill §7) — e esta é uma tela de decisão
+   irreversível, que é onde a cor de marca mais importa.
+   ========================================================================= */
+#profSubpedidos .order-details__cancel{
+  height:60px;
+  min-height:60px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-bottom:1px solid #d8d8d8;
+  background:transparent;
+  color:var(--danger, #c0392b);
+  font-family:inherit;
+  font-size:var(--ref-text-sm);
+  line-height:var(--ref-line-md);
+  font-weight:600;
+  cursor:pointer;
+}
+#profOrderDetail .order-cancel-confirm{
+  position:absolute;
+  inset:0;
+  z-index:30;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(0,0,0,.28);
+}
+/* O `display:flex` acima VENCE o `[hidden]{display:none}` do agente de usuário
+   — especificidade de id contra seletor de atributo puro. Sem esta linha o
+   elemento fica com o atributo `hidden` E visível na tela, que é a pior
+   combinação possível: o DOM diz uma coisa, o olho vê outra, e o Playwright
+   relata `resolved to <div hidden="">` como VISÍVEL. Foi assim que o E2E desta
+   folha caiu na primeira execução.
+
+   A regra geral: toda vez que uma folha der `display` a um elemento que o JS
+   esconde por `hidden`, a linha de baixo tem de vir junto. */
+#profOrderDetail .order-cancel-confirm[hidden]{
+  display:none;
+}
+#profOrderDetail .order-cancel-panel{
+  width:414px;
+  max-width:100%;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:22px 20px calc(24px + var(--safe-bottom, 0px));
+  border-radius:14px 14px 0 0;
+  background:var(--surface, #fff);
+  box-shadow:0 -8px 26px rgba(0,0,0,.12);
+}
+#profOrderDetail .order-cancel-title{
+  margin:0;
+  font-size:var(--ref-text-lg, 16px);
+  line-height:var(--ref-line-lg, 22px);
+  font-weight:700;
+  color:var(--fg, #222);
+}
+#profOrderDetail .order-cancel-text{
+  margin:0;
+  font-size:var(--ref-text-sm, 13px);
+  line-height:18px;
+  color:var(--fg2, #777);
+}
+#profOrderDetail .order-cancel-consequences{
+  margin:0;
+  padding:0 0 0 18px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:var(--ref-text-sm, 13px);
+  line-height:18px;
+  color:var(--fg, #222);
+}
+#profOrderDetail .order-cancel-error{
+  margin:0;
+  font-size:var(--ref-text-sm, 13px);
+  line-height:18px;
+  font-weight:600;
+  color:var(--danger, #c0392b);
+}
+#profOrderDetail .order-cancel-go,
+#profOrderDetail .order-cancel-keep{
+  width:100%;
+  margin:0;
+}
+#profOrderDetail .order-cancel-go[disabled]{
+  opacity:.6;
+  cursor:default;
+}

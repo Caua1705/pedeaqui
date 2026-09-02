@@ -4,6 +4,7 @@
       appState,
       getRestaurantSlug,
       getCouponContext,
+      getCart,
       restaurantStore,
       setLoading,
       logAppError,
@@ -65,20 +66,25 @@
     const couponAmount = (value) => window.PedeAquiCouponFormat.couponAmount(value);
 
     /**
-     * O que o botão do card pode fazer com ESTA sacola — direto de `state`.
+     * O que o botão do card pode fazer com ESTA sacola.
      *
-     * Antes o botão dizia "Usar cupom" nos três casos. Para quem não estava
-     * logado isso levava a um cupom que não aplicava sem explicar por quê, e
-     * para quem não tinha atingido o mínimo levava a um desconto de R$ 0,00
+     * A decisão saiu daqui em 02/09/2026 para `services/coupon-cta.js`, porque
+     * ela é a MESMA em três superfícies (card do Clube, folha de detalhe,
+     * checkout) e duas cópias de uma regra de cupom já divergiram neste
+     * repositório antes — `couponLabel` tinha duas versões que anunciavam
+     * descontos diferentes para o mesmo cupom (ver o cabeçalho de
+     * coupon-format.js).
+     *
+     * Antes disso o botão dizia "Usar cupom" nos três casos: para quem não
+     * estava logado levava a um cupom que não aplicava sem explicar por quê, e
+     * para quem não tinha atingido o mínimo, a um desconto de R$ 0,00
      * anunciado como aplicado.
      */
     function couponCta(coupon) {
-      if (coupon.state === 'login_required') return 'Entre para usar';
-      if (coupon.state === 'missing_amount') {
-        const missing = couponAmount(coupon.missing_amount);
-        return missing > 0 ? `Faltam ${fmtClubCurrency(missing)}` : 'Usar cupom';
-      }
-      return 'Usar cupom';
+      return window.PedeAquiCouponCta.couponCta(coupon, {
+        sacolaVazia: !(getCart?.() || []).length,
+        fmt: fmtClubCurrency
+      });
     }
 
     function getCouponCode(coupon, index) {
@@ -90,19 +96,33 @@
     }
 
     /**
-     * A tarja do topo do card.
+     * A tarja do topo do card — OU ELA DIZ ALGO, OU ELA NÃO EXISTE.
      *
-     * `label` é o único selo do contrato — hoje só `selected_for_you`, e `null`
-     * na maioria dos cupons. A versão anterior procurava `badge_label`,
-     * `audience`, `segment` e `campaign_type`, nenhum dos quais existe: o
-     * resultado era "Cupom disponível" em 100% dos cards, uma tarja que não
-     * distinguia nada de nada.
+     * `label` é o único selo do contrato, e `CustomerCouponLabel` tem UM valor:
+     * `selected_for_you`. O `@description` dele é explícito sobre o que NÃO
+     * existe: "Nao ha `exclusivo`: o alvo e um SEGMENTO, nao uma pessoa, e
+     * prometer exclusividade para um recorte de milhares de clientes e
+     * propaganda que nao se sustenta."
+     *
+     * Duas tarjas saíram em 02/09/2026:
+     *
+     * - **"Cupom disponível"** aparecia em todo card sem label, ou seja na
+     *   maioria deles. Uma tarja que todo mundo tem não distingue ninguém — é
+     *   ruído com aparência de informação. (A versão anterior a essa procurava
+     *   `badge_label`, `audience`, `segment` e `campaign_type`, nenhum dos
+     *   quais existe no contrato.)
+     * - **"Frete grátis"** para `discount_type: free_delivery` REPETIA o
+     *   `title`, que no contrato do cliente já é o rótulo do desconto — o card
+     *   dizia "Frete grátis" duas vezes, uma na tarja e outra no destaque.
+     *
+     * BLOQUEADO POR BACKEND: a regra pede "para todos" no cupom público e nada
+     * no de segmento, mas `CustomerCouponResponse` não publica `visibility` —
+     * ele existe só em `CouponCreate`/`CouponAdminResponse`. Sem esse campo o
+     * front não tem como distinguir os dois, e inventar a distinção seria
+     * anunciar audiência por chute.
      */
     function getCouponBadge(coupon) {
-      if (coupon.label === 'selected_for_you') return 'Selecionado para você';
-      const type = String(coupon.discount_type || '').toLowerCase();
-      if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
-      return 'Cupom disponível';
+      return coupon.label === 'selected_for_you' ? 'Selecionado para você' : '';
     }
 
     function formatCouponDate(value) {
@@ -140,6 +160,7 @@
 
     function renderClubCoupon(coupon, index) {
       const code = getCouponCode(coupon, index);
+      const badge = getCouponBadge(coupon);
       const label = getCouponLabel(coupon);
       const image = getCouponImage(coupon);
       const title = coupon.title || coupon.code || 'Cupom';
@@ -155,7 +176,7 @@
       const subtitle = title === label ? '' : title;
       return `
         <article class='club-available-coupon-card' data-coupon-key='${esc(code)}'>
-          <div class='club-available-coupon-badge'>${esc(getCouponBadge(coupon))}</div>
+          ${badge ? `<div class='club-available-coupon-badge'>${esc(badge)}</div>` : ''}
           ${image ? `<img class='club-available-coupon-image' src='${esc(image)}' alt='${esc(title)}' loading='lazy'>` : ''}
           <div class='club-available-coupon-content'>
             <strong class='club-available-coupon-discount'>${esc(label)}</strong>
@@ -163,7 +184,7 @@
             ${description ? `<p>${esc(description)}</p>` : ''}
             <div class='club-available-coupon-meta'>${renderCouponMeta(coupon)}</div>
           </div>
-          <button type='button' class='club-available-coupon-use' data-coupon-state='${esc(coupon.state || '')}'>${esc(couponCta(coupon))}</button>
+          <button type='button' class='club-available-coupon-use' data-coupon-state='${esc(coupon.state || '')}' data-coupon-acao='${esc(couponCta(coupon).acao)}'>${esc(couponCta(coupon).rotulo)}</button>
         </article>`;
     }
 

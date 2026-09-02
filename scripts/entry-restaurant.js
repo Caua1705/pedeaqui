@@ -64,6 +64,10 @@ import './services/club-service.js';
 // Rotulo do cupom, lido pela folha de detalhe (restaurant-page) e pelo card do
 // Clube (restaurant-club). Usa o formatador de moeda, importado la em cima.
 import './services/coupon-format.js';
+// O que o botao do cupom FAZ, decidido num lugar so — o card do Clube, a folha
+// de detalhe e o checkout leem daqui. Depende do coupon-format (couponAmount) e
+// do formatador de moeda, os dois importados acima.
+import './services/coupon-cta.js';
 // Rotulo da bandeira do cartao, lido pela lista de cartoes salvos
 // (payment-card-flow) e pela linha de pagamento da sacola (restaurant-page).
 // Nao depende de nada; so precisa vir antes dos dois.

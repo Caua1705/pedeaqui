@@ -66,7 +66,9 @@ const ALVOS = [
     variaveis: ['coupon'],
     esquemas: ['CustomerCouponResponse'],
     porque: 'o card do Clube desenha exatamente a lista de GET /restaurants/{slug}/coupons',
-    sonda: ['state', 'missing_amount']
+    // `missing_amount` saiu daqui em 02/09/2026 para services/coupon-cta.js, e
+    // a sonda apontou isso na hora — que e para o que ela existe.
+    sonda: ['state', 'discount_amount']
   },
   {
     arquivo: 'scripts/pages/screens/coupon-detail-screen.js',
@@ -99,6 +101,13 @@ const ALVOS = [
     esquemas: ['BannerResponse'],
     porque: 'a normalização dos dois trilhos de banner',
     sonda: ['is_active', 'sort_order']
+  },
+  {
+    arquivo: 'scripts/services/coupon-cta.js',
+    variaveis: ['coupon'],
+    esquemas: ['CustomerCouponResponse'],
+    porque: 'o decisor do botao le o veredito que o backend deu para ESTA sacola',
+    sonda: ['state', 'missing_amount']
   },
   {
     arquivo: 'scripts/services/coupon-format.js',

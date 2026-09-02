@@ -402,3 +402,146 @@ preencha — e é alcançável pela linha "Cupons" do Perfil. Vai para o item 5.
 `lint 78 problems (0 errors)` · `typecheck:cards` exit 0 · `test 319 passed`
 (29 arquivos) · `test:e2e 304 passed · 3 skipped`, exit 0, 5,4 min,
 **3 testes acima de 10 s**.
+
+---
+
+## Item 5 — o fluxo de cupons
+
+### 5.0 O que o backend JÁ devolve hoje (levantado antes de codar)
+
+Três rotas, todas por slug de restaurante:
+
+| rota | o que faz | quem chama hoje |
+|---|---|---|
+| `GET /restaurants/{slug}/coupons` | a lista do cliente, **com o estado já decidido** | `club-service.getCustomerCoupons` |
+| `POST /restaurants/{slug}/coupons/preview` | valida UM cupom contra a sacola | `club-service.previewCoupon` |
+| `POST /restaurants/{slug}/coupons/claim` | **digitar um código sem sacola** | **NINGUÉM — não está ligado no front** |
+
+**`GET /coupons` aceita `subtotal`, `delivery_fee` e `order_type` como query, e
+os três são OPCIONAIS.** O `@description` da rota diz o que isso significa, e é
+exatamente a regra dura do prompt: *"Sem `subtotal` a rota responde a tela do
+Clube... Com `subtotal` ela responde a tela do checkout."* Ou seja **a mesma
+função do backend decide nos dois lugares** — não há o que construir aqui, só o
+que usar. `getCustomerCoupons` já monta a query.
+
+`CustomerCouponResponse` (o que cada card recebe pronto):
+`code, description, discount_amount, discount_type, id, image_url, label,
+min_order_value, missing_amount, state, title, valid_until`.
+
+`CustomerCouponState` = **`applicable` | `missing_amount` | `login_required`**,
+e o `@description` dele já implementa a decisão "cupom indisponível aparece SÓ
+quando existe ação que destrava": *"Nao ha valor para 'nao aparece': cupom sem
+conserto nesta sacola — vencido, primeira-compra para quem ja comprou, de outro
+segmento, teto estourado, cooldown correndo — simplesmente nao entra na lista."*
+
+`CustomerCouponLabel` = **`selected_for_you`**, e um só. O `@description` já
+escreve a decisão da etiqueta: *"Nao ha `exclusivo`: o alvo e um SEGMENTO, nao
+uma pessoa, e prometer exclusividade para um recorte de milhares de clientes e
+propaganda que nao se sustenta."*
+
+### 5.0.1 As três restrições que o prompt mandou conferir: NENHUMA existe
+
+O prompt pede para checar "forma de pagamento, horário do dia, itens
+específicos". Conferido em `CouponCreate`/`CouponAdminResponse` — que é onde as
+regras da campanha são declaradas:
+
+`code, cooldown_days, coupon_template_id, description, discount_type,
+discount_value, first_order_only, is_active, max_discount_amount,
+min_order_value, target_segment, title, total_usage_limit,
+usage_limit_per_customer, valid_from, valid_until, visibility`
+
+**Não há restrição por forma de pagamento, por horário do dia nem por item.**
+O que existe é: valor mínimo, primeira compra, segmento/visibilidade, janela de
+validade, tetos de uso, cooldown e teto de desconto. Qualquer tela que ofereça
+"só no PIX" ou "só das 18h às 22h" estaria inventando — **não construir.**
+
+### 5.0.2 O que fica BLOQUEADO POR BACKEND
+
+| decisão do prompt | por que não dá |
+|---|---|
+| etiqueta **"para todos"** no cupom público | `CustomerCouponResponse` **não publica `visibility`** — o campo existe só em `CouponCreate`/`CouponAdminResponse`. Sem ele o front não distingue público de segmento, e inventar a distinção é anunciar audiência por chute |
+| **"sem código aplica automaticamente"** | o contrato permite `code: null`, mas **ninguém diz QUAL escolher** quando mais de um cupom sem código cabe na mesma sacola. Escolher pelo maior `discount_amount` é uma decisão de DINHEIRO tomada no front, que é a regra 1 do CLAUDE.md. Precisa de uma rota que devolva "o cupom que o backend aplicaria", ou de uma regra escrita |
+
+### 5.0.3 A leitura de escopo que eu tomei
+
+O item 5 diz "Nada aqui toca sacola, checkout de pagamento ou troca de filial" e
+o item 6 lista "sacola · checkout" como fora. Mas o item 5 TAMBÉM pede "Checkout:
+onde aplica, com campo único para digitar código".
+
+Li assim, e é o que está construído: **a MATEMÁTICA da sacola é intocável**
+(`cartTotals`, a folha de confirmação, o pagamento), e a UI de cupom é o
+trabalho desta rodada. Nenhuma linha desta seção soma preço.
+
+### 5.A CONSTRUÍDO — o botão diz o que vai acontecer, e nada aplica sem sacola
+
+**O defeito mais caro que isto fecha, e ele estava em produção:**
+`confirmCouponDetail()` com a sacola VAZIA fazia `armSelectedCoupon()` +
+`persistCouponChoice()` e dizia *"Cupom selecionado. Adicione produtos à sacola
+para usar"*. Um cupom **aplicado sem preview nenhum**, gravado na sacola
+guardada, que voltava armado no próximo boot e seguia no `coupon_id` do
+`POST /orders`. Num cupom de uso único, o backend o **queima** ali.
+
+Isso é exatamente o que a decisão do prompt proíbe: *"Nunca aplicar para depois
+falhar."*
+
+**O decisor único: `scripts/services/coupon-cta.js`.**
+
+| situação | rótulo | destino |
+|---|---|---|
+| `login_required` | "Entre para usar" | login |
+| `missing_amount` com valor | "Faltam R$ 8,85" | **cardápio** |
+| sacola VAZIA | "Ver cardápio" | cardápio |
+| `applicable` com sacola | "Aplicar cupom" | preview → aplica |
+| **sem `state`** (vitrine do `/menu`) com sacola | "Aplicar cupom" | preview → aplica |
+| `state` presente mas desconhecido | "Ver cardápio" | cardápio |
+
+Duas decisões que precisaram ser tomadas e estão escritas no cabeçalho do
+módulo:
+
+1. **`login_required` vence a sacola vazia.** Sem conta o cupom não volta nem na
+   lista; "Ver cardápio" mandaria a pessoa ao lugar errado.
+2. **Ausência de `state` NÃO é estado desconhecido.** `PublicCouponResponse` (o
+   trilho da Home) não tem `state`, e a folha de detalhe recebe os dois
+   contratos. Recusar esses cupons abriria um buraco de capacidade sem
+   substituto — e não precisa: aplicar continua passando pelo backend, uma
+   porta adiante, no `POST /coupons/preview`, que é **A MESMA função** que
+   decidiu os estados da lista. A regra dura continua valendo.
+
+   Isto foi descoberto pelo E2E: `confirmar o cupom aplica o desconto` ficou
+   vermelho porque `JP10` vem do feed do `/menu`, sem `state`.
+
+**A sacola entra por ACESSOR.** `getCart: () => cart` no `createRestaurantClub
+Controller` — `cart` é reatribuído (restoreCart, troca de filial, limpar
+sacola), e uma cópia viraria a fotografia do boot, com o botão decidindo para
+sempre com a sacola de quando o app subiu (§2.1 da skill).
+
+**`persistCouponChoice()` foi REMOVIDA**, e o buraco tem comentário. Ela só
+existia para o ramo da sacola vazia; deixá-la de pé é deixar o mecanismo do
+defeito armado para quem for religar. A gravação legítima do cupom aplicado
+continua sendo a de `updateCartUI` (`restaurant-page.js:2262`).
+
+### 5.B CONSTRUÍDO — a etiqueta
+
+`getCouponBadge` passa a ser: `label === 'selected_for_you'` → "Selecionado para
+você"; **senão a tarja não existe** (o elemento não é desenhado). Saíram duas:
+
+- **"Cupom disponível"**, que aparecia em todo card sem label — uma tarja que
+  todo mundo tem não distingue ninguém.
+- **"Frete grátis"** para `discount_type: free_delivery`, que **repetia o
+  `title`**: o card dizia a mesma coisa duas vezes.
+
+"Para todos" no público está bloqueado por backend (§5.0.2).
+
+### Verificação do estágio A+B
+
+`lint 78 problems (0 errors)` · `typecheck:cards` exit 0 · `test 332 passed`
+(30 arquivos; +11 do decisor, +3 do contrato) · `test:e2e 305 passed ·
+3 skipped`, exit 0, 4,2 min, **3 acima de 10 s**.
+
+Vermelhos vistos: 11 unitários do decisor escritos primeiro; 5 E2E do Clube
+caíram com a mudança de comportamento e foram lidos um a um (não "consertados"
+— dois deles passaram a afirmar a regra nova); e a tarja foi vista vermelha com
+a função antiga reinjetada (`Expected: 0 / Received: 1`).
+
+**Nenhum número de dinheiro mudou.** O que mudou é QUANDO um cupom pode ser
+armado — e a mudança só REMOVE um caminho que armava sem preview.

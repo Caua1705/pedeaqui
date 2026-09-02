@@ -433,6 +433,11 @@
       const totals = cartTotals();
       return { subtotal: totals.subtotal, deliveryFee: totals.delivery, orderType: deliveryType };
     },
+    // ACESSOR, nao valor. `cart` e reatribuido (restoreCart, troca de filial,
+    // limpar sacola); uma copia aqui viraria a fotografia do boot e o botao do
+    // cupom decidiria para sempre com a sacola de quando o app subiu — a
+    // armadilha mais cara da §2.1 da skill.
+    getCart: () => cart,
     restaurantStore,
     setLoading,
     logAppError,
@@ -4848,7 +4853,7 @@
   //
   // O que fica AQUI é o dinheiro: selectedCoupon/preview e as três portas que
   // a folha usa para tocá-lo (armSelectedCoupon, restoreSelectedCoupon,
-  // persistCouponChoice). A folha lê e escreve o estado da SACOLA só por
+  // restoreSelectedCoupon). A folha lê e escreve o estado da SACOLA só por
   // essas portas — a separação leitura/aplicação (couponDetailCoupon vs
   // selectedCoupon) continua valendo, agora com o lado da leitura DENTRO da
   // tela e o da aplicação aqui.
@@ -4874,10 +4879,15 @@
     updateCartUI();
   }
 
-  /** Escolha com a sacola vazia: fica guardada para quando houver itens. */
-  function persistCouponChoice() {
-    cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
-  }
+  // `persistCouponChoice()` MORREU em 02/09/2026, e o buraco onde ela estava
+  // e proposital. Ela gravava `{ coupon: selectedCoupon }` na sacola guardada
+  // quando alguem confirmava um cupom com a sacola VAZIA — um cupom aplicado
+  // sem preview nenhum, que voltava armado no proximo boot e seguia no
+  // `coupon_id` do pedido. Num cupom de uso unico, o backend o queima ali.
+  // Hoje a sacola vazia leva ao cardapio e nao arma nada (coupon-cta.js), e a
+  // gravacao legitima do cupom aplicado continua sendo a de `updateCartUI`
+  // (:2262), que roda em toda mutacao do carrinho. Nao recoloque esta funcao
+  // sem ler o cabecalho de services/coupon-cta.js.
 
   // Trampolins: o clube e o auth-flow chamam estes dois POR NOME (window e
   // deps de init). DECLARAÇÃO de função — const aqui é TDZ, a lição do
@@ -5545,7 +5555,6 @@
       // diretamente — arma, desfaz e persiste por aqui.
       armSelectedCoupon,
       restoreSelectedCoupon,
-      persistCouponChoice,
       previewSelectedCoupon,
       couponDiscountAmount,
       couponImageUrl,

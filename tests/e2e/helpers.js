@@ -656,3 +656,38 @@ export async function seedOnlineCardBranch(page) {
     body: JSON.stringify(info)
   }));
 }
+
+/**
+ * ROLA A HOME E DEVOLVE O SCROLL JÁ PARADO.
+ *
+ * `styles/restaurant.css:314` declara `html{scroll-behavior:smooth}`, e
+ * `scrollTo({behavior:'auto'})` NÃO é instantâneo: `auto` quer dizer "use o
+ * valor do CSS", então todo `scrollTo` de teste nesta página vira uma animação.
+ * Quem lê `window.scrollY` logo depois lê um ponto no MEIO dela.
+ *
+ * Foi assim que `auth-screen-nav` reprovou o CI: o teste rolava para 500,
+ * lia 136 (a animação subindo), abria a tela e lia 148 — e culpava o app por um
+ * salto de 12 px que era a cauda da própria rolagem. O comentário do teste
+ * explicava o salto por "abrir o modal muda a altura do conteúdo"; medido, o
+ * `scrollHeight` não muda (994 antes e depois). A explicação estava errada, e a
+ * margem de 8 px que ela justificava era um número inventado.
+ *
+ * Duas coisas consertam isso, e as duas importam:
+ *
+ * 1. `behavior:'instant'` ignora o CSS e move de uma vez — não há animação para
+ *    ler no meio.
+ * 2. O alvo fica LONGE do fim do documento. A Home mede 994 px em 844 de
+ *    viewport, então o scroll máximo é 150: pedir 500 é pedir o limite, e no
+ *    limite qualquer mudança de altura do documento reposiciona o scroll de
+ *    graça. Com 120 sobram 30 px de folga dos dois lados.
+ *
+ * Com as duas, o deslocamento ao abrir a tela de operação mediu 0 px em 12 de
+ * 12 execuções a 4 workers — pelos dois caminhos de abertura. É o que permite a
+ * afirmação EXATA lá: uma tolerância só esconderia a próxima regressão.
+ */
+export async function rolarHome(page, top = 120) {
+  return page.evaluate(alvo => {
+    window.scrollTo({ top: alvo, behavior: 'instant' });
+    return window.scrollY;
+  }, top);
+}

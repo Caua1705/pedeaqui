@@ -1539,6 +1539,78 @@ está provado. É ponto de partida, não veredito.
 **Nenhum dos três foi corrigido nesta rodada**, de propósito: a §11 manda rodar
 isolado e conferir que o que falhou não é o eixo que se mexeu, e o eixo desta
 rodada (tempo de animação do detalhe do assistente) não toca nenhum dos três.
+
+### 13.3 Os três, medidos — e a leitura da §13.2 errou dois de três
+
+Fechado o eixo do assistente, os três viraram o eixo. Reproduzidos com
+`--repeat-each` a 4 workers, que é a carga que o terminal não tem e o CI tem.
+
+**`auth-screen-nav:232` — reproduzido, e a causa não era nenhuma das duas
+hipóteses.** Falhou 1 em 208 com `o scroll da Home saltou: 136 -> 148`. O
+comentário do teste explicava a tolerância por "abrir o modal muda a altura do
+conteúdo e o navegador reajusta o scroll no limite". **Medido, o
+`scrollHeight` não muda: 994 px antes e 994 depois.** E o scroll SUBIU, o que
+clamp não faz.
+
+A causa é uma linha de CSS: **`styles/restaurant.css:314` declara
+`html{scroll-behavior:smooth}`**, e `scrollTo({behavior:'auto'})` não é
+instantâneo — `auto` quer dizer *"use o valor do CSS"*. Todo `scrollTo` de
+teste nesta página é uma ANIMAÇÃO, e o teste lia `scrollAntes` no meio dela. A
+sonda pegou a curva inteira, um quadro por amostra, desacelerando:
+
+    136 → 142 → 146 → 148 → 149 → 150   (maxScroll = 150)
+
+Os 12 px "do app" eram a cauda da rolagem do próprio teste. **Terceira vez nesta
+rodada que a margem media o instrumento e não o app** — e a primeira em que o
+comentário que a justificava afirmava um fato falso, verificável em uma linha.
+
+Duas coisas consertam, e as duas importam: `behavior:'instant'` (ignora o CSS)
+e um alvo LONGE do fim do documento — a Home mede 994 px em 844 de viewport,
+então pedir 500 é pedir o limite, onde qualquer mudança de altura reposiciona o
+scroll de graça; 120 deixa 30 px de folga. As duas juntas: **deslocamento de 0 px
+em 12 de 12**, pelos dois caminhos de abertura. A margem foi a ZERO
+(`toBe(scrollAntes)`) — tolerância aqui só esconderia a próxima regressão.
+
+**E a §13.2 estava certa sobre a redundância, mas o conserto não é apagar a
+linha: é trocar a ORDEM.** Com a trava `fixed` reinjetada (`operationModal`
+fora de `SOFT_LOCK_MODALS`), quem reprovava era `body.style.position`, duas
+linhas acima — a linha do scroll nunca era exercida, um teste verde pelo motivo
+errado com o defeito escondido atrás de um sintoma mais específico. Invertidas,
+o scroll reprova 2/2 com `120 -> 0`, que é a frase do CLIENTE (a página pulou);
+o `position` fica embaixo, como o PORQUÊ. **Afirme o observável antes do
+mecanismo:** o mecanismo só cobre a causa que você já imaginou.
+
+**`profile-order-tracking:403` — a leitura da §13.2 está DESMENTIDA.** Ela
+supunha `Math.round(rect.height)` fracionário contra `scrollHeight` inteiro,
+e a fonte chegando no meio da leitura. Medido, 12 de 12 a 4 workers:
+`rect.height` é **222 exato** (não há fração para quantizar) e
+`document.fonts.status` já é `"loaded"` quando a leitura acontece. Não
+reproduziu, e a hipótese não se sustenta. **Não foi tocado** — mexer num teste
+que não se viu falhar é o oposto da regra 3. O que falta é o log de falha do CI,
+que diz a asserção; o número de linha sozinho não disse.
+
+**`tenant-theme:244` — sem dado, sem mexer.** Continua valendo a §11.
+
+### 13.4 O achado maior: uma linha de CSS anima TODO scroll de teste
+
+`html{scroll-behavior:smooth}` vale para a página inteira, e três specs criaram
+contornos INDEPENDENTES para ela sem ninguém nomear a causa:
+
+| spec | o contorno | o que ele custa |
+|---|---|---|
+| `auth-screen-nav` | margem de 8 px com explicação falsa | **reprovou o CI** |
+| `menu-scrollspy:54` | 5 rolagens com 350 ms + 400 ms finais | **2,15 s por chamada**, e um `expectedSlug` que afirma contra a regra do app "sem depender de o scroll ter parado num pixel exato" |
+| `lifecycle:120` | reaplica a rolagem a cada tentativa | o comentário culpa "a primeira rolagem não pegar" |
+
+Os dois últimos estão VERDES e não foram tocados — são outro eixo, e a §11 manda
+não mexer no que não se viu falhar. Mas o dono único existe agora:
+**`rolarHome()` em `tests/e2e/helpers.js`**, com a medida escrita. Quem for
+mexer em qualquer um dos dois começa por ali.
+
+**A regra que fica:** quando três lugares diferentes ganham esperas empíricas
+para o mesmo tipo de leitura, o problema não está nos três — está numa coisa que
+os três usam. Contorno que funciona não vira notícia, e por isso a causa
+sobreviveu em três arquivos até o CI reprovar no único que virou número.
 Consertar por leitura de código é o mesmo erro que a §12.6 registra — a
 premissa com que se entra costuma estar errada, e a sonda é mais barata que o
 teste.

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
+import { mockApi, seedPickupSession, RESTAURANT_URL, esperarAppPronto, rolarHome } from './helpers.js';
 
 // Fase 5, bloco C2. A barra inferior some quando uma tela de autenticação abre.
 //
@@ -107,10 +107,7 @@ for (const [label, navId] of [['Perfil', 'mobNavProfile'], ['Clube', 'mobNavOrde
     await boot(page);
     await page.evaluate(() => window.act('closeOperationScreen'));
 
-    await expect.poll(() => page.evaluate(() => {
-      window.scrollTo({ top: 500, behavior: 'auto' });
-      return window.scrollY;
-    })).toBeGreaterThan(100);
+    await expect.poll(() => rolarHome(page)).toBeGreaterThan(100);
 
     const header = page.locator('#homeStickyHeader');
     const widget = header.locator('.delivery-widget');
@@ -190,10 +187,7 @@ for (const [label, navigateAndReturn] of AUTH_RETURN_PATHS) {
     await page.setViewportSize({ width: 390, height: 844 });
     await boot(page);
     await page.evaluate(() => window.act('closeOperationScreen'));
-    await expect.poll(() => page.evaluate(() => {
-      window.scrollTo({ top: 500, behavior: 'auto' });
-      return window.scrollY;
-    })).toBeGreaterThan(100);
+    await expect.poll(() => rolarHome(page)).toBeGreaterThan(100);
 
     const header = page.locator('#homeStickyHeader');
     const before = await header.boundingBox();
@@ -234,10 +228,7 @@ for (const [rotulo, abrir] of [
     await boot(page);
     await page.evaluate(() => window.act('closeOperationScreen'));
 
-    await expect.poll(() => page.evaluate(() => {
-      window.scrollTo({ top: 500, behavior: 'auto' });
-      return window.scrollY;
-    })).toBeGreaterThan(100);
+    await expect.poll(() => rolarHome(page)).toBeGreaterThan(100);
 
     const header = page.locator('#homeStickyHeader');
     await expect(header).toBeVisible();
@@ -248,16 +239,31 @@ for (const [rotulo, abrir] of [
     await abrir(page);
     await expect(page.locator('#operationModal')).toHaveClass(/active/);
 
-    // O <body> não pode virar `position:fixed`: é isso que desgruda o sticky.
+    // SEM TOLERÂNCIA: abrir uma tela por cima da Home não move o scroll, ponto.
+    //
+    // A versão anterior tolerava 8 px e explicava a tolerância por um reajuste
+    // do navegador quando o modal muda a altura do documento. Medido, a altura
+    // NÃO muda (994 px antes e depois), e o CI reprovou aqui com um salto de 12
+    // que era a cauda da rolagem animada do próprio teste — a explicação e o
+    // número estavam os dois errados. `rolarHome` acabou com a animação e tirou
+    // o alvo do limite do documento; a medida está no helper.
+    //
+    // Com isso o deslocamento é 0 px em 12 de 12 a 4 workers, pelos dois
+    // caminhos de abertura, e a afirmação exata é o que faz esta linha valer:
+    // ela pega a trava "fixed" (que devolvia scrollY 0) e pega também o
+    // empurrão de um pixel que uma tolerância engoliria.
+    const scrollDepois = await page.evaluate(() => window.scrollY);
+    expect(scrollDepois,
+      `o scroll da Home saltou ao abrir a tela: ${scrollAntes} -> ${scrollDepois}`)
+      .toBe(scrollAntes);
+
+    // E SÓ AGORA o mecanismo. A ordem importa: com esta linha antes da de cima,
+    // reinjetar a trava "fixed" reprovava AQUI e a de cima nunca era exercida —
+    // um teste passando pelo motivo errado, com o defeito real escondido atrás
+    // de um sintoma mais específico. Primeiro o que o cliente vê (a página
+    // pulou), depois o porquê (quem a fez pular).
     expect(await page.evaluate(() => document.body.style.position),
       'a trava trocou o container de scroll do cabeçalho').toBe('');
-    // Tolerância de alguns pixels: abrir o modal muda a altura do conteúdo e o
-    // navegador reajusta o scroll no limite do documento. O que este expect
-    // barra é o ZERO — a trava "fixed" devolvia scrollY 0.
-    const scrollDepois = await page.evaluate(() => window.scrollY);
-    expect(Math.abs(scrollDepois - scrollAntes),
-      `o scroll da Home saltou ao abrir a tela: ${scrollAntes} -> ${scrollDepois}`)
-      .toBeLessThanOrEqual(8);
 
     // E o cabeçalho continua onde estava, inteiro.
     const depois = await header.boundingBox();

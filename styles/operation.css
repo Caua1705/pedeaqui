@@ -1249,10 +1249,40 @@
 
 /* ---- Address Picker Modal ---- */
 .addr-picker-body{padding:24px 20px 16px!important;display:flex!important;flex-direction:column!important;align-items:center;gap:12px;background:#fff!important}
-.addr-picker-add-btn{position:relative!important;width:338px!important;max-width:calc(100% - 28px)!important;height:45px!important;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 24px!important;margin-bottom:6px!important;background:var(--brand-tint-strong)!important;border:1px solid var(--brand-tint-strong)!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:var(--ref-text-sm)!important;font-weight:700!important;cursor:pointer;font-family:inherit!important;box-sizing:border-box!important}
+.addr-picker-add-btn{position:relative!important;width:338px!important;max-width:calc(100% - 28px)!important;height:45px!important;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 24px!important;margin-bottom:6px!important;background:var(--brand-tint-strong)!important;border:1px solid var(--brand-tint-strong)!important;border-radius:10px!important;color:var(--op-orange)!important;font-size:var(--ref-text-sm)!important;font-weight:700!important;cursor:pointer;font-family:inherit!important;box-sizing:border-box!important;
+  /* O PAI E UM FLEX DE COLUNA, e este botao nascia com o `flex-shrink:1` do
+     padrao. Enquanto a lista de enderecos cabia na tela nada acontecia;
+     quando ela passava, o algoritmo tirava a sobra de quem podia encolher — e
+     o unico que podia era ele. Medido com 10 enderecos: scrollHeight 1002
+     contra clientHeight 826, e o botao caindo de 45px para **15px**.
+     O `height:45px` acima nao protege: num flex de coluna a altura e a BASE
+     do item, e e dela que o encolhimento sai. Mesmo conserto de
+     `.cart-location-alert` (restaurant.css), pelo mesmo motivo. */
+  flex-shrink:0!important}
 .addr-picker-add-btn svg{position:static!important;transform:translateX(-3px)!important;flex-shrink:0!important}
 .addr-picker-add-btn span{width:auto!important;text-align:left!important;transform:none!important}
 .addr-picker-add-btn:active{background:var(--brand-tint-strong)!important}
+/* O aviso do teto de enderecos.
+
+   A FORMA E A COR sao de `.reg-summary` (register.css), a classe de erro que o
+   cadastro e o login ja usam — inclusive o circulo com a exclamacao. O que esta
+   folha acrescenta e so a CAIXA desta tela: sem isto o aviso sai de borda a
+   borda (414px medidos) sobre um botao de 338px centrado, e a tela fica com dois
+   alinhamentos.
+
+   `flex-shrink:0` pelo mesmo motivo do botao logo acima: o pai e um flex de
+   coluna, e com a lista cheia quem pode encolher, encolhe.
+
+   Especificidade por ID de proposito: `register.css` carrega DEPOIS desta
+   folha, entao um seletor de classe so empataria e perderia. */
+#addrPickerModal .addr-picker-limit{
+  width:338px;
+  max-width:calc(100% - 28px);
+  margin:0 auto 8px;
+  flex-shrink:0;
+  box-sizing:border-box;
+}
+
 #addrPickerList:empty{display:none!important}
 #addrPickerList{width:354px!important;max-width:calc(100% - 16px)!important;display:flex!important;flex-direction:column!important;align-items:center;gap:12px}
 .addr-picker-item{width:354px!important;max-width:calc(100% - 16px)!important;height:75px!important;min-height:75px!important;display:flex!important;align-items:center;gap:12px;padding:0 14px!important;background:#fff!important;border:1.5px solid #dddddd!important;border-radius:10px!important;cursor:pointer;font-family:inherit!important;text-align:left!important;transition:border-color .15s,border-width .15s!important;box-sizing:border-box!important}

@@ -1607,10 +1607,18 @@
       <div class="cart-hdr-spacer"></div>
     </div>
     <div class="cart-scroll addr-picker-body">
-      <button class="addr-picker-add-btn" data-act-click='openAddressChoiceDirect'>
+      <button class="addr-picker-add-btn" data-act-click='addAddressFromPicker'>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Adicionar novo endereço</span>
       </button>
+      <!-- O teto de endereços por conta. `.reg-summary` é a classe de erro que
+           já existe no projeto (cadastro e login usam a mesma) — inclusive o
+           ícone de exclamação. O botão acima continua clicável de propósito: o
+           aviso é a resposta AO CLIQUE, não um botão desligado sem explicação. -->
+      <div class="reg-summary addr-picker-limit" id="addrPickerLimit" role="alert" aria-live="polite">
+        <span class="reg-summary-icon" aria-hidden="true">!</span>
+        <span>O limite de endereços foi atingido, remova algum para adicionar um novo.</span>
+      </div>
       <div id="addrPickerList"></div>
     </div>
     <div class="addr-delete-confirm" id="addrDeleteConfirm" aria-hidden="true" data-act-click='closeAddrDeleteConfirm'>

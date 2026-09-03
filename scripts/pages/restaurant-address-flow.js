@@ -99,6 +99,39 @@
     openAddressChoiceDirect(true);
   }
 
+  /**
+   * O teto de endereços por conta.
+   *
+   * É REGRA DO FRONT, e a diferença importa: `create_address`
+   * (`customer_service.py:324`) não tem teto nenhum, e nenhuma rota do contrato
+   * publica um número máximo. Ou seja, este número não é conferido em lugar
+   * nenhum além daqui — outro aparelho passa por cima dele.
+   */
+  const LIMITE_DE_ENDERECOS = 10;
+
+  function setAddrPickerLimitAviso(visivel) {
+    // `.reg-summary` só desenha com a classe `show` (register.css) — é a mesma
+    // mecânica do aviso do cadastro, e o `[hidden]` sozinho perderia para ela.
+    $('addrPickerLimit')?.classList.toggle('show', Boolean(visivel));
+  }
+
+  /**
+   * O "Adicionar novo endereço" DA LISTA. Ele não é `openAddressChoiceDirect`
+   * direto porque aquela porta é chamada de outros quatro lugares, e o teto é
+   * desta tela — é aqui que existe uma lista da qual dá para remover algum.
+   *
+   * O botão continua clicável de propósito: o aviso é a resposta AO CLIQUE. Um
+   * botão desligado sem explicação é a mesma negativa, sem a frase.
+   */
+  function addAddressFromPicker() {
+    if (_addrPickerItems.length >= LIMITE_DE_ENDERECOS) {
+      setAddrPickerLimitAviso(true);
+      return;
+    }
+    setAddrPickerLimitAviso(false);
+    openAddressChoiceDirect(true);
+  }
+
   let _addAddressOrigin = 'operation';
   let _returnToAddAddressChoice = false;
 
@@ -274,6 +307,9 @@
     _addrPickerItems = [];
     _addrPickerDeleteId = null;
     setAddrDeleteConfirm(false);
+    // Abrir a tela é começar de novo: um aviso de teto guardado da visita
+    // anterior falaria de uma lista que já pode ter mudado.
+    setAddrPickerLimitAviso(false);
     const confirmBtn = $('addrPickerConfirmBtn');
     if (confirmBtn) {
       confirmBtn.disabled = true;
@@ -309,6 +345,10 @@
   function _renderAddrPickerList() {
     const list = $('addrPickerList');
     if (!list) return;
+    // Apagar um endereço resolve o aviso do teto — e quem sabe disso é a lista,
+    // não o botão. Sem esta linha o aviso ficaria de pé sobre uma lista que já
+    // tem espaço, e o cliente leria uma negativa que não vale mais.
+    if (_addrPickerItems.length < LIMITE_DE_ENDERECOS) setAddrPickerLimitAviso(false);
     const current = getCurrentPickerAddress();
     list.innerHTML = _addrPickerItems.map(addr => {
       const id = addrPickerId(addr);
@@ -1332,6 +1372,7 @@
     openAddressScreen,
     openAddressChoice,
     openAddressChoiceDirect,
+    addAddressFromPicker,
     backFromAddAddress,
     selectAdcOption,
     adcConfirm,

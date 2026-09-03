@@ -3482,6 +3482,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verify Webhook
+         * @description A verificacao que a Meta faz ao salvar o webhook no painel.
+         *
+         *     **Devolve o `hub.challenge` como texto puro, e nao como JSON.** A Meta
+         *     compara byte a byte com o que mandou; `"1158201444"` com aspas nao e
+         *     `1158201444`, e o painel so diz que nao conseguiu validar — sem dizer o
+         *     que estava errado.
+         *
+         *     Os tres codigos sao distintos de proposito, porque respondem a coisas
+         *     diferentes quando esse painel nao ajuda:
+         *
+         *     - **503**: a variavel nao esta no ambiente. O problema e nosso, e o
+         *       conserto e subir a API com ela ANTES de clicar em salvar;
+         *     - **403**: o token nao bate. O que foi colado no painel e outro;
+         *     - **200**: pronto, e nao se repete — a verificacao acontece uma vez.
+         *
+         *     `compare_digest` e nao `!=`: e segredo, e a armadilha 18 vale aqui como
+         *     em qualquer outro.
+         */
+        get: operations["verify_webhook_webhooks_whatsapp_get"];
+        put?: never;
+        /**
+         * Receive Webhook
+         * @description Mensagem recebida e status de entrega, de qualquer numero.
+         *
+         *     `async def` para conseguir o corpo CRU: a assinatura e calculada sobre os
+         *     bytes exatos que a Meta enviou, e reserializar o JSON (espacos, ordem das
+         *     chaves) quebraria a conferencia. Como o resto do projeto e sincrono, o
+         *     service roda em threadpool para nao segurar o event loop enquanto fala
+         *     com o banco.
+         */
+        post: operations["receive_webhook_webhooks_whatsapp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9016,6 +9062,23 @@ export interface components {
             /** Reset Token */
             reset_token: string;
         };
+        /**
+         * WhatsAppWebhookResponse
+         * @description O que a Meta recebe de volta.
+         *
+         *     Curto e sem dado nenhum do restaurante: e resposta para maquina, e
+         *     qualquer coisa a mais seria informacao entregue a quem so tem o endereco
+         *     do webhook — que e publico.
+         *
+         *     `reason` existe para o LOG de quem opera, e nao para a Meta decidir nada:
+         *     ela trata 200 como sucesso, seja qual for o corpo.
+         */
+        WhatsAppWebhookResponse: {
+            /** Reason */
+            reason?: string | null;
+            /** Status */
+            status: string;
+        };
         /** PaymentMethodsResponse */
         src__schemas__admin_report_schema__PaymentMethodsResponse: {
             /** Branch Id */
@@ -14441,6 +14504,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_webhook_webhooks_whatsapp_get: {
+        parameters: {
+            query: {
+                "hub.mode": string;
+                "hub.verify_token": string;
+                "hub.challenge": string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Verify token diferente do configurado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description WHATSAPP_WEBHOOK_VERIFY_TOKEN nao configurada */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    receive_webhook_webhooks_whatsapp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhatsAppWebhookResponse"];
                 };
             };
         };

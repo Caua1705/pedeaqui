@@ -68,6 +68,10 @@ import './services/coupon-format.js';
 // de detalhe e o checkout leem daqui. Depende do coupon-format (couponAmount) e
 // do formatador de moeda, os dois importados acima.
 import './services/coupon-cta.js';
+// O motivo da RECUSA de um cupom, em portugues. `ineligibility_reason` e um
+// codigo interno do backend, e ele chegava cru ao toast do cliente. Puro; nao
+// depende de nada.
+import './services/coupon-reason.js';
 // Rotulo da bandeira do cartao, lido pela lista de cartoes salvos
 // (payment-card-flow) e pela linha de pagamento da sacola (restaurant-page).
 // Nao depende de nada; so precisa vir antes dos dois.

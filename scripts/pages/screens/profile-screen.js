@@ -51,7 +51,12 @@
     return {
       status,
       tone,
-      label: PROF_ORDER_STATUS_LABELS[status] || (status ? status.replace(/_/g, ' ').replace(/^./, char => char.toUpperCase()) : 'Status não informado')
+      // O fallback ERA `status.replace(/_/g, ' ')`, que enfeita o código do
+      // backend e o entrega em inglês ao cliente ("Out for delivery"). A tabela
+      // acima cobre os oito de `ORDER_STATUSES`, então isto só alcança um
+      // status novo — e aí uma frase em português informa o mesmo sem expor o
+      // vocabulário interno. É a mesma regra do orderStatusLabel().
+      label: PROF_ORDER_STATUS_LABELS[status] || (status ? 'Em andamento' : 'Status não informado')
     };
   }
 

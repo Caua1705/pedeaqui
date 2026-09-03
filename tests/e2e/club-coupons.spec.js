@@ -411,7 +411,12 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
           discount_amount: '0.00',
           total_after_coupon: '22.14',
           valid: false,
-          ineligibility_reason: 'Este cupom é válido apenas na primeira compra.'
+          // O TIPO DE PRODUCAO. `ineligibility_reason` NAO e uma frase: e um
+          // codigo interno do backend (os treze `reason=` de coupon_service.py).
+          // Este fixture trazia 'Este cupom e valido apenas na primeira compra.',
+          // que e a assuncao de quem o escreveu — e foi ela que deixou o front
+          // mostrar o campo cru por meses com o e2e verde.
+          ineligibility_reason: 'first_order_only'
         })
       )
   });
@@ -426,6 +431,7 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
   const aviso = page.locator('#couponNotice');
   await expect(aviso).toBeVisible();
   await expect(aviso).toContainText('primeira compra');
+  await expect(aviso, 'o codigo do backend nao pode aparecer').not.toContainText('first_order_only');
   await expect(aviso).not.toContainText('Cupom aplicado');
 
   // A folha NÃO fecha: o motivo está nela, e fechar jogaria a pessoa de volta
@@ -453,6 +459,51 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
   // O cupom que o backend recusou não pode chegar ao POST /orders.
   expect(orderRequests[0].body).not.toHaveProperty('coupon_id');
   expect(orderRequests[0].body).not.toHaveProperty('coupon_code');
+});
+
+// O RELATO, reproduzido: sacola de R$ 11 e cupom de pedido minimo R$ 30. O que
+// aparecia era um toast escuro com `minimum_order_not_reached` — o codigo
+// interno do backend, cru, na tela do cliente.
+//
+// O numero da frase sai de duas entradas que o BACKEND deu: o `min_order_value`
+// do cupom e o subtotal que acabou de ir no preview. E a mesma subtracao que o
+// backend faz (`missing_amount = minimum - subtotal`), e o resultado nao entra
+// na sacola nem no pedido — ele vive dentro da frase.
+test('pedido minimo nao atingido vira frase com o quanto falta, e nao o codigo', async ({ page }) => {
+  // 3 x H2O = 21,15; o cupom JP10 tem min_order_value 30,00 -> faltam 8,85.
+  await mockApi(page, {
+    orderResponse: pixOrder,
+    onPreviewCoupon: (route) =>
+      route.fulfill(
+        json({
+          coupon_id: 'd0d99eee-9cf1-409d-bd48-b5afb991da70',
+          coupon_code: 'JP10',
+          discount_type: 'percent',
+          subtotal: '21.15',
+          delivery_fee: '0.00',
+          discount_amount: '0.00',
+          total_after_coupon: '21.15',
+          valid: false,
+          ineligibility_reason: 'minimum_order_not_reached'
+        })
+      )
+  });
+  await seedPickupSession(page);
+
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.openCouponDetail('JP10'));
+  await page.locator('.coupon-detail-use').click();
+
+  const aviso = page.locator('#couponNotice');
+  await expect(aviso).toBeVisible();
+  await expect(aviso).toContainText('Faltam');
+  await expect(aviso).toContainText('8,85');
+  await expect(aviso, 'o codigo do backend nao pode aparecer').not.toContainText(
+    'minimum_order_not_reached'
+  );
+  // Nenhum sublinhado: e a assinatura de um codigo interno vazando.
+  await expect(aviso).not.toHaveText(/[a-z]_[a-z]/);
 });
 
 test('cupom aplicado sobrevive a abrir OUTRO cupom para leitura', async ({ page }) => {

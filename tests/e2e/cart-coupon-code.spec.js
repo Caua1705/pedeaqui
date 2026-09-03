@@ -48,7 +48,11 @@ const PREVIEW_RECUSADO = {
   discount_amount: '0.00',
   total_after_coupon: '22.14',
   valid: false,
-  ineligibility_reason: 'Este cupom é válido apenas na primeira compra.'
+  // O TIPO DE PRODUCAO: `ineligibility_reason` e um CODIGO interno do backend
+  // (os treze `reason=` de coupon_service.py), nao uma frase. Este fixture
+  // trazia a frase pronta, que e a assuncao de quem o escreveu — e foi ela que
+  // deixou o front mostrar o campo cru com o e2e verde.
+  ineligibility_reason: 'first_order_only'
 };
 
 async function abrirSacolaCom3(page, opcoes = {}) {
@@ -116,9 +120,13 @@ test('200 com valid:false NÃO aplica, e o código recusado não entra no pedido
   await campo(page).fill('PANFLETO10');
   await page.locator('#cartCouponApply').click();
 
-  // A razão vem do BACKEND, com as palavras dele. Uma frase genérica nossa
-  // esconderia a única informação acionável que a pessoa tem.
+  // O motivo e ESPECIFICO — uma frase generica esconderia a unica informacao
+  // acionavel que a pessoa tem —, mas as palavras sao NOSSAS: o backend manda
+  // um codigo, e quem o traduz e coupon-reason.js.
   await expect(aviso(page)).toContainText('primeira compra');
+  await expect(aviso(page), 'o codigo do backend nao pode aparecer').not.toContainText(
+    'first_order_only'
+  );
   await expect(aviso(page)).not.toContainText('Cupom aplicado');
 
   // A sacola segue inteira: sem desconto e sem linha de desconto.

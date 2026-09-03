@@ -3424,18 +3424,49 @@
     })[paymentStatusKind(order?.payment_status)] || 'Aguardando pagamento';
   }
 
+  /**
+   * O status do pedido, em português — na tela de pedido criado.
+   *
+   * ESTA TABELA ESTAVA ERRADA DOS DOIS LADOS, e o fallback era o código CRU.
+   * O vocabulário do backend é `ORDER_STATUSES` (core/constants.py):
+   * pending, accepted, rejected, preparing, ready, out_for_delivery,
+   * completed, cancelled.
+   *
+   * Faltavam QUATRO dos oito — `accepted`, `rejected`, `out_for_delivery` e
+   * `completed` —, e cada um deles caía no `String(status)`: o cliente lia
+   * `out_for_delivery` na tela do pedido que acabou de fazer. E sobravam
+   * quatro nomes fantasma que a API nunca mandou (`submitted`, `confirmed`,
+   * `delivering`, `delivered`), que é a classe de erro da §12.1 da skill —
+   * código que mente para quem lê.
+   *
+   * Os fantasmas ficam como ALIAS, e a distinção importa: eles não são
+   * contrato, são tolerância a um backend antigo. Se um deles chegar, a tela
+   * diz a frase certa em vez do código.
+   */
+  const ORDER_STATUS_LABELS = {
+    pending: 'Aguardando confirmação',
+    accepted: 'Confirmado',
+    rejected: 'Recusado',
+    preparing: 'Em preparo',
+    ready: 'Pronto',
+    out_for_delivery: 'Saiu para entrega',
+    completed: 'Finalizado',
+    cancelled: 'Cancelado',
+    // Alias de nomes que não estão em ORDER_STATUSES.
+    submitted: 'Enviado',
+    confirmed: 'Confirmado',
+    delivering: 'Saiu para entrega',
+    delivered: 'Entregue',
+    canceled: 'Cancelado',
+    refused: 'Recusado',
+    finished: 'Finalizado'
+  };
+
   function orderStatusLabel(status) {
-    const labels = {
-      pending: 'Aguardando confirmação',
-      submitted: 'Enviado',
-      confirmed: 'Confirmado',
-      preparing: 'Em preparo',
-      ready: 'Pronto',
-      delivering: 'Saiu para entrega',
-      delivered: 'Entregue',
-      cancelled: 'Cancelado'
-    };
-    return labels[String(status || '').toLowerCase()] || String(status || '—');
+    const chave = String(status || '').trim().toLowerCase();
+    // Sem tabela, um status novo do backend viraria `out_for_delivery` na tela.
+    // A frase genérica não informa menos que o código, e não expõe o interno.
+    return ORDER_STATUS_LABELS[chave] || (chave ? 'Em andamento' : '—');
   }
 
   // showAppToast() morava LA DENTRO do bloco do Pix, por acidente de historia —
@@ -4915,12 +4946,24 @@
         // `silent` (o campo do checkout) responde na propria secao, e sem isto
         // teria de repetir a leitura de `ineligibility_reason` — a segunda
         // copia de uma frase que o backend escreveu, pronta para divergir.
-        ultimoMotivoDeCupom = detailText(payload.ineligibility_reason)
-          || String(payload.ineligibility_reason || '').trim()
-          || 'Este cupom não vale para esta sacola.';
-        // A razão vem do backend em português e é específica ("primeira compra",
-        // "fora do período"). Ela ganha da nossa frase genérica sempre que existe.
-          if (!silent) showCouponNotice(ultimoMotivoDeCupom);
+        // `ineligibility_reason` NÃO é uma frase: é um código interno do
+        // backend (`minimum_order_not_reached`, `first_order_only`, ...), e ele
+        // chegava CRU ao toast do cliente. O comentário que autorizava isso
+        // dizia "a razão vem do backend em português"; a metade certa é que ela
+        // é específica, e a metade errada é a que ficou na tela.
+        //
+        // A tradução mora em coupon-reason.js e é NOMINAL: código desconhecido
+        // devolve '' e cai na frase genérica daqui, em vez de virar um palpite.
+        const motivos = window.PedeAquiCouponReason;
+        ultimoMotivoDeCupom = motivos.couponReasonMessage(payload.ineligibility_reason, {
+          // O quanto falta sai do mínimo do cupom e do MESMO subtotal que
+          // acabou de ser enviado no preview — as duas entradas da conta que o
+          // backend fez. O número não entra na sacola nem no pedido: ele existe
+          // dentro da frase.
+          faltam: motivos.couponMissingAmount(selectedCoupon, totals.subtotal),
+          fmt
+        }) || 'Este cupom não vale para esta sacola.';
+        if (!silent) showCouponNotice(ultimoMotivoDeCupom);
         updateCartUI();
         return null;
       }

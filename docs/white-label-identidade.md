@@ -142,6 +142,45 @@ Recomendação: **não fazer agora**. O vazamento — que era a nossa marca apar
 não correção de white-label, e ele cobra latência no boot de todo mundo. Vale
 como tarefa própria, medida contra quanto tráfego chega por link compartilhado.
 
+### Compartilhar um PRODUTO — frente própria, e é a que vale (anotado 03/09/2026)
+
+Decidido: **não agora**. Fica escrito aqui porque é o caso de uso real por trás
+do preview, e porque ele é mais caro do que o preview da loja — não menos.
+
+O que o lojista quer mandar no grupo não é a loja: é *a picanha*, com a foto e o
+preço. E o que existe hoje não faz isso:
+
+- **não há URL de produto.** O app é uma página só; produto abre por
+  `openProduct(id)` em JS, sem rota, sem `history.pushState`. Compartilhar a
+  tela do produto compartilha a tela da LOJA, e quem clica cai no cardápio sem
+  saber por que foi chamado;
+- **e mesmo que houvesse, o crawler não a leria.** O motivo é o mesmo desta
+  seção inteira: o WhatsApp busca o HTML servido e para por aí. Uma rota
+  `/:slug/p/:produto` que só o JS entendesse daria preview neutro igual.
+
+Então a frente inteira é: **uma rota que devolva HTML PRONTO por produto**, com
+`og:title`, `og:image` e `og:description` daquele item já no corpo servido —
+render no servidor, com todo o custo já listado acima (a rota deixa de ser
+estática, entra latência de API no primeiro byte, e a página passa a depender da
+API para responder).
+
+O que ela acrescenta ao custo do preview da loja:
+
+- **duas chamadas, não uma**: resolver o slug e resolver o produto dentro do
+  cardápio daquela filial — e produto é POR FILIAL (`menu?branch_id=`), então a
+  URL precisa carregar filial ou escolher uma, o que é decisão de produto;
+- **cache com invalidação real**: o preview da loja envelhece devagar (nome,
+  logo, cor). O de produto tem PREÇO e DISPONIBILIDADE dentro, e um link
+  compartilhado que anuncia um preço velho é pior que um link sem preview;
+- **o link precisa de destino de verdade**: quem clica tem de cair no produto
+  ABERTO, não na Home. Isso é roteamento no app do cliente — `history` e
+  deep-link —, que hoje não existe em lugar nenhum e é o pedaço que não some
+  nem com SSR.
+
+O que **não** precisa do backend: os campos já existem em `ProductResponse`
+(`name`, `description`, `price`, `image_url`). O que falta é infraestrutura de
+rota e de render, não contrato.
+
 ## Fora do escopo, mas anotado
 
 - `restaurant.html` traz `Tecnologia de pedidos por Rapidex` no rodapé e no

@@ -55,7 +55,13 @@ async function freezeTransitions(page) {
  * vê no instante da revelação: lá a animação é o objeto da medida, e congelá-la
  * faria o teste passar pelo motivo errado.
  */
-async function bootWithPrimary(page, primaryColor, { congelarTransicoes = true, waitUntil = 'load' } = {}) {
+async function bootWithPrimary(page, primaryColor, { congelarTransicoes = true, waitUntil = 'load', largura = 0 } = {}) {
+  // `largura` existe por causa de um buraco medido em 03/09/2026: este app é
+  // de CELULAR, e boa parte do CSS dele mora em `@media(max-width:767px)`. Na
+  // largura padrão do Playwright (1280) essas regras não valem, então uma
+  // varredura ali lê um layout que o cliente nunca vê. Medido com o mesmo
+  // scan, no mesmo tenant azul: 0 elementos a 1280 e 8 a 414.
+  if (largura) await page.setViewportSize({ width: largura, height: 896 });
   await mockApi(page);
   if (primaryColor) {
     const menu = JSON.parse(JSON.stringify(MENU));
@@ -253,11 +259,24 @@ test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por
 //
 // O que continua legitimamente laranja/amarelo num tenant azul, e por quê.
 // Qualquer coisa FORA desta lista é cor de marca chumbada voltando.
+//
+// COR DE ESTADO ENTRA AQUI, com o motivo escrito. Âmbar de aviso, vermelho de
+// perigo e verde de sucesso não são cor de marca: eles carregam a informação, e
+// vesti-los com a marca apaga a informação. O que este scan mede é a faixa
+// LARANJA (matiz 8–50), então na prática só o âmbar precisa de licença — o
+// vermelho de apagar (matiz 0) e o verde de concluído (matiz 140) nunca caem
+// nela, e quem os guarda é `state-colors.spec.js`, que cobra o positivo.
 const ALLOWED_ORANGE = [
   '.pay-brand', // bandeiras de cartão (Visa, Master, Elo): marca de terceiro
   '.g-yellow', // "powered by Google" do autocomplete de endereço
   '.coupon-art', // número do desconto, acento amarelo fixo do cupom
-  '.highlight-banner' // superfície bege neutra do banner sem imagem
+  '.highlight-banner', // superfície bege neutra do banner sem imagem
+  // COR DE ESTADO: o aviso âmbar de "Informe seu endereço" na sacola. É a cor
+  // de ALERTA, não a da loja — pintá-la com a marca faria o aviso desaparecer
+  // dentro da própria identidade da tela. Ela só apareceu nesta lista quando o
+  // scan passou a rodar na largura do app (ver a nota do viewport abaixo): o
+  // bloco que a pinta mora em `@media(max-width:767px)`.
+  '.cart-location-alert'
 ];
 
 function varrerLaranja(page) {
@@ -302,7 +321,7 @@ function varrerLaranja(page) {
 }
 
 test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {
-  await bootWithPrimary(page, BLUE);
+  await bootWithPrimary(page, BLUE, { largura: 414 });
 
   const leaks = await varrerLaranja(page);
 
@@ -332,7 +351,7 @@ test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page })
 // Congelar transição aqui seria fazer o teste passar pelo motivo errado: é
 // exatamente a animação que o cliente vê.
 test('a cor do lojista já está pintada no instante em que o app aparece', async ({ page }) => {
-  await bootWithPrimary(page, BLUE, { congelarTransicoes: false, waitUntil: 'commit' });
+  await bootWithPrimary(page, BLUE, { congelarTransicoes: false, waitUntil: 'commit', largura: 414 });
 
   const leaks = await varrerLaranja(page);
 

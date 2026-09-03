@@ -5286,6 +5286,25 @@ body.menu-tab .product-card.is-pressing{
     stroke-linecap:round;
     stroke-linejoin:round;
   }
+  /* COR DE ESTADO NÃO É COR DE MARCA.
+
+     Os dois ícones saíam em `--brand-light` acima: o X de "Recusado" e o check
+     de "Finalizado" eram a MESMA cor, e a única diferença entre "seu pedido foi
+     recusado" e "seu pedido ficou pronto" era o desenho de 12px dentro do
+     círculo. Num tenant azul, dois círculos azuis — um deles dando má notícia.
+
+     Vermelho é `--state-danger-strong`, e não `--state-danger`: o círculo é
+     preenchido e o glifo por cima é branco (`path{stroke:#fff}` acima), que é
+     o caso para o qual o token forte existe. Ver a nota dele em tokens.css.
+
+     `--brand-light` continua valendo para o tom `active` (pedido em andamento):
+     ali o estado não é nem positivo nem negativo, e a marca é a cor certa. */
+  #profSubpedidos .prof-order-status--danger .prof-order-status-icon{
+    color:var(--state-danger-strong);
+  }
+  #profSubpedidos .prof-order-status--success .prof-order-status-icon{
+    color:var(--state-success);
+  }
       #profSubpedidos .prof-order-details-button{
     box-sizing:border-box;
     width:100%;

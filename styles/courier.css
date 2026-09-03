@@ -1,0 +1,301 @@
+/* ============================================================================
+   A TELA DO ENTREGADOR — folha própria, e só dela.
+
+   Não importa nada de tokens.css nem de restaurant.css de propósito. Aquelas
+   folhas carregam o tema do LOJISTA (--brand-primary e as tintas derivadas
+   dele), e esta tela não é de um lojista: um entregador pode rodar para mais de
+   um restaurante no mesmo turno, e pintar a tela com a cor de um deles seria
+   escolher um na cara do outro. Aqui a paleta é neutra e fixa — e é o único
+   lugar deste repositório onde cor fixa é a resposta certa, não um defeito de
+   white-label.
+
+   O alvo é UM: celular, na rua, no sol, com uma mão. Daí as decisões abaixo —
+   alvo de toque grande, contraste alto, e nada que dependa de hover.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --cr-ink: #14181E;
+  --cr-ink-soft: #5B6472;
+  --cr-line: #E4E7EC;
+  --cr-paper: #FFFFFF;
+  --cr-ground: #F5F6F8;
+  /* Um verde escuro para a ação, não a laranja da plataforma: esta tela não é
+     do Rapidex nem do restaurante, e verde é o que o entregador lê como
+     "seguir". Passa 4.5:1 sobre branco. */
+  --cr-go: #10693C;
+  --cr-go-ink: #FFFFFF;
+  --cr-warn: #8A4B00;
+  --cr-warn-bg: #FFF3E2;
+  --cr-danger: #A4231C;
+  --cr-radius: 14px;
+  --cr-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cr-ground);
+  color: var(--cr-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* O boot esconde tudo: sem isto as três telas piscam juntas antes de o JS
+   decidir qual vale. É o mesmo motivo do `app-booting` do app do cliente. */
+body.courier-booting > * { display: none !important; }
+
+[hidden] { display: none !important; }
+
+/* ── Botões ── */
+.cr-btn {
+  appearance: none;
+  border: 0;
+  border-radius: var(--cr-radius);
+  /* 52px de altura: alvo de toque para quem está de capacete ou com a mão
+     ocupada. O mínimo recomendado é 44; aqui vale a folga. */
+  min-height: 52px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cr-btn--primary { background: var(--cr-go); color: var(--cr-go-ink); }
+.cr-btn--primary:disabled { opacity: .55; cursor: default; }
+.cr-btn--ghost {
+  background: var(--cr-paper);
+  color: var(--cr-ink);
+  border: 1px solid var(--cr-line);
+}
+
+/* ── 1. A porta: o código ── */
+.cr-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.cr-gate__box { width: 100%; max-width: 360px; }
+.cr-gate__title { margin: 0 0 8px; font-size: 26px; line-height: 32px; }
+.cr-gate__hint { margin: 0 0 24px; color: var(--cr-ink-soft); font-size: 15px; line-height: 21px; }
+.cr-gate__form { display: grid; gap: 12px; }
+.cr-gate__label { font-size: 13px; font-weight: 600; color: var(--cr-ink-soft); }
+.cr-gate__input {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid var(--cr-line);
+  border-radius: var(--cr-radius);
+  background: var(--cr-paper);
+  padding: 0 16px;
+  /* Espaçado e grande: seis dígitos digitados uma vez por dia, muitas vezes
+     com luvas. `font-variant-numeric` mantém a largura estável enquanto digita
+     — sem isso a caixa "pula" a cada número. */
+  font-size: 28px;
+  letter-spacing: 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--cr-ink);
+}
+.cr-gate__input:focus { outline: 2px solid var(--cr-go); outline-offset: 2px; }
+.cr-gate__error { margin: 0; color: var(--cr-danger); font-size: 14px; line-height: 20px; }
+
+/* ── 2. O trabalho ── */
+.cr-app { padding: 0 0 calc(96px + var(--cr-safe-bottom)); }
+
+.cr-hdr {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--cr-paper);
+  border-bottom: 1px solid var(--cr-line);
+}
+.cr-hdr__who { display: grid; min-width: 0; }
+.cr-hdr__name { font-size: 17px; line-height: 22px; }
+.cr-hdr__branch { font-size: 13px; line-height: 18px; color: var(--cr-ink-soft); }
+.cr-hdr__reload {
+  appearance: none;
+  border: 1px solid var(--cr-line);
+  background: var(--cr-paper);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--cr-ink);
+  cursor: pointer;
+}
+.cr-hdr__reload svg { width: 20px; height: 20px; }
+.cr-hdr__reload.is-busy { opacity: .5; }
+
+.cr-alert {
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--cr-radius);
+  background: var(--cr-warn-bg);
+  color: var(--cr-warn);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.cr-list { display: grid; gap: 12px; padding: 12px 16px 0; }
+.cr-empty { margin: 40px 16px; text-align: center; color: var(--cr-ink-soft); font-size: 15px; }
+
+.cr-card {
+  background: var(--cr-paper);
+  border: 1px solid var(--cr-line);
+  border-radius: var(--cr-radius);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+/* Selecionado para sair: a borda inteira muda, não só um check no canto. Com o
+   celular na mão e o sol batendo, um indicador de 16px não se vê. */
+.cr-card.is-picked { border-color: var(--cr-go); box-shadow: inset 0 0 0 1px var(--cr-go); }
+
+.cr-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.cr-card__num { font-size: 17px; font-weight: 700; }
+.cr-card__status { font-size: 12px; font-weight: 600; color: var(--cr-ink-soft); text-transform: uppercase; letter-spacing: .04em; }
+
+.cr-card__who { font-size: 15px; font-weight: 600; }
+.cr-card__addr { font-size: 14px; line-height: 20px; color: var(--cr-ink-soft); }
+
+/* O dinheiro. Linha própria e destacada — é a única coisa desta tela que o
+   entregador tem de acertar com a mão dele. */
+.cr-card__money {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cr-warn-bg);
+  color: var(--cr-warn);
+}
+.cr-card__paid { font-size: 14px; font-weight: 600; color: var(--cr-ink-soft); }
+
+.cr-card__notes {
+  font-size: 14px;
+  line-height: 20px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cr-ground);
+}
+
+.cr-card__acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.cr-card__acts .cr-btn { flex: 1 1 auto; min-width: 132px; }
+.cr-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: var(--cr-radius);
+  border: 1px solid var(--cr-line);
+  background: var(--cr-paper);
+  color: var(--cr-ink);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  flex: 1 1 auto;
+  min-width: 132px;
+}
+
+/* ── A barra de ação ── */
+.cr-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(12px + var(--cr-safe-bottom));
+  background: var(--cr-paper);
+  border-top: 1px solid var(--cr-line);
+}
+.cr-bar__count { font-size: 15px; font-weight: 600; }
+.cr-bar .cr-btn { flex: 1; }
+
+/* ── 3. Fim da linha ── */
+.cr-dead { min-height: 100dvh; display: grid; place-items: center; align-content: center; padding: 32px; text-align: center; }
+.cr-dead__title { margin: 0 0 10px; font-size: 22px; }
+.cr-dead__text { margin: 0; color: var(--cr-ink-soft); font-size: 15px; line-height: 21px; max-width: 320px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ── O ACERTO ──
+   A tela que o entregador mostra ao dono no fim do dia. O número grande é o
+   `fee_total` do backend, exibido e nunca somado aqui: se esta tela calculasse,
+   ela e o caixa do restaurante poderiam divergir, e quem perde a discussão é
+   quem não tem o sistema na mão. */
+.cr-acerto { padding: 0 0 40px; }
+
+.cr-acerto__box {
+  display: grid;
+  gap: 4px;
+  margin: 16px;
+  padding: 18px;
+  background: var(--cr-paper);
+  border: 1px solid var(--cr-line);
+  border-radius: var(--cr-radius);
+}
+.cr-acerto__rotulo { font-size: 13px; font-weight: 600; color: var(--cr-ink-soft); }
+.cr-acerto__total {
+  font-size: 34px;
+  line-height: 40px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cr-go);
+}
+.cr-acerto__linha { font-size: 14px; color: var(--cr-ink-soft); }
+/* Fora da soma e com peso próprio: é a linha que o entregador vai querer
+   perguntar sobre, não uma nota de rodapé. */
+.cr-acerto__semtaxa {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cr-warn-bg);
+  color: var(--cr-warn);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.cr-entrega {
+  background: var(--cr-paper);
+  border: 1px solid var(--cr-line);
+  border-radius: var(--cr-radius);
+  padding: 12px 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cr-entrega__esq { display: grid; gap: 2px; min-width: 0; }
+.cr-entrega__num { font-size: 15px; font-weight: 700; }
+.cr-entrega__meta { font-size: 13px; color: var(--cr-ink-soft); }
+.cr-entrega__taxa { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+.cr-entrega__taxa--sem { color: var(--cr-warn); font-weight: 600; font-size: 13px; }
+
+/* Os botões do cabeçalho: o de acerto tem texto, o de recarregar é redondo. */
+.cr-hdr__acts { display: flex; align-items: center; gap: 8px; flex: none; }
+.cr-hdr__btn {
+  appearance: none;
+  border: 1px solid var(--cr-line);
+  background: var(--cr-paper);
+  color: var(--cr-ink);
+  border-radius: var(--cr-radius);
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cr-hdr__btn.cr-hdr__reload { border-radius: 50%; width: 44px; padding: 0; display: grid; place-items: center; }

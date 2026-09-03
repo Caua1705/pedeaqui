@@ -255,3 +255,94 @@ test('os demais headers de segurança estão presentes', () => {
   // Proteção de frame nos dois mecanismos: header legado + diretiva da CSP.
   expect(headerValue('X-Frame-Options')).toBe('DENY');
 });
+
+// ============================================================================
+//  A CSP DA TELA DO ENTREGADOR — menor privilégio, e a dúvida que ela resolve.
+//
+//  `/entregador` só fala com a nossa API. Mercado Pago, OpenAI, Google Maps e
+//  as fontes do Google são do app do CLIENTE e não têm uso nenhum ali; herdar
+//  a política global significava carregar a superfície de ataque de três
+//  terceiros numa página que roda com uma credencial no caminho da URL.
+//
+//  A DÚVIDA: dois blocos de header da vercel.json casam com /entregador, e os
+//  dois declaram Content-Security-Policy. A Vercel soma ou substitui?
+//
+//  O que foi MEDIDO na produção (02/09/2026, curl -I): blocos que casam a mesma
+//  URL SOMAM — /sw.js recebe o `Service-Worker-Allowed` do bloco dele E o CSP e
+//  o X-Frame-Options do bloco global. Mas isso mede chaves DISTINTAS; para a
+//  mesma chave repetida o comportamento não foi observado, porque até hoje não
+//  havia chave repetida nenhuma neste arquivo.
+//
+//  A SAÍDA é não depender da resposta. Se a Vercel mandar as duas, o browser
+//  aplica a INTERSEÇÃO (é assim que CSP múltiplo funciona por especificação);
+//  se mandar só uma, vale a do bloco mais específico. Como a política do
+//  entregador é COMPLETA e é subconjunto da global em toda diretiva, os dois
+//  caminhos dão o mesmo resultado: a política do entregador.
+//
+//  O teste do subconjunto abaixo é o que mantém isso verdadeiro. No dia em que
+//  alguém liberar um host no entregador que a global não tem, a interseção
+//  passa a BLOQUEAR esse host e a página quebra só em produção — e é esse o
+//  defeito que este teste existe para pegar antes.
+// ============================================================================
+
+const blocoDe = (source) => vercel.headers?.find(h => h.source === source);
+const CSP_ENTREGADOR = blocoDe('/entregador(/.*)?')
+  ?.headers?.find(h => h.key.toLowerCase() === 'content-security-policy')?.value;
+
+/** "script-src 'self' https://x" -> Map { 'script-src' => Set{"'self'", 'https://x'} } */
+const diretivas = (csp) => new Map(
+  String(csp || '').split(';').map(parte => parte.trim()).filter(Boolean).map(parte => {
+    const [nome, ...valores] = parte.split(/\s+/);
+    return [nome.toLowerCase(), new Set(valores)];
+  })
+);
+
+test('a tela do entregador tem política própria, e ela é completa', () => {
+  expect(CSP_ENTREGADOR, 'bloco de CSP do /entregador ausente da vercel.json').toBeTruthy();
+  const d = diretivas(CSP_ENTREGADOR);
+
+  // Completa: não depende de a global chegar junto para ser segura.
+  for (const obrigatoria of ['default-src', 'script-src', 'object-src', 'base-uri', 'frame-ancestors']) {
+    expect(d.has(obrigatoria), `a política do entregador não declara ${obrigatoria}`).toBe(true);
+  }
+  expect([...d.get('object-src')]).toEqual(["'none'"]);
+  expect([...d.get('base-uri')]).toEqual(["'none'"]);
+  expect([...d.get('frame-ancestors')]).toEqual(["'none'"]);
+  expect([...d.get('script-src')], 'script-src do entregador deixou de ser só self').toEqual(["'self'"]);
+});
+
+test('a tela do entregador não carrega os terceiros do app do cliente', () => {
+  // O ponto da mudança, escrito como afirmação: nenhum destes tem uso ali.
+  for (const terceiro of [
+    'mercadopago.com', 'openai.com', 'googleapis.com', 'gstatic.com', 'ggpht.com', 'supabase.co'
+  ]) {
+    expect(CSP_ENTREGADOR, `${terceiro} continua liberado na tela do entregador`)
+      .not.toContain(terceiro);
+  }
+  // E o que ela PRECISA continua lá: a nossa API.
+  expect(CSP_ENTREGADOR).toContain('https://api.pederapidex.com');
+});
+
+test('a política do entregador é subconjunto da global em toda diretiva', () => {
+  // É esta propriedade que faz "a Vercel soma ou substitui?" não mudar o
+  // resultado. Ver o cabeçalho desta seção.
+  const global = diretivas(CSP);
+  const courier = diretivas(CSP_ENTREGADOR);
+
+  expect(courier.size, 'sonda cega: nenhuma diretiva casou').toBeGreaterThan(5);
+
+  for (const [nome, valores] of courier) {
+    // Diretiva sem lista (upgrade-insecure-requests) não tem o que comparar.
+    if (!valores.size) continue;
+    const daGlobal = global.get(nome);
+    // Diretiva que a global não declara cai no default-src dela.
+    const permitido = daGlobal || global.get('default-src');
+    expect(permitido, `a global não declara ${nome} nem default-src`).toBeTruthy();
+    for (const valor of valores) {
+      expect(
+        permitido.has(valor),
+        `${nome} do entregador libera ${valor}, que a global não tem — somadas, a interseção BLOQUEIA isso e a página quebra só em produção`
+      ).toBe(true);
+    }
+  }
+});

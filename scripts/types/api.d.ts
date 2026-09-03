@@ -3803,6 +3803,8 @@ export interface components {
         };
         /** AdminCourierResponse */
         AdminCourierResponse: {
+            /** Access Blocked Until */
+            access_blocked_until?: string | null;
             /** Access Generated At */
             access_generated_at?: string | null;
             /**

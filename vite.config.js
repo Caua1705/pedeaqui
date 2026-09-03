@@ -93,7 +93,15 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
-        restaurant: resolve(import.meta.dirname, 'restaurant.html')
+        restaurant: resolve(import.meta.dirname, 'restaurant.html'),
+        // A TERCEIRA PÁGINA, 02/09/2026. A tela do entregador não compartilha
+        // nada com o app do cliente além de config, cliente HTTP, rotas e
+        // formatador de dinheiro — sem cardápio, sacola, conta, cashback nem
+        // assistente. Servi-la pelo restaurant.html custaria os 382 kB de JS
+        // dele para mostrar uma lista de endereços, e quem abre isto está no
+        // celular, na rua. Entrada própria = bundle próprio: o Vite separa o
+        // que só ela usa e nenhuma das duas cresce por causa da outra.
+        entregador: resolve(import.meta.dirname, 'entregador.html')
       }
     }
   },

@@ -1999,6 +1999,31 @@ body.app-error .top-nav,
 body.app-error .restaurant-app-shell,
 body.app-error .mob-bottom-nav,
 body.app-error .cart-sticky{visibility:hidden}
+
+/* NADA TRANSICIONA ENQUANTO O APP ESTÁ BOOTANDO.
+
+   A paleta padrão de tokens.css é a cor da PLATAFORMA: o app inteiro nasce
+   laranja e só vira a cor do lojista quando applyTheme() escreve as custom
+   properties. Como as superfícies de marca têm transição de 0,15 a 0,25 s, essa
+   troca não era um repaint — era uma ANIMAÇÃO de um quarto de segundo. O loader
+   saía no meio dela, e num restaurante que não é o piloto os botões apareciam
+   laranja e viravam a cor certa na frente do cliente. Medido em 03/09/2026 num
+   tenant azul: 15 elementos ainda laranja no instante em que `app-booting` sai,
+   entre eles `.ui-btn-primary` em rgb(243,111,33).
+
+   Aqui não se perde nada: durante o boot tudo o que não é o loader está
+   `visibility:hidden` logo acima, então uma transição neste estado é, por
+   construção, invisível — ou danosa, que era o caso.
+
+   O `!important` não é enfeite: dez folhas declaram `transition` sob
+   `!important` (assistant.css sozinha tem dezenas), e sem ele esta regra não
+   alcança nenhuma delas. Quem prova que o conjunto ficou vazio é
+   `tenant-theme.spec.js`, no teste que NÃO congela transições. */
+body.app-booting *,
+body.app-booting *::before,
+body.app-booting *::after{
+  transition:none!important;
+}
 .app-loader-box{
   width:min(280px,calc(100vw - 48px));
   display:flex;

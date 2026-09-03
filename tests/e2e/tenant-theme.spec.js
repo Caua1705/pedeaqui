@@ -48,8 +48,14 @@ async function freezeTransitions(page) {
   });
 }
 
-/** Boota o app com a cor de marca pedida e devolve a página pronta. */
-async function bootWithPrimary(page, primaryColor) {
+/**
+ * Boota o app com a cor de marca pedida e devolve a página pronta.
+ *
+ * `congelarTransicoes: false` é para o teste que afirma sobre o que o CLIENTE
+ * vê no instante da revelação: lá a animação é o objeto da medida, e congelá-la
+ * faria o teste passar pelo motivo errado.
+ */
+async function bootWithPrimary(page, primaryColor, { congelarTransicoes = true, waitUntil = 'load' } = {}) {
   await mockApi(page);
   if (primaryColor) {
     const menu = JSON.parse(JSON.stringify(MENU));
@@ -67,9 +73,9 @@ async function bootWithPrimary(page, primaryColor) {
       return route.fallback();
     });
   }
-  await page.goto(`/restaurant.html?slug=${SLUG}`);
+  await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil });
   await esperarAppPronto(page);
-  await freezeTransitions(page);
+  if (congelarTransicoes) await freezeTransitions(page);
   return page;
 }
 
@@ -241,19 +247,21 @@ test('a tela aparece assim que os dados chegam, sem piso de tempo nem espera por
   await expect(page.locator('body')).not.toHaveClass(/app-booting/, { timeout: 15_000 });
 });
 
-test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {
-  await bootWithPrimary(page, BLUE);
+// A varredura da cor da PLATAFORMA num tenant azul. Ela saiu de dentro do teste
+// para o escopo do módulo em 03/09/2026, quando passaram a existir DOIS testes
+// que a fazem — e a única diferença entre eles é congelar ou não as transições.
+//
+// O que continua legitimamente laranja/amarelo num tenant azul, e por quê.
+// Qualquer coisa FORA desta lista é cor de marca chumbada voltando.
+const ALLOWED_ORANGE = [
+  '.pay-brand', // bandeiras de cartão (Visa, Master, Elo): marca de terceiro
+  '.g-yellow', // "powered by Google" do autocomplete de endereço
+  '.coupon-art', // número do desconto, acento amarelo fixo do cupom
+  '.highlight-banner' // superfície bege neutra do banner sem imagem
+];
 
-  // O que continua legitimamente laranja/amarelo num tenant azul, e por quê.
-  // Qualquer coisa FORA desta lista é cor de marca chumbada voltando.
-  const ALLOWED = [
-    '.pay-brand', // bandeiras de cartão (Visa, Master, Elo): marca de terceiro
-    '.g-yellow', // "powered by Google" do autocomplete de endereço
-    '.coupon-art', // número do desconto, acento amarelo fixo do cupom
-    '.highlight-banner' // superfície bege neutra do banner sem imagem
-  ];
-
-  const leaks = await page.evaluate((allowed) => {
+function varrerLaranja(page) {
+  return page.evaluate((allowed) => {
     const hue = (value) => {
       const m = String(value).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/);
       if (!m) return null;
@@ -290,9 +298,48 @@ test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page })
       }
     }
     return [...new Set(out)];
-  }, ALLOWED);
+  }, ALLOWED_ORANGE);
+}
+
+test('nenhuma cor de marca chumbada sobrevive num tenant azul', async ({ page }) => {
+  await bootWithPrimary(page, BLUE);
+
+  const leaks = await varrerLaranja(page);
 
   expect(leaks, `cor de marca chumbada encontrada:\n${leaks.join('\n')}`).toEqual([]);
+});
+
+// O teste acima congela as transições, e por isso ele NÃO via o defeito que este
+// vê. Ele é a prova do que o cliente enxerga, e a diferença entre os dois é uma
+// linha: aqui as transições ficam vivas.
+//
+// O DEFEITO (03/09/2026): a paleta padrão de `tokens.css` é a cor da
+// PLATAFORMA, então o app inteiro nasce laranja e só vira a cor do lojista
+// quando `applyTheme()` roda. Ele rodava no FIM do boot — depois de
+// `initOperationContext()`, depois de um segundo ida-e-volta de rede
+// (`ensureMenuMatchesSelectedBranch` + `requestBranchAvailability`) e depois de
+// `restoreCart()` — embora a cor chegue no PRIMEIRO await, com o `/menu`.
+// E as superfícies de marca têm `transition` de 0,15 a 0,25 s: a troca da
+// paleta não era um repaint, era uma ANIMAÇÃO. O loader saía no meio dela, e
+// num restaurante que não é o piloto os botões apareciam laranja e viravam a
+// cor certa na frente do cliente.
+//
+// Medido antes da correção, com o tenant azul: 15 elementos ainda laranja no
+// instante em que `app-booting` sai, entre eles `button.ui-btn.ui-btn-primary`
+// (243,111,33), `#cartCtaBtn`, `#pmAddBtn` e `#mobNavHome` — todos com
+// `transitionDuration` de 0,15–0,25 s em curso, e todos azuis 800 ms depois.
+//
+// Congelar transição aqui seria fazer o teste passar pelo motivo errado: é
+// exatamente a animação que o cliente vê.
+test('a cor do lojista já está pintada no instante em que o app aparece', async ({ page }) => {
+  await bootWithPrimary(page, BLUE, { congelarTransicoes: false, waitUntil: 'commit' });
+
+  const leaks = await varrerLaranja(page);
+
+  expect(
+    leaks,
+    `no instante em que o loader saiu, a cor da plataforma ainda estava na tela:\n${leaks.join('\n')}`
+  ).toEqual([]);
 });
 
 test('a tinta do rótulo sobre a marca é calculada, não fixa em branco', async ({ page }) => {

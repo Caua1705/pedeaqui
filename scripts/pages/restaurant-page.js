@@ -1138,6 +1138,16 @@
   //
   // Um hex ausente ou inválido cai na cor da PLATAFORMA — que significa "a API
   // não mandou cor", nunca "use a marca do tenant X".
+  //
+  // QUANDO ELA RODA IMPORTA. Até 03/09/2026 esta chamada era a penúltima do
+  // boot, depois de um segundo ida-e-volta de rede, embora a cor chegue no
+  // primeiro. E como as superfícies de marca transicionam (0,15 a 0,25 s), a
+  // troca da paleta padrão — que é a cor da PLATAFORMA — pela do lojista era uma
+  // animação, e o loader saía no meio dela: num tenant azul, 15 elementos ainda
+  // laranja no instante da revelação. Hoje ela roda assim que o /menu responde,
+  // e `body.app-booting *{transition:none}` (styles/restaurant.css) faz a troca
+  // ser um repaint em vez de uma animação. Guardado por tenant-theme.spec.js,
+  // no teste que NÃO congela transições.
   function applyTheme() {
     const config = window.APP_CONFIG || {};
     window.RapidexTheme.applyBrandTheme(
@@ -5504,6 +5514,14 @@
     };
     bootPromise = (async () => {
     await loadInitialData();
+    // O TEMA VEM AQUI, e não no fim do boot.
+    //
+    // A cor do lojista chega no PRIMEIRO await desta função, junto com o
+    // /menu. Enquanto applyTheme() ficava lá embaixo, a paleta da PLATAFORMA
+    // seguia pintada por todo o initOperationContext(), por um SEGUNDO
+    // ida-e-volta de rede (a disponibilidade da filial) e pelo restoreCart().
+    // O comentário de applyTheme() conta o que isso custava na tela.
+    applyTheme();
     // A ORDEM IMPORTA: a chave da sacola tem a filial, então o contexto de
     // operação precisa estar montado antes de restaurá-la — e o cardápio
     // precisa ser o daquela filial, porque é contra ele que os itens são
@@ -5523,7 +5541,6 @@
     // grava, e a sacola guardada sobrevive intacta para a próxima visita.
     if (menuMatchesBranch) restoreCart();
     else showAppToast('Não foi possível carregar o cardápio da sua unidade. Recarregue a página.');
-    applyTheme();
     window.RapidexActions.resolve('initStoreInfoModal')?.();
     initCashbackState();
     renderRestaurantShell();

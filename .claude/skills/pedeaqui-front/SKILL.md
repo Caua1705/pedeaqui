@@ -259,6 +259,27 @@ Antes de ler um campo, ache-o em `scripts/types/api.d.ts`. `npm run
 typecheck:cards` é o único portão que pega renome no caminho do cartão antes do
 runtime — está no CI, mantenha assim.
 
+**ARQUIVO GERADO NÃO SE MESCLA, SE REGENERA.** Em 02/09/2026 um merge juntou os
+dois lados de `scripts/types/*` **sem conflito** e o resultado estava ERRADO:
+`npm run api:generate` devolveu **536 linhas** que o merge textual tinha comido
+— os schemas de entregador inteiros entre elas. O git não reclamou porque as
+duas branches editaram regiões DIFERENTES de um JSON de milhares de linhas, que
+é exatamente o caso em que o merge de três vias "funciona" e mente. Só apareceu
+porque alguém rodou o gerador depois do merge e olhou o diff; se ninguém
+tivesse rodado, o repositório teria um contrato que não é o de lado nenhum, e o
+`api-contract.test.js` que o pegaria **se pula no CI** (`it.skipIf(!hasBackend)`
+— o backend não existe ao lado no runner).
+
+Hoje o `.gitattributes` marca os dois com `merge=binary`, que não é sobre o
+arquivo ser binário: **desliga o merge de conteúdo**. Dois lados mexendo no
+mesmo arquivo viram conflito barulhento (`warning: Cannot merge binary files`),
+e a resolução é uma só — `npm run api:generate`. Medido replicando o merge que
+falhou: sem o atributo, **0** conflitos em `scripts/types`; com ele, **os dois
+arquivos** param o merge.
+
+A regra vale para qualquer arquivo gerado que venha a existir aqui, não só para
+estes dois: se um comando o produz, o comando é que o resolve.
+
 **E não é só o NOME: o VALOR PADRÃO também está no contrato.** A auditoria de
 30/08 dispensou as cadeias de fallback com "o nome certo vem em primeiro, logo
 o fallback é inalcançável". Isso vale quando o campo é obrigatório e não pode

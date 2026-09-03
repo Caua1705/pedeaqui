@@ -10,3 +10,20 @@
 *.woff binary
 *.woff2 binary
 *.ico binary
+
+# ── ARQUIVO GERADO NÃO SE MESCLA, SE REGENERA ──
+#
+# Em 02/09/2026 um merge juntou os dois lados de `scripts/types/*` SEM
+# conflito e o resultado estava ERRADO: `npm run api:generate` devolveu 536
+# linhas que o merge textual tinha comido, os schemas de entregador entre elas.
+# O git não reclamou de nada — as duas branches editaram regiões diferentes de
+# um JSON de milhares de linhas, que é o caso em que o merge de três vias
+# "funciona" e mente. Só apareceu porque alguém rodou o gerador depois e olhou
+# o diff.
+#
+# `merge=binary` não é sobre o arquivo ser binário: ele DESLIGA o merge de
+# conteúdo. Com ele, dois lados mexendo no mesmo arquivo viram CONFLITO
+# barulhento, e a resolução é uma só — `npm run api:generate`, que reconstrói
+# os dois a partir do ../pedeaqui_back. Nunca resolva estes dois à mão.
+scripts/types/openapi.json merge=binary
+scripts/types/api.d.ts     merge=binary

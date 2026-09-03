@@ -325,6 +325,67 @@ const comEnderecos = (page) => page.route('**/customers/me/addresses**', route =
 /** Espera um seletor casar, sem depender de relogio de parede. */
 const esperar = (page, seletor, timeout = 15000) => page.waitForSelector(seletor, { timeout });
 
+// ── O backend da TELA DO ENTREGADOR ───────────────────────────────────────────
+// Fixture proprio: a terceira pagina nao chama nenhuma rota do app do cliente, e
+// o mock dele responde 404 a /courier/*. Registrado no `setup` de cada tela,
+// portanto DEPOIS do mockApi() — no Playwright a ultima rota registrada vence.
+//
+// Os valores nao coincidem de proposito, como no spec: 23,50 a receber contra
+// 118,90 de total, e fee_total 91,00 contra 15,00 de soma das taxas visiveis. Se
+// a tela algum dia calcular em vez de exibir, a captura muda e a diferenca
+// aparece no diff.
+const TOKEN_ENTREGADOR = "lnk_captura";
+const CODIGO_ENTREGADOR = "482915";
+
+const ENTREGADOR_PEDIDOS = [
+  {
+    order_id: "cap-1", order_number: 1042, status: "ready",
+    can_leave: true, can_deliver: false,
+    customer_name: "Marina Alves", customer_phone: "5541999990000",
+    is_paid: false, amount_to_collect: 23.5, total: 118.9, payment_method: "Dinheiro",
+    address_street: "Rua das Acacias", address_number: "481",
+    address_neighborhood: "Portao", address_city: "Curitiba",
+    address_complement: "Apto 32", address_reference: "Portao verde",
+    notes: "Interfone quebrado, ligar ao chegar",
+    delivery_latitude: -25.4809, delivery_longitude: -49.2905
+  },
+  {
+    order_id: "cap-2", order_number: 1043, status: "out_for_delivery",
+    can_leave: false, can_deliver: true,
+    customer_name: "Jonas Pires", customer_phone: "5541988887777",
+    is_paid: true, amount_to_collect: 0, total: 64.2, payment_method: "Pix",
+    address_street: "Av. Republica Argentina", address_number: "1200",
+    address_neighborhood: "Agua Verde", address_city: "Curitiba"
+  }
+];
+
+const ENTREGADOR_HISTORICO = {
+  start_date: "2026-09-01", end_date: "2026-09-02",
+  deliveries_count: 12, deliveries_without_fee: 3, fee_total: 91,
+  deliveries: [
+    { order_id: "h1", order_number: 1001, delivered_at: "2026-09-01T18:32:00Z", courier_fee: 8, address_neighborhood: "Portao", distance_km: 3.4 },
+    { order_id: "h2", order_number: 1002, delivered_at: "2026-09-01T19:10:00Z", courier_fee: 7, address_neighborhood: "Batel", distance_km: 0 },
+    // courier_fee nulo NAO e zero: e a entrega "sem taxa registrada", que a
+    // tela mostra separada da soma.
+    { order_id: "h3", order_number: 1003, delivered_at: "2026-09-02T12:05:00Z", courier_fee: null, address_neighborhood: "Agua Verde", distance_km: null }
+  ]
+};
+
+function mockEntregador(page) {
+  return page.route("**/api.pederapidex.com/**", (route) => {
+    const caminho = new URL(route.request().url()).pathname;
+    if (!caminho.startsWith("/courier/")) return route.fulfill(json({ detail: "fora do escopo" }, 404));
+    // O codigo e credencial: sem ele, nada responde. A captura o digita.
+    if (route.request().headers()["x-courier-code"] !== CODIGO_ENTREGADOR) {
+      return route.fulfill(json({ detail: "codigo invalido" }, 401));
+    }
+    if (caminho.endsWith("/me")) return route.fulfill(json({ name: "Rafael Souza", branch_name: "Matriz - Batel" }));
+    if (caminho.endsWith("/orders")) return route.fulfill(json(ENTREGADOR_PEDIDOS));
+    if (caminho.endsWith("/history")) return route.fulfill(json(ENTREGADOR_HISTORICO));
+    return route.fulfill(json({ detail: "nao declarada" }, 404));
+  });
+}
+
 /**
  * As telas. Cada uma é levada ao estado por AÇÕES do próprio app — nunca por
  * um estado montado à mão, que provaria só que o CSS existe, e não que o
@@ -1230,6 +1291,54 @@ export const SCREENS = [
       await act(page, 'mobNavMenu');
       await esperar(page, '.product-image--placeholder');
       await page.waitForTimeout(700);
+    }
+  },
+
+  // ── A TELA DO ENTREGADOR (terceira pagina, 02/09/2026) ────────────────────
+  //  `styles/courier.css` nasceu inteira sem medida nenhuma, que e exatamente
+  //  a condicao em que `landing.css` e `assistant.css` acumularam regra morta
+  //  por meses. Entram aqui as tres telas dela.
+  //
+  //  Preparo PROPRIO, e por isso o `setup`: esta pagina nao fala com nenhuma
+  //  rota do app do cliente, e o mock dele responde 404 para /courier/*. A rota
+  //  registrada aqui roda DEPOIS de `mockApi()` e por isso vence (no Playwright
+  //  a ultima registrada ganha) — a mesma regra do `seedOnlineCardBranch`.
+  //
+  //  O codigo de 6 digitos e a SEGUNDA credencial: sem ele a tela nao passa da
+  //  porta, entao as duas telas de dentro precisam digita-lo.
+  {
+    name: "entregador-porta",
+    setup: (page) => mockEntregador(page),
+    async go(page) {
+      await page.goto(BASE + "/entregador/" + TOKEN_ENTREGADOR);
+      await esperar(page, "#courierGate:not([hidden])");
+      await page.waitForTimeout(400);
+    }
+  },
+  {
+    name: "entregador-lista",
+    setup: (page) => mockEntregador(page),
+    async go(page) {
+      await page.goto(BASE + "/entregador/" + TOKEN_ENTREGADOR);
+      await esperar(page, "#courierGate:not([hidden])");
+      await page.locator("#courierCodeInput").fill(CODIGO_ENTREGADOR);
+      await page.locator("#courierGateSubmit").click();
+      await esperar(page, ".cr-card");
+      await page.waitForTimeout(400);
+    }
+  },
+  {
+    name: "entregador-acerto",
+    setup: (page) => mockEntregador(page),
+    async go(page) {
+      await page.goto(BASE + "/entregador/" + TOKEN_ENTREGADOR);
+      await esperar(page, "#courierGate:not([hidden])");
+      await page.locator("#courierCodeInput").fill(CODIGO_ENTREGADOR);
+      await page.locator("#courierGateSubmit").click();
+      await esperar(page, ".cr-card");
+      await page.locator("#courierHistoryBtn").click();
+      await esperar(page, ".cr-entrega");
+      await page.waitForTimeout(400);
     }
   }
 ];

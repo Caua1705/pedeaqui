@@ -709,6 +709,39 @@ sem ter olhado para nenhum deles. O que ainda NAO esta la:
    elementos: havia uma terceira regra no meio que vencia a de cima e perdeu
    para a de baixo. A repetição É o mecanismo de ordem.
 
+### Header da Vercel: blocos SOMAM (medido), chave repetida continua em aberto
+
+A `vercel.json` tem mais de um bloco em `headers`, e mais de um casa a mesma
+URL. O que acontece foi **medido na produção** em 02/09/2026, com
+`curl -I https://www.pederapidex.com/sw.js`: a resposta traz o
+`Service-Worker-Allowed` do bloco de `/sw.js` **e** o `Content-Security-Policy`
+e o `X-Frame-Options` do bloco global `/(.*)`. Ou seja, **blocos que casam se
+somam** — não é o primeiro que ganha nem o último que substitui.
+
+Isso vale para chaves DISTINTAS. Para a **mesma chave** declarada em dois blocos
+não há medida: até a tela do entregador não existia chave repetida neste
+arquivo, e a documentação de `project-configuration` não diz. **A pergunta está
+aberta**, e fecha com uma linha assim que `/entregador` estiver publicado:
+
+```
+curl -sI https://www.pederapidex.com/entregador/x | grep -ci content-security-policy
+```
+
+`2` = soma (o browser aplica a interseção das duas políticas, por especificação).
+`1` = substitui. **Escreva o resultado aqui quando souber.**
+
+A tela do entregador foi desenhada para não depender da resposta: a política
+dela é COMPLETA e é subconjunto da global em toda diretiva, então interseção e
+substituição dão o mesmo resultado. Quem mantém isso verdadeiro é o teste
+"a política do entregador é subconjunto da global em toda diretiva"
+(`csp.spec.js`) — no dia em que alguém liberar ali um host que a global não tem,
+somadas as duas o host passa a ser BLOQUEADO, e a página quebraria só em
+produção.
+
+E `csp.spec.js` lê a política global por `vercel.headers[0]`. Bloco novo entra
+DEPOIS do índice 0, ou o guarda mais antigo do arquivo passa a medir a política
+errada.
+
 Guardas que existem para barrar reincidência — se uma delas te barrar, ela
 provavelmente está certa: `css-duplicate-declarations` (a folha não pode brigar
 com ela mesma), `inline-handlers`, `mark-contrast`, `tenant-theme.spec.js`,

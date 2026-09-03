@@ -158,7 +158,33 @@
     customerCards: restaurantSlug =>
       `/customers/me/cards?restaurant_slug=${routeSlug(restaurantSlug)}`,
     customerCard: cardId =>
-      `/customers/me/cards/${routeSlug(cardId)}`
+      `/customers/me/cards/${routeSlug(cardId)}`,
+
+    // ── O ENTREGADOR ──
+    // Outra página (entregador.html), outra credencial: o `link_token` vem no
+    // CAMINHO e o código de 6 dígitos vai no header `X-Courier-Code`, em toda
+    // requisição. Não há sessão, não há Authorization e não há slug — quem
+    // identifica a filial é o próprio token.
+    //
+    // Ficam aqui, e não num arquivo do entregador, porque este é o ÚNICO
+    // arquivo que `tests/unit/api-contract.test.js` lê para saber o que o
+    // front chama. Rota declarada noutro lugar nasce sem guarda, e foi assim
+    // que `/coupons/available` sobreviveu 404 por semanas.
+    courierMe: linkToken =>
+      `/courier/${routeSlug(linkToken)}/me`,
+    courierOrders: linkToken =>
+      `/courier/${routeSlug(linkToken)}/orders`,
+    courierOrdersOutForDelivery: linkToken =>
+      `/courier/${routeSlug(linkToken)}/orders/out-for-delivery`,
+    courierOrderDelivered: (linkToken, orderId) =>
+      `/courier/${routeSlug(linkToken)}/orders/${routeSlug(orderId)}/delivered`,
+    courierHistory: (linkToken, { startDate, endDate } = {}) => {
+      const q = new URLSearchParams();
+      if (startDate) q.set('start_date', startDate);
+      if (endDate) q.set('end_date', endDate);
+      const query = q.toString();
+      return `/courier/${routeSlug(linkToken)}/history${query ? `?${query}` : ''}`;
+    }
   };
 
   window.API_ROUTES = API_ROUTES;

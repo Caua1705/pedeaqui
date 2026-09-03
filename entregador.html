@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<!-- Terceira página do repositório, ao lado de index.html (landing) e
+     restaurant.html (o app do cliente). Ela NÃO compartilha nada com o app do
+     cliente além do cliente HTTP, das rotas e dos tipos: não tem cardápio,
+     sacola, conta, cashback nem assistente. Carregar o restaurant.html inteiro
+     (382 kB de JS) para mostrar uma lista de endereços seria peso sem ganho, e
+     quem abre isto está no celular, na rua, no 4G. -->
+<title>Entregas</title>
+<!-- SEM manifest, de propósito. O manifest do app do cliente tem escopo "/" e
+     start_url próprio; declarar um aqui faria o app instalado do restaurante
+     engolir a URL do entregador, ou o contrário. Se um dia o entregador tiver
+     PWA, ele precisa de manifest e escopo próprios (/entregador/). -->
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- O `link_token` é CREDENCIAL e vive no caminho da URL. `noindex` para não
+     entrar em buscador, e `no-referrer` para que ele não escape no header
+     Referer quando o entregador tocar num link externo (mapa, telefone). O
+     Referrer-Policy global do vercel.json já é `strict-origin-when-cross-origin`,
+     que também não vazaria o caminho; aqui a política é a mais restrita
+     possível porque esta página não tem motivo nenhum para mandar referrer. -->
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<script type="module" src="/scripts/entry-courier.js"></script>
+</head>
+<body class="courier-booting">
+
+<!-- Três telas exclusivas, trocadas por `hidden`. A tela de erro é irmã das
+     outras duas, e não um overlay: um link inválido não tem nada atrás dele. -->
+
+<!-- 1. O código. O link sozinho não abre nada. -->
+<section class="cr-gate" id="courierGate" hidden>
+  <div class="cr-gate__box">
+    <h1 class="cr-gate__title">Suas entregas</h1>
+    <p class="cr-gate__hint" id="courierGateHint">Digite o código de 6 dígitos que veio junto com o link.</p>
+    <form class="cr-gate__form" id="courierGateForm" novalidate>
+      <label class="cr-gate__label" for="courierCodeInput">Código</label>
+      <input class="cr-gate__input" id="courierCodeInput" name="code" type="text"
+        inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6"
+        placeholder="000000" aria-describedby="courierGateError" required>
+      <p class="cr-gate__error" id="courierGateError" role="alert" hidden></p>
+      <button class="cr-btn cr-btn--primary" id="courierGateSubmit" type="submit">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<!-- 2. O trabalho. -->
+<main class="cr-app" id="courierApp" hidden>
+  <header class="cr-hdr">
+    <div class="cr-hdr__who">
+      <strong class="cr-hdr__name" id="courierName"></strong>
+      <span class="cr-hdr__branch" id="courierBranch"></span>
+    </div>
+    <div class="cr-hdr__acts">
+      <button class="cr-hdr__btn" id="courierHistoryBtn" type="button">Acerto</button>
+      <button class="cr-hdr__btn cr-hdr__reload" id="courierReload" type="button" aria-label="Atualizar lista">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <p class="cr-alert" id="courierAlert" role="alert" hidden></p>
+
+  <div class="cr-list" id="courierList" aria-live="polite"></div>
+
+  <p class="cr-empty" id="courierEmpty" hidden>Nenhum pedido para você agora.</p>
+
+  <!-- A barra só existe quando há pedido selecionado: um botão de ação
+       permanentemente desabilitado ocupa o polegar sem nunca servir. -->
+  <div class="cr-bar" id="courierBar" hidden>
+    <span class="cr-bar__count" id="courierBarCount"></span>
+    <button class="cr-btn cr-btn--primary" id="courierLeaveBtn" type="button">Sair para entrega</button>
+  </div>
+</main>
+
+<!-- 2b. O ACERTO. É o número que o entregador leva ao dono no fim do dia, e
+     sem ele resta confiar na palavra do restaurante. Tudo aqui vem pronto do
+     backend: `fee_total` é o valor a receber e NÃO é somado aqui. -->
+<section class="cr-acerto" id="courierHistory" hidden>
+  <header class="cr-hdr">
+    <button class="cr-hdr__btn" id="courierHistoryBack" type="button" aria-label="Voltar para as entregas">Voltar</button>
+    <div class="cr-hdr__who"><strong class="cr-hdr__name">Acerto</strong>
+      <span class="cr-hdr__branch" id="courierPeriod"></span></div>
+  </header>
+
+  <p class="cr-alert" id="courierHistoryAlert" role="alert" hidden></p>
+
+  <div class="cr-acerto__box">
+    <span class="cr-acerto__rotulo">A receber no período</span>
+    <strong class="cr-acerto__total" id="courierFeeTotal">—</strong>
+    <span class="cr-acerto__linha" id="courierCount"></span>
+    <!-- SEPARADO da soma, de propósito: entrega sem taxa não entra em
+         `fee_total` e misturá-la na mesma linha faria a conta parecer maior do
+         que o que será pago. Some quando é zero — parcela zerada é linha FORA. -->
+    <span class="cr-acerto__semtaxa" id="courierWithoutFee" hidden></span>
+  </div>
+
+  <div class="cr-list" id="courierHistoryList"></div>
+  <p class="cr-empty" id="courierHistoryEmpty" hidden>Nenhuma entrega no período.</p>
+</section>
+
+<!-- 3. O fim da linha: link inválido, revogado, ou ausente. -->
+<section class="cr-dead" id="courierDead" hidden>
+  <h1 class="cr-dead__title" id="courierDeadTitle">Link inválido</h1>
+  <p class="cr-dead__text" id="courierDeadText">Peça um link novo para o restaurante.</p>
+</section>
+
+</body>
+</html>

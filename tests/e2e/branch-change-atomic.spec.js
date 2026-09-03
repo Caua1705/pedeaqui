@@ -56,6 +56,13 @@ async function semearMatriz(page) {
         'rapidex.customer.profile',
         JSON.stringify({ name: 'E2E Test', phone: '85999999999' })
       );
+      // O TOKEN, e não só o perfil. Um destes testes aplica cupom, e
+      // `POST /coupons/preview` usa auth OBRIGATÓRIA no backend
+      // (`docs/autenticacao-e-escopo.md`): sem token, 401. Perfil em
+      // localStorage NÃO é sessão — é o que sobra de quem só digitou nome e
+      // telefone no checkout, e é justamente o caso em que a folha do cupom
+      // abre o login em vez de validar.
+      localStorage.setItem('rapidex.customer.token', 'e2e-troca-filial-token');
     },
     { slug: SLUG, branchId: BRANCH_MATRIZ }
   );

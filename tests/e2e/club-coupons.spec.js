@@ -117,9 +117,7 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   await expect(aplicavel.locator('h3')).toHaveCount(0);
 });
 
-test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ page }) => {
-  // Duas decisões do fluxo de cupons, guardadas juntas porque as duas dizem a
-  // mesma coisa: cupom não se usa fora do checkout, e o Clube É a lista.
+test('o Clube abre pelos CUPONS, e a faixa da Home leva à TELA do cupom', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedLoggedSession(page);
   await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
@@ -127,15 +125,28 @@ test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ 
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);
 
-  // A FAIXA DA HOME DIVULGA. Ela lê `menu.coupons` (PublicCouponResponse), que
-  // não tem `state` — o backend nunca julgou aquele cupom contra esta pessoa —
-  // e do lado da Home a sacola quase sempre está vazia, que é o caso em que
-  // aplicar armava um cupom sem preview nenhum.
+  // O "Usar cupom" DA HOME VOLTOU em 03/09/2026, e a linha pontilhada com ele.
+  //
+  // Isto é REVERSÃO CONSCIENTE da decisão de 02/09 ("FORA: botão usar cupom na
+  // home"), não conserto. O que aquela decisão temia — "aplicar arma um cupom
+  // sem preview nenhum" — continua valendo e continua guardado: o botão leva à
+  // TELA do cupom, e é lá que se lê a regra. A aplicação segue acontecendo no
+  // checkout, e o teste logo abaixo cobra que tocar aqui NÃO fala com
+  // /coupons/preview.
+  const usar = page.locator('#couponRail .coupon-use-btn').first();
   await expect(page.locator('#couponRail .coupon-card').first()).toBeVisible();
+  await expect(usar).toHaveText('Usar cupom');
+  // A divisória pontilhada saiu junto com o botão e volta junto: ela existe
+  // para separar o corpo do card do botão, e sem botão separava o card do nada.
+  await expect(page.locator('#couponRail .coupon-dash').first()).toBeVisible();
+
+  await usar.click();
   await expect(
-    page.locator('#couponRail .coupon-use-btn'),
-    'a faixa da Home não pode oferecer usar um cupom que ninguém avaliou'
-  ).toHaveCount(0);
+    page.locator('#couponDetailOverlay'),
+    'o botão da Home abre a tela do cupom'
+  ).toHaveClass(/active/);
+  await page.evaluate(() => window.RapidexActions.resolve('closeCouponDetail')());
+  await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);
 
   await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
   await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
@@ -157,6 +168,36 @@ test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ 
   // E o saldo continua ALCANÇÁVEL: o extrato só tem esta porta, e apagar o
   // cartão deixaria aquela tela sem entrada nenhuma.
   await expect(page.locator('.club-cashback-icon')).toHaveCount(1);
+});
+
+// A METADE QUE FAZ A REVERSÃO DO ITEM 9 SER SEGURA.
+//
+// O "Usar cupom" voltou à Home, mas o motivo pelo qual ele saiu — "aplicar arma
+// um cupom sem preview nenhum" — continua valendo. Ele leva à TELA do cupom; a
+// aplicação segue no checkout. Este teste cobra exatamente isso: tocar nele não
+// pode falar com `/coupons/preview`, que é a rota que aplica.
+//
+// Sem este teste, a reversão do botão poderia voltar a ser a reversão da
+// DECISÃO, e ninguém veria.
+test('tocar em "Usar cupom" na Home abre a tela e NÃO fala com /coupons/preview', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  const { couponPreviewRequests } = await mockApi(page, {
+    onListCoupons: (route) => route.fulfill(json(COUPONS))
+  });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+
+  await page.locator('#couponRail .coupon-use-btn').first().click();
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+
+  expect(
+    couponPreviewRequests,
+    'o botão da Home não aplica: quem aplica é o checkout'
+  ).toHaveLength(0);
 });
 
 test('a linha "Cupons" do Perfil leva ao Clube, e não a uma tela que mente', async ({ page }) => {

@@ -262,16 +262,25 @@
       // The gradient + discount text is only a fallback when there's no image
       // (or it fails to load — onerror reverts to the fallback).
       //
-      // O BOTAO "Usar cupom" SAIU DAQUI em 02/09/2026, e a divisoria pontilhada
-      // (.coupon-dash) com ele — ela existia para separar o corpo do card do
-      // botao, e sem botao ela separava o card do nada.
+      // O BOTAO "Usar cupom" E A DIVISORIA PONTILHADA VOLTARAM em 03/09/2026.
+      // Eles sairam daqui em 02/09 e a volta e REVERSAO CONSCIENTE, nao
+      // conserto — quem le isto precisa saber que ha um motivo escrito dos dois
+      // lados, e por que o motivo antigo continua atendido.
       //
-      // A faixa da Home DIVULGA. Ela le `menu.coupons`, que e
-      // PublicCouponResponse: a vitrine da loja, sem `state`, ou seja o backend
-      // nunca julgou aquele cupom contra ESTA pessoa e ESTA sacola. Um botao
-      // "Usar cupom" ali prometia usar o que ninguem tinha avaliado — e do lado
-      // da Home a sacola quase sempre esta vazia, que e justamente o caso em que
-      // aplicar arma um cupom sem preview (ver services/coupon-cta.js).
+      // O MEDO DE 02/09 ERA APLICAR, NAO ABRIR. O trilho le `menu.coupons`
+      // (PublicCouponResponse), a vitrine da loja: sem `state`, ou seja o
+      // backend nunca julgou aquele cupom contra ESTA pessoa e ESTA sacola. Um
+      // botao que APLICASSE ali prometeria usar o que ninguem avaliou, e do lado
+      // da Home a sacola quase sempre esta vazia, que e o caso em que aplicar
+      // armava um cupom sem preview nenhum.
+      //
+      // Este botao NAO APLICA: ele leva a TELA DO CUPOM, que e onde se leem as
+      // regras — a mesma acao do card inteiro (`openCouponDetail`), agora com um
+      // alvo que diz o que faz. A aplicacao continua acontecendo no checkout, e
+      // quem cobra isso e `club-coupons.spec.js` ("tocar em Usar cupom na Home
+      // nao fala com /coupons/preview" e "abrir um cupom para LER nao aplica
+      // nada"). O `$stop` antes da acao existe para o clique nao contar duas
+      // vezes — o <article> inteiro ja e clicavel com a mesma acao.
       return `
         <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code, '$this')}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
@@ -280,6 +289,8 @@
             <strong>${esc(discount)}</strong>
           </div>
           <div class="coupon-title">${esc(coupon.name || coupon.code || 'Cupom')}</div>
+          <div class="coupon-dash"></div>
+          <button type="button" class="coupon-use-btn" ${shell.actAll('click', [['$stop'], ['openCouponDetail', coupon.code, '$this']])}>Usar cupom</button>
         </article>
       `;
     }).join('');

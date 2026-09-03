@@ -24,13 +24,14 @@ const AZUL_RGB = 'rgb(27, 79, 216)';
 
 const PEDIDOS = [
   { ...ORDERS[0], id: 'order-recusado', order_number: 9001, status: 'rejected' },
-  { ...ORDERS[0], id: 'order-finalizado', order_number: 9002, status: 'completed' }
+  { ...ORDERS[0], id: 'order-finalizado', order_number: 9002, status: 'completed' },
+  { ...ORDERS[0], id: 'order-andamento', order_number: 9003, status: 'preparing' }
 ];
 
 /** Componentes de "rgb(r, g, b)". */
 const canais = (css) => css.match(/\d+/g).map(Number);
 
-async function bootarAzul(page) {
+async function bootarAzul(page, { congelarAnimacoes = true } = {}) {
   await page.setViewportSize({ width: 414, height: 896 });
   await mockApi(page);
   const menu = JSON.parse(JSON.stringify(MENU));
@@ -50,7 +51,16 @@ async function bootarAzul(page) {
   await page.addInitScript(() => localStorage.setItem('rapidex.customer.token', 'e2e-state-colors'));
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);
-  await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
+  // Congelar e o padrao (a cor lida tem de ser a final, nao um quadro do meio),
+  // MAS o teste da barra de progresso afirma sobre o `animation-name` — e com
+  // `animation:none` ele le `none` e o teste passaria a reprovar o app correto.
+  if (congelarAnimacoes) {
+    await page.addStyleTag({
+      content: '*,*::before,*::after{transition:none!important;animation:none!important}'
+    });
+  } else {
+    await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important}' });
+  }
 }
 
 async function abrirMeusPedidos(page) {
@@ -126,4 +136,72 @@ test('excluir ENDEREÇO é o mesmo vermelho de excluir item da sacola', async ({
     vermelhoDaSacola
   );
   expect(excluirEndereco, 'e nenhum dos dois veste a marca').not.toBe(AZUL_RGB);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  E ONDE A MARCA É A COR CERTA, ELA TEM DE ESTAR LÁ.
+//
+//  O card de "Pedidos em andamento" tinha uma barrinha de 3px correndo no topo,
+//  em degradê da cor do lojista, mais a borda e o número do pedido na marca. O
+//  commit 79ab508 (29/08/2026, "963 regras que nao podiam pintar nada") a
+//  removeu junto com as cores de estado deste mesmo cartão.
+//
+//  NÃO FOI DESCUIDO, FOI UM PONTO CEGO DA FERRAMENTA, e ele vale para todo o
+//  repositório: `css-usage.mjs` só autoriza apagar pela metade ESTÁTICA — "o
+//  nome não existe fora do CSS". Mas estas classes são MONTADAS EM RUNTIME:
+//
+//      `prof-order-card--${statusClass} prof-order-card--${status.tone}-tone`
+//      `prof-order-status--${status.tone}`
+//
+//  A string `prof-order-card--active-tone` não existe em lugar nenhum do
+//  código-fonte. Para uma varredura por nome, ela está morta — e estava viva.
+//
+//  A prova de que a remoção foi mecânica ficou no arquivo: o
+//  `@keyframes prof-order-progress` SOBREVIVEU, órfão, por quatro dias, porque
+//  o nome dele aparecia literalmente na regra que o usava.
+// ─────────────────────────────────────────────────────────────────────────────
+test('o cartão de pedido EM ANDAMENTO tem a barra de progresso na cor do lojista', async ({ page }) => {
+  await bootarAzul(page, { congelarAnimacoes: false });
+  await abrirMeusPedidos(page);
+
+  const emAndamento = page.locator('.prof-order-card', { hasText: 'Pedido #9003' });
+  await expect(emAndamento).toHaveClass(/prof-order-card--active-tone/);
+
+  const barra = await emAndamento.evaluate(el => {
+    const cs = getComputedStyle(el, '::before');
+    return {
+      content: cs.content,
+      altura: cs.height,
+      posicao: cs.position,
+      animacao: cs.animationName,
+      degrade: cs.backgroundImage
+    };
+  });
+
+  expect(barra.content, 'a barra é um ::before, e ele precisa existir').not.toBe('none');
+  expect(barra.posicao).toBe('absolute');
+  expect(barra.altura).toBe('3px');
+  // O `@keyframes` ficou órfão no arquivo quando a regra saiu; isto amarra os dois.
+  expect(barra.animacao).toBe('prof-order-progress');
+  // O degradê é a cor do LOJISTA, não uma cor fixa: num tenant azul ele é azul.
+  expect(barra.degrade, `degradê sem a cor do tenant: ${barra.degrade}`).toContain(AZUL_RGB);
+
+  // A borda e o número do pedido também vinham da marca no cartão em andamento.
+  const borda = await emAndamento.evaluate(el => getComputedStyle(el).borderTopColor);
+  expect(borda, 'a borda do cartão ativo carrega a marca').toContain('rgba(27, 79, 216');
+  const numero = await emAndamento
+    .locator('.prof-order-number')
+    .evaluate(el => getComputedStyle(el).color);
+  expect(numero).toBe(AZUL_RGB);
+});
+
+test('o cartão FINALIZADO não tem a barra — ela diz "está acontecendo"', async ({ page }) => {
+  await bootarAzul(page);
+  await abrirMeusPedidos(page);
+
+  const finalizado = page.locator('.prof-order-card', { hasText: 'Pedido #9002' });
+  await expect(finalizado).not.toHaveClass(/prof-order-card--active-tone/);
+
+  const altura = await finalizado.evaluate(el => getComputedStyle(el, '::before').height);
+  expect(altura, 'barra correndo num pedido que já acabou promete o que não há').not.toBe('3px');
 });

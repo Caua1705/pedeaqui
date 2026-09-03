@@ -5235,7 +5235,43 @@ body.menu-tab .product-card.is-pressing{
     background:#fff;
     box-shadow:0 3px 8px rgba(0,0,0,.045);
   }
-        @keyframes prof-order-progress{
+  /* A BARRA DE PROGRESSO DO PEDIDO EM ANDAMENTO — devolvida em 03/09/2026.
+
+     Ela existia até 79ab508 (29/08/2026, "963 regras que nao podiam pintar
+     nada") e saiu junto com as cores de estado deste mesmo cartão. Estas quatro
+     regras são as de lá, sem uma vírgula de diferença.
+
+     NÃO FOI DESCUIDO, FOI UM PONTO CEGO DA FERRAMENTA, e ele vale para todo o
+     repositório: `css-usage.mjs` só autoriza apagar pela metade ESTÁTICA — "o
+     nome não existe fora do CSS". Estas classes são MONTADAS EM RUNTIME
+     (`prof-order-card--${status.tone}-tone`, em screens/profile-screen.js), e a
+     string `prof-order-card--active-tone` não existe em lugar nenhum do
+     código-fonte. Para uma varredura por nome ela está morta, e estava viva.
+
+     A prova de que a remoção foi mecânica ficou no arquivo: o
+     `@keyframes prof-order-progress` logo abaixo SOBREVIVEU, órfão, porque o
+     nome dele aparecia literalmente na regra que o usava.
+
+     A barra só existe no tom `active`. Correndo num pedido que já acabou, ela
+     prometeria que ainda está acontecendo alguma coisa. */
+  #profSubpedidos .prof-order-card.prof-order-card--active-tone{
+    border-color:rgba(var(--brand-primary-rgb), .38);
+  }
+  #profSubpedidos .prof-order-card.prof-order-card--active-tone::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:1;
+    width:0;
+    height:3px;
+    background:linear-gradient(90deg,var(--brand-primary) 0%,var(--brand-light) 72%,rgba(var(--brand-primary-rgb), 0) 100%);
+    animation:prof-order-progress 2.4s ease-out infinite;
+  }
+  #profSubpedidos .prof-order-card.prof-order-card--active-tone .prof-order-number{
+    color:var(--brand-primary);
+  }
+  @keyframes prof-order-progress{
     0%{width:0;opacity:1}
     85%{width:100%;opacity:1}
     100%{width:100%;opacity:0}

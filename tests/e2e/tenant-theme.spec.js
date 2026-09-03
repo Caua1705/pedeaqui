@@ -292,3 +292,59 @@ test('a tinta do rótulo sobre a marca é calculada, não fixa em branco', async
   expect(onBrand).toBe('#1A1A1A');
   expect(ctaColor).toBe('rgb(26, 26, 26)');
 });
+
+// A marca do assistente era um balão com uma cloche dentro, pintada por um
+// <linearGradient> de SVG. Virou uma esfera pintada por `background-image` do
+// CSS.
+//
+// A varredura de cor chumbada acima NÃO a cobre, e isso foi medido, não
+// suposto: com a esfera chumbada no laranja do piloto, o teste do tenant azul
+// passou verde. A razão é que ele nunca abre a tela do assistente, e
+// `buildAssistantView()` só injeta a marca no DOM na primeira navegação para
+// ela — `#assistantIntroMark` não existe enquanto ninguém entra. Vale para tudo
+// o que mora nessa tela, não só para a esfera.
+//
+// Então este teste é a ÚNICA guarda da cor da esfera, e cobra o positivo: ela
+// tem de SEGUIR a cor cadastrada, nas duas pontas do espectro. Chumbar cinza
+// aqui também passaria despercebido pelo teste acima — cinza não é laranja.
+test('a esfera do assistente nasce da cor do lojista, nas duas pontas', async ({ page }) => {
+  const esferaDe = async (primaria) => {
+    await bootWithPrimary(page, primaria);
+    await page.evaluate(() => window.RapidexActions.resolve('mobNavAssistant')());
+    await expect(page.locator('#assistantIntroMark')).toBeVisible();
+    // As animações da esfera escalam o corpo; `freezeTransitions` as desliga
+    // para que a leitura seja da cor pintada, não de um quadro no meio do
+    // ritmo. Mesma razão pela qual os testes acima a chamam.
+    await freezeTransitions(page);
+    return page.locator('#assistantIntroMark .assistant-mark__orb')
+      .evaluate(el => getComputedStyle(el).backgroundImage);
+  };
+
+  // Matiz do primeiro `rgb()` que aparece no degradê da esfera. As duas paradas
+  // vêm de markInkColors: a primária escurecida até 3:1 no branco e ela mesma um
+  // degrau abaixo — então o MATIZ é o do lojista nas duas, e é ele que este
+  // teste segue. A luminosidade não serve de prova: ela é justamente o que a
+  // guarda de contraste tem liberdade para mexer.
+  const matiz = (backgroundImage) => {
+    const paradas = [...String(backgroundImage).matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)]
+      // As duas primeiras camadas são o brilho e a sombra do volume (branco e
+      // preto): cinza não tem matiz e é descartado aqui, sobra a cor da marca.
+      .map(m => [+m[1] / 255, +m[2] / 255, +m[3] / 255])
+      .filter(([r, g, b]) => Math.max(r, g, b) - Math.min(r, g, b) > 0.02);
+    expect(paradas.length, `a esfera não tem cor nenhuma: ${backgroundImage}`).toBeGreaterThan(0);
+    const [r, g, b] = paradas[0];
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return (h * 60 + 360) % 360;
+  };
+
+  const laranja = matiz(await esferaDe('#D95C04'));
+  const azul = matiz(await esferaDe(BLUE));
+
+  // ~26° para o laranja do piloto, ~223° para o azul. A folga de 25° é a
+  // liberdade que markInkColors tem para escurecer sem virar outra cor.
+  expect(laranja, `esfera laranja saiu em ${laranja}°`).toBeGreaterThan(1);
+  expect(laranja).toBeLessThan(51);
+  expect(azul, `esfera azul saiu em ${azul}°`).toBeGreaterThan(198);
+  expect(azul).toBeLessThan(248);
+});

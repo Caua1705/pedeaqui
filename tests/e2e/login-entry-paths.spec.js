@@ -137,3 +137,83 @@ test('o login entra com a MESMA camada pelos dois caminhos, e "Entrar" não escu
   ).toBe(peloCupom.login.fundo);
   await outra.close();
 });
+
+// ============================================================================
+//  O VOLTAR DAS TELAS QUE ENTRAM POR CIMA DA FOLHA DE LOGIN.
+//
+//  Da folha de login, ir para "Cadastre-se" e tocar VOLTAR devolvia o cliente à
+//  tela de usar cupom, e não ao login. A pilha parecia pular um nível.
+//
+//  Medido a 414x896, e a leitura óbvia estava errada: o login REABRE, só que
+//  EMBAIXO. `openRegisterScreen()` fecha o #loginModal pelo `closeModalId`
+//  DECORADO do restaurant-page, que chama `resetMenuLoginState()` e apaga as
+//  classes de origem. Sem `from-coupon` o modal volta como `.overlay` cru —
+//  z-index 200 em vez de 280 — e o #couponDetailOverlay, que é 260 e continua
+//  aberto atrás, passa a cobri-lo.
+//
+//  Sondado: ao voltar do cadastro, `#loginModal.className` era `overlay active`
+//  (sem `from-coupon`), `z-index` 200, e `elementFromPoint` no meio da tela
+//  respondia a foto do cupom.
+//
+//  São QUATRO as telas que entram por cima da folha e voltam para ela —
+//  Cadastre-se, Esqueci a senha, o código de verificação e a redefinição de
+//  senha —, e as quatro perdiam a origem do mesmo jeito. Pelo Perfil o sintoma
+//  era mais quieto (um scrim preto onde não havia), e por isso ninguém viu.
+// ============================================================================
+test('voltar do "Cadastre-se" devolve o LOGIN, e não a tela que estava atrás', async ({
+  page
+}) => {
+  await bootVisitante(page);
+  await loginPeloCupom(page);
+  const naEntrada = await camadas(page);
+
+  await page.locator('#loginModal .cart-cta-btn').click();
+  await expect(page.locator('#registerScreen')).toHaveClass(/active/);
+
+  await page.locator('#registerScreen .reg-back').click();
+  await expect(page.locator('#registerScreen')).not.toHaveClass(/active/);
+  await expect(page.locator('#loginModal')).toHaveClass(/active/);
+
+  // A AFIRMAÇÃO DO CLIENTE VEM PRIMEIRO: o que está na frente é o login.
+  // Ela é o fato observável; as duas abaixo são o mecanismo. Afirmar o
+  // mecanismo primeiro esconderia a causa que ainda não se imaginou (§13.3).
+  const naFrente = await page.evaluate(() => {
+    const alvo = document.elementFromPoint(Math.round(window.innerWidth / 2), 300);
+    return Boolean(alvo?.closest('#loginModal'));
+  });
+  expect(naFrente, 'a folha do cupom ficou na frente do login que acabou de reabrir').toBe(true);
+
+  const naVolta = await camadas(page);
+  expect(naVolta.login.z, 'o login voltou sem a origem e caiu para o z-index cru').toBe(
+    naEntrada.login.z
+  );
+  expect(naVolta.login.fundo, 'o scrim voltou diferente do que era na entrada').toBe(
+    naEntrada.login.fundo
+  );
+});
+
+test('as outras três telas de auth também devolvem o login com a origem intacta', async ({
+  page
+}) => {
+  await bootVisitante(page);
+  await loginPeloCupom(page);
+  const naEntrada = await camadas(page);
+
+  // "Esqueci a senha" mora DENTRO do formulário de entrar, então o caminho
+  // passa por ele. As três telas voltam pela mesma porta (`reopenLoginSheet`);
+  // este teste exercita a que tem caminho de UI, e o que ele guarda é a porta.
+  await page.locator('#loginModal .login-secondary').click();
+  await expect(page.locator('#loginScreen')).toHaveClass(/active/);
+  await page.evaluate(() => window.RapidexActions.resolve('openForgotPasswordScreen')());
+  await expect(page.locator('#forgotPasswordScreen')).toHaveClass(/active/);
+
+  await page.locator('#forgotPasswordScreen .vfy-back').click();
+  await expect(page.locator('#forgotPasswordScreen')).not.toHaveClass(/active/);
+  await expect(page.locator('#loginModal')).toHaveClass(/active/);
+
+  const naVolta = await camadas(page);
+  expect(naVolta.login.z, 'o login voltou sem a origem').toBe(naEntrada.login.z);
+  expect(naVolta.login.fundo, 'o scrim voltou diferente do que era na entrada').toBe(
+    naEntrada.login.fundo
+  );
+});

@@ -76,7 +76,21 @@
 
   let _loginOrigin = 'profile';
 
-  function openLoginScreen(origin = 'profile') {
+  /**
+   * A ORIGEM CARIMBADA NA FOLHA DE LOGIN — e por que ela precisa ser
+   * reaplicável.
+   *
+   * Estas classes não são decoração: `from-coupon` leva o #loginModal para
+   * `z-index:280` (utilities.css) e o deixa por cima do #couponDetailOverlay,
+   * que é 260; `from-add-address` o leva para 240; e `from-coupon` /
+   * `from-bottom-nav` zeram o scrim (assistant.css) para o painel branco
+   * entrar sem empilhar um segundo preto. Sem elas o modal cai no `.overlay`
+   * cru: z-index 200 e scrim de 42%.
+   *
+   * Elas se perdiam ao ir para o "Cadastre-se", e é isso que este bloco
+   * separado conserta — ver `closeRegisterScreen()`.
+   */
+  function applyLoginOrigin(origin = 'profile') {
     _loginOrigin = origin;
     S.loginReturnNavId = document.body.classList.contains('menu-tab') && ['profile', 'club'].includes(origin)
       ? 'mobNavMenu'
@@ -87,7 +101,37 @@
     $('loginModal')?.classList.toggle('from-bottom-nav', ['profile', 'club'].includes(origin));
     const voiceReason = $('loginVoiceReason');
     if (voiceReason) voiceReason.hidden = origin !== 'assistant-voice';
+  }
+
+  function openLoginScreen(origin = 'profile') {
+    applyLoginOrigin(origin);
     openModal('loginModal');
+  }
+
+  /**
+   * VOLTAR PARA A FOLHA DE LOGIN — a porta única das telas que entram por cima
+   * dela.
+   *
+   * QUATRO telas fecham o #loginModal para abrir por cima ("Cadastre-se",
+   * "Esqueci a senha", o código de verificação e a redefinição de senha), e as
+   * quatro voltavam reabrindo o modal CRU. O `closeModalId('loginModal')` da
+   * ida é o decorado do restaurant-page, que chama `resetMenuLoginState()` e
+   * apaga a origem — certo para "fechou o login", errado para "entrou um nível
+   * mais fundo".
+   *
+   * Sem a origem o modal cai no `.overlay` cru (z-index 200, scrim de 42%). Pelo
+   * caminho do cupom isso o punha ATRÁS do #couponDetailOverlay (260), e a
+   * pessoa via a tela do cupom em vez do login — o "voltar que pula um nível".
+   * Nas outras portas o sintoma era mais quieto: um scrim preto onde não havia,
+   * e o `loginReturnNavId` zerado, que é quem devolve a aba do cardápio.
+   *
+   * Um sítio só, porque o defeito era o MESMO nos quatro e consertar um a um é
+   * como ele volta pelo irmão.
+   */
+  function reopenLoginSheet({ imediato = false } = {}) {
+    applyLoginOrigin(_loginOrigin);
+    if (imediato) openModalImmediately('loginModal');
+    else openModal('loginModal');
   }
 
   function mockLogin(mode) {
@@ -119,8 +163,27 @@
   function closeRegisterScreen() {
     $('registerScreen')?.classList.remove('active');
     syncAuthScreenOpenClass();
-    // Return to the login sheet the user came from.
-    openModalImmediately('loginModal');
+    // O VOLTAR DO CADASTRO PULAVA UM NIVEL, e o defeito nao estava aqui: estava
+    // no `closeModalId('loginModal')` de `openRegisterScreen()`.
+    //
+    // Aquele closeModalId e o DECORADO do restaurant-page, e ele chama
+    // `resetMenuLoginState()`, que APAGA `from-add-address` / `from-coupon` /
+    // `from-bottom-nav` e zera `loginReturnNavId`. Isso esta certo para "a
+    // pessoa FECHOU o login e foi embora" e errado para "a pessoa entrou um
+    // nivel mais fundo": ir ao cadastro nao e sair do login.
+    //
+    // O que isso produzia, medido a 414x896 pelo caminho do cupom: ao voltar do
+    // cadastro o #loginModal reabria como `.overlay active` cru — z-index 200
+    // em vez dos 280 de `from-coupon` — e o #couponDetailOverlay, que e 260 e
+    // continua aberto atras, passava a cobri-lo. O login REABRIA, mas embaixo:
+    // o cliente via a tela de usar cupom e concluia que o voltar tinha pulado
+    // um nivel. Pelo Perfil o mesmo apagamento acontecia e ninguem via, porque
+    // ali nao ha nada em cima — so o scrim de 42% que nao devia estar la.
+    //
+    // `_loginOrigin` sobrevive (e estado do modulo), entao a origem e
+    // REAPLICADA em vez de adivinhada — e por uma porta so, que as outras tres
+    // telas de auth tambem usam (ver `reopenLoginSheet`).
+    reopenLoginSheet({ imediato: true });
   }
 
   function applyRegMask(el, template, maxDigits) {
@@ -499,7 +562,7 @@
     syncAuthScreenOpenClass();
     // Return to a sensible previous screen.
     if (verifyCtx.source === 'register') $('registerScreen')?.classList.add('active');
-    else openModal('loginModal');
+    else reopenLoginSheet();
   }
 
   function handleVfyInput(el, index) {
@@ -661,7 +724,7 @@
   function closeResetPasswordScreen() {
     $('resetPasswordScreen')?.classList.remove('active');
     syncAuthScreenOpenClass();
-    openModal('loginModal');
+    reopenLoginSheet();
   }
   // Per-field error below each password input (same style as the register form).
   function showResetFieldErr(fieldId, errId, msg) {
@@ -824,7 +887,7 @@
   function closeForgotPasswordScreen() {
     $('forgotPasswordScreen')?.classList.remove('active');
     syncAuthScreenOpenClass();
-    openModal('loginModal');
+    reopenLoginSheet();
   }
 
   function showForgotEmailErr(msg) {

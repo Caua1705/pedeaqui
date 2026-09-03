@@ -21,8 +21,29 @@ const FALTA = { state: 'missing_amount', missing_amount: '12.00' };
 const LOGIN = { state: 'login_required', missing_amount: '30.00' };
 
 describe('os três estados do contrato', () => {
-  it('applicable com sacola: aplica', () => {
-    expect(cta(APLICAVEL)).toEqual({ acao: ACOES.APLICAR, rotulo: 'Aplicar cupom' });
+  it('applicable com sacola: aplica, e o rótulo é a palavra do cliente', () => {
+    // "Usar cupom" VOLTOU em 03/09/2026, e isso é REVERSÃO CONSCIENTE, não
+    // conserto. Ele saiu em 02/09 porque o botão dizia "Usar cupom" nos QUATRO
+    // casos — inclusive sem o mínimo, sem conta e com a sacola vazia. Hoje os
+    // outros três têm rótulo próprio, então "Usar cupom" só aparece onde o
+    // cupom de fato pode ser usado.
+    expect(cta(APLICAVEL)).toEqual({ acao: ACOES.APLICAR, rotulo: 'Usar cupom' });
+  });
+
+  it('e NENHUM dos outros casos diz "Usar cupom" — a guarda do motivo antigo', () => {
+    // Esta é a metade que faz a reversão ser segura (§14.8 da skill): o teste
+    // que protegia a decisão antiga foi INVERTIDO, não apagado. O medo de
+    // 02/09 era um "Usar cupom" que não usa nada; ele continua barrado aqui,
+    // caso a caso, inclusive com a sacola vazia.
+    for (const [nome, cupom, vazia] of [
+      ['missing_amount', FALTA, false],
+      ['login_required', LOGIN, false],
+      ['applicable com sacola vazia', APLICAVEL, true],
+      ['estado desconhecido', { state: 'expired' }, false],
+      ['cupom nulo', null, false]
+    ]) {
+      expect(cta(cupom, vazia).rotulo, nome).not.toBe('Usar cupom');
+    }
   });
 
   it('missing_amount diz QUANTO falta e leva ao cardápio', () => {
@@ -65,7 +86,7 @@ describe('as bordas que não podem virar um botão que cobra', () => {
       .toEqual({ acao: ACOES.VER_CARDAPIO, rotulo: 'Ver cardápio' });
   });
 
-  it('estado desconhecido nunca vira "Aplicar cupom"', () => {
+  it('estado desconhecido nunca vira um botão que aplica', () => {
     // `normalizeCustomerCoupons` já descarta a linha antes daqui; esta é a rede
     // de baixo. Mandar ao cardápio não cobra nada de ninguém.
     for (const estado of ['expired', 'ineligible', 'usado', 'APPLICABLE']) {

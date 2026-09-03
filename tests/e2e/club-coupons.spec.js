@@ -92,8 +92,10 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   // do fluxo é que cupom só se aplica quando existe sacola; com ela vazia o
   // botão leva ao cardápio, que é a ação que de fato destrava.
   //
-  // O caso com sacola — o que faz o botão dizer "Aplicar cupom" — está no
-  // teste logo abaixo.
+  // "Usar cupom" voltou em 03/09/2026 para o caso que APLICA (§14.8: reversão
+  // consciente, não conserto). O que este teste guarda — que a sacola vazia
+  // NÃO diga "Usar cupom" — é exatamente o motivo antigo, e continua valendo.
+  // O caso com sacola está no teste logo abaixo.
   await expect(aplicavel.locator('.club-available-coupon-use')).toHaveText('Ver cardápio');
   // O desconto JÁ CALCULADO pelo backend para esta sacola.
   await expect(aplicavel.locator('.club-available-coupon-meta')).toContainText(
@@ -280,7 +282,7 @@ test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page })
   await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
 
   const cards = page.locator('.club-available-coupon-card');
-  await expect(cards.nth(0).locator('.club-available-coupon-use')).toHaveText('Aplicar cupom');
+  await expect(cards.nth(0).locator('.club-available-coupon-use')).toHaveText('Usar cupom');
   // Os outros dois não mudam: o veredito deles é do backend, e a sacola não o
   // altera. `missing_amount` continua dizendo quanto falta.
   await expect(cards.nth(1).locator('.club-available-coupon-use')).toHaveText('Faltam R$ 8,85');
@@ -479,7 +481,7 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
   // ao cardápio com um aviso que some. Quem decide sair é ela.
   await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
   await expect(page.locator('.coupon-detail-use'), 'o botão volta ao normal').toHaveText(
-    'Aplicar cupom'
+    'Usar cupom'
   );
   await page.evaluate(() => window.RapidexActions.resolve('closeCouponDetail')());
   await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);

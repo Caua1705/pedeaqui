@@ -179,27 +179,32 @@
   /**
    * Estados que o card pode ter. Fora desta lista, o cupom não é desenhável.
    *
-   * ANOTADO, NÃO CONSERTADO (varredura de 03/09/2026, item 9 da rodada).
-   *
-   * `CustomerCouponState` tem CINCO valores no contrato; esta lista conhece
-   * TRÊS. Os dois que faltam são `payment_method_not_allowed` (o cupom vale só
-   * em outra forma de pagamento, e o backend só o marca assim quando a forma
-   * JÁ foi escolhida — ver o parâmetro `payment_method` de `GET /coupons`) e
-   * `outside_hours`.
-   *
-   * O que isso custa hoje: um cupom nesses dois estados é DESCARTADO por
-   * `normalizeCustomerCoupons`, então ele some da lista do Clube — e, desde
-   * `judgedCouponForDetail` (restaurant-page.js), também faz a folha de detalhe
-   * cair no cupom da vitrine, que não tem `state`, e o botão dizer "Usar
+   * OS CINCO DO CONTRATO, desde 03/09/2026. Até essa data esta lista tinha
+   * TRÊS, e os dois que faltavam eram descartados aqui — o cupom sumia da
+   * lista do Clube, e (desde `judgedCouponForDetail`) a folha de detalhe caía
+   * no cupom da vitrine, que não tem `state`, fazendo o botão dizer "Usar
    * cupom" para um cupom que o backend acabou de recusar.
    *
-   * Não foi consertado junto porque cada um precisa de rótulo E destino
-   * próprios em `services/coupon-cta.js`: o de forma de pagamento leva à
-   * escolha de pagamento; o de horário não leva a lugar nenhum e a decisão de
-   * o que dizer ali é de produto. Acrescentar os dois nomes AQUI sem isso só
-   * trocaria "some da lista" por um botão que promete e falha.
+   * Eles só entraram DEPOIS de cada um ganhar rótulo e destino próprios em
+   * `services/coupon-cta.js` — acrescentar o nome aqui sem isso teria trocado
+   * "some da lista" por um botão que promete e falha:
+   *
+   *   outside_hours               o card aparece, diz a faixa, e NÃO navega
+   *   payment_method_not_allowed  o card diz em que forma vale, e leva à
+   *                               escolha de pagamento
+   *
+   * O QUE CONTINUA VALENDO: um `state` que este front não conhece segue sendo
+   * descartado. Não há valor para "não tem conserto" no contrato — cupom
+   * vencido, de outro segmento ou de primeira compra não vem na lista —, então
+   * um sexto nome que apareça aqui é um contrato novo, não um caso a adivinhar.
    */
-  const COUPON_STATES = new Set(['applicable', 'missing_amount', 'login_required']);
+  const COUPON_STATES = new Set([
+    'applicable',
+    'missing_amount',
+    'login_required',
+    'outside_hours',
+    'payment_method_not_allowed'
+  ]);
 
   /**
    * A lista já vem RESOLVIDA do backend, e é por isso que aqui não há filtro.

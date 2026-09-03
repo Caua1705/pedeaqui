@@ -69,6 +69,17 @@
     if (coupon.state === 'login_required') {
       rules.push('Entre na sua conta para usar este cupom');
     }
+    // AS DUAS RESTRIÇÕES QUE O CUPOM PODE TER, quando o contrato as publica.
+    //
+    // Elas entram INDEPENDENTE do `state`, e isso é de propósito: um cupom
+    // `applicable` que só vale no Pix continua só valendo no Pix, e a pessoa
+    // precisa saber disso ANTES de aplicar — não só quando o backend recusa.
+    // O `state` decide o BOTÃO; estas linhas são a regra do cupom.
+    const restricao = window.PedeAquiCouponRestriction;
+    const formas = restricao.couponPaymentPhrase(coupon);
+    if (formas) rules.push(formas);
+    const faixa = restricao.couponHoursPhrase(coupon);
+    if (faixa) rules.push(faixa);
     if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
     // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
     // vitrine o campo não vinha, então ninguém tinha visto ainda.
@@ -192,6 +203,12 @@
     const { acao, rotulo } = ctaDoCupom(coupon);
     botao.textContent = rotulo;
     botao.dataset.couponAcao = acao;
+    // `SEM_DESTINO` é o único caso em que tocar não faz nada (fora do horário:
+    // não há tela que adiante o relógio). `aria-disabled` e NÃO `disabled`: o
+    // rótulo É a informação — "Vale das 15h às 18h" —, e `disabled` o tiraria
+    // da leitura de tela e da ordem de foco justamente onde ele é o conteúdo.
+    const inerte = acao === CTA().ACOES.SEM_DESTINO;
+    botao.setAttribute('aria-disabled', inerte ? 'true' : 'false');
   }
 
   function closeCouponDetail(event) {
@@ -220,6 +237,26 @@
     const coupon = couponDetailCoupon;
     if (!coupon) return;
     const { acao } = ctaDoCupom(coupon);
+
+    // FORA DO HORÁRIO: o botão diz a faixa e é só isso. Não existe tela que
+    // adiante as 15h, e fechar a folha "para fazer alguma coisa" tiraria a
+    // pessoa da regra que ela acabou de ler. Sai ANTES de qualquer outra
+    // porta — inclusive antes do login, porque entrar na conta não muda a hora.
+    if (acao === CTA().ACOES.SEM_DESTINO) return;
+
+    // FORMA DE PAGAMENTO: este a pessoa resolve agora. A folha fecha e a
+    // escolha de pagamento abre — o backend só marca este estado quando a
+    // forma JÁ foi escolhida, então existe uma escolha para desfazer.
+    //
+    // A sacola vem junto, e não é detalhe: a tela de pagamento volta para ela
+    // ao confirmar, e é na sacola que o cupom se aplica. Abrir só o pagamento
+    // deixaria a pessoa num beco com o cupom fora de alcance.
+    if (acao === CTA().ACOES.VER_PAGAMENTO) {
+      closeCouponDetail();
+      shell.openCartModal();
+      shell.openPaymentMethodScreen();
+      return;
+    }
 
     // NAO SE VALIDA O QUE NAO PODE SER APLICADO: sem conta, o login vem
     // ANTES do preview.
@@ -310,7 +347,7 @@
     ({ $, esc, fmt } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['getCouponForDetail', 'judgedCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu']) {
+    for (const nome of ['getCouponForDetail', 'judgedCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu', 'openCartModal', 'openPaymentMethodScreen']) {
       if (typeof shell[nome] !== 'function') throw new Error(`coupon-detail-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({

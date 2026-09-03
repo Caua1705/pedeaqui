@@ -122,6 +122,21 @@
      * anunciar audiência por chute.
      */
     function getCouponBadge(coupon) {
+      // A FAIXA DO CUPOM FORA DE HORÁRIO VENCE O SELO, e isso é decisão.
+      //
+      // O card `outside_hours` aparece de propósito (sumir de manhã tornaria a
+      // campanha da tarde invisível para quem olha antes das 15h), e a faixa é
+      // o que explica por que ele está ali cinza. "Selecionado para você" ao
+      // lado de um cupom que não vale agora é elogio no lugar da informação —
+      // e são os dois a MESMA faixa, então um tem de ceder.
+      //
+      // A frase sai de `services/coupon-restriction.js` e é '' quando o
+      // contrato não mandou a faixa; aí o selo volta a valer, porque uma tarja
+      // vazia não diz nada.
+      if (coupon.state === 'outside_hours') {
+        const faixa = window.PedeAquiCouponRestriction.couponHoursPhrase(coupon);
+        if (faixa) return faixa;
+      }
       return coupon.label === 'selected_for_you' ? 'Selecionado para você' : '';
     }
 

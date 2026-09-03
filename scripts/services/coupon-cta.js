@@ -61,19 +61,60 @@
 //  A guarda do motivo antigo NÃO foi apagada, foi invertida (§14.8): o
 //  unitário exige que nenhum dos outros três estados diga "Usar cupom".
 //
-//  ## Precedência: `login_required` vence a sacola vazia
+//  ## Precedência: o VEREDITO DO BACKEND vence a sacola vazia
 //
 //  Quando os dois valem (visitante, sacola vazia), o rótulo é "Entre para
 //  usar". O motivo: `login_required` é o veredito que o backend deu SOBRE ESTE
 //  CUPOM, e sem conta ele não aparece nem na lista depois; a sacola vazia é
 //  uma condição da tela, que se resolve sozinha ao navegar. Mostrar "Ver
 //  cardápio" a quem precisa entrar manda a pessoa para o lugar errado.
+//
+//  A mesma precedência vale para os quatro estados: eles são o que o servidor
+//  decidiu, e a sacola vazia é o que a tela sabe.
+//
+//  ## Os cinco estados, e a decisão de cada um (03/09/2026)
+//
+//  Até esta data o front conhecia TRÊS dos cinco `CustomerCouponState`:
+//  `payment_method_not_allowed` e `outside_hours` eram descartados por
+//  `club-service.normalizeCustomerCoupons`, o cupom sumia da lista, e — desde
+//  `judgedCouponForDetail` — a folha de detalhe caía no cupom da vitrine e o
+//  botão dizia "Usar cupom" para um cupom que o backend acabou de recusar.
+//
+//    applicable                  "Usar cupom"          aplica
+//    missing_amount              "Faltam R$ X"         cardápio
+//    login_required              "Entre para usar"     login
+//    outside_hours               "Vale das 15h às 18h" NADA
+//    payment_method_not_allowed  "Só no Pix"           escolha de pagamento
+//
+//  As duas decisões novas, e por que elas são diferentes uma da outra:
+//
+//  - **fora do horário o card APARECE.** Sumir de manhã seria pior — a
+//    campanha da tarde ficaria invisível justamente para quem olha o Clube
+//    antes das 15h. E o botão NÃO leva a lugar nenhum: não existe tela que
+//    adiante o relógio, e mandar ao cardápio prometeria uma solução que não
+//    existe. É o único caso em que a ação certa é nenhuma.
+//  - **forma de pagamento a pessoa resolve agora**, e por isso o botão leva à
+//    escolha de pagamento. O backend só marca este estado quando a forma JÁ
+//    foi escolhida, então existe uma escolha para desfazer.
+//
+//  NENHUM DOS DOIS PODE DIZER "Usar cupom" — era esse o defeito.
+//
+//  As frases saem de `services/coupon-restriction.js`, tabela NOMINAL sobre
+//  `allowed_payment_methods` / `valid_hours_from` / `valid_hours_until`: código
+//  do backend não vira texto de tela (§14.5 da skill).
 // ============================================================================
 (function () {
   const ACOES = Object.freeze({
     APLICAR: 'aplicar',
     VER_CARDAPIO: 'ver-cardapio',
-    ENTRAR: 'entrar'
+    ENTRAR: 'entrar',
+    // A forma de pagamento escolhida não é uma das que o cupom aceita. O
+    // destino é a escolha de pagamento, que é onde isso se resolve.
+    VER_PAGAMENTO: 'ver-pagamento',
+    // Fora da faixa de horário. NÃO LEVA A LUGAR NENHUM, de propósito: não
+    // existe tela que adiante as 15h. O botão diz quando o cupom vale e para
+    // por aí — é a única ação honesta.
+    SEM_DESTINO: 'sem-destino'
   });
 
   /**
@@ -99,6 +140,29 @@
         acao: ACOES.VER_CARDAPIO,
         rotulo: falta > 0 ? `Faltam ${fmt(falta)}` : 'Ver cardápio'
       };
+    }
+
+    // FORA DO HORÁRIO — o card APARECE, e é essa a decisão.
+    //
+    // Sumir de manhã seria pior: a campanha da tarde ficaria invisível para
+    // quem olha o Clube antes das 15h, que é justamente quem ela quer trazer.
+    // O botão diz a faixa e não leva a lugar nenhum — não há tela que adiante
+    // o relógio, e mandar ao cardápio prometeria uma solução que não existe.
+    if (estado === 'outside_hours') {
+      const faixa = window.PedeAquiCouponRestriction.couponHoursPhrase(coupon);
+      // Sem a faixa no contrato não há frase acionável, e a genérica é a
+      // resposta certa — nunca um horário inventado.
+      return { acao: ACOES.SEM_DESTINO, rotulo: faixa || 'Fora do horário' };
+    }
+
+    // FORMA DE PAGAMENTO — este a pessoa resolve agora, e o botão leva lá.
+    //
+    // O backend só marca este estado quando a forma JÁ foi escolhida (é o
+    // parâmetro `payment_method` de `GET /coupons`), então existe uma escolha
+    // para desfazer e a tela de pagamento é onde ela mora.
+    if (estado === 'payment_method_not_allowed') {
+      const formas = window.PedeAquiCouponRestriction.couponPaymentPhrase(coupon);
+      return { acao: ACOES.VER_PAGAMENTO, rotulo: formas || 'Vale em outra forma de pagamento' };
     }
 
     if (contexto?.sacolaVazia) {

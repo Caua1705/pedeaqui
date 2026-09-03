@@ -771,3 +771,138 @@ test('cupom da vitrine que CABE: o veredito do backend chega e o botão aplica',
   // E a folha passa a mostrar o desconto DESTA sacola, que só o veredito tem.
   await expect(page.locator('#couponDetailRules')).toContainText('Desconto de R$ 1,06');
 });
+
+// ============================================================================
+//  OS DOIS ESTADOS QUE O FRONT NÃO CONHECIA, na tela (03/09/2026).
+//
+//  `CustomerCouponState` tem cinco valores e o front conhecia três:
+//  `outside_hours` e `payment_method_not_allowed` eram descartados por
+//  `club-service.normalizeCustomerCoupons`. O cupom sumia da lista do Clube e,
+//  desde `judgedCouponForDetail`, a folha de detalhe caía no cupom da vitrine
+//  (que não tem `state`) e o botão dizia "Usar cupom" para um cupom que o
+//  backend acabou de recusar.
+//
+//  As decisões, cada uma com o seu motivo:
+//
+//  - FORA DO HORÁRIO o card APARECE, com a faixa escrita, e o botão diz quando
+//    o cupom vale sem levar a lugar nenhum. Sumir de manhã seria pior: a
+//    campanha da tarde ficaria invisível para quem olha o Clube antes das 15h.
+//  - FORMA DE PAGAMENTO o card diz em qual forma vale, e o botão leva à escolha
+//    de pagamento — o backend só marca este estado quando a forma JÁ foi
+//    escolhida, então existe uma escolha para desfazer.
+//
+//  Os TIPOS são os de produção: `valid_hours_from` é `format: time`
+//  ("15:00:00") e `allowed_payment_methods` traz o vocabulário fechado do
+//  backend. Escrever "15:00" aqui esconderia a classe de erro que o formatador
+//  existe para pegar.
+// ============================================================================
+const CUPONS_DOS_DOIS_ESTADOS = {
+  coupons: [
+    {
+      id: '0d6e7327-6637-48fb-ad67-fdc362d32ace',
+      code: 'JP5',
+      title: '5% OFF',
+      description: null,
+      image_url: 'https://cdn.example/coupon-5-percent-off.webp',
+      discount_type: 'percent',
+      min_order_value: '20.00',
+      valid_until: '2099-12-31T23:59:59Z',
+      label: 'selected_for_you',
+      state: 'outside_hours',
+      discount_amount: '0.00',
+      missing_amount: '0.00',
+      valid_hours_from: '15:00:00',
+      valid_hours_until: '18:00:00'
+    },
+    {
+      id: 'd0d99eee-9cf1-409d-bd48-b5afb991da70',
+      code: 'JP10',
+      title: '10% OFF',
+      description: null,
+      image_url: 'https://cdn.example/coupon-10-percent-off.webp',
+      discount_type: 'percent',
+      min_order_value: '20.00',
+      valid_until: '2099-12-31T23:59:59Z',
+      label: null,
+      state: 'payment_method_not_allowed',
+      discount_amount: '0.00',
+      missing_amount: '0.00',
+      allowed_payment_methods: ['pix']
+    }
+  ]
+};
+
+async function clubeComOsDoisEstados(page) {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await seedLoggedSession(page);
+  const mock = await mockApi(page, {
+    onListCoupons: (route) => route.fulfill(json(CUPONS_DOS_DOIS_ESTADOS))
+  });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await addH2OToCart(page, 3);
+  return mock;
+}
+
+test('cupom fora do horário APARECE na lista, com a faixa e sem prometer nada', async ({ page }) => {
+  await clubeComOsDoisEstados(page);
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+
+  // O card EXISTE. Antes ele era descartado e a campanha da tarde ficava
+  // invisível de manhã — que é a metade cara desta decisão.
+  const cards = page.locator('.club-available-coupon-card');
+  await expect(cards).toHaveCount(2);
+
+  const foraDeHorario = cards.filter({ hasText: '5% OFF' });
+  await expect(foraDeHorario.locator('.club-available-coupon-badge')).toHaveText('Vale das 15h às 18h');
+  await expect(foraDeHorario.locator('.club-available-coupon-use')).toHaveText('Vale das 15h às 18h');
+  // A faixa VENCE o selo: este cupom tem `label: "selected_for_you"`, e
+  // "Selecionado para você" ao lado de um cupom que não vale agora é elogio no
+  // lugar da informação.
+  await expect(foraDeHorario.locator('.club-available-coupon-badge')).not.toHaveText('Selecionado para você');
+});
+
+test('tocar no cupom fora do horário não leva a lugar nenhum, e não aplica nada', async ({ page }) => {
+  const { couponPreviewRequests } = await clubeComOsDoisEstados(page);
+  await page.evaluate(() => window.openCouponDetail('JP5'));
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+
+  const botao = page.locator('.coupon-detail-use');
+  await expect(botao).toHaveText('Vale das 15h às 18h');
+  // `aria-disabled`, e não `disabled`: o rótulo É a informação, e `disabled` o
+  // tiraria da leitura de tela justamente onde ele é o conteúdo.
+  await expect(botao).toHaveAttribute('aria-disabled', 'true');
+  // A regra também aparece na lista da folha.
+  await expect(page.locator('#couponDetailRules')).toContainText('Vale das 15h às 18h');
+
+  await page.evaluate(() => window.RapidexActions.resolve('confirmCouponDetail')());
+  // NADA aconteceu: a folha continua aberta, ninguém foi ao cardápio, e o
+  // cupom não foi ao preview. Não existe tela que adiante o relógio.
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+  await expect(page.locator('body')).not.toHaveClass(/menu-tab/);
+  expect(couponPreviewRequests, 'um cupom fora do horário não vai ao preview').toHaveLength(0);
+});
+
+test('cupom de outra forma de pagamento diz qual é, e leva onde ela se troca', async ({ page }) => {
+  const { couponPreviewRequests } = await clubeComOsDoisEstados(page);
+  await page.evaluate(() => window.openCouponDetail('JP10'));
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+
+  const botao = page.locator('.coupon-detail-use');
+  await expect(botao).toHaveText('Só no Pix');
+  // Este é acionável: a pessoa resolve agora.
+  await expect(botao).toHaveAttribute('aria-disabled', 'false');
+  await expect(page.locator('#couponDetailRules')).toContainText('Só no Pix');
+
+  await page.evaluate(() => window.RapidexActions.resolve('confirmCouponDetail')());
+  await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);
+  // O DESTINO: a escolha de pagamento, sobre a sacola. As duas, e nesta ordem —
+  // a tela de pagamento volta para a sacola ao confirmar, e é na sacola que o
+  // cupom se aplica.
+  await expect(page.locator('#paymentMethodModal')).toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  expect(couponPreviewRequests, 'nada foi aplicado: quem julga é o backend').toHaveLength(0);
+});

@@ -5904,7 +5904,13 @@
       // para pedir, nunca criou conta, e via "Validando..." antes do login.
       hasAuthSession: () => Boolean(window.PedeAquiCustomerService?.isLoggedIn?.()),
       showCouponNotice,
-      mobNavMenu
+      mobNavMenu,
+      // O destino do cupom `payment_method_not_allowed`. As DUAS, e nesta
+      // ordem: a tela de pagamento volta para a sacola ao confirmar, e é na
+      // sacola que o cupom se aplica — abrir só o pagamento deixaria a pessoa
+      // num beco com o cupom fora de alcance.
+      openCartModal,
+      openPaymentMethodScreen
     }
   });
 

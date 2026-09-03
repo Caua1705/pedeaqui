@@ -69,6 +69,10 @@ import './services/club-service.js';
 // Rotulo do cupom, lido pela folha de detalhe (restaurant-page) e pelo card do
 // Clube (restaurant-club). Usa o formatador de moeda, importado la em cima.
 import './services/coupon-format.js';
+// As frases das duas restricoes do cupom (faixa de horario e forma de
+// pagamento), em tabela NOMINAL. Puro; so precisa vir antes do coupon-cta, que
+// e quem as le.
+import './services/coupon-restriction.js';
 // O que o botao do cupom FAZ, decidido num lugar so — o card do Clube, a folha
 // de detalhe e o checkout leem daqui. Depende do coupon-format (couponAmount) e
 // do formatador de moeda, os dois importados acima.

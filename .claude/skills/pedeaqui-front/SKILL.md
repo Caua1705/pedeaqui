@@ -784,9 +784,31 @@ parcialmente laranja do piloto — o que travava comercialmente o cadastro do
 segundo cliente. Use tokens (`styles/tokens.css`); `tenant-theme.spec.js` falha
 se a regressão voltar.
 
-Cor de estado (âmbar, vermelho) num tenant azul é **cor de ninguém**: prefira
-peso, borda e hierarquia. Cor de marca sobre fundo claro passa pela guarda de
-contraste (`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária crua.
+**COR DE ESTADO NÃO É COR DE MARCA — e esta regra foi decidida ao contrário do
+que esta seção dizia até 03/09/2026.** Ela dizia "cor de estado (âmbar,
+vermelho) num tenant azul é cor de ninguém: prefira peso, borda e hierarquia".
+O que isso produziu está medido: o X de "Recusado" e o check de "Finalizado" na
+lista de pedidos saíam os DOIS em `--brand-light`, e a única diferença entre
+"seu pedido foi recusado" e "seu pedido ficou pronto" era o desenho de 12px
+dentro do círculo. Peso e hierarquia não distinguem duas notícias opostas.
+
+A regra que vale:
+
+- **vermelho** (`--state-danger-strong`) onde a ação APAGA ou o estado é
+  negativo; **verde** (`--state-success`) onde é sucesso; **âmbar**
+  (`--state-warning`) no aviso que pede ação.
+- a marca continua sendo a cor do que é **neutro ou em andamento** — o cartão de
+  pedido `active` usa `--brand-light` e a barra de progresso dele é o degradê da
+  marca, de propósito.
+- cor de estado que entre na varredura de laranja vai para a lista de permitidos
+  de `tenant-theme.spec.js` **com o motivo escrito**.
+
+Cor de marca sobre fundo claro passa pela guarda de contraste
+(`--brand-mark-light` / `--brand-mark-deep`), nunca pela primária crua. E o piso
+de contraste do rótulo SOBRE a marca é **3:1** (`ON_BRAND_MIN_CONTRAST`), o
+mínimo AA de componente de interface — um teste que exija 4,5 ali reprova o app
+inteiro (o CTA da sacola dá 3,83 no piloto). O 4,5 vale para as cores que são
+NOSSAS, como `--state-danger-strong`, escolhida justamente para alcançá-lo.
 
 ## 8. Antes de fechar
 
@@ -1635,3 +1657,155 @@ virou `fixed`", "o painel não foi cortado") não precisa de número; o número
 entrou para absorver ruído de ambiente, e é ele que reprova a máquina no lugar
 do código. Quando a margem aparecer, pergunte: *existe uma linha que prove o
 mesmo fato sem número?* No `auth-screen-nav` existe, e está logo acima.
+
+## 14. A rodada de telas de 03/09/2026 — dez itens vistos com o olho
+
+Nenhum dos dez foi pego por teste. Sete tinham teste **passando por cima**, e é
+essa a parte que interessa.
+
+### 14.1 O TESTE QUE ESTABILIZA A MEDIDA PODE APAGAR O DEFEITO
+
+`tenant-theme.spec.js` chamava `freezeTransitions()` DENTRO do próprio
+`bootWithPrimary()`, para ler cor final em vez de quadro de interpolação. Isso
+está certo — e por isso mesmo a suíte estava cega para uma classe inteira:
+**a troca da paleta era uma ANIMAÇÃO**, e o loader saía no meio dela.
+
+`transition:none` no meio de uma transição a CANCELA e salta para o valor final.
+O congelamento, que existe para tornar a medida estável, é literalmente o
+apagador do defeito. Medido num tenant azul, no instante em que `app-booting`
+sai: **15 elementos ainda laranja**, todos com `transitionDuration` em curso e
+todos azuis 800 ms depois.
+
+A regra: quando o objeto da medida é a ANIMAÇÃO (ou o instante em que ela
+acaba), o congelamento tem de sair — e isso vira parâmetro do helper, com o
+motivo escrito. Aconteceu de novo no mesmo dia, com `animation:none` apagando o
+`animation-name` que o teste da barra de progresso afirmava: o teste reprovou o
+app JÁ CORRIGIDO.
+
+O irmão disso: `page.goto` com o `waitUntil` padrão (`load`) volta **depois** do
+boot inteiro. Para afirmar sobre o instante da revelação, é `commit`.
+
+### 14.2 A LARGURA PADRÃO DO PLAYWRIGHT NÃO É A DESTE APP
+
+1280px. Este app é de celular e boa parte do CSS mora em
+`@media(max-width:767px)`. Um teste sem `setViewportSize` lê um layout que o
+cliente **nunca vê**. Medido com a mesma varredura de cor chumbada, no mesmo
+tenant azul:
+
+    1280px -> 0 elementos       414px -> 8 elementos
+
+E reinjetando um `#F36F21` dentro de um `@media(max-width:767px)`: o teste em 414
+acusa, o de 1280 não vê nada. A guarda mais antiga do white-label passou meses
+medindo a largura errada.
+
+O mesmo pegou a hierarquia do `#logoutConfirm`: em 1280 o "Sair" já era vermelho
+(a regra genérica de `operation.css`), e a inversão que o cliente via só existia
+abaixo de 768. Uma tela com duas aparências e nenhuma decisão.
+
+**Antes de afirmar qualquer coisa sobre pixel ou cor deste app, ponha o
+viewport.**
+
+### 14.3 `css-usage.mjs` NÃO VÊ CLASSE MONTADA EM RUNTIME
+
+Já estava escrito que só a metade ESTÁTICA autoriza apagar. Faltava o outro lado
+da mesma frase: **um nome que o JS COMPÕE não existe no corpus**.
+
+    `prof-order-card--${status.tone}-tone`   ->  prof-order-card--active-tone
+    `prof-order-status--${status.tone}`      ->  prof-order-status--success
+
+A string completa não aparece em lugar nenhum do código-fonte. Em 79ab508
+(29/08/2026) saíram por isso a barra de progresso do cartão de pedido em
+andamento e as duas cores de estado do mesmo cartão — quatro regras vivas, num
+commit de limpeza correto em tudo o mais.
+
+**A assinatura desse corte fica no arquivo:** o `@keyframes prof-order-progress`
+sobreviveu ÓRFÃO, porque o nome dele aparecia literalmente na regra que o usava e
+a regra não. Um keyframe, uma variável ou um modificador sem dono é o rastro de
+uma família apagada pela metade. Procure por eles antes de acreditar num
+relatório de regra morta.
+
+### 14.4 SENTINELA QUE VIRA IDENTIDADE
+
+`currentPickerItem()` carimbava `id: '__current__'` em todo endereço sem id do
+backend. O sentinela nasceu para UM endereço — o ativo — e numa conta que nunca
+sincronizou a lista INTEIRA é assim. Três coisas quebraram juntas: o cartão
+destacado, o aviso de "endereço ativo" (que passou a valer para todos, travando
+a exclusão de qualquer um) e a própria exclusão, que filtra a lista local por
+esse id e teria apagado todos de uma vez.
+
+Um valor que significa "não sei qual" não pode ser usado como chave. Sem id do
+backend, a identidade sai de `client_reference` ou da impressão digital do
+endereço.
+
+### 14.5 CÓDIGO DO BACKEND NA TELA: A VARREDURA INTEIRA
+
+`ineligibility_reason` (`CouponPreviewResponse`) é `string | null` no contrato e
+CÓDIGO na prática — os treze `reason=` de `coupon_service.py`. O front mostrava
+cru: o cliente lia `minimum_order_not_reached` num toast.
+
+A varredura da classe inteira, com o veredito de cada sítio:
+
+| onde | o que vazava | situação |
+|---|---|---|
+| `restaurant-page.js` (preview de cupom) | os 13 `reason=` | corrigido (`services/coupon-reason.js`, tabela NOMINAL) |
+| `restaurant-page.js` `orderStatusLabel()` | `String(status)` no fallback | corrigido |
+| `screens/profile-screen.js` | o código enfeitado por `replace(/_/g,' ')`, em inglês | corrigido |
+| `restaurant-auth-flow.js:380` | `item.msg` do 422 do FastAPI (texto do pydantic, em inglês) | ACHADO, aberto |
+| `club-service.js` `COUPON_STATES` | conhece 3 dos 5 `CustomerCouponState`; os outros dois somem da lista | ACHADO, aberto |
+| `restaurant-pix-flow.js` | `PaymentErrorCode` ao lado da frase | por decisão (referência para citar ao restaurante) |
+
+O que a varredura provou estar CERTO: `status_detail` do gateway (tabela
+nominal), tipo e estado de cashback, os códigos do entregador (lidos como
+controle de fluxo, nunca escritos) e os **131** `detail="..."` do backend —
+todos frase em português, nenhum código. Os sítios de `apiErrorMessage()` estão
+seguros.
+
+`orderStatusLabel()` estava errada dos DOIS lados contra `ORDER_STATUSES`:
+faltavam `accepted`, `rejected`, `out_for_delivery` e `completed` (quatro dos
+oito) e sobravam quatro nomes fantasma. Metade dos status reais caía no código
+cru, na tela do pedido recém-feito.
+
+### 14.6 ALTURA FIXA SOBRE DADO DO LOJISTA
+
+`height:301px` na aba Pagamento da tela de informações. A lista de formas de
+pagamento vem de `/info` e é DA LOJA: com o fixture de produção o conteúdo mede
+321px e vaza para fora do cartão branco; com uma lista curta sobra uma faixa
+branca. Num app white-label isso é sempre defeito — o `min-height` é o número
+calibrado, o `height` cresce.
+
+Da mesma família, medido no mesmo dia: um botão com `height:45px!important`
+dentro de um flex de COLUNA encolheu para **15px** quando a lista passou da tela.
+`height` num item flex é a BASE, e o `flex-shrink:1` do padrão come dela. Quem
+protege é `flex-shrink:0` — o idioma já existia em `.cart-location-alert`.
+
+### 14.7 FIXTURE QUE CODIFICA UM CONTRATO QUE NÃO EXISTE (de novo)
+
+- dois specs mandavam `ineligibility_reason` como FRASE pronta, onde o backend
+  manda um código. Foi essa fixture que deixou o front mostrar o campo cru com
+  o e2e verde por meses.
+- `tests/fixtures/orders.json` trazia `status: "delivered"`, que não está em
+  `ORDER_STATUSES` (o nome do contrato é `completed`).
+
+O tipo de produção é parte do teste. Fixture escrita a partir do que o código
+espera confirma a leitura errada para sempre.
+
+### 14.8 REVERSÃO CONSCIENTE PRECISA DIZER QUE É
+
+O "Usar cupom" da Home saiu em 13a2b5f com motivo escrito e voltou em 03/09 por
+decisão do dono. O que faz a volta ser segura não é o markup: é o teste novo que
+guarda o motivo ANTIGO — "tocar em Usar cupom na Home não fala com
+`/coupons/preview`". O medo era APLICAR sem preview; o botão leva à tela de
+leitura, e a aplicação segue no checkout.
+
+Quando uma decisão for invertida, o commit diz que é inversão, e o teste que
+protegia a decisão antiga é **invertido, não apagado** — o que dela continua
+valendo vira asserção própria.
+
+### 14.9 O CONTRATO MUDOU DUAS VEZES NUMA TARDE
+
+`api-contract.test.js` ficou vermelho no início da rodada (login social do
+Google) e de novo uma hora depois (exclusão de conta por código de e-mail, para
+a conta que nasce sem senha). As duas vezes o caminho foi o mesmo:
+`npm run api:generate`, commitar os dois arquivos, commit próprio. Se você tem
+os dois repositórios ao lado, rode `npm run test` ANTES de começar — e de novo
+antes de fechar.

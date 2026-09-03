@@ -97,6 +97,16 @@ prova ao contrário na mão. `css-important` tem três vetos — runtime, token
 estático e **um teste que exige o texto da regra** (o adversário nem sempre
 está no CSS).
 
+E a metade estática tem um buraco que custou quatro regras vivas em 29/08/2026:
+**classe MONTADA em runtime não existe no corpus.** `prof-order-card--${tone}`
+nunca aparece inteira no código, então `prof-order-card--active-tone` "está
+morta" para uma varredura por nome. O rastro fica no arquivo — um `@keyframes`
+(ou uma variável, ou um modificador) órfão é família apagada pela metade.
+
+**E ponha o viewport antes de medir qualquer coisa.** A largura padrão do
+Playwright é 1280 e este app é de celular: a varredura de cor chumbada achou
+**0** elementos em 1280 e **8** em 414, na mesma build.
+
 E a prova de que nada mudou continua sendo `node tools/capture-screens.mjs`
 (antes, depois, `--diff`), hoje com **58 telas** e **69 propriedades** — não
 todas. Antes de citar um "Nenhuma diferença" como prova, confira se a

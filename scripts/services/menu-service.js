@@ -179,28 +179,32 @@
       branch_id: branchId,
       settings: raw.settings || {},
       branches: normalizeBranches(raw),
+      // BANNER NAO TEM TEXTO NO CONTRATO. `BannerResponse` declara sete
+      // campos — banner_type, id, image_path, image_url, is_active,
+      // restaurant_id, sort_order — e nenhum deles e titulo, nome, subtitulo ou
+      // descricao. Ate 02/09/2026 esta normalizacao publicava
+      // `title: banner.title || banner.name || ''` e o par dele para subtitulo:
+      // duas chaves que valiam '' em 100% das respostas, e que faziam quem le
+      // este arquivo acreditar que existe texto de banner vindo da API.
+      // Quem escreve o alt do hero e o nome do restaurante, que existe.
       banners: sourceBanners
         .filter(banner => banner.is_active !== false)
         .map((banner, index) => ({
           ...banner,
-          id: banner.id || banner.uuid || `banner-${index}`,
-          title: banner.title || banner.name || '',
-          subtitle: banner.subtitle || banner.description || '',
-          image_url: banner.image_url || banner.imageUrl || banner.image || banner.image_path || '',
-          image_path: banner.image_path || banner.image || banner.image_url || banner.imageUrl || '',
-          sort_order: Number(banner.sort_order ?? banner.order ?? index) // 0 e ordem
+          id: banner.id || `banner-${index}`,
+          image_url: banner.image_url || banner.image_path || '',
+          image_path: banner.image_path || banner.image_url || '',
+          sort_order: Number(banner.sort_order ?? index) // 0 e ordem
         }))
         .sort((a, b) => a.sort_order - b.sort_order),
       highlight_banners: sourceHighlightBanners
         .filter(banner => banner.is_active !== false)
         .map((banner, index) => ({
           ...banner,
-          id: banner.id || banner.uuid || `highlight-${index}`,
-          title: banner.title || banner.name || '',
-          subtitle: banner.subtitle || banner.description || '',
-          image_url: banner.image_url || banner.imageUrl || banner.image || banner.image_path || '',
-          image_path: banner.image_path || banner.image || banner.image_url || banner.imageUrl || '',
-          sort_order: Number(banner.sort_order ?? banner.order ?? index) // 0 e ordem
+          id: banner.id || `highlight-${index}`,
+          image_url: banner.image_url || banner.image_path || '',
+          image_path: banner.image_path || banner.image_url || '',
+          sort_order: Number(banner.sort_order ?? index) // 0 e ordem
         }))
         .sort((a, b) => a.sort_order - b.sort_order),
       // Home keeps the legacy public menu feed as its source. Do not apply

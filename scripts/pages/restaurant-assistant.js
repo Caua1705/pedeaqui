@@ -654,7 +654,7 @@
       session_id: ensureAssistantSessionId(),
       message
     };
-    const apiResponse = await window.PedeAquiApiClient.request('/chat', {
+    const apiResponse = await window.PedeAquiApiClient.request(window.PedeAquiApiRoutes.chat(), {
       method: 'POST',
       body: JSON.stringify(payload),
       signal,
@@ -1341,7 +1341,7 @@
     actions.dataset.feedbackSent = '1';
 
     try {
-      await window.PedeAquiApiClient.post('/chat/feedback', {
+      await window.PedeAquiApiClient.post(window.PedeAquiApiRoutes.chatFeedback(), {
         restaurant_id: getAssistantRestaurantId(),
         session_id: ensureAssistantSessionId(),
         user_message: context.user_message,

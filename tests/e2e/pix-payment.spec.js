@@ -164,25 +164,63 @@ test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', 
   //
   // HONESTIDADE SOBRE ESTA CORREÇÃO. A falha observada em 31/08/2026 leu
   // `cta.x - footer.x = 307,6` onde o assentado é 20 — e com a largura e a
-  // altura do botão JÁ corretas. Como o CTA é centrado no rodapé, isso implica
-  // um rodapé de ~989 px, largura que não se reproduz aqui de jeito nenhum:
-  // medido, 1280 dá 414 (e offset 20), sem o teto de 414 dá 1280 (offset 453),
-  // e 390 dá 390 (offset 16). A hipótese óbvia — medir no meio da animação de
-  // entrada — foi TESTADA e reprovada: com a transição alongada para 4 s pelo
-  // lado do teste, os dois braços (medir na hora e medir depois de assentar)
-  // deram 20, porque rodapé e botão viajam na MESMA transformação e a distância
-  // entre eles não muda enquanto o painel desliza.
+  // altura do botão JÁ corretas. A hipótese óbvia — medir no meio da animação
+  // de entrada — foi TESTADA e reprovada: com a transição alongada para 4 s
+  // pelo lado do teste, os dois braços (medir na hora e medir depois de
+  // assentar) deram 20, porque rodapé e botão viajam na MESMA transformação e a
+  // distância entre eles não muda enquanto o painel desliza.
   //
-  // Ou seja: a causa exata continua sem explicação, e o artefato daquela
-  // execução já foi sobrescrito. As duas mudanças deste commit fecham os dois
-  // caminhos CONHECIDOS pelos quais o número podia andar — viewport não
-  // declarada e medição antes de a caixa parar — sem fingir que qualquer uma
-  // delas seja a causa provada. Este teste segue na lista de observação.
+  // EM 02/09/2026 O 307,6 FOI MEDIDO ATÉ O FIM, e o que saiu é mais forte que
+  // "sem explicação": ele é ARITMETICAMENTE INALCANÇÁVEL neste CSS.
+  //
+  // A lei, conferida por sonda em quatro larguras (1280, 989, 767 e 390), é
+  //
+  //     offset = (larguraDoPainel - 374) / 2
+  //
+  // porque o rodapé tem 16px de padding e o CTA tem `width:374px; margin:0 auto`
+  // (styles/pix.css:682). Os três regimes que este repositório sabe produzir:
+  //
+  //   | regime                                   | painel   | offset  |
+  //   |------------------------------------------|----------|---------|
+  //   | pix.css valendo, viewport >= 768         | 414      | **20**  |
+  //   | pix.css valendo, viewport <= 767 (@media)| viewport | <= 196,5|
+  //   | pix.css AUSENTE (.modal de restaurant.css| 600      | 113     |
+  //   |   com max-width:600px)                   |          |         |
+  //
+  // 307,6 exige um painel de 989,2 px, e nenhum dos três chega lá: acima de 767
+  // o teto de 414 é absoluto, e abaixo dele o máximo possível é (767-374)/2 =
+  // 196,5. Não há `@media`, `zoom` nem `.modal--fs` neste repositório que solte
+  // o teto numa largura de ~989 (conferido folha por folha). O número não veio
+  // de nenhuma combinação de viewport com folha de estilo — veio de uma leitura
+  // de `boundingBox()` sobre um layout que o CSSOM já não descrevia.
+  //
+  // E o mecanismo foi REPRODUZIDO, não deduzido: com
+  // `#pixPaymentModal .modal{max-width:989.2px!important}` injetado por
+  // `addStyleTag`, o Chromium arredonda para 989,1875 e esta linha lê
+  // **307,59375** — o mesmo número, até a última casa, do vermelho de
+  // 31/08/2026. Largura e altura do CTA seguem corretas na injeção, exatamente
+  // como estavam naquela falha. Ou seja: o QUE aconteceu está provado (o painel
+  // ficou com 989,19 px); o POR QUE ele ficou continua aberto. Se o vermelho
+  // voltar, a largura é o que se procura.
+  //
+  // Por isso este teste NÃO foi para quarentena: ele passou 20 de 20 isoladas
+  // sob contenção de 4 workers (durações de 7 a 17 s, ou seja com a máquina de
+  // fato ocupada) e duas suítes completas. Quarentena aqui trocaria uma dúvida
+  // por uma perda real — ele é quem guarda a geometria do CTA, o peso de fonte
+  // que o Inter realmente carrega e a cor da marca em três elementos.
+  //
+  // O QUE MUDOU é o diagnóstico. A afirmação do offset sozinha embute TRÊS
+  // fatos (o painel tem 414, o CTA tem 374, o CTA está centrado) e, quando
+  // falhou, não nomeou nenhum. A largura do rodapé passa a ser afirmada ANTES:
+  // se o 307,6 voltar, a linha que falha diz `expected 414, received 989.2` em
+  // vez de um número sem dono.
   await esperarAssentar(page.locator('#pixPaymentModal .modal'));
 
   // Mesmo padrão dos CTAs da sacola e da confirmação do pedido.
   const ctaBox = await cta.boundingBox();
   const footerBox = await page.locator('#pixFooter').boundingBox();
+  // Primeiro o fato que o offset embute em silêncio: o painel está no teto.
+  expect(footerBox.width, 'o painel do Pix perdeu o teto de 414px').toBeCloseTo(414, 1);
   expect(ctaBox.width).toBeCloseTo(374, 1);
   expect(ctaBox.height).toBeCloseTo(45, 1);
   expect(ctaBox.x - footerBox.x).toBeCloseTo(20, 1);

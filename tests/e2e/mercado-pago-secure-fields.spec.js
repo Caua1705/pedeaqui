@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ } from './helpers.js';
+import { mockApi, addH2OToCart, RESTAURANT_URL, SLUG, BRANCH_MATRIZ, validadeFutura } from './helpers.js';
 
 // Opt-in: usa a chave pública do ambiente escolhido sem acoplar o CI à produção.
 const publicKey = process.env.PAYMENT_PUBLIC_KEY;
@@ -114,8 +114,8 @@ test('Secure Fields real tokeniza o cartão de teste e a requisição leva apena
   await page.keyboard.type('5031433215406351');
   await expect(page.frameLocator('#mpCardNumber iframe').locator('#cardNumber')).toHaveValue('5031 4332 1540 6351');
   await page.locator('#mpExpirationDate').click();
-  await page.keyboard.type('11/31');
-  await expect(page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate')).toHaveValue('11/31');
+  await page.keyboard.type(validadeFutura());
+  await expect(page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate')).toHaveValue(validadeFutura());
   await page.locator('#mpSecurityCode').click();
   await page.keyboard.type('123');
   await expect(page.frameLocator('#mpSecurityCode iframe').locator('#securityCode')).toHaveValue('123');
@@ -180,7 +180,7 @@ test('Secure Fields real informa Luhn, validade futura e tamanho do CVV no campo
   await page.waitForTimeout(1500);
   await page.keyboard.type('11111112', { delay: 30 });
   await page.frameLocator('#mpExpirationDate iframe').locator('#expirationDate').click();
-  await page.keyboard.type('11/31');
+  await page.keyboard.type(validadeFutura());
   await page.frameLocator('#mpSecurityCode iframe').locator('#securityCode').click();
   await page.keyboard.type('123');
   await page.locator('#cardholderName').fill('APRO');

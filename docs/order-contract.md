@@ -293,13 +293,29 @@ mensagem pode levar o cliente a refazê-lo.
    endereçada pelo `tracking_token`). Logo, quando o cartão é recusado, o pedido **já está
    gravado** — sem pagamento.
    O que o front faz hoje: não mostra tela de pedido feito, devolve o cliente à sacola com
-   o motivo da recusa e **não toca nos itens** (ver `failCardCheckout`). O que ele **não**
-   pode fazer: cancelar o pedido — não existe rota de cliente para isso (o único `PATCH` de
-   status é `/admin/orders/{id}/status`).
-   **Pendência de backend:** cancelar (ou não expor à cozinha) o pedido `payment_flow:
-   online` cuja cobrança de cartão voltou `failed`. Enquanto isso não existir, uma recusa
-   de cartão deixa um pedido registrado e não pago. Uma rota de cancelamento pelo
-   `tracking_token` também resolveria, e aí o front a chamaria em `failCardCheckout`.
+   o motivo da recusa e **não toca nos itens** (ver `failCardCheckout`).
+
+   **ATUALIZADO EM 02/09/2026 — A ROTA DE CANCELAMENTO PELO CLIENTE EXISTE.**
+   `POST /restaurants/{slug}/orders/track/{tracking_token}/cancel`: sem login (o
+   `tracking_token` autoriza), válida em `pending` e `accepted`, 409 a partir de `preparing`,
+   e ela **estorna o pagamento online, devolve o cupom e devolve o cashback resgatado**.
+   Ela entrou no contrato sem ninguém notar, porque o `api-contract.test.js` conferia um
+   sentido só — rota que o front chama existe no spec, nunca o contrário. Hoje ele também
+   **avisa** sobre rota publicada que o front ignora.
+
+   O front já a usa: o detalhe do pedido no Perfil oferece **Cancelar pedido** dentro da
+   janela, com confirmação e com o texto do que acontece com pagamento/cupom/cashback
+   (`screens/profile-screen.js`, `tests/e2e/order-cancel.spec.js`).
+
+   **O que continua aberto, e são duas coisas diferentes:**
+   1. **Chamar a rota em `failCardCheckout`** — cancelar sozinho o pedido cuja cobrança de
+      cartão voltou `failed`, para ele não chegar à cozinha. **Não feito**: é decisão de
+      produto, porque hoje o cliente volta à sacola COM os itens e pode tentar outro cartão.
+      Cancelar automaticamente ajuda se ele desistir e atrapalha se ele for tentar de novo.
+   2. **O `tracking_token` não vem no pedido do cliente logado** (`OrderDetailResponse` não
+      o publica). Por isso o botão só aparece no aparelho que fez o pedido — quem pediu no
+      celular não cancela pelo computador. **Pendência de backend**, registrada no
+      scratchpad da rodada.
 14. **⚠️ `/coupons/preview` ORÇA A TAXA DE SERVIÇO, OU NÃO? — pendência de backend,
    e é dinheiro que o cliente vê.** O front manda `subtotal` e `delivery_fee`, e
    **só isso**: `CouponPreviewRequest` tem `additionalProperties: false` e cinco

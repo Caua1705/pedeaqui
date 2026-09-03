@@ -39,8 +39,8 @@
     const source = coupon || {};
     const title = String(source.title || '').trim();
     if (title) return title;
-    const type = String(source.discount_type || source.type || '').toLowerCase();
-    const value = couponAmount(source.discount_value ?? source.value ?? source.amount);
+    const type = String(source.discount_type || '').toLowerCase();
+    const value = couponAmount(source.discount_value);
     if (type === 'percent' || type === 'percentage') return `${value.toLocaleString('pt-BR')}% OFF`;
     if (type === 'free_delivery' || type === 'free_shipping') return 'Frete grátis';
     if (value > 0) return `${window.PedeAquiCurrency.formatCurrency(value)} OFF`;

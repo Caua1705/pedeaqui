@@ -85,6 +85,70 @@
     );
   }
 
+  /**
+   * O CLIENTE DESISTINDO DO PRÓPRIO PEDIDO, antes do preparo.
+   *
+   * Quem autoriza é o `tracking_token` do path, e **não** o Bearer: a rota não
+   * declara `security`, e é assim de propósito — pedido de convidado é caso
+   * normal, e exigir conta aqui deixaria o convidado sem saída. Por isso este
+   * método NÃO manda `authOptions()`: mandar um header que a rota não pede é
+   * vazar o token do cliente numa chamada que não precisa dele.
+   *
+   * O corpo é OPCIONAL e o `reason` dentro dele também. Quando não há motivo,
+   * não se manda corpo nenhum — um `{reason: null}` seria a mesma coisa com
+   * mais bytes, e `CustomerCancelOrderRequest` não exige campo algum.
+   *
+   * O 409 é o caso que a tela precisa distinguir: não é erro de rede nem token
+   * inválido, é **o pedido já saiu da janela** (entrou em `preparing`, ou já
+   * foi cancelado por um clique anterior). Quem chama precisa dizer "o
+   * restaurante já começou a preparar" em vez de "tente de novo", e por isso o
+   * erro sobe com o `status` intacto — `api-error.js` já o preserva.
+   *
+   * @param {string} restaurantSlug
+   * @param {string} trackingToken
+   * @param {{ reason?: string }} [options]
+   * @returns {Promise<object>} OrderDetailResponse com o pedido já cancelado
+   */
+  async function cancelOrder(restaurantSlug, trackingToken, options = {}) {
+    const reason = String(options.reason ?? '').trim();
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.cancelOrder(restaurantSlug, trackingToken),
+      {
+        method: 'POST',
+        // `maxLength: 150` é do contrato. Cortar aqui é melhor que levar um 422
+        // por causa de um texto colado.
+        ...(reason ? { body: JSON.stringify({ reason: reason.slice(0, 150) }) } : {}),
+        timeout: 15000
+      }
+    );
+  }
+
+  /**
+   * O MESMO cancelamento, pela porta do cliente LOGADO.
+   *
+   * Publicada pelo backend em 02/09/2026, depois de esta limitação ter sido
+   * escrita como pedido: o `tracking_token` só vive no `localStorage` do
+   * aparelho que fez o pedido, então quem pedia pelo celular e abria o app no
+   * computador via o pedido em `accepted` e não tinha como desistir.
+   *
+   * Aqui o vínculo sai de `orders.customer_id` e quem autoriza é o Bearer —
+   * por isso, ao contrário de `cancelOrder`, esta manda `authOptions()`.
+   *
+   * As duas convivem de propósito: a do token é a única saída do convidado.
+   */
+  async function cancelCustomerOrder(orderId, options = {}) {
+    const reason = String(options.reason ?? '').trim();
+    return window.PedeAquiApiClient.request(
+      window.PedeAquiApiRoutes.cancelCustomerOrder(orderId),
+      {
+        method: 'POST',
+        ...(reason ? { body: JSON.stringify({ reason: reason.slice(0, 150) }) } : {}),
+        timeout: 15000,
+        ...authOptions()
+      }
+    );
+  }
+
   async function getCustomerOrders() {
     const result = await window.PedeAquiCustomerAuth?.getCustomerOrders?.();
     return Array.isArray(result) ? result : (result?.orders || result?.items || result?.data || []);
@@ -102,6 +166,8 @@
     createOrder,
     trackOrder,
     startOrderPayment,
+    cancelOrder,
+    cancelCustomerOrder,
     getCustomerOrders,
     getCustomerOrder
   };

@@ -5,13 +5,14 @@
 //  `couponDetailCoupon` (aberto para LEITURA) mora AQUI, dentro da tela;
 //  `selectedCoupon` (APLICADO à sacola, vai no payload) mora no
 //  restaurant-page, e a folha só o toca pelas três portas da shell
-//  (armSelectedCoupon / restoreSelectedCoupon / persistCouponChoice).
+//  (armSelectedCoupon / restoreSelectedCoupon).
 //  Fechar a leitura nunca desaplica o que já valia.
 // ============================================================================
 (function () {
   let $, esc, fmt;
   let app, shell;
   const UI = () => window.PedeAquiRestaurantUi;
+  const CTA = () => window.PedeAquiCouponCta;
 
   let couponDetailCoupon = null;
   let couponDetailScrollY = 0;
@@ -54,7 +55,7 @@
 
   function couponRules(coupon) {
     const rules = [];
-    const minimum = couponAmount(coupon.min_order_value ?? coupon.minimum_order_value ?? coupon.min_subtotal);
+    const minimum = couponAmount(coupon.min_order_value);
     const discount = couponAmount(coupon.discount_amount);
     const missing = couponAmount(coupon.missing_amount);
     // O desconto desta sacola, quando o backend já o decidiu. Vem antes do
@@ -71,8 +72,10 @@
     if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
     // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
     // vitrine o campo não vinha, então ninguém tinha visto ainda; o feed do
-    // cliente manda `valid_until` em todo cupom.
-    const validUntil = couponValidUntil(coupon.expires_at || coupon.valid_until);
+    // cliente manda `valid_until` em todo cupom. `expires_at` estava NA FRENTE
+    // dele e não existe em contrato nenhum: lia `undefined` sempre, e no dia em
+    // que o backend publicasse esse nome venceria o campo certo.
+    const validUntil = couponValidUntil(coupon.valid_until);
     if (validUntil) rules.push(`Válido até ${validUntil}`);
     // `max_discount` saiu de propósito do contrato do cliente: teto é limite
     // interno da campanha, e publicá-lo só serviria para refazer a conta.
@@ -112,10 +115,33 @@
     }
     if ($('couponDetailTitle')) $('couponDetailTitle').textContent = coupon.name || coupon.title || label;
     if ($('couponDetailCode')) $('couponDetailCode').textContent = coupon.code || 'CUPOM';
+    // O BOTAO DIZ O QUE VAI ACONTECER. Ate 02/09/2026 ele era "Usar cupom"
+    // escrito no restaurant.html, nos quatro casos — e o caso mais caro era o
+    // da sacola vazia, em que "usar" guardava o cupom armado sem preview
+    // nenhum. Agora o rotulo sai do MESMO decisor do card do Clube.
+    aplicarRotuloDoBotao(coupon);
     if ($('couponDetailMin')) $('couponDetailMin').textContent = minText;
     const rules = $('couponDetailRules');
     if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
     $('couponDetailOverlay')?.classList.add('active');
+  }
+
+  /** O rotulo e o destino do CTA, do decisor unico (services/coupon-cta.js). */
+  function ctaDoCupom(coupon) {
+    return window.PedeAquiCouponCta.couponCta(coupon, {
+      // `app.cart` e GETTER (skill §9, regra 3): ler aqui, na chamada, e nao
+      // guardar — a sacola muda entre uma abertura da folha e a seguinte.
+      sacolaVazia: !app.cart.length,
+      fmt
+    });
+  }
+
+  function aplicarRotuloDoBotao(coupon) {
+    const botao = document.querySelector('.coupon-detail-use');
+    if (!botao) return;
+    const { acao, rotulo } = ctaDoCupom(coupon);
+    botao.textContent = rotulo;
+    botao.dataset.couponAcao = acao;
   }
 
   function closeCouponDetail(event) {
@@ -143,37 +169,39 @@
   async function confirmCouponDetail() {
     const coupon = couponDetailCoupon;
     if (!coupon) return;
+    const { acao } = ctaDoCupom(coupon);
+
     // `requires_login` era do contrato antigo e sumiu junto com
     // /coupons/available. Como o campo deixou de existir, a comparação
     // `=== true` passou a ser sempre falsa: o cupom que exige conta seguia
     // direto para o preview, que respondia 401, e o cliente via "Não foi
     // possível aplicar este cupom" em vez da tela de login.
-    if (coupon.state === 'login_required' && !app.isLogged()) {
+    if (acao === CTA().ACOES.ENTRAR && !app.isLogged()) {
       shell.openLoginScreen('coupon');
       return;
     }
-    // O cupom que ainda não cabe nesta sacola não vira tentativa: o backend já
-    // disse quanto falta, e gastar uma requisição para ouvir a mesma coisa só
-    // adiaria o aviso.
-    if (coupon.state === 'missing_amount') {
-      const missing = couponAmount(coupon.missing_amount);
-      shell.showCouponNotice(missing > 0
-        ? `Faltam ${fmt(missing)} na sacola para usar este cupom.`
-        : 'Este cupom ainda não vale para esta sacola.');
+
+    // NADA SE APLICA FORA DO CHECKOUT — nem o cupom que "caberia".
+    //
+    // São dois caminhos que davam no mesmo lugar errado. O do
+    // `missing_amount` só avisava, e a pessoa ficava na folha sem o que fazer.
+    // O da SACOLA VAZIA era pior: ele ARMAVA o cupom
+    // (`armSelectedCoupon` + `persistCouponChoice`) e dizia "Cupom
+    // selecionado. Adicione produtos à sacola para usar" — um cupom aplicado
+    // sem preview nenhum, que seguia no `coupon_id` do pedido e que, sendo de
+    // uso único, o backend queima na primeira tentativa.
+    //
+    // Agora os dois levam ao cardápio, que é a ação que de fato destrava, e
+    // NENHUM dos dois toca em `selectedCoupon`.
+    if (acao === CTA().ACOES.VER_CARDAPIO) {
+      const falta = couponAmount(coupon.missing_amount);
+      closeCouponDetail();
+      await shell.mobNavMenu();
+      if (falta > 0) shell.showCouponNotice(`Faltam ${fmt(falta)} na sacola para usar este cupom.`);
       return;
     }
 
     const previousCoupon = shell.armSelectedCoupon(coupon);
-
-    if (!app.cart.length) {
-      // Escolha explícita com a sacola vazia: fica guardado para quando houver
-      // itens. É o único caso em que armar sem preview é o que a pessoa pediu.
-      shell.persistCouponChoice();
-      closeCouponDetail();
-      await shell.mobNavMenu();
-      shell.showCouponNotice('Cupom selecionado. Adicione produtos à sacola para usar.');
-      return;
-    }
 
     const button = document.querySelector('.coupon-detail-use');
     if (button) {
@@ -183,7 +211,7 @@
     const preview = await shell.previewSelectedCoupon();
     if (button) {
       button.disabled = false;
-      button.textContent = 'Usar cupom';
+      button.textContent = ctaDoCupom(coupon).rotulo;
     }
     if (!preview) {
       // Recusado, inelegível ou falha de rede: a sacola volta EXATAMENTE ao que
@@ -206,7 +234,7 @@
     ({ $, esc, fmt } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['getCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'persistCouponChoice', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'showCouponNotice', 'mobNavMenu']) {
+    for (const nome of ['getCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'showCouponNotice', 'mobNavMenu']) {
       if (typeof shell[nome] !== 'function') throw new Error(`coupon-detail-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({

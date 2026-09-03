@@ -75,7 +75,26 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   await expect(aplicavel.locator('.club-available-coupon-badge')).toHaveText(
     'Selecionado para você'
   );
-  await expect(aplicavel.locator('.club-available-coupon-use')).toHaveText('Usar cupom');
+  // E OS OUTROS DOIS NÃO TÊM TARJA NENHUMA — nem "Cupom disponível" (que todo
+  // card tinha, e por isso não distinguia nada) nem "Frete grátis" (que repetia
+  // o `title` do próprio card, dizendo a mesma coisa duas vezes). O contrato
+  // tem UM selo, `selected_for_you`, e `CustomerCouponLabel` diz com todas as
+  // letras que "exclusivo" não existe. Uma tarja para todos é ruído com
+  // aparência de informação.
+  await expect(cards.nth(1).locator('.club-available-coupon-badge')).toHaveCount(0);
+  await expect(cards.nth(2).locator('.club-available-coupon-badge')).toHaveCount(0);
+  // A SACOLA DESTE TESTE ESTÁ VAZIA, e é isso que o botão diz.
+  //
+  // Até 02/09/2026 ele dizia "Usar cupom" aqui, e confirmar GUARDAVA o cupom
+  // armado ("Cupom selecionado. Adicione produtos à sacola para usar") — um
+  // cupom aplicado sem preview nenhum, que seguia no coupon_id do pedido e
+  // que, sendo de uso único, o backend queima na primeira tentativa. A regra
+  // do fluxo é que cupom só se aplica quando existe sacola; com ela vazia o
+  // botão leva ao cardápio, que é a ação que de fato destrava.
+  //
+  // O caso com sacola — o que faz o botão dizer "Aplicar cupom" — está no
+  // teste logo abaixo.
+  await expect(aplicavel.locator('.club-available-coupon-use')).toHaveText('Ver cardápio');
   // O desconto JÁ CALCULADO pelo backend para esta sacola.
   await expect(aplicavel.locator('.club-available-coupon-meta')).toContainText(
     'Desconto de R$ 1,06'
@@ -96,6 +115,135 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   // Nenhum card repete a mesma frase duas vezes: no contrato do cliente `title`
   // JÁ É o rótulo do desconto, e não há nome de campanha separado.
   await expect(aplicavel.locator('h3')).toHaveCount(0);
+});
+
+test('o Clube abre pelos CUPONS, e a faixa da Home não oferece usar', async ({ page }) => {
+  // Duas decisões do fluxo de cupons, guardadas juntas porque as duas dizem a
+  // mesma coisa: cupom não se usa fora do checkout, e o Clube É a lista.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+
+  // A FAIXA DA HOME DIVULGA. Ela lê `menu.coupons` (PublicCouponResponse), que
+  // não tem `state` — o backend nunca julgou aquele cupom contra esta pessoa —
+  // e do lado da Home a sacola quase sempre está vazia, que é o caso em que
+  // aplicar armava um cupom sem preview nenhum.
+  await expect(page.locator('#couponRail .coupon-card').first()).toBeVisible();
+  await expect(
+    page.locator('#couponRail .coupon-use-btn'),
+    'a faixa da Home não pode oferecer usar um cupom que ninguém avaliou'
+  ).toHaveCount(0);
+
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+  await expect(page.locator('.club-available-coupon-card').first()).toBeVisible();
+
+  // A LISTA VEM ANTES DO SALDO. Comparação por posição no documento, e não por
+  // coordenada: `compareDocumentPosition` responde sobre a ORDEM, que é o que
+  // a decisão diz, sem depender de a tela ter assentado num pixel.
+  const cuponsAntesDoSaldo = await page.evaluate(() => {
+    const cupons = document.querySelector('.club-coupons-section');
+    const saldo = document.querySelector('.club-cashback-panel');
+    if (!cupons || !saldo) return null;
+    // Node.DOCUMENT_POSITION_FOLLOWING = 4: o saldo vem DEPOIS dos cupons.
+    return (cupons.compareDocumentPosition(saldo) & 4) === 4;
+  });
+  expect(cuponsAntesDoSaldo, 'o saldo de cashback voltou para o topo do Clube').toBe(true);
+
+  // E o saldo continua ALCANÇÁVEL: o extrato só tem esta porta, e apagar o
+  // cartão deixaria aquela tela sem entrada nenhuma.
+  await expect(page.locator('.club-cashback-icon')).toHaveCount(1);
+});
+
+test('a linha "Cupons" do Perfil leva ao Clube, e não a uma tela que mente', async ({ page }) => {
+  // Até 02/09/2026 ela abria #profSubcupons: markup ESTÁTICO dizendo "Nenhum
+  // cupom disponível", sem nenhum código que a preenchesse. Ela respondia isso
+  // para quem tinha cupons e para quem não tinha, sempre, desde que existe.
+  //
+  // A lista tem UM dono. Duas superfícies desenhando o mesmo dado é como o
+  // rótulo do cupom chegou a ter duas implementações anunciando descontos
+  // diferentes para o MESMO cupom (ver services/coupon-format.js).
+  // #profSubcupons ERA INALCANÇÁVEL DOS DOIS LADOS, e a sonda de 02/09/2026
+  // mostrou que por um motivo mais forte do que se supunha: o Perfil é SEMPRE
+  // remontado em JS (`prof-account-page`, restaurant-page.js:5286), tanto para
+  // o visitante quanto para quem está logado, e a lista estática de
+  // `.prof-option-row` do restaurant.html — inclusive a linha "Cupons" —
+  // NUNCA renderiza. Medido: `document.querySelectorAll('.prof-option-row')
+  // .length === 0` com o Perfil aberto.
+  //
+  // Some-se a trava de login de screens/profile-screen.js:419 e o resultado é
+  // que aquela tela respondia "Nenhum cupom disponível" para ninguém, desde
+  // sempre. O que este teste guarda é que ela não voltou.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedPickupSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+
+  // A tela morta não existe mais no documento — nem escondida.
+  await expect(page.locator('#profSubcupons')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('Nenhum cupom disponível');
+
+  // E o Clube — o dono único da lista — continua desenhando os três estados.
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+});
+
+test('cupom SEM prazo (valid_until null) não desenha "Válido até" vazio', async ({ page }) => {
+  // O backend tornou `valid_until` ANULÁVEL em 02/09/2026 — antes era
+  // `required`, string, sempre presente. Um cupom sem prazo passou a ser
+  // possível, e o `api-contract.test.js` é quem cobrou a sincronização.
+  //
+  // O front já tolerava (`formatCouponDate`/`couponValidUntil` devolvem '' para
+  // valor vazio, e a linha só entra se houver texto), mas "já tolerava" sem
+  // teste é uma afirmação sobre código lido, não sobre comportamento medido —
+  // e a fixture do repositório tem prazo em todos os três cupons, então nada
+  // exercitava esse caminho.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  const semPrazo = { coupons: COUPONS.coupons.map((c) => ({ ...c, valid_until: null })) };
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(semPrazo)) });
+  await mockCustomerRoutes(page);
+
+  await openClub(page);
+  const cards = page.locator('.club-available-coupon-card');
+  await expect(cards).toHaveCount(3);
+
+  // Nenhum card anuncia validade, e nenhum deixa a frase pela metade.
+  await expect(page.locator('#mobViewClub')).not.toContainText('Válido até');
+
+  // E o resto do card continua inteiro: sem prazo não é sem cupom.
+  await expect(cards.nth(0).locator('.club-available-coupon-discount')).toHaveText('5% OFF');
+  await expect(cards.nth(0).locator('.club-available-coupon-meta')).toContainText('Em pedidos a partir de');
+});
+
+test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page }) => {
+  // O par do teste acima. Os dois juntos provam que quem decide o rótulo é o
+  // estado do backend MAIS a sacola — e que a sacola entra por acessor, não
+  // por uma cópia do boot: o Clube é montado depois de o carrinho já ter itens.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await mockCustomerRoutes(page);
+
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavClub')());
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+
+  const cards = page.locator('.club-available-coupon-card');
+  await expect(cards.nth(0).locator('.club-available-coupon-use')).toHaveText('Aplicar cupom');
+  // Os outros dois não mudam: o veredito deles é do backend, e a sacola não o
+  // altera. `missing_amount` continua dizendo quanto falta.
+  await expect(cards.nth(1).locator('.club-available-coupon-use')).toHaveText('Faltam R$ 8,85');
+  await expect(cards.nth(2).locator('.club-available-coupon-use')).toHaveText('Entre para usar');
 });
 
 test('a lista leva o contexto da sacola, para o desconto ser o desta sacola', async ({ page }) => {
@@ -284,7 +432,7 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
   // ao cardápio com um aviso que some. Quem decide sair é ela.
   await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
   await expect(page.locator('.coupon-detail-use'), 'o botão volta ao normal').toHaveText(
-    'Usar cupom'
+    'Aplicar cupom'
   );
   await page.evaluate(() => window.RapidexActions.resolve('closeCouponDetail')());
   await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);

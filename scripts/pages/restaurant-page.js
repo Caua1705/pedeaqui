@@ -433,6 +433,11 @@
       const totals = cartTotals();
       return { subtotal: totals.subtotal, deliveryFee: totals.delivery, orderType: deliveryType };
     },
+    // ACESSOR, nao valor. `cart` e reatribuido (restoreCart, troca de filial,
+    // limpar sacola); uma copia aqui viraria a fotografia do boot e o botao do
+    // cupom decidiria para sempre com a sacola de quando o app subiu — a
+    // armadilha mais cara da §2.1 da skill.
+    getCart: () => cart,
     restaurantStore,
     setLoading,
     logAppError,
@@ -2303,7 +2308,27 @@
     // "R$ 0,00" solto. setProperty com important porque a folha declara
     // display:flex!important na .cps-row e um style inline comum perderia.
     $('csSvcFeeRow')?.style.setProperty('display', totals.svc > 0 ? 'flex' : 'none', 'important');
-    $('csDelivery').textContent = deliveryType === 'delivery' ? fmt(totals.delivery) : 'Grátis';
+    // TAXA DESCONHECIDA NÃO É TAXA ZERO, e esta linha dizia que era.
+    //
+    // `deliveryFee()` devolve `currentDeliveryEstimateFee() ?? 0` — quando a
+    // estimativa falha (422 da rota) ou nem é pedida (endereço incompleto: o
+    // `deliveryEstimateKey()` devolve null), o total sai SEM o frete. Isso é
+    // por construção, e quem impede o estrago é `hasValidDeliveryEstimateFee()`
+    // barrando a criação do pedido.
+    //
+    // O que estava errado era a LINHA: ela escrevia `R$ 0,00`, afirmando que a
+    // entrega é de graça. O cliente lia 68,60 + 0,99 + 0,00 = 69,59 e a conta
+    // FECHAVA — uma tela internamente coerente e mentirosa, que é pior do que
+    // uma que não fecha. O CLAUDE.md já dizia a regra pela outra ponta:
+    // "parcela zerada é linha FORA, nunca um R$ 0,00 solto".
+    //
+    // "A definir" é o mesmo texto que o markup traz por padrão
+    // (restaurant.html:956) e o mesmo que o resto da tela usa enquanto a taxa
+    // não chegou. O total continua sem o frete — mudá-lo é outra conversa, e o
+    // pedido está barrado de qualquer forma.
+    $('csDelivery').textContent = deliveryType === 'delivery'
+      ? (hasValidDeliveryEstimateFee() ? fmt(totals.delivery) : 'A definir')
+      : 'Grátis';
     // O desconto do cupom, com o sinal que ele tem na conta. Sem esta linha as
     // parcelas de cima somavam mais do que o Total de baixo e o cliente via
     // dinheiro sumir sem explicação — mesma classe do R$ 0,99 da taxa de
@@ -2312,6 +2337,13 @@
     $('csDiscount').textContent = `- ${fmt(totals.discount)}`;
     $('csDiscountRow')?.style.setProperty('display', totals.discount > 0 ? 'flex' : 'none', 'important');
     $('csTotal').textContent = fmt(totals.total);
+    // O CAMPO DE CUPOM SÓ EXISTE COM SACOLA. É a mesma regra do decisor do
+    // botão (services/coupon-cta.js): cupom só se aplica quando existe sacola,
+    // e um campo que aceita um código para depois recusá-lo por falta de itens
+    // é a definição de "aplicar para depois falhar". A seção sai da tela, e
+    // não fica desabilitada — um campo cinza convida a tentar.
+    const secaoCupom = $('cartCouponSection');
+    if (secaoCupom) secaoCupom.hidden = qty === 0;
     if (qty > 0 && selectedCoupon) previewSelectedCoupon({ silent: true });
   }
 
@@ -3600,7 +3632,12 @@
     const neighborhood = normalizeAddressPart(address.neighborhood);
     const city = normalizeAddressPart(address.city);
     if (!street || !number || !neighborhood) return '';
-    const postalCode = onlyDigits(address.postal_code || address.zip_code || address.cep || '');
+    // `zipcode` PRIMEIRO: e o nome do contrato (CustomerAddressResponse), e um
+    // endereco que venha CRU do `GET /customers/me/addresses` — sem passar por
+    // normalizeAddress — nao tem `postal_code` nenhum. Sem isto, o mesmo
+    // endereco gera impressoes digitais diferentes conforme o caminho por onde
+    // chegou, e o app o trata como dois.
+    const postalCode = onlyDigits(address.zipcode || address.postal_code || address.zip_code || address.cep || '');
     return [street, number, postalCode, neighborhood, city, normalizeAddressPart(address.state)].join('|');
   }
 
@@ -3802,13 +3839,48 @@
     return Boolean(id && !id.startsWith('local_') && id !== '__current__');
   }
 
+  /**
+   * O CORPO DE `POST/PUT /customers/me/addresses` — e ele e FECHADO.
+   *
+   * `CreateCustomerAddressRequest` e `UpdateCustomerAddressRequest` tem
+   * `additionalProperties: false`, entao um nome que a API nao declara nao e
+   * ignorado: ele derruba a requisicao inteira com 422.
+   *
+   * Ate 02/09/2026 esta funcao mandava TRES nomes que nao existem la —
+   * `postal_code`, `place_id` e `alias` — e o resultado era que NENHUM cliente
+   * logado conseguia salvar endereco na conta. O que ele via era o
+   * `alert("Nao foi possivel salvar o endereco na sua conta. Ele continuara
+   * disponivel neste aparelho...")` de finishAddressDetails, toda vez, e o
+   * endereco ficava so naquele aparelho.
+   *
+   * Ninguem pegou porque NENHUM teste salvava endereco: o `mockApi()` so
+   * atende o GET, o POST caia no catch-all, e o boot-smoke — que e quem le
+   * `rotasDesconhecidas` — nao passa pelo formulario de endereco.
+   *
+   * Os tres nomes certos, e por que os errados existiam:
+   *
+   * - `zipcode`: `postal_code` e o nome INTERNO do front (quem o produz e
+   *   `address-service.normalizeAddress`, de proposito, para ter uma forma so
+   *   entre a API e o que ele mesmo grava no localStorage). Mapear de volta na
+   *   borda ja era o que `order-payload.js:70` fazia ao criar o pedido; era
+   *   esta borda que nao fazia.
+   * - `label`: `alias` e o nome do campo no formulario, nao o do contrato.
+   * - `place_id` SAI. Ele e do Google, nao da nossa API, e nao esta em esquema
+   *   de endereco nenhum. O front continua guardando-o localmente (o
+   *   `addressFingerprint` o usa); o que ele nao faz mais e manda-lo.
+   *
+   * Guardado por `tests/e2e/customer-address-contract.spec.js`, cujo mock
+   * recusa como o backend recusa — lendo o `openapi.json`, e nao uma lista de
+   * campos copiada a mao, que seria a segunda copia do contrato.
+   */
   function addressApiPayload(address) {
     return {
       street: address?.street || '', number: address?.number || '', neighborhood: address?.neighborhood || '',
       city: address?.city || '', state: address?.state || '', complement: address?.complement || '',
-      reference: address?.reference || '', postal_code: onlyDigits(address?.postal_code || address?.zip_code || address?.cep || ''),
-      latitude: address?.latitude ?? null, longitude: address?.longitude ?? null, place_id: address?.place_id || '',
-      alias: address?.alias || address?.label || ''
+      reference: address?.reference || '',
+      zipcode: onlyDigits(address?.zipcode || address?.postal_code || address?.zip_code || address?.cep || ''),
+      latitude: address?.latitude ?? null, longitude: address?.longitude ?? null,
+      label: address?.label || address?.alias || ''
     };
   }
 
@@ -4792,6 +4864,17 @@
     return String(coupon?.id ?? coupon?.coupon_id ?? coupon?.code ?? coupon?.coupon_code ?? '');
   }
 
+  /**
+   * O motivo da ULTIMA recusa de cupom, nas palavras do backend.
+   *
+   * Existe porque `previewSelectedCoupon({ silent: true })` nao pinta nada, e
+   * quem pediu em silencio precisa da mesma frase para responder no proprio
+   * lugar. Ler `ineligibility_reason` de novo do outro lado seria a segunda
+   * copia de uma frase do backend — e duas copias de uma frase de cupom ja
+   * divergiram neste repositorio (ver coupon-format.js).
+   */
+  let ultimoMotivoDeCupom = '';
+
   async function previewSelectedCoupon({ silent = false } = {}) {
     if (!selectedCoupon || !cart.length) return null;
     const totals = cartTotals();
@@ -4818,11 +4901,16 @@
       const payload = preview.preview ?? preview;
       if (payload.valid === false) {
         selectedCouponPreview = null;
+        // O MOTIVO FICA GUARDADO mesmo em modo silencioso. Quem chama com
+        // `silent` (o campo do checkout) responde na propria secao, e sem isto
+        // teria de repetir a leitura de `ineligibility_reason` — a segunda
+        // copia de uma frase que o backend escreveu, pronta para divergir.
+        ultimoMotivoDeCupom = detailText(payload.ineligibility_reason)
+          || String(payload.ineligibility_reason || '').trim()
+          || 'Este cupom não vale para esta sacola.';
         // A razão vem do backend em português e é específica ("primeira compra",
         // "fora do período"). Ela ganha da nossa frase genérica sempre que existe.
-        if (!silent) showCouponNotice(detailText(payload.ineligibility_reason)
-          || String(payload.ineligibility_reason || '').trim()
-          || 'Este cupom não vale para esta sacola.');
+          if (!silent) showCouponNotice(ultimoMotivoDeCupom);
         updateCartUI();
         return null;
       }
@@ -4832,10 +4920,12 @@
     }).catch(async error => {
       if (couponPreviewKey === requestKey) selectedCouponPreview = null;
       if (error?.status === 401) {
+        ultimoMotivoDeCupom = 'Entre na sua conta para usar este cupom.';
         await syncCustomerSession();
         if (!silent) openLoginScreen('coupon');
-      } else if (!silent) {
-        showCouponNotice('Não foi possível aplicar este cupom. Tente novamente.');
+      } else {
+        ultimoMotivoDeCupom = 'Não foi possível aplicar este cupom. Tente novamente.';
+        if (!silent) showCouponNotice(ultimoMotivoDeCupom);
       }
       return null;
     }).finally(() => {
@@ -4848,7 +4938,7 @@
   //
   // O que fica AQUI é o dinheiro: selectedCoupon/preview e as três portas que
   // a folha usa para tocá-lo (armSelectedCoupon, restoreSelectedCoupon,
-  // persistCouponChoice). A folha lê e escreve o estado da SACOLA só por
+  // restoreSelectedCoupon). A folha lê e escreve o estado da SACOLA só por
   // essas portas — a separação leitura/aplicação (couponDetailCoupon vs
   // selectedCoupon) continua valendo, agora com o lado da leitura DENTRO da
   // tela e o da aplicação aqui.
@@ -4857,8 +4947,89 @@
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
   }
 
+  // ==========================================================================
+  //  O CAMPO DE CUPOM DO CHECKOUT — digitar um código que veio de fora.
+  //
+  //  É AQUI que um cupom se aplica, e é o único campo: sem escolher entre
+  //  escanear e digitar, sem um segundo caminho que faça a mesma coisa.
+  //
+  //  Ele NÃO calcula nada e não julga nada. Monta `{ code }`, passa pelas
+  //  MESMAS três portas que a folha de detalhe usa (armSelectedCoupon →
+  //  previewSelectedCoupon → restoreSelectedCoupon em caso de recusa) e exibe
+  //  o veredito que voltou. O `POST /coupons/preview` aceita `coupon_code` em
+  //  vez de `coupon_id` (CouponPreviewRequest), e `buildOrderPayload` já manda
+  //  `coupon_code` quando não há id (order-payload.js:132) — nenhum dos dois
+  //  precisou mudar para este campo existir.
+  //
+  //  Sacola vazia não chega aqui: a seção inteira sai da tela em updateCartUI.
+  //  É a mesma regra do decisor do botão (services/coupon-cta.js) — cupom só se
+  //  aplica quando existe sacola, nunca aplicar para depois falhar.
+  // ==========================================================================
+  function setCartCouponMsg(texto, tom) {
+    const alvo = $('cartCouponMsg');
+    if (!alvo) return;
+    alvo.textContent = texto || '';
+    alvo.hidden = !texto;
+    if (tom) alvo.dataset.tom = tom;
+    else delete alvo.dataset.tom;
+  }
+
+  async function applyTypedCoupon() {
+    const campo = $('cartCouponInput');
+    const botao = $('cartCouponApply');
+    const codigo = String(campo?.value || '').trim();
+    if (!codigo) {
+      setCartCouponMsg('Digite o código do cupom.', 'erro');
+      campo?.focus();
+      return;
+    }
+    if (!cart.length) {
+      // Rede de baixo: a seção já sai da tela com a sacola vazia.
+      setCartCouponMsg('Adicione itens à sacola para usar um cupom.', 'erro');
+      return;
+    }
+
+    const anterior = armSelectedCoupon({ code: codigo });
+    if (botao) { botao.disabled = true; botao.textContent = 'Validando...'; }
+    setCartCouponMsg('');
+    // `silent` porque a resposta é DESTA seção: o aviso flutuante do app diria
+    // a mesma coisa num segundo lugar, e duas mensagens para um toque é o
+    // caminho de elas divergirem.
+    const preview = await previewSelectedCoupon({ silent: true });
+    if (botao) { botao.disabled = false; botao.textContent = 'Aplicar'; }
+
+    if (!preview) {
+      // Recusado, inelegível ou falha de rede: a sacola volta EXATAMENTE ao que
+      // era. Sem isto, `selectedCoupon` ficaria apontando para um código que o
+      // backend não aceitou — a tela não mostraria desconto, mas o
+      // `coupon_code` seguiria indo no pedido.
+      restoreSelectedCoupon(anterior);
+      setCartCouponMsg(ultimoMotivoDeCupom || 'Não foi possível aplicar este cupom.', 'erro');
+      return;
+    }
+    if (campo) campo.value = '';
+    setCartCouponMsg(`Cupom aplicado. Desconto de ${fmt(couponDiscountAmount())}.`);
+  }
+
+  function applyTypedCouponOnEnter(event) {
+    if (event?.key !== 'Enter') return;
+    event.preventDefault();
+    applyTypedCoupon();
+  }
+
   /** Arma o cupom na sacola e devolve o anterior (para rollback). */
   function armSelectedCoupon(coupon) {
+    // O motivo da recusa anterior morre AQUI, e nao no topo de
+    // previewSelectedCoupon — foi onde ele estava, e nao funcionava: o ramo
+    // `valid: false` chama updateCartUI(), que chama previewSelectedCoupon()
+    // de novo (o cupom ainda esta armado nesse instante), e a reentrada zerava
+    // a frase antes de quem pediu em silencio conseguir le-la. O campo do
+    // checkout exibia "Nao foi possivel aplicar este cupom" no lugar do motivo
+    // que o backend tinha escrito.
+    //
+    // Armar e o comeco de uma tentativa nova; e esse o instante em que o motivo
+    // da anterior deixa de valer.
+    ultimoMotivoDeCupom = '';
     const previous = selectedCoupon;
     selectedCoupon = coupon;
     selectedCouponPreview = null;
@@ -4874,10 +5045,15 @@
     updateCartUI();
   }
 
-  /** Escolha com a sacola vazia: fica guardada para quando houver itens. */
-  function persistCouponChoice() {
-    cartStore()?.set?.({ coupon: selectedCoupon, couponPreview: null });
-  }
+  // `persistCouponChoice()` MORREU em 02/09/2026, e o buraco onde ela estava
+  // e proposital. Ela gravava `{ coupon: selectedCoupon }` na sacola guardada
+  // quando alguem confirmava um cupom com a sacola VAZIA — um cupom aplicado
+  // sem preview nenhum, que voltava armado no proximo boot e seguia no
+  // `coupon_id` do pedido. Num cupom de uso unico, o backend o queima ali.
+  // Hoje a sacola vazia leva ao cardapio e nao arma nada (coupon-cta.js), e a
+  // gravacao legitima do cupom aplicado continua sendo a de `updateCartUI`
+  // (:2262), que roda em toda mutacao do carrinho. Nao recoloque esta funcao
+  // sem ler o cabecalho de services/coupon-cta.js.
 
   // Trampolins: o clube e o auth-flow chamam estes dois POR NOME (window e
   // deps de init). DECLARAÇÃO de função — const aqui é TDZ, a lição do
@@ -5449,6 +5625,8 @@
     // As nove ações de dados/senha do cliente são registradas por
     // screens/customer-data-screen.js.
     openServiceFeeInfo,
+    // O campo de cupom do checkout — o lugar onde um cupom se aplica.
+    applyTypedCoupon, applyTypedCouponOnEnter,
     // As três ações do extrato (openCashbackStatement, retryCashbackStatement,
     // closeCashbackStatement) são registradas por cashback-statement.js.
     retryRestaurantBoot, retryMenuLoad, retryClubLoad, refreshAvailableCoupons
@@ -5545,7 +5723,6 @@
       // diretamente — arma, desfaz e persiste por aqui.
       armSelectedCoupon,
       restoreSelectedCoupon,
-      persistCouponChoice,
       previewSelectedCoupon,
       couponDiscountAmount,
       couponImageUrl,

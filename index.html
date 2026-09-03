@@ -422,7 +422,17 @@
 
 <!-- FOOTER -->
 <footer class="landing-footer">
-  © 2025 Rapidex. Todos os direitos reservados.
+  <!-- O ANO SAI DO RELOGIO, e o valor escrito aqui e so o piso.
+
+       Ate 02/09/2026 esta linha dizia "© 2025" — errado desde 1º de janeiro, na
+       primeira dobra da landing, para todo visitante. Um ano escrito a mao numa
+       pagina que ninguem revisita apodrece em silencio: nada quebra, nenhum
+       teste cai, e a unica pessoa que percebe e quem esta avaliando a empresa.
+
+       `landing-page.js` escreve o ano corrente no boot. O valor do HTML e o
+       que aparece com o JS desligado — por isso ele fica, e por isso ele nao
+       precisa de manutencao: errar por baixo num ano e melhor que sumir. -->
+  © <span id="landingCopyYear">2026</span> Rapidex. Todos os direitos reservados.
 </footer>
 
 <script type="module" src="/scripts/entry-landing.js"></script>

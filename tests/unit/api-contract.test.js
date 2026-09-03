@@ -184,6 +184,104 @@ describe('toda rota que o front chama existe na API', () => {
     );
     expect(routes.availableCoupons, '/coupons/available foi removida da API').toBeUndefined();
   });
+
+  // ============================================================================
+  //  O SENTIDO INVERSO: rota que a API OFERECE e o front não chama.
+  //
+  //  Os testes acima conferem um sentido só — "toda rota que o front chama existe
+  //  no spec". Ele pega rota MORTA (o `/coupons/available` do incidente). Não
+  //  pega o contrário: capacidade que o backend publicou e o front ignora.
+  //
+  //  E o contrário custou caro. `POST .../orders/track/{token}/cancel` — o
+  //  cliente cancelando o próprio pedido, com estorno do pagamento online,
+  //  devolução do cupom e do cashback — entrou no contrato e ficou invisível,
+  //  enquanto o `docs/order-contract.md` seguia listando "não há rota de cliente
+  //  para cancelar o pedido" como a pendência mais cara do repositório. Ela foi
+  //  achada em 02/09/2026 por acaso, varrendo outra coisa.
+  //
+  //  ## POR QUE É AVISO, E NÃO FALHA
+  //
+  //  A maioria das rotas do spec NÃO é do app do cliente: `/admin/*` é o painel
+  //  do lojista, `/payments/webhooks/*` é o gateway falando com o backend,
+  //  `/health` é infraestrutura. Um teste que exigisse consumo de todas seria
+  //  vermelho permanente — e portão que nasce vermelho é portão que se aprende a
+  //  ignorar, que é pior do que não ter.
+  //
+  //  O que ele faz é IMPRIMIR, em toda execução, as rotas de cliente que o front
+  //  não usa. É barato de ler e, se a lista tivesse existido, o cancelamento
+  //  teria aparecido nela no dia em que o backend o publicou.
+  //
+  //  A separação entre "é do cliente" e "não é" está em PREFIXOS_FORA — uma
+  //  lista curta que alguém precisa editar de propósito, e não um filtro
+  //  esperto que silencia sozinho.
+  //
+  //  ## O PRIMEIRO FALSO POSITIVO JÁ RENDEU UM CONSERTO
+  //
+  //  Na estreia, em 02/09/2026, a lista tinha QUATRO linhas e duas eram falso
+  //  positivo: `/chat` e `/chat/feedback` apareciam como não usadas, e o app
+  //  usava as duas — elas estavam escritas LITERALMENTE dentro do
+  //  `restaurant-assistant.js`, fora do ponto único de rotas.
+  //
+  //  O falso positivo era informação: rota literal não passa pelo teste que
+  //  confere as rotas do front contra o spec, então um renome no backend a
+  //  quebraria em silêncio — que é o incidente do `/coupons/available`. As duas
+  //  foram para `api-routes.js` e sumiram desta lista sozinhas, que é o
+  //  comportamento certo. **Não silencie um falso positivo daqui**: ele é o
+  //  sintoma de uma rota que escapou.
+  //
+  //  As outras duas eram reais e continuam na lista: `GET /customers/me/export`
+  //  (o pacote da LGPD) e `PUT .../orders/track/{token}/review` (avaliar o
+  //  pedido) — capacidades publicadas que o app do cliente não oferece.
+  // ============================================================================
+  describe('rotas que a API oferece e o front não usa (AVISO, não falha)', () => {
+    const PREFIXOS_FORA = [
+      '/admin/',          // painel do lojista, outro app
+      '/payments/webhooks/', // o gateway falando com o backend, não com o app
+      '/health'           // infraestrutura
+    ];
+
+    it('lista as rotas de cliente não consumidas', () => {
+      const spec = JSON.parse(readFileSync(VENDORED_SPEC, 'utf8'));
+      const specPaths = new Set(Object.keys(spec.paths));
+      const usadas = new Set(
+        frontRoutes()
+          .map(({ path }) => toSpecShape(path, specPaths))
+          .filter((path) => specPaths.has(path))
+      );
+
+      const naoUsadas = [...specPaths]
+        .filter((path) => !usadas.has(path))
+        .filter((path) => !PREFIXOS_FORA.some((prefixo) => path.startsWith(prefixo)))
+        .sort();
+
+      // Sonda contra vacuidade: se `frontRoutes()`/`toSpecShape()` pararem de
+      // casar, `usadas` fica vazia, a lista abaixo vira o spec inteiro e o aviso
+      // deixa de significar qualquer coisa. Estas duas o front comprovadamente
+      // chama.
+      expect(usadas.has('/restaurants/{restaurant_slug}/menu'), 'a varredura parou de casar').toBe(true);
+      expect(usadas.has('/restaurants/{restaurant_slug}/coupons'), 'a varredura parou de casar').toBe(true);
+
+      if (naoUsadas.length) {
+        const metodos = (caminho) => Object.keys(spec.paths[caminho])
+          .filter((m) => ['get', 'post', 'put', 'patch', 'delete'].includes(m))
+          .map((m) => m.toUpperCase())
+          .join('/');
+        // process.stdout.write, e nao console.warn: o vitest INTERCEPTA o console
+      // e nao imprime a saida de teste que passa. Um aviso que nao aparece e o
+      // mesmo que nenhum aviso — foi exatamente assim que a primeira versao
+      // deste teste ficou verde sem mostrar as quatro rotas que ela achou.
+      process.stdout.write(
+          `\n[contrato] ${naoUsadas.length} rota(s) de cliente que a API oferece e o front NÃO usa:\n` +
+          naoUsadas.map((caminho) => `  ${metodos(caminho).padEnd(6)} ${caminho}`).join('\n') +
+          '\n  (aviso, não falha — mas foi aqui que o cancelamento de pedido ficou meses invisível)\n'
+        );
+      }
+
+      // Nada a afirmar: o valor deste teste é a lista impressa. A afirmação
+      // existe só para que ele não passe por vacuidade se o spec sumir.
+      expect(specPaths.size).toBeGreaterThan(20);
+    });
+  });
 });
 
 describe('o spec versionado é o do backend', () => {

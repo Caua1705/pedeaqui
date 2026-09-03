@@ -2212,6 +2212,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/customers/me/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Order
+         * @description O cliente logado desistindo do proprio pedido, de QUALQUER aparelho.
+         *
+         *     E a contrapartida autenticada de
+         *     `POST /{slug}/orders/track/{token}/cancel`, do mesmo jeito que a rota
+         *     acima e a de `/orders/track/{token}`: aqui o vinculo sai de
+         *     `orders.customer_id`, entao nao ha token nenhum para guardar nem para
+         *     vazar. O `tracking_token` so vive no `localStorage` do aparelho que fez o
+         *     pedido — quem pediu pelo celular e abriu o app no computador nao alcancava
+         *     o proprio pedido.
+         *
+         *     **A rota do token continua existindo**, e nao e redundancia: ela e a unica
+         *     saida do convidado, que nao tem conta para autenticar.
+         *
+         *     **Ate onde ela vai: `pending` e `accepted`**, a mesma janela da outra
+         *     porta. A partir de `preparing` o insumo ja saiu do estoque e quem decide
+         *     quem come o prejuizo passa a ser o lojista — a rota responde **409** e o
+         *     app manda o cliente falar com o restaurante.
+         *
+         *     **O corpo e opcional**, e o motivo dentro dele tambem, pelo mesmo motivo
+         *     da outra: exigir justificativa de quem desiste de um pedido que nem
+         *     comecou produz um campo preenchido com "a".
+         *
+         *     ## O que ela faz junto, e que o app nao precisa pedir
+         *
+         *     E a MESMA escrita do cancelamento pelo painel, entao o cupom volta a ficar
+         *     disponivel, o cashback resgatado volta para o saldo e **o pagamento online
+         *     e estornado**. O estorno acontece depois do commit e nao pode derrubar
+         *     esta resposta: se o gateway estiver fora do ar, o cancelamento vale e uma
+         *     varredura devolve o dinheiro depois.
+         *
+         *     **Sem `Idempotency-Key`**, e ela nao faz falta: o segundo clique chega com
+         *     o pedido ja em `cancelled` e leva 409 da maquina de estados.
+         */
+        post: operations["cancel_order_customers_me_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/customers/me/password": {
         parameters: {
             query?: never;
@@ -5115,6 +5166,8 @@ export interface components {
              * Format: uuid
              */
             restaurant_id: string;
+            /** Sort Order */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5131,11 +5184,8 @@ export interface components {
              * Format: date-time
              */
             valid_from: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
             visibility: components["schemas"]["CouponVisibility"];
         };
         /** CouponClaimRequest */
@@ -5196,6 +5246,11 @@ export interface components {
              * @default 0.00
              */
             min_order_value: number | string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5208,11 +5263,8 @@ export interface components {
              * Format: date-time
              */
             valid_from: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
             /** @default public */
             visibility: components["schemas"]["CouponVisibility"];
         };
@@ -5315,6 +5367,8 @@ export interface components {
             max_discount_amount?: number | string | null;
             /** Min Order Value */
             min_order_value?: number | string | null;
+            /** Sort Order */
+            sort_order?: number | null;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title?: string | null;
@@ -5644,11 +5698,8 @@ export interface components {
             state: components["schemas"]["CustomerCouponState"];
             /** Title */
             title: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
         };
         /**
          * CustomerCouponState
@@ -11294,6 +11345,62 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrderDetailResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_customers_me_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CustomerCancelOrderRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailResponse"];
+                };
+            };
+            /** @description Nao autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pedido nao encontrado, ou nao e deste cliente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description O pedido ja saiu da janela em que o cliente cancela sozinho (a partir de `preparing`), ou ja e um estado final */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

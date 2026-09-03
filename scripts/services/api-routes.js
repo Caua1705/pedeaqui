@@ -34,6 +34,19 @@
       `/restaurants/${routeSlug(restaurantSlug)}/coupons`,
     previewCoupon: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/coupons/preview`,
+    // DIGITAR UM CÓDIGO SEM SACOLA. É o par de `customerCoupons`: resgatado
+    // aqui, o cupom passa a ser do cliente e aparece na lista; APLICAR continua
+    // sendo outra coisa, no checkout.
+    //
+    // Resgate NÃO é uso, e a diferença é da campanha: o backend grava em
+    // `coupon_claims`, que não tem pedido nem valor, e `coupon_redemptions`
+    // continua sendo o registro de uso — é ela que conta no teto. Gravar
+    // resgate lá faria um cupom de 100 usos se esgotar com gente que só digitou
+    // o código.
+    //
+    // Idempotente: resgatar de novo devolve o mesmo cupom, 201, sem erro.
+    claimCoupon: restaurantSlug =>
+      `/restaurants/${routeSlug(restaurantSlug)}/coupons/claim`,
     deliveryEstimate: restaurantSlug =>
       `/restaurants/${routeSlug(restaurantSlug)}/delivery/estimate`,
 
@@ -55,6 +68,56 @@
 
     startOrderPayment: (restaurantSlug, trackingToken) =>
       `/restaurants/${routeSlug(restaurantSlug)}/orders/${routeSlug(trackingToken)}/payment`,
+
+    // CANCELAR O PRÓPRIO PEDIDO, pelo cliente.
+    //
+    // Autoriza pelo `tracking_token` da URL — o MESMO do acompanhamento, e
+    // **sem login, de propósito**: pedido de convidado é caso normal, e exigir
+    // conta aqui deixaria justamente o convidado sem saída.
+    //
+    // O backend só aceita em `pending` e `accepted`. A partir de `preparing` o
+    // insumo já saiu do estoque, quem come o prejuízo passa a ser o lojista, e
+    // a rota responde **409** — o app manda falar com o restaurante.
+    //
+    // Ela faz três coisas junto, e é por isso que a tela precisa dizê-las: o
+    // pagamento online é ESTORNADO, o cupom volta a ficar disponível e o
+    // cashback resgatado volta para o saldo. O estorno acontece depois do
+    // commit e não derruba a resposta — gateway fora do ar não impede o
+    // cancelamento, uma varredura devolve o dinheiro depois.
+    //
+    // Sem `Idempotency-Key`, e ela não faz falta: o segundo clique chega com o
+    // pedido já em `cancelled` e leva 409 da máquina de estados.
+    cancelOrder: (restaurantSlug, trackingToken) =>
+      `/restaurants/${routeSlug(restaurantSlug)}/orders/track/${routeSlug(trackingToken)}/cancel`,
+
+    // A CONTRAPARTIDA AUTENTICADA da de cima, publicada pelo backend em
+    // 02/09/2026 — o cliente logado cancelando de QUALQUER aparelho.
+    //
+    // O vínculo aqui sai de `orders.customer_id`, então não há token nenhum
+    // para guardar nem para vazar. A do `tracking_token` continua existindo e
+    // NÃO é redundância: ela é a única saída do convidado, que não tem conta
+    // para autenticar.
+    //
+    // Mesma janela (`pending`/`accepted`), mesmo 409 a partir de `preparing`,
+    // mesmo corpo opcional. O que muda é quem autoriza.
+    cancelCustomerOrder: orderId =>
+      `/customers/me/orders/${routeSlug(orderId)}/cancel`,
+
+    // ---- Assistente por texto ----
+    //
+    // Estas duas estavam escritas LITERALMENTE dentro do
+    // `restaurant-assistant.js` ('/chat' e '/chat/feedback'), fora do ponto
+    // único de rotas. Quem as denunciou foi o aviso novo do
+    // `api-contract.test.js`, em 02/09/2026: elas saíram na lista de "rotas que
+    // a API oferece e o front não usa" — o app usava as duas, mas nenhuma delas
+    // passava por aqui, então a varredura não as via.
+    //
+    // O preço de estar fora não era teórico: rota literal não é conferida
+    // contra o spec pelo teste que existe justamente para isso. Se o backend
+    // renomeasse `/chat`, o app quebraria como a tela do Clube quebrou quando
+    // `/coupons/available` virou `/coupons` — com todos os portões verdes.
+    chat: () => '/chat',
+    chatFeedback: () => '/chat/feedback',
 
     // ---- Atendimento por voz ----
     // Só a emissão exige Bearer; as outras três são abertas. Quando a voz está

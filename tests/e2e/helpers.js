@@ -7,6 +7,118 @@ const here = dirname(fileURLToPath(import.meta.url));
 const readFixture = (name) =>
   JSON.parse(readFileSync(resolve(here, '..', 'fixtures', name), 'utf8'));
 
+// ============================================================================
+//  O MOCK RECUSA COMO O BACKEND RECUSA — corpo conferido contra o OpenAPI.
+//
+//  "Um mock que só aceita é um teste que só concorda" (skill §4). Esta é a
+//  aplicação geral dessa regra, e ela nasceu de um defeito que passou por TODOS
+//  os portões: `addressApiPayload()` mandava `postal_code`, `place_id` e
+//  `alias` para `POST /customers/me/addresses`, cujo esquema é
+//  `additionalProperties: false` — três nomes fora do contrato viram 422 na
+//  requisição inteira, e nenhum cliente logado conseguia salvar endereço.
+//  Ninguém pegou porque nenhum teste salvava endereço, e porque um mock que
+//  responde 200 a qualquer corpo não tem opinião sobre o corpo.
+//
+//  ## A tabela vem do CONTRATO, não de uma lista escrita aqui
+//
+//  Uma lista de campos à mão neste arquivo seria a segunda cópia do contrato, e
+//  ela divergiria — provavelmente na direção do que o código manda hoje, que é
+//  exatamente o defeito que se quer pegar. `ESQUEMAS_DE_CORPO` é montada
+//  percorrendo `paths` do `openapi.json`: todo caminho+método que declara um
+//  corpo com `$ref` entra, e rota nova entra sozinha.
+//
+//  ## O que ele confere, e o que NÃO confere
+//
+//  Confere as duas coisas que um modelo `extra=forbid` do FastAPI recusa e que
+//  um mock permissivo esconde: **campo desconhecido** e **obrigatório
+//  ausente**. Um nível de aninhamento também (o `address` de
+//  `DeliveryEstimateRequest` é um `DeliveryAddressInput`, e ele TAMBÉM é
+//  fechado).
+//
+//  NÃO confere tipo, formato nem faixa. Isso é de propósito: reimplementar o
+//  Pydantic aqui seria a terceira cópia do contrato, e o que custou dinheiro
+//  neste repositório foi sempre o NOME do campo, não o tipo dele.
+// ============================================================================
+const SPEC_API = JSON.parse(
+  readFileSync(resolve(here, '..', '..', 'scripts', 'types', 'openapi.json'), 'utf8')
+);
+
+const ESQUEMAS_DE_CORPO = Object.entries(SPEC_API.paths || {}).flatMap(([caminho, operacoes]) =>
+  Object.entries(operacoes || {})
+    .map(([metodo, operacao]) => {
+      // O corpo pode vir por $ref DIRETO ou dentro de um anyOf — e o segundo
+      // caso e o do corpo OPCIONAL, que o FastAPI gera como
+      // `anyOf: [{$ref}, {type: null}]`. Duas rotas do contrato sao assim (a
+      // cobranca do pedido e o cancelamento pelo cliente), e ler so o $ref
+      // direto as deixava de fora da conferencia sem dizer nada.
+      const esquemaDoCorpo = operacao?.requestBody?.content?.['application/json']?.schema;
+      const nomeDoEsquema = refsDe(esquemaDoCorpo)[0];
+      if (!nomeDoEsquema) return null;
+      return {
+        metodo: metodo.toUpperCase(),
+        // `{restaurant_slug}` -> `[^/]+`. A âncora no fim impede que
+        // `/coupons/preview` case com o caminho de `/coupons`.
+        regex: new RegExp(`^${caminho.replace(/\{[^}]+\}/g, '[^/]+')}$`),
+        esquema: nomeDoEsquema
+      };
+    })
+    .filter(Boolean)
+);
+
+/** Os `$ref` de um sub-esquema, direto ou dentro de `anyOf`/`allOf`. */
+function refsDe(sub) {
+  if (!sub) return [];
+  if (sub.$ref) return [sub.$ref.split('/').pop()];
+  return [...(sub.anyOf || []), ...(sub.allOf || []), ...(sub.oneOf || [])]
+    .flatMap(refsDe);
+}
+
+function violacoesDoCorpo(corpo, nomeDoEsquema, caminhoDoCampo = 'body') {
+  const esquema = SPEC_API.components?.schemas?.[nomeDoEsquema];
+  if (!esquema?.properties || corpo == null || typeof corpo !== 'object') return [];
+  const erros = [];
+  const permitidos = Object.keys(esquema.properties);
+
+  if (esquema.additionalProperties === false) {
+    for (const chave of Object.keys(corpo)) {
+      if (!permitidos.includes(chave)) {
+        erros.push(`${caminhoDoCampo}.${chave}: campo fora do contrato (${nomeDoEsquema} é additionalProperties:false)`);
+      }
+    }
+  }
+  for (const chave of esquema.required || []) {
+    if (corpo[chave] === undefined || corpo[chave] === null) {
+      erros.push(`${caminhoDoCampo}.${chave}: obrigatório ausente (${nomeDoEsquema})`);
+    }
+  }
+  // Um nível de aninhamento: o objeto de endereço dentro do estimate/availability.
+  for (const [chave, valor] of Object.entries(corpo)) {
+    if (!valor || typeof valor !== 'object' || Array.isArray(valor)) continue;
+    for (const aninhado of refsDe(esquema.properties[chave])) {
+      erros.push(...violacoesDoCorpo(valor, aninhado, `${caminhoDoCampo}.${chave}`));
+    }
+  }
+  return erros;
+}
+
+/**
+ * Devolve a lista de violações do corpo desta requisição, ou `[]`.
+ *
+ * EXPORTADA para os specs que registram rota própria: uma rota própria vence o
+ * `mockApi()` (a última registrada ganha), e com ela o corpo deixaria de ser
+ * conferido. Reusar esta função é o que impede que cada spec escreva a SUA
+ * cópia da regra do contrato — que divergiria na direção do que o código manda
+ * hoje, que é justamente o que se quer pegar.
+ */
+export function violacoesDaRequisicao(metodo, caminho, textoDoCorpo) {
+  const alvo = ESQUEMAS_DE_CORPO.find(item => item.metodo === metodo && item.regex.test(caminho));
+  if (!alvo) return [];
+  let corpo;
+  try { corpo = JSON.parse(textoDoCorpo || 'null'); } catch { return []; }
+  if (corpo == null) return [];
+  return violacoesDoCorpo(corpo, alvo.esquema);
+}
+
 export const MENU = readFixture('menu.json');
 export const INFO = readFixture('info.json');
 /**
@@ -146,6 +258,17 @@ export async function mockApi(page, {
     const request = route.request();
     const url = request.url();
     const method = request.method();
+
+    // O CORPO E CONFERIDO ANTES DE QUALQUER ROTA. Um mock que responde 200 a
+    // qualquer corpo nao tem opiniao sobre o corpo — e foi assim que um payload
+    // com tres nomes fora do contrato passou por todos os portoes. Ver o
+    // cabecalho de ESQUEMAS_DE_CORPO.
+    const violacoes = violacoesDaRequisicao(method, new URL(url).pathname, request.postData());
+    if (violacoes.length) {
+      return route.fulfill(json({
+        detail: violacoes.map(mensagem => ({ msg: mensagem, type: 'contrato' }))
+      }, 422));
+    }
 
     // POST /restaurants/{slug}/orders/{tracking_token}/payment
     if (method === 'POST' && /\/orders\/[^/]+\/payment(\?|$)/.test(url)) {
@@ -307,6 +430,28 @@ export async function mockApi(page, {
 }
 
 export const TRACKING_TOKEN = 'trk_e2e_0000000000000000';
+
+/**
+ * Uma validade de cartão que ainda é FUTURA quando o teste rodar.
+ *
+ * Aqui havia o literal `11/31` em três sítios, e ele não era inofensivo: quem
+ * confere a validade é o relógio REAL nos dois lados — o SDK falso do
+ * Mercado Pago (`new Date()` dentro do mock de `card-payment-flow` e de
+ * `payment-card-validation-timing`) e, em `mercado-pago-secure-fields`, o SDK
+ * de verdade. Em 01/12/2031 os três testes passariam a recusar o cartão e a
+ * suíte ficaria vermelha sem uma linha de código ter mudado.
+ *
+ * É a mesma classe do teste que só quebrava entre 00:00 e 01:30 por ler a hora
+ * real, só que com a virada em anos em vez de em horas — e por isso ainda mais
+ * cara: quando estourar, ninguém vai lembrar deste literal.
+ *
+ * Cinco anos à frente porque o cartão de teste tem de ser aceito hoje e daqui
+ * a muito tempo, e porque um mês fixo (novembro) mantém a string com dois
+ * dígitos sempre.
+ */
+export function validadeFutura() {
+  return `11/${String((new Date().getFullYear() + 5) % 100).padStart(2, '0')}`;
+}
 
 // Payload EMV de Pix (copia e cola), no formato que o gateway devolve.
 export const PIX_QR_CODE =

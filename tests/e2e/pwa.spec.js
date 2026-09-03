@@ -211,3 +211,23 @@ test('a landing NÃO tem manifest: o escopo "/" dela engoliria todo restaurante'
   await page.goto('/index.html');
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
 });
+
+// ============================================================================
+//  O ano do rodape da landing acompanha o relogio.
+//
+//  Ate 02/09/2026 o rodape dizia "© 2025" — errado desde 1º de janeiro, na
+//  landing, para todo visitante. Um ano escrito a mao apodrece em silencio:
+//  nada quebra, nenhum teste cai, e quem percebe e quem esta avaliando a
+//  empresa.
+//
+//  ESTE TESTE NAO E UMA BOMBA-RELOGIO, e a diferenca importa. Ele nao tem ano
+//  embutido: compara o ano da PAGINA com o ano de quem esta rodando, e os dois
+//  andam juntos. E o mesmo padrao de  no helpers — derivar do
+//  relogio em vez de cravar um literal que um dia fica para tras.
+// ============================================================================
+test('o rodape da landing mostra o ano corrente, e nao um ano cravado', async ({ page }) => {
+  await page.goto('/index.html');
+  const anoAgora = String(new Date().getFullYear());
+  await expect(page.locator('#landingCopyYear')).toHaveText(anoAgora);
+  await expect(page.locator('.landing-footer')).toContainText(`© ${anoAgora} Rapidex`);
+});

@@ -1974,10 +1974,16 @@ export interface paths {
          * Sign In With Google
          * @description Entrar com Google. Mande o `id_token`; leia o `status` da resposta.
          *
-         *     O app faz o login com o Google no aparelho e manda aqui o `id_token` (o
-         *     `idToken` do `GoogleSignIn`, nao o `accessToken`). O servidor confere a
-         *     assinatura contra as chaves publicas do Google, o `aud` contra os nossos
-         *     client ids e o `iss`; `email_verified` falso e recusado com 401.
+         *     **Antes:** chame `POST /auth/google/nonce`, passe o `nonce` ao Google
+         *     Identity Services e guarde o `nonce_token` — os dois campos do corpo aqui
+         *     sao obrigatorios.
+         *
+         *     O servidor confere a assinatura contra as chaves publicas do Google, o
+         *     `aud` contra os nossos client ids, o `iss`, e o `nonce` do token contra o
+         *     que ESTA sessao pediu; `email_verified` falso e recusado com 401.
+         *
+         *     Mande o `id_token` (o campo `credential` do Google Identity Services, ou o
+         *     `idToken` do SDK nativo), nunca o `accessToken`.
          *
          *     ## Os tres desfechos, pelo campo `status`
          *
@@ -2043,6 +2049,43 @@ export interface paths {
          *     e-mail. Chame `POST /auth/google` de novo — ele cai sozinho no caso certo.
          */
         post: operations["complete_google_signup_auth_google_complete_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/nonce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Google Nonce
+         * @description Abre um login pelo Google. Chame ANTES de mostrar o botao.
+         *
+         *     Devolve `nonce` e `nonce_token`. Passe o `nonce` para
+         *     `google.accounts.id.initialize({ nonce })` — o Google o copia para dentro
+         *     do `id_token` que assina — e guarde o `nonce_token` para mandar junto em
+         *     `POST /auth/google`.
+         *
+         *     **Um sem o outro nao serve para nada, e e essa a defesa.** No navegador, o
+         *     `id_token` e um valor que passa por varias maos; sem o nonce, um token
+         *     legitimo capturado em qualquer lugar seria aceito aqui como se fosse a
+         *     pessoa entrando agora. Com ele, o token so vale na sessao que pediu o par.
+         *
+         *     O par vale **10 minutos**. Vencido, `POST /auth/google` responde 400
+         *     pedindo para tocar no botao de novo — peca um par novo e recomece; nao ha
+         *     o que consertar do lado do app.
+         *
+         *     Nao autenticada, nao toca no banco e nao diz nada sobre ninguem: e um
+         *     sorteio e uma assinatura.
+         */
+        post: operations["create_google_nonce_auth_google_nonce_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2808,6 +2851,123 @@ export interface paths {
          *     primeira senha — o codigo vai para o e-mail que o Google ja verificou.
          */
         patch: operations["change_password_customers_me_password_patch"];
+        trace?: never;
+    };
+    "/customers/me/social": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Social Accounts
+         * @description As contas de provedor conectadas a esta conta. E a tela de "contas
+         *     conectadas", e o que as outras duas rotas desta secao pressupoem.
+         *
+         *     Lista vazia significa que a conta abre so por e-mail e senha.
+         *
+         *     **Nao vem o `provider_user_id`** (o `sub` do Google), de proposito: ele e
+         *     identificador da pessoa dentro do provedor e pertence a exportacao da
+         *     LGPD, que e um pedido explicito — nao a uma tela que abre sozinha.
+         *
+         *     Junto com `password_set` de `GET /customers/me`, esta lista diz tudo que a
+         *     tela precisa saber: uma conta com `password_set: false` e uma unica conta
+         *     conectada nao pode desconectar essa conta (`DELETE` responde 400), e a tela
+         *     deve mostrar isso desabilitado, com o motivo, antes do clique.
+         */
+        get: operations["list_social_accounts_customers_me_social_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/customers/me/social/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Google Account
+         * @description Conecta o Google a esta conta SEM sair dela.
+         *
+         *     E o caminho de quem ja tem conta por e-mail e quer passar a entrar pelo
+         *     Google. Sem esta rota, a unica forma seria sair, entrar com Google, cair no
+         *     caso (b) e digitar um codigo — para alguem que ja esta autenticado.
+         *
+         *     Mande `id_token` e `nonce_token` (peca o par em `POST /auth/google/nonce`)
+         *     **e a senha atual**.
+         *
+         *     ## Por que a senha
+         *
+         *     Conectar acrescenta uma forma de entrar. Sem a senha, um token roubado
+         *     vira acesso permanente: o ladrao conecta o Google dele, voce troca a senha
+         *     — o que mata todos os tokens — e ele volta pelo botao do Google. A troca de
+         *     senha deixaria de ser o que expulsa quem entrou na sua conta.
+         *
+         *     Conta com `password_set: false` recebe **400**: ela nao tem senha para
+         *     provar. Defina uma por "Esqueci minha senha" e conecte depois.
+         *
+         *     ## O e-mail do Google NAO precisa ser o da conta
+         *
+         *     Conectar o Gmail do trabalho a uma conta pessoal e o caso comum, e ele
+         *     funciona: a sessao ja prova de quem e a conta e o `id_token` prova de quem
+         *     e o Google.
+         *
+         *     Conectar duas vezes o mesmo Google e a mesma coisa que conectar uma. Se
+         *     aquele Google ja pertence a OUTRA conta, a resposta e 409.
+         */
+        post: operations["link_google_account_customers_me_social_google_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/customers/me/social/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlink Social Account
+         * @description Desconecta um provedor. Devolve a lista que sobrou.
+         *
+         *     Mande a senha atual no corpo — desconectar mexe em forma de entrar, do
+         *     mesmo jeito que conectar.
+         *
+         *     ## A TRAVA: nunca deixa a conta sem porta
+         *
+         *     Conta com `password_set: false` e **uma unica** conta conectada recebe
+         *     **400**, com a frase dizendo que aquela e a unica forma de entrar. Sem
+         *     senha e sem provedor a pessoa nao entra mais — e ela nao descobriria isso
+         *     no clique, e sim na proxima vez que tentasse entrar, sem nenhuma pista.
+         *
+         *     **A tela deve mostrar isso antes.** `GET /customers/me/social` mais o
+         *     `password_set` de `GET /customers/me` dizem exatamente quando o botao de
+         *     desconectar tem que estar desabilitado, e com que explicacao.
+         *
+         *     Desconectar **nao apaga nada** da conta: pedidos, endereços, cashback e
+         *     cupons continuam iguais — eles pendem do cliente, nunca do provedor. O que
+         *     sai e o vinculo, e aquele Google fica livre para ser conectado a outra
+         *     conta depois.
+         */
+        delete: operations["unlink_social_account_customers_me_social__provider__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/health": {
@@ -7036,10 +7196,28 @@ export interface components {
             /** Signup Ticket */
             signup_ticket: string;
         };
+        /**
+         * GoogleNonceResponse
+         * @description O par que abre um login pelo Google no navegador.
+         *
+         *     `nonce` vai para `google.accounts.id.initialize({ nonce })` e volta dentro
+         *     do `id_token`; `nonce_token` volta para nos junto dele. Um sem o outro nao
+         *     serve para nada.
+         */
+        GoogleNonceResponse: {
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Nonce */
+            nonce: string;
+            /** Nonce Token */
+            nonce_token: string;
+        };
         /** GoogleSignInRequest */
         GoogleSignInRequest: {
             /** Id Token */
             id_token: string;
+            /** Nonce Token */
+            nonce_token: string;
         };
         /**
          * GoogleSignInResponse
@@ -7148,6 +7326,47 @@ export interface components {
             existing?: components["schemas"]["CustomerAddressResponse"][];
             /** Ignored */
             ignored?: components["schemas"]["IgnoredImportedAddress"][];
+        };
+        /**
+         * LinkGoogleAccountRequest
+         * @description Ligar o Google a uma conta que JA ESTA logada.
+         *
+         *     `password` e obrigatoria no servico e opcional no schema pelo mesmo motivo
+         *     de `DeleteCustomerAccountRequest`: a conta sem senha utilizavel nao tem o
+         *     que preencher, e a resposta dela e um 400 que ensina o caminho — nao um
+         *     422 de campo faltando.
+         *
+         *     O par `id_token`/`nonce_token` e o mesmo de `POST /auth/google`: peca o
+         *     nonce em `POST /auth/google/nonce` antes de abrir o botao.
+         */
+        LinkGoogleAccountRequest: {
+            /** Id Token */
+            id_token: string;
+            /** Nonce Token */
+            nonce_token: string;
+            /** Password */
+            password?: string | null;
+        };
+        /**
+         * LinkedSocialAccountResponse
+         * @description Uma conta de provedor conectada, para a TELA de contas conectadas.
+         *
+         *     **Nao leva `provider_user_id`, e a ausencia e a diferenca para
+         *     `CustomerSocialIdentityItem`.** O `sub` e o identificador da pessoa dentro
+         *     do Google: ele pertence a exportacao da LGPD, que e um pedido explicito e
+         *     baixado uma vez — nao a uma tela de configuracoes que abre sozinha e cujo
+         *     corpo passa por log de proxy, cache de app e captura de tela.
+         */
+        LinkedSocialAccountResponse: {
+            /** Last Login At */
+            last_login_at?: string | null;
+            /**
+             * Linked At
+             * Format: date-time
+             */
+            linked_at: string;
+            /** Provider */
+            provider: string;
         };
         /** LoginCustomerResponse */
         LoginCustomerResponse: {
@@ -8673,6 +8892,15 @@ export interface components {
         StoreStatusRequest: {
             /** Is Open */
             is_open: boolean;
+        };
+        /**
+         * UnlinkSocialAccountRequest
+         * @description Desconectar um provedor. A senha atual, pelo motivo de sempre:
+         *     desconectar mexe em forma de entrar.
+         */
+        UnlinkSocialAccountRequest: {
+            /** Password */
+            password?: string | null;
         };
         /** UpdateCurrentCustomerRequest */
         UpdateCurrentCustomerRequest: {
@@ -12024,7 +12252,14 @@ export interface operations {
                     "application/json": components["schemas"]["GoogleSignInResponse"];
                 };
             };
-            /** @description `id_token` invalido, ou e-mail nao verificado no Google */
+            /** @description `nonce_token` vencido ou invalido — peca outro par e recomece */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `id_token` invalido, `nonce` que nao bate com esta sessao, ou e-mail nao verificado no Google */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -12106,6 +12341,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_google_nonce_auth_google_nonce_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleNonceResponse"];
                 };
             };
         };
@@ -13375,6 +13630,143 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_social_accounts_customers_me_social_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedSocialAccountResponse"][];
+                };
+            };
+            /** @description Nao autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    link_google_account_customers_me_social_google_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkGoogleAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedSocialAccountResponse"][];
+                };
+            };
+            /** @description Senha nao informada, `nonce_token` vencido, ou conta sem senha utilizavel (defina uma antes) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nao autenticado, senha incorreta, ou `id_token`/`nonce` invalido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Esta conta do Google ja esta conectada a outra conta */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_social_account_customers_me_social__provider__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlinkSocialAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedSocialAccountResponse"][];
+                };
+            };
+            /** @description Seria a unica forma de entrar, ou a conta nao tem senha utilizavel para confirmar */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nao autenticado, ou senha incorreta */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Esta conta nao esta conectada a esse provedor */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

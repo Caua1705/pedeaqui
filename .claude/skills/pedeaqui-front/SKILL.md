@@ -1467,3 +1467,85 @@ de `mockApi()` não intercepta coisa nenhuma, e o sintoma é
 Custou uma leitura errada do vermelho (fui procurar ação inexistente) até uma
 sonda das ações registradas mostrar que estavam todas lá. Quando um espião não
 vê nada, confira a ORDEM antes de duvidar do app.
+
+## 13. A rodada de CI de 03/09/2026 — a margem de 1 ms
+
+### 13.1 Uma afirmação de tempo cuja margem era menor que o instrumento
+
+`assistant-product-detail.spec.js:4` reprovou o CI exigindo `>= 520` e medindo
+**519**, depois **518** no retry. O app estava certo nas duas vezes.
+
+A conta do app: o CSS declara `.52s` de transição de saída e
+`assistantCloseProductDetail()` devolve o `hidden` num `setTimeout(540)`. A
+folga real é de **20 ms** — e a sonda gastava essa folga inteira antes de
+começar a contar, porque zerava o cronômetro no **`transitionrun`**, que só é
+despachado no recálculo de estilo SEGUINTE à remoção da classe. O temporizador
+do app, esse, foi armado no MESMO instante da remoção. A distância entre os dois
+marcos não é do app — é do escalonador — e o teste a cobrava do app.
+
+Medido, com a CPU estrangulada por CDP e a sonda imprimindo a leitura:
+
+| origem do relógio | 1x ocioso | 6x / 4 workers | 10x |
+|---|---|---|---|
+| `transitionrun` (o que reprovou) | 539–559 | 509 | **447**–672 |
+| remoção da classe (hoje) | 562–568 | 618–681 | 658–777 |
+
+Os 518 do CI são um atraso de despacho de 22 ms; a 10x ele chegou a 93 ms. Com
+a origem certa, **carga só EMPURRA a medida para cima**, que é o lado seguro, e
+nenhuma das 32 leituras ficou abaixo dos 540 do app.
+
+**A lição de método:** antes de afrouxar o teto, pergunte se o número que ele
+compara está medindo o que você pensa. Aqui metade da leitura era latência do
+protocolo do próprio teste. Afrouxar sozinho teria escondido isso e a margem
+teria de ser gigante.
+
+**E a margem tem o tamanho do INSTRUMENTO, não de um palpite.** São dois, com
+resoluções diferentes, então são dois números:
+
+- **`desenhadoAteMs`** (quanto tempo o painel ficou desenhado) é lido por
+  `requestAnimationFrame`, erra até um quadro de cada lado → **33 ms**, dois
+  quadros a 60 Hz.
+- **`hiddenAosMs`** (quando o `hidden` voltou) tem os dois extremos em
+  checkpoint de microtarefa, não espera quadro, e é limitado por baixo pelo
+  próprio temporizador do app → **8 ms**.
+
+**Por que DUAS leituras, e por que a segunda não é luxo:** medir por quadro erra
+para cima sob carga, e o erro chega a ser maior que o defeito. Com o CSS em
+`.60s` contra o temporizador de 540 ms — "alongaram a transição e esqueceram o
+temporizador" — `desenhadoAteMs` leu 546–565 e **deixou passar 1 de 5**;
+`hiddenAosMs` leu 541–549 e reprovou nas 5. O comentário anterior do arquivo
+afirmava que aquela metade pegava esse defeito. Pegava **quase sempre**, o que
+é outra coisa — e só apareceu porque o defeito foi reinjetado em vez de
+raciocinado.
+
+Vistos vermelhos, os três: temporizador 540→200 (3/3, leituras 214–232), CSS
+`.52s`→`.60s` (5/5), e `display:none` fora de `is-open` (3/3 — este NÃO chega
+às linhas de tempo: mata também a transição de ENTRADA, e quem reprova é o
+`abertura`, dizendo que a animação nunca começou).
+
+### 13.2 Os três flaky da mesma rodada — só um é da mesma classe
+
+Vieram como flaky (vermelhos que passaram no retry) na mesma execução.
+**Classificados por leitura da afirmação, sem os logs de falha** — o número de
+linha que o CI reporta é o do `test(`, não o da asserção, então nenhum dos três
+está provado. É ponto de partida, não veredito.
+
+| teste | tem margem apertada? | leitura |
+|---|---|---|
+| `auth-screen-nav:232` | **SIM** | `expect(Math.abs(scrollDepois - scrollAntes)).toBeLessThanOrEqual(8)`. O próprio comentário admite que o 8 cobre um reajuste de scroll do navegador quando o modal muda a altura do documento — **e a magnitude desse reajuste nunca foi medida**. O que a linha quer provar é binário ("a trava `fixed` devolvia scrollY 0"), e já é provado dois `expect` acima, por `document.body.style.position === ''`. Margem inventada guardando um fato que outra linha já guarda. Mesma classe do `:4` |
+| `profile-order-tracking:403` | **SIM, em pixel** | `expect(layout.height).toBe(layout.scrollHeight)` compara `Math.round(rect.height)` (fracionário, arredondado por nós) com `scrollHeight` (inteiro, arredondado pelo browser por outra regra) — tolerância ZERO entre duas quantizações diferentes. E mede geometria de texto sem esperar a fonte: é a família do §5.1-8, o Inter chegando no meio da leitura. Mesma classe, com o relógio trocado por régua |
+| `tenant-theme:244` | **NÃO** | varredura booleana de cor em ~1.500 elementos, sem número nenhum para afrouxar. O buraco histórico dele (boot que falha e deixa a página no laranja da plataforma) já está fechado por `esperarAppPronto` + `freezeTransitions`. Trate pela taxonomia da §11 — rode isolado e **olhe a duração antes de tocar no teste** |
+
+**Nenhum dos três foi corrigido nesta rodada**, de propósito: a §11 manda rodar
+isolado e conferir que o que falhou não é o eixo que se mexeu, e o eixo desta
+rodada (tempo de animação do detalhe do assistente) não toca nenhum dos três.
+Consertar por leitura de código é o mesmo erro que a §12.6 registra — a
+premissa com que se entra costuma estar errada, e a sonda é mais barata que o
+teste.
+
+**O padrão que os une, e que vale procurar no resto da suíte:** uma afirmação
+que embute uma margem numérica para guardar um fato BINÁRIO. O fato ("o body não
+virou `fixed`", "o painel não foi cortado") não precisa de número; o número
+entrou para absorver ruído de ambiente, e é ele que reprova a máquina no lugar
+do código. Quando a margem aparecer, pergunte: *existe uma linha que prove o
+mesmo fato sem número?* No `auth-screen-nav` existe, e está logo acima.

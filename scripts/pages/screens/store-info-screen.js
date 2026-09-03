@@ -76,10 +76,25 @@
     setStoreInfoTab('hours');
   }
 
+  /**
+   * O ícone só sai quando existe ARTE para ele.
+   *
+   * `infoBrandClass()` conhece cinco bandeiras de cartão e devolve '' para
+   * todo o resto — PIX, dinheiro, vale, e a sexta bandeira que o backend pode
+   * mandar amanhã. Um `<i class="pay-brand">` sem modificador é um retângulo
+   * branco vazio de 30x20 ao lado do rótulo: foi o que apareceu ao lado de
+   * "PIX" na aba Pagamento.
+   *
+   * O preço disto é que numa lista mista (uma bandeira conhecida ao lado de uma
+   * desconhecida) a linha sem ícone começa no texto. É menos ruim que o
+   * retângulo fantasma, que aparece SEMPRE em toda forma que não é cartão.
+   */
   function renderInfoPaymentEntries(entries) {
     return entries.map(entry => {
       const label = shell.infoPaymentLabel(entry);
-      return `<span><i class='pay-brand ${shell.infoBrandClass(label)}'></i>${esc(label)}</span>`;
+      const brandClass = shell.infoBrandClass(label);
+      const icon = brandClass ? `<i class='pay-brand ${brandClass}'></i>` : '';
+      return `<span>${icon}${esc(label)}</span>`;
     }).join('');
   }
 
@@ -153,7 +168,7 @@
         <div class='prof-info-card-header'><span class='prof-info-card-title'>${esc(branch.display_name || branch.name || 'Unidade')}</span></div>
         <div class='prof-info-row'><div><div class='prof-info-row-label'>Endereço</div><div class='prof-info-row-val'>${esc(infoFullAddress(branch) || 'Endereço não informado')}</div></div></div>
         <div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone || 'Telefone não informado')}</div></div></div>
-        <div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email || 'E-mail não informado')}</div></div></div>
+        ${branch.email ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email)}</div></div></div>` : ''}
         <div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div>${whatsapp ? `<a class='prof-info-row-link' href='https://wa.me/${whatsapp.startsWith('55') ? whatsapp : `55${whatsapp}`}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a>` : `<div class='prof-info-row-val'>WhatsApp não informado</div>`}</div></div>
       </div>
       <div class='prof-info-card'>
@@ -174,7 +189,16 @@
     document.querySelectorAll('#infoModal .store-info-name').forEach(element => { element.textContent = name; });
     document.querySelectorAll('#infoModal .store-info-neighborhood').forEach(element => { element.textContent = branch.display_name || branch.name || ''; });
     document.querySelectorAll('#infoModal .store-info-phone').forEach(element => { element.textContent = branch.phone || 'Telefone não informado'; });
-    document.querySelectorAll('#infoModal .store-info-email').forEach(element => { element.textContent = branch.email || 'E-mail não informado'; });
+    // SEM E-MAIL, A LINHA INTEIRA SOME. "E-mail não informado" é anunciar a
+    // ausência: ele ocupa uma linha do cartão de contato para dizer que não há
+    // nada ali. A loja do piloto é exatamente esse caso (`branch.email: null`).
+    // O texto é limpo ALÉM de a linha ser escondida — texto de elemento
+    // escondido continua no `textContent` do modal.
+    document.querySelectorAll('#infoModal .store-info-email').forEach(element => {
+      element.textContent = branch.email || '';
+      const row = element.closest('.store-contact-row');
+      if (row) row.hidden = !branch.email;
+    });
     document.querySelectorAll('#infoModal .store-info-whatsapp').forEach(element => { element.textContent = branch.whatsapp || 'WhatsApp não informado'; });
     document.querySelectorAll('#infoModal .store-contact-row--wa').forEach(element => {
       const phone = onlyDigits(branch.whatsapp || '');

@@ -54,6 +54,12 @@
 #infoModal .store-contact-row{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;max-width:100%!important;color:#757575!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;font-weight:500!important;text-decoration:none!important}
 #infoModal .store-contact-row svg{width:16px!important;height:16px!important;color:#9a9a9a!important;stroke-width:2!important}
 #infoModal .store-contact-row span{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+/* A linha de contato que a loja não tem é escondida pelo JS com `hidden`, e o
+   `display` da linha acima vem de um seletor com ID e `!important`: o
+   `[hidden]{display:none}` do agente de usuário perde por especificidade, e o
+   elemento ficaria com o atributo E visível (§12.14 da skill). Esta linha anda
+   junto daquela, sempre. */
+#infoModal .store-contact-row[hidden]{display:none!important}
 #infoModal .store-contact-row--wa,#infoModal .store-contact-row--wa svg{color:var(--brand-primary)!important;stroke:var(--brand-primary);font-weight:700!important}
 #infoModal .store-info-tabs{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:0!important;overflow:visible!important;}
 #infoModal .store-info-tabs button{min-width:0!important;border:0!important;border-bottom:3px solid transparent!important;background:transparent!important;font-size:var(--ref-text-sm)!important;line-height:var(--ref-line-md)!important;text-align:center!important;white-space:nowrap!important}
@@ -288,10 +294,20 @@
 #infoModal[data-store-info-tab="payment"] .store-info-tabs,
 #infoModal[data-store-info-tab="payment"] .store-payment-card{background:#ffffff!important}
 #infoModal[data-store-info-tab="payment"] .store-info-tabs{height:62px!important}
+/* ALTURA FIXA SOBRE DADO DO LOJISTA — era 301px de `height` E `min-height`.
+
+   A lista de formas de pagamento vem de /info e é DA LOJA: o piloto tem dez na
+   entrega, e o conteúdo mede 321px. As duas últimas bandeiras do Débito caíam
+   para FORA do cartão branco, em cima do cinza da página. Uma loja com menos
+   formas ganhava o defeito ao contrário — uma faixa branca vazia embaixo.
+
+   O `min-height` fica: ele é a altura calibrada da tela e segura o cartão
+   quando a lista é curta. Quem cresce é o `height`. */
 #infoModal[data-store-info-tab="payment"] .store-payment-card{
-  height:301px!important;
+  height:auto!important;
   min-height:301px!important;
   padding-top:20px!important;
+  padding-bottom:20px!important;
 }
 #infoModal[data-store-info-tab="payment"] .store-info-body::after{display:none!important}
 #infoModal .store-payment-group--debit{margin-top:32px!important}

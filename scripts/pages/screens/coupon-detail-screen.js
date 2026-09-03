@@ -179,12 +179,35 @@
     if (!coupon) return;
     const { acao } = ctaDoCupom(coupon);
 
+    // NAO SE VALIDA O QUE NAO PODE SER APLICADO: sem conta, o login vem
+    // ANTES do preview.
+    //
     // `requires_login` era do contrato antigo e sumiu junto com
     // /coupons/available. Como o campo deixou de existir, a comparação
     // `=== true` passou a ser sempre falsa: o cupom que exige conta seguia
     // direto para o preview, que respondia 401, e o cliente via "Não foi
     // possível aplicar este cupom" em vez da tela de login.
-    if (acao === CTA().ACOES.ENTRAR && !app.isLogged()) {
+    //
+    // O RAMO `ENTRAR` SOZINHO NAO BASTA, e este era o defeito de 03/09/2026.
+    // Ele só cobre `state: 'login_required'`, que é um veredito do backend
+    // sobre um cupom da LISTA. O cupom aberto pela vitrine da Home é
+    // `PublicCouponResponse` e não tem `state` nenhum, então ele caía em
+    // APLICAR mesmo para um visitante: o botão virava "Validando...", o
+    // `POST /coupons/preview` saía, o backend respondia 401 (a rota exige
+    // Bearer) e só então a tela de login abria. O cliente via um "Validando..."
+    // de meio segundo antes de uma tela que não tem nada a ver com validação.
+    //
+    // `previewSelectedCoupon()` continua abrindo o login no 401 — ela é a rede
+    // de baixo, para a sessão que expira ENTRE o toque e a resposta. O que
+    // muda aqui é não gastar uma ida à rede para descobrir o que a sessão já
+    // dizia antes do toque.
+    //
+    // E A PERGUNTA É `hasAuthSession()`, NÃO `app.isLogged()`. Medido numa
+    // sonda: `isLogged()` é `Boolean(customer || ...)` e responde TRUE para
+    // quem só digitou nome e telefone no checkout — isso grava um perfil em
+    // localStorage sem token nenhum, e é o caso mais comum do defeito. Quem faz
+    // o preview responder 401 é a ausência do Bearer, e só ela.
+    if (!shell.hasAuthSession() && (acao === CTA().ACOES.ENTRAR || acao === CTA().ACOES.APLICAR)) {
       shell.openLoginScreen('coupon');
       return;
     }
@@ -242,7 +265,7 @@
     ({ $, esc, fmt } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['getCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'showCouponNotice', 'mobNavMenu']) {
+    for (const nome of ['getCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu']) {
       if (typeof shell[nome] !== 'function') throw new Error(`coupon-detail-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({

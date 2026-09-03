@@ -374,7 +374,7 @@ test('confirmar o cupom aplica o desconto e o pedido leva o coupon_id', async ({
         })
       )
   });
-  await seedPickupSession(page);
+  await seedLoggedSession(page); // o preview exige token: auth OBRIGATORIA no backend
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
@@ -423,7 +423,7 @@ test('o total exibido é o total_after_coupon do backend, não a nossa subtraç�
         })
       )
   });
-  await seedPickupSession(page);
+  await seedLoggedSession(page); // o preview exige token: auth OBRIGATORIA no backend
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
@@ -463,7 +463,7 @@ test('cupom recusado com 200 não vira "cupom aplicado" nem entra no pedido', as
         })
       )
   });
-  await seedPickupSession(page);
+  await seedLoggedSession(page); // o preview exige token: auth OBRIGATORIA no backend
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
@@ -531,7 +531,7 @@ test('pedido minimo nao atingido vira frase com o quanto falta, e nao o codigo',
         })
       )
   });
-  await seedPickupSession(page);
+  await seedLoggedSession(page); // o preview exige token: auth OBRIGATORIA no backend
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
@@ -568,7 +568,7 @@ test('cupom aplicado sobrevive a abrir OUTRO cupom para leitura', async ({ page 
         })
       )
   });
-  await seedPickupSession(page);
+  await seedLoggedSession(page); // o preview exige token: auth OBRIGATORIA no backend
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
@@ -601,4 +601,56 @@ test('o saldo do Clube é o DESTA loja (by_restaurant), nunca a soma da conta', 
   // CashbackBalanceResponse avisa que a soma não é gastável — mostrar 50 aqui
   // é prometer desconto de outra loja.
   await expect(page.locator('#clubCashbackBalance')).toHaveText('R$ 12,50');
+});
+
+// ============================================================================
+//  SEM CONTA, O LOGIN VEM ANTES DO PREVIEW.
+//
+//  O que o cliente via: sacola cheia, sem login, abria um cupom pela vitrine da
+//  Home e tocava no botão. Ele virava "Validando...", ficava assim meio
+//  segundo, e só então abria a tela de login — que não tem nada a ver com
+//  validação. Não faz sentido validar o que não vai ser aplicado.
+//
+//  A causa é a mesma do item 7 desta rodada, por outra porta: o cupom da
+//  vitrine é `PublicCouponResponse` e NÃO TEM `state`, então o decisor caía em
+//  "aplicar" mesmo para um visitante. O ramo que já existia só cobria
+//  `state: 'login_required'`, que é veredito do backend sobre um cupom da
+//  LISTA — e o visitante da Home nunca tem esse veredito na mão.
+//
+//  O preview não é opcional aqui: `POST /coupons/preview` declara `HTTPBearer`,
+//  e sem token responde 401. Ou seja, a ida à rede era garantidamente inútil.
+// ============================================================================
+test('sem login, o botão do cupom abre o login direto — sem "Validando..." e sem preview', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await seedPickupSession(page);
+  // SEM token de propósito: é o visitante.
+  const { couponPreviewRequests } = await mockApi(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.RapidexActions.resolve('showHomeTab')?.());
+
+  await page.locator('#couponRail .coupon-use-btn').first().click();
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+
+  const botao = page.locator('.coupon-detail-use');
+  // A sacola está CHEIA, então o botão é o que aplica — é esse o caminho do
+  // defeito. Com a sacola vazia ele diria "Ver cardápio" e nunca chegaria aqui.
+  await expect(botao).toHaveText('Usar cupom');
+
+  await botao.click();
+  await expect(page.locator('#loginModal')).toHaveClass(/active/);
+
+  // A afirmação que vale: o rótulo NUNCA passou por "Validando...". Ela é lida
+  // do texto atual porque o app restaura o rótulo no fim do caminho — se o
+  // teste só olhasse o estado final, o "Validando..." de meio segundo passaria
+  // batido, que foi exatamente como ele sobreviveu.
+  await expect(botao).not.toHaveText('Validando...');
+  expect(
+    couponPreviewRequests,
+    'sem token o preview responde 401: a ida à rede era garantidamente inútil'
+  ).toHaveLength(0);
 });

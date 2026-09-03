@@ -55,9 +55,19 @@ const PREVIEW_RECUSADO = {
   ineligibility_reason: 'first_order_only'
 };
 
+// O CAMPO DE CUPOM DO CHECKOUT EXIGE CONTA, e este preparo passou a dizer isso.
+//
+// `POST /coupons/preview` usa auth OBRIGATÓRIA no backend
+// (`docs/autenticacao-e-escopo.md`): sem token, 401. Até 03/09/2026 estes
+// testes rodavam SEM token e passavam mesmo assim, porque o mock respondia a
+// qualquer requisição — exercitavam um caminho que produção nunca teve. Hoje o
+// mock recusa como o backend recusa, e o preparo semeia a sessão.
 async function abrirSacolaCom3(page, opcoes = {}) {
   const mock = await mockApi(page, { orderResponse: pixOrder, ...opcoes });
   await seedPickupSession(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('rapidex.customer.token', 'e2e-cupom-token');
+  });
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);
   await addH2OToCart(page, 3);

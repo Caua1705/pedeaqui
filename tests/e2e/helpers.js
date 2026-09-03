@@ -346,8 +346,27 @@ export async function mockApi(page, {
     }
     // A ORDEM importa: /coupons/preview é POST e precisa ser testado ANTES do
     // /coupons genérico, senão a lista responderia à validação também.
+    // O PREVIEW EXIGE TOKEN, E O MOCK RECUSA COMO O BACKEND RECUSA.
+    //
+    // `POST /coupons/preview` usa `get_current_customer` (auth OBRIGATÓRIA):
+    // sem token → 401. Está escrito em `docs/autenticacao-e-escopo.md` do
+    // backend, e a diferença importa porque `GET /coupons` usa
+    // `get_optional_current_customer` e funciona sem token — as duas rotas
+    // carregam o MESMO `security: [{HTTPBearer}]` no OpenAPI, então o spec
+    // sozinho não distingue uma da outra.
+    //
+    // Até 03/09/2026 este mock respondia a QUALQUER requisição, com ou sem
+    // Authorization, e cinco testes desta suíte aplicavam cupom sem token —
+    // um caminho que em produção sempre respondeu 401. "Um mock que só aceita
+    // é um teste que só concorda" (§4 da skill): a recusa vem primeiro.
     if (/\/coupons\/preview(\?|$)/.test(url)) {
-      couponPreviewRequests.push({ body: JSON.parse(request.postData() || '{}') });
+      couponPreviewRequests.push({
+        body: JSON.parse(request.postData() || '{}'),
+        autorizado: Boolean(request.headers().authorization)
+      });
+      if (!request.headers().authorization) {
+        return route.fulfill(json({ detail: 'Not authenticated' }, 401));
+      }
       if (onPreviewCoupon) return onPreviewCoupon(route, request, couponPreviewRequests.length);
       return route.fulfill(json({ detail: 'Token ausente' }, 401));
     }

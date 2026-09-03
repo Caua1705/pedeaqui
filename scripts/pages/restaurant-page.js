@@ -5839,6 +5839,18 @@
       readyCardImage,
       renderDetailImage,
       openLoginScreen,
+      // NAO E `app.isLogged()`, e a diferenca decide se uma requisicao sai.
+      //
+      // `isLogged()` e `Boolean(customer || ...)`: ele responde TRUE para quem
+      // so digitou nome e telefone no checkout, porque isso grava um perfil em
+      // localStorage sem token nenhum. Quem faz `POST /coupons/preview`
+      // responder 401 e a ausencia do Bearer, e so ela — a rota declara
+      // `HTTPBearer` no contrato.
+      //
+      // Perguntar `isLogged()` antes de aplicar um cupom deixaria passar
+      // exatamente o caso mais comum do defeito: a pessoa que se identificou
+      // para pedir, nunca criou conta, e via "Validando..." antes do login.
+      hasAuthSession: () => Boolean(window.PedeAquiCustomerService?.isLoggedIn?.()),
       showCouponNotice,
       mobNavMenu
     }

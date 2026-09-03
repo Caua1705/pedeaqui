@@ -460,10 +460,10 @@
            As classes de PAPEL vêm de styles/components.css (.ui-btn-danger e
            .ui-btn-secondary) de propósito. Não se reusa aqui `.addr-delete-yes`
            / `.addr-delete-cancel`: aqueles dois nomes marcam a POSIÇÃO no par,
-           não a função, e já trocam de papel entre as três telas que os usam —
-           no #logoutConfirm quem tem "yes" no nome é o botão de FICAR. Herdar
-           essa confusão numa tela que cancela pedido é herdar a pior parte
-           dela. Ver §4.1 da skill.
+           não a função. Até 03/09/2026 o #logoutConfirm ainda invertia os
+           papéis (quem tinha "yes" no nome era o botão de FICAR); isso foi
+           desfeito, mas os nomes continuam sendo posição, e herdá-los numa tela
+           que cancela pedido seria herdar a confusão de volta. Ver §4.1.
 
            A lista de consequências é preenchida pelo JS a partir do PEDIDO:
            prometer estorno num pedido que se paga na entrega seria mentir. -->
@@ -2131,8 +2131,12 @@
 <div class="addr-delete-confirm" id="logoutConfirm" aria-hidden="true" data-act-click='closeLogoutConfirm'>
   <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" data-act-click='["$stop"]'>
     <h3 class="addr-delete-title" id="logoutConfirmTitle">Deseja sair?</h3>
-    <button class="addr-delete-cancel" type="button" data-act-click='cancelLogout'>Cancelar</button>
+    <!-- A AÇÃO VEM PRIMEIRO, como em #addrDeleteConfirm e no excluir item da
+         sacola: quem abre este diálogo quer sair. Até 03/09/2026 o "Cancelar"
+         vinha antes e preenchido, e o "Sair" contornado embaixo — a inversão
+         de papéis da §4.1 da skill, que era decisão de produto em aberto. -->
     <button class="addr-delete-yes" type="button" data-act-click='confirmLogout'>Sair</button>
+    <button class="addr-delete-cancel" type="button" data-act-click='cancelLogout'>Cancelar</button>
   </div>
 </div>
 <!-- Aviso curto do app: troca de unidade, e o que mais precisar ser visto sem

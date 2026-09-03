@@ -5416,7 +5416,10 @@
     }
     if (open) {
       document.body.classList.add('logout-confirm-open');
-      setAccessibleDialogState(confirm, true, '.addr-delete-cancel');
+      // O foco vai para o botão CHEIO, como nos outros dois diálogos. Ele era
+      // `.addr-delete-cancel` porque ali morava o preenchido; com os papéis
+      // desinvertidos (§4.1), o preenchido é o `.addr-delete-yes`.
+      setAccessibleDialogState(confirm, true, '.addr-delete-yes');
       return;
     }
     setAccessibleDialogState(confirm, false);

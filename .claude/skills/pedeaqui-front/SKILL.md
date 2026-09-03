@@ -544,33 +544,47 @@ o relógio da página (`clock.install` + **`pauseAt`** — `install()` sozinho n
 para o relógio, e a versão sem `pauseAt` passou com um piso de 900ms injetado de
 propósito). Não há mais nenhuma asserção de `Date.now()` na suíte.
 
-## 4.1 `.addr-delete-yes` e `.addr-delete-cancel` TROCAM DE PAPEL entre telas
+## 4.1 `.addr-delete-yes` e `.addr-delete-cancel` nomeiam POSIÇÃO, não função
 
-NÃO renomeie, não "corrija", não unifique por nome. As duas classes nomeiam a
-POSIÇÃO no par de botões, não a função:
+NÃO renomeie e não unifique por nome. As duas classes nomeiam a POSIÇÃO no par
+de botões; quem dá o papel é a folha de cada tela:
 
 | Tela | `.addr-delete-yes` | `.addr-delete-cancel` |
 |---|---|---|
 | `#addrPickerModal` (apagar endereço) | **vermelho**, apaga | secundário, volta |
 | Sacola (remover item) | **vermelho**, remove | secundário, volta |
-| `#logoutConfirm` (sair da conta) | secundário, **fica** | **primário laranja**, SAI |
+| `#logoutConfirm` (sair da conta) | **preenchido na marca**, SAI | contornado, fica |
 
-No logout os dois invertem: quem tem `yes` no nome é o botão de FICAR, e quem
-tem `cancel` é o que executa a saída. A folha de cada tela repinta por cima
-(`utilities.css`, `#logoutConfirm ...`), e é só por isso que a tela está certa.
+**A INVERSÃO DO LOGOUT ACABOU (03/09/2026).** Até essa data o logout trocava os
+papéis: quem tinha `yes` no nome era o botão de FICAR, e o `cancel` era o que
+executava a saída, preenchido. Isso estava levantado aqui como decisão de
+produto em aberto; a decisão foi tomada — quem abre "Deseja sair?" quer sair, e
+o preenchido passou a ser o "Sair", com o markup reordenado (a ação primeiro,
+como nas outras duas) e o foco inicial indo para `.addr-delete-yes`.
 
-Duas consequências práticas:
+Duas coisas que essa correção ensinou:
 
-1. Um `grep .addr-delete-yes` sugere "o botão destrutivo" e está errado em uma
-   das três telas. Antes de mexer, abra a tela.
-2. Uma classe de componente por PAPEL (`.ui-btn-danger`) não pode ser aplicada
-   a essas duas por nome — teria de ser por tela. É exatamente por isso que
-   `styles/components.css` separa FORMA (`.ui-btn`) de PAPEL
-   (`.ui-btn-primary` / `-secondary` / `-danger`): a forma é a mesma nas três
-   telas, o papel não.
+1. **A inversão só existia no CELULAR.** As duas regras de cor moravam dentro
+   de `@media(max-width:767px)` em `utilities.css`. Acima disso elas não valiam,
+   `.addr-delete-yes` caía na regra genérica de `operation.css` e o "Sair"
+   aparecia VERMELHO — a mesma tela dizendo coisas diferentes conforme a
+   largura, e nenhuma das duas por decisão. Um teste na largura padrão do
+   Playwright (1280) **passa sem ter olhado para o defeito**: qualquer afirmação
+   sobre estas telas precisa de `setViewportSize` de celular.
+2. **O que continua diferente é a COR, e por decisão.** Apagar é
+   `--state-danger-strong`; sair da conta é a marca, porque sair não destrói
+   nada. Cor de estado é para o que destrói.
 
-Consertar isso é mexer em markup e em três telas de confirmação, e é decisão de
-produto — foi levantado e deixado de propósito em 30/08/2026.
+Consequência que não mudou: uma classe de componente por PAPEL (`.ui-btn-danger`)
+continua não podendo ser aplicada a essas duas por nome — teria de ser por tela.
+É por isso que `styles/components.css` separa FORMA (`.ui-btn`) de PAPEL
+(`.ui-btn-primary` / `-secondary` / `-danger`).
+
+E o contraste do rótulo sobre a marca tem piso **3:1**, não 4,5 — é
+`ON_BRAND_MIN_CONTRAST` (`brand-theme.js`), o mínimo AA de COMPONENTE de
+interface. O 4,5 do botão de apagar é outro caso: lá a cor é nossa
+(`--state-danger-strong`), escolhida para alcançá-lo. Um teste que exija 4,5
+sobre a marca reprova o app inteiro (o CTA da sacola dá 3,83 no piloto).
 
 ## 5.1 O CSS, e as quatro ferramentas que respondem por medida
 

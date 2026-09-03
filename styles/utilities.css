@@ -4816,18 +4816,37 @@ body.menu-tab .product-card.is-pressing{
     line-height:var(--ref-line-md)!important;
     font-weight:700!important;
   }
-  #logoutConfirm .addr-delete-cancel{
-    margin:0 0 10px!important;
-    border:0!important;
-    background:var(--brand-primary)!important;
-    color:var(--brand-on)!important;
-  }
-  #logoutConfirm .addr-delete-yes{
-    margin:0!important;
-    border:1.5px solid var(--brand-primary)!important;
-    background:var(--surface)!important;
-    color:var(--brand-primary)!important;
-  }
+}
+/* QUEM ABRE ESTE DIÁLOGO QUER SAIR, então o cheio é o "Sair".
+
+   Até 03/09/2026 era o contrário: o `.addr-delete-cancel` (o "Cancelar") vinha
+   preenchido na marca e o "Sair" contornado. Era a §4.1 da skill em pessoa —
+   `.addr-delete-yes` e `.addr-delete-cancel` nomeiam a POSIÇÃO no par, não a
+   função, e só esta tela invertia os papéis. Ficou levantado de propósito em
+   30/08/2026 por ser decisão de produto; a decisão foi tomada, e as três telas
+   de confirmação passam a ler igual: `.addr-delete-yes` é a AÇÃO,
+   `.addr-delete-cancel` volta atrás.
+
+   FORA DO @media, e essa parte não é cosmética. As duas regras moravam dentro
+   do bloco de até 767px, então acima disso elas não valiam e `.addr-delete-yes`
+   caía na regra genérica de operation.css — o VERMELHO de apagar. A mesma tela
+   dizia coisas diferentes conforme a largura, e nenhuma das duas por decisão.
+   Agora vale nas duas.
+
+   E o cheio é a MARCA, não o vermelho: sair da conta não apaga nada, e cor de
+   estado é para o que destrói. A especificidade por id vence o `!important` de
+   `.addr-delete-yes` em operation.css sem precisar de um próprio. */
+#logoutConfirm .addr-delete-yes{
+  margin:0 0 10px!important;
+  border:0!important;
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+}
+#logoutConfirm .addr-delete-cancel{
+  margin:0!important;
+  border:1.5px solid var(--brand-primary)!important;
+  background:var(--surface)!important;
+  color:var(--brand-primary)!important;
 }
 /* Address picker from profile: no lingering blur while returning. */
 #addrPickerModal,

@@ -69,6 +69,85 @@ test('o botao que EXCLUI nao pode ser igual ao que confirma o pedido', async ({ 
   ).toBeGreaterThanOrEqual(4.5);
 });
 
+// A HIERARQUIA DO "Deseja sair?" ESTAVA INVERTIDA.
+//
+// Quem abre este dialogo quer sair; o cheio tem de ser o "Sair". Ate 03/09/2026
+// era o contrario — `#logoutConfirm .addr-delete-cancel` (o "Cancelar") vinha
+// com `background:var(--brand-primary)` e o "Sair" contornado.
+//
+// Isto era a §4.1 da skill em pessoa: `.addr-delete-yes` e
+// `.addr-delete-cancel` nomeiam a POSICAO no par, nao a funcao, e nesta tela os
+// papeis vinham trocados. Ficou levantado de proposito em 30/08/2026 por ser
+// decisao de produto; a decisao foi tomada agora, e as tres telas passam a ler
+// igual: `.addr-delete-yes` e a acao, `.addr-delete-cancel` volta atras.
+//
+// O que este teste NAO exige: que o Sair seja vermelho. Sair da conta nao apaga
+// nada — a cor de estado e para o que destroi, e o teste abaixo guarda os dois
+// dialogos onde ela vale.
+test('no "Deseja sair?" o botao CHEIO e o Sair, e o Cancelar e o contornado', async ({ page }) => {
+  // A INVERSAO SO EXISTE NO CELULAR: o bloco que a fazia mora dentro de
+  // `@media(max-width:767px)` (utilities.css). Na largura padrao do Playwright
+  // (1280) esta tela nem chega a ser a folha de baixo, e o teste passaria sem
+  // ter olhado para o defeito.
+  await page.setViewportSize({ width: 414, height: 896 });
+  await mockApi(page);
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => {
+    window.PedeAquiCustomerAuth.setToken('e2e-logout-token');
+    window.PedeAquiCustomerService.getCurrentCustomer = async () => ({ id: 'c', name: 'E2E', phone: '85999999999' });
+    window.PedeAquiOrderService.getCustomerOrders = async () => [];
+    window.PedeAquiAddressService.getCustomerAddresses = async () => [];
+    window.RapidexActions.resolve('logout')();
+  });
+
+  const sair = page.locator('#logoutConfirm .addr-delete-yes');
+  const cancelar = page.locator('#logoutConfirm .addr-delete-cancel');
+  await expect(sair).toBeVisible();
+
+  // Os rotulos primeiro: sem isto o teste afirmaria sobre a classe, e a classe
+  // e justamente a que mente aqui.
+  await expect(sair).toHaveText('Sair');
+  await expect(cancelar).toHaveText('Cancelar');
+  await expect(sair).toHaveAttribute('data-act-click', /confirmLogout/);
+  await expect(cancelar).toHaveAttribute('data-act-click', /cancelLogout/);
+
+  const caixa = (locator) =>
+    locator.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { fundo: cs.backgroundColor, texto: cs.color, borda: cs.borderTopWidth };
+    });
+  const marca = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim()
+  );
+  const hexParaRgb = (hex) => {
+    const n = hex.replace('#', '');
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16));
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
+  const cheio = await caixa(sair);
+  const vazado = await caixa(cancelar);
+
+  expect(cheio.fundo, 'o Sair e o preenchido na cor da marca').toBe(hexParaRgb(marca));
+  expect(cheio.borda, 'preenchido nao tem borda').toBe('0px');
+  expect(vazado.fundo, 'o Cancelar nao pode estar preenchido na marca').not.toBe(
+    hexParaRgb(marca)
+  );
+  expect(vazado.texto, 'o Cancelar leva a marca no TEXTO').toBe(hexParaRgb(marca));
+  expect(parseFloat(vazado.borda), 'o Cancelar e contornado').toBeGreaterThan(0);
+
+  // Contraste do rotulo sobre o preenchido: o piso e 3:1, nao 4,5.
+  // `--brand-on` e calculado por `onBrandColor()` contra ON_BRAND_MIN_CONTRAST
+  // = 3, que e o minimo AA de COMPONENTE de interface — rotulo de botao, chip,
+  // aba ativa —, nunca texto corrido. Exigir 4,5 aqui seria exigir deste botao
+  // mais do que o app inteiro exige de toda superficie de marca (o CTA da
+  // sacola da 3,83:1 no piloto). O 4,5 do teste de cima e outro caso: la a cor
+  // e NOSSA (--state-danger-strong), escolhida justamente para alcanca-lo.
+  expect(contraste(cheio.fundo, cheio.texto)).toBeGreaterThanOrEqual(3);
+});
+
 test('toda seta de voltar do app tem a mesma caixa', async ({ page }) => {
   // Havia DEZ regras prefixadas por id repetindo 32x32 / 9px / #ececec para
   // derrubar uma base que dizia 36x36 / 50% / #f5f5f5 (e 40x40 / 12px no

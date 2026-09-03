@@ -1408,10 +1408,11 @@
    texto normal para efeito de contraste, e o alvo é 4,5:1. Sobre o token claro
    dariam 3,34:1. Ver a nota do token em tokens.css.
 
-   `#logoutConfirm` INVERTE os papéis destas duas classes — lá o cheio é o
-   "Cancelar" e o `.addr-delete-yes` é o contornado — e continua fazendo isso:
-   a regra dele em utilities.css é mais específica e vem depois. Sair da conta
-   não é o mesmo gesto que apagar um endereço, e a tela já dizia isso. */
+   `#logoutConfirm` INVERTIA os papéis destas duas classes — lá o cheio era o
+   "Cancelar" — e deixou de inverter em 03/09/2026: o cheio passou a ser o
+   "Sair", como aqui. O que ele continua trocando é a COR, e por decisão: a
+   regra dele em utilities.css pinta o cheio com a MARCA, não com este vermelho.
+   Sair da conta não apaga nada, e cor de estado é para o que destrói. */
 .addr-delete-yes{
   border:0!important;
   background:var(--state-danger-strong)!important;

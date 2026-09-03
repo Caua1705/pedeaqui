@@ -43,12 +43,13 @@
 
    `.ui-btn` é só a FORMA. A cor é o papel, e vem de uma das três classes
    abaixo — dessa separação sai a resposta para o caso que existe neste app: as
-   MESMAS duas classes trocam de papel entre telas. Em `#addrPickerModal`,
-   `.addr-delete-yes` é o botão vermelho de apagar e `.addr-delete-cancel` é o
-   secundário; em `#logoutConfirm`, `.addr-delete-cancel` é o primário laranja
-   e `.addr-delete-yes` é o secundário. As classes nomeiam a POSIÇÃO no par, e
-   a folha de cada tela repinta por cima. Não foram tocadas aqui: trocar isso
-   mexe em markup e em três telas de confirmação, e é decisão de produto.
+   MESMAS duas classes nomeiam a POSIÇÃO no par, não a função, e a folha de
+   cada tela repinta por cima. Em `#addrPickerModal` e na sacola,
+   `.addr-delete-yes` é o botão vermelho de apagar. Em `#logoutConfirm` os
+   papéis vinham INVERTIDOS — o `.addr-delete-cancel` é que era o primário —, e
+   isso foi desfeito em 03/09/2026: hoje as três telas leem igual, com
+   `.addr-delete-yes` sendo a ação. O que continua diferente é a COR: apagar é
+   vermelho, sair da conta é a marca, porque sair não destrói nada.
 
    Sem `!important`, e `font-family` FORA. As regras substituídas tinham as
    duas coisas, e a captura mostrou por quê: `utilities.css:394` declara

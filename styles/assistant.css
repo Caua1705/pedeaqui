@@ -241,8 +241,25 @@ body.menu-tab .delivery-widget:has(.address-strip.has-address) .delivery-widget-
 /* Perfil/Clube deslogado: o painel branco entra por cima da tela atual. A
    camada do overlay precisa continuar transparente durante esse movimento;
    um scrim instantâneo fazia localização + identidade da Home desaparecerem
-   antes de o painel realmente cobri-los. */
-#loginModal.active.from-bottom-nav:not(.signin-open) {
+   antes de o painel realmente cobri-los.
+
+   `from-coupon` ENTROU AQUI em 03/09/2026, e o motivo é medido, não estético.
+   Vindo da folha do cupom o login abre POR CIMA de uma tela que já tem scrim
+   próprio: `.coupon-detail-overlay.active` é `rgba(0,0,0,.42)` e continua
+   aberta atrás. Dois scrims de 42% empilhados dão ~66% de preto, e ao tocar
+   "Entrar" a classe `signin-open` entra e derruba SÓ o de cima — de .42 para
+   0 em .28s, com o de baixo parado. Esse degrau é o "fade preto estranho" que
+   só existia por este caminho; pelo Perfil não havia scrim nenhum para cair.
+
+   Sondado nos dois caminhos, 414x896:
+     cupom  -> loginModal bg rgba(0,0,0,.42) SOBRE couponDetailOverlay .42
+     perfil -> loginModal bg rgba(0,0,0,0)   e nenhuma camada atrás
+
+   A folha do cupom NÃO é fechada de propósito: quem desiste do login precisa
+   voltar para o cupom que estava lendo, e fechá-la jogaria a pessoa na Home. O
+   scrim que sobra é o dela, que é de quem a tela é. */
+#loginModal.active.from-bottom-nav:not(.signin-open),
+#loginModal.active.from-coupon:not(.signin-open) {
   background: transparent !important;
 }
 

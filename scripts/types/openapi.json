@@ -8139,6 +8139,11 @@
             "title": "Name",
             "type": "string"
           },
+          "password_set": {
+            "default": true,
+            "title": "Password Set",
+            "type": "boolean"
+          },
           "phone": {
             "title": "Phone",
             "type": "string"
@@ -8565,6 +8570,13 @@
             },
             "title": "Reviews",
             "type": "array"
+          },
+          "social_identities": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerSocialIdentityItem"
+            },
+            "title": "Social Identities",
+            "type": "array"
           }
         },
         "required": [
@@ -8573,7 +8585,8 @@
           "addresses",
           "orders",
           "cashback",
-          "reviews"
+          "reviews",
+          "social_identities"
         ],
         "title": "CustomerDataExportResponse",
         "type": "object"
@@ -8774,6 +8787,43 @@
         ],
         "title": "CustomerSegment",
         "type": "string"
+      },
+      "CustomerSocialIdentityItem": {
+        "description": "Uma conta de provedor ligada a esta pessoa, na exportacao de dados.\n\n`provider_user_id` entra, e a decisao merece a linha: e o `sub` do Google,\num identificador estavel da pessoa DENTRO do provedor. Omiti-lo faria a\nexportacao do Art. 18, II descrever um dado que a plataforma guarda e nao\nmostra — e ele e da propria pessoa, devolvido so a ela, numa rota\nautenticada que nao aceita id de terceiro.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_user_id": {
+            "title": "Provider User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "provider_user_id",
+          "created_at"
+        ],
+        "title": "CustomerSocialIdentityItem",
+        "type": "object"
       },
       "DeleteCustomerAccountRequest": {
         "description": "A senha atual, e nada mais.\n\nCorpo em `DELETE` e incomum mas legal. A alternativa — senha na\nquerystring — a colocaria no log de todo proxy no caminho.",
@@ -9156,6 +9206,169 @@
           "email"
         ],
         "title": "ForgotPasswordRequest",
+        "type": "object"
+      },
+      "GoogleCompleteSignupRequest": {
+        "description": "O que o Google nao da, e que `customers` exige.\n\n`phone` e `birth_date` sao NOT NULL na tabela e nao vem no `id_token`. O\ntelefone em especial nao aceita sentinela: para cliente logado o\n`customer_phone_snapshot` do pedido sai de `customers.phone`, e um valor\nfalso ali e o numero que o entregador liga.",
+        "properties": {
+          "birth_date": {
+            "format": "date",
+            "title": "Birth Date",
+            "type": "string"
+          },
+          "marketing_opt_in": {
+            "default": false,
+            "title": "Marketing Opt In",
+            "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "phone": {
+            "minLength": 8,
+            "title": "Phone",
+            "type": "string"
+          },
+          "privacy_accepted": {
+            "title": "Privacy Accepted",
+            "type": "boolean"
+          },
+          "signup_ticket": {
+            "title": "Signup Ticket",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signup_ticket",
+          "phone",
+          "birth_date",
+          "privacy_accepted"
+        ],
+        "title": "GoogleCompleteSignupRequest",
+        "type": "object"
+      },
+      "GoogleSignInRequest": {
+        "properties": {
+          "id_token": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Id Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_token"
+        ],
+        "title": "GoogleSignInRequest",
+        "type": "object"
+      },
+      "GoogleSignInResponse": {
+        "description": "Uma resposta com campos opcionais, e nao tres schemas.\n\nE a forma que `LoginResponse` ja usa nesta API, e o app do cliente ja sabe\nler. `status` diz qual bloco esta preenchido.",
+        "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
+          "customer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginCustomerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "link_ticket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Ticket"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "signup_ticket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signup Ticket"
+          },
+          "status": {
+            "enum": [
+              "authenticated",
+              "link_confirmation_required",
+              "profile_required"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "token_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Type"
+          }
+        },
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "GoogleSignInResponse",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -13011,6 +13224,17 @@
           "email": {
             "title": "Email",
             "type": "string"
+          },
+          "google_link_ticket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Google Link Ticket"
           }
         },
         "required": [
@@ -13022,9 +13246,52 @@
       },
       "VerifyEmailCodeResponse": {
         "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
+          "customer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginCustomerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "linked_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Provider"
+          },
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "token_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Type"
           },
           "verified": {
             "title": "Verified",
@@ -18788,6 +19055,108 @@
         ]
       }
     },
+    "/auth/google": {
+      "post": {
+        "description": "Entrar com Google. Mande o `id_token`; leia o `status` da resposta.\n\nO app faz o login com o Google no aparelho e manda aqui o `id_token` (o\n`idToken` do `GoogleSignIn`, nao o `accessToken`). O servidor confere a\nassinatura contra as chaves publicas do Google, o `aud` contra os nossos\nclient ids e o `iss`; `email_verified` falso e recusado com 401.\n\n## Os tres desfechos, pelo campo `status`\n\n**`authenticated`** — o `sub` ja e conhecido. Vem `access_token`,\n`token_type` e `customer`: e o MESMO token de `POST /auth/login`, e a\nsessao se usa igual.\n\n**`link_confirmation_required`** — o `sub` e novo e o `email` ja tem conta\naqui. **Ninguem foi logado e nada foi ligado.** Um codigo de seis digitos\nsaiu para o e-mail, e a resposta traz `link_ticket`: leve a pessoa para a\ntela de codigo e chame `POST /auth/verify-email-code` com\n`{email, code, google_link_ticket}`. E de la que sai a sessao.\n\n**`profile_required`** — o `sub` e novo e o e-mail nao tem conta. Vem\n`signup_ticket`, `email` e `name` (o nome do Google, que pode ser o proprio\ne-mail quando o perfil nao tem nome). Peca telefone e data de nascimento —\nos dois campos obrigatorios que o Google nao fornece — e chame\n`POST /auth/google/complete-signup`.\n\n## O que esta rota NAO faz\n\nNao junta contas por e-mail, em nenhuma hipotese. Nao devolve sessao para\num e-mail que o Google nao confirmou. E nao guarda o `id_token`: ele e\nconferido e descartado.",
+        "operationId": "sign_in_with_google_auth_google_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleSignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleSignInResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "`id_token` invalido, ou e-mail nao verificado no Google"
+          },
+          "403": {
+            "description": "Conta inativa"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "description": "Nao foi possivel falar com o Google"
+          },
+          "503": {
+            "description": "`GOOGLE_OAUTH_CLIENT_IDS` nao esta configurada neste servidor"
+          }
+        },
+        "summary": "Sign In With Google",
+        "tags": [
+          "customer auth"
+        ]
+      }
+    },
+    "/auth/google/complete-signup": {
+      "post": {
+        "description": "Conclui o cadastro do caso (c) e devolve a sessao.\n\nMande o `signup_ticket` que `POST /auth/google` deu, mais `phone`,\n`birth_date` e `privacy_accepted`. `marketing_opt_in` e `name` sao\nopcionais — sem `name`, fica o do Google.\n\n**Por que estes dois campos, e por que nao da para pular.** `phone` e\n`birth_date` sao `NOT NULL` em `customers` e o Google nao manda nenhum dos\ndois. O telefone em especial nao aceita valor de enfeite: para cliente\nlogado, o pedido copia `customers.phone` no snapshot, e e esse numero que\no entregador liga.\n\nA resposta e o mesmo `LoginResponse` do login por e-mail. A conta nasce com\no e-mail ja verificado (o Google provou) e **sem senha utilizavel** — quem\nquiser uma senha usa `POST /auth/forgot-password`, que manda codigo para\nesse mesmo e-mail.\n\n**409 significa recomecar**, e nao \"tente outros dados\": entre as duas\ntelas, ou o `sub` foi ligado em outra aba, ou alguem criou conta com esse\ne-mail. Chame `POST /auth/google` de novo — ele cai sozinho no caso certo.",
+        "operationId": "complete_google_signup_auth_google_complete_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCompleteSignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Ticket que nao vale mais, ou aceite de privacidade ausente"
+          },
+          "409": {
+            "description": "Telefone ja cadastrado, ou o e-mail/`sub` mudou de estado entre as duas telas"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Google Signup",
+        "tags": [
+          "customer auth"
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "login_auth_login_post",
@@ -18954,6 +19323,7 @@
     },
     "/auth/verify-email-code": {
       "post": {
+        "description": "Confere o codigo de seis digitos. E a MESMA rota para dois usos.\n\n**Sem `google_link_ticket`** — o cadastro por e-mail, sem nenhuma mudanca:\nmarca `email_verified_at`, responde `{verified, message}` e nao devolve\ntoken. O login continua sendo o passo seguinte.\n\n**Com `google_link_ticket`** — o caso (b) do \"entrar com Google\":\n`POST /auth/google` encontrou um `sub` novo cujo e-mail ja tem conta,\nmandou este codigo e devolveu o ticket. O codigo certo **liga a identidade\nao cliente que ja existe** — nunca cria outro — e a resposta traz\n`access_token`, `token_type`, `customer` e `linked_provider`.\n\nO ticket sozinho nao liga nada: quem autoriza e o codigo, que so chega na\ncaixa de entrada. E essa prova a mais que fecha o furo de juntar contas por\ne-mail — sem ela, quem tivesse se cadastrado antes com o endereco de outra\npessoa receberia a conta dela pronta quando ela entrasse com o Google.\n\n**Nao ha rota de reenvio para este codigo.** `POST /auth/resend-email-code`\nnao serve: ele desiste em silencio quando o e-mail ja esta verificado, que\ne o caso da maioria das contas existentes. Para outro codigo, chame\n`POST /auth/google` de novo — o cooldown de 60 s e o teto de 3 na janela de\n15 min continuam valendo, e um ticket novo vem junto.",
         "operationId": "verify_email_code_auth_verify_email_code_post",
         "requestBody": {
           "content": {
@@ -18976,6 +19346,18 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "Codigo invalido ou expirado, ou `google_link_ticket` que nao vale mais"
+          },
+          "403": {
+            "description": "Conta inativa (so no caminho com `google_link_ticket`)"
+          },
+          "404": {
+            "description": "Cliente nao encontrado"
+          },
+          "409": {
+            "description": "A conta do Google do ticket ja esta ligada a outra conta"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18985,6 +19367,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Muitas tentativas neste codigo"
           }
         },
         "summary": "Verify Email Code",
@@ -19518,7 +19903,7 @@
     },
     "/customers/me": {
       "delete": {
-        "description": "Exclusao da conta (LGPD, Art. 18, VI). NAO TEM DESFAZER.\n\nE o par natural de `GET /me/export`, que fica logo acima: **vejo o que\nvoces tem** e **apaguem**.\n\nA conta e ANONIMIZADA, nao apagada — o pedido continua existindo para o\nrestaurante, sem nada da pessoa dentro. O e-mail e o telefone sao\nliberados para recadastro, e o token desta propria chamada morre junto.\nOs campos exatos estao em `CustomerAnonymizationService`.\n\n## O SALDO DE CASHBACK E PERDIDO. Avise antes de chamar esta rota.\n\nO recadastro nasce com **id novo** — e o que libera o e-mail e o telefone\ne justamente a saida deles da tabela. O cashback continua ligado ao id\nvelho, e nao ha caminho de volta: a pessoa volta como desconhecida.\n\n**Chame `GET /customers/me/cashback` na tela de confirmacao** e mostre o\n`balance` — que e o acumulado em TODOS os restaurantes, e e exatamente o\nque se perde aqui. A quebra de `by_restaurant[]` serve para nomear as\nlojas no aviso (\"R$ 40 no Junior da Picanha\"). Nao ha como esta rota\navisar: quando ela responde, a conta ja foi anonimizada, e nao ha\ndesfazer.\n\nDesde que o credito e o resgate existem, o aviso deixou de ser\nhipotetico: o saldo e dinheiro que a pessoa gastaria no proximo pedido.\n\nO saldo NAO vem no corpo da resposta, e nao e esquecimento: um numero\nentregue depois do fato nao evita a perda, e publicar um corpo aqui\ntrocaria o `204` por `200` — mudanca de contrato para um app que ja\nconsome esta rota.\n\nO corpo leva a senha atual: `DELETE` com corpo e incomum mas legal, e a\nalternativa a colocaria na querystring, ou seja, no log do proxy.",
+        "description": "Exclusao da conta (LGPD, Art. 18, VI). NAO TEM DESFAZER.\n\nE o par natural de `GET /me/export`, que fica logo acima: **vejo o que\nvoces tem** e **apaguem**.\n\nA conta e ANONIMIZADA, nao apagada — o pedido continua existindo para o\nrestaurante, sem nada da pessoa dentro. O e-mail e o telefone sao\nliberados para recadastro, e o token desta propria chamada morre junto.\nOs campos exatos estao em `CustomerAnonymizationService`.\n\n## O SALDO DE CASHBACK E PERDIDO. Avise antes de chamar esta rota.\n\nO recadastro nasce com **id novo** — e o que libera o e-mail e o telefone\ne justamente a saida deles da tabela. O cashback continua ligado ao id\nvelho, e nao ha caminho de volta: a pessoa volta como desconhecida.\n\n**Chame `GET /customers/me/cashback` na tela de confirmacao** e mostre o\n`balance` — que e o acumulado em TODOS os restaurantes, e e exatamente o\nque se perde aqui. A quebra de `by_restaurant[]` serve para nomear as\nlojas no aviso (\"R$ 40 no Junior da Picanha\"). Nao ha como esta rota\navisar: quando ela responde, a conta ja foi anonimizada, e nao ha\ndesfazer.\n\nDesde que o credito e o resgate existem, o aviso deixou de ser\nhipotetico: o saldo e dinheiro que a pessoa gastaria no proximo pedido.\n\nO saldo NAO vem no corpo da resposta, e nao e esquecimento: um numero\nentregue depois do fato nao evita a perda, e publicar um corpo aqui\ntrocaria o `204` por `200` — mudanca de contrato para um app que ja\nconsome esta rota.\n\nO corpo leva a senha atual: `DELETE` com corpo e incomum mas legal, e a\nalternativa a colocaria na querystring, ou seja, no log do proxy.\n\n## CONTA QUE ENTROU PELO GOOGLE E NUNCA DEFINIU SENHA\n\nEla nao tem senha para mandar aqui, e esta rota exige uma. **O caminho e\ndefinir a senha antes**, e ele ja existe inteiro:\n`POST /auth/forgot-password` manda um codigo para o e-mail que o Google\nverificou, `POST /auth/verify-reset-code` devolve o `reset_token` e\n`POST /auth/reset-password` grava a senha. Depois disso, esta rota\nfunciona como para qualquer conta.\n\n**A tela precisa avisar antes, e nao depois.** `GET /customers/me` traz\n`password_set`: com `false`, mostre \"defina uma senha para excluir a\nconta\" em vez de um campo de senha que so pode receber \"Senha incorreta\".\nSem esse aviso, a pessoa fica sem saida visivel num caminho de LGPD.",
         "operationId": "delete_me_customers_me_delete",
         "requestBody": {
           "content": {
@@ -20363,6 +20748,7 @@
     },
     "/customers/me/password": {
       "patch": {
+        "description": "Troca a senha, conferindo a atual.\n\n**Conta que entrou pelo Google e nunca definiu senha nao passa aqui**: nao\nha \"senha atual\" para conferir, e a resposta e sempre \"Senha atual\nincorreta\". Quem tem `password_set: false` em `GET /customers/me` deve ser\nmandado para `POST /auth/forgot-password`, que e o caminho de DEFINIR a\nprimeira senha — o codigo vai para o e-mail que o Google ja verificou.",
         "operationId": "change_password_customers_me_password_patch",
         "requestBody": {
           "content": {

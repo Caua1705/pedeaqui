@@ -1961,6 +1961,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign In With Google
+         * @description Entrar com Google. Mande o `id_token`; leia o `status` da resposta.
+         *
+         *     O app faz o login com o Google no aparelho e manda aqui o `id_token` (o
+         *     `idToken` do `GoogleSignIn`, nao o `accessToken`). O servidor confere a
+         *     assinatura contra as chaves publicas do Google, o `aud` contra os nossos
+         *     client ids e o `iss`; `email_verified` falso e recusado com 401.
+         *
+         *     ## Os tres desfechos, pelo campo `status`
+         *
+         *     **`authenticated`** — o `sub` ja e conhecido. Vem `access_token`,
+         *     `token_type` e `customer`: e o MESMO token de `POST /auth/login`, e a
+         *     sessao se usa igual.
+         *
+         *     **`link_confirmation_required`** — o `sub` e novo e o `email` ja tem conta
+         *     aqui. **Ninguem foi logado e nada foi ligado.** Um codigo de seis digitos
+         *     saiu para o e-mail, e a resposta traz `link_ticket`: leve a pessoa para a
+         *     tela de codigo e chame `POST /auth/verify-email-code` com
+         *     `{email, code, google_link_ticket}`. E de la que sai a sessao.
+         *
+         *     **`profile_required`** — o `sub` e novo e o e-mail nao tem conta. Vem
+         *     `signup_ticket`, `email` e `name` (o nome do Google, que pode ser o proprio
+         *     e-mail quando o perfil nao tem nome). Peca telefone e data de nascimento —
+         *     os dois campos obrigatorios que o Google nao fornece — e chame
+         *     `POST /auth/google/complete-signup`.
+         *
+         *     ## O que esta rota NAO faz
+         *
+         *     Nao junta contas por e-mail, em nenhuma hipotese. Nao devolve sessao para
+         *     um e-mail que o Google nao confirmou. E nao guarda o `id_token`: ele e
+         *     conferido e descartado.
+         */
+        post: operations["sign_in_with_google_auth_google_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/complete-signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Google Signup
+         * @description Conclui o cadastro do caso (c) e devolve a sessao.
+         *
+         *     Mande o `signup_ticket` que `POST /auth/google` deu, mais `phone`,
+         *     `birth_date` e `privacy_accepted`. `marketing_opt_in` e `name` sao
+         *     opcionais — sem `name`, fica o do Google.
+         *
+         *     **Por que estes dois campos, e por que nao da para pular.** `phone` e
+         *     `birth_date` sao `NOT NULL` em `customers` e o Google nao manda nenhum dos
+         *     dois. O telefone em especial nao aceita valor de enfeite: para cliente
+         *     logado, o pedido copia `customers.phone` no snapshot, e e esse numero que
+         *     o entregador liga.
+         *
+         *     A resposta e o mesmo `LoginResponse` do login por e-mail. A conta nasce com
+         *     o e-mail ja verificado (o Google provou) e **sem senha utilizavel** — quem
+         *     quiser uma senha usa `POST /auth/forgot-password`, que manda codigo para
+         *     esse mesmo e-mail.
+         *
+         *     **409 significa recomecar**, e nao "tente outros dados": entre as duas
+         *     telas, ou o `sub` foi ligado em outra aba, ou alguem criou conta com esse
+         *     e-mail. Chame `POST /auth/google` de novo — ele cai sozinho no caso certo.
+         */
+        post: operations["complete_google_signup_auth_google_complete_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -2038,7 +2126,31 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verify Email Code */
+        /**
+         * Verify Email Code
+         * @description Confere o codigo de seis digitos. E a MESMA rota para dois usos.
+         *
+         *     **Sem `google_link_ticket`** — o cadastro por e-mail, sem nenhuma mudanca:
+         *     marca `email_verified_at`, responde `{verified, message}` e nao devolve
+         *     token. O login continua sendo o passo seguinte.
+         *
+         *     **Com `google_link_ticket`** — o caso (b) do "entrar com Google":
+         *     `POST /auth/google` encontrou um `sub` novo cujo e-mail ja tem conta,
+         *     mandou este codigo e devolveu o ticket. O codigo certo **liga a identidade
+         *     ao cliente que ja existe** — nunca cria outro — e a resposta traz
+         *     `access_token`, `token_type`, `customer` e `linked_provider`.
+         *
+         *     O ticket sozinho nao liga nada: quem autoriza e o codigo, que so chega na
+         *     caixa de entrada. E essa prova a mais que fecha o furo de juntar contas por
+         *     e-mail — sem ela, quem tivesse se cadastrado antes com o endereco de outra
+         *     pessoa receberia a conta dela pronta quando ela entrasse com o Google.
+         *
+         *     **Nao ha rota de reenvio para este codigo.** `POST /auth/resend-email-code`
+         *     nao serve: ele desiste em silencio quando o e-mail ja esta verificado, que
+         *     e o caso da maioria das contas existentes. Para outro codigo, chame
+         *     `POST /auth/google` de novo — o cooldown de 60 s e o teto de 3 na janela de
+         *     15 min continuam valendo, e um ticket novo vem junto.
+         */
         post: operations["verify_email_code_auth_verify_email_code_post"];
         delete?: never;
         options?: never;
@@ -2267,6 +2379,20 @@ export interface paths {
          *
          *     O corpo leva a senha atual: `DELETE` com corpo e incomum mas legal, e a
          *     alternativa a colocaria na querystring, ou seja, no log do proxy.
+         *
+         *     ## CONTA QUE ENTROU PELO GOOGLE E NUNCA DEFINIU SENHA
+         *
+         *     Ela nao tem senha para mandar aqui, e esta rota exige uma. **O caminho e
+         *     definir a senha antes**, e ele ja existe inteiro:
+         *     `POST /auth/forgot-password` manda um codigo para o e-mail que o Google
+         *     verificou, `POST /auth/verify-reset-code` devolve o `reset_token` e
+         *     `POST /auth/reset-password` grava a senha. Depois disso, esta rota
+         *     funciona como para qualquer conta.
+         *
+         *     **A tela precisa avisar antes, e nao depois.** `GET /customers/me` traz
+         *     `password_set`: com `false`, mostre "defina uma senha para excluir a
+         *     conta" em vez de um campo de senha que so pode receber "Senha incorreta".
+         *     Sem esse aviso, a pessoa fica sem saida visivel num caminho de LGPD.
          */
         delete: operations["delete_me_customers_me_delete"];
         options?: never;
@@ -2627,7 +2753,16 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Change Password */
+        /**
+         * Change Password
+         * @description Troca a senha, conferindo a atual.
+         *
+         *     **Conta que entrou pelo Google e nunca definiu senha nao passa aqui**: nao
+         *     ha "senha atual" para conferir, e a resposta e sempre "Senha atual
+         *     incorreta". Quem tem `password_set: false` em `GET /customers/me` deve ser
+         *     mandado para `POST /auth/forgot-password`, que e o caminho de DEFINIR a
+         *     primeira senha — o codigo vai para o e-mail que o Google ja verificou.
+         */
         patch: operations["change_password_customers_me_password_patch"];
         trace?: never;
     };
@@ -6329,6 +6464,11 @@ export interface components {
             marketing_opt_in: boolean;
             /** Name */
             name: string;
+            /**
+             * Password Set
+             * @default true
+             */
+            password_set: boolean;
             /** Phone */
             phone: string;
         };
@@ -6540,6 +6680,8 @@ export interface components {
             profile: components["schemas"]["CurrentCustomerResponse"];
             /** Reviews */
             reviews: components["schemas"]["CustomerReviewItem"][];
+            /** Social Identities */
+            social_identities: components["schemas"]["CustomerSocialIdentityItem"][];
         };
         /** CustomerInput */
         CustomerInput: {
@@ -6638,6 +6780,29 @@ export interface components {
          * @enum {string}
          */
         CustomerSegment: "novo" | "ocasional" | "fiel" | "em_risco" | "perdido";
+        /**
+         * CustomerSocialIdentityItem
+         * @description Uma conta de provedor ligada a esta pessoa, na exportacao de dados.
+         *
+         *     `provider_user_id` entra, e a decisao merece a linha: e o `sub` do Google,
+         *     um identificador estavel da pessoa DENTRO do provedor. Omiti-lo faria a
+         *     exportacao do Art. 18, II descrever um dado que a plataforma guarda e nao
+         *     mostra — e ele e da propria pessoa, devolvido so a ela, numa rota
+         *     autenticada que nao aceita id de terceiro.
+         */
+        CustomerSocialIdentityItem: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Provider */
+            provider: string;
+            /** Provider User Id */
+            provider_user_id: string;
+        };
         /**
          * DeleteCustomerAccountRequest
          * @description A senha atual, e nada mais.
@@ -6778,6 +6943,69 @@ export interface components {
         ForgotPasswordRequest: {
             /** Email */
             email: string;
+        };
+        /**
+         * GoogleCompleteSignupRequest
+         * @description O que o Google nao da, e que `customers` exige.
+         *
+         *     `phone` e `birth_date` sao NOT NULL na tabela e nao vem no `id_token`. O
+         *     telefone em especial nao aceita sentinela: para cliente logado o
+         *     `customer_phone_snapshot` do pedido sai de `customers.phone`, e um valor
+         *     falso ali e o numero que o entregador liga.
+         */
+        GoogleCompleteSignupRequest: {
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /**
+             * Marketing Opt In
+             * @default false
+             */
+            marketing_opt_in: boolean;
+            /** Name */
+            name?: string | null;
+            /** Phone */
+            phone: string;
+            /** Privacy Accepted */
+            privacy_accepted: boolean;
+            /** Signup Ticket */
+            signup_ticket: string;
+        };
+        /** GoogleSignInRequest */
+        GoogleSignInRequest: {
+            /** Id Token */
+            id_token: string;
+        };
+        /**
+         * GoogleSignInResponse
+         * @description Uma resposta com campos opcionais, e nao tres schemas.
+         *
+         *     E a forma que `LoginResponse` ja usa nesta API, e o app do cliente ja sabe
+         *     ler. `status` diz qual bloco esta preenchido.
+         */
+        GoogleSignInResponse: {
+            /** Access Token */
+            access_token?: string | null;
+            customer?: components["schemas"]["LoginCustomerResponse"] | null;
+            /** Email */
+            email?: string | null;
+            /** Link Ticket */
+            link_ticket?: string | null;
+            /** Message */
+            message: string;
+            /** Name */
+            name?: string | null;
+            /** Signup Ticket */
+            signup_ticket?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "authenticated" | "link_confirmation_required" | "profile_required";
+            /** Token Type */
+            token_type?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -8468,11 +8696,20 @@ export interface components {
             code: string;
             /** Email */
             email: string;
+            /** Google Link Ticket */
+            google_link_ticket?: string | null;
         };
         /** VerifyEmailCodeResponse */
         VerifyEmailCodeResponse: {
+            /** Access Token */
+            access_token?: string | null;
+            customer?: components["schemas"]["LoginCustomerResponse"] | null;
+            /** Linked Provider */
+            linked_provider?: string | null;
             /** Message */
             message: string;
+            /** Token Type */
+            token_type?: string | null;
             /** Verified */
             verified: boolean;
         };
@@ -11702,6 +11939,114 @@ export interface operations {
             };
         };
     };
+    sign_in_with_google_auth_google_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleSignInResponse"];
+                };
+            };
+            /** @description `id_token` invalido, ou e-mail nao verificado no Google */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conta inativa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Nao foi possivel falar com o Google */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `GOOGLE_OAUTH_CLIENT_IDS` nao esta configurada neste servidor */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    complete_google_signup_auth_google_complete_signup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleCompleteSignupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Ticket que nao vale mais, ou aceite de privacidade ausente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Telefone ja cadastrado, ou o e-mail/`sub` mudou de estado entre as duas telas */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_auth_login_post: {
         parameters: {
             query?: never;
@@ -11856,6 +12201,34 @@ export interface operations {
                     "application/json": components["schemas"]["VerifyEmailCodeResponse"];
                 };
             };
+            /** @description Codigo invalido ou expirado, ou `google_link_ticket` que nao vale mais */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conta inativa (so no caminho com `google_link_ticket`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cliente nao encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A conta do Google do ticket ja esta ligada a outra conta */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -11864,6 +12237,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Muitas tentativas neste codigo */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

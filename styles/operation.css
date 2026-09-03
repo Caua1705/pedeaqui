@@ -1310,6 +1310,30 @@
 .addr-picker-item.actions-open .addr-picker-dots svg{width:20px!important;height:8px!important}
 .addr-picker-item.actions-open .addr-picker-delete{display:flex!important;transform:none!important;margin-left:10px!important;background:#f7f7f7!important}
 
+/* `overflow:CLIP`, e não `hidden` — a diferença é a que decide se o popup
+   escapa da tela.
+
+   O painel entra de baixo com `transform:translate3d(0,118%,0)`, ou seja 257px
+   ABAIXO desta caixa durante os 0,9s da animação. Com `overflow:hidden` a caixa
+   vira um CONTAINER DE ROLAGEM: medido, `scrollHeight` 1153 contra
+   `clientHeight` 896. Ela não rola no dedo, mas rola por programa — e é isso
+   que acontece, porque `setAccessibleDialogState()` dá foco ao botão de
+   confirmar um quadro depois de abrir, quando ele ainda está 128px fora.
+
+   O foco pede `preventScroll:true`, que é o certo, mas ele NÃO é garantia: o
+   Safari só passou a honrá-lo no 15.4, e num iPhone anterior a opção é
+   ignorada. Reproduzido com dois braços, a 414x896:
+
+     braço A (Chromium, honra preventScroll):  scrollTop 0 o tempo todo
+     braço B (focus sem preventScroll):        scrollTop 216 -> 64 -> 0
+
+   No braço B o painel aparece de estalo no lugar final (a rolagem compensa a
+   transformação) e depois DESCE junto com o clamp do scroll, conforme a área
+   rolável encolhe. É o "botão que salta e popup que desce para fora da tela".
+
+   `overflow:clip` clipa igual e NÃO cria container de rolagem: com ele os dois
+   braços dão `scrollTop` 0. A guarda passa a ser a caixa, não uma opção de API
+   que nem todo browser implementa. */
 .addr-delete-confirm{
   position:absolute!important;
   inset:0!important;
@@ -1320,7 +1344,7 @@
   background:rgba(0,0,0,.14)!important;
   visibility:hidden!important;
   pointer-events:none!important;
-  overflow:hidden!important;
+  overflow:clip!important;
   transition:visibility 0s linear .9s, background .18s ease!important;
 }
 .addr-delete-confirm:not(.active){

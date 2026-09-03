@@ -1150,10 +1150,28 @@
   // no teste que NÃO congela transições.
   function applyTheme() {
     const config = window.APP_CONFIG || {};
-    window.RapidexTheme.applyBrandTheme(
+    const palette = window.RapidexTheme.applyBrandTheme(
       restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
       restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
     );
+    // A COR DE HOJE PAGA O LOADER DE AMANHÃ. Os três pontinhos do boot pintam
+    // com --app-loader-dot, que nasce cinza neutro; sem isto aqui ele fica
+    // cinza para sempre, e a cor da loja só apareceria depois do /menu — que é
+    // exatamente o instante em que o loader sai. Guardado por slug, como o
+    // carrinho. Ver scripts/utils/boot-tint.js.
+    //
+    // Grava o que a PALETA recebeu, não `restaurant.primary_color` cru: um hex
+    // inválido do backend vira a cor da plataforma dentro do brand-theme, e
+    // gravar o cru ressuscitaria o laranja na visita seguinte.
+    //
+    // E SÓ GRAVA SE O LOJISTA CADASTROU COR. Sem `primary_color` a paleta é a
+    // da PLATAFORMA — guardá-la seria escrever o laranja do Rapidex no cache
+    // do tenant e reintroduzir, da segunda visita em diante, exatamente o
+    // defeito que este bloco existe para fechar. Loja sem cor fica no cinza
+    // neutro, que é a resposta certa para "não sei qual é a marca desta loja".
+    if (restaurant.primary_color) {
+      window.RapidexBootTint?.rememberTint?.(getRestaurantSlug(), palette['--brand-primary']);
+    }
     // Sem o sufixo da plataforma: a aba é da loja, e o cliente que abriu isto
     // não sabe o que é Rapidex.
     document.title = `${restaurant.name || fallback().restaurantName || ''} — Pedido Online`;

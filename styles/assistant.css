@@ -334,7 +334,12 @@ body.coupon-nav-keep .mob-bottom-nav {
   height: 13.333px !important;
   flex: 0 0 13.333px !important;
   border-radius: 50%;
-  background-color: var(--brand-primary);
+  /* NÃO É --brand-primary. Durante o boot essa variável ainda vale a paleta
+     padrão de tokens.css, que é a cor da PLATAFORMA — o loader de um tenant
+     azul nascia laranja do Rapidex. --app-loader-dot é neutro por padrão e
+     recebe a cor DAQUELE slug, quando ela já foi vista uma vez, em
+     scripts/utils/boot-tint.js. */
+  background-color: var(--app-loader-dot);
   background-image: none;
   display: block !important;
   animation: appLoaderDotPulse 0.9s ease-in-out infinite both !important;

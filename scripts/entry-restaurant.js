@@ -20,6 +20,11 @@ import './utils/storage-keys.js';
 import './services/api-routes.js';
 import './utils/restaurant-slug.js';
 import './utils/brand-theme.js';
+// A cor dos três pontinhos do loader, e só ela. EXECUTA NO IMPORT de propósito
+// (o cabeçalho do arquivo diz por quê) e precisa vir logo depois de
+// storage-keys (chave) e restaurant-slug (tenant): o loader já está pintado
+// desde o HTML, então chegar tarde aqui é o mesmo que não chegar.
+import './utils/boot-tint.js';
 // Favicon, ícone de tela inicial e meta de compartilhamento do tenant. Depende
 // de brand-theme (cor da marca e guarda de contraste da letra) e precisa vir
 // ANTES de pwa.js, que consome tenantIcons() para montar o manifest.

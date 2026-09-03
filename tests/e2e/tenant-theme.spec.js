@@ -13,6 +13,11 @@ import { mockApi, MENU, SLUG, menuForBranch, esperarAppPronto } from './helpers.
 
 const PILOT_PRIMARY = 'rgb(217, 92, 4)'; // #D95C04, o que o piloto cadastrou
 const BLUE = '#1B4FD8';
+// #F36F21, a paleta padrão de styles/tokens.css — a cor da PLATAFORMA, que é
+// o que --brand-primary vale enquanto applyTheme() não rodou.
+const PLATFORM_ORANGE = 'rgb(243, 111, 33)';
+// --app-loader-dot, o cinza neutro dos pontinhos na primeira visita.
+const NEUTRO = 'rgb(201, 206, 212)';
 
 // Superfícies que o lojista reconhece como "a minha marca na tela" — uma de
 // cada área citada no escopo da fase.
@@ -126,14 +131,63 @@ test('trocar a cor do tenant repinta a interface inteira', async ({ page }) => {
   }
 });
 
-test('loader de três pontos usa a cor sólida e as medidas do white label', async ({ page }) => {
-  await bootWithPrimary(page, BLUE);
-  await page.evaluate(() => document.body.classList.add('app-booting'));
+// ============================================================================
+//  O LOADER DO BOOT — e um teste que era VAZIO.
+//
+//  A versão anterior deste teste fazia `bootWithPrimary()` (que espera o app
+//  ficar PRONTO, isto é, `applyTheme()` já ter rodado) e só então readicionava
+//  `app-booting` à mão para o loader reaparecer. Ele media, portanto, um loader
+//  com a paleta do lojista já escrita — um estado que **nunca existe** no boot
+//  de verdade, onde o loader vive inteiro ANTES do `/menu` responder.
+//
+//  Nesse instante real `--brand-primary` ainda vale a paleta padrão de
+//  tokens.css, que é a cor da PLATAFORMA. O teste antigo dizia "os pontinhos
+//  são azuis" e passava; o cliente do tenant azul via laranja do Rapidex por
+//  toda a ida-e-volta de rede. Teste que afirma sobre um estado que a execução
+//  não produz é teste vazio.
+//
+//  Os dois abaixo medem o loader com o `/menu` PENDURADO — o estado que o
+//  cliente de fato vê — e por isso `waitUntil: 'commit'`: o `load` padrão só
+//  volta depois de o boot inteiro terminar (§14.1 da skill).
+// ============================================================================
 
-  const loader = page.locator('.app-loader-dots');
-  await expect(loader).toBeVisible();
+/** Boota com o /menu preso, e devolve a função que o solta. */
+async function bootComMenuPreso(page, primaryColor) {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await mockApi(page);
+  const menu = JSON.parse(JSON.stringify(MENU));
+  menu.restaurant.primary_color = primaryColor;
+  let soltar;
+  const portao = new Promise(resolve => { soltar = resolve; });
+  await page.route('**/restaurants/*/menu**', async (route) => {
+    await portao;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(menu) });
+  });
+  await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil: 'commit' });
+  await expect(page.locator('body')).toHaveClass(/app-booting/);
+  // O `commit` volta assim que a resposta COMEÇA — o bundle ainda pode não ter
+  // executado. Sem esta espera o teste lê o loader do HTML puro e passa por um
+  // motivo que não é o do código (foi o que aconteceu na primeira escrita
+  // dele). `RapidexBootTint` é o último global publicado antes do boot pedir
+  // rede, então esperá-lo é esperar "o JS rodou, o /menu não respondeu".
+  await page.waitForFunction(() => Boolean(window.RapidexBootTint));
+  return soltar;
+}
 
-  const appearance = await loader.evaluate(element => {
+const corDosPontinhos = (page) => page.locator('.app-loader-dots span').first()
+  .evaluate(dot => getComputedStyle(dot).backgroundColor);
+
+test('PRIMEIRA visita: os pontinhos do loader são neutros, nunca o laranja da plataforma', async ({ page }) => {
+  const soltar = await bootComMenuPreso(page, BLUE);
+
+  const cor = await corDosPontinhos(page);
+  // A afirmação que importa é NEGATIVA e é sobre a plataforma: cinza é uma
+  // escolha, laranja é a marca do Rapidex na loja de outra pessoa.
+  expect(cor, 'o loader nasceu com a cor da PLATAFORMA').not.toBe(PLATFORM_ORANGE);
+  expect(cor, 'a primeira visita não sabe a cor da loja — neutro é a resposta').toBe(NEUTRO);
+
+  // E as medidas do white label continuam sendo as mesmas.
+  const forma = await page.locator('.app-loader-dots').evaluate(element => {
     const rect = element.getBoundingClientRect();
     return {
       width: Math.round(rect.width * 10) / 10,
@@ -143,7 +197,6 @@ test('loader de três pontos usa a cor sólida e as medidas do white label', asy
         return {
           width: Math.round(parseFloat(style.width) * 10) / 10,
           height: Math.round(parseFloat(style.height) * 10) / 10,
-          color: style.backgroundColor,
           image: style.backgroundImage,
           opacity: style.opacity,
           animation: style.animationName
@@ -151,19 +204,31 @@ test('loader de três pontos usa a cor sólida e as medidas do white label', asy
       })
     };
   });
-
-  expect(appearance).toEqual({
+  expect(forma).toEqual({
     width: 60,
     height: 13.3,
     dots: Array.from({ length: 3 }, () => ({
-      width: 13.3,
-      height: 13.3,
-      color: 'rgb(27, 79, 216)',
-      image: 'none',
-      opacity: '1',
-      animation: 'appLoaderDotPulse'
+      width: 13.3, height: 13.3, image: 'none', opacity: '1', animation: 'appLoaderDotPulse'
     }))
   });
+
+  soltar();
+  await esperarAppPronto(page);
+});
+
+test('SEGUNDA visita: o loader já nasce na cor daquela loja, antes de qualquer rede', async ({ page }) => {
+  // Primeira visita completa: é ela que grava a cor do slug.
+  const soltar = await bootComMenuPreso(page, BLUE);
+  soltar();
+  await esperarAppPronto(page);
+  expect(await brandPrimary(page)).toBe(BLUE);
+
+  // Segunda visita, com o /menu preso: nada de rede respondeu ainda.
+  await bootComMenuPreso(page, BLUE);
+  expect(
+    await corDosPontinhos(page),
+    'a cor guardada do slug não foi para o loader'
+  ).toBe('rgb(27, 79, 216)');
 });
 
 // O contrário do que este teste pedia antes: ele exigia que o loader

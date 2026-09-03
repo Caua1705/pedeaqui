@@ -59,7 +59,13 @@
     operationContext: 'rapidex.operationContext.',
     addressImportSignature: 'rapidex.addressImportSignature.',
     cart: 'rapidex.cart.',
-    orderTracking: 'rapidex.orderTracking.'
+    orderTracking: 'rapidex.orderTracking.',
+    // A cor da marca da loja, guardada só para pintar o LOADER do boot seguinte
+    // (scripts/utils/boot-tint.js). Por slug, como o carrinho: cor de um tenant
+    // não pode vazar para outro — seria o defeito do white-label ao contrário.
+    // Não é fonte de verdade de tema nenhum: quem manda continua sendo o
+    // primary_color que o /menu devolve, e applyTheme() sobrescreve isto.
+    brandTint: 'rapidex.brandTint.'
   };
 
   // chave nova -> nomes legados que ela substitui, do mais recente para o mais antigo

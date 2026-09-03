@@ -125,7 +125,13 @@ async function mockCourier(page, estado = {}) {
       if (dados.entregueStatus !== 200) {
         return route.fulfill(json({ detail: 'pedido não está em rota' }, dados.entregueStatus));
       }
-      return route.fulfill(json({ ...PEDIDO_NA_RUA, status: 'delivered', can_deliver: false }));
+      // `completed`, e não `delivered`: é o nome do contrato
+      // (`ORDER_STATUSES`) e é o que `COURIER_TRANSITIONS` produz a partir de
+      // `out_for_delivery`. Até 03/09/2026 este dublê respondia `delivered`, um
+      // status que o backend não tem — e com ele confirmava a chave fantasma
+      // que a tela traduzia. Mock que inventa valor é a mesma família do
+      // fixture que mandava `ineligibility_reason` como frase pronta.
+      return route.fulfill(json({ ...PEDIDO_NA_RUA, status: 'completed', can_deliver: false }));
     }
     if (caminho.endsWith('/history')) {
       if (dados.historicoStatus !== 200) {
@@ -379,6 +385,26 @@ test('o status vira frase em português, e o desconhecido não vaza jargão', as
   // E o cartão sem rótulo continua servindo: endereço, pagamento e ação.
   await expect(page.locator('.cr-card[data-order-id="ord-2"] button[data-acao="entregue"]')).toHaveCount(1);
   await expect(page.getByText(/awaiting|OUT_FOR_DELIVERY|READY/i)).toHaveCount(0);
+});
+
+test('pedido atribuído antes do aceite também tem chip: pending e accepted chegam aqui', async ({ page }) => {
+  // Não são hipóteses. A atribuição só recusa status TERMINAL
+  // (`admin_courier_service._assign_one`) e a lista do entregador só exclui os
+  // terminais (`courier_delivery_service.list_orders`) — então os dois chegam.
+  // Até 03/09/2026 a tabela não os tinha e o cartão vinha SEM chip nenhum,
+  // enquanto traduzia um `delivered` que o backend nunca manda.
+  await mockCourier(page, {
+    pedidos: [
+      { ...PEDIDO_PRONTO, status: 'pending', can_leave: false, can_deliver: false },
+      { ...PEDIDO_NA_RUA, status: 'accepted', can_leave: false, can_deliver: false }
+    ]
+  });
+  await abrir(page);
+  await entrar(page);
+
+  await expect(page.locator('.cr-card[data-order-id="ord-1"] .cr-card__status'))
+    .toHaveText('Aguardando o restaurante');
+  await expect(page.locator('.cr-card[data-order-id="ord-2"] .cr-card__status')).toHaveText('Aceito');
 });
 
 // ── A tela sob a CSP restrita dela ────────────────────────────────────────────

@@ -31,15 +31,35 @@
 
   const $ = (id) => document.getElementById(id);
 
-  // O `status` do contrato é string livre, e os valores são os do BACKEND. Só
-  // os que fazem sentido para quem está na rua ganham rótulo; o resto não
-  // aparece (ver o comentário em `cartao()`). Este mapa não decide nada — quem
-  // decide o que pode ser feito é `can_leave`/`can_deliver`.
+  // O `status` do contrato é string livre, e os valores são os do BACKEND
+  // (`ORDER_STATUSES`, ../pedeaqui_back/src/core/constants.py:54). Este mapa
+  // não decide nada — quem decide o que pode ser feito é
+  // `can_leave`/`can_deliver`.
+  //
+  // A TABELA ESTAVA ERRADA DOS DOIS LADOS até 03/09/2026, que é a mesma forma
+  // do `orderStatusLabel()` do app do cliente (skill §14.5):
+  //
+  //  - SOBRAVA `delivered`, que não existe em `ORDER_STATUSES`. O nome do
+  //    contrato é `completed`, e é ele que o `COURIER_TRANSITIONS` produz
+  //    (`out_for_delivery` -> `completed`). Chave fantasma: nenhuma resposta
+  //    do backend jamais casou com ela. O mock do e2e respondia `delivered`
+  //    no `/delivered`, então o dublê confirmava a leitura errada;
+  //  - FALTAVAM `pending` e `accepted`, e os dois CHEGAM aqui: a atribuição
+  //    só recusa status terminal (`admin_courier_service._assign_one`) e a
+  //    lista só exclui os terminais (`courier_delivery_service.list_orders`).
+  //    Um pedido atribuído antes de o restaurante aceitar aparecia sem chip.
+  //
+  // `completed` NÃO entra, e é medida, não esquecimento: ele é terminal, então
+  // some da lista; e a resposta do `/delivered`, que o traz, é DESCARTADA por
+  // `marcarEntregue()`, que recarrega em vez de desenhar o corpo. Pôr um
+  // rótulo aqui seria repor um fantasma com outro nome. Quem guarda os dois
+  // lados é `tests/unit/courier-status-labels.test.js`.
   const STATUS_EM_PORTUGUES = {
-    ready: 'Pronto',
+    pending: 'Aguardando o restaurante',
+    accepted: 'Aceito',
     preparing: 'Em preparo',
-    out_for_delivery: 'A caminho',
-    delivered: 'Entregue'
+    ready: 'Pronto',
+    out_for_delivery: 'A caminho'
   };
 
   let pedidos = [];

@@ -212,8 +212,34 @@
     return _addrJustSavedAddress || S.opDraft?.address || S.operationContext?.address || S.customerAddress || null;
   }
 
+  /**
+   * A identidade de um endereço que o backend ainda NÃO numerou.
+   *
+   * `__current__` nasceu como sentinela de UM endereço — o ativo — e virou o
+   * `id` de TODOS os que não têm id do backend, que é a lista inteira de quem
+   * nunca sincronizou. Dois endereços com o mesmo id quebram três coisas ao
+   * mesmo tempo: o cartão destacado, o aviso de "endereço ativo" (que passava a
+   * valer para todos, e travava a exclusão de qualquer um) e a própria
+   * exclusão, que filtra a lista local por este id e apagaria os dois.
+   *
+   * `client_reference` é o nome que este app já dá a um endereço local — é ele
+   * que o import para a conta usa. Ele só existe depois de `ensureLocal
+   * ClientReferences()`, que só roda no import, então a impressão digital do
+   * endereço é a segunda linha: ela é estável, é a mesma que o resto do fluxo
+   * usa para comparar endereços, e distingue dois endereços diferentes.
+   *
+   * O sentinela continua sendo a última linha, para o endereço tão incompleto
+   * que não gera impressão digital (sem rua, número ou bairro).
+   */
+  function localAddressId(addr, fallback = '__current__') {
+    const reference = String(addr?.client_reference || '').trim();
+    if (reference) return reference;
+    const fingerprint = addressFingerprint(addr);
+    return fingerprint ? `local:${fingerprint}` : fallback;
+  }
+
   function addrPickerId(addr, fallback = '__current__') {
-    return String(addr?.id || addr?.address_id || fallback);
+    return String(addr?.id || addr?.address_id || localAddressId(addr, fallback));
   }
 
   function sameAddress(a, b) {
@@ -230,7 +256,7 @@
     if (!current) return null;
     return {
       ...current,
-      id: current.id || current.address_id || '__current__',
+      id: current.id || current.address_id || localAddressId(current),
       label: current.label || current.alias || current.tag || current.name || current.street || 'Endereco'
     };
   }
@@ -393,7 +419,16 @@
     if (!id) return;
     const address = _addrPickerItems.find(item => addrPickerId(item) === String(id));
     const activeAddress = S.operationContext?.address || S.customerAddress;
-    if (address && (sameAddress(address, activeAddress) || _addrPickerSelected === String(id))) {
+    // A PERGUNTA É UMA SÓ: este endereço é o que está ativo agora?
+    //
+    // Aqui havia também `|| _addrPickerSelected === String(id)`, e ele
+    // respondia outra pergunta: "qual cartão está DESTACADO na lista". Tocar
+    // num cartão só o destaca — a escolha só vale no Confirmar —, então quem
+    // tocasse num endereço e o apagasse em seguida levava o aviso de "ativo"
+    // sobre um endereço que não era o ativo. E enquanto todo endereço local
+    // dividia o id `__current__` (ver localAddressId), esse ramo era verdadeiro
+    // para TODOS: o cliente não conseguia apagar endereço nenhum.
+    if (address && sameAddress(address, activeAddress)) {
       _addrPickerDeleteId = null;
       closeAddrPickerActions();
       configureAddrDeleteDialog('active-warning');

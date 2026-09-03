@@ -436,6 +436,24 @@
     let handled = false;
 
     // FastAPI-style validation array: [{ loc: ['body','email'], msg }]
+    //
+    // ANOTADO, NAO CONSERTADO (varredura de 03/09/2026, item 9 da rodada).
+    //
+    // `item.msg` e o TEXTO DO PYDANTIC, e ele vai cru para debaixo do campo:
+    // "value is not a valid email address", "String should have at least 8
+    // characters", "Input should be a valid date". Em ingles, com vocabulario
+    // de validador, para um cliente preenchendo um cadastro em portugues.
+    //
+    // E a mesma familia do `ineligibility_reason` que virou
+    // `services/coupon-reason.js` em 03/09/2026 — codigo/idioma do backend
+    // chegando a tela —, e a correcao tem a mesma forma: uma tabela NOMINAL
+    // por (campo, tipo de erro), com fallback em portugues para o que nao
+    // estiver nela. Nao foi feita aqui porque exige levantar os `type` que o
+    // backend de fato emite neste endpoint, e chutar a tabela seria trocar um
+    // texto errado por outro.
+    //
+    // O fallback 'Valor invalido' ja cobre o caso de `msg` ausente; o que falta
+    // e cobrir o caso de `msg` PRESENTE e em ingles.
     if (Array.isArray(data?.detail)) {
       const map = { name: 'regFullName', email: 'regEmail', phone: 'regPhone', birth_date: 'regBirth', cpf: 'regCpf', password: 'regPassword' };
       data.detail.forEach(item => {

@@ -176,7 +176,29 @@
     return getCashbackTransactions(options);
   }
 
-  /** Estados que o card pode ter. Fora desta lista, o cupom não é desenhável. */
+  /**
+   * Estados que o card pode ter. Fora desta lista, o cupom não é desenhável.
+   *
+   * ANOTADO, NÃO CONSERTADO (varredura de 03/09/2026, item 9 da rodada).
+   *
+   * `CustomerCouponState` tem CINCO valores no contrato; esta lista conhece
+   * TRÊS. Os dois que faltam são `payment_method_not_allowed` (o cupom vale só
+   * em outra forma de pagamento, e o backend só o marca assim quando a forma
+   * JÁ foi escolhida — ver o parâmetro `payment_method` de `GET /coupons`) e
+   * `outside_hours`.
+   *
+   * O que isso custa hoje: um cupom nesses dois estados é DESCARTADO por
+   * `normalizeCustomerCoupons`, então ele some da lista do Clube — e, desde
+   * `judgedCouponForDetail` (restaurant-page.js), também faz a folha de detalhe
+   * cair no cupom da vitrine, que não tem `state`, e o botão dizer "Usar
+   * cupom" para um cupom que o backend acabou de recusar.
+   *
+   * Não foi consertado junto porque cada um precisa de rótulo E destino
+   * próprios em `services/coupon-cta.js`: o de forma de pagamento leva à
+   * escolha de pagamento; o de horário não leva a lugar nenhum e a decisão de
+   * o que dizer ali é de produto. Acrescentar os dois nomes AQUI sem isso só
+   * trocaria "some da lista" por um botão que promete e falha.
+   */
   const COUPON_STATES = new Set(['applicable', 'missing_amount', 'login_required']);
 
   /**

@@ -299,8 +299,26 @@
       if (appState.clubData) appState.clubData.coupons_status = 'idle';
     }
 
+    /**
+     * O cupom JULGADO desta lista, por id OU por código.
+     *
+     * `getCouponCode()` devolve `id ?? code`, ou seja o ID quando ele existe —
+     * e ele sempre existe no contrato do cliente. Quem abre a folha de detalhe
+     * pela vitrine da Home passa o CÓDIGO (`openCouponDetail(coupon.code)`,
+     * screens/home-screen.js), então esta busca nunca casava por aquele
+     * caminho: o mesmo cupom que a lista já tinha julgado voltava `null`, e a
+     * folha caía no cupom da vitrine, que não tem `state` nenhum.
+     *
+     * As duas chaves aqui não são tolerância: são os dois vocabulários que as
+     * duas superfícies de fato usam.
+     */
     function getCoupon(key) {
-      return currentCoupons.find((coupon, index) => getCouponCode(coupon, index) === String(key)) || null;
+      const alvo = String(key);
+      return currentCoupons.find((coupon, index) => (
+        getCouponCode(coupon, index) === alvo
+        || String(coupon.id ?? '') === alvo
+        || String(coupon.code ?? '') === alvo
+      )) || null;
     }
 
     return { ensureClubLoaded, renderClubView, retryClubLoad, invalidateCoupons, getCoupon };

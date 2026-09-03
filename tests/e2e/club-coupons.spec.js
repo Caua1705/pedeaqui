@@ -654,3 +654,120 @@ test('sem login, o botão do cupom abre o login direto — sem "Validando..." e 
     'sem token o preview responde 401: a ida à rede era garantidamente inútil'
   ).toHaveLength(0);
 });
+
+// ============================================================================
+//  A TELA DO CUPOM NÃO PODE SE CONTRADIZER — quem diz é o BOTÃO.
+//
+//  O que o cliente via: abria um cupom pela vitrine da Home com a sacola abaixo
+//  do mínimo, e a tela mostrava um toast "Faltam R$ 28,90 para usar este cupom"
+//  ao lado de um botão dizendo "Usar cupom". Duas frases opostas no mesmo
+//  instante.
+//
+//  A CAUSA é de contrato: o cupom da vitrine é `PublicCouponResponse` e NÃO TEM
+//  `state` — o backend nunca julgou aquele cupom contra esta pessoa. Sem
+//  `state`, `coupon-cta.js` cai em "aplicar", e a pessoa só descobria depois do
+//  toque.
+//
+//  E O FRONT NÃO PASSOU A CALCULAR NADA. A rota que julga já existe e já é
+//  chamada por este app: `GET /coupons` aceita `subtotal`/`delivery_fee`/
+//  `order_type` opcionais e responde com o estado pronto. O que faltava era
+//  PERGUNTAR. Este teste prova as duas coisas: que o botão passa a dizer o
+//  quanto falta, e que quem disse isso foi o backend — a lista é pedida com a
+//  sacola desta pessoa.
+//
+//  Havia AINDA uma segunda causa, e ela é a que fazia o defeito sobreviver a
+//  quem já estava logado com a lista carregada: `clubController.getCoupon()`
+//  casava por `id ?? code`, ou seja pelo ID, e a vitrine da Home chama
+//  `openCouponDetail(coupon.code)`. O mesmo cupom que a lista já tinha julgado
+//  voltava `null` e a folha caía no da vitrine.
+// ============================================================================
+test('cupom da vitrine SEM mínimo atingido: o botão diz o quanto falta, e não "Usar cupom"', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await seedLoggedSession(page);
+  // A lista JULGADA: JP10 vem `missing_amount` com 8,85 faltando. É o backend
+  // dizendo, não o front calculando.
+  const { couponListRequests, couponPreviewRequests } = await mockApi(page, {
+    onListCoupons: (route) => route.fulfill(json(COUPONS))
+  });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.RapidexActions.resolve('showHomeTab')?.());
+
+  // FRETE0 é o cupom que a lista julgada devolve como `missing_amount`.
+  await page.evaluate(() => window.openCouponDetail('FRETE0'));
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+
+  const botao = page.locator('.coupon-detail-use');
+  await expect(
+    botao,
+    'a tela abriu pela vitrine (sem state) e o botão prometeu aplicar um cupom que não cabe'
+  ).toHaveText('Faltam R$ 8,85');
+
+  // QUEM DISSE FOI O BACKEND: a lista foi pedida com a sacola desta pessoa.
+  expect(couponListRequests.length).toBeGreaterThan(0);
+  const comSacola = couponListRequests.some(r => /subtotal=21\.15/.test(r.url));
+  expect(comSacola, 'a lista foi pedida sem a sacola: o veredito não seria o desta sacola').toBe(true);
+
+  // E a regra na lista diz o mesmo que o botão — a tela não fala com duas vozes.
+  await expect(page.locator('#couponDetailRules')).toContainText('Faltam R$ 8,85');
+
+  // Tocar leva ao cardápio, SEM TOAST e sem aplicar nada.
+  //
+  // A ausência é gravada por um observador instalado ANTES do toque, e não
+  // conferida depois: o toast é criado sob demanda, vive 3,6s e some sozinho,
+  // e um `toHaveCount(0)` logo após o clique passa por chegar ANTES de ele
+  // nascer. Foi o que aconteceu na primeira escrita deste teste — com o toast
+  // reinjetado de propósito ele continuou VERDE. Um teste de ausência precisa
+  // de uma testemunha que não pisque.
+  await page.evaluate(() => {
+    window.__toastVisto = false;
+    const olho = new MutationObserver(() => {
+      if (document.getElementById('couponNotice')) window.__toastVisto = true;
+    });
+    olho.observe(document.body, { childList: true, subtree: true, attributes: true });
+  });
+
+  // O CAMINHO INTEIRO, AGUARDADO — não um marco no meio dele.
+  //
+  // `confirmCouponDetail` é async, e o toast nascia DEPOIS do
+  // `await shell.mobNavMenu()`. Medido em três execuções: `body.menu-tab`
+  // entra aos ~1000ms e o toast aos ~1360ms. A primeira versão deste teste
+  // esperava `menu-tab` e lia a testemunha aos 1000ms — 360ms ANTES do que
+  // queria pegar, e por isso passou com o toast reinjetado de propósito.
+  //
+  // Chamar a ação e AGUARDÁ-LA elimina o palpite: quando o `evaluate` resolve,
+  // o caminho terminou, inclusive o que vem depois do await interno. É a mesma
+  // função que o `data-act-click` do botão resolve, e o clique de verdade
+  // continua exercitado nos outros testes deste arquivo.
+  await page.evaluate(() => window.RapidexActions.resolve('confirmCouponDetail')());
+  await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);
+  await expect(page.locator('body')).toHaveClass(/menu-tab/);
+  expect(
+    await page.evaluate(() => window.__toastVisto),
+    'a tela falou com duas vozes: o botão disse o que falta e um toast repetiu'
+  ).toBe(false);
+  expect(couponPreviewRequests, 'um cupom que não cabe não vai ao preview').toHaveLength(0);
+});
+
+test('cupom da vitrine que CABE: o veredito do backend chega e o botão aplica', async ({ page }) => {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await seedLoggedSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await mockCustomerRoutes(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+  await addH2OToCart(page, 3);
+  await page.evaluate(() => window.RapidexActions.resolve('showHomeTab')?.());
+
+  // JP5 vem `applicable` na lista julgada, com desconto de R$ 1,06.
+  await page.evaluate(() => window.openCouponDetail('JP5'));
+  await expect(page.locator('.coupon-detail-use')).toHaveText('Usar cupom');
+  // E a folha passa a mostrar o desconto DESTA sacola, que só o veredito tem.
+  await expect(page.locator('#couponDetailRules')).toContainText('Desconto de R$ 1,06');
+});

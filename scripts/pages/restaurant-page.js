@@ -5047,6 +5047,57 @@
       || coupons.find(c => [c.id, c.coupon_id, c.code, c.coupon_code].some(value => String(value) === String(code)));
   }
 
+  /**
+   * O MESMO CUPOM, JULGADO PELO BACKEND CONTRA ESTA SACOLA.
+   *
+   * O problema que isto fecha: a folha de detalhe aberta pela vitrine da Home
+   * recebe um `PublicCouponResponse`, que NÃO TEM `state` — a vitrine é o feed
+   * do `/menu`, e o backend nunca julgou aquele cupom contra esta pessoa. Sem
+   * `state` o botão caía em "aplicar", e quem não tinha o mínimo só descobria
+   * depois do toque, por um toast que contradizia o botão ao lado.
+   *
+   * O FRONT NÃO PASSA A CALCULAR NADA. Quem julga continua sendo o servidor, e
+   * a rota que julga JÁ EXISTE e já é chamada por este app:
+   * `GET /restaurants/{slug}/coupons` aceita `subtotal`, `delivery_fee` e
+   * `order_type` OPCIONAIS, e o `@description` dela diz textualmente que sem
+   * eles responde a tela do Clube e COM eles responde a do checkout. Ela
+   * também funciona sem token (`get_optional_current_customer` no backend),
+   * então o visitante recebe `login_required` em vez de nada.
+   *
+   * Ou seja: o backend não precisa publicar `state` em `PublicCouponResponse`.
+   * O que faltava era o front PERGUNTAR — e a pergunta é a mesma que o card do
+   * Clube já faz, com a mesma sacola, pelo mesmo controlador (o que também
+   * aproveita o cache por contexto: abrir a folha duas vezes não pede duas).
+   */
+  // ANOTADO, NÃO CONSERTADO NESTA RODADA — e este bloco aumenta o preço do que
+  // já estava anotado, então fica escrito aqui e não só na skill.
+  //
+  // `CustomerCouponState` tem CINCO valores no contrato — `applicable`,
+  // `missing_amount`, `login_required`, `payment_method_not_allowed` e
+  // `outside_hours` — e `club-service.COUPON_STATES` conhece TRÊS. Os dois
+  // últimos são DESCARTADOS por `normalizeCustomerCoupons`.
+  //
+  // Até agora isso custava um cupom sumido da lista do Clube. Com este bloco
+  // custa mais: um cupom nesses dois estados volta `null` daqui, a folha fica
+  // com o da vitrine (sem `state`) e o botão diz "Usar cupom" para um cupom que
+  // o backend acabou de recusar por forma de pagamento ou por horário — que é
+  // exatamente a contradição que este bloco existe para fechar, por outra porta.
+  // Não foi consertado aqui porque cada um dos dois precisa de rótulo e destino
+  // próprios (o de forma de pagamento leva à escolha de pagamento, o de horário
+  // não leva a lugar nenhum), e isso é decisão de produto, não de código.
+  async function judgedCouponForDetail(code) {
+    const jaCarregado = clubController.getCoupon(code);
+    if (jaCarregado) return jaCarregado;
+    try {
+      await clubController.ensureClubLoaded();
+    } catch {
+      // Sem veredito, a folha segue com o cupom da vitrine e o backend julga
+      // uma porta adiante, no preview. Falhar aqui não pode fechar a tela.
+      return null;
+    }
+    return clubController.getCoupon(code);
+  }
+
   // ==========================================================================
   //  O CAMPO DE CUPOM DO CHECKOUT — digitar um código que veio de fora.
   //
@@ -5829,6 +5880,7 @@
     app: window.PedeAquiAppPort,
     shell: {
       getCouponForDetail,
+      judgedCouponForDetail,
       // As três portas do dinheiro: a folha nunca escreve selectedCoupon
       // diretamente — arma, desfaz e persiste por aqui.
       armSelectedCoupon,

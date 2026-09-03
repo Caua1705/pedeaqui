@@ -129,9 +129,51 @@
     // nenhum. Agora o rotulo sai do MESMO decisor do card do Clube.
     aplicarRotuloDoBotao(coupon);
     if ($('couponDetailMin')) $('couponDetailMin').textContent = minText;
+    aplicarRegras(coupon);
+    $('couponDetailOverlay')?.classList.add('active');
+    pedirVeredito(coupon);
+  }
+
+  function aplicarRegras(coupon) {
     const rules = $('couponDetailRules');
     if (rules) rules.innerHTML = couponRules(coupon).map(rule => `<li>${esc(rule)}</li>`).join('');
-    $('couponDetailOverlay')?.classList.add('active');
+  }
+
+  /**
+   * QUEM DIZ É O BOTÃO — e para ele poder dizer, alguém precisa ter julgado.
+   *
+   * O cupom que chega da vitrine da Home é `PublicCouponResponse` e NÃO TEM
+   * `state`: o backend nunca o julgou contra esta pessoa e esta sacola. Sem
+   * `state` o botão dizia "Usar cupom" mesmo faltando R$ 28,90, e o cliente só
+   * descobria depois do toque — por um toast que dizia o CONTRÁRIO do botão ao
+   * lado dele. Duas frases opostas na mesma tela.
+   *
+   * Aqui a folha PERGUNTA. O front não passa a calcular elegibilidade: quem
+   * julga continua sendo o servidor, na mesma rota que já decide os estados do
+   * card do Clube (`GET /coupons` com a sacola). Ver `judgedCouponForDetail`.
+   *
+   * A TELA ABRE ANTES DA RESPOSTA, de propósito: a folha é instantânea hoje e
+   * pagar uma ida à rede para abri-la seria trocar um defeito por outro. Ela
+   * abre com o que se sabe e se corrige quando o veredito chega.
+   *
+   * A guarda de identidade não é zelo: entre o pedido e a resposta a pessoa
+   * pode ter fechado a folha ou aberto OUTRO cupom, e repintar aí escreveria o
+   * veredito de um cupom no botão de outro.
+   */
+  function pedirVeredito(coupon) {
+    if (coupon.state) return;
+    const aberto = coupon;
+    Promise.resolve(shell.judgedCouponForDetail(coupon.code ?? coupon.id))
+      .then(julgado => {
+        if (!julgado || couponDetailCoupon !== aberto) return;
+        // O julgado é a fonte do estado; o da vitrine continua sendo a fonte
+        // da arte e do nome, que só ele tem. `title`/`name` são o MESMO campo
+        // em dois esquemas (§12.1), então nenhum dos dois pode sumir.
+        couponDetailCoupon = { ...aberto, ...julgado };
+        aplicarRotuloDoBotao(couponDetailCoupon);
+        aplicarRegras(couponDetailCoupon);
+      })
+      .catch(() => { /* sem veredito, o backend julga no preview */ });
   }
 
   /** O rotulo e o destino do CTA, do decisor unico (services/coupon-cta.js). */
@@ -224,11 +266,14 @@
     //
     // Agora os dois levam ao cardápio, que é a ação que de fato destrava, e
     // NENHUM dos dois toca em `selectedCoupon`.
+    // QUEM DIZ É O BOTÃO, E SÓ ELE. O toast que existia aqui — "Faltam R$ X na
+    // sacola para usar este cupom" — era a segunda voz da mesma tela, e ela
+    // aparecia ao lado de um botão que (antes do veredito) dizia "Usar cupom".
+    // Duas frases opostas no mesmo instante. Com o botão já dizendo "Faltam
+    // R$ X", o toast só repete o que a pessoa acabou de ler e tocar.
     if (acao === CTA().ACOES.VER_CARDAPIO) {
-      const falta = couponAmount(coupon.missing_amount);
       closeCouponDetail();
       await shell.mobNavMenu();
-      if (falta > 0) shell.showCouponNotice(`Faltam ${fmt(falta)} na sacola para usar este cupom.`);
       return;
     }
 
@@ -265,7 +310,7 @@
     ({ $, esc, fmt } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['getCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu']) {
+    for (const nome of ['getCouponForDetail', 'judgedCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu']) {
       if (typeof shell[nome] !== 'function') throw new Error(`coupon-detail-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({

@@ -45,6 +45,14 @@
   let pedidos = [];
   const selecionados = new Set();
   let carregando = false;
+  // UM menu aberto por vez, e é o id do pedido — não um booleano. Dois menus
+  // abertos num celular estreito se sobrepõem, e fechar "o menu" sem saber qual
+  // era deixaria o `aria-expanded` do outro mentindo.
+  let menuAberto = null;
+  // Os cartões com os detalhes abertos. Sobrevive ao redesenho da lista de
+  // propósito: o `carregarPedidos()` roda sozinho depois de cada ação, e um
+  // painel que fechasse a cada volta da rede seria um painel que não abre.
+  const detalhados = new Set();
 
   // ── Montagem de nós ──────────────────────────────────────────────────────
   function el(tag, className, text) {
@@ -54,18 +62,66 @@
     return node;
   }
 
-  // ── As três telas ────────────────────────────────────────────────────────
+  // ── As telas, exclusivas ─────────────────────────────────────────────────
+  //
+  //  Três delas são ABAS (trabalho, acerto, ajustes) e duas não (a porta e o
+  //  fim da linha). A barra de abas só existe nas três primeiras: não há para
+  //  onde navegar sem código, e um link morto não tem seções.
+  const ABAS = new Set(['trabalho', 'acerto', 'ajustes']);
+
   function mostrar(qual) {
     for (const [id, ativo] of [
       ['courierGate', qual === 'porta'],
       ['courierApp', qual === 'trabalho'],
       ['courierHistory', qual === 'acerto'],
+      ['courierSettings', qual === 'ajustes'],
       ['courierDead', qual === 'fim']
     ]) {
       const node = $(id);
       if (node) node.hidden = !ativo;
     }
+    // Trocar de tela fecha qualquer menu aberto. Sem isto o menu do pedido
+    // sobreviveria por trás da tela nova e reapareceria na volta, aberto sobre
+    // um cartão que a pessoa não estava mais olhando.
+    menuAberto = null;
+    const tabs = $('courierTabs');
+    if (tabs) {
+      const eAba = ABAS.has(qual);
+      tabs.hidden = !eAba;
+      if (eAba) {
+        tabs.querySelectorAll('.cr-tabs__btn').forEach(botao => {
+          const ativa = botao.dataset.aba === qual;
+          // `aria-current` e não `aria-selected`: isto é navegação entre telas,
+          // não um `tablist` ARIA — não há painéis irmãos com `role=tabpanel`, e
+          // declarar a semântica errada é pior que não declarar nenhuma.
+          if (ativa) botao.setAttribute('aria-current', 'page');
+          else botao.removeAttribute('aria-current');
+        });
+      }
+    }
     document.body.classList.remove('courier-booting');
+  }
+
+  /**
+   * Trocar de aba.
+   *
+   * "Entregas" RECARREGA, e é de propósito: era o que `courierHistoryBack` já
+   * fazia antes de existir barra de abas, pelo mesmo motivo — o entregador pode
+   * ter ficado minutos na outra tela, e voltar para uma lista congelada é o
+   * caminho curto para um toque em "Entregue" que responde 409.
+   *
+   * De brinde, isso dá um recarregar ao alcance do polegar sem inventar
+   * controle nenhum: a aba fica embaixo, e o botão do topo continua lá para
+   * quem já está na lista.
+   */
+  function irParaAba(aba) {
+    if (aba === 'acerto') return abrirAcerto();
+    if (aba === 'ajustes') {
+      mostrar('ajustes');
+      return;
+    }
+    mostrar('trabalho');
+    carregarPedidos();
   }
 
   function fimDaLinha(titulo, texto) {
@@ -134,44 +190,54 @@
     if (pedido.address_complement) card.append(el('div', 'cr-card__addr', pedido.address_complement));
     if (pedido.address_reference) card.append(el('div', 'cr-card__addr', `Referência: ${pedido.address_reference}`));
 
-    // O DINHEIRO. Uma linha sempre, e ela diz o que o backend disse — nunca uma
-    // conta feita aqui. `is_paid` e `amount_to_collect` são os dois campos, e
-    // são independentes: um pedido pode estar pago e não ter nada a receber, e
-    // é isso que a primeira condição cobre.
+    // O DINHEIRO, E O ESTADO DELE EM COR.
+    //
+    // `is_paid` e `amount_to_collect` são independentes e os dois vêm prontos:
+    // um pedido pode estar pago e não ter nada a receber. Nada aqui soma,
+    // subtrai ou arredonda.
+    //
+    // O CHIP entrou em 03/09/2026 porque isto era texto cinza discreto ao lado
+    // do valor, e cobrar duas vezes é o erro que sai do bolso do entregador. A
+    // cor é de ESTADO, nunca de marca — esta tela não tem marca, e a folha
+    // declara `--cr-paid`/`--cr-unpaid` separados da cor de ação.
+    //
+    // E o chip carrega A PALAVRA, não só a cor: no sol duas cores saturadas
+    // viram a mesma mancha, e daltonismo é comum. A cor acelera a leitura; quem
+    // informa é o texto.
     const aReceber = Number(pedido.amount_to_collect);
+    const linhaPagamento = el('div', 'cr-card__pay');
     if (pedido.is_paid) {
-      card.append(el('div', 'cr-card__paid', 'Pedido pago — nada a receber'));
+      linhaPagamento.append(el('div', 'cr-card__paid', 'Nada a receber'));
+      linhaPagamento.append(el('span', 'cr-card__chip cr-card__chip--paid', 'Pago'));
     } else if (Number.isFinite(aReceber) && aReceber > 0) {
       const metodo = pedido.payment_method ? ` (${pedido.payment_method})` : '';
-      card.append(el('div', 'cr-card__money', `Receber ${fmt(aReceber)}${metodo}`));
+      linhaPagamento.append(el('div', 'cr-card__money', `Receber ${fmt(aReceber)}${metodo}`));
+      linhaPagamento.append(el('span', 'cr-card__chip cr-card__chip--unpaid', 'Não pago'));
     } else {
       // Não pago e sem valor a receber é dado contraditório do backend. A tela
       // diz o que sabe e não inventa um número: um valor chutado aqui vira
-      // dinheiro cobrado a mais ou a menos na porta de alguém.
-      card.append(el('div', 'cr-card__paid', 'Pagamento não confirmado — confira com o restaurante'));
+      // dinheiro cobrado a mais ou a menos na porta de alguém. O chip continua
+      // sendo "Não pago", que é o fato de `is_paid: false` — o que falta é
+      // QUANTO, e disso a frase ao lado cuida.
+      linhaPagamento.append(el('div', 'cr-card__paid', 'Valor não confirmado — confira com o restaurante'));
+      linhaPagamento.append(el('span', 'cr-card__chip cr-card__chip--unpaid', 'Não pago'));
     }
+    card.append(linhaPagamento);
 
     if (pedido.notes) card.append(el('div', 'cr-card__notes', pedido.notes));
 
+    // Os detalhes ficam montados e escondidos: abrir e fechar não redesenha o
+    // cartão, e um redesenho fecharia o menu que acabou de ser tocado.
+    const detalhes = painelDeDetalhes(pedido);
+    detalhes.hidden = !detalhados.has(pedido.order_id);
+    card.append(detalhes);
+
     const acoes = el('div', 'cr-card__acts');
 
-    if (pedido.customer_phone) {
-      const tel = el('a', 'cr-link', 'Ligar');
-      tel.href = `tel:${pedido.customer_phone}`;
-      acoes.append(tel);
-    }
-    const mapa = linkDeMapa(pedido);
-    if (mapa) {
-      const rota = el('a', 'cr-link', 'Rota');
-      rota.href = mapa;
-      rota.target = '_blank';
-      // noopener por higiene; o link vai para fora e não pode alcançar esta
-      // janela, que carrega o token na URL.
-      rota.rel = 'noopener noreferrer';
-      acoes.append(rota);
-    }
-
-    // Quem manda é o backend: can_leave e can_deliver, não o status.
+    // O QUE FICA NO CARTÃO é a seleção para o lote. Ela não é uma ação sobre um
+    // pedido — é o que alimenta a barra de baixo —, e escondê-la no menu
+    // tornaria o fluxo principal um segredo. Quem manda é o backend:
+    // `can_leave`/`can_deliver`, nunca o `status`.
     if (pedido.can_leave) {
       const escolher = el('button', 'cr-btn cr-btn--ghost',
         selecionados.has(pedido.order_id) ? 'Remover da saída' : 'Selecionar para sair');
@@ -179,15 +245,170 @@
       escolher.dataset.acao = 'alternar';
       acoes.append(escolher);
     }
-    if (pedido.can_deliver) {
-      const entregue = el('button', 'cr-btn cr-btn--primary', 'Entregue');
-      entregue.type = 'button';
-      entregue.dataset.acao = 'entregue';
-      acoes.append(entregue);
+    acoes.append(menuDoPedido(pedido));
+    card.append(acoes);
+    return card;
+  }
+
+  // ── O menu de ações do pedido ────────────────────────────────────────────
+  //
+  //  Elas eram quatro links e botões soltos disputando a mesma linha do cartão.
+  //  Num celular estreito quebravam em duas fileiras e o cartão ficava mais
+  //  alto que a informação dentro dele — cabiam dois pedidos na tela em vez de
+  //  três, e a lista é o que essa pessoa passa o turno olhando.
+  //
+  //  O menu é montado por nó, como o resto: nome de cliente e endereço vêm da
+  //  API e vão para a tela.
+  const PONTINHOS = 'M12 6.2a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7.3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7.3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z';
+
+  function itemDeMenu(texto, acao, classe) {
+    const botao = el('button', classe ? `cr-pop--${classe}` : null, texto);
+    botao.type = 'button';
+    botao.dataset.acao = acao;
+    return botao;
+  }
+
+  function menuDoPedido(pedido) {
+    const caixa = el('div', 'cr-card__menu');
+
+    const dots = el('button', 'cr-card__dots');
+    dots.type = 'button';
+    dots.dataset.acao = 'menu';
+    dots.setAttribute('aria-haspopup', 'true');
+    dots.setAttribute('aria-expanded', menuAberto === pedido.order_id ? 'true' : 'false');
+    dots.setAttribute('aria-label', `Ações do pedido ${pedido.order_number}`);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', PONTINHOS);
+    path.setAttribute('fill', 'currentColor');
+    svg.append(path);
+    dots.append(svg);
+    caixa.append(dots);
+
+    const pop = el('div', 'cr-card__pop');
+    pop.hidden = menuAberto !== pedido.order_id;
+
+    // Confirmar entrega lidera, e só ela é colorida: as outras quatro são
+    // caminhos, esta é a que fecha o pedido. Só aparece quando o BACKEND diz
+    // que dá — `can_deliver`.
+    if (pedido.can_deliver) pop.append(itemDeMenu('Confirmar entrega', 'entregue', 'go'));
+
+    // `customer_phone` é required no contrato, mas required não é "não vazio":
+    // uma string em branco viraria `tel:` sem número, um alvo que promete e não
+    // cumpre.
+    const telefone = String(pedido.customer_phone || '').trim();
+    if (telefone) {
+      const ligar = el('a', null, 'Ligar para o cliente');
+      ligar.href = `tel:${telefone}`;
+      pop.append(ligar);
+
+      const digitos = whatsAppDigits(telefone);
+      if (digitos) {
+        const zap = el('a', null, 'Chamar no WhatsApp');
+        zap.href = `https://wa.me/${digitos}`;
+        zap.target = '_blank';
+        // O link sai desta janela, e a URL desta janela carrega o link_token,
+        // que é credencial. `noreferrer` é o que impede o token de viajar no
+        // Referer — a mesma razão do `<meta name="referrer">` da página.
+        zap.rel = 'noopener noreferrer';
+        pop.append(zap);
+      }
     }
 
-    if (acoes.childElementCount) card.append(acoes);
-    return card;
+    if (enderecoEmTexto(pedido)) pop.append(itemDeMenu('Copiar endereço', 'copiar'));
+
+    // O mapa CONTINUA, com o nome trocado. Ele já existia como "Rota" e apagar
+    // função que funciona não é reorganizar — mas "rota" virou o nome de uma
+    // frente de fase 2 (planejar a rota do turno), e dois significados para a
+    // mesma palavra na mesma tela é como se promete o que não existe.
+    const mapa = linkDeMapa(pedido);
+    if (mapa) {
+      const abrir = el('a', null, 'Abrir no mapa');
+      abrir.href = mapa;
+      abrir.target = '_blank';
+      abrir.rel = 'noopener noreferrer';
+      pop.append(abrir);
+    }
+
+    pop.append(itemDeMenu(
+      detalhados.has(pedido.order_id) ? 'Ocultar detalhes' : 'Detalhes',
+      'detalhes'
+    ));
+
+    caixa.append(pop);
+    return caixa;
+  }
+
+  /**
+   * O telefone do cliente em dígitos, com o 55 do país quando ele falta.
+   *
+   * O contrato não diz o formato de `customer_phone` — em produção ele chega
+   * como o cliente digitou, com parênteses e traço. Onze dígitos ou menos é
+   * número nacional e ganha o 55; acima disso já vem com país e não se mexe.
+   * Sem dígito nenhum não há link: `wa.me/` sozinho abre o WhatsApp em branco.
+   */
+  function whatsAppDigits(telefone) {
+    const digitos = String(telefone || '').replace(/\D+/g, '');
+    if (!digitos) return '';
+    return digitos.length <= 11 ? `55${digitos}` : digitos;
+  }
+
+  /**
+   * Os detalhes, no próprio cartão.
+   *
+   * SEM tela nova e SEM rota nova: tudo aqui já está em `CourierOrderResponse`.
+   * Uma tela de detalhe pediria uma rota de detalhe do entregador, que não
+   * existe — e inventar uma chamada para preencher tela é o caminho para o
+   * front chamar rota que o contrato não tem.
+   */
+  function painelDeDetalhes(pedido) {
+    const caixa = el('div', 'cr-card__detalhes');
+    caixa.dataset.papel = 'detalhes';
+
+    const linha = (rotulo, valor) => {
+      if (valor === '' || valor === null || valor === undefined) return;
+      const par = el('div', 'cr-card__det');
+      par.append(el('dt', null, rotulo));
+      par.append(el('dd', null, valor));
+      caixa.append(par);
+    };
+
+    linha('Pedido', `#${pedido.order_number}`);
+    linha('Cliente', pedido.customer_name);
+    linha('Telefone', pedido.customer_phone);
+    if (pedido.address_complement) linha('Complemento', pedido.address_complement);
+    if (pedido.address_reference) linha('Referência', pedido.address_reference);
+    if (pedido.payment_method) linha('Forma de pagamento', pedido.payment_method);
+    // O `total` DO PEDIDO NÃO ENTRA AQUI, e isso é decisão, não esquecimento.
+    //
+    // A primeira versão deste painel mostrava os dois lado a lado ("são números
+    // diferentes num pedido pago online, mostrar só um deixa a pergunta sem
+    // resposta"). O argumento é bom e perde para um mais caro: o único número
+    // que o entregador cobra na porta é `amount_to_collect`, e o `total` é o
+    // ÚNICO número desta tela sobre o qual ele não pode agir. Num pedido pago
+    // online eles são 118,90 e 23,50 — e cobrar o de cima é exatamente o erro
+    // que o chip Pago/Não pago entrou para evitar.
+    //
+    // Quem já guardava isso é `courier-screen.spec.js:213` ("o valor a receber
+    // é o do backend"), que exige o total AUSENTE do cartão. O painel novo o
+    // reintroduziu escondido e o teste reprovou — que é o teste fazendo o
+    // trabalho dele. Se o dono quiser o total aqui, é inversão consciente: o
+    // teste vira asserção do que continua valendo, não some (§14.8 da skill).
+    //
+    // `amount_to_collect` é `number` obrigatório e ZERO é linha FORA, nunca um
+    // "R$ 0,00" solto — a mesma regra da sacola do cliente. Quem diz que não há
+    // nada a receber é a linha "Nada a receber" com o chip "Pago" ao lado.
+    const aCobrar = Number(pedido.amount_to_collect);
+    if (Number.isFinite(aCobrar) && aCobrar > 0) linha('A receber na entrega', fmt(aCobrar));
+    // `courier_fee` é `number | null`, e nulo NÃO é zero: é "esta corrida não
+    // tem taxa registrada". É a mesma distinção da tela de acerto.
+    linha('Sua taxa', pedido.courier_fee == null ? 'sem taxa registrada' : fmt(pedido.courier_fee));
+    if (pedido.assigned_at) linha('Atribuído', quando(pedido.assigned_at));
+    if (pedido.created_at) linha('Pedido feito', quando(pedido.created_at));
+
+    return caixa;
   }
 
   function desenhar() {
@@ -396,6 +617,27 @@
     }
   }
 
+  // ── Sair ─────────────────────────────────────────────────────────────────
+  //
+  //  NÃO é "sair da conta": não há conta. É "este aparelho esquece o código", e
+  //  é por isso que a tela diz exatamente isso embaixo do botão. O link
+  //  continua valendo — quem revoga link é o restaurante, pelo painel.
+  //
+  //  Ele reusa `pedirCodigo()`, que já apaga o guardado e limpa o código do
+  //  serviço. Uma segunda implementação de "esquecer credencial" é a chance de
+  //  uma delas esquecer metade.
+  function sair() {
+    // A lista e a seleção morrem junto: deixá-las em memória faria a tela
+    // seguinte, de quem digitar outro código no mesmo aparelho, nascer com os
+    // pedidos do turno anterior até a primeira resposta chegar.
+    pedidos = [];
+    selecionados.clear();
+    detalhados.clear();
+    aviso('');
+    desenhar();
+    pedirCodigo('');
+  }
+
   // ── A porta ──────────────────────────────────────────────────────────────
   function pedirCodigo(mensagem) {
     try { localStorage.removeItem(codeKey(service().currentToken())); } catch { /* modo privado */ }
@@ -458,28 +700,91 @@
 
     $('courierReload')?.addEventListener('click', () => { aviso(''); carregarPedidos(); });
     $('courierLeaveBtn')?.addEventListener('click', sairParaEntrega);
-    $('courierHistoryBtn')?.addEventListener('click', abrirAcerto);
-    // Voltar do acerto RECARREGA a lista: o entregador pode ter ficado minutos
-    // na outra tela, e voltar para uma lista congelada é o caminho curto para
-    // um toque em "Entregue" que responde 409.
-    $('courierHistoryBack')?.addEventListener('click', () => {
-      mostrar('trabalho');
-      carregarPedidos();
+    $('courierLogout')?.addEventListener('click', sair);
+
+    $('courierTabs')?.addEventListener('click', (event) => {
+      const botao = event.target.closest('.cr-tabs__btn');
+      if (botao?.dataset.aba) irParaAba(botao.dataset.aba);
     });
 
     $('courierList')?.addEventListener('click', (event) => {
-      const botao = event.target.closest('button[data-acao]');
-      if (!botao) return;
-      const card = botao.closest('.cr-card');
+      const alvo = event.target.closest('button[data-acao]');
+      // Um toque em qualquer outro lugar da lista FECHA o menu aberto. Sem
+      // isto ele só fecharia pelo próprio botão, e num celular o gesto natural
+      // para desistir é tocar fora.
+      if (!alvo) {
+        if (menuAberto) { menuAberto = null; desenhar(); }
+        return;
+      }
+      const card = alvo.closest('.cr-card');
       const id = card?.dataset.orderId;
       if (!id) return;
-      if (botao.dataset.acao === 'alternar') {
-        if (selecionados.has(id)) selecionados.delete(id); else selecionados.add(id);
+
+      if (alvo.dataset.acao === 'menu') {
+        menuAberto = menuAberto === id ? null : id;
         desenhar();
         return;
       }
-      if (botao.dataset.acao === 'entregue') marcarEntregue(id, botao);
+      if (alvo.dataset.acao === 'alternar') {
+        if (selecionados.has(id)) selecionados.delete(id); else selecionados.add(id);
+        menuAberto = null;
+        desenhar();
+        return;
+      }
+      if (alvo.dataset.acao === 'detalhes') {
+        if (detalhados.has(id)) detalhados.delete(id); else detalhados.add(id);
+        menuAberto = null;
+        desenhar();
+        return;
+      }
+      if (alvo.dataset.acao === 'copiar') {
+        menuAberto = null;
+        copiarEndereco(id);
+        return;
+      }
+      if (alvo.dataset.acao === 'entregue') {
+        menuAberto = null;
+        marcarEntregue(id, alvo);
+      }
     });
+
+    // Um menu aberto some ao tocar em QUALQUER outro lugar da página, e ao
+    // apertar Esc. Os dois no `document`: o menu é `position:absolute` dentro
+    // do cartão, mas o toque de desistência acontece fora da lista tanto quanto
+    // dentro dela.
+    document.addEventListener('click', (event) => {
+      if (!menuAberto) return;
+      if (event.target.closest('.cr-card__menu')) return;
+      menuAberto = null;
+      desenhar();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !menuAberto) return;
+      menuAberto = null;
+      desenhar();
+    });
+  }
+
+  /**
+   * Copiar o endereço.
+   *
+   * `navigator.clipboard` NÃO é garantido: ele exige contexto seguro e, em
+   * alguns browsers, permissão — e esta tela roda no celular de alguém na rua,
+   * onde falhar calado é pior que falhar. Por isso o `catch` avisa em vez de
+   * engolir: quem tocou precisa saber se pode colar ou se vai colar o que
+   * estava antes na área de transferência.
+   */
+  async function copiarEndereco(orderId) {
+    const pedido = pedidos.find(item => item.order_id === orderId);
+    const texto = pedido ? enderecoEmTexto(pedido) : '';
+    if (!texto) return;
+    desenhar();
+    try {
+      await navigator.clipboard.writeText(texto);
+      aviso('Endereço copiado.');
+    } catch {
+      aviso('Não foi possível copiar. O endereço está no cartão.');
+    }
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────

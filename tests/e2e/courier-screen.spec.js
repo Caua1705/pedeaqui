@@ -147,6 +147,22 @@ async function entrar(page, codigo = CODIGO) {
   await page.locator('#courierGateSubmit').click();
 }
 
+// A NAVEGAÇÃO VIROU BARRA DE ABAS em 03/09/2026. Antes eram um botão "Acerto"
+// no topo e um "Voltar" na tela do acerto — duas saídas, cada uma num canto, e
+// nenhuma delas ao alcance do polegar de quem segura o celular com uma mão.
+const aba = (page, nome) => page.locator(`#courierTabs .cr-tabs__btn[data-aba="${nome}"]`);
+const abaEntregas = (page) => aba(page, 'trabalho');
+const abaHistorico = (page) => aba(page, 'acerto');
+const abaAjustes = (page) => aba(page, 'ajustes');
+
+/** Abre o menu de ações de um pedido e espera ele estar de fato visível. */
+async function abrirMenu(page, orderId) {
+  const card = page.locator(`.cr-card[data-order-id="${orderId}"]`);
+  await card.locator('button[data-acao="menu"]').click();
+  await expect(card.locator('.cr-card__pop')).toBeVisible();
+  return card;
+}
+
 test('sem token na URL a tela não pede código: não há o que abrir', async ({ page }) => {
   await mockCourier(page);
   await page.goto('/entregador');
@@ -209,7 +225,7 @@ test('o valor a receber é o do backend, exibido sem conta nenhuma', async ({ pa
   // "R$ 0,00" solto — a mesma regra da sacola do cliente.
   const naRua = page.locator('.cr-card[data-order-id="ord-2"]');
   await expect(naRua.locator('.cr-card__money')).toHaveCount(0);
-  await expect(naRua.locator('.cr-card__paid')).toHaveText('Pedido pago — nada a receber');
+  await expect(naRua.locator('.cr-card__paid')).toHaveText('Nada a receber');
 });
 
 test('quem decide a ação é can_leave/can_deliver, não o status', async ({ page }) => {
@@ -283,6 +299,7 @@ test('409 em "entregue" não é erro de rede: a lista estava velha e se recarreg
   await entrar(page);
 
   const antes = dados.chamadas.filter(c => c.caminho.endsWith('/orders')).length;
+  await abrirMenu(page, 'ord-2');
   await page.locator('.cr-card[data-order-id="ord-2"] button[data-acao="entregue"]').click();
 
   await expect(page.locator('#courierAlert')).toContainText('mudou de estado');
@@ -459,7 +476,7 @@ async function abrirAcerto(page, historico = HISTORICO) {
   const dados = await mockCourier(page, { historico });
   await abrir(page);
   await entrar(page);
-  await page.locator('#courierHistoryBtn').click();
+  await abaHistorico(page).click();
   await expect(page.locator('#courierHistory')).toBeVisible();
   return dados;
 }
@@ -517,9 +534,9 @@ test('acerto que falha não deixa número velho na tela', async ({ page }) => {
   const dados = await abrirAcerto(page);
   await expect(page.locator('#courierFeeTotal')).toHaveText('R$ 91,00');
 
-  await page.locator('#courierHistoryBack').click();
+  await abaEntregas(page).click();
   dados.historicoStatus = 500;
-  await page.locator('#courierHistoryBtn').click();
+  await abaHistorico(page).click();
 
   await expect(page.locator('#courierHistoryAlert')).toBeVisible();
   // O 91,00 da consulta anterior NÃO pode continuar ali ao lado do erro.
@@ -531,11 +548,222 @@ test('voltar do acerto recarrega a lista, em vez de mostrar uma congelada', asyn
   const dados = await abrirAcerto(page);
   const antes = dados.chamadas.filter(c => c.caminho.endsWith('/orders')).length;
 
-  await page.locator('#courierHistoryBack').click();
+  await abaEntregas(page).click();
   await expect(page.locator('#courierApp')).toBeVisible();
 
   await expect.poll(
     () => dados.chamadas.filter(c => c.caminho.endsWith('/orders')).length,
     'voltar do acerto não recarregou a lista'
   ).toBeGreaterThan(antes);
+});
+
+// ============================================================================
+//  AS TRÊS MELHORIAS DE 03/09/2026 — barra de abas, chip de pagamento e menu
+//  de ações. Nenhuma delas tinha teste; as adaptações acima só mantiveram os
+//  testes velhos funcionando com a navegação nova, o que não é a mesma coisa.
+//
+//  VIEWPORT DE CELULAR, e o motivo é geometria, não cascata: medido, a
+//  `courier.css` NÃO tem uma única `@media` de largura (só a de movimento
+//  reduzido), então a folha é a mesma em 1280 e em 414. O que muda é o que
+//  cabe: a barra fica `fixed` embaixo e o menu do pedido abre por cima do
+//  cartão seguinte. Afirmar sobre isso a 1280 é afirmar sobre uma tela que o
+//  entregador nunca vê (skill §14.2).
+// ============================================================================
+
+test.describe('a tela do entregador no celular', () => {
+  test.use({ viewport: { width: 414, height: 844 } });
+
+  test('a barra de abas some onde não há para onde navegar', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+
+    // Na PORTA não há abas: sem código, não há lista, acerto nem ajustes.
+    //
+    // `toBeAttached` ANTES de `toBeHidden`, e não é cerimônia: para o
+    // Playwright um elemento que NÃO EXISTE está escondido, então um teste só
+    // com `toBeHidden` fica verde num app que nunca construiu a barra — que é
+    // exatamente o estado pré-rodada que ele deveria acusar. As duas linhas
+    // juntas dizem "existe, e está escondida AQUI".
+    await expect(page.locator('#courierGate')).toBeVisible();
+    await expect(page.locator('#courierTabs')).toBeAttached();
+    await expect(page.locator('#courierTabs')).toBeHidden();
+
+    await entrar(page);
+    await expect(page.locator('#courierTabs')).toBeVisible();
+    await expect(page.locator('#courierTabs .cr-tabs__btn')).toHaveCount(3);
+    // A aba corrente se anuncia, e é UMA só.
+    await expect(page.locator('#courierTabs [aria-current="page"]')).toHaveCount(1);
+    await expect(abaEntregas(page)).toHaveAttribute('aria-current', 'page');
+
+    await abaHistorico(page).click();
+    await expect(abaHistorico(page)).toHaveAttribute('aria-current', 'page');
+    await expect(abaEntregas(page)).not.toHaveAttribute('aria-current', 'page');
+  });
+
+  test('link morto não tem abas', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page, 'lnk_morto');
+    // `entrar()` é obrigatório: sem código guardado o app mostra a PORTA e só
+    // descobre que o link morreu quando alguém digita — o 404 vem do `/me`.
+    // A primeira versão deste teste pulava essa linha, e o vermelho que ela
+    // produziu foi `#courierDead` escondido: falhava pelo motivo errado, e
+    // teria falhado igual com o app corrigido.
+    await entrar(page);
+
+    await expect(page.locator('#courierDead')).toBeVisible();
+    await expect(page.locator('#courierTabs')).toBeAttached();
+    await expect(page.locator('#courierTabs')).toBeHidden();
+  });
+
+  test('Configurações tem Sair, e Sair faz o APARELHO esquecer o código', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    const chave = `rapidex.courier.code.${TOKEN}`;
+    // Entrar guardou o código: é isso que Sair precisa desfazer.
+    await expect.poll(() => page.evaluate(k => localStorage.getItem(k), chave)).toBe(CODIGO);
+
+    await abaAjustes(page).click();
+    await expect(page.locator('#courierSettings')).toBeVisible();
+    await page.locator('#courierLogout').click();
+
+    // Volta para a porta, e o código sai do aparelho — não é "sair da conta",
+    // que não existe: o link continua valendo.
+    await expect(page.locator('#courierGate')).toBeVisible();
+    await expect(page.locator('#courierTabs')).toBeHidden();
+    expect(await page.evaluate(k => localStorage.getItem(k), chave)).toBeNull();
+
+    // E a lista do turno anterior não pode reaparecer para quem digitar outro
+    // código neste mesmo aparelho.
+    await expect(page.locator('.cr-card')).toHaveCount(0);
+  });
+
+  test('pago e não pago se distinguem por PALAVRA, e a cor é de estado', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    const naRua = page.locator('.cr-card[data-order-id="ord-2"] .cr-card__chip');
+    const pronto = page.locator('.cr-card[data-order-id="ord-1"] .cr-card__chip');
+
+    // A PALAVRA primeiro: no sol duas cores saturadas viram a mesma mancha, e
+    // daltonismo é comum. Um teste só de cor aprovaria um chip sem texto.
+    await expect(naRua).toHaveText('Pago');
+    await expect(pronto).toHaveText('Não pago');
+
+    const cor = (loc) => loc.evaluate(n => getComputedStyle(n).backgroundColor);
+    // #10693C e #A4231C, os dois tokens de estado da folha. Verde e vermelho
+    // NÃO são matizes de marca — esta tela não tem marca, e mesmo que tivesse,
+    // cor de estado não é cor de marca (skill §7).
+    expect(await cor(naRua)).toBe('rgb(16, 105, 60)');
+    expect(await cor(pronto)).toBe('rgb(164, 35, 28)');
+  });
+
+  test('as ações do pedido moram no menu, e só um menu abre por vez', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    const um = page.locator('.cr-card[data-order-id="ord-1"]');
+    const dois = page.locator('.cr-card[data-order-id="ord-2"]');
+
+    // Fechado, o menu não está só invisível: ele não oferece alvo nenhum.
+    await expect(um.locator('.cr-card__pop')).toBeHidden();
+    await expect(um.locator('button[data-acao="menu"]')).toHaveAttribute('aria-expanded', 'false');
+
+    await abrirMenu(page, 'ord-1');
+    await expect(um.locator('button[data-acao="menu"]')).toHaveAttribute('aria-expanded', 'true');
+
+    // Abrir o segundo FECHA o primeiro. Dois menus abertos num celular estreito
+    // se sobrepõem, e o `aria-expanded` do que ficou aberto mentiria.
+    await abrirMenu(page, 'ord-2');
+    await expect(um.locator('.cr-card__pop')).toBeHidden();
+    await expect(um.locator('button[data-acao="menu"]')).toHaveAttribute('aria-expanded', 'false');
+    await expect(dois.locator('.cr-card__pop')).toBeVisible();
+
+    // Tocar fora desiste: é o gesto natural no celular, e sem ele o menu só
+    // fecharia pelo próprio botão.
+    await page.locator('#courierName').click();
+    await expect(dois.locator('.cr-card__pop')).toBeHidden();
+  });
+
+  test('quem decide o "Confirmar entrega" do menu continua sendo can_deliver', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    // ord-1 é `can_deliver: false` e ord-2 é `true`. O status diz o contrário
+    // em outro teste; aqui o ponto é que a ação MUDOU DE LUGAR sem mudar de
+    // dono — ela saiu do cartão para o menu, e o backend continua mandando.
+    const um = await abrirMenu(page, 'ord-1');
+    await expect(um.locator('.cr-card__pop button[data-acao="entregue"]')).toHaveCount(0);
+
+    const dois = await abrirMenu(page, 'ord-2');
+    await expect(dois.locator('.cr-card__pop button[data-acao="entregue"]')).toHaveText('Confirmar entrega');
+  });
+
+  test('o WhatsApp recebe dígitos, e o 55 entra só quando falta', async ({ page }) => {
+    await mockCourier(page, {
+      pedidos: [
+        // Como o cliente digita: com máscara e sem país. `customer_phone` é
+        // `string` required no contrato, e o contrato NÃO diz o formato.
+        { ...PEDIDO_PRONTO, customer_phone: '(41) 99999-0000' },
+        // Já com país: não se põe 55 duas vezes.
+        { ...PEDIDO_NA_RUA, customer_phone: '5541988887777' }
+      ]
+    });
+    await abrir(page);
+    await entrar(page);
+
+    const um = await abrirMenu(page, 'ord-1');
+    await expect(um.locator('.cr-card__pop a[href^="https://wa.me/"]'))
+      .toHaveAttribute('href', 'https://wa.me/5541999990000');
+    // O link sai desta janela, e a URL desta janela carrega o link_token.
+    // `noreferrer` é o que impede a credencial de viajar no Referer.
+    await expect(um.locator('.cr-card__pop a[href^="https://wa.me/"]'))
+      .toHaveAttribute('rel', 'noopener noreferrer');
+
+    const dois = await abrirMenu(page, 'ord-2');
+    await expect(dois.locator('.cr-card__pop a[href^="https://wa.me/"]'))
+      .toHaveAttribute('href', 'https://wa.me/5541988887777');
+  });
+
+  test('telefone em branco não vira alvo que promete e não cumpre', async ({ page }) => {
+    // `customer_phone` é required no contrato, e required não é "não vazio".
+    await mockCourier(page, { pedidos: [{ ...PEDIDO_PRONTO, customer_phone: '   ' }] });
+    await abrir(page);
+    await entrar(page);
+
+    const um = await abrirMenu(page, 'ord-1');
+    await expect(um.locator('.cr-card__pop a[href^="tel:"]')).toHaveCount(0);
+    await expect(um.locator('.cr-card__pop a[href^="https://wa.me/"]')).toHaveCount(0);
+    // E o menu continua existindo: as outras ações não dependem do telefone.
+    await expect(um.locator('.cr-card__pop button[data-acao="detalhes"]')).toHaveCount(1);
+  });
+
+  test('os detalhes não trazem o total do pedido, e zero não vira R$ 0,00', async ({ page }) => {
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    const dois = await abrirMenu(page, 'ord-2');
+    await dois.locator('.cr-card__pop button[data-acao="detalhes"]').click();
+    const painel = dois.locator('.cr-card__detalhes');
+    await expect(painel).toBeVisible();
+
+    // O ÚNICO número desta tela sobre o qual o entregador não pode agir é o
+    // total do pedido: cobrar os 64,20 de um pedido já pago é o erro mais caro
+    // que ele comete. Ele fica fora, e é decisão — se voltar, o commit diz que
+    // é inversão e este teste vira asserção do que continua valendo.
+    await expect(painel).not.toContainText('Total do pedido');
+    await expect(painel).not.toContainText('64,20');
+    // ord-2 é pago: `amount_to_collect` é 0, e parcela zerada é linha FORA.
+    await expect(painel).not.toContainText('R$ 0,00');
+    await expect(painel).not.toContainText('A receber na entrega');
+
+    // O que o painel TEM de trazer continua lá.
+    await expect(painel).toContainText('Jonas Pires');
+    await expect(painel).toContainText('#1043');
+  });
 });

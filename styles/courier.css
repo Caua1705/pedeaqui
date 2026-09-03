@@ -31,6 +31,24 @@
   --cr-danger: #A4231C;
   --cr-radius: 14px;
   --cr-safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Altura da barra de abas. Vive num token porque TRÊS coisas dependem dela:
+     a própria barra, o respiro do fim da lista e o `bottom` da barra de ação —
+     e as três desalinhadas cobrem o último cartão ou deixam um buraco. */
+  --cr-tabs-h: 64px;
+
+  /* ── COR DE ESTADO, e ela não é cor de marca ──
+     Pago e não pago são a informação mais cara desta tela: cobrar duas vezes é
+     o erro que o motoboy paga do bolso, e até 03/09/2026 isso era texto cinza
+     discreto ao lado do valor.
+
+     `--cr-paid` É O MESMO VERDE de `--cr-go`, de propósito e com o valor
+     repetido em vez de um alias: são papéis diferentes (um é ação, o outro é
+     estado) que hoje concordam na cor, e um alias esconderia que dá para mudar
+     um sem o outro. Dois verdes quase iguais na mesma tela seriam pior.
+     Branco sobre os dois passa 4,5:1. */
+  --cr-paid: #10693C;
+  --cr-unpaid: #A4231C;
+  --cr-state-ink: #FFFFFF;
 }
 
 html, body {
@@ -68,6 +86,14 @@ body.courier-booting > * { display: none !important; }
   color: var(--cr-ink);
   border: 1px solid var(--cr-line);
 }
+/* Sair. Contornado e não preenchido: ele apaga a credencial deste aparelho, e
+   um botão vermelho chapado numa tela de uma opção só vira o alvo natural do
+   polegar de quem abriu a aba para outra coisa. */
+.cr-btn--danger {
+  background: var(--cr-paper);
+  color: var(--cr-unpaid);
+  border: 1.5px solid var(--cr-unpaid);
+}
 
 /* ── 1. A porta: o código ── */
 .cr-gate {
@@ -101,7 +127,11 @@ body.courier-booting > * { display: none !important; }
 .cr-gate__error { margin: 0; color: var(--cr-danger); font-size: 14px; line-height: 20px; }
 
 /* ── 2. O trabalho ── */
-.cr-app { padding: 0 0 calc(96px + var(--cr-safe-bottom)); }
+/* O respiro do fim: a barra de abas SEMPRE, mais a de ação QUANDO existe. Os
+   dois somados de propósito — a de ação aparece com a primeira seleção, e um
+   respiro que só cobrisse as abas esconderia o último cartão exatamente no
+   instante em que o entregador está escolhendo pedidos. */
+.cr-app { padding: 0 0 calc(var(--cr-tabs-h) + 88px + var(--cr-safe-bottom)); }
 
 .cr-hdr {
   position: sticky;
@@ -178,6 +208,42 @@ body.courier-booting > * { display: none !important; }
 }
 .cr-card__paid { font-size: 14px; font-weight: 600; color: var(--cr-ink-soft); }
 
+/* ── PAGO / NÃO PAGO, EM COR ──
+   A linha do dinheiro vira uma linha com DUAS partes: o valor e o estado. O
+   estado é chapado porque é a informação que não pode ser lida errada de
+   relance — cobrar de novo quem já pagou é o erro que sai do bolso do
+   entregador.
+
+   Forma DIFERENTE do botão de propósito: raio menor, sem sombra e com o texto
+   em caixa alta pequena. Um retângulo verde do tamanho de um `.cr-btn--primary`
+   dentro do cartão seria lido como "toque aqui".
+
+   E NÃO É SÓ COR: o chip carrega a palavra. Daltonismo é comum, e no sol duas
+   cores saturadas viram a mesma mancha — quem informa é o texto, a cor só
+   acelera. */
+.cr-card__pay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cr-card__chip {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--cr-state-ink);
+}
+.cr-card__chip--paid { background: var(--cr-paid); }
+.cr-card__chip--unpaid { background: var(--cr-unpaid); }
+/* O valor ao lado do chip: o número grande continua sendo o que ele recebe. */
+.cr-card__pay .cr-card__money,
+.cr-card__pay .cr-card__paid { flex: 1 1 auto; margin: 0; }
+
 .cr-card__notes {
   font-size: 14px;
   line-height: 20px;
@@ -186,8 +252,92 @@ body.courier-booting > * { display: none !important; }
   background: var(--cr-ground);
 }
 
-.cr-card__acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.cr-card__acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
 .cr-card__acts .cr-btn { flex: 1 1 auto; min-width: 132px; }
+
+/* ── O MENU DE AÇÕES DO PEDIDO (⋯) ──
+   As ações por pedido saíram de cima do cartão. Elas eram quatro links e botões
+   soltos disputando a mesma linha, e num celular estreito quebravam em duas
+   fileiras — o cartão ficava mais alto que a informação dentro dele, e cabiam
+   dois pedidos na tela em vez de três.
+
+   O que FICA no cartão é a seleção para o lote: ela não é uma ação sobre um
+   pedido, é o que alimenta a barra de baixo, e escondê-la num menu tornaria o
+   fluxo principal um segredo. */
+.cr-card__menu { position: relative; flex: 0 0 auto; }
+.cr-card__dots {
+  appearance: none;
+  width: 52px;
+  min-height: 52px;
+  border-radius: var(--cr-radius);
+  border: 1px solid var(--cr-line);
+  background: var(--cr-paper);
+  color: var(--cr-ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.cr-card__dots svg { width: 22px; height: 22px; }
+.cr-card__dots[aria-expanded="true"] { background: var(--cr-ground); }
+
+.cr-card__pop {
+  position: absolute;
+  right: 0;
+  /* ABRE PARA CIMA. O cartão pode ser o último da lista, e um menu que desce
+     nasce embaixo da barra de ação e da barra de abas — as duas são `fixed` e
+     ganham dele por posição, então metade dos itens ficaria intocável. */
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  min-width: 232px;
+  padding: 6px;
+  display: grid;
+  background: var(--cr-paper);
+  border: 1px solid var(--cr-line);
+  border-radius: var(--cr-radius);
+  box-shadow: 0 12px 28px rgba(20, 24, 30, .18);
+}
+.cr-card__pop button,
+.cr-card__pop a {
+  appearance: none;
+  border: 0;
+  background: none;
+  /* 48px e texto de 16px: é um menu, mas continua sendo alvo de dedo na rua. */
+  min-height: 48px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cr-ink);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.cr-card__pop button:active,
+.cr-card__pop a:active { background: var(--cr-ground); }
+/* Confirmar entrega é a ação que fecha o pedido: ela lidera o menu e é a única
+   colorida. As outras quatro são caminhos, não conclusões. */
+.cr-card__pop .cr-pop--go { color: var(--cr-paid); }
+
+/* ── Os detalhes, abertos no próprio cartão ──
+   Sem tela nova e sem rota nova: `CourierOrderResponse` já traz tudo o que este
+   painel mostra. Uma tela de detalhe pediria uma rota de detalhe que não
+   existe. */
+.cr-card__detalhes {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cr-ground);
+  font-size: 14px;
+  line-height: 20px;
+}
+.cr-card__det { display: flex; justify-content: space-between; gap: 12px; }
+.cr-card__det dt { color: var(--cr-ink-soft); margin: 0; }
+.cr-card__det dd { margin: 0; font-weight: 600; text-align: right; }
 .cr-link {
   display: inline-flex;
   align-items: center;
@@ -205,22 +355,76 @@ body.courier-booting > * { display: none !important; }
   min-width: 132px;
 }
 
-/* ── A barra de ação ── */
+/* ── A barra de ação ──
+   Ela fica ACIMA da barra de abas, não sobre ela: navegar e agir são duas
+   coisas, e empilhar a ação em cima da navegação faria o polegar acertar
+   "Histórico" quando quisesse "Sair para entrega". O `bottom` sai do mesmo
+   token que dá altura às abas. */
 .cr-bar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(var(--cr-tabs-h) + var(--cr-safe-bottom));
   z-index: 3;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px calc(12px + var(--cr-safe-bottom));
+  padding: 12px 16px;
   background: var(--cr-paper);
   border-top: 1px solid var(--cr-line);
 }
 .cr-bar__count { font-size: 15px; font-weight: 600; }
 .cr-bar .cr-btn { flex: 1; }
+
+/* ── A BARRA DE ABAS ──
+   Embaixo porque é lá que o polegar chega com uma mão só, e fixa porque a lista
+   rola. Três alvos de largura igual: quem está de capacete não mira, acerta a
+   região. */
+.cr-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: calc(var(--cr-tabs-h) + var(--cr-safe-bottom));
+  padding-bottom: var(--cr-safe-bottom);
+  background: var(--cr-paper);
+  border-top: 1px solid var(--cr-line);
+}
+.cr-tabs__btn {
+  appearance: none;
+  border: 0;
+  background: none;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 0 4px;
+  color: var(--cr-ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  /* O rótulo não abrevia nem quebra: "Configurações" cabe em 11px num celular
+     de 320, e um "Configuraçõ…" seria a única palavra truncada da tela. */
+  white-space: nowrap;
+}
+.cr-tabs__btn svg { width: 24px; height: 24px; }
+/* A ABA ATIVA É COR E PESO, nunca só cor: quem está no sol com a tela suja não
+   distingue dois cinzas, e daltonismo é comum no público desta tela. */
+.cr-tabs__btn[aria-current="page"] {
+  color: var(--cr-ink);
+  font-weight: 700;
+}
+.cr-tabs__btn[aria-current="page"] svg { stroke-width: 2.4; }
+
+/* ── CONFIGURAÇÕES ── */
+.cr-ajustes { padding: 0 0 calc(var(--cr-tabs-h) + 24px + var(--cr-safe-bottom)); }
+.cr-ajustes__box { display: grid; gap: 10px; padding: 16px; }
+.cr-ajustes__box .cr-btn { width: 100%; }
+.cr-ajustes__nota { margin: 0; color: var(--cr-ink-soft); font-size: 14px; line-height: 20px; }
 
 /* ── 3. Fim da linha ── */
 .cr-dead { min-height: 100dvh; display: grid; place-items: center; align-content: center; padding: 32px; text-align: center; }

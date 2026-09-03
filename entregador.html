@@ -54,15 +54,29 @@
       <strong class="cr-hdr__name" id="courierName"></strong>
       <span class="cr-hdr__branch" id="courierBranch"></span>
     </div>
-    <div class="cr-hdr__acts">
-      <button class="cr-hdr__btn" id="courierHistoryBtn" type="button">Acerto</button>
-      <button class="cr-hdr__btn cr-hdr__reload" id="courierReload" type="button" aria-label="Atualizar lista">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
-        </svg>
-      </button>
-    </div>
+    <!-- O RECARREGAR FICA NO TOPO, e não vira puxar-para-atualizar. Os três
+         motivos, na ordem em que pesam para quem está na rua:
+
+         1. o gesto só existe no TOPO DA ROLAGEM. Com meia dúzia de pedidos o
+            entregador está rolado para baixo boa parte do tempo, e é aí que
+            ele quer atualizar — a ferramenta some justamente na hora de usar;
+         2. o Chrome do Android JÁ TEM puxar-para-atualizar nativo, e o dele
+            RECARREGA A PÁGINA. Implementar o nosso exige `overscroll-behavior`
+            travando o do browser, e um reload aqui reexecuta o boot inteiro
+            numa página cuja URL carrega credencial. Brigar com o gesto da
+            plataforma por um botão que já existe é risco sem troco;
+         3. um alvo fixo, sempre no mesmo lugar, é o que se acerta de primeira
+            com uma mão só — gesto depende de acertar a direção e a distância.
+
+         O alcance do polegar era o contra-argumento honesto (canto superior é
+         o pior canto num celular grande), e a barra de abas o resolve de
+         graça: tocar em "Entregas" recarrega a lista, e a aba fica embaixo. -->
+    <button class="cr-hdr__btn cr-hdr__reload" id="courierReload" type="button" aria-label="Atualizar lista">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+      </svg>
+    </button>
   </header>
 
   <p class="cr-alert" id="courierAlert" role="alert" hidden></p>
@@ -83,16 +97,21 @@
      sem ele resta confiar na palavra do restaurante. Tudo aqui vem pronto do
      backend: `fee_total` é o valor a receber e NÃO é somado aqui. -->
 <section class="cr-acerto" id="courierHistory" hidden>
+  <!-- SEM botão de voltar: quem navega agora é a barra de abas embaixo, e um
+       "Voltar" ao lado dela daria duas saídas para a mesma tela. O TÍTULO é
+       "Histórico" (o nome da aba) e "Acerto" continua sendo o rótulo do BOXE
+       do dinheiro — a tela é o histórico, e o acerto é o número dentro dela.
+       Chamar a aba de uma coisa e a tela de outra seria a mentira pequena que
+       este repositório não deixa passar. -->
   <header class="cr-hdr">
-    <button class="cr-hdr__btn" id="courierHistoryBack" type="button" aria-label="Voltar para as entregas">Voltar</button>
-    <div class="cr-hdr__who"><strong class="cr-hdr__name">Acerto</strong>
+    <div class="cr-hdr__who"><strong class="cr-hdr__name">Histórico</strong>
       <span class="cr-hdr__branch" id="courierPeriod"></span></div>
   </header>
 
   <p class="cr-alert" id="courierHistoryAlert" role="alert" hidden></p>
 
   <div class="cr-acerto__box">
-    <span class="cr-acerto__rotulo">A receber no período</span>
+    <span class="cr-acerto__rotulo">Acerto — a receber no período</span>
     <strong class="cr-acerto__total" id="courierFeeTotal">—</strong>
     <span class="cr-acerto__linha" id="courierCount"></span>
     <!-- SEPARADO da soma, de propósito: entrega sem taxa não entra em
@@ -105,11 +124,51 @@
   <p class="cr-empty" id="courierHistoryEmpty" hidden>Nenhuma entrega no período.</p>
 </section>
 
+<!-- 2c. CONFIGURAÇÕES. Só "Sair" por ora — notificação, localização e app de
+     navegação são fase 2. A aba existe agora porque uma barra de duas abas
+     ganharia uma terceira depois e mudaria de largura embaixo do polegar de
+     quem já aprendeu onde tocar; e porque "Sair" não tinha lugar nenhum: o
+     código ficava guardado no aparelho sem uma porta para apagá-lo. -->
+<section class="cr-ajustes" id="courierSettings" hidden>
+  <header class="cr-hdr">
+    <div class="cr-hdr__who"><strong class="cr-hdr__name">Configurações</strong>
+      <span class="cr-hdr__branch" id="courierSettingsWho"></span></div>
+  </header>
+
+  <div class="cr-ajustes__box">
+    <!-- Sair APAGA o código guardado neste aparelho e volta para a porta. É a
+         única coisa desta tela que mexe em credencial, então ela fica sozinha
+         e com o efeito escrito embaixo — não é "sair da conta", é "este
+         aparelho esquece o código". -->
+    <button class="cr-btn cr-btn--danger" id="courierLogout" type="button">Sair</button>
+    <p class="cr-ajustes__nota">O código sai deste aparelho. O link continua valendo — para entrar de novo, é só digitar o código.</p>
+  </div>
+</section>
+
 <!-- 3. O fim da linha: link inválido, revogado, ou ausente. -->
 <section class="cr-dead" id="courierDead" hidden>
   <h1 class="cr-dead__title" id="courierDeadTitle">Link inválido</h1>
   <p class="cr-dead__text" id="courierDeadText">Peça um link novo para o restaurante.</p>
 </section>
+
+<!-- A BARRA DE ABAS. Fica FORA das seções de propósito: ela é a mesma barra nas
+     três telas de trabalho, e duplicá-la dentro de cada uma faria três cópias
+     que precisariam concordar. Some na porta e no fim da linha — não há para
+     onde navegar sem código, e um link morto não tem abas. -->
+<nav class="cr-tabs" id="courierTabs" aria-label="Seções" hidden>
+  <button class="cr-tabs__btn" type="button" data-aba="trabalho" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>
+    <span>Entregas</span>
+  </button>
+  <button class="cr-tabs__btn" type="button" data-aba="acerto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v10"/><path d="M15.5 9.4A3.2 3.2 0 0 0 12.6 8h-1a2.3 2.3 0 0 0 0 4.6h1.2a2.3 2.3 0 0 1 0 4.6h-1a3.2 3.2 0 0 1-2.9-1.4"/><circle cx="12" cy="12" r="9"/></svg>
+    <span>Histórico</span>
+  </button>
+  <button class="cr-tabs__btn" type="button" data-aba="ajustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+    <span>Configurações</span>
+  </button>
+</nav>
 
 </body>
 </html>

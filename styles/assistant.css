@@ -2700,8 +2700,10 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 
-/* Base geometrica da marca do assistente. O desenho (conversa + cloche), as
-   cores white-label e os ritmos de atividade ficam no bloco de refresh abaixo. */
+/* Base geometrica da marca do assistente: so a CAIXA. O desenho (a esfera), as
+   cores white-label e os tres ritmos ficam no bloco de refresh abaixo.
+   A caixa nao muda de tamanho em ritmo nenhum — quem escala e o corpo da esfera,
+   por dentro dela. */
 .assistant-mark{
   --size: 68px;
   width: var(--size);
@@ -2709,12 +2711,6 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   flex: none;
   display: grid;
   place-items: center;
-}
-
-.assistant-mark__glyph{
-  width: 100%;
-  height: 100%;
-  overflow: visible;
 }
 
 /* A mini acompanha o status de busca e identifica as respostas do assistente. */
@@ -3010,47 +3006,97 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   font-weight:700!important;
 }
 
-/* ── Marca do assistente: balão de conversa + cloche ──
-   As duas paradas do gradiente vêm PRONTAS do tema, já garantidas acima de 3:1
-   contra o branco desta tela (markInkColors, scripts/utils/brand-theme.js).
-   Pintar o glifo com --brand-primary cru fazia a marca de um restaurante claro
-   sumir no fundo: #FFD34D tem 1,4:1 no branco. */
-.assistant-mark__bubble{
-  transform-origin:16px 16px;
+/* ── Marca do assistente: a esfera ──
+   O MESMO objeto do modo voz (.assistant-voice-orb, mais abaixo nesta folha),
+   na medida da marca. Era um balão de conversa com uma cloche dentro: em 54px,
+   o domo com a linha embaixo e os dois riscos de vapor em cima liam como SINO,
+   que é notificação e não assistente.
+
+   As duas paradas do degradê vêm PRONTAS do tema (markInkColors,
+   scripts/utils/brand-theme.js): --brand-mark-light é a primária do lojista
+   escurecida até passar 3:1 contra o branco desta tela, e --brand-mark-deep é
+   ela mesma um degrau de luminosidade ABAIXO. Nenhuma cor de marca é escrita
+   aqui — a segunda tonalidade é derivada, não fixada, e num tenant azul a
+   esfera nasce azul. Branco e preto entram só como luz e sombra do volume, que
+   é o que dá a curvatura; não são cor de ninguém. */
+.assistant-mark{
+  position:relative;
 }
-.assistant-mark__service{
-  stroke:var(--brand-on);
+.assistant-mark__halo,
+.assistant-mark__orb{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  display:block;
 }
-.assistant-mark__steam{
-  transform-origin:center;
-  animation:assistant-steam-idle 2.8s ease-in-out infinite;
+
+/* O sopro em volta. Transborda a caixa da marca, por isso é irmão do corpo e
+   não filho dele — e por isso a marca não pode ganhar overflow escondido. */
+.assistant-mark__halo{
+  background:radial-gradient(circle at 50% 50%,
+    rgba(var(--brand-primary-rgb),.28) 0%,
+    rgba(var(--brand-primary-rgb),.10) 54%,
+    rgba(var(--brand-primary-rgb),0) 72%);
+  transform:scale(1.2);
+  opacity:.72;
 }
-.assistant-mark__steam--two{
-  animation-delay:.55s;
+
+/* O corpo, em três camadas: o brilho do alto à esquerda dá a curvatura, a
+   sombra embaixo à direita fecha o volume, e o degradê diagonal carrega a
+   marca. É a receita da esfera do modo voz, na escala daqui. */
+.assistant-mark__orb{
+  background:
+    radial-gradient(circle at 33% 27%, rgba(255,255,255,.70) 0%, rgba(255,255,255,0) 44%),
+    radial-gradient(circle at 72% 80%, rgba(0,0,0,.26) 0%, rgba(0,0,0,0) 58%),
+    linear-gradient(148deg, var(--brand-mark-light) 4%, var(--brand-mark-deep) 96%);
+  box-shadow:
+    0 6px 16px rgba(var(--brand-primary-rgb),.24),
+    inset 0 -4px 10px rgba(0,0,0,.16),
+    inset 0 4px 8px rgba(255,255,255,.20);
+  animation:assistant-mark-idle 4.4s ease-in-out infinite;
 }
-.assistant-mark.is-thinking .assistant-mark__bubble{
-  animation:assistant-mark-thinking 1.15s ease-in-out infinite;
+
+/* ── Os três ritmos ──
+   Parado é quase estático de propósito: a marca fica na abertura da tela, atrás
+   do título, e uma esfera pulsando sozinha numa tela em repouso vira distração.
+   Pensando é contínuo e LENTO; respondendo é o mais rápido dos três — é a
+   diferença entre "estou procurando" e "estou te respondendo agora".
+
+   A escala mora no CORPO, que é position:absolute dentro de uma caixa de
+   tamanho fixo: a esfera cresce sem empurrar o título nem a linha de digitação.
+   O desenho antigo proibia scale e só andava em translateY porque ali quem
+   escalava era o <svg>, que OCUPA a caixa inteira. */
+.assistant-mark.is-thinking .assistant-mark__orb{
+  animation-name:assistant-mark-thinking;
+  animation-duration:2.9s;
 }
-.assistant-mark.is-thinking .assistant-mark__steam{
-  animation-duration:.85s;
+.assistant-mark.is-responding .assistant-mark__orb{
+  animation-name:assistant-mark-responding;
+  animation-duration:1.15s;
 }
-.assistant-mark.is-responding .assistant-mark__bubble{
-  animation:assistant-mark-responding .72s ease-in-out infinite alternate;
+.assistant-mark.is-thinking .assistant-mark__halo,
+.assistant-mark.is-responding .assistant-mark__halo{
+  animation:assistant-mark-halo 2.9s ease-in-out infinite;
 }
-.assistant-mark.is-responding .assistant-mark__steam{
-  animation-duration:.7s;
+.assistant-mark.is-responding .assistant-mark__halo{
+  animation-duration:1.15s;
 }
-@keyframes assistant-steam-idle{
-  0%,100%{opacity:.42;transform:translateY(1px)}
-  50%{opacity:1;transform:translateY(-1px)}
+
+@keyframes assistant-mark-idle{
+  0%,100%{ transform:scale(1) }
+  50%    { transform:scale(1.02) }
 }
 @keyframes assistant-mark-thinking{
-  0%,100%{transform:translateY(0) rotate(0)}
-  50%{transform:translateY(-1.5px) rotate(-2deg)}
+  0%,100%{ transform:scale(.97) }
+  50%    { transform:scale(1.05) }
 }
 @keyframes assistant-mark-responding{
-  from{transform:translateY(0)}
-  to{transform:translateY(-1px)}
+  0%,100%{ transform:scale(.99) }
+  50%    { transform:scale(1.07) }
+}
+@keyframes assistant-mark-halo{
+  0%,100%{ transform:scale(1.2); opacity:.72 }
+  50%    { transform:scale(1.34); opacity:1 }
 }
 
 @media (max-height:730px){
@@ -3061,18 +3107,18 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   }
 }
 @media (prefers-reduced-motion:reduce){
-  .assistant-mark__bubble,
-  .assistant-mark__steam{
+  .assistant-mark__orb,
+  .assistant-mark__halo{
+    /* Os `!important` ficam, e nao sao decoracao: os tres ritmos sao ligados por
+       `.assistant-mark.is-thinking .assistant-mark__orb` (0,2,1), e media query
+       NAO acrescenta especificidade — sem o marcador, `.assistant-mark__orb`
+       (0,1,0) perde para o estado e a esfera continua pulsando para quem pediu
+       para ela parar. Mesma licao do vapor que estava aqui antes.
+
+       Nao ha `transform:none`: parar a animacao ja devolve cada camada ao
+       valor estatico dela (o halo tem `scale(1.2)` declarado fora do keyframe),
+       e zerar o transform ENCOLHERIA o halo em vez de so para-lo. */
     animation:none!important;
-  }
-  .assistant-mark__steam{
-    /* O `!important` fica: o adversario dele nao esta no CSS, esta em
-       tests/unit/mark-contrast.test.js, que le o TEXTO desta regra e exige o
-       marcador. Sob movimento reduzido o vapor tem de parar num valor fixo, e
-       a animacao que o move declara opacity com !important — sem o marcador
-       aqui, a parada nao vence a animacao parada no meio. */
-    opacity:.82!important;
-    transform:none!important;
   }
 }
 

@@ -37,21 +37,29 @@ async function waitForIntro(page) {
   await expect(page.locator('#assistantStarter')).toHaveClass(/is-ready/);
 }
 
+// Lê as paradas de MARCA do degradê da esfera. O corpo tem três camadas: o
+// brilho branco e a sombra preta que dão o volume, sem matiz nenhum, e o
+// degradê linear que carrega a cor do lojista. Filtrar por saturação separa os
+// dois grupos sem depender da ordem em que o navegador serializa as camadas.
+const paradasDeMarca = (backgroundImage) =>
+  [...String(backgroundImage).matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)]
+    .map(m => [+m[1], +m[2], +m[3]])
+    .filter(([r, g, b]) => Math.max(r, g, b) - Math.min(r, g, b) > 6)
+    .map(([r, g, b]) => `rgb(${r}, ${g}, ${b})`);
+
 test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // O balao recebe o gradiente do tenant, nao uma cor fixa da plataforma.
-  const ler = () => page.locator('#assistantIntroMark').evaluate(el => {
-    const paradas = [...el.querySelectorAll('linearGradient stop')]
-      .map(s => getComputedStyle(s).stopColor);
-    return {
-      brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
-      temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
-      paradas,
-      fill: el.querySelector('.assistant-mark__bubble').getAttribute('fill')
-    };
-  });
+  // A esfera recebe as tintas do tenant, não uma cor fixa da plataforma. As
+  // duas paradas são markInkColors (brand-theme.js): a primária escurecida até
+  // 3:1 contra o branco desta tela, e ela mesma um degrau de luminosidade
+  // abaixo — a segunda é DERIVADA da primeira, nunca escrita no CSS.
+  const ler = () => page.locator('#assistantIntroMark').evaluate(el => ({
+    brand: getComputedStyle(el).getPropertyValue('--brand').trim(),
+    temaBrand: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
+    fundo: getComputedStyle(el.querySelector('.assistant-mark__orb')).backgroundImage
+  }));
 
   const laranja = await ler();
   await page.evaluate(() => window.RapidexTheme.applyBrandTheme('#2A2D7C'));
@@ -60,51 +68,61 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
   expect(laranja.brand.toUpperCase(), 'o componente não leu a cor do tema').toBe(laranja.temaBrand.toUpperCase());
   expect(indigo.brand.toUpperCase()).toBe('#2A2D7C');
 
-  // O azul entra de fato nas duas paradas do desenho.
-  expect(indigo.paradas, 'o gradiente perdeu uma parada').toHaveLength(2);
+  const antes = paradasDeMarca(laranja.fundo);
+  const depois = paradasDeMarca(indigo.fundo);
+
+  expect(antes, 'o degradê da esfera perdeu uma parada').toHaveLength(2);
+  expect(depois).toHaveLength(2);
   for (let i = 0; i < 2; i++) {
-    expect(indigo.paradas[i], `a parada ${i} não acompanhou o tenant`).not.toBe(laranja.paradas[i]);
+    expect(depois[i], `a parada ${i} não acompanhou o tenant`).not.toBe(antes[i]);
   }
-  expect(indigo.fill).toMatch(/^url\(#assistantMarkGrad\d+\)$/);
-  expect(indigo.paradas[0], 'o gradiente virou cor chapada').not.toBe(indigo.paradas[1]);
+  expect(depois[0], 'o degradê virou cor chapada').not.toBe(depois[1]);
 });
 
-test('cada marca tem seu próprio gradiente', async ({ page }) => {
+test('as duas marcas da tela pintam, e não há mais id global para colidir', async ({ page }) => {
   await openAssistant(page, { chatDelay: 3000 });
   await waitForIntro(page);
   await page.locator('.assistant-starter-card').first().click();
   await expect(page.locator('#assistantTypingMessage .assistant-mark')).toBeVisible();
 
-  // IDs de <defs> são globais no documento. Com um id fixo, o segundo
-  // <linearGradient> de mesmo nome é ignorado e as duas marcas passam a apontar
-  // para o primeiro — que some junto com o elemento que o declarou, deixando o
-  // glifo preto. Aqui há DUAS marcas na tela ao mesmo tempo.
+  // Este teste nasceu de um defeito de SVG: ids de <defs> são GLOBAIS no
+  // documento, então com duas marcas na tela ao mesmo tempo (a da abertura e a
+  // do esqueleto de digitação) o segundo <linearGradient> de mesmo nome era
+  // ignorado e as duas apontavam para o primeiro — que some junto com o
+  // elemento que o declarou, deixando o glifo preto. Era só por isso que o
+  // arquivo mantinha um contador de instância para a marca.
+  //
+  // Com o degradê no CSS o modo de falha deixou de existir: não há id nenhum
+  // para colidir. O teste fica porque a PERGUNTA continua válida — as duas
+  // marcas pintam ao mesmo tempo? — e porque ele barra a volta do desenho por
+  // <defs>, que traria o defeito de volta junto.
   const marcas = await page.locator('#mobViewAssistant').evaluate(raiz => {
     const nos = [...raiz.querySelectorAll('.assistant-mark')];
-    return nos.map(m => ({
-      idGradiente: m.querySelector('linearGradient')?.id,
-      fillBalao: m.querySelector('.assistant-mark__bubble')?.getAttribute('fill')
-    }));
+    return {
+      fundos: nos.map(m => getComputedStyle(m.querySelector('.assistant-mark__orb')).backgroundImage),
+      gradientesDeSvg: raiz.querySelectorAll('linearGradient, radialGradient').length
+    };
   });
 
-  expect(marcas.length, 'o teste precisa de duas marcas na tela').toBeGreaterThanOrEqual(2);
-  const ids = marcas.map(m => m.idGradiente);
-  expect(new Set(ids).size, `ids de gradiente repetidos: ${ids}`).toBe(ids.length);
-  // E cada glifo aponta para o SEU gradiente, não para o do vizinho.
-  for (const m of marcas) {
-    expect(m.fillBalao, `o balao nao usa o gradiente da propria instancia (${m.idGradiente})`)
-      .toBe(`url(#${m.idGradiente})`);
+  expect(marcas.fundos.length, 'o teste precisa de duas marcas na tela').toBeGreaterThanOrEqual(2);
+  expect(marcas.gradientesDeSvg, 'o degradê voltou para <defs>, e com ele a colisão de id').toBe(0);
+  for (const fundo of marcas.fundos) {
+    expect(paradasDeMarca(fundo), 'uma das marcas ficou sem a cor do lojista').toHaveLength(2);
   }
+  // As duas leem os MESMOS tokens, então pintam igual — e era exatamente isso
+  // que a colisão de id quebrava.
+  expect(new Set(marcas.fundos.map(f => paradasDeMarca(f).join('|'))).size).toBe(1);
 });
 
 test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // A regressão que este teste existe para barrar. O que morava aqui era uma
-  // nuvem de ruído fractal, e sete tentativas mostraram que desfoque sobre fundo
-  // claro degenera em mancha pixelada no celular. A troca só vale enquanto
-  // ninguém reintroduzir blur — em CSS ou em primitiva de filtro SVG.
+  // A regressão que este teste existe para barrar. O que morava aqui antes do
+  // SVG era uma nuvem de ruído fractal, e sete tentativas mostraram que
+  // desfoque sobre fundo claro degenera em mancha pixelada no celular. O
+  // desenho mudou duas vezes desde então; a proibição não. O volume da esfera
+  // vem de degradê radial, que o navegador resolve sem borrar nada.
   const desenho = await page.locator('#assistantIntroMark').evaluate(el => {
     const estilos = [el, ...el.querySelectorAll('*')].map(n => {
       const cs = getComputedStyle(n);
@@ -113,9 +131,7 @@ test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) =
     return {
       estilos,
       tags: [...new Set([...el.querySelectorAll('*')].map(n => n.tagName))],
-      // O glifo e geometria: balao, vapor e cloche; nada rasterizado.
-      paths: el.querySelectorAll('path').length,
-      viewBox: el.querySelector('svg').getAttribute('viewBox')
+      camadas: el.querySelectorAll('.assistant-mark__orb, .assistant-mark__halo').length
     };
   });
 
@@ -128,37 +144,50 @@ test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) =
     'FEFLOOD', 'FECOMPOSITE', 'MASK', 'IMG', 'VIDEO', 'CANVAS']) {
     expect(desenho.tags, `a marca voltou a depender de <${proibida.toLowerCase()}>`).not.toContain(proibida);
   }
-  expect(desenho.paths, 'o simbolo perdeu parte da sua geometria').toBe(4);
-  expect(desenho.viewBox).toBe('0 0 32 32');
+  expect(desenho.camadas, 'a esfera perdeu uma das duas camadas (sopro e corpo)').toBe(2);
 });
 
-test('o simbolo nao depende de fundo ou sombra CSS', async ({ page }) => {
+test('a esfera é redonda e desenhada pelo CSS, sem uma segunda placa atrás', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
-  // Toda a forma vive no SVG; raiz e glyph nao desenham uma segunda placa.
-  const fundo = await page.locator('#assistantIntroMark').evaluate(el => {
+  // Este contrato INVERTEU com a troca do desenho, e é de propósito. Enquanto a
+  // marca era SVG, fundo e sombra CSS eram proibidos: qualquer um dos dois seria
+  // uma segunda placa desenhada atrás do glifo. Agora a forma É o fundo — o
+  // degradê pinta a esfera e a sombra fecha o volume. O que continua proibido é
+  // a placa a mais: a caixa não desenha nada, e nenhum pseudo-elemento entra.
+  const camadas = await page.locator('#assistantIntroMark').evaluate(el => {
     const invisivel = v => /^(rgba\(0, 0, 0, 0\)|transparent|none)$/.test(v);
     const olhar = (n, quem) => {
       const cs = getComputedStyle(n);
-      const antes = getComputedStyle(n, '::before').content;
-      const depois = getComputedStyle(n, '::after').content;
       return {
         quem,
-        fundo: cs.backgroundColor, imagem: cs.backgroundImage,
-        sombra: cs.boxShadow, borda: cs.borderStyle, raio: cs.borderRadius,
-        pseudo: [antes, depois].filter(c => c !== 'none').length,
-        limpo: invisivel(cs.backgroundColor) && invisivel(cs.backgroundImage)
-          && invisivel(cs.boxShadow)
+        raio: cs.borderRadius,
+        temImagem: !invisivel(cs.backgroundImage),
+        limpo: invisivel(cs.backgroundColor) && invisivel(cs.backgroundImage) && invisivel(cs.boxShadow),
+        borda: cs.borderStyle,
+        pseudo: [getComputedStyle(n, '::before').content, getComputedStyle(n, '::after').content]
+          .filter(c => c !== 'none').length
       };
     };
-    return [olhar(el, 'raiz'), olhar(el.querySelector('.assistant-mark__glyph'), 'svg')];
+    return {
+      raiz: olhar(el, 'raiz'),
+      corpo: olhar(el.querySelector('.assistant-mark__orb'), 'corpo'),
+      halo: olhar(el.querySelector('.assistant-mark__halo'), 'halo'),
+      svgs: el.querySelectorAll('svg').length
+    };
   });
 
-  for (const n of fundo) {
-    expect(n.limpo, `voltou fundo/sombra CSS atras do glifo (${n.quem}): ${JSON.stringify(n)}`).toBe(true);
+  expect(camadas.svgs, 'o desenho voltou para dentro de um <svg>').toBe(0);
+  expect(camadas.raiz.limpo, `a caixa da marca voltou a desenhar: ${JSON.stringify(camadas.raiz)}`).toBe(true);
+  for (const n of [camadas.raiz, camadas.corpo, camadas.halo]) {
     expect(n.borda, `voltou contorno na marca (${n.quem})`).toMatch(/^none$/);
-    expect(n.pseudo, `voltou um pseudo-elemento desenhando atrás do glifo (${n.quem})`).toBe(0);
+    expect(n.pseudo, `voltou um pseudo-elemento desenhando atrás da esfera (${n.quem})`).toBe(0);
+  }
+  // Esfera, não quadrado de cantos arredondados: 50% nas duas camadas.
+  for (const n of [camadas.corpo, camadas.halo]) {
+    expect(n.raio, `a ${n.quem} deixou de ser redonda`).toMatch(/^50%/);
+    expect(n.temImagem, `a ${n.quem} ficou sem degradê`).toBe(true);
   }
 });
 
@@ -166,12 +195,19 @@ test('a marca encolhe em telas curtas sem perder proporcao', async ({ page }) =>
   await openAssistant(page);
   await waitForIntro(page);
 
+  // O corpo é medido por offsetWidth/offsetHeight, que é a caixa de LAYOUT, e
+  // não por getBoundingClientRect, que inclui o transform: a esfera respira em
+  // repouso (scale até 1.02), então o rect visual dela mede 69 num quadro e 68
+  // no outro. Foi assim que a primeira versão deste teste falhou — e a
+  // diferença importa, porque o que este teste guarda é a PROPORÇÃO da marca,
+  // que é da caixa, não a amplitude do ritmo, que é medida no teste dos ritmos.
   const medir = () => page.locator('#assistantIntroMark').evaluate(el => {
     const r = el.getBoundingClientRect();
-    const g = el.querySelector('.assistant-mark__glyph').getBoundingClientRect();
+    const corpo = el.querySelector('.assistant-mark__orb');
+    const g = corpo.getBoundingClientRect();
     return {
       lado: [Math.round(r.width), Math.round(r.height)],
-      glifo: [Math.round(g.width), Math.round(g.height)],
+      corpo: [corpo.offsetWidth, corpo.offsetHeight],
       desvio: [Math.abs((g.left + g.width / 2) - (r.left + r.width / 2)),
         Math.abs((g.top + g.height / 2) - (r.top + r.height / 2))]
     };
@@ -179,73 +215,127 @@ test('a marca encolhe em telas curtas sem perder proporcao', async ({ page }) =>
 
   const padrao = await medir();
   expect(padrao.lado, 'a marca saiu do tamanho de abertura').toEqual([68, 68]);
-  expect(padrao.glifo).toEqual([68, 68]);
-  for (const d of padrao.desvio) expect(d, 'o simbolo saiu do centro').toBeLessThanOrEqual(1);
+  expect(padrao.corpo).toEqual([68, 68]);
+  for (const d of padrao.desvio) expect(d, 'a esfera saiu do centro').toBeLessThanOrEqual(1);
 
   // Tela curta: encolhe proporcionalmente, sem virar oval.
   await page.setViewportSize({ width: 390, height: 700 });
   const curta = await medir();
   expect(curta.lado, 'a marca não encolheu na tela curta').toEqual([54, 54]);
   expect(curta.lado[0]).toBe(curta.lado[1]);
-  expect(curta.glifo[0] / curta.lado[0]).toBeCloseTo(padrao.glifo[0] / padrao.lado[0], 2);
+  expect(curta.corpo[0] / curta.lado[0]).toBeCloseTo(padrao.corpo[0] / padrao.lado[0], 2);
 });
 
-test('o simbolo combina conversa, cardapio e atividade', async ({ page }) => {
+test('o simbolo é uma esfera, e nada do desenho antigo sobrou', async ({ page }) => {
   await openAssistant(page);
   await waitForIntro(page);
 
   const mark = page.locator('#assistantIntroMark');
-  await expect(mark.locator('.assistant-mark__bubble')).toHaveCount(1);
-  await expect(mark.locator('.assistant-mark__cloche')).toHaveCount(1);
-  await expect(mark.locator('.assistant-mark__steam')).toHaveCount(2);
+  await expect(mark.locator('.assistant-mark__orb')).toHaveCount(1);
+  await expect(mark.locator('.assistant-mark__halo')).toHaveCount(1);
+  // O balão de conversa com a cloche dentro lia como SINO em 54px, e sino é
+  // notificação, não assistente. Se qualquer uma destas voltar, a troca foi
+  // desfeita pela metade e a tela fica com dois símbolos para a mesma coisa.
+  for (const morta of ['bubble', 'cloche', 'steam', 'service', 'glyph']) {
+    await expect(mark.locator(`.assistant-mark__${morta}`),
+      `o desenho antigo voltou: .assistant-mark__${morta}`).toHaveCount(0);
+  }
 });
-test('pensando e respondendo usam ritmos diferentes sem redimensionar a marca', async ({ page }) => {
+
+test('parado, pensando e respondendo usam ritmos diferentes sem mexer na caixa', async ({ page }) => {
   await openAssistant(page, { chatDelay: 2500 });
   await waitForIntro(page);
 
   const marca = page.locator('#assistantIntroMark');
+  const corpo = marca.locator('.assistant-mark__orb');
 
-  // O tamanho e medido pelo fator de escala da matriz, nao pela caixa visual:
-  // translacao e rotacao podem mudar o rect sem redimensionar o desenho.
-  const escalaBalao = () => marca.locator('.assistant-mark__bubble').evaluate(el => {
+  // A escala é medida pelo fator da matriz, não pela caixa visual: translação e
+  // rotação mudam o rect sem redimensionar o desenho.
+  const escalaCorpo = () => corpo.evaluate(el => {
     const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-    return { x: Math.hypot(m.a, m.b), y: Math.hypot(m.c, m.d) };
+    return Math.hypot(m.a, m.b);
+  });
+  const ritmo = () => corpo.evaluate(el => {
+    const cs = getComputedStyle(el);
+    return { nome: cs.animationName, duracao: parseFloat(cs.animationDuration) };
+  });
+  const caixa = () => marca.evaluate(el => {
+    const r = el.getBoundingClientRect();
+    return [Math.round(r.width), Math.round(r.height)];
   });
 
-  // 1. O contrato do CSS, isolado: ligar "pensando" muda o ritmo e SÓ ele.
-  //    A alternância é forçada na classe porque, numa conversa de verdade, a
-  //    abertura é escondida assim que a primeira mensagem sai — a marca da
-  //    abertura mediria zero e o teste passaria sem ter medido nada.
+  // 1. O contrato do CSS, isolado. A alternância é forçada na classe porque,
+  //    numa conversa de verdade, a abertura é escondida assim que a primeira
+  //    mensagem sai — a marca da abertura mediria zero e o teste passaria sem
+  //    ter medido nada.
   await expect(marca).not.toHaveClass(/is-thinking/);
-  await expect(marca.locator('.assistant-mark__bubble')).toBeVisible();
+  await expect(corpo).toBeVisible();
+
+  const parado = await ritmo();
+  expect(parado.nome, 'a esfera parou de respirar em repouso').toContain('assistant-mark-idle');
 
   await marca.evaluate(el => el.classList.add('is-thinking'));
+  const pensando = await ritmo();
+  expect(pensando.nome, 'a esfera não entrou no ritmo de pensando').toContain('assistant-mark-thinking');
 
-  const animacao = await marca.locator('.assistant-mark__bubble')
-    .evaluate(el => getComputedStyle(el).animationName);
-  expect(animacao, 'o balao nao entrou no ritmo de pensando').toContain('assistant-mark-thinking');
+  await marca.evaluate(el => el.classList.replace('is-thinking', 'is-responding'));
+  const respondendo = await ritmo();
+  expect(respondendo.nome).toContain('assistant-mark-responding');
 
-  // Amostra ao longo do ciclo: um scale no keyframe só aparece no meio da
-  // animação, então uma leitura única não pegaria.
-  for (let i = 0; i < 6; i++) {
-    const escala = await escalaBalao();
-    expect(escala.x, 'a marca cresceu na horizontal ao pensar').toBeCloseTo(1, 2);
-    expect(escala.y, 'a marca cresceu na vertical ao pensar').toBeCloseTo(1, 2);
-    await page.waitForTimeout(220);
+  // Parado é o mais lento de todos; entre os ativos, pensar é o lento e
+  // responder é o rápido — a diferença entre "estou procurando" e "estou te
+  // respondendo agora".
+  expect(parado.duracao).toBeGreaterThan(pensando.duracao);
+  expect(pensando.duracao).toBeGreaterThan(respondendo.duracao);
+
+  // 2. A esfera CRESCE E ENCOLHE de verdade, e a caixa não se mexe. É o oposto
+  //    do desenho antigo, que só andava em translateY e tinha `scale` proibido:
+  //    lá quem escalava era o <svg>, que OCUPA a caixa. Aqui quem escala é um
+  //    filho absoluto dentro de uma caixa de tamanho fixo, então a esfera cresce
+  //    sem empurrar o título nem a linha de digitação.
+  const caixaAntes = await caixa();
+  const escalas = [];
+  for (let i = 0; i < 8; i++) {
+    escalas.push(await escalaCorpo());
+    expect(await caixa(), 'a caixa da marca mudou de tamanho durante o ritmo').toEqual(caixaAntes);
+    await page.waitForTimeout(150);
   }
+  const amplitude = Math.max(...escalas) - Math.min(...escalas);
+  expect(amplitude, `a esfera não cresceu nem encolheu ao responder: ${escalas.join(', ')}`)
+    .toBeGreaterThan(0.02);
 
-  await marca.evaluate(el => el.classList.remove('is-thinking'));
-
-  await marca.evaluate(el => el.classList.add('is-responding'));
-  const respondingAnimation = await marca.locator('.assistant-mark__bubble')
-    .evaluate(el => getComputedStyle(el).animationName);
-  expect(respondingAnimation).toContain('assistant-mark-responding');
   await marca.evaluate(el => el.classList.remove('is-responding'));
 
-  // 2. E o app move esse estado sozinho: parada -> pensando -> respondendo.
+  // 3. E o app move esse estado sozinho: parada -> pensando -> respondendo.
+  //
+  // Quem observa é um MutationObserver instalado ANTES do clique, e não uma
+  // amostragem: `answering` dura os 190ms do temporizador da resposta mais a
+  // revelação, então perguntar de fora "está respondendo agora?" acerta ou erra
+  // conforme a máquina. O observador não perde a transição, ele a REGISTRA.
+  //
+  // Sem isto, `is-responding` não teria guarda nenhuma: até 02/09/2026 o estado
+  // `answering` era emitido de dois lugares e não pintava nada, e a parte 1
+  // deste teste força a classe na mão — ela prova o CSS, não o app.
+  await page.evaluate(() => {
+    window.__estadosDaMarca = [];
+    const alvo = document.getElementById('assistantIntroMark');
+    new MutationObserver(() => {
+      const atual = [...alvo.classList].filter(c => c.startsWith('is-')).join(' ') || 'parada';
+      if (window.__estadosDaMarca.at(-1) !== atual) window.__estadosDaMarca.push(atual);
+    }).observe(alvo, { attributes: true, attributeFilter: ['class'] });
+  });
+
   await page.locator('.assistant-starter-card').first().click();
   await expect(marca).toHaveClass(/is-thinking/);
   await expect(marca).not.toHaveClass(/is-thinking/, { timeout: 15000 });
+
+  const observados = await page.evaluate(() => window.__estadosDaMarca);
+  expect(observados, `a marca nunca entrou em pensando: ${observados.join(' -> ')}`)
+    .toContain('is-thinking');
+  expect(observados, `a marca nunca entrou em respondendo: ${observados.join(' -> ')}`)
+    .toContain('is-responding');
+  expect(observados.indexOf('is-responding'), 'respondendo veio antes de pensando')
+    .toBeGreaterThan(observados.indexOf('is-thinking'));
 });
 
 test('sob movimento reduzido a marca aparece parada e inteira', async ({ page }) => {
@@ -254,25 +344,29 @@ test('sob movimento reduzido a marca aparece parada e inteira', async ({ page })
   await waitForIntro(page);
 
   const estado = await page.locator('#assistantIntroMark').evaluate(el => {
+    const corpo = getComputedStyle(el.querySelector('.assistant-mark__orb'));
+    const halo = getComputedStyle(el.querySelector('.assistant-mark__halo'));
     const r = el.getBoundingClientRect();
-    const steam = el.querySelector('.assistant-mark__steam');
-    const bubble = el.querySelector('.assistant-mark__bubble');
-    const cs = getComputedStyle(el), csteam = getComputedStyle(steam);
     return {
       largura: Math.round(r.width),
-      visibilidade: cs.visibility,
-      animacaoBalao: getComputedStyle(bubble).animationName,
-      animacaoVapor: csteam.animationName,
-      opacidadeVapor: Number(csteam.opacity),
-      opacidadeBalao: Number(getComputedStyle(bubble).opacity)
+      visibilidade: getComputedStyle(el).visibility,
+      animacaoCorpo: corpo.animationName,
+      animacaoHalo: halo.animationName,
+      opacidadeCorpo: Number(corpo.opacity),
+      opacidadeHalo: Number(halo.opacity),
+      escalaHalo: new DOMMatrixReadOnly(halo.transform).a
     };
   });
 
   // Parada de verdade: sem animação declarada, não só pausada.
-  expect(estado.animacaoBalao, 'o balao continuou se movendo').toBe('none');
-  expect(estado.animacaoVapor, 'o vapor continuou se movendo').toBe('none');
-  expect(estado.opacidadeVapor, 'o vapor ficou apagado').toBeGreaterThanOrEqual(0.5);
-  expect(estado.opacidadeBalao).toBe(1);
+  expect(estado.animacaoCorpo, 'a esfera continuou se movendo').toBe('none');
+  expect(estado.animacaoHalo, 'o sopro continuou se movendo').toBe('none');
+  // E inteira: parar não pode apagar nem encolher nada. O halo tem `scale(1.2)`
+  // declarado FORA do keyframe — um `transform:none` no bloco de movimento
+  // reduzido o encolheria em vez de só pará-lo, e é por isso que ele não está lá.
+  expect(estado.opacidadeCorpo).toBe(1);
+  expect(estado.opacidadeHalo, 'o sopro ficou apagado').toBeGreaterThanOrEqual(0.5);
+  expect(estado.escalaHalo, 'o sopro encolheu ao parar').toBeGreaterThan(1);
   expect(estado.largura).toBe(68);
   expect(estado.visibilidade).toBe('visible');
 });

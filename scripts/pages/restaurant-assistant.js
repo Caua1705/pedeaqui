@@ -50,59 +50,58 @@
   ];
 
   /* ── Helpers ── */
-  // Um gradiente por instância. IDs de <defs> são GLOBAIS no documento: com um
-  // id fixo, a segunda marca da tela (a mini do esqueleto de digitação) definiria
-  // um <linearGradient> de mesmo nome, o segundo seria ignorado e as duas
-  // ficariam presas ao primeiro — que some junto com o elemento que o declarou.
-  let _markSeq = 0;
 
   /**
-   * Marca do assistente: um balao de conversa com uma cloche dentro. O balao
-   * diz "conversa" e a cloche diz "cardapio" sem depender da convencao generica
-   * de estrelinha de IA. O vapor vira o indicador de atividade.
+   * Marca do assistente: uma ESFERA com a cor do lojista.
    *
-   * Continua sendo SVG puro e recebe a paleta white-label do restaurante. Cada
-   * instancia ganha seu proprio gradiente porque ids de <defs> sao globais no
-   * documento. E decorativo: o texto ao lado comunica o estado para leitores de
-   * tela.
+   * Era um balao de conversa com uma cloche dentro — a tampa de servir dizia
+   * "cardapio" sem depender da estrelinha generica de IA. A intencao era boa e
+   * o desenho nao sobreviveu ao tamanho: em 54px, um domo com uma linha embaixo
+   * e dois risquinhos de vapor em cima le como SINO. Sino e notificacao, nao
+   * assistente — o cliente lia "voce tem um aviso" onde devia ler "fale comigo".
    *
-   * As duas paradas do gradiente sao --brand-mark-*, nao a primaria crua: a
-   * tela e branca, e markInkColors() ja entrega essas duas tintas escurecidas
-   * ate 3:1 contra o branco mantendo o matiz do lojista. Com --brand-primary o
-   * glifo de um restaurante claro sumia no fundo (#FFD34D da 1,4:1).
+   * A esfera e a convencao que ele ja conhece de outros assistentes de voz, e e
+   * o MESMO objeto do modo voz desta tela (.assistant-voice-orb): quem toca no
+   * microfone ve a marca virar a esfera grande, em vez de trocar de simbolo no
+   * meio do caminho.
+   *
+   * Nenhuma cor entra aqui: o desenho inteiro mora no CSS, sobre
+   * --brand-mark-light/--brand-mark-deep (markInkColors, brand-theme.js — a
+   * primaria do lojista escurecida ate passar 3:1 no branco desta tela, e a
+   * mesma cor um degrau de luminosidade abaixo). Num restaurante azul a esfera
+   * e azul, e tenant-theme.spec.js falha se alguem chumbar laranja aqui.
+   *
+   * Sem SVG: o degrade radial do CSS nao precisa de <defs>, e com ele foi
+   * embora o contador de id global que existia so porque duas marcas na mesma
+   * tela colidiam de nome.
    */
   function markMarkup({ size = '', id = '', thinking = false, responding = false } = {}) {
     const classes = ['assistant-mark'];
     if (size) classes.push(`assistant-mark--${size}`);
     if (thinking) classes.push('is-thinking');
     if (responding) classes.push('is-responding');
-    const grad = `assistantMarkGrad${++_markSeq}`;
     return `
       <div class="${classes.join(' ')}"${id ? ` id="${id}"` : ''} aria-hidden="true">
-        <svg viewBox="0 0 32 32" class="assistant-mark__glyph" focusable="false"
-             xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="${grad}" x1="5" y1="3" x2="27" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stop-color="var(--brand-mark-light)"/>
-              <stop offset="1" stop-color="var(--brand-mark-deep)"/>
-            </linearGradient>
-          </defs>
-          <path class="assistant-mark__bubble" fill="url(#${grad})" d="M7.2 3h17.6A4.2 4.2 0 0 1 29 7.2v12.1a4.2 4.2 0 0 1-4.2 4.2H15l-7.3 5.1v-5.1h-.5A4.2 4.2 0 0 1 3 19.3V7.2A4.2 4.2 0 0 1 7.2 3Z"/>
-          <g class="assistant-mark__service" fill="none" stroke="var(--brand-on)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path class="assistant-mark__steam assistant-mark__steam--one" d="M13.2 11.8c-1.25-1.25 1.1-2 0-3.45"/>
-            <path class="assistant-mark__steam assistant-mark__steam--two" d="M18.5 11.4c-1.2-1.15 1.05-1.9 0-3.2"/>
-            <path class="assistant-mark__cloche" d="M9.8 20h12.4M11.2 18.4c.35-3.2 2.05-4.8 4.8-4.8s4.45 1.6 4.8 4.8H11.2Z"/>
-          </g>
-        </svg>
+        <span class="assistant-mark__halo"></span>
+        <span class="assistant-mark__orb"></span>
       </div>`;
   }
 
-  // Só existem dois ritmos: pensando e o resto. "Respondendo" é o ritmo calmo —
-  // a resposta já está entrando na tela e uma marca agitada atrás dela
-  // competiria com o texto.
+  // Tres ritmos, um por estado que o chat ja emite ha tempo: parado, pensando e
+  // respondendo. Ate 02/09/2026 so 'thinking' chegava ao desenho — 'answering'
+  // era chamado de tres lugares (1121, 1134) e nao pintava nada, entao a marca
+  // ficava parada justamente enquanto a resposta entrava na tela. A classe
+  // is-responding ja existia no CSS e nunca tinha sido ligada por ninguem.
+  //
+  // Respondendo e o ritmo mais RAPIDO, pensando e o mais lento: e a diferenca
+  // entre "estou procurando" e "estou te respondendo agora". Nenhum dos dois
+  // reage ao volume de audio porque nesta tela nao existe audio nenhum — quem
+  // reage de verdade e a esfera do modo voz, por --voice-level.
   function setAssistantMarkState(state) {
-    document.getElementById('assistantIntroMark')
-      ?.classList.toggle('is-thinking', state === 'thinking');
+    const mark = document.getElementById('assistantIntroMark');
+    if (!mark) return;
+    mark.classList.toggle('is-thinking', state === 'thinking');
+    mark.classList.toggle('is-responding', state === 'answering');
   }
 
   const fmtPrice = (value) => window.PedeAquiCurrency.formatCurrency(value);

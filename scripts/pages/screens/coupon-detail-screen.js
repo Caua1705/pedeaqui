@@ -70,8 +70,19 @@
     }
     if (minimum > 0) rules.push(`Em pedidos a partir de ${fmt(minimum)}`);
     // A data ia CRUA para a tela ("Válido até 2099-12-31T23:59:59Z"). Na
-    // vitrine o campo não vinha, então ninguém tinha visto ainda; o feed do
-    // cliente manda `valid_until` em todo cupom.
+    // vitrine o campo não vinha, então ninguém tinha visto ainda.
+    //
+    // `valid_until` DEIXOU de ser obrigatório em 02/09/2026: em
+    // `CustomerCouponResponse` ele é `string | null` e saiu do `required`, ou
+    // seja, cupom sem prazo agora é legal. A linha inteira sai quando não há
+    // data — que é o certo, e é o mesmo princípio da sacola: parcela sem valor
+    // é linha FORA, nunca um rótulo com o campo vazio atrás.
+    //
+    // `expires_at` NÃO EXISTE em cupom nenhum do contrato (ele é de cashback e
+    // de pagamento), então o primeiro operando é `undefined` em 100% das
+    // chamadas e quem responde é sempre o segundo. Está aqui só por inércia:
+    // não quebra nada hoje, e vira armadilha no dia em que o backend criar um
+    // `expires_at` de cupom com outra semântica.
     const validUntil = couponValidUntil(coupon.expires_at || coupon.valid_until);
     if (validUntil) rules.push(`Válido até ${validUntil}`);
     // `max_discount` saiu de propósito do contrato do cliente: teto é limite

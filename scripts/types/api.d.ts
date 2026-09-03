@@ -213,6 +213,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/branches/{branch_id}/courier-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Courier Fee
+         * @description Quanto esta filial paga ao entregador por corrida.
+         *
+         *     `null` nos dois campos e "sem taxa configurada": a atribuicao congela
+         *     snapshot nulo e o historico do entregador mostra a corrida sem valor.
+         *     Nao e zero, de proposito.
+         */
+        get: operations["get_courier_fee_admin_branches__branch_id__courier_fee_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Courier Fee
+         * @description `base + km x por_km`, congelada em cada atribuicao a partir daqui.
+         *
+         *     Motoboy pago por corrida: `courier_fee_base` preenchida e
+         *     `courier_fee_per_km` em `0` (ou ausente). Campo ausente do corpo nao e
+         *     tocado; `null` explicito apaga. **Nao mexe em nenhuma corrida ja
+         *     atribuida** — a taxa e congelada no momento da atribuicao.
+         *
+         *     Nenhum numero que o CLIENTE paga muda com isto.
+         */
+        patch: operations["update_courier_fee_admin_branches__branch_id__courier_fee_patch"];
+        trace?: never;
+    };
     "/admin/branches/{branch_id}/delivery-pause": {
         parameters: {
             query?: never;
@@ -760,6 +795,139 @@ export interface paths {
         patch: operations["update_admin_coupon_admin_coupons__coupon_id__patch"];
         trace?: never;
     };
+    "/admin/couriers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Couriers
+         * @description Os entregadores do restaurante do token, inativos inclusive.
+         *
+         *     Excluidos nao aparecem. `has_access` diz se ja existe um link+codigo
+         *     valendo — o par em si nunca sai desta rota.
+         */
+        get: operations["list_couriers_admin_couriers_get"];
+        put?: never;
+        /**
+         * Create Courier
+         * @description Nome e telefone, numa filial. Nasce ativo e SEM acesso: o link e o
+         *     codigo saem de `POST /admin/couriers/{id}/access`.
+         *
+         *     O telefone e unico por filial (409). Quem serve duas lojas tem dois
+         *     cadastros, um por filial.
+         */
+        post: operations["create_courier_admin_couriers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/couriers/{courier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Courier */
+        get: operations["get_courier_admin_couriers__courier_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Courier
+         * @description Exclui o entregador: some das listas, perde o acesso na hora, os
+         *     pedidos abertos voltam para a fila. O historico de corridas dele
+         *     continua existindo — e o que o dono usa para pagar.
+         *
+         *     O telefone fica livre para um cadastro novo.
+         */
+        delete: operations["delete_courier_admin_couriers__courier_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Courier
+         * @description PATCH parcial: nome, telefone, ativo/inativo.
+         *
+         *     `is_active: false` tira o acesso na hora e **devolve os pedidos abertos
+         *     dele para a fila** (as atribuicoes sao fechadas). `true` de volta nao
+         *     reabre nada e nao recria o acesso: o par gerado antes continua valendo.
+         */
+        patch: operations["update_courier_admin_couriers__courier_id__patch"];
+        trace?: never;
+    };
+    "/admin/couriers/{courier_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Courier Access
+         * @description Gera (ou REGENERA) o link e o codigo do entregador.
+         *
+         *     A resposta e a unica vez que os dois existem em claro. O painel monta a
+         *     URL do app do entregador com `link_token` e entrega o par ao motoboy;
+         *     ele digita o codigo uma vez e o app guarda.
+         *
+         *     Chamar de novo gera outro par, e **o anterior morre na hora** — nao ha
+         *     sessao nem token derivado que sobreviva. E o botao de "o motoboy saiu".
+         *     Entregador inativo responde 409.
+         */
+        post: operations["generate_courier_access_admin_couriers__courier_id__access_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/couriers/{courier_id}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Open Assignments
+         * @description Os pedidos que estao nas maos deste entregador agora (atribuicoes
+         *     abertas), do mais antigo ao mais novo. Historico e o do proprio
+         *     entregador, pelo link dele.
+         */
+        get: operations["list_open_assignments_admin_couriers__courier_id__assignments_get"];
+        put?: never;
+        /**
+         * Assign Orders
+         * @description Atribui um ou mais pedidos a este entregador.
+         *
+         *     **A resposta e por item, na ordem do corpo.** Cada pedido diz `ok` ou o
+         *     `error`: `not_found` (nao alcancado por este lojista), `not_delivery`
+         *     (retirada), `order_closed` (ja terminou) ou `other_branch` (o motoboy e
+         *     de outra filial). Os `ok` sao gravados juntos; os outros nao sao
+         *     gravados. A rota so responde erro HTTP para o entregador em si (404 fora
+         *     do escopo, 409 inativo) ou para o corpo (422).
+         *
+         *     **Reatribuir e chamar esta rota com outro entregador**: a atribuicao
+         *     anterior e fechada e a nova aberta, com a taxa de agora. Atribuir ao
+         *     mesmo de novo nao muda nada.
+         *
+         *     A taxa do entregador e congelada aqui (`courier_fee_snapshot`), da
+         *     configuracao da filial sobre a distancia que o pedido ja tinha. Nulo
+         *     quando a filial nao tem taxa configurada.
+         */
+        post: operations["assign_orders_admin_couriers__courier_id__assignments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/customers": {
         parameters: {
             query?: never;
@@ -1013,6 +1181,34 @@ export interface paths {
          *     status: pedido ja entregue ou ja cancelado responde 409.
          */
         patch: operations["cancel_order_admin_orders__order_id__cancel_patch"];
+        trace?: never;
+    };
+    "/admin/orders/{order_id}/courier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Order Courier
+         * @description Quem esta com este pedido. Os dois campos nulos = ninguem ainda —
+         *     estado normal do pedido, e nao 404. 404 e o pedido que este lojista nao
+         *     alcanca.
+         */
+        get: operations["get_order_courier_admin_orders__order_id__courier_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Unassign Order
+         * @description Tira o pedido das maos de quem estiver com ele. 409 se ninguem
+         *     estiver. A linha da atribuicao nao e apagada: fica fechada, com quem e
+         *     quando, no historico.
+         */
+        delete: operations["unassign_order_admin_orders__order_id__courier_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/admin/orders/{order_id}/print-jobs": {
@@ -1870,6 +2066,130 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/courier/{link_token}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description As entregas concluidas no periodo e a soma das taxas — "quanto fiz".
+         *
+         *     Ate 92 dias. Corrida sem taxa (a filial nao tinha taxa configurada na
+         *     atribuicao) conta como entrega e nao como zero: sai em
+         *     `deliveries_without_fee`, que e o numero que o motoboy leva ao dono.
+         */
+        get: operations["get_history_courier__link_token__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courier/{link_token}/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Me
+         * @description Quem e o entregador deste link. E a rota que o app chama para conferir
+         *     o codigo digitado antes de guarda-lo: 200 e o par certo.
+         */
+        get: operations["get_me_courier__link_token__me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courier/{link_token}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Orders
+         * @description Os pedidos atribuidos a ele que ainda nao terminaram, do mais antigo
+         *     ao mais novo.
+         *
+         *     Cada um traz status, endereco, forma de pagamento, `is_paid`, e
+         *     `amount_to_collect` — o que ha para receber na porta, que e o total so
+         *     quando o pedido e pago na entrega. `can_leave` e `can_deliver` dizem o
+         *     que o botao pode fazer: em preparo ainda nao sai.
+         */
+        get: operations["list_orders_courier__link_token__orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courier/{link_token}/orders/out-for-delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Out For Delivery
+         * @description "Sai para entrega", um ou varios de uma vez.
+         *
+         *     **A resposta e por item, na ordem do corpo.** `not_found` e o pedido que
+         *     nao esta com ele; `wrong_status` e o pedido que ainda nao esta pronto
+         *     (ou ja saiu), com a frase em `message`. Os que deram `ok` JA SAIRAM,
+         *     mesmo que outro do lote tenha falhado — nao ha como desfazer uma moto
+         *     que ja esta na rua.
+         *
+         *     O cliente ve a mudanca no acompanhamento do pedido; o painel recebe o
+         *     evento no stream. Nenhuma notificacao e disparada alem disso.
+         */
+        post: operations["mark_out_for_delivery_courier__link_token__orders_out_for_delivery_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courier/{link_token}/orders/{order_id}/delivered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Delivered
+         * @description "Entregue". So a partir de `out_for_delivery` (409 antes disso).
+         *
+         *     Pedido que nao esta com ele — inclusive o que ja foi entregue — e 404:
+         *     terminal saiu da lista dele. E a mesma escrita do painel, entao o
+         *     cashback do cliente e creditado aqui, de graca.
+         */
+        post: operations["mark_delivered_courier__link_token__orders__order_id__delivered_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/customers/me": {
         parameters: {
             query?: never;
@@ -2206,6 +2526,57 @@ export interface paths {
         get: operations["get_order_customers_me_orders__order_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/customers/me/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Order
+         * @description O cliente logado desistindo do proprio pedido, de QUALQUER aparelho.
+         *
+         *     E a contrapartida autenticada de
+         *     `POST /{slug}/orders/track/{token}/cancel`, do mesmo jeito que a rota
+         *     acima e a de `/orders/track/{token}`: aqui o vinculo sai de
+         *     `orders.customer_id`, entao nao ha token nenhum para guardar nem para
+         *     vazar. O `tracking_token` so vive no `localStorage` do aparelho que fez o
+         *     pedido — quem pediu pelo celular e abriu o app no computador nao alcancava
+         *     o proprio pedido.
+         *
+         *     **A rota do token continua existindo**, e nao e redundancia: ela e a unica
+         *     saida do convidado, que nao tem conta para autenticar.
+         *
+         *     **Ate onde ela vai: `pending` e `accepted`**, a mesma janela da outra
+         *     porta. A partir de `preparing` o insumo ja saiu do estoque e quem decide
+         *     quem come o prejuizo passa a ser o lojista — a rota responde **409** e o
+         *     app manda o cliente falar com o restaurante.
+         *
+         *     **O corpo e opcional**, e o motivo dentro dele tambem, pelo mesmo motivo
+         *     da outra: exigir justificativa de quem desiste de um pedido que nem
+         *     comecou produz um campo preenchido com "a".
+         *
+         *     ## O que ela faz junto, e que o app nao precisa pedir
+         *
+         *     E a MESMA escrita do cancelamento pelo painel, entao o cupom volta a ficar
+         *     disponivel, o cashback resgatado volta para o saldo e **o pagamento online
+         *     e estornado**. O estorno acontece depois do commit e nao pode derrubar
+         *     esta resposta: se o gateway estiver fora do ar, o cancelamento vale e uma
+         *     varredura devolve o dinheiro depois.
+         *
+         *     **Sem `Idempotency-Key`**, e ela nao faz falta: o segundo clique chega com
+         *     o pedido ja em `cancelled` e leva 409 da maquina de estados.
+         */
+        post: operations["cancel_order_customers_me_orders__order_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2796,6 +3167,91 @@ export interface components {
             /** Zipcode */
             zipcode?: string | null;
         };
+        /** AdminAssignOrdersRequest */
+        AdminAssignOrdersRequest: {
+            /** Order Ids */
+            order_ids: string[];
+        };
+        /**
+         * AdminAssignmentBatchResponse
+         * @description Um item por `order_id` do corpo, NA MESMA ORDEM.
+         *
+         *     Por item e nao tudo-ou-nada: um pedido de retirada no meio do lote nao
+         *     pode derrubar os outros quatro que o atendente selecionou. A escrita
+         *     continua sendo uma so — os itens `ok` sao gravados juntos, e os outros
+         *     nao sao gravados.
+         */
+        AdminAssignmentBatchResponse: {
+            /** Items */
+            items: components["schemas"]["AdminAssignmentResultItem"][];
+        };
+        /** AdminAssignmentResponse */
+        AdminAssignmentResponse: {
+            /** Assigned At */
+            assigned_at?: string | null;
+            /** Courier Fee Snapshot */
+            courier_fee_snapshot?: number | null;
+            /**
+             * Courier Id
+             * Format: uuid
+             */
+            courier_id: string;
+            /** Distance Km Snapshot */
+            distance_km_snapshot?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** Order Number */
+            order_number: number;
+            /** Order Status */
+            order_status: string;
+        };
+        /** AdminAssignmentResultItem */
+        AdminAssignmentResultItem: {
+            assignment?: components["schemas"]["AdminAssignmentResponse"] | null;
+            error?: components["schemas"]["AssignmentErrorCode"] | null;
+            /** Ok */
+            ok: boolean;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+        };
+        /** AdminBranchCourierFeeResponse */
+        AdminBranchCourierFeeResponse: {
+            /**
+             * Branch Id
+             * Format: uuid
+             */
+            branch_id: string;
+            /** Courier Fee Base */
+            courier_fee_base?: number | null;
+            /** Courier Fee Per Km */
+            courier_fee_per_km?: number | null;
+        };
+        /**
+         * AdminBranchCourierFeeUpdate
+         * @description A taxa do entregador DESTA filial. Dois estados por campo:
+         *
+         *     - campo ausente do corpo: nao mexe;
+         *     - campo com valor, ou com `null` explicito: grava. `null` e "sem taxa"
+         *       (a atribuicao passa a congelar snapshot nulo), e nao "volta a herdar"
+         *       — aqui nao ha heranca, como nas cinco colunas do frete do cliente.
+         */
+        AdminBranchCourierFeeUpdate: {
+            /** Courier Fee Base */
+            courier_fee_base?: number | string | null;
+            /** Courier Fee Per Km */
+            courier_fee_per_km?: number | string | null;
+        };
         /**
          * AdminBranchDeliveryPauseRequest
          * @description Pausa a entrega desta filial por um tempo, e so por um tempo.
@@ -3215,6 +3671,92 @@ export interface components {
             /** Sort Order */
             sort_order?: number | null;
         };
+        /**
+         * AdminCourierAccessResponse
+         * @description A UNICA vez que o link e o codigo existem fora do hash.
+         *
+         *     Nao ha rota que os devolva de novo, e isso e propriedade: uma rota "me
+         *     mostra de novo" seria uma rota que entrega a credencial de outra pessoa.
+         *     Segunda via e chamar esta rota outra vez, que gera OUTRO par e mata o
+         *     anterior na mesma resposta.
+         *
+         *     `link_token` e o segredo do link; o painel monta a URL do app do
+         *     entregador com ele. `access_code` e o que o motoboy digita uma vez.
+         */
+        AdminCourierAccessResponse: {
+            /** Access Code */
+            access_code: string;
+            /**
+             * Access Generated At
+             * Format: date-time
+             */
+            access_generated_at: string;
+            /**
+             * Courier Id
+             * Format: uuid
+             */
+            courier_id: string;
+            /** Link Token */
+            link_token: string;
+        };
+        /**
+         * AdminCourierCreate
+         * @description Nome e telefone. Nada mais, de proposito: e o que o dono sabe do
+         *     motoboy, e cada campo a mais e um que ninguem preenche.
+         *
+         *     `extra="forbid"` porque o corpo NAO e lugar de escolher codigo de acesso:
+         *     o codigo e sorteado pelo servidor em `POST /admin/couriers/{id}/access`.
+         */
+        AdminCourierCreate: {
+            /**
+             * Branch Id
+             * Format: uuid
+             */
+            branch_id: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string;
+        };
+        /** AdminCourierResponse */
+        AdminCourierResponse: {
+            /** Access Generated At */
+            access_generated_at?: string | null;
+            /**
+             * Branch Id
+             * Format: uuid
+             */
+            branch_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Has Access */
+            has_access: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string;
+        };
+        /**
+         * AdminCourierUpdate
+         * @description PATCH parcial. `is_active = false` fecha as corridas abertas e tira o
+         *     acesso na hora; `true` de volta NAO recria o acesso — o par gerado antes
+         *     continua valendo, que e o que "raramente trocado" pede.
+         */
+        AdminCourierUpdate: {
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
         /** AdminCustomerListItem */
         AdminCustomerListItem: {
             /** Average Ticket */
@@ -3410,6 +3952,15 @@ export interface components {
             /** Sort Order */
             sort_order?: number | null;
         };
+        /**
+         * AdminOrderCourierResponse
+         * @description Quem esta com o pedido. Os dois nulos = ninguem ainda, que e estado
+         *     normal do pedido e nao um 404.
+         */
+        AdminOrderCourierResponse: {
+            assignment?: components["schemas"]["AdminAssignmentResponse"] | null;
+            courier?: components["schemas"]["AdminCourierResponse"] | null;
+        };
         /** AdminOrderListItem */
         AdminOrderListItem: {
             /**
@@ -3417,6 +3968,10 @@ export interface components {
              * Format: uuid
              */
             branch_id: string;
+            /** Courier Id */
+            courier_id?: string | null;
+            /** Courier Name */
+            courier_name?: string | null;
             /** Created At */
             created_at?: string | null;
             /** Customer Name Snapshot */
@@ -4170,6 +4725,14 @@ export interface components {
             /** Role */
             role?: ("owner" | "manager" | "attendant") | null;
         };
+        /**
+         * AssignmentErrorCode
+         * @description Por que um pedido do lote NAO foi atribuido. Enum para a lista sair
+         *     no /openapi.json (armadilha 16): o painel escreve a mensagem por codigo,
+         *     nao pelo texto.
+         * @enum {string}
+         */
+        AssignmentErrorCode: "not_found" | "not_delivery" | "order_closed" | "other_branch";
         /** BannerResponse */
         BannerResponse: {
             /**
@@ -5115,6 +5678,8 @@ export interface components {
              * Format: uuid
              */
             restaurant_id: string;
+            /** Sort Order */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5131,11 +5696,8 @@ export interface components {
              * Format: date-time
              */
             valid_from: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
             visibility: components["schemas"]["CouponVisibility"];
         };
         /** CouponClaimRequest */
@@ -5196,6 +5758,11 @@ export interface components {
              * @default 0.00
              */
             min_order_value: number | string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title: string;
@@ -5208,11 +5775,8 @@ export interface components {
              * Format: date-time
              */
             valid_from: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
             /** @default public */
             visibility: components["schemas"]["CouponVisibility"];
         };
@@ -5315,6 +5879,8 @@ export interface components {
             max_discount_amount?: number | string | null;
             /** Min Order Value */
             min_order_value?: number | string | null;
+            /** Sort Order */
+            sort_order?: number | null;
             target_segment?: components["schemas"]["CustomerSegment"] | null;
             /** Title */
             title?: string | null;
@@ -5341,6 +5907,160 @@ export interface components {
          * @enum {string}
          */
         CouponVisibility: "public" | "segment" | "private";
+        /** CourierHistoryItem */
+        CourierHistoryItem: {
+            /** Address Neighborhood */
+            address_neighborhood?: string | null;
+            /** Courier Fee */
+            courier_fee?: number | null;
+            /**
+             * Delivered At
+             * Format: date-time
+             */
+            delivered_at: string;
+            /** Distance Km */
+            distance_km?: number | null;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** Order Number */
+            order_number: number;
+        };
+        /**
+         * CourierHistoryResponse
+         * @description "Quanto fiz": as entregas concluidas no periodo e a soma das taxas.
+         *
+         *     `deliveries_without_fee` conta as corridas cujo snapshot e nulo (a
+         *     filial nao tinha taxa na atribuicao). Elas entram em
+         *     `deliveries_count` e NAO entram em `fee_total` — e o numero que o
+         *     motoboy leva ao dono para acertar a mao.
+         */
+        CourierHistoryResponse: {
+            /** Deliveries */
+            deliveries: components["schemas"]["CourierHistoryItem"][];
+            /** Deliveries Count */
+            deliveries_count: number;
+            /** Deliveries Without Fee */
+            deliveries_without_fee: number;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Fee Total */
+            fee_total: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /** CourierMeResponse */
+        CourierMeResponse: {
+            /** Branch Name */
+            branch_name: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * CourierOrderResponse
+         * @description Um pedido nas maos do entregador — o que ele precisa para entregar.
+         *
+         *     NAO e o `OrderDetailResponse`: aquele traz itens, valores de desconto e
+         *     o historico inteiro, e o motoboy nao precisa de nada disso. O que ele
+         *     precisa e endereco, telefone, e quanto receber na porta.
+         *
+         *     `amount_to_collect` e o total SO quando o pedido e pago na entrega. Pago
+         *     online (ou pix ainda pendente) e zero: nao ha o que receber.
+         */
+        CourierOrderResponse: {
+            /** Address City */
+            address_city?: string | null;
+            /** Address Complement */
+            address_complement?: string | null;
+            /** Address Neighborhood */
+            address_neighborhood?: string | null;
+            /** Address Number */
+            address_number?: string | null;
+            /** Address Reference */
+            address_reference?: string | null;
+            /** Address Street */
+            address_street?: string | null;
+            /** Amount To Collect */
+            amount_to_collect: number;
+            /** Assigned At */
+            assigned_at?: string | null;
+            /** Can Deliver */
+            can_deliver: boolean;
+            /** Can Leave */
+            can_leave: boolean;
+            /** Courier Fee */
+            courier_fee?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Customer Name */
+            customer_name: string;
+            /** Customer Phone */
+            customer_phone: string;
+            /** Delivery Latitude */
+            delivery_latitude?: number | null;
+            /** Delivery Longitude */
+            delivery_longitude?: number | null;
+            /** Is Paid */
+            is_paid: boolean;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** Order Number */
+            order_number: number;
+            /** Payment Method */
+            payment_method?: string | null;
+            /** Status */
+            status: string;
+            /** Total */
+            total: number;
+        };
+        /** CourierOrdersStatusRequest */
+        CourierOrdersStatusRequest: {
+            /** Order Ids */
+            order_ids: string[];
+        };
+        /**
+         * CourierStatusBatchResponse
+         * @description Um item por `order_id` do corpo, na mesma ordem. Os `ok` JA SAIRAM,
+         *     mesmo que outro do lote tenha falhado.
+         */
+        CourierStatusBatchResponse: {
+            /** Items */
+            items: components["schemas"]["CourierStatusResultItem"][];
+        };
+        /**
+         * CourierStatusErrorCode
+         * @description Por que um pedido do lote NAO mudou. Enum para a lista sair no
+         *     /openapi.json (armadilha 16).
+         * @enum {string}
+         */
+        CourierStatusErrorCode: "not_found" | "wrong_status";
+        /** CourierStatusResultItem */
+        CourierStatusResultItem: {
+            error?: components["schemas"]["CourierStatusErrorCode"] | null;
+            /** Message */
+            message?: string | null;
+            /** Ok */
+            ok: boolean;
+            order?: components["schemas"]["CourierOrderResponse"] | null;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+        };
         /** CreateCustomerAddressRequest */
         CreateCustomerAddressRequest: {
             /** City */
@@ -5644,11 +6364,8 @@ export interface components {
             state: components["schemas"]["CustomerCouponState"];
             /** Title */
             title: string;
-            /**
-             * Valid Until
-             * Format: date-time
-             */
-            valid_until: string;
+            /** Valid Until */
+            valid_until?: string | null;
         };
         /**
          * CustomerCouponState
@@ -7495,6 +8212,11 @@ export interface components {
             /** Checkout Url */
             checkout_url?: string | null;
             /**
+             * Expires At
+             * @description Quando o QR do pix deixa de ser pagavel, como o gateway devolveu. E o que o contador do app deve usar — nao o relogio do cliente. Nulo no cartao. Um segundo clique em 'pagar' devolve a MESMA cobranca com o MESMO prazo.
+             */
+            expires_at?: string | null;
+            /**
              * Payment Status
              * @description Estado do pagamento. No pix e sempre 'pending'; no cartao ja e o desfecho ('paid', 'failed' ou 'in_review').
              */
@@ -8074,6 +8796,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_courier_fee_admin_branches__branch_id__courier_fee_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBranchCourierFeeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_courier_fee_admin_branches__branch_id__courier_fee_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBranchCourierFeeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBranchCourierFeeResponse"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -8951,6 +9739,263 @@ export interface operations {
             };
         };
     };
+    list_couriers_admin_couriers_get: {
+        parameters: {
+            query?: {
+                /** @description Filtra por filial. Quem so tem acesso a uma filial ja vem filtrado. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCourierResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_courier_admin_couriers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCourierCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCourierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_courier_admin_couriers__courier_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCourierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_courier_admin_couriers__courier_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_courier_admin_couriers__courier_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCourierUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCourierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_courier_access_admin_couriers__courier_id__access_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCourierAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_open_assignments_admin_couriers__courier_id__assignments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAssignmentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_orders_admin_couriers__courier_id__assignments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminAssignOrdersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAssignmentBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_customers_admin_customers_get: {
         parameters: {
             query?: {
@@ -9340,6 +10385,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CancelOrderErrorResponse"];
+                };
+            };
+        };
+    };
+    get_order_courier_admin_orders__order_id__courier_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrderCourierResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unassign_order_admin_orders__order_id__courier_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -10708,6 +11813,263 @@ export interface operations {
             };
         };
     };
+    get_history_courier__link_token__history_get: {
+        parameters: {
+            query?: {
+                /** @description Primeiro dia (inclusive), no fuso da operacao. Sem datas: hoje. */
+                start_date?: string | null;
+                /** @description Ultimo dia (inclusive). Ausente: o mesmo de start_date. */
+                end_date?: string | null;
+            };
+            header?: {
+                /** @description O codigo de 6 digitos entregue junto com o link. Vai em toda requisicao. */
+                "X-Courier-Code"?: string | null;
+            };
+            path: {
+                link_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourierHistoryResponse"];
+                };
+            };
+            /** @description Codigo de acesso ausente ou errado (cabecalho `X-Courier-Code`) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link invalido: desconhecido, regenerado, inativo ou excluido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_me_courier__link_token__me_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description O codigo de 6 digitos entregue junto com o link. Vai em toda requisicao. */
+                "X-Courier-Code"?: string | null;
+            };
+            path: {
+                link_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourierMeResponse"];
+                };
+            };
+            /** @description Codigo de acesso ausente ou errado (cabecalho `X-Courier-Code`) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link invalido: desconhecido, regenerado, inativo ou excluido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_orders_courier__link_token__orders_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description O codigo de 6 digitos entregue junto com o link. Vai em toda requisicao. */
+                "X-Courier-Code"?: string | null;
+            };
+            path: {
+                link_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourierOrderResponse"][];
+                };
+            };
+            /** @description Codigo de acesso ausente ou errado (cabecalho `X-Courier-Code`) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link invalido: desconhecido, regenerado, inativo ou excluido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_out_for_delivery_courier__link_token__orders_out_for_delivery_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description O codigo de 6 digitos entregue junto com o link. Vai em toda requisicao. */
+                "X-Courier-Code"?: string | null;
+            };
+            path: {
+                link_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourierOrdersStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourierStatusBatchResponse"];
+                };
+            };
+            /** @description Codigo de acesso ausente ou errado (cabecalho `X-Courier-Code`) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link invalido: desconhecido, regenerado, inativo ou excluido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_delivered_courier__link_token__orders__order_id__delivered_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description O codigo de 6 digitos entregue junto com o link. Vai em toda requisicao. */
+                "X-Courier-Code"?: string | null;
+            };
+            path: {
+                link_token: string;
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourierOrderResponse"];
+                };
+            };
+            /** @description Codigo de acesso ausente ou errado (cabecalho `X-Courier-Code`) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link invalido: desconhecido, regenerado, inativo ou excluido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description O pedido ainda nao saiu para entrega */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_me_customers_me_get: {
         parameters: {
             query?: never;
@@ -11294,6 +12656,62 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrderDetailResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_customers_me_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CustomerCancelOrderRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailResponse"];
+                };
+            };
+            /** @description Nao autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pedido nao encontrado, ou nao e deste cliente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description O pedido ja saiu da janela em que o cliente cancela sozinho (a partir de `preparing`), ou ja e um estado final */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

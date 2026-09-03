@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockApi, seedPickupSession, INFO, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
+import { mockApi, seedPickupSession, INFO, MENU, RESTAURANT_URL, esperarAppPronto } from './helpers.js';
 
 // ============================================================================
 //  A tela de INFORMAÇÕES do restaurante.
@@ -108,3 +108,92 @@ test('sem e-mail, a linha inteira some — no modal e no Perfil', async ({ page 
   // ausência anunciada, com menos palavras.
   await expect(page.locator('#profSubinfo .prof-info-row-label', { hasText: /^E-mail$/ })).toHaveCount(0);
 });
+
+// A MESMA REGRA VALE PARA OS TRES, e nao so para o e-mail.
+//
+// Ate 03/09/2026 a regra da linha que some era so do e-mail. Telefone e
+// WhatsApp continuavam escrevendo "Telefone nao informado" / "WhatsApp nao
+// informado" — e numa loja que nao preencheu nenhum dos tres, o cartao de
+// contato virava TRES linhas, com icone, dizendo que nao ha nada. No cartao de
+// Ajuda isso acontecia embaixo da frase "entre em contato conosco pelos
+// seguintes meios".
+//
+// O fixture aqui e uma loja VAZIA de proposito: o de producao tem telefone e
+// WhatsApp, entao ele nunca exercitaria este caminho.
+async function informacoesSemContato(page) {
+  await page.setViewportSize({ width: 414, height: 896 });
+  await mockApi(page);
+  const semContato = JSON.parse(JSON.stringify(INFO));
+  semContato.branch.phone = null;
+  semContato.branch.email = null;
+  semContato.branch.whatsapp = null;
+  // Registrada DEPOIS de mockApi: a rota mais recente vence.
+  await page.route(/\/info(\?|$)/, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(semContato)
+  }));
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')?.());
+}
+
+test('loja sem telefone e sem WhatsApp: as linhas somem, nao viram "não informado"', async ({ page }) => {
+  await informacoesSemContato(page);
+
+  await page.evaluate(() => window.RapidexActions.resolve('openRestaurantInfo')());
+  await expect(page.locator('#infoModal')).toHaveClass(/active/);
+  await page.waitForFunction(
+    () => !/Carregando/.test(document.getElementById('storeInfoPayment')?.textContent || 'Carregando')
+  );
+
+  const modal = page.locator('#infoModal');
+  await expect(modal).not.toContainText('Telefone não informado');
+  await expect(modal).not.toContainText('WhatsApp não informado');
+  await expect(modal).not.toContainText('E-mail não informado');
+  // As tres linhas ESCONDIDAS, nao so o texto limpo: uma linha vazia com o
+  // icone continua sendo uma linha do cartao gasta com nada.
+  await expect(page.locator('#infoModal .store-contact-row:visible')).toHaveCount(0);
+
+  await page.evaluate(() => window.RapidexActions.resolve('closeModalId')?.('infoModal'));
+  await page.locator('#mobNavProfile').click();
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('info'));
+  await expect(page.locator('#profSubinfo')).toHaveClass(/active/);
+  const perfil = page.locator('#profSubinfo');
+  await expect(perfil).not.toContainText('Telefone não informado');
+  await expect(perfil).not.toContainText('WhatsApp não informado');
+  await expect(page.locator('#profSubinfo .prof-info-row-label', { hasText: /^Telefone$/ })).toHaveCount(0);
+  await expect(page.locator('#profSubinfo .prof-info-row-label', { hasText: /^WhatsApp$/ })).toHaveCount(0);
+  // O ENDERECO CONTINUA: sem ele o cartao da unidade nao diz nada sobre a
+  // unidade, e ali a frase de ausencia e a unica coisa util a dizer.
+  await expect(page.locator('#profSubinfo .prof-info-row-label', { hasText: /^Endereço$/ })).toHaveCount(1);
+});
+
+test('cartao de Ajuda sem contato nenhum nao convida para meios que nao existem', async ({ page }) => {
+  await informacoesSemContato(page);
+  await page.locator('#mobNavProfile').click();
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('ajuda'));
+  await expect(page.locator('#profSubajuda')).toHaveClass(/active/);
+
+  const cartao = page.locator('#profSubajuda .help-store-info');
+  await expect(cartao).not.toContainText('Telefone não informado');
+  await expect(cartao).not.toContainText('E-MAIL NÃO INFORMADO');
+  await expect(cartao).not.toContainText('WhatsApp não informado');
+  await expect(page.locator('#profSubajuda .help-store-contact')).toHaveCount(0);
+  // "entre em contato conosco pelos seguintes meios" seguido de NADA e pior
+  // que o silencio: o convite e a divisoria saem junto com as linhas.
+  await expect(cartao).not.toContainText('entre em contato conosco');
+  await expect(page.locator('#profSubajuda .help-store-divider')).toHaveCount(0);
+  // E o cartao continua sendo o cartao daquela loja.
+  await expect(page.locator('#profSubajuda .help-store-name')).toHaveText(INFO.restaurant?.name || MENU.restaurant.name);
+});
+
+// O `height:362px` fixo de `#profSubajuda .help-store-info` (utilities.css)
+// PARECE ser o defeito da §14.6 — altura fixa sobre conteúdo do lojista — e a
+// tentação era trocá-lo por `min-height` de carona neste commit. MEDIDO, ele
+// não estoura: com o nome da unidade em duas linhas o conteúdo dá exatamente
+// 362, e com um nome de 400 caracteres ele nem quebra (não há espaço onde
+// quebrar, o transbordo é horizontal). Nenhum fixture produziu `scrollHeight`
+// maior que a caixa, então o teste que guardaria essa troca passaria com o
+// `height` fixo de volta — teste que não se vê falhar não vale nada (§3.3).
+// A troca ficou de fora, e a folga real de 0px fica registrada aqui: quem
+// acrescentar uma linha a este cartão precisa mexer no 362 junto.

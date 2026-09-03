@@ -163,13 +163,18 @@
     const methods = shell.infoPaymentData(data);
     const whatsapp = onlyDigits(branch.whatsapp || '');
     const paymentEntries = [...methods.online, ...methods.delivery];
+    // MESMA REGRA DO MODAL: contato que a loja nao informou nao ganha linha.
+    // Aqui o markup e montado, entao a linha simplesmente nao e escrita.
+    // O ENDERECO fica de fora dessa regra de proposito: sem endereco o cartao
+    // da unidade nao diz nada sobre a unidade, e "Endereco nao informado" e a
+    // unica frase util quando o backend nao mandou o que sempre manda.
     body.innerHTML = `
       <div class='prof-info-card'>
         <div class='prof-info-card-header'><span class='prof-info-card-title'>${esc(branch.display_name || branch.name || 'Unidade')}</span></div>
         <div class='prof-info-row'><div><div class='prof-info-row-label'>Endereço</div><div class='prof-info-row-val'>${esc(infoFullAddress(branch) || 'Endereço não informado')}</div></div></div>
-        <div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone || 'Telefone não informado')}</div></div></div>
+        ${branch.phone ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone)}</div></div></div>` : ''}
         ${branch.email ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email)}</div></div></div>` : ''}
-        <div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div>${whatsapp ? `<a class='prof-info-row-link' href='https://wa.me/${whatsapp.startsWith('55') ? whatsapp : `55${whatsapp}`}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a>` : `<div class='prof-info-row-val'>WhatsApp não informado</div>`}</div></div>
+        ${whatsapp ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div><a class='prof-info-row-link' href='https://wa.me/${whatsapp.startsWith('55') ? whatsapp : `55${whatsapp}`}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a></div></div>` : ''}
       </div>
       <div class='prof-info-card'>
         <div class='prof-info-card-header'><span class='prof-info-card-title'>Horário de funcionamento</span></div>
@@ -188,18 +193,34 @@
     renderInfoLogo(apiRestaurant.logo_url || apiRestaurant.logo_path || app.restaurant.logo_url || app.restaurant.logo_path, name);
     document.querySelectorAll('#infoModal .store-info-name').forEach(element => { element.textContent = name; });
     document.querySelectorAll('#infoModal .store-info-neighborhood').forEach(element => { element.textContent = branch.display_name || branch.name || ''; });
-    document.querySelectorAll('#infoModal .store-info-phone').forEach(element => { element.textContent = branch.phone || 'Telefone não informado'; });
-    // SEM E-MAIL, A LINHA INTEIRA SOME. "E-mail não informado" é anunciar a
-    // ausência: ele ocupa uma linha do cartão de contato para dizer que não há
-    // nada ali. A loja do piloto é exatamente esse caso (`branch.email: null`).
-    // O texto é limpo ALÉM de a linha ser escondida — texto de elemento
-    // escondido continua no `textContent` do modal.
-    document.querySelectorAll('#infoModal .store-info-email').forEach(element => {
-      element.textContent = branch.email || '';
+    // CONTATO QUE NAO EXISTE NAO GANHA LINHA — nos TRES, nao so no e-mail.
+    //
+    // "Telefone nao informado" e anunciar a ausencia: gasta uma linha do cartao
+    // de contato para dizer que nao ha nada ali. A regra ja valia para o e-mail
+    // desde 03/09/2026 (a loja do piloto tem `branch.email: null`), mas o
+    // telefone e o WhatsApp continuavam escrevendo a frase — e numa loja que
+    // nao preencheu nenhum dos tres o cartao inteiro virava tres linhas
+    // dizendo que nao ha nada.
+    //
+    // O texto e LIMPO alem de a linha ser escondida: texto de elemento
+    // escondido continua no `textContent` do modal, e e por ele que o teste
+    // (e o leitor de tela) passa.
+    //
+    // Quem faz o `hidden` valer e `#infoModal .store-contact-row[hidden]
+    // {display:none!important}` em store-info.css: o `[hidden]` do agente de
+    // usuario sozinho PERDE para o `display:inline-flex!important` que um
+    // seletor com ID da a essa linha (§12.14 da skill).
+    const esconderLinha = (element, valor) => {
+      element.textContent = valor || '';
       const row = element.closest('.store-contact-row');
-      if (row) row.hidden = !branch.email;
-    });
-    document.querySelectorAll('#infoModal .store-info-whatsapp').forEach(element => { element.textContent = branch.whatsapp || 'WhatsApp não informado'; });
+      if (row) row.hidden = !valor;
+    };
+    document.querySelectorAll('#infoModal .store-info-phone')
+      .forEach(element => esconderLinha(element, branch.phone));
+    document.querySelectorAll('#infoModal .store-info-email')
+      .forEach(element => esconderLinha(element, branch.email));
+    document.querySelectorAll('#infoModal .store-info-whatsapp')
+      .forEach(element => esconderLinha(element, branch.whatsapp));
     document.querySelectorAll('#infoModal .store-contact-row--wa').forEach(element => {
       const phone = onlyDigits(branch.whatsapp || '');
       if (phone) element.href = `https://wa.me/${phone.startsWith('55') ? phone : `55${phone}`}`;

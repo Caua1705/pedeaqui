@@ -1260,12 +1260,23 @@
     renderHomeLoginPrompt();
     document.querySelectorAll('.store-info-name').forEach(el => el.textContent = restName);
     document.querySelectorAll('.store-info-neighborhood').forEach(el => el.textContent = branch.neighborhood || branch.city || '');
-    document.querySelectorAll('.store-info-phone').forEach(el => el.textContent = branch.phone || 'Telefone não informado');
-    // O e-mail não vem no /menu (restaurant.email/settings.email nunca
-    // existiram): quem o tem é o branch do /info, e renderRestaurantInfo
-    // sobrescreve quando ele chega.
-    document.querySelectorAll('.store-info-email').forEach(el => el.textContent = 'E-mail não informado');
-    document.querySelectorAll('.store-info-whatsapp').forEach(el => el.textContent = branch.whatsapp || 'WhatsApp não informado');
+    // A PINTURA DE ANTES DO /info SEGUE A MESMA REGRA das linhas de contato:
+    // contato que nao existe nao ganha linha (ver o bloco em
+    // screens/store-info-screen.js, que reescreve isto quando o /info chega).
+    //
+    // Este ramo escrevia "Telefone nao informado" / "E-mail nao informado" /
+    // "WhatsApp nao informado" e era ele quem ficava na tela enquanto o /info
+    // estava em voo — ou para sempre, se ele falhasse. O e-mail nunca vem no
+    // /menu (restaurant.email/settings.email jamais existiram no contrato),
+    // entao a linha dele nasce escondida aqui e so aparece se o /info trouxer.
+    const esconderLinhaDeContato = (el, valor) => {
+      el.textContent = valor || '';
+      const row = el.closest('.store-contact-row');
+      if (row) row.hidden = !valor;
+    };
+    document.querySelectorAll('.store-info-phone').forEach(el => esconderLinhaDeContato(el, branch.phone));
+    document.querySelectorAll('.store-info-email').forEach(el => esconderLinhaDeContato(el, ''));
+    document.querySelectorAll('.store-info-whatsapp').forEach(el => esconderLinhaDeContato(el, branch.whatsapp));
     document.querySelectorAll('.store-contact-row--wa').forEach(el => {
       const phone = onlyDigits(branch.whatsapp || branch.phone || '');
       if (phone) el.href = `https://wa.me/55${phone}`;
@@ -1337,30 +1348,48 @@
     const email = branch.email || '';
     const whatsappDigits = helpWhatsAppDigits(whatsapp);
     const phoneHref = onlyDigits(phone);
-    const emailLabel = email ? String(email).toUpperCase() : 'E-MAIL NÃO INFORMADO';
 
+    // CONTATO QUE NAO EXISTE NAO GANHA LINHA — a mesma regra que o e-mail do
+    // #infoModal ja seguia desde 03/09/2026, agora nas tres linhas e nas tres
+    // superficies. "Telefone nao informado" nao e informacao: e uma linha do
+    // cartao gasta para dizer que nao ha nada ali, e numa loja que nao
+    // preencheu nenhum dos tres a tela inteira virava tres frases anunciando
+    // ausencia, com icone e tudo, embaixo de "entre em contato conosco pelos
+    // seguintes meios".
+    //
+    // O `href` de placeholder ('#') sai junto: um <a> que leva a lugar nenhum
+    // e um alvo de toque que promete e nao cumpre.
+    const linhasDeContato = [
+      phoneHref && `
+        <a class="help-store-contact" href="tel:${esc(phoneHref)}">
+          <span class="help-store-contact-icon">${HELP_PHONE_ICON}</span>
+          <span>${esc(phone)}</span>
+        </a>`,
+      email && `
+        <a class="help-store-contact" href="mailto:${esc(email)}">
+          <span class="help-store-contact-icon help-store-contact-at" aria-hidden="true">@</span>
+          <span>${esc(String(email).toUpperCase())}</span>
+        </a>`,
+      whatsappDigits && `
+        <a class="help-store-contact help-store-contact--whatsapp" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">
+          <span class="help-store-contact-icon">${HELP_WHATSAPP_ICON}</span>
+          <span>${esc(whatsapp)}</span>
+        </a>`
+    ].filter(Boolean);
+
+    // Sem contato NENHUM, o convite e a divisoria tambem saem: "entre em
+    // contato conosco pelos seguintes meios" seguido de nada e pior que o
+    // silencio, e uma divisoria separa o cartao do vazio.
     card.innerHTML = `
       <div class="help-store-logo" aria-hidden="true">
         ${logoUrl ? `<img src="${esc(logoUrl)}" alt="">` : `<span>${esc(initials(name))}</span>`}
       </div>
       <div class="help-store-name">${esc(name)}</div>
       <div class="help-store-branch">${esc(branchName)}</div>
+      ${linhasDeContato.length ? `
       <p class="help-store-intro">Se precisar de ajuda, entre em contato conosco pelos<br> seguintes meios:</p>
       <div class="help-store-divider"></div>
-      <div class="help-store-contacts">
-        <a class="help-store-contact" href="${phoneHref ? `tel:${esc(phoneHref)}` : '#'}">
-          <span class="help-store-contact-icon">${HELP_PHONE_ICON}</span>
-          <span>${esc(phone || 'Telefone não informado')}</span>
-        </a>
-        <a class="help-store-contact" href="${email ? `mailto:${esc(email)}` : '#'}">
-          <span class="help-store-contact-icon help-store-contact-at" aria-hidden="true">@</span>
-          <span>${esc(emailLabel)}</span>
-        </a>
-        <a class="help-store-contact help-store-contact--whatsapp" href="${whatsappDigits ? `https://wa.me/${esc(whatsappDigits)}` : '#'}" ${whatsappDigits ? 'target="_blank" rel="noopener"' : ''}>
-          <span class="help-store-contact-icon">${HELP_WHATSAPP_ICON}</span>
-          <span>${esc(whatsapp || 'WhatsApp não informado')}</span>
-        </a>
-      </div>`;
+      <div class="help-store-contacts">${linhasDeContato.join('')}</div>` : ''}`;
 
     const logo = card.querySelector('.help-store-logo');
     logo?.querySelector('img')?.addEventListener('error', () => {

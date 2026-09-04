@@ -6775,11 +6775,27 @@ body.menu-tab .product-card.is-pressing{
   }
 }
 
-/* A barra da sacola pertence exclusivamente à tela base do Cardápio. */
+/* A barra da sacola pertence exclusivamente à tela base do Cardápio.
+
+   AS TRÊS EXCEÇÕES SÃO AS TELAS QUE ENTRAM POR CIMA, e a terceira entrou em
+   03/09/2026: `#productModal`. O que a pessoa via sem ela — com item na sacola,
+   tocar num item do cardápio fazia o "Ver sacola" SUMIR, e sumir ANTES de a
+   tela do produto chegar. A regra aqui é instantânea; a tela do produto leva
+   .53s deslizando da direita (a regra em `#productModal.active .modal--product`,
+   mais acima nesta folha). O buraco entre as duas é o pisca.
+
+   Esconder não era necessário em nenhuma delas: o `.overlay` tem z-index 200 e
+   a barra 121, então ela já fica ATRÁS do escurecimento e, no celular, o painel
+   do produto é `inset:0` e cobre a tela inteira. Quem tira a barra da tela é o
+   painel, não uma regra que corre na frente dele.
+
+   Medido por sonda quadro a quadro (order-flow.spec.js, "sacola nao some antes
+   de a tela do produto cobrir a Home"): 30 dos 30 quadros antes de o painel
+   cobrir a barra tinham `display:none`. */
 @media(max-width:767px){
   body:not(.menu-tab) #cartSticky.show,
   body.menu-tab:has(.mob-view.active) #cartSticky.show,
-  body.menu-tab:has(.overlay.active):not(:has(#cartModal.active)):not(:has(#operationModal.active)) #cartSticky.show,
+  body.menu-tab:has(.overlay.active):not(:has(#cartModal.active)):not(:has(#operationModal.active)):not(:has(#productModal.active)) #cartSticky.show,
   body.menu-tab:has(.policy-screen.active) #cartSticky.show,
   body.menu-tab:has(.lgn-screen.active) #cartSticky.show,
   body.menu-tab:has(.reg-screen.active) #cartSticky.show,

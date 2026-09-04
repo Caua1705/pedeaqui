@@ -51,6 +51,77 @@ test('sacola nao pisca ao abrir unidades pelo widget do cardapio', async ({ page
   await expect(stickyCart).toBeVisible();
 });
 
+test('sacola nao some antes de a tela do produto cobrir a Home', async ({ page }) => {
+  // O RELATO: com item na sacola, tocar num item do cardápio fazia o botão
+  // "Ver sacola" SUMIR — e sumir ANTES de a tela do produto chegar por cima.
+  // A tela vir por cima está certa; a barra piscar fora antes, não.
+  //
+  // A LARGURA É PARTE DO TESTE. A regra que tira a barra sob overlay mora em
+  // `@media(max-width:767px)` (utilities.css), e a largura padrão do Playwright
+  // é 1280: um teste sem viewport de celular passa sem ter olhado para o
+  // defeito. É a §14.2 da skill.
+  //
+  // O QUE ESTE TESTE MEDE, e por que não é o estado final: a barra some no
+  // MESMO quadro do toque, enquanto o painel do produto ainda está lá embaixo.
+  // Afirmar só sobre o fim ("continua flex com o modal aberto") não distingue
+  // "nunca saiu" de "saiu e voltou". A sonda anda quadro a quadro do toque até
+  // o painel cobrir a tela e pergunta, em cada um, se a barra ainda estava
+  // desenhada. Máquina lenta só acrescenta amostras — o lado seguro.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await seedPickupSession(page);
+  await page.goto(RESTAURANT_URL);
+  await addH2OToCart(page, 1);
+  await page.evaluate(() => window.RapidexActions.resolve('goToMenuTab')());
+
+  const stickyCart = page.locator('#cartSticky');
+  await expect(stickyCart).toBeVisible();
+  await expect(page.locator('#productModal')).not.toHaveClass(/active/);
+
+  // A TELA DO PRODUTO ENTRA PELA DIREITA, não por baixo: no celular
+  // `#productModal .modal--product` vai de `translateX(100%)` a
+  // `translateX(-50%)` em .53s (utilities.css:3881). A primeira versão desta
+  // sonda mediu o TOPO do painel — que nunca sai de 0 — e reprovou por
+  // vacuidade, sem uma palavra sobre a barra. Quem anda é a borda ESQUERDA.
+  const quadros = await page.evaluate(async (productId) => {
+    const barra = document.getElementById('cartSticky');
+    const overlay = document.getElementById('productModal');
+    const painel = overlay.querySelector('.modal--product');
+    const amostras = [];
+    window.openProduct(productId);
+    await new Promise((resolve) => {
+      const quadro = () => {
+        const bordaDoPainel = painel.getBoundingClientRect().left;
+        amostras.push({ bordaDoPainel, display: getComputedStyle(barra).display });
+        if (bordaDoPainel <= 0.5 || amostras.length >= 300) resolve();
+        else requestAnimationFrame(quadro);
+      };
+      requestAnimationFrame(quadro);
+    });
+    return amostras;
+  }, PRODUCT_H2O);
+
+  // SONDA CONTRA VACUIDADE: se o painel já estivesse no lugar no primeiro
+  // quadro, o filtro abaixo seria vazio por não ter medido nada.
+  const antesDeCobrir = quadros.filter((q) => q.bordaDoPainel > 1);
+  expect(
+    antesDeCobrir.length,
+    `a sonda não pegou o painel em voo: ${JSON.stringify(quadros.slice(0, 6))}`
+  ).toBeGreaterThan(1);
+
+  const sumiuAntes = antesDeCobrir.filter((q) => q.display === 'none');
+  expect(
+    sumiuAntes.length,
+    `o rodapé da sacola saiu da tela em ${sumiuAntes.length} de ${antesDeCobrir.length} quadros antes de o painel do produto cobri-lo`
+  ).toBe(0);
+
+  // E com a tela aberta ela continua no lugar, atrás do painel — é o mesmo
+  // arranjo já afirmado para a sacola e para a tela de unidades.
+  await expect(page.locator('#productModal')).toHaveClass(/active/);
+  await expect(stickyCart).toHaveClass(/show/);
+  await expect(stickyCart).toHaveCSS('display', 'flex');
+});
+
 test('product -> cart -> payment -> submit creates an order with the contract payload', async ({
   page
 }) => {

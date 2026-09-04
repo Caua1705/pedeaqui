@@ -7158,6 +7158,8 @@ export interface components {
             order_number: number;
             /** Order Type */
             order_type: string;
+            /** Payment Status */
+            payment_status?: string | null;
             /** Restaurant Name */
             restaurant_name: string;
             /** Service Fee */

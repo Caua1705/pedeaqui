@@ -1278,8 +1278,12 @@
     document.querySelectorAll('.store-info-email').forEach(el => esconderLinhaDeContato(el, ''));
     document.querySelectorAll('.store-info-whatsapp').forEach(el => esconderLinhaDeContato(el, branch.whatsapp));
     document.querySelectorAll('.store-contact-row--wa').forEach(el => {
-      const phone = onlyDigits(branch.whatsapp || branch.phone || '');
-      if (phone) el.href = `https://wa.me/55${phone}`;
+      // O 55 NÃO se prega sempre: aqui ele era, e quem digitou o país no
+      // cadastro virava `wa.me/555541...`. Quem decide é utils/contact-link.js,
+      // por comprimento — a mesma regra que a tela do entregador e o Perfil já
+      // usavam, e que este sítio contrariava.
+      const href = window.PedeAquiContactLink.whatsAppHref(branch.whatsapp || branch.phone || '');
+      if (href) el.href = href;
       else el.removeAttribute('href');
     });
     document.querySelectorAll('.pickup-restaurant-name').forEach(el => el.textContent = `${restName}${branch.name ? ' — ' + branch.name : ''}`);
@@ -1326,10 +1330,6 @@
   const HELP_WHATSAPP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M9 8.7c.6 2.7 2.6 4.7 5.3 5.3"/></svg>';
   const HELP_PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>';
 
-  function helpWhatsAppDigits(value) {
-    const digits = onlyDigits(value);
-    return digits && digits.length <= 11 ? `55${digits}` : digits;
-  }
 
   // A tela exibe apenas a unidade escolhida pelo cliente. A resposta de /info
   // complementa o cardápio porque é nela que normalmente vêm e-mail e contato.
@@ -1346,8 +1346,14 @@
     const phone = branch.phone || branch.whatsapp || '';
     const whatsapp = branch.whatsapp || branch.phone || '';
     const email = branch.email || '';
-    const whatsappDigits = helpWhatsAppDigits(whatsapp);
-    const phoneHref = onlyDigits(phone);
+    // Os três hrefs saem do MESMO dono (utils/contact-link.js). O `tel:` era
+    // `onlyDigits()` no campo inteiro, e o telefone do piloto tem DOIS números
+    // ("(85) 3025-3303 / (85) 3025-7808"): o link discava os vinte dígitos
+    // grudados, sem sintoma na tela, porque o rótulo mostra o texto original.
+    const contato = window.PedeAquiContactLink;
+    const whatsappHref = contato.whatsAppHref(whatsapp);
+    const telefoneHref = contato.telHref(phone);
+    const emailHref = contato.mailHref(email);
 
     // CONTATO QUE NAO EXISTE NAO GANHA LINHA — a mesma regra que o e-mail do
     // #infoModal ja seguia desde 03/09/2026, agora nas tres linhas e nas tres
@@ -1360,18 +1366,18 @@
     // O `href` de placeholder ('#') sai junto: um <a> que leva a lugar nenhum
     // e um alvo de toque que promete e nao cumpre.
     const linhasDeContato = [
-      phoneHref && `
-        <a class="help-store-contact" href="tel:${esc(phoneHref)}">
+      telefoneHref && `
+        <a class="help-store-contact" href="${esc(telefoneHref)}">
           <span class="help-store-contact-icon">${HELP_PHONE_ICON}</span>
           <span>${esc(phone)}</span>
         </a>`,
-      email && `
-        <a class="help-store-contact" href="mailto:${esc(email)}">
+      emailHref && `
+        <a class="help-store-contact" href="${esc(emailHref)}">
           <span class="help-store-contact-icon help-store-contact-at" aria-hidden="true">@</span>
           <span>${esc(String(email).toUpperCase())}</span>
         </a>`,
-      whatsappDigits && `
-        <a class="help-store-contact help-store-contact--whatsapp" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">
+      whatsappHref && `
+        <a class="help-store-contact help-store-contact--whatsapp" href="${esc(whatsappHref)}" target="_blank" rel="noopener">
           <span class="help-store-contact-icon">${HELP_WHATSAPP_ICON}</span>
           <span>${esc(whatsapp)}</span>
         </a>`

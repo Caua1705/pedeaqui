@@ -70,11 +70,18 @@
     ].filter(Boolean).join(' - ');
   }
 
-  /** Telefone/WhatsApp → href de wa.me com DDI 55 (só dígitos). '' sem número. */
+  /**
+   * Telefone/WhatsApp → href de wa.me. '' quando não dá para saber o número.
+   *
+   * A regra saiu daqui para `utils/contact-link.js` em 03/09/2026: ela estava
+   * escrita em SEIS lugares com TRÊS respostas, e a desta versão
+   * (`startsWith('55')`) errava numa cidade inteira — em Santa Maria/RS o DDD é
+   * 55, então um fixo de 10 dígitos começa com 55 sem trazer o país, e o link
+   * ia para o WhatsApp de outra pessoa. O nome fica: este módulo é a porta dos
+   * formatadores de /info, e as telas o conhecem.
+   */
   function formatWhatsappHref(value) {
-    const digits = String(value ?? '').replace(/\D/g, '');
-    if (!digits) return '';
-    return `https://wa.me/${digits.startsWith('55') ? digits : `55${digits}`}`;
+    return window.PedeAquiContactLink.whatsAppHref(value);
   }
 
   /** method_type de BranchPaymentMethodResponse → rótulo do grupo na tela. */

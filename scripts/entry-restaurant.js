@@ -47,6 +47,11 @@ import './utils/currency.js';
 // posicao exata nao importa — só precisa vir antes das telas (screens/*).
 import './utils/screen-kit.js';
 import './utils/validators.js';
+// De um campo de contato para um link (tel:, wa.me, mailto:). Puro, sem
+// dependencia, e vem antes de store-info-format e das telas que montam os
+// links — o /info e o /menu trazem o mesmo campo e as duas superficies liam
+// regras diferentes.
+import './utils/contact-link.js';
 // Leitura do `detail` de erro da API (string | array 422 | objeto estruturado).
 // Precisa vir antes do api-client, que o usa para montar a mensagem do erro.
 import './utils/api-error.js';

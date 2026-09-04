@@ -24,8 +24,11 @@
 //                      chamador de propósito: se este arquivo sair da ordem, a
 //                      tela quebra na primeira renderização em vez de calar e
 //                      divergir (ver o cabeçalho de utils/currency.js).
-//   6. courier-service a porta das cinco rotas, com o X-Courier-Code.
-//   7. courier-page    define e publica; não executa nada no import.
+//   6. contact-link    telefone -> tel:/wa.me. UM dono para a regra, que ja
+//                      esteve escrita em seis lugares com tres respostas — e
+//                      duas delas montavam link para o numero de outra pessoa.
+//   7. courier-service a porta das cinco rotas, com o X-Courier-Code.
+//   8. courier-page    define e publica; não executa nada no import.
 //
 //  A folha entra por import para o Vite hasheá-la e injetá-la no HTML — o mesmo
 //  caminho das folhas do app do cliente.
@@ -37,6 +40,7 @@ import './utils/api-error.js';
 import './services/api-client.js';
 import './services/api-routes.js';
 import './utils/currency.js';
+import './utils/contact-link.js';
 import './services/courier-service.js';
 import './pages/courier-page.js';
 

@@ -315,16 +315,21 @@
     // que dá — `can_deliver`.
     if (pedido.can_deliver) pop.append(itemDeMenu('Confirmar entrega', 'entregue', 'go'));
 
+    // Quem decide o que vira link é utils/contact-link.js — o mesmo dono do
+    // app do cliente. O WhatsApp pode não existir com o `tel:` existindo: oito
+    // dígitos discam na cidade, mas sem DDD um wa.me aponta para outra pessoa.
+    const contato = window.PedeAquiContactLink;
     const telefone = telefoneDoCliente(pedido);
-    if (telefone) {
+    const discar = contato.telHref(telefone);
+    if (discar) {
       const ligar = el('a', null, 'Ligar para o cliente');
-      ligar.href = `tel:${telefone}`;
+      ligar.href = discar;
       pop.append(ligar);
 
-      const digitos = whatsAppDigits(telefone);
-      if (digitos) {
+      const zapHref = contato.whatsAppHref(telefone);
+      if (zapHref) {
         const zap = el('a', null, 'Chamar no WhatsApp');
-        zap.href = `https://wa.me/${digitos}`;
+        zap.href = zapHref;
         zap.target = '_blank';
         // O link sai desta janela, e a URL desta janela carrega o link_token,
         // que é credencial. `noreferrer` é o que impede o token de viajar no
@@ -372,34 +377,19 @@
    * "qualquer coisa que trate este valor como telefone falha alto, em vez de
    * mandar um SMS para um numero inventado que pode ser de outra pessoa".
    *
-   * Esta tela fazia o contrário: `whatsAppDigits` arrancava os dígitos do hex e
-   * montava um `wa.me/55...` para o número de OUTRA PESSOA, sem um erro sequer.
-   * Falha alto quer dizer, aqui, não oferecer o caminho: sem telefone o cartão
-   * continua inteiro, com endereço, mapa e as ações do pedido.
+   * Esta tela fazia o contrário: arrancava os dígitos do hex e montava um
+   * `wa.me/55...` para o número de OUTRA PESSOA, sem um erro sequer. Falha alto
+   * quer dizer, aqui, não oferecer o caminho: sem telefone o cartão continua
+   * inteiro, com endereço, mapa e as ações do pedido.
    *
-   * A régua dos 8 dígitos não é palpite: é o `Field(min_length=8)` que o
-   * próprio backend exige de um telefone de cliente (auth_schema.py).
+   * QUEM DECIDE é `utils/contact-link.js`, o mesmo dono do app do cliente — as
+   * letras do sentinela separam os dígitos em cacos curtos demais para serem
+   * telefone. O que fica aqui é a devolução do TEXTO, que é o que a tela mostra
+   * no painel de detalhes; o número que vai no link sai de lá.
    */
   function telefoneDoCliente(pedido) {
     const valor = String(pedido?.customer_phone || '').trim();
-    // Letra nenhuma cabe num telefone; o resto é máscara (parênteses, traço,
-    // ponto, espaço, +55).
-    if (!valor || /[^\d\s()+.-]/.test(valor)) return '';
-    return valor.replace(/\D+/g, '').length >= 8 ? valor : '';
-  }
-
-  /**
-   * O telefone do cliente em dígitos, com o 55 do país quando ele falta.
-   *
-   * O contrato não diz o formato de `customer_phone` — em produção ele chega
-   * como o cliente digitou, com parênteses e traço. Onze dígitos ou menos é
-   * número nacional e ganha o 55; acima disso já vem com país e não se mexe.
-   * Sem dígito nenhum não há link: `wa.me/` sozinho abre o WhatsApp em branco.
-   */
-  function whatsAppDigits(telefone) {
-    const digitos = String(telefone || '').replace(/\D+/g, '');
-    if (!digitos) return '';
-    return digitos.length <= 11 ? `55${digitos}` : digitos;
+    return window.PedeAquiContactLink.telHref(valor) ? valor : '';
   }
 
   /**

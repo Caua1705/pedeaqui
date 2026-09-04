@@ -14,6 +14,9 @@ const INFO = JSON.parse(readFileSync(resolve(here, '..', 'fixtures', 'info.json'
 
 let F;
 beforeAll(async () => {
+  // `formatWhatsappHref` delega para o dono único do link de contato — a mesma
+  // ordem do entry-restaurant.js, onde contact-link vem antes.
+  await import('../../scripts/utils/contact-link.js');
   await import('../../scripts/services/store-info-format.js');
   F = window.PedeAquiStoreInfoFormat;
 });

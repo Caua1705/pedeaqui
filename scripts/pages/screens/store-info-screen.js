@@ -12,7 +12,7 @@
 //  por ter dois formatadores).
 // ============================================================================
 (function () {
-  let $, esc, act, initials, onlyDigits;
+  let $, esc, act, initials;
   let app, shell;
   const F = () => window.PedeAquiStoreInfoFormat;
 
@@ -161,7 +161,12 @@
     const branch = data?.branch || {};
     const hours = Array.isArray(data?.business_hours) ? data.business_hours : (Array.isArray(branch.business_hours) ? branch.business_hours : []);
     const methods = shell.infoPaymentData(data);
-    const whatsapp = onlyDigits(branch.whatsapp || '');
+    // `d.startsWith('55') ? d : '55' + d` morava aqui e no #infoModal. Em
+    // Santa Maria/RS, onde o DDD É 55, um fixo de 10 dígitos começa com 55 e a
+    // regra o tomava por número que já traz o país: o link ia para o WhatsApp
+    // de outra pessoa. Quem decide agora é utils/contact-link.js, por
+    // comprimento.
+    const whatsappHref = window.PedeAquiContactLink.whatsAppHref(branch.whatsapp || '');
     const paymentEntries = [...methods.online, ...methods.delivery];
     // MESMA REGRA DO MODAL: contato que a loja nao informou nao ganha linha.
     // Aqui o markup e montado, entao a linha simplesmente nao e escrita.
@@ -174,7 +179,7 @@
         <div class='prof-info-row'><div><div class='prof-info-row-label'>Endereço</div><div class='prof-info-row-val'>${esc(infoFullAddress(branch) || 'Endereço não informado')}</div></div></div>
         ${branch.phone ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone)}</div></div></div>` : ''}
         ${branch.email ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email)}</div></div></div>` : ''}
-        ${whatsapp ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div><a class='prof-info-row-link' href='https://wa.me/${whatsapp.startsWith('55') ? whatsapp : `55${whatsapp}`}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a></div></div>` : ''}
+        ${whatsappHref ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div><a class='prof-info-row-link' href='${esc(whatsappHref)}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a></div></div>` : ''}
       </div>
       <div class='prof-info-card'>
         <div class='prof-info-card-header'><span class='prof-info-card-title'>Horário de funcionamento</span></div>
@@ -222,8 +227,8 @@
     document.querySelectorAll('#infoModal .store-info-whatsapp')
       .forEach(element => esconderLinha(element, branch.whatsapp));
     document.querySelectorAll('#infoModal .store-contact-row--wa').forEach(element => {
-      const phone = onlyDigits(branch.whatsapp || '');
-      if (phone) element.href = `https://wa.me/${phone.startsWith('55') ? phone : `55${phone}`}`;
+      const href = window.PedeAquiContactLink.whatsAppHref(branch.whatsapp || '');
+      if (href) element.href = href;
       else element.removeAttribute('href');
     });
     const currentWeekday = Number(data?.current_weekday);
@@ -266,7 +271,7 @@
 
   function mount(ctx) {
     if (!ctx?.kit || !ctx?.app || !ctx?.shell) throw new Error('store-info-screen: mount(ctx) exige kit, app e shell');
-    ({ $, esc, act, initials, onlyDigits } = ctx.kit);
+    ({ $, esc, act, initials } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
     for (const nome of ['infoPaymentData', 'infoPaymentLabel', 'infoBrandClass', 'profilePaymentChips', 'ensureRestaurantInfo', 'openModal']) {

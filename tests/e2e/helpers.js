@@ -693,11 +693,18 @@ const TETO_DO_BOOT = 25_000;
 export async function esperarAppPronto(page) {
   try {
     await page.waitForFunction(() => {
-      if (document.body.classList.contains('app-error')) {
+      // O `?.` NÃO É ZELO: quem navega com `waitUntil: 'commit'` (tenant-theme,
+      // para medir a cor no INSTANTE da revelação) chega aqui antes de o
+      // documento ter <body>, e `document.body.classList` estoura com
+      // "Cannot read properties of null". O predicado que estoura NÃO é
+      // repetido pelo Playwright: ele derruba a espera na hora, e o teste
+      // acusa a tela de não subir quando ela nem tinha comecado. Sem body, a
+      // resposta e "ainda nao" — que e o que `?.` devolve.
+      if (document.body?.classList.contains('app-error')) {
         const motivo = document.getElementById('appLoaderMessage')?.textContent || '';
         throw new Error(`o app NÃO subiu: caiu na tela de erro de boot (body.app-error). ${motivo}`.trim());
       }
-      return !document.body.classList.contains('app-booting');
+      return document.body ? !document.body.classList.contains('app-booting') : false;
     }, undefined, { timeout: TETO_DO_BOOT });
   } catch (erro) {
     // Só o ESTOURO ganha contexto: o lançamento de dentro da página já tem a

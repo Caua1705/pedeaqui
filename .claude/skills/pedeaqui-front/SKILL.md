@@ -2168,3 +2168,67 @@ E uma coisa que a sonda ensinou de graça: **rota pendurada NÃO produz esse
 estouro**. Com o `/menu` sem resposta, o app cai sozinho na tela de erro em
 segundos e a espera falha com a frase certa ("caiu na tela de erro de boot").
 Seja lá o que trava aquele boot, não é uma requisição sem resposta.
+
+### 17.6 A CONTAGEM DO PERFIL, FECHADA — e o campo que o backend publicou para isso
+
+A §17.4 mediu que a contagem e a lista saíam do mesmo array (25 e 25) e
+consertou o que estava provado: o rótulo. O relato continuou de pé, e a razão
+apareceu no contrato do dia seguinte: **`CustomerOrderHistoryItem` ganhou
+`payment_status`** (04/09/2026), com a tabela escrita no próprio schema:
+
+    paid         pago, esperando a loja   ele espera
+    on_delivery  paga na entrega          ele espera
+    failed       cobrança recusada        ele TENTA OUTRO CARTÃO
+    pending      nunca chegou a pagar     ele FINALIZA O PAGAMENTO
+
+"As duas ultimas ele resolve SOZINHO, e sem este campo ele nao sabe que pode —
+ficava esperando uma cozinha que nunca recebeu o pedido."
+
+Ou seja: `status: 'pending'` era o MESMO valor para quatro situações, e "em
+andamento" engolia as duas em que nada está andando. O "(39)" era isso.
+
+A tela agora tem TRÊS seções, cada cabeçalho contando a sua lista:
+"Aguardando pagamento" (primeira, porque é a única em que o cliente tem o que
+fazer, e some quando vazia), "Pedidos em andamento" e "Histórico".
+
+**Duas armadilhas desta separação:**
+
+1. **Nulo não é "aguardando pagamento".** `payment_status` é `string | null`, e
+   pedido antigo — gravado antes do campo — tem nulo. Um `!order.payment_status`
+   o jogaria na seção errada; é a família do `sort_order`.
+2. **Excluir da CONTAGEM sem excluir da LISTA seria o mesmo defeito espelhado.**
+   O pedido é "faça a contagem contar o mesmo que a lista", e a única forma de
+   ter as duas verdadeiras sem esconder pedido é a seção própria.
+
+### 17.7 O SPEC DO BACKEND ATRASA POR PADRÃO — confira antes de duvidar
+
+Segunda vez em dois dias: o `openapi.json` do backend estava atrás do código
+dele (o commit que publicou `payment_status` não reexportou). O `--check` de lá
+responde em segundos:
+
+    cd ../pedeaqui_back && venv/Scripts/python.exe scripts/export_openapi.py --check
+
+Faça disso o primeiro passo de qualquer tarefa que diga "o backend entregou o
+campo X". Um `npm run api:generate` que não traz nada NÃO quer dizer que o campo
+não existe — quer dizer que o elo do meio não foi regerado.
+
+### 17.8 `document.body` PODE SER NULO — e o predicado que estoura não é repetido
+
+`esperarAppPronto` lia `document.body.classList` direto. Quem navega com
+`waitUntil: 'commit'` — `tenant-theme`, para medir a cor no INSTANTE da
+revelação (§14.1) — chega ao predicado antes de o documento ter `<body>`, e a
+leitura estoura com "Cannot read properties of null".
+
+**Um predicado que LANÇA não é repetido pelo Playwright**: ele derruba a espera
+na hora. O sintoma é o teste acusar que a tela não subiu quando ela ainda nem
+tinha começado — e a pilha aponta para o helper, não para o `goto` que escolheu
+o `commit`.
+
+Medido com o experimento de dois braços: a forma antiga falha 3/3 nesta
+máquina, a nova (`document.body?.classList`, e `false` enquanto não há body)
+passa 20/20 nos dois specs de tenant. **Não era regressão da rodada** — era uma
+corrida que passou anos caindo do lado bom.
+
+A regra: em predicado de `waitForFunction`, "ainda não existe" tem de responder
+FALSO, nunca lançar. Lançar é para o que a espera precisa denunciar (a tela de
+erro de boot), e a diferença entre os dois é o que o `?.` marca.

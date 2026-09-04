@@ -22,8 +22,8 @@
         "product_name_snapshot": "Maminha à Moda (400g)",
         "product_description_snapshot": "Maminha grelhada com acompanhamento.",
         "quantity": 1,
-        "unit_price_snapshot": 126.0,
-        "total": 126.0,
+        "unit_price_snapshot": 126,
+        "total": 126,
         "observation": "Bem passada, por favor",
         "option_groups": [
           {
@@ -48,7 +48,8 @@
         "unit_price_snapshot": 7.05,
         "total": 14.1
       }
-    ]
+    ],
+    "payment_status": "on_delivery"
   },
   {
     "id": "0a11c001-0000-4000-8000-000000003002",
@@ -75,7 +76,8 @@
         "unit_price_snapshot": 87.9,
         "total": 87.9
       }
-    ]
+    ],
+    "payment_status": "paid"
   },
   {
     "id": "0a11c001-0000-4000-8000-000000003003",
@@ -102,6 +104,7 @@
         "unit_price_snapshot": 45.3,
         "total": 45.3
       }
-    ]
+    ],
+    "payment_status": "paid"
   }
 ]

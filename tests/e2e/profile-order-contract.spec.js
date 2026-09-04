@@ -159,3 +159,90 @@ test('cada pedido em andamento diz o SEU estado, e o cabeçalho conta o mesmo', 
   await expect(page.locator('.prof-orders-history h2')).toContainText('(1)');
   await expect(page.locator('.prof-orders-history .prof-order-card')).toHaveCount(1);
 });
+
+// ============================================================================
+//  AGUARDANDO PAGAMENTO NÃO É "EM ANDAMENTO" — e o contrato passou a permitir
+//  dizer isso.
+//
+//  O RELATO: "Pedidos em andamento (39)" conta um conjunto e a lista mostra
+//  outro. A contagem e a lista sempre saíram do MESMO array (medido: 25 e 25),
+//  então o defeito não era aritmético — era de CONJUNTO: entravam em "em
+//  andamento" pedidos que o cliente nunca chegou a pagar, e que ficavam ali
+//  para sempre esperando uma cozinha que nunca recebeu o pedido.
+//
+//  `CustomerOrderHistoryItem` ganhou `payment_status` (04/09/2026) para
+//  exatamente isto. A tabela é do próprio contrato:
+//
+//      payment_status   o que aconteceu          o que o cliente faz
+//      -------------------------------------------------------------
+//      paid             pago, esperando a loja   espera
+//      on_delivery      paga na entrega          espera
+//      failed           cobrança recusada        TENTA OUTRO CARTÃO
+//      pending          nunca chegou a pagar     FINALIZA O PAGAMENTO
+//
+//  Os dois de baixo são do CLIENTE, e é por isso que eles não são "em
+//  andamento": não há nada em andamento — há algo parado esperando ele.
+//
+//  E `payment_status` é `string | null`: NULO não é "aguardando pagamento".
+//  Pedido antigo, gravado antes deste campo existir, continua onde estava.
+// ============================================================================
+
+const COM_PAGAMENTO = [
+  // [status, payment_status, seção, frase]
+  ['pending', 'pending', 'pagamento', 'Aguardando pagamento'],
+  ['pending', 'failed', 'pagamento', 'Pagamento recusado'],
+  ['pending', 'on_delivery', 'andamento', 'Aguardando confirmação'],
+  ['preparing', 'paid', 'andamento', 'Preparando'],
+  ['out_for_delivery', null, 'andamento', 'Saiu para entrega']
+];
+
+test('o que espera o CLIENTE sai de "em andamento", e cada seção conta a sua lista', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 414, height: 844 });
+  await seedPickupSession(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('rapidex.customer.token', 'e2e-profile-pagamento-token');
+  });
+  await mockApi(page);
+  const pedidos = COM_PAGAMENTO.map(([status, payment_status], i) => ({
+    ...ORDERS[0], id: `pg-${i}`, order_number: 8000 + i, status, payment_status
+  }));
+  pedidos.push({ ...ORDERS[1], id: 'pg-fim', order_number: 8100, status: 'completed', payment_status: 'paid' });
+  await page.route('**/customers/me/orders**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(pedidos) }));
+
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
+  await page.locator('#mobNavProfile').click();
+  await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus pedidos' }).click();
+
+  const esperado = {
+    pagamento: COM_PAGAMENTO.filter(([, , secao]) => secao === 'pagamento').length,
+    andamento: COM_PAGAMENTO.filter(([, , secao]) => secao === 'andamento').length,
+    historico: 1
+  };
+
+  // CADA CABEÇALHO CONTA A SUA PRÓPRIA LISTA — as três, e não só a do meio:
+  // uma contagem que não bate é o mesmo defeito, em qualquer seção.
+  for (const [secao, classe, quantos] of [
+    ['pagamento', '.prof-orders-awaiting', esperado.pagamento],
+    ['andamento', '.prof-orders-current', esperado.andamento],
+    ['histórico', '.prof-orders-history', esperado.historico]
+  ]) {
+    await expect(page.locator(`${classe} h2`), `cabeçalho de ${secao}`).toContainText(`(${quantos})`);
+    await expect(page.locator(`${classe} .prof-order-card`), `lista de ${secao}`).toHaveCount(quantos);
+  }
+
+  // E cada cartão diz o que É — o pagamento recusado não pode se parecer com o
+  // pedido que nunca foi pago: um pede outro cartão, o outro pede concluir.
+  await expect(page.locator('.prof-orders-awaiting .prof-order-card').nth(0)).toContainText('Aguardando pagamento');
+  await expect(page.locator('.prof-orders-awaiting .prof-order-card').nth(1)).toContainText('Pagamento recusado');
+
+  // NULO NÃO É "AGUARDANDO PAGAMENTO". O pedido antigo, gravado antes do campo
+  // existir, continua em andamento — e é o caso que um `!order.payment_status`
+  // ingênuo jogaria na seção errada.
+  await expect(page.locator('.prof-orders-current')).toContainText('Saiu para entrega');
+  await expect(page.locator('.prof-orders-awaiting')).not.toContainText('Saiu para entrega');
+});

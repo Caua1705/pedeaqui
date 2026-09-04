@@ -42,6 +42,47 @@
   };
   const PROF_ORDER_SUCCESS_STATUSES = new Set(['completed', 'delivered', 'finished']);
   const PROF_ORDER_DANGER_STATUSES = new Set(['cancelled', 'canceled', 'refused', 'rejected']);
+
+  // ==========================================================================
+  //  AGUARDANDO PAGAMENTO NÃO É "EM ANDAMENTO".
+  //
+  //  `orders.status = 'pending'` é o MESMO valor para quatro situações que
+  //  pedem coisas diferentes do cliente, e quem as separa é `payment_status` —
+  //  publicado em `CustomerOrderHistoryItem` em 04/09/2026 para isto. A tabela
+  //  é do contrato:
+  //
+  //      paid         pago, esperando a loja   ele espera
+  //      on_delivery  paga na entrega          ele espera
+  //      failed       cobrança recusada        ele TENTA OUTRO CARTÃO
+  //      pending      nunca chegou a pagar     ele FINALIZA O PAGAMENTO
+  //
+  //  Os dois de baixo não têm nada em andamento: têm algo PARADO esperando
+  //  uma ação dele. Contá-los junto era o "(39)" que não descrevia a lista —
+  //  e, sem o campo, a tela não tinha como saber que ele podia resolver.
+  //
+  //  `in_review` fica de FORA desta lista de propósito: ali quem está fazendo
+  //  alguma coisa é o gateway, e não há ação do cliente para oferecer.
+  //
+  //  E NULO NÃO ENTRA: `payment_status` é `string | null`, e pedido antigo —
+  //  gravado antes de o campo existir — não vira "aguardando pagamento" por
+  //  ausência. É a mesma armadilha do `sort_order`: `!campo` não distingue
+  //  "não veio" de "veio dizendo que está tudo certo".
+  // ==========================================================================
+  const PROF_PAYMENT_WAITING_STATUSES = new Set(['pending', 'failed']);
+  const PROF_PAYMENT_LABELS = {
+    pending: 'Aguardando pagamento',
+    failed: 'Pagamento recusado'
+  };
+
+  function profPaymentStatus(order) {
+    return String(order?.payment_status || '').trim().toLowerCase();
+  }
+
+  /** O pedido ATIVO cujo pagamento espera uma ação do cliente. */
+  function profWaitingPayment(order) {
+    return PROF_ORDER_ACTIVE_STATUSES.has(profOrderStatus(order))
+      && PROF_PAYMENT_WAITING_STATUSES.has(profPaymentStatus(order));
+  }
   let profOrdersView = [];
   let profOrderDetailRequest = 0;
 
@@ -57,12 +98,18 @@
     return {
       status,
       tone,
-      // O fallback ERA `status.replace(/_/g, ' ')`, que enfeita o código do
-      // backend e o entrega em inglês ao cliente ("Out for delivery"). A tabela
-      // acima cobre os oito de `ORDER_STATUSES`, então isto só alcança um
-      // status novo — e aí uma frase em português informa o mesmo sem expor o
-      // vocabulário interno. É a mesma regra do orderStatusLabel().
-      label: PROF_ORDER_STATUS_LABELS[status] || (status ? 'Em andamento' : 'Status não informado')
+      // QUANDO O PAGAMENTO É QUE ESTÁ PARADO, é DELE que o cartão fala: o
+      // cliente precisa saber se conclui um pagamento ou se tenta outro cartão,
+      // e "Aguardando confirmação" não distingue os dois.
+      //
+      // Depois vem a tabela de status. E o último fallback ERA
+      // `status.replace(/_/g, ' ')`, que enfeitava o código do backend e o
+      // entregava em inglês ("Out for delivery"): a tabela cobre os oito de
+      // `ORDER_STATUSES`, então a frase genérica só alcança um status NOVO — e
+      // informa o mesmo sem expor o vocabulário interno.
+      label: (profWaitingPayment(order) && PROF_PAYMENT_LABELS[profPaymentStatus(order)])
+        || PROF_ORDER_STATUS_LABELS[status]
+        || (status ? 'Em andamento' : 'Status não informado')
     };
   }
 
@@ -101,15 +148,34 @@
     const body = $('profSubPedidosBody');
     if (!body) return;
     profOrdersView = Array.isArray(orders) ? orders : [];
+    // TRÊS BALDES, e cada cabeçalho conta o SEU. A contagem e a lista sempre
+    // saíram do mesmo array (medido: 25 e 25 numa sonda de 40 pedidos), então o
+    // "(39) que não bate" nunca foi aritmética — era o CONJUNTO: pedidos que o
+    // cliente nunca chegou a pagar contados como "em andamento". Ver a tabela
+    // de `payment_status` lá em cima.
+    const awaitingPayment = [];
     const activeOrders = [];
     const orderHistory = [];
     profOrdersView.forEach((order, index) => {
       const entry = { order, index };
-      if (PROF_ORDER_ACTIVE_STATUSES.has(profOrderStatus(order))) activeOrders.push(entry);
-      else orderHistory.push(entry);
+      if (!PROF_ORDER_ACTIVE_STATUSES.has(profOrderStatus(order))) orderHistory.push(entry);
+      else if (profWaitingPayment(order)) awaitingPayment.push(entry);
+      else activeOrders.push(entry);
     });
     const renderEntries = entries => entries.map(({ order, index }) => renderProfOrderCard(order, index)).join('');
+    // A seção do pagamento vem PRIMEIRO porque é a única em que o cliente tem
+    // o que fazer — as outras duas ele acompanha. E ela some quando está
+    // vazia: seção vazia anunciando ausência é a mesma linha gasta do "Telefone
+    // não informado".
+    const secaoPagamento = awaitingPayment.length
+      ? `
+      <section class="prof-orders-awaiting">
+        <h2>Aguardando pagamento (${awaitingPayment.length})</h2>
+        <div class="prof-orders-list">${renderEntries(awaitingPayment)}</div>
+      </section>`
+      : '';
     body.innerHTML = `
+      ${secaoPagamento}
       <section class="prof-orders-current">
         <h2>Pedidos em andamento (${activeOrders.length})</h2>
         ${activeOrders.length

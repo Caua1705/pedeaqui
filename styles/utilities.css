@@ -5171,6 +5171,7 @@ body.menu-tab .product-card.is-pressing{
     overflow-x:hidden!important;
     touch-action:pan-y;
   }
+  #profSubpedidos .prof-orders-awaiting,
   #profSubpedidos .prof-orders-current{
     box-sizing:border-box;
     min-height:101px;
@@ -5179,6 +5180,7 @@ body.menu-tab .product-card.is-pressing{
     border-bottom:10px solid #f7f5f3;
     background:#fff;
   }
+  #profSubpedidos .prof-orders-awaiting h2,
   #profSubpedidos .prof-orders-current h2,
   #profSubpedidos .prof-orders-history h2{
     margin:0;
@@ -5194,6 +5196,11 @@ body.menu-tab .product-card.is-pressing{
     font-size:var(--ref-text-md);
     line-height:var(--ref-line-md);
     font-weight:400;
+  }
+  /* Duas seções brancas coladas somariam as duas divisórias de 10px numa de
+     20. A de baixo cede a sua quando a de cima existe. */
+  #profSubpedidos .prof-orders-awaiting + .prof-orders-current{
+    border-top:0;
   }
   #profSubpedidos .prof-orders-history{
     box-sizing:border-box;
@@ -5218,6 +5225,7 @@ body.menu-tab .product-card.is-pressing{
     gap:14px;
     width:100%;
   }
+  #profSubpedidos .prof-orders-awaiting .prof-orders-list,
   #profSubpedidos .prof-orders-current .prof-orders-list{
     margin-top:20px;
   }

@@ -218,21 +218,47 @@ jobs:
       #   VITE_MAPS_KEY            NAO TEM FALLBACK. scripts/config/maps-config.js
       #                            resolve para '' e o mapa do endereco morre em
       #                            SILENCIO no bundle publicado.
+      #   VITE_GOOGLE_CLIENT_ID    NAO TEM FALLBACK, e o vazio e uma DECISAO: sem
+      #                            client id o "Entrar com Google" nao aparece
+      #                            (app-config.js diz por que). Entrou em
+      #                            04/09/2026 com o login social.
       #
-      # Por isso so a terceira precisa vir de secret do repositorio, com o mesmo
-      # valor que esta em Vercel > Project > Settings > Environment Variables >
-      # Production. Nenhum valor e inventado aqui: se o secret nao existir, o
-      # passo AVISA e o bundle sobe sem chave — que e exatamente o que ja
-      # acontecia com o `pull` quebrado, so que agora escrito no log.
+      # ERAM TRES ATE 05/09/2026, E ESSA LISTA FICOU PARA TRAS — foi o defeito.
+      # A variavel do Google foi cadastrada no painel da Vercel, em Production,
+      # Preview e Development, e o botao continuou escondido no deploy seguinte.
+      # O motivo esta duas linhas acima: **este build nao roda na Vercel e nao
+      # fala com o painel dela**. Ele roda no runner do GitHub, com
+      # `vercel build --prod` sobre o checkout, e le exclusivamente o que
+      # estiver no `env:` do passo abaixo. Configurar no painel nao chega aqui.
+      #
+      # A prova, no bundle publicado de 05/09/2026: `VITE_MAPS_KEY` veio
+      # PREENCHIDA (ela e secret do repositorio) e `VITE_GOOGLE_CLIENT_ID` veio
+      # VAZIA (ela so existia no painel). Mesma build, mesmo arquivo, duas
+      # variaveis — a diferenca e so ONDE elas moram.
+      #
+      # POR ISSO AS QUATRO ESTAO NO `env:` ABAIXO, inclusive as duas que tem
+      # fallback identico ao de producao: o passo passa a ser o INVENTARIO das
+      # variaveis de build, e a quinta que aparecer nao repete isto.
+      # `tests/unit/build-env.test.js` cobra a lista.
+      #
+      # Nenhum valor e inventado aqui: se o secret nao existir, o passo AVISA e
+      # o bundle sobe sem a variavel — o mesmo que ja acontecia com o `pull`
+      # quebrado, so que agora escrito no log.
       - name: Publicar na Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VITE_MAPS_KEY: ${{ secrets.VITE_MAPS_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_TENANT_ROOT_DOMAINS: ${{ secrets.VITE_TENANT_ROOT_DOMAINS }}
         run: |
           if [ -z "$VITE_MAPS_KEY" ]; then
             echo "::warning::Sem o secret VITE_MAPS_KEY: o bundle vai subir com a chave do Google Maps VAZIA e o mapa do endereco nao carrega. Copie o valor de Vercel > Project > Settings > Environment Variables > Production."
+          fi
+          if [ -z "$VITE_GOOGLE_CLIENT_ID" ]; then
+            echo "::warning::Sem o secret VITE_GOOGLE_CLIENT_ID: o bundle sobe com o client id VAZIO e o botao 'Entrar com Google' NAO APARECE. Configurar no painel da Vercel nao resolve — este build roda no runner e le so o env deste passo. Crie o secret no GitHub com o mesmo valor."
           fi
           mkdir -p .vercel
           cat > .vercel/project.json <<EOF

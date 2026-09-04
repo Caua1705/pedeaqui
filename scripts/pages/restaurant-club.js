@@ -140,14 +140,12 @@
       return coupon.label === 'selected_for_you' ? 'Selecionado para você' : '';
     }
 
-    function formatCouponDate(value) {
-      if (!value) return '';
-      const raw = String(value);
-      const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (match) return `${match[3]}/${match[2]}`;
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? raw : new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date);
-    }
+    // O prazo do cupom: implementação única em coupon-format.js. Havia duas
+    // (esta, em dia/mês, e a da folha de detalhe, com o ano), e a mesma linha
+    // do banco saía "31/12" aqui e "31/12/2099" lá — a versão curta disfarçava
+    // o sentinela de prazo desta virada de ano. Cai para '' quando não há
+    // prazo: linha FORA, nunca um rótulo com o campo vazio atrás.
+    const formatCouponDate = (value) => window.PedeAquiCouponFormat.couponDeadline(value);
 
     /**
      * As linhas pequenas do rodapé do card.

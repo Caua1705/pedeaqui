@@ -265,6 +265,47 @@ test('cupom SEM prazo (valid_until null) não desenha "Válido até" vazio', asy
   await expect(cards.nth(0).locator('.club-available-coupon-meta')).toContainText('Em pedidos a partir de');
 });
 
+test('o sentinela "para sempre" do banco não vira prazo na tela', async ({ page }) => {
+  // O RELATO: a folha de detalhe anunciava "Válido até 31/12/2099".
+  //
+  // Esse 2099 é a OUTRA forma de dizer o que o teste acima diz com NULO: até
+  // 03/09/2026 `restaurant_coupons.valid_until` era NOT NULL, e campanha
+  // permanente só podia ser escrita com uma data absurda. As linhas antigas
+  // continuam no banco, e a fixture guarda as duas populações de propósito —
+  // JP5 com prazo de verdade (30/06/2027), os outros dois com o sentinela.
+  //
+  // O card do Clube era o pior dos dois lugares: ele escreve só dia/mês, então
+  // a mesma linha saía "Válido até 31/12" — o sentinela DISFARÇADO de prazo
+  // desta virada de ano, que é pior que o 2099 visível do detalhe.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seedLoggedSession(page);
+  await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
+  await mockCustomerRoutes(page);
+
+  await openClub(page);
+  const cards = page.locator('.club-available-coupon-card');
+  await expect(cards).toHaveCount(3);
+
+  // O prazo DE VERDADE continua na tela — sem esta linha o teste passaria com
+  // um front que simplesmente parou de mostrar validade.
+  await expect(cards.nth(0).locator('.club-available-coupon-meta')).toContainText('Válido até 30/06');
+  // E o sentinela não vira prazo, em nenhum dos dois cards que o trazem.
+  await expect(cards.nth(1).locator('.club-available-coupon-meta')).not.toContainText('Válido até');
+  await expect(cards.nth(2).locator('.club-available-coupon-meta')).not.toContainText('Válido até');
+  await expect(page.locator('#mobViewClub')).not.toContainText('31/12');
+
+  // E na folha de detalhe, que é onde ele foi visto, com o ano por extenso.
+  await page.evaluate(() => window.openCouponDetail('FRETE0'));
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
+  await expect(page.locator('#couponDetailRules')).not.toContainText('2099');
+  await expect(page.locator('#couponDetailRules')).not.toContainText('Válido até');
+
+  // O mesmo cupom com prazo de verdade escreve a linha inteira, com ano.
+  await page.evaluate(() => window.RapidexActions.resolve('closeCouponDetail')());
+  await page.evaluate(() => window.openCouponDetail('JP5'));
+  await expect(page.locator('#couponDetailRules')).toContainText('Válido até 30/06/2027');
+});
+
 test('com sacola, o cupom aplicável passa a oferecer aplicar', async ({ page }) => {
   // O par do teste acima. Os dois juntos provam que quem decide o rótulo é o
   // estado do backend MAIS a sacola — e que a sacola entra por acessor, não

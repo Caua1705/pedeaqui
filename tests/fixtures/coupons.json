@@ -8,7 +8,7 @@
       "image_url": "https://cdn.example/coupon-5-percent-off.webp",
       "discount_type": "percent",
       "min_order_value": "20.00",
-      "valid_until": "2099-12-31T23:59:59Z",
+      "valid_until": "2027-06-30T23:59:59Z",
       "label": "selected_for_you",
       "state": "applicable",
       "discount_amount": "1.06",

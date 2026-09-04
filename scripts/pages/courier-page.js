@@ -315,10 +315,7 @@
     // que dá — `can_deliver`.
     if (pedido.can_deliver) pop.append(itemDeMenu('Confirmar entrega', 'entregue', 'go'));
 
-    // `customer_phone` é required no contrato, mas required não é "não vazio":
-    // uma string em branco viraria `tel:` sem número, um alvo que promete e não
-    // cumpre.
-    const telefone = String(pedido.customer_phone || '').trim();
+    const telefone = telefoneDoCliente(pedido);
     if (telefone) {
       const ligar = el('a', null, 'Ligar para o cliente');
       ligar.href = `tel:${telefone}`;
@@ -362,6 +359,36 @@
   }
 
   /**
+   * O TELEFONE DO CLIENTE, quando o que chega é um telefone.
+   *
+   * `customer_phone` é required no contrato, e required não é "não vazio" nem
+   * "é um número": uma string em branco viraria `tel:` sem número, um alvo que
+   * promete e não cumpre. E há um valor pior que o vazio.
+   *
+   * Quando o cliente exclui a conta, o backend anonimiza os pedidos dele e
+   * grava um SENTINELA em `customer_phone_snapshot` — `removido-<hex do id>` —,
+   * que é de onde sai este campo (courier_delivery_service.py:364). O sentinela
+   * é não numérico DE PROPÓSITO, e o comentário do backend diz por quê:
+   * "qualquer coisa que trate este valor como telefone falha alto, em vez de
+   * mandar um SMS para um numero inventado que pode ser de outra pessoa".
+   *
+   * Esta tela fazia o contrário: `whatsAppDigits` arrancava os dígitos do hex e
+   * montava um `wa.me/55...` para o número de OUTRA PESSOA, sem um erro sequer.
+   * Falha alto quer dizer, aqui, não oferecer o caminho: sem telefone o cartão
+   * continua inteiro, com endereço, mapa e as ações do pedido.
+   *
+   * A régua dos 8 dígitos não é palpite: é o `Field(min_length=8)` que o
+   * próprio backend exige de um telefone de cliente (auth_schema.py).
+   */
+  function telefoneDoCliente(pedido) {
+    const valor = String(pedido?.customer_phone || '').trim();
+    // Letra nenhuma cabe num telefone; o resto é máscara (parênteses, traço,
+    // ponto, espaço, +55).
+    if (!valor || /[^\d\s()+.-]/.test(valor)) return '';
+    return valor.replace(/\D+/g, '').length >= 8 ? valor : '';
+  }
+
+  /**
    * O telefone do cliente em dígitos, com o 55 do país quando ele falta.
    *
    * O contrato não diz o formato de `customer_phone` — em produção ele chega
@@ -397,7 +424,10 @@
 
     linha('Pedido', `#${pedido.order_number}`);
     linha('Cliente', pedido.customer_name);
-    linha('Telefone', pedido.customer_phone);
+    // Pelo mesmo filtro do menu: o sentinela da conta excluída não é telefone,
+    // e escrevê-lo aqui seria o código do banco na tela do entregador. Linha
+    // FORA, como parcela zerada na sacola.
+    linha('Telefone', telefoneDoCliente(pedido));
     if (pedido.address_complement) linha('Complemento', pedido.address_complement);
     if (pedido.address_reference) linha('Referência', pedido.address_reference);
     if (pedido.payment_method) linha('Forma de pagamento', pedido.payment_method);

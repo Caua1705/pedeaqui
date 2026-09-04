@@ -768,6 +768,48 @@ test.describe('a tela do entregador no celular', () => {
     await expect(um.locator('.cr-card__pop button[data-acao="detalhes"]')).toHaveCount(1);
   });
 
+  test('o telefone SENTINELA da conta excluída não vira ligação nem WhatsApp', async ({ page }) => {
+    // A MESMA FAMÍLIA do "Válido até 31/12/2099": um valor de controle do banco
+    // chegando à tela — só que aqui ele não é feio, é PERIGOSO.
+    //
+    // Quando o cliente exclui a conta, o backend anonimiza os pedidos dele e
+    // `customer_phone_snapshot` (que é de onde sai `customer_phone` desta tela,
+    // courier_delivery_service.py:364) vira `removido-<hex do id>`. O sentinela
+    // é NÃO NUMÉRICO de propósito — o comentário do backend diz por quê:
+    // "qualquer coisa que trate este valor como telefone falha alto, em vez de
+    // mandar um SMS para um numero inventado que pode ser de outra pessoa".
+    //
+    // Esta tela fazia exatamente isso: `whatsAppDigits` arrancava os dígitos do
+    // hex e montava `https://wa.me/55<lixo>`, um número de OUTRA PESSOA, e o
+    // `tel:` levava o mesmo lixo para o discador.
+    await mockCourier(page, {
+      pedidos: [
+        {
+          ...PEDIDO_PRONTO,
+          customer_name: 'Cliente removido',
+          customer_phone: 'removido-4f2a1b6c8d9e0f1a2b3c4d5e6f708192'
+        }
+      ]
+    });
+    await abrir(page);
+    await entrar(page);
+
+    const um = await abrirMenu(page, 'ord-1');
+    await expect(um.locator('.cr-card__pop a[href^="tel:"]')).toHaveCount(0);
+    await expect(um.locator('.cr-card__pop a[href^="https://wa.me/"]')).toHaveCount(0);
+
+    // E o código não fica escrito no cartão: linha FORA, como parcela zerada.
+    await um.locator('.cr-card__pop button[data-acao="detalhes"]').click();
+    const painel = um.locator('.cr-card__detalhes');
+    await expect(painel).toBeVisible();
+    await expect(painel).not.toContainText('removido-');
+    await expect(painel).not.toContainText('Telefone');
+    // O resto do pedido continua inteiro: sem telefone não é sem entrega.
+    await expect(painel).toContainText('#1042');
+    await expect(painel).toContainText('Apto 32');
+    await expect(painel).toContainText('R$ 23,50');
+  });
+
   test('os detalhes não trazem o total do pedido, e zero não vira R$ 0,00', async ({ page }) => {
     await mockCourier(page);
     await abrir(page);

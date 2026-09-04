@@ -42,16 +42,9 @@
   const couponAmount = (value) => window.PedeAquiCouponFormat.couponAmount(value);
   const couponLabel = (coupon) => window.PedeAquiCouponFormat.couponLabel(coupon);
 
-  /** "2099-12-31T23:59:59Z" -> "31/12/2099". */
-  function couponValidUntil(value) {
-    if (!value) return '';
-    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? String(value)
-      : new Intl.DateTimeFormat('pt-BR').format(date);
-  }
+  /** "2026-09-30T23:59:59Z" -> "30/09/2026"; sem prazo (ou o sentinela) -> ''. */
+  const couponValidUntil = (value) =>
+    window.PedeAquiCouponFormat.couponDeadline(value, { withYear: true });
 
   function couponRules(coupon) {
     const rules = [];
@@ -94,6 +87,11 @@
     // cupom sem prazo virou legal. A linha inteira sai quando não há data, que
     // é o mesmo princípio da sacola: parcela sem valor é linha FORA, nunca um
     // rótulo com o campo vazio atrás.
+    //
+    // E não há UMA forma de dizer "sem prazo": as linhas anteriores àquela data
+    // dizem o mesmo com o sentinela que o banco NOT NULL obrigava — era o
+    // "Válido até 31/12/2099" que aparecia nesta folha. Quem decide o que é
+    // prazo é o formatador único (coupon-format.js).
     const validUntil = couponValidUntil(coupon.valid_until);
     if (validUntil) rules.push(`Válido até ${validUntil}`);
     // `max_discount` saiu de propósito do contrato do cliente: teto é limite

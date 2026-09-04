@@ -1323,6 +1323,9 @@ no `coupon_id` do pedido. **Num cupom de uso único o backend o queima ali.**
 **O campo de código do checkout** (`#cartCouponInput`) não precisou de NADA no
 caminho do dinheiro: `CouponPreviewRequest` já aceita `coupon_code` e
 `buildOrderPayload` já o manda quando não há id (`order-payload.js:132`).
+**Ele SAIU da sacola em 03/09/2026** por decisão de produto — vai morar em
+outra tela —, e o que fica dessa passagem é a metade que continua verdadeira:
+o dinheiro aceita as duas formas, então a tela nova não mexe nele. Ver §15.1.
 
 **E ele achou um defeito no código velho:**
 `previewSelectedCoupon({silent:true})` não pinta mensagem, e o campo lia o
@@ -1809,3 +1812,112 @@ a conta que nasce sem senha). As duas vezes o caminho foi o mesmo:
 `npm run api:generate`, commitar os dois arquivos, commit próprio. Se você tem
 os dois repositórios ao lado, rode `npm run test` ANTES de começar — e de novo
 antes de fechar.
+
+## 15. Três achados de olho, 03/09/2026 (segunda rodada do dia)
+
+Os três vieram de alguém usando o app local. Nenhum tinha teste; dois tinham
+teste passando POR CIMA.
+
+### 15.1 O campo de código de cupom saiu da sacola
+
+Decisão de produto: digitar um código que veio de fora vai ser outra tela.
+Saiu INTEIRO — markup, as três funções de view, as duas ações e o bloco de CSS.
+Ação registrada sem markup é caminho armado esperando quem o religue (é a lição
+do `persistCouponChoice`, §12.7), e regra de folha sem markup é regra morta que
+`css-usage.mjs` só encontra pela metade estática.
+
+O que ficou: as três portas do DINHEIRO (`armSelectedCoupon`,
+`restoreSelectedCoupon`, `previewSelectedCoupon`), que a folha de detalhe do
+Clube usa hoje e a tela nova vai usar amanhã.
+
+**O que uma remoção destas custa, e ninguém lembra na hora:** o estado que só
+o campo lia. `ultimoMotivoDeCupom` ficou sem leitor e viraria variável
+escrita-e-nunca-lida — o lint pega, mas a nota de POR QUE ela existia se
+perderia junto. Ela virou comentário no lugar exato, com a lição que ela
+carregava (zerar o motivo no começo da AÇÃO, nunca no da leitura).
+
+O `cart-coupon-code.spec.js` foi apagado, e não é o `git rm` que fecha isso:
+é a §14.8 na direção contrária. Dos cinco fatos que ele guardava, quatro
+continuam guardados onde já estavam (club-coupons.spec.js pela folha de
+detalhe, order-payload.test.js, cart-money-chain.spec.js) e o quinto virou
+`tests/unit/cart-coupon-field.test.js` — markup e registro de ações são fatos
+ESTÁTICOS, e um leitor de arquivo responde em milissegundos o que um E2E
+responderia em 11 segundos.
+
+**De brinde, o bloco removido tinha um token FANTASMA:** `--brand-on-primary`
+não é definido em lugar nenhum (o nome certo é `--brand-on`), então a cor do
+rótulo do botão Aplicar nunca veio da marca. É a §12.1 dentro do CSS — e
+nenhuma das três ferramentas de folha responde essa pergunta hoje.
+
+### 15.2 O "Ver sacola" sumia ANTES de a tela do produto chegar
+
+Com item na sacola, tocar num item do cardápio fazia a barra piscar fora. A
+tela do produto vir por cima está certa; a barra sair na frente dela, não.
+
+A causa: `body.menu-tab:has(.overlay.active) #cartSticky.show{display:none}`
+(utilities.css) é INSTANTÂNEA, e a tela do produto leva .53s deslizando. O
+`#cartModal` e o `#operationModal` já eram exceção nessa regra pelo mesmo
+motivo; o `#productModal` faltava. Esconder nunca foi necessário: o `.overlay`
+tem z-index 200 e a barra 121, e no celular o painel é `inset:0` — quem tira a
+barra da tela é o painel.
+
+**A sonda mediu o eixo errado na primeira tentativa, e o teste reprovou por
+VACUIDADE em vez de mentir.** A tela do produto entra pela DIREITA
+(`translateX(100%)` → `translateX(-50%)`, utilities.css:3881), não por baixo
+como todo outro modal deste app. Medir `getBoundingClientRect().top` dava 0 em
+todos os quadros, o filtro ficava vazio e nada era afirmado. A guarda contra
+vacuidade — "a sonda tem de ter pego o painel em voo" — é o que transformou um
+falso verde em uma frase; e a mensagem dela imprime as amostras, que é o que
+apontou o eixo em uma execução.
+
+Com o eixo certo: **30 dos 30 quadros** antes de o painel cobrir a barra tinham
+`display:none`. Depois: 0 de 30.
+
+### 15.3 A CLASSE DO VALOR SENTINELA — a varredura inteira
+
+`ineligibility_reason` (§14.5) era CÓDIGO do backend na tela. A família maior é
+**valor de controle do banco chegando ao cliente**, e ela tem três formas: data
+máxima, número mágico e string de controle. O que a varredura de 03/09/2026
+achou, com o veredito de cada um:
+
+| onde | o sentinela | situação |
+|---|---|---|
+| cupom, `valid_until` | `2099-12-31` = "para sempre" da era NOT NULL | **corrigido** (`coupon-format.js`) |
+| entregador, `customer_phone` | `removido-<hex>` da conta excluída | **corrigido** (`courier-page.js`) |
+| perfil, `birth_date` | `1900-01-01` da conta anonimizada | inalcançável: a conta anonimizada não faz login (e-mail `@rapidex.invalid`) |
+| pedido, `customer_name_snapshot` | `"Cliente removido"` | correto por desenho — é FRASE, não código |
+| endereço, `id` | `'__current__'` | já corrigido em §14.4 |
+| cupom, `state` | os 5 de `CustomerCouponState` | fechado: `COUPON_STATES` conhece os cinco |
+
+E o backend foi varrido por constante mágica (`N/A`, `unknown`, `-1`, data
+máxima): fora o conjunto de anonimização, **não há**. Os números do contrato
+que chegam à tela passam por `numberOrNull`/`asFiniteNumber` e tratam nulo.
+
+**O cupom: por que uma DISTÂNCIA e não uma lista de datas proibidas.** Lista
+nominal é o idioma daqui para CÓDIGO de conjunto fechado (os treze `reason=`).
+Data não é código: quem escreveu "para sempre" pôde digitar 31/12/2099,
+01/01/2100 ou qualquer outra, e a lista erra em silêncio na primeira que faltar.
+A régua é a pergunta que a linha responde — "dá tempo?" —, e uma data a uma
+DÉCADA daqui não responde isso em campanha nenhuma. A ordem de grandeza está
+ancorada no outro lado: a mesma migração preencheu o campo ausente com
+`now() + interval '1 year'`, e essas linhas são prazos de verdade.
+
+**E o pior lugar era o que mostrava menos.** O card do Clube escreve só dia/mês:
+a MESMA linha saía "Válido até 31/12/2099" na folha de detalhe e "Válido até
+31/12" no card — o sentinela DISFARÇADO de prazo desta virada de ano. Duas
+implementações do mesmo formatador, e a mais curta era a que mais mentia. Hoje
+é uma só (`couponDeadline`).
+
+**O entregador é o caro dos dois, e não é estética.** O sentinela do telefone é
+não numérico DE PROPÓSITO — o comentário do backend diz que é para "falhar
+alto, em vez de mandar um SMS para um numero inventado que pode ser de outra
+pessoa". A tela fazia o contrário: `whatsAppDigits` arrancava os dígitos do hex
+e montava um `wa.me/55...` para o número de OUTRA PESSOA, sem um erro sequer.
+O filtro exige dígito e nada de letra, com piso de 8 dígitos — que é o
+`Field(min_length=8)` que o próprio backend exige, e não um palpite.
+
+**E a fixture guardava o sentinela.** `tests/fixtures/coupons.json` tinha
+`2099-12-31` nos TRÊS cupons, e nenhum spec afirmava sobre a linha de validade:
+a fixture era fiel à produção e a suíte não olhava. Hoje um cupom tem prazo de
+verdade (30/06/2027) e dois guardam o sentinela — as duas populações que o
+banco tem —, e o e2e afirma os dois lados.

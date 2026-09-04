@@ -81,5 +81,69 @@
     return parts.join(', ');
   }
 
-  window.RapidexImageCdn = { isSupabaseObjectUrl, variant, srcsetByDpr, srcsetByWidth };
+  // ==========================================================================
+  //  OS DOIS MONTADORES — o ponto ÚNICO de "esta <img> pede largura".
+  //
+  //  Eles moravam em `restaurant-page.js` e só chegavam às telas que recebem
+  //  `shell` (a Home e o cupom). O resultado, medido em 05/09/2026: metade dos
+  //  sítios de imagem do app pedia o ORIGINAL — o logo do cabeçalho, o do
+  //  login, o das Informações, o da Ajuda, o do Pix, os do detalhe do pedido, a
+  //  arte do cupom no Clube e as duas fotos do assistente. Um logo de 1200px
+  //  desenhado num círculo de 45px, em toda visita.
+  //
+  //  Aqui embaixo eles alcançam qualquer arquivo, porque `RapidexImageCdn` é
+  //  global desde o boot. `restaurant-page.js` continua exportando os mesmos
+  //  dois nomes para o `shell`, agora delegando — dois montadores seriam duas
+  //  regras de tamanho para divergir.
+  //
+  //  `box`   { w, h } para caixa de tamanho FIXO: descritores `x`, e o par
+  //          width/height reserva o espaço antes do byte chegar. w e h vêm
+  //          SEPARADOS de propósito — assumir caixa quadrada publica uma
+  //          proporção intrínseca errada, que é o reflow que se quer evitar.
+  //  `fluid` { widths, sizes } para caixa que acompanha a viewport.
+  //
+  //  Sem nenhum dos dois, ou com URL que não é do Storage, devolve vazio e a
+  //  imagem sai como saía: só o original no `src`.
+  // ==========================================================================
+
+  const esc = (texto) => (window.PedeAquiDom?.escapeHtml
+    ? window.PedeAquiDom.escapeHtml(texto)
+    : String(texto ?? ''));
+
+  function attrs(url, { box, fluid } = {}) {
+    if (!url) return '';
+    if (box) {
+      const set = srcsetByDpr(url, box.w);
+      return set ? ` srcset="${esc(set)}" width="${box.w}" height="${box.h}"` : '';
+    }
+    if (fluid) {
+      const set = srcsetByWidth(url, fluid.widths);
+      return set ? ` srcset="${esc(set)}" sizes="${esc(fluid.sizes)}"` : '';
+    }
+    return '';
+  }
+
+  // Para <img> que JÁ existe no DOM. Limpa o srcset ANTERIOR quando a origem
+  // não é transformável: sem isso, trocar por uma imagem de outro CDN deixaria
+  // o srcset velho no elemento e o browser continuaria pintando a antiga,
+  // ignorando o `src` novo.
+  function apply(img, url, { box, fluid } = {}) {
+    if (!img) return;
+    const set = fluid ? srcsetByWidth(url, fluid.widths) : (box ? srcsetByDpr(url, box.w) : '');
+    if (!set) {
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+      return;
+    }
+    img.srcset = set;
+    if (fluid) img.sizes = fluid.sizes;
+    else {
+      img.removeAttribute('sizes');
+      if (box) { img.width = box.w; img.height = box.h; }
+    }
+  }
+
+  window.RapidexImageCdn = {
+    isSupabaseObjectUrl, variant, srcsetByDpr, srcsetByWidth, attrs, apply
+  };
 })();

@@ -22,6 +22,14 @@
  * contrato de 30/08/2026 provou que o campo nunca existiu na API — a leitura
  * saiu, e com ela a exceção.)
  */
+// AS DUAS FOTOS DE PRODUTO DO ASSISTENTE ocupam a LARGURA DA PÁGINA: o cartão
+// de resultado empilha em coluna (`.assistant-results` é flex-column,
+// styles/assistant.css:501) e o detalhe é um painel de tela cheia no celular.
+// Por isso `100vw` no `sizes` — é o valor certo, não um arredondamento para
+// cima. Até 05/09/2026 os dois pediam o ORIGINAL: a mesma foto que a grade do
+// cardápio já servia em 160px vinha aqui no tamanho em que o lojista subiu.
+const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
+
 (function () {
   'use strict';
 
@@ -670,7 +678,7 @@
     // O fallback era um onerror inline que montava HTML por string. Virou ação
     // registrada: o evento `error` não borbulha, mas o despachante escuta na
     // fase de captura, então a delegação alcança imagens criadas depois do boot.
-    return `<img class="assistant-result-image" src="${esc(src)}" alt="${esc(product.name)}" loading="lazy"
+    return `<img class="assistant-result-image" src="${esc(src)}"${window.RapidexImageCdn?.attrs?.(src, ASSISTANT_FLUID) || ''} alt="${esc(product.name)}" loading="lazy"
       data-act-error="assistantImagePlaceholder">`;
   }
 
@@ -1035,6 +1043,7 @@
       image.alt = productName;
       image.onerror = () => media.classList.add('has-no-image');
       image.onload = () => media.classList.remove('has-no-image');
+      window.RapidexImageCdn?.apply?.(image, imageSrc, ASSISTANT_FLUID);
       image.src = imageSrc;
     }
 

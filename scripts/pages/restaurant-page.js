@@ -648,21 +648,46 @@
   //
   // Sem nenhum dos dois — ou com uma URL que não é do Storage — devolve vazio e
   // a imagem sai exatamente como saía antes: só o original em src.
-  function responsiveImageAttrs(url, { box, fluid } = {}) {
-    const cdn = window.RapidexImageCdn;
-    if (!cdn || !url) return '';
+  // ==========================================================================
+  //  AS CAIXAS DO LOGO DA LOJA — MEDIDAS, não lidas da folha.
+  //
+  //  O MESMO arquivo é desenhado em seis lugares, e o lado de cada um é
+  //  diferente. Medido no app a 390x844 com `getBoundingClientRect()`, e não
+  //  lido no CSS de propósito: `.mob-logo` não declara lado nenhum na regra
+  //  dela (styles/restaurant.css:1008) — o tamanho vem de outra folha, e
+  //  qualquer número tirado dali seria chute.
+  //
+  //      .mob-logo             45x45     cabeçalho da Home
+  //      #loginLogo           150x150    folha de login
+  //      #infoStoreLogo        95x95     Informações da loja
+  //      .help-store-logo      95x95     Perfil > Ajuda
+  //      #pixOrderLogo         32x32     cartão de conferência do Pix
+  //      order-details logo    40x40     detalhe do pedido (screens/profile)
+  //
+  //  Até 05/09/2026 os seis pediam o ORIGINAL — o arquivo no tamanho em que o
+  //  lojista subiu, em toda visita, para desenhar um círculo de 45px.
+  //
+  //  QUANDO ALGUÉM MUDAR O CSS: o número aqui não acompanha sozinho. Ele erra
+  //  para o lado seguro (uma derivada um pouco maior ou menor que a caixa
+  //  continua desenhando), mas quem mexer no lado do logo mede de novo — a
+  //  sonda é `getBoundingClientRect()` na tela, e leva dois minutos.
+  // ==========================================================================
+  const LOGO_BOX = {
+    cabecalho: { w: 45, h: 45 },
+    login: { w: 150, h: 150 },
+    info: { w: 95, h: 95 },
+    ajuda: { w: 95, h: 95 },
+    pix: { w: 32, h: 32 },
+    pedido: { w: 40, h: 40 }
+  };
 
-    if (box) {
-      const set = cdn.srcsetByDpr(url, box.w);
-      // width/height reservam a caixa antes do byte chegar. O CSS já fixa esses
-      // mesmos lados, então não muda layout — só evita o reflow do carregamento.
-      return set ? ` srcset="${esc(set)}" width="${box.w}" height="${box.h}"` : '';
-    }
-    if (fluid) {
-      const set = cdn.srcsetByWidth(url, fluid.widths);
-      return set ? ` srcset="${esc(set)}" sizes="${esc(fluid.sizes)}"` : '';
-    }
-    return '';
+  // DELEGAÇÃO, não implementação: o montador mora em `utils/image-cdn.js`
+  // desde 05/09/2026, para alcançar os arquivos que não recebem `shell` (o
+  // Clube, o assistente, o Perfil). Estes dois nomes ficam porque a Home e a
+  // tela do cupom os recebem por `shell`/`kit` — o que sumiu foi a segunda
+  // cópia da regra de tamanho.
+  function responsiveImageAttrs(url, options = {}) {
+    return window.RapidexImageCdn?.attrs?.(url, options) || '';
   }
 
   // O herói é full-bleed (aspect-ratio 1080/500 — styles/utilities.css:652) e a
@@ -676,21 +701,8 @@
 
   // Versão para <img> que JÁ existe no DOM (o herói é atualizado por
   // propriedade, não recriado por template).
-  function applyResponsiveImage(img, url, { box, fluid } = {}) {
-    const cdn = window.RapidexImageCdn;
-    if (!img || !cdn) return;
-    const set = fluid ? cdn.srcsetByWidth(url, fluid.widths) : cdn.srcsetByDpr(url, box.w);
-    if (!set) {
-      // Origem não transformável: limpa o srcset ANTERIOR. Sem isto, trocar o
-      // banner por um de outro CDN deixaria o srcset velho no elemento e o
-      // browser continuaria pintando a imagem antiga, ignorando o src novo.
-      img.removeAttribute('srcset');
-      img.removeAttribute('sizes');
-      return;
-    }
-    img.srcset = set;
-    if (fluid) img.sizes = fluid.sizes;
-    else img.removeAttribute('sizes');
+  function applyResponsiveImage(img, url, options = {}) {
+    window.RapidexImageCdn?.apply?.(img, url, options);
   }
 
   function productImage(product, className = 'product-image', options = {}) {
@@ -1211,7 +1223,12 @@
       element.textContent = initials(restName);
       return element;
     };
-    const renderLogo = container => {
+    // A CAIXA VEM POR PARÂMETRO porque os três destinos têm tamanhos
+    // DIFERENTES — medidos no app a 390x844, não lidos da folha: 45 no
+    // cabeçalho, 150 na folha de login, 95 nas Informações. Uma caixa fixa aqui
+    // pediria a largura errada para dois deles, e pedir 150 para um círculo de
+    // 45 é o mesmo desperdício de antes com outro número.
+    const renderLogo = (container, box) => {
       if (!container) return;
       container.replaceChildren();
       if (!logoUrl) {
@@ -1220,6 +1237,10 @@
       }
       const image = document.createElement('img');
       image.src = logoUrl;
+      // O `src` continua sendo o ORIGINAL de propósito (ver o cabeçalho de
+      // image-cdn.js): se a transformação falhar, o browser ainda tem uma URL
+      // boa. Quem escolhe a derivada é o `srcset` abaixo.
+      applyResponsiveImage(image, logoUrl, { box });
       image.alt = restName;
       image.loading = 'eager';
       image.decoding = 'async';
@@ -1227,9 +1248,9 @@
       image.addEventListener('error', () => container.replaceChildren(fallbackLogo()), { once: true });
       container.appendChild(image);
     };
-    renderLogo(document.querySelector('.mob-logo'));
-    renderLogo($('loginLogo'));
-    renderLogo($('infoStoreLogo'));
+    renderLogo(document.querySelector('.mob-logo'), LOGO_BOX.cabecalho);
+    renderLogo($('loginLogo'), LOGO_BOX.login);
+    renderLogo($('infoStoreLogo'), LOGO_BOX.info);
 
     // O cartão de conferência do Pix mostra a MARCA da loja, não as iniciais:
     // ali o cliente confere para quem está prestes a pagar, e uma sigla não
@@ -1240,6 +1261,7 @@
     if (pixAvatar && logoUrl) {
       const avatarImage = document.createElement('img');
       avatarImage.src = logoUrl;
+      applyResponsiveImage(avatarImage, logoUrl, { box: LOGO_BOX.pix });
       avatarImage.alt = '';
       avatarImage.decoding = 'async';
       avatarImage.addEventListener(
@@ -1390,7 +1412,7 @@
     // silencio, e uma divisoria separa o cartao do vazio.
     card.innerHTML = `
       <div class="help-store-logo" aria-hidden="true">
-        ${logoUrl ? `<img src="${esc(logoUrl)}" alt="">` : `<span>${esc(initials(name))}</span>`}
+        ${logoUrl ? `<img src="${esc(logoUrl)}"${responsiveImageAttrs(logoUrl, { box: LOGO_BOX.ajuda })} alt="">` : `<span>${esc(initials(name))}</span>`}
       </div>
       <div class="help-store-name">${esc(name)}</div>
       <div class="help-store-branch">${esc(branchName)}</div>

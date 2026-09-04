@@ -15,6 +15,12 @@
   let $, esc, fmt, act, initials, fallback, releaseFocusFrom, logAppError, getRestaurantSlug;
   let app, shell;
 
+  // 40x40 nas DUAS imagens do detalhe do pedido — a foto do item e o logo da
+  // loja (styles/utilities.css:5654 e :5708). Até 05/09/2026 as duas pediam o
+  // ORIGINAL, e um detalhe de pedido com seis itens baixava seis fotos em
+  // tamanho de catálogo para desenhar seis quadrados de 40px.
+  const PEDIDO_BOX = { w: 40, h: 40 };
+
   const PROF_ORDER_ACTIVE_STATUSES = new Set([
     'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
   ]);
@@ -318,7 +324,7 @@
     return `
       <div class="order-details__item">
         ${imageUrl
-          ? `<img class="order-details__item-image" src="${esc(imageUrl)}" alt="${esc(name)}">`
+          ? `<img class="order-details__item-image" src="${esc(imageUrl)}"${window.RapidexImageCdn?.attrs?.(imageUrl, { box: PEDIDO_BOX }) || ''} alt="${esc(name)}">`
           : `<div class="order-details__item-image order-details__item-image--fallback"><span>${esc(initials(name))}</span></div>`}
         <div class="order-details__item-copy">
           <div class="order-details__item-title"><strong>${quantity}x</strong><span>${esc(name)}</span></div>
@@ -579,7 +585,7 @@
         <div class="order-details__divider"></div>
         <div class="order-details__restaurant">
           ${restaurantLogo
-            ? `<img class="order-details__restaurant-logo" src="${esc(restaurantLogo)}" alt="">`
+            ? `<img class="order-details__restaurant-logo" src="${esc(restaurantLogo)}"${window.RapidexImageCdn?.attrs?.(restaurantLogo, { box: PEDIDO_BOX }) || ''} alt="">`
             : `<div class="order-details__restaurant-logo order-details__restaurant-logo--fallback">${esc(initials(restaurantName))}</div>`}
           <div><strong>${esc(restaurantName)}</strong><span>${esc(profOrderRelativeDate(order.created_at))}</span></div>
         </div>

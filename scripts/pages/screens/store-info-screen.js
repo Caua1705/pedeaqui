@@ -132,6 +132,13 @@
     }
     const image = document.createElement('img');
     image.src = url;
+    // 95x95, medido no app — o MESMO número de `LOGO_BOX.info` em
+    // restaurant-page.js, porque este container (#infoStoreLogo) tem DOIS
+    // donos: `renderLogo()` do page desenha nele no boot e `renderInfoLogo()`
+    // redesenha quando o /info chega. Os dois pedem a mesma derivada de
+    // propósito; se pedissem larguras diferentes, a mesma tela baixaria o logo
+    // duas vezes.
+    window.RapidexImageCdn?.apply?.(image, url, { box: { w: 95, h: 95 } });
     image.alt = name || 'Restaurante';
     image.addEventListener('error', () => {
       const fallbackElement = document.createElement('div');

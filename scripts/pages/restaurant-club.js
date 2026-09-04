@@ -1,3 +1,14 @@
+// A CAIXA DA ARTE DO CUPOM, lida da folha e não chutada:
+// `.club-available-coupon` é `width:calc(100vw - 108px)` com `max-width:282px`
+// (styles/coupons-api.css:18) e a arte ocupa 100% dela, com 110px de altura.
+// Fluida, portanto — e o `sizes` repete os dois regimes, senão o browser
+// escolhe pela largura da viewport inteira e baixa uma derivada maior do que a
+// caixa. Até 05/09/2026 este sítio pedia o ORIGINAL.
+const CLUB_COUPON_FLUID = {
+  widths: [282, 480, 564, 846],
+  sizes: '(max-width: 390px) calc(100vw - 108px), 282px'
+};
+
 (function () {
   function createRestaurantClubController(deps) {
     const {
@@ -190,7 +201,7 @@
       return `
         <article class='club-available-coupon-card' data-coupon-key='${esc(code)}'>
           ${badge ? `<div class='club-available-coupon-badge'>${esc(badge)}</div>` : ''}
-          ${image ? `<img class='club-available-coupon-image' src='${esc(image)}' alt='${esc(title)}' loading='lazy'>` : ''}
+          ${image ? `<img class='club-available-coupon-image' src='${esc(image)}'${window.RapidexImageCdn?.attrs?.(image, CLUB_COUPON_FLUID) || ''} alt='${esc(title)}' loading='lazy'>` : ''}
           <div class='club-available-coupon-content'>
             <strong class='club-available-coupon-discount'>${esc(label)}</strong>
             ${subtitle ? `<h3>${esc(subtitle)}</h3>` : ''}

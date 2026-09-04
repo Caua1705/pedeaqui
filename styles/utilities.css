@@ -5807,7 +5807,11 @@ body.menu-tab .product-card.is-pressing{
     #profSubpedidos .prof-order-detail.active{transition-duration:.01ms}
     #profSubpedidos .order-details__waiting-spinner{animation-duration:2.4s}
   }
-  #profSubmeusdados .prof-password-screen{
+  /* A tela de contas conectadas usa o MESMO vestido: as duas saem da mesma
+     lista de "Configurar conta" e deslizam do mesmo jeito. Uma terceira cópia
+     desta geometria divergiria no dia em que alguém ajustasse uma delas. */
+  #profSubmeusdados .prof-password-screen,
+  #profSubmeusdados .prof-connected-screen{
     box-sizing:border-box;
     position:absolute;
     inset:0;
@@ -5821,13 +5825,15 @@ body.menu-tab .product-card.is-pressing{
     pointer-events:none;
     transition:none;
   }
-  #profSubmeusdados .prof-password-screen.active{
+  #profSubmeusdados .prof-password-screen.active,
+  #profSubmeusdados .prof-connected-screen.active{
     transform:translateX(0);
     visibility:visible;
     pointer-events:auto;
     transition:none;
   }
-  #profSubmeusdados .prof-password-header{
+  #profSubmeusdados .prof-password-header,
+  #profSubmeusdados .prof-connected-header{
     box-sizing:border-box;
     width:100%;
     height:70px;
@@ -5838,7 +5844,8 @@ body.menu-tab .product-card.is-pressing{
     border-bottom:1px solid var(--border-subtle);
     background:var(--surface);
   }
-  #profSubmeusdados .prof-password-header h1{
+  #profSubmeusdados .prof-password-header h1,
+  #profSubmeusdados .prof-connected-header h1{
     margin:0;
     color:#262626;
     font-size:var(--ref-text-lg);
@@ -5846,7 +5853,8 @@ body.menu-tab .product-card.is-pressing{
     font-weight:600;
     text-align:center;
   }
-  #profSubmeusdados .prof-password-back{
+  #profSubmeusdados .prof-password-back,
+  #profSubmeusdados .prof-connected-back{
     width:32px;
     height:32px;
     display:flex;
@@ -5858,7 +5866,8 @@ body.menu-tab .product-card.is-pressing{
     background:#ececec;
     color:#3f454b;
   }
-  #profSubmeusdados .prof-password-back svg{
+  #profSubmeusdados .prof-password-back svg,
+  #profSubmeusdados .prof-connected-back svg{
     width:17px;
     height:17px;
   }
@@ -6113,6 +6122,14 @@ body.menu-tab .product-card.is-pressing{
     font-weight:500!important;
     text-align:left!important;
     -webkit-tap-highlight-color:transparent!important;
+  }
+  /* DUAS LINHAS NA MESMA SEÇÃO precisam de respiro, e até 04/09/2026 nenhuma
+     seção tinha duas: "Meu perfil" e "Configurar conta" tinham uma cada, e o
+     `margin:0 auto` acima deixava as linhas encostadas assim que a segunda
+     chegasse. "Contas conectadas" foi a segunda. O `!important` não é gosto: a
+     regra de cima o usa, e sem ele esta perde. */
+  #profSubmeusdados .prof-manage-row + .prof-manage-row{
+    margin-top:10px!important;
   }
   #profSubmeusdados .prof-manage-row:active{
     background:#f7f7f7!important;

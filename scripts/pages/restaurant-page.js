@@ -5479,7 +5479,12 @@
           ${row('user', 'Gerenciar perfil', ['openProfSub', 'meusdados'])}
           ${row('receipt', 'Meus pedidos', ['openProfSub', 'pedidos'])}
           ${row('pin', 'Meus endere&ccedil;os', ['openAddrPicker', 'profile'])}
-          ${row('shield', 'Contas conectadas', ['openProfSub', 'contas'])}
+          <!-- CONTAS CONECTADAS NÃO ESTÁ AQUI, e a ausência é decisão. Com um
+               provedor só, uma linha de primeiro nível para dizer "Google:
+               conectado" pesa mais do que informa; ela mora dentro de
+               "Gerenciar perfil", ao lado de "Alterar senha", que é a mesma
+               família — configuração de acesso à conta. VOLTA para cá no dia em
+               que houver mais de um provedor: scratchpad/contas-conectadas-no-menu.md -->
           ${row('doc', 'Pol&iacute;tica de privacidade', ['openPolicyScreen', 'privacy'])}
           ${row('help', 'Ajuda', ['openProfSub', 'ajuda'])}
           ${row('exit', 'Sair', ['logout'], 'prof-account-row--logout')}

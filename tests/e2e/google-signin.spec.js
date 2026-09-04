@@ -304,18 +304,16 @@ async function entrarEAbrirContas(page, mockOpcoes) {
   await abrirFolhaDeLogin(page);
   await tocarNoGoogle(page, GOOGLE_TOKENS.contaConhecida);
   await expect.poll(() => tokenGuardado(page)).toBe(AUTH_CONTA.token);
-  await page.evaluate(() => window.RapidexActions.resolve('mobNavProfile')());
-  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('contas'));
-  await expect(page.locator('#profSubcontas')).toHaveClass(/active/);
+  await abrirContasConectadas(page);
   return mock;
 }
 
 test('a lista mostra o provedor conectado, e desconectar pede a senha', async ({ page }) => {
   const { unlinkRequests } = await entrarEAbrirContas(page, { social: { contas: [CONTA_GOOGLE] } });
 
-  await expect(page.locator('#profSubContasBody .prof-social-name')).toHaveText('Google');
-  await expect(page.locator('#profSubContasBody .prof-social-detail')).toContainText('01/08/2026');
-  const botao = page.locator('#profSubContasBody .prof-social-unlink');
+  await expect(page.locator('#profConnectedBody .prof-social-name')).toHaveText('Google');
+  await expect(page.locator('#profConnectedBody .prof-social-detail')).toContainText('01/08/2026');
+  const botao = page.locator('#profConnectedBody .prof-social-unlink');
   await expect(botao).toBeEnabled();
 
   await botao.click();
@@ -336,12 +334,12 @@ test('a lista mostra o provedor conectado, e desconectar pede a senha', async ({
   // A rota DEVOLVE a lista que sobrou, e é ela que a tela redesenha: sem isso a
   // tela discordaria do servidor até alguém recarregar.
   await expect(page.locator('#unlinkConfirm')).not.toHaveClass(/active/);
-  await expect(page.locator('#profSubContasBody .prof-social-row')).toHaveCount(0);
-  await expect(page.locator('#profSubContasBody')).toContainText('só por e-mail e senha');
+  await expect(page.locator('#profConnectedBody .prof-social-row')).toHaveCount(0);
+  await expect(page.locator('#profConnectedBody')).toContainText('só por e-mail e senha');
   // E A OFERTA DE CONECTAR VOLTA. Desconectar não é uma porta que se fecha: quem
   // desconectou por engano refaz sem sair da conta, que é exatamente o caminho
   // que esta tela passou a oferecer em 04/09/2026.
-  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
+  await expect(page.locator('#profConnectedBody .prof-social-connect')).toBeVisible();
 });
 
 test('a ÚNICA forma de entrar não pode ser desconectada — e a tela diz antes do clique', async ({ page }) => {
@@ -353,8 +351,8 @@ test('a ÚNICA forma de entrar não pode ser desconectada — e a tela diz antes
     social: { contas: [CONTA_GOOGLE], passwordSet: false }
   });
 
-  await expect(page.locator('#profSubContasBody .prof-social-unlink')).toBeDisabled();
-  await expect(page.locator('#profSubContasBody .prof-social-locked'))
+  await expect(page.locator('#profConnectedBody .prof-social-unlink')).toBeDisabled();
+  await expect(page.locator('#profConnectedBody .prof-social-locked'))
     .toContainText('única forma de entrar');
   expect(unlinkRequests).toHaveLength(0);
 });
@@ -398,10 +396,20 @@ async function entrarPorSenha(page) {
   await expect.poll(() => tokenGuardado(page)).toBe(AUTH_CONTA.token);
 }
 
+/**
+ * O caminho até as contas conectadas, pelo GESTO.
+ *
+ * Ela mora dentro de "Gerenciar perfil", ao lado de "Alterar senha" — a mesma
+ * família (configuração de acesso à conta). Chamar
+ * `openConnectedAccountsScreen` direto pularia justamente a linha que precisa
+ * existir, e o teste passaria com o menu vazio.
+ */
 async function abrirContasConectadas(page) {
   await page.evaluate(() => window.RapidexActions.resolve('mobNavProfile')());
-  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('contas'));
-  await expect(page.locator('#profSubcontas')).toHaveClass(/active/);
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('meusdados'));
+  await expect(page.locator('#profSubmeusdados')).toHaveClass(/active/);
+  await page.locator('#profSubmeusdados .prof-manage-row', { hasText: 'Contas conectadas' }).click();
+  await expect(page.locator('#profConnectedScreen')).toHaveClass(/active/);
 }
 
 /** O botão que o SDK falso desenha DENTRO do diálogo de conectar. */
@@ -418,8 +426,8 @@ test('conectar o Google pede a senha, e o corpo é exatamente o do contrato', as
 
   // A conta abre só por e-mail e senha, e a tela diz as duas coisas: que não há
   // provedor conectado, e que dá para conectar um.
-  await expect(page.locator('#profSubContasBody')).toContainText('Nenhuma conta conectada');
-  const oferta = page.locator('#profSubContasBody .prof-social-connect');
+  await expect(page.locator('#profConnectedBody')).toContainText('Nenhuma conta conectada');
+  const oferta = page.locator('#profConnectedBody .prof-social-connect');
   await expect(oferta).toBeVisible();
 
   await oferta.click();
@@ -445,18 +453,18 @@ test('conectar o Google pede a senha, e o corpo é exatamente o do contrato', as
   // A ROTA DEVOLVE A LISTA JÁ COM O PROVEDOR NOVO, e é ela que a tela redesenha:
   // sem isso a tela discordaria do servidor até alguém recarregar.
   await expect(page.locator('#linkGoogleConfirm')).not.toHaveClass(/active/);
-  await expect(page.locator('#profSubContasBody .prof-social-name')).toHaveText('Google');
-  await expect(page.locator('#profSubContasBody .prof-social-unlink')).toBeEnabled();
+  await expect(page.locator('#profConnectedBody .prof-social-name')).toHaveText('Google');
+  await expect(page.locator('#profConnectedBody .prof-social-unlink')).toBeEnabled();
   // E a oferta SAI: um botão que se oferece a fazer o que já está feito é a
   // tela mentindo sobre o estado.
-  await expect(page.locator('#profSubContasBody .prof-social-connect')).toHaveCount(0);
+  await expect(page.locator('#profConnectedBody .prof-social-connect')).toHaveCount(0);
   expect(rotasDesconhecidas).toEqual([]);
 });
 
 test('a senha errada não conecta, o diálogo diz, e o botão volta ARMADO', async ({ page }) => {
   const { linkGoogleRequests, googleNonceRequests } = await entrarPorSenhaEAbrirContas(page);
 
-  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await page.locator('#profConnectedBody .prof-social-connect').click();
   await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
   const noncesAntes = googleNonceRequests.length;
 
@@ -476,7 +484,7 @@ test('a senha errada não conecta, o diálogo diz, e o botão volta ARMADO', asy
   await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
 
   // E nada foi conectado.
-  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
+  await expect(page.locator('#profConnectedBody .prof-social-connect')).toBeVisible();
 });
 
 test('o campo em branco não gasta a credencial: nenhuma requisição sai', async ({ page }) => {
@@ -486,7 +494,7 @@ test('o campo em branco não gasta a credencial: nenhuma requisição sai', asyn
   // tela rearma o botão em vez de falar com a rede.
   const { linkGoogleRequests, googleNonceRequests } = await entrarPorSenhaEAbrirContas(page);
 
-  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await page.locator('#profConnectedBody .prof-social-connect').click();
   await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
   const noncesAntes = googleNonceRequests.length;
 
@@ -509,7 +517,7 @@ test('o Google de OUTRA conta é recusado com 409, e a lista não muda', async (
   // com frase, e a tela tem de mostrá-la em vez de um "não foi possível".
   const { linkGoogleRequests } = await entrarPorSenhaEAbrirContas(page);
 
-  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await page.locator('#profConnectedBody .prof-social-connect').click();
   await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
   await page.locator('#linkGooglePassword').fill(AUTH_CONTA.senha);
   await tocarNoGoogleDoDialogo(page, GOOGLE_TOKENS.subDeOutraConta);
@@ -517,7 +525,7 @@ test('o Google de OUTRA conta é recusado com 409, e a lista não muda', async (
   await expect.poll(() => linkGoogleRequests.length).toBe(1);
   await expect(page.locator('#linkGoogleErr')).toContainText('já está conectada a outra conta');
   await expect(page.locator('#linkGoogleConfirm')).toHaveClass(/active/);
-  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
+  await expect(page.locator('#profConnectedBody .prof-social-connect')).toBeVisible();
 });
 
 test('SEM client id não há oferta de conectar — e nenhum nonce é pedido', async ({ page }) => {
@@ -529,8 +537,57 @@ test('SEM client id não há oferta de conectar — e nenhum nonce é pedido', a
   await entrarPorSenha(page);
   await abrirContasConectadas(page);
 
-  await expect(page.locator('#profSubContasBody')).toContainText('Nenhuma conta conectada');
-  await expect(page.locator('#profSubContasBody .prof-social-connect')).toHaveCount(0);
+  await expect(page.locator('#profConnectedBody')).toContainText('Nenhuma conta conectada');
+  await expect(page.locator('#profConnectedBody .prof-social-connect')).toHaveCount(0);
   expect(googleNonceRequests).toHaveLength(0);
   expect(linkGoogleRequests).toHaveLength(0);
+});
+
+test('contas conectadas sai do MENU e entra em "Gerenciar perfil"', async ({ page }) => {
+  // A DECISÃO QUE ESTE TESTE GUARDA, e o motivo, porque ele é o primeiro lugar
+  // onde alguém vai tropeçar ao querer a linha de volta: com UM provedor, uma
+  // linha de primeiro nível para dizer "Google: conectado" pesa mais do que
+  // informa. Ela mora ao lado de "Alterar senha", que é a mesma família —
+  // configuração de acesso à conta.
+  //
+  // Ela VOLTA para o menu quando houver mais de um provedor. Quando isso
+  // acontecer, este teste é INVERTIDO, não apagado (§14.8): o que continua
+  // valendo é que existe UM caminho até a tela, e que o "Voltar" devolve para
+  // onde se veio. O porquê está em `scratchpad/contas-conectadas-no-menu.md`.
+  await abrirApp(page, { social: { contas: [] } });
+  await entrarPorSenha(page);
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavProfile')());
+
+  const menu = page.locator('.prof-account-list');
+  await expect(menu).toBeVisible();
+  await expect(menu.locator('.prof-account-row', { hasText: 'Contas conectadas' })).toHaveCount(0);
+  // A sonda contra vacuidade: se o menu deixar de ser desenhado, a linha acima
+  // passa por não achar NADA — e não por a decisão estar valendo.
+  await expect(menu.locator('.prof-account-row', { hasText: 'Gerenciar perfil' })).toHaveCount(1);
+
+  await abrirContasConectadas(page);
+  // E o VOLTAR devolve para "Gerenciar perfil", não para o menu do Perfil: a
+  // pessoa tocou lá dentro, e é para lá que ela espera voltar. Uma `.prof-sub`
+  // própria fecharia dois níveis acima.
+  await page.locator('#profConnectedScreen .prof-connected-back').click();
+  await expect(page.locator('#profConnectedScreen')).not.toHaveClass(/active/);
+  await expect(page.locator('#profSubmeusdados')).toHaveClass(/active/);
+  await expect(page.locator('#profSubmeusdados .prof-manage-row').first()).toBeVisible();
+});
+
+test('sair de "Gerenciar perfil" com a tela aberta não a deixa armada', async ({ page }) => {
+  // A sobreposição guarda o próprio `.active`, e a subtela que a contém some
+  // sem apagá-lo. Sem a limpeza na entrada, quem deixasse a tela aberta e
+  // trocasse de aba voltaria DIRETO nela — a subtela reaberta com a
+  // sobreposição de antes, sem ter tocado em nada.
+  await abrirApp(page, { social: { contas: [] } });
+  await entrarPorSenha(page);
+  await abrirContasConectadas(page);
+
+  // Sai pelo caminho que NÃO passa pelo "Voltar" da sobreposição.
+  await page.evaluate(() => window.RapidexActions.resolve('closeProfSub')());
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('meusdados'));
+
+  await expect(page.locator('#profSubmeusdados')).toHaveClass(/active/);
+  await expect(page.locator('#profConnectedScreen')).not.toHaveClass(/active/);
 });

@@ -2630,3 +2630,73 @@ um buraco do tamanho de duas telas, e ele erra calado**: quem lê "Nenhuma
 diferença" não sabe que aquelas duas não foram olhadas. É a mesma família do
 `borderTopColor` sozinho (§5.1) — um verificador que não olha onde o app desenha
 é pior que nenhum, porque com ele você para de conferir à mão.
+
+## 21. Onde uma tela MORA decide para onde o "Voltar" leva (04/09/2026)
+
+"Contas conectadas" saiu do menu do Perfil e entrou em **Gerenciar perfil >
+Configurar conta**, ao lado de "Alterar senha" — decisão de produto, com um
+provedor só. O porquê e o gatilho da volta estão em
+`scratchpad/contas-conectadas-no-menu.md`; o que segue é o que a mudança
+ensinou.
+
+### 21.1 A LISTA AFIRMADA INTEIRA PEGOU A ENTRADA E A SAÍDA, NA MESMA SEMANA
+
+`profile-order-tracking.spec.js:338` afirma os SETE rótulos do menu do Perfil
+com `toHaveText([...])`, e o comentário dela diz por quê: "é o que faz uma linha
+nova aparecer aqui em vez de passar despercebida". Ela reprovou a suíte no
+minuto em que a linha SAIU — o mesmo guarda, nos dois sentidos, com quatro dias
+de diferença.
+
+Vale a generalização: **para uma lista curta e estável, afirmar o conjunto
+INTEIRO vale mais do que afirmar que um item existe.** `toHaveCount(1)` sobre um
+item não tem opinião sobre o oitavo item que alguém acrescentar, e é o oitavo
+que costuma ser o erro. O custo é uma manutenção por mudança deliberada, que é
+exatamente quando alguém devia estar olhando.
+
+### 21.2 UMA `.prof-sub` FECHA PARA O MENU, e isso é resposta de navegação
+
+A tela era uma `.prof-sub` (irmã de "Meus pedidos", "Ajuda"). `closeProfSub()`
+fecha para o menu do Perfil — o que estava certo enquanto ela SAÍA do menu.
+
+Movida para dentro de "Gerenciar perfil", a mesma tela passaria a fechar **dois
+níveis acima de onde a pessoa tocou**. As outras duas linhas daquela lista
+("Meus dados", "Alterar senha") abrem SOBREPOSIÇÃO dentro da própria subtela e
+voltam para a lista; a terceira tinha de fazer igual, e virou
+`#profConnectedScreen`, irmã de `#profPasswordScreen`.
+
+**A regra:** mover uma tela de lugar no menu não é mover markup — é escolher
+para onde o "Voltar" dela leva. Se as vizinhas da nova casa usam um mecanismo de
+volta, a recém-chegada usa o mesmo, ou ela é a única que se comporta diferente
+sem que ninguém tenha decidido isso.
+
+### 21.3 SOBREPOSIÇÃO GUARDA O PRÓPRIO `.active`, E O PAI SOME SEM APAGÁ-LO
+
+`.prof-sub` sem `.active` desaparece, mas a sobreposição DENTRO dela continua
+com o `.active` dela. Quem deixasse a tela aberta e trocasse de aba voltaria
+**direto nela** — a subtela reaberta com a sobreposição de antes, sem ter tocado
+em nada.
+
+Não era hipótese: com a limpeza removida, o e2e lê
+`class="prof-connected-screen active"` depois de sair e voltar. Hoje
+`openProfSub('meusdados')` fecha a de contas conectadas ao entrar — **entrar numa
+subtela mostra a lista de opções, sempre**.
+
+**`#profPasswordScreen` tem o mesmo buraco e NÃO foi tocado**, de propósito: é de
+outro módulo (`customer-data-screen.js`) e mexer nele sem teste é trocar um
+defeito conhecido por um desconhecido. Fica nomeado aqui, que é o que se faz com
+o que se acha e não se conserta.
+
+### 21.4 A REGRA QUE SERVIA PARA UM ITEM NÃO É A QUE SERVE PARA DOIS
+
+`.prof-manage-row` tem `margin:0 auto!important` e nenhuma regra de espaço entre
+irmãs — porque até 04/09/2026 **nenhuma seção tinha duas linhas**: "Meu perfil"
+tinha uma, "Configurar conta" tinha uma. A segunda linha nasceria encostada na
+primeira.
+
+É a família do §14.6 (altura fixa sobre dado do lojista): uma regra calibrada
+para o caso que existia, que erra em silêncio no primeiro caso novo. Sonda de
+dois minutos antes de acreditar: as duas linhas medem 44px com 10px entre elas,
+e a tela nova cobre 390×844 com o corpo em 774 (= 844 − 70 do cabeçalho).
+
+E o `!important` na regra nova não é gosto: a regra de cima o usa, e sem ele a
+de baixo perde — a §5.1 de novo.

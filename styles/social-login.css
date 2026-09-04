@@ -259,3 +259,20 @@
   margin: 4px 0 12px;
 }
 #linkGoogleConfirm .login-google-btn { width: min(100%, 374px); }
+
+/* --- O corpo da tela de contas conectadas ---
+
+   A geometria da tela (o deslize, o cabeçalho, o botão de voltar) é a MESMA da
+   tela de "Alterar senha" e mora com ela em `utilities.css`, num seletor só —
+   as duas saem da mesma lista de "Configurar conta". O que é próprio daqui é o
+   corpo: lista, não formulário.
+
+   `height` calculado a partir do cabeçalho de 70px, como o irmão, e
+   `overflow-y:auto` porque a lista cresce com o número de provedores. */
+.prof-connected-body {
+  box-sizing: border-box;
+  height: calc(100% - 70px);
+  padding: 18px 16px 40px;
+  overflow-y: auto;
+  background: var(--page-bg, #f6f5f4);
+}

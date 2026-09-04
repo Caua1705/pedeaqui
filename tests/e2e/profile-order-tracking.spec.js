@@ -345,14 +345,20 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
   await expect(stickyCart).not.toBeVisible();
 
   const labels = page.locator('#mobViewProfile .prof-account-row-label');
-  // "Contas conectadas" entrou em 04/09/2026, com o "entrar com Google". A
-  // lista é afirmada INTEIRA de propósito — é o que faz uma linha nova aparecer
-  // aqui em vez de passar despercebida.
+  // A lista é afirmada INTEIRA de propósito — é o que faz uma linha nova
+  // aparecer aqui em vez de passar despercebida. Funcionou nos dois sentidos na
+  // mesma semana: "Contas conectadas" ENTROU em 04/09/2026 com o "entrar com
+  // Google" e SAIU no mesmo dia, por decisão de produto — com um provedor só,
+  // uma linha de primeiro nível para dizer "Google: conectado" pesa mais do que
+  // informa, e ela passou a morar em "Gerenciar perfil", ao lado de "Alterar
+  // senha". Foi esta linha que acusou a saída.
+  //
+  // Ela volta para cá quando houver mais de um provedor:
+  // `scratchpad/contas-conectadas-no-menu.md`.
   await expect(labels).toHaveText([
     'Gerenciar perfil',
     'Meus pedidos',
     'Meus endereços',
-    'Contas conectadas',
     'Política de privacidade',
     'Ajuda',
     'Sair'

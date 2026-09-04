@@ -775,7 +775,7 @@
   const googleDisponivel = () => Boolean(window.PedeAquiGoogleIdentity?.isEnabled?.());
 
   async function renderConnectedAccounts() {
-    const body = $('profSubContasBody');
+    const body = $('profConnectedBody');
     if (!body) return;
     body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando contas conectadas...</div></div>';
     try {
@@ -896,7 +896,7 @@
       // uma segunda ida à rede e, principalmente, evita a tela discordar do
       // servidor.
       const me = await window.PedeAquiCustomerAuth.getCurrentCustomer().catch(() => null);
-      const body = $('profSubContasBody');
+      const body = $('profConnectedBody');
       if (body) body.innerHTML = renderConnectedAccountsHtml(contas, {
         temSenha: me?.password_set ?? true,
         googleDisponivel: googleDisponivel()
@@ -911,6 +911,40 @@
     } finally {
       _linkSubmitting = false;
     }
+  }
+
+  // ------------------------------------------------------------------------
+  //  A TELA, e por que ela é IRMÃ da de senha em vez de uma `.prof-sub`
+  //
+  //  Ela sai de "Gerenciar perfil > Configurar conta", ao lado de "Alterar
+  //  senha" — a mesma família, e o mesmo gesto de voltar. Uma `.prof-sub`
+  //  fecharia para o MENU do Perfil, dois níveis acima de onde a pessoa tocou:
+  //  o "Voltar" tem de devolver para onde se veio.
+  //
+  //  Ela deixou de ser linha do menu em 04/09/2026, e a ausência é decisão:
+  //  com um provedor só, "Google: conectado" não paga uma linha de primeiro
+  //  nível. Volta para lá quando houver mais de um — o porquê está em
+  //  `scratchpad/contas-conectadas-no-menu.md`, para quem mexer depois não
+  //  desfazer sem saber.
+  // ------------------------------------------------------------------------
+
+  function openConnectedAccountsScreen() {
+    // A mesma guarda de `openCustomerPasswordScreen`: a tela lê
+    // `/customers/me/social` e `/customers/me`, e sem token as duas são 401.
+    if (!app.isLogged()) { shell.openLoginScreen(); return; }
+    const screen = $('profConnectedScreen');
+    screen?.classList.add('active');
+    screen?.setAttribute('aria-hidden', 'false');
+    // Sem await: a tela abre na hora e a lista chega por trás, com o
+    // "Carregando..." que `renderConnectedAccounts` já escreve.
+    renderConnectedAccounts();
+  }
+
+  function closeConnectedAccountsScreen() {
+    const screen = $('profConnectedScreen');
+    releaseFocusFrom(screen);
+    screen?.classList.remove('active');
+    screen?.setAttribute('aria-hidden', 'true');
   }
 
   function setUnlinkError(msg) {
@@ -967,7 +1001,7 @@
       // A rota DEVOLVE a lista que sobrou: redesenhar com ela evita uma segunda
       // ida à rede e, principalmente, evita a tela discordar do servidor.
       const me = await window.PedeAquiCustomerAuth.getCurrentCustomer().catch(() => null);
-      const body = $('profSubContasBody');
+      const body = $('profConnectedBody');
       if (body) body.innerHTML = renderConnectedAccountsHtml(restantes, {
         temSenha: me?.password_set ?? true,
         googleDisponivel: googleDisponivel()
@@ -982,7 +1016,7 @@
   }
 
   async function openProfSub(subId, { instant = false } = {}) {
-    if (!app.isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos', 'contas'].includes(subId)) {
+    if (!app.isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos'].includes(subId)) {
       shell.openLoginScreen();
       return;
     }
@@ -992,6 +1026,12 @@
     if (!instant) document.body.classList.remove('prof-order-help-instant');
     sub.classList.toggle('prof-sub--instant', subId === 'ajuda' && instant);
     if (subId === 'pedidos') $('profOrdersBackdrop')?.classList.add('active');
+    // ENTRAR EM "Gerenciar perfil" MOSTRA A LISTA DE OPÇÕES, sempre. A tela de
+    // contas conectadas é uma sobreposição DENTRO desta subtela e guarda o
+    // próprio `.active`: sem esta linha, quem a deixasse aberta e trocasse de
+    // aba voltaria direto nela — a subtela reaberta com a sobreposição de
+    // antes, sem ter tocado em nada.
+    if (subId === 'meusdados') closeConnectedAccountsScreen();
     sub.classList.add('active');
     // O Perfil principal aplica estilos `!important` inline para flutuar a
     // sacola. Remova-os ao entrar numa subpágina; CSS sozinho não os vence.
@@ -1011,7 +1051,6 @@
       ]);
       await window.PedeAquiCardFlow?.refreshProfilePaymentMethods?.();
     }
-    if (subId === 'contas') await renderConnectedAccounts();
     if (subId === 'info') {
       const body = document.querySelector('#profSubinfo .prof-sub-body');
       if (body && app.restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando informações...</div></div>';
@@ -1045,6 +1084,8 @@
       closeUnlinkConfirm,
       confirmUnlinkSocial,
       clearUnlinkError,
+      openConnectedAccountsScreen,
+      closeConnectedAccountsScreen,
       openLinkGoogleConfirm,
       closeLinkGoogleConfirm,
       clearLinkGoogleError,

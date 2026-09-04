@@ -1642,7 +1642,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
   display:block!important;
 }
 /* Lower the composer slightly to reduce the visible strip above the bottom nav. */
-/* assistente typing indicator: neutral radial dot matrix and left-to-right text beam. */
+/* Indicador antigo do assistente: matriz animada dentro do bloco quadrado. */
 #mobViewAssistant .assistant-chat-typing .assistant-thinking--dark{flex:0 0 42px!important;
 }
 #mobViewAssistant .assistant-chat-typing .assistant-thinking-dots--dark{
@@ -1773,7 +1773,7 @@ body.menu-tab .assistant-location-widget .assistant-location-tab--branch,
 /* Product names use application-wide Title Case presentation. */
 body.menu-tab .product-name{font-weight:600!important;text-transform:none!important}
 
-/* Rapidex loading identity: orange loader, medium-gray status text. */
+/* Texto do estado de digitação permanece legível sobre o fundo claro. */
 #mobViewAssistant .assistant-typing-label{background:none!important;animation:none!important;
 }
 /* Rapidex quick suggestions: light, quiet interaction styling. */

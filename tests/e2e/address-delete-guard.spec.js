@@ -28,7 +28,7 @@ import { mockApi, BRANCH_MATRIZ, RESTAURANT_URL, SLUG, esperarAppPronto } from '
 // ativo agora?
 
 const CASA = {
-  id: 'address-home',
+  id: '11111111-1111-4111-8111-111111111111',
   label: 'Casa',
   street: 'Rua das Flores',
   number: '123',
@@ -39,7 +39,7 @@ const CASA = {
 };
 
 const TRABALHO = {
-  id: 'address-work',
+  id: '22222222-2222-4222-8222-222222222222',
   label: 'Trabalho',
   street: 'Avenida Santos Dumont',
   number: '2000',
@@ -101,28 +101,50 @@ async function bootar(page, { local = null, ativo = CASA } = {}) {
 test('tocar num cartao nao o torna o endereco ativo — e nao impede de apaga-lo', async ({ page }) => {
   await bootar(page);
   await page.evaluate(enderecos => {
+    window.__enderecosE2E = enderecos;
+    let leituras = 0;
     window.PedeAquiCustomerAuth.setToken('e2e-customer-token');
     window.PedeAquiCustomerService.getCurrentCustomer = async () => ({
       id: 'customer-e2e',
       name: 'Cliente E2E',
       phone: '85999999999'
     });
-    window.PedeAquiAddressService.getCustomerAddresses = async () => enderecos;
+    window.PedeAquiAddressService.getCustomerAddresses = async () => {
+      leituras += 1;
+      if (leituras > 1) await new Promise(resolve => setTimeout(resolve, 120));
+      return window.__enderecosE2E;
+    };
+    window.PedeAquiAddressService.deleteCustomerAddress = async id => {
+      window.__enderecosE2E = window.__enderecosE2E.filter(address => address.id !== id);
+    };
     window.PedeAquiOrderService.getCustomerOrders = async () => [];
   }, [CASA, TRABALHO]);
 
   await abrirListaDeEnderecos(page);
   await expect(page.locator('#addrPickerList .addr-picker-item')).toHaveCount(2);
 
-  const trabalho = page.locator('#addrPickerList .addr-picker-item[data-addr-id="address-work"]');
+  const trabalho = page.locator('#addrPickerList .addr-picker-item[data-addr-id="22222222-2222-4222-8222-222222222222"]');
   // Tocar SO DESTACA: a escolha ainda nao foi confirmada, e "Casa" segue ativa.
   await trabalho.locator('.addr-picker-copy').click();
   await expect(trabalho).toHaveClass(/selected/);
 
-  await pedirParaExcluir(page.locator('#addrPickerList .addr-picker-item[data-addr-id="address-work"]'));
+  await pedirParaExcluir(page.locator('#addrPickerList .addr-picker-item[data-addr-id="22222222-2222-4222-8222-222222222222"]'));
 
   await expect(dialogo(page)).toHaveAttribute('aria-hidden', 'false');
   await expect(textoDoDialogo(page)).toHaveText('Tem certeza que deseja excluir este endereço?');
+
+  // O refetch fica deliberadamente pendurado por alguns frames. O botão fixo
+  // continua habilitado enquanto só o popup fecha e a exclusão é processada.
+  await page.evaluate(() => {
+    const button = document.getElementById('addrPickerConfirmBtn');
+    window.__addrDisabledStates = [button.disabled];
+    new MutationObserver(() => window.__addrDisabledStates.push(button.disabled))
+      .observe(button, { attributes: true, attributeFilter: ['disabled'] });
+  });
+  await page.locator('#addrDeleteConfirm .addr-delete-yes').click();
+  await expect(page.locator('#addrPickerList .addr-picker-item')).toHaveCount(1);
+  expect(await page.evaluate(() => window.__addrDisabledStates)).not.toContain(true);
+  await expect(page.locator('#addrPickerConfirmBtn')).toBeEnabled();
 });
 
 test('o aviso de ativo continua saindo no endereco que esta MESMO ativo', async ({ page }) => {
@@ -139,7 +161,7 @@ test('o aviso de ativo continua saindo no endereco que esta MESMO ativo', async 
   }, [CASA, TRABALHO]);
 
   await abrirListaDeEnderecos(page);
-  await pedirParaExcluir(page.locator('#addrPickerList .addr-picker-item[data-addr-id="address-home"]'));
+  await pedirParaExcluir(page.locator('#addrPickerList .addr-picker-item[data-addr-id="11111111-1111-4111-8111-111111111111"]'));
 
   await expect(textoDoDialogo(page)).toHaveText('Não é possível excluir o endereço que está ativo neste momento.');
 });

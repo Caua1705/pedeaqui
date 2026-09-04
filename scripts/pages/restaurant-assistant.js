@@ -506,34 +506,30 @@
     });
     scrollAssistantToLatest();
   }
-  /**
-   * Esqueleto de carregamento.
-   *
-   * Antes, "Preparando sugestões..." ficava sozinho no alto com meia tela em
-   * branco embaixo — o cliente não tinha como saber se vinha alguma coisa. O
-   * esqueleto ocupa o lugar da resposta com as três barras na medida das linhas
-   * do texto, que é o que TODA resposta traz.
-   *
-   * Os cartões fantasma de produto saíram: eles prometiam três produtos antes de
-   * saber se viria algum, e numa resposta só de texto viravam três retângulos
-   * que apareciam e sumiam — parecia defeito. Cartão só entra quando o produto
-   * chega de verdade.
-   */
+  /** Indicador visual enquanto a lógica atual aguarda a resposta do assistente. */
   function appendAssistantTypingIndicator() {
     const resultsEl = document.getElementById('assistantResults');
     if (!resultsEl || document.getElementById('assistantTypingMessage')) return;
-    let statusIndex = Math.floor(Math.random() * ASSISTANT_TYPING_STATUSES.length);
+    // Visual recuperado de b836489 (restaurant-rapi.js): o bloco 7x7 em forma
+    // de polígono. A lógica atual de envio/remoção/timer permanece intacta.
+    const typingDots = Array.from({ length: 49 }, (_, index) => {
+      const row = Math.floor(index / 7);
+      const column = index % 7;
+      const inset = Math.max(0, Math.abs(row - 3) - 1);
+      const hidden = column < inset || column > 6 - inset;
+      const ring = Math.max(Math.abs(row - 3), Math.abs(column - 3));
+      return `<span class="${hidden ? 'is-shape-cut' : `is-ring-${ring}`}"></span>`;
+    }).join('');
+    let statusIndex = ASSISTANT_TYPING_STATUSES.indexOf('Digitando...');
+    if (statusIndex < 0) statusIndex = 0;
     resultsEl.insertAdjacentHTML('beforeend', `
       <div class="assistant-result-card assistant-chat-assistant-message assistant-chat-typing" id="assistantTypingMessage" aria-live="polite">
         <div class="assistant-result-content">
           <div class="assistant-typing-row">
-            ${markMarkup({ size: 'mini', thinking: true })}
+            <div class="assistant-thinking assistant-thinking--dark visible">
+              <div class="assistant-thinking-dots assistant-thinking-dots--dark">${typingDots}</div>
+            </div>
             <span class="assistant-typing-label" data-text="${ASSISTANT_TYPING_STATUSES[statusIndex]}">${ASSISTANT_TYPING_STATUSES[statusIndex]}</span>
-          </div>
-          <div class="assistant-skeleton-lines" aria-hidden="true">
-            <span class="assistant-skeleton-line"></span>
-            <span class="assistant-skeleton-line"></span>
-            <span class="assistant-skeleton-line"></span>
           </div>
         </div>
       </div>`);

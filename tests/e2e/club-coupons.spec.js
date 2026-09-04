@@ -119,7 +119,7 @@ test('os três estados do cupom desenham cada um com a sua frase', async ({ page
   await expect(aplicavel.locator('h3')).toHaveCount(0);
 });
 
-test('o Clube abre pelos CUPONS, e a faixa da Home leva à TELA do cupom', async ({ page }) => {
+test('o Clube abre com cashback antes dos cupons, e a faixa da Home leva à TELA do cupom', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedLoggedSession(page);
   await mockApi(page, { onListCoupons: (route) => route.fulfill(json(COUPONS)) });
@@ -155,17 +155,17 @@ test('o Clube abre pelos CUPONS, e a faixa da Home leva à TELA do cupom', async
   await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
   await expect(page.locator('.club-available-coupon-card').first()).toBeVisible();
 
-  // A LISTA VEM ANTES DO SALDO. Comparação por posição no documento, e não por
+  // O SALDO VEM ANTES DA LISTA. Comparação por posição no documento, e não por
   // coordenada: `compareDocumentPosition` responde sobre a ORDEM, que é o que
   // a decisão diz, sem depender de a tela ter assentado num pixel.
-  const cuponsAntesDoSaldo = await page.evaluate(() => {
+  const saldoAntesDosCupons = await page.evaluate(() => {
     const cupons = document.querySelector('.club-coupons-section');
     const saldo = document.querySelector('.club-cashback-panel');
     if (!cupons || !saldo) return null;
-    // Node.DOCUMENT_POSITION_FOLLOWING = 4: o saldo vem DEPOIS dos cupons.
-    return (cupons.compareDocumentPosition(saldo) & 4) === 4;
+    // Node.DOCUMENT_POSITION_FOLLOWING = 4: os cupons vêm DEPOIS do saldo.
+    return (saldo.compareDocumentPosition(cupons) & 4) === 4;
   });
-  expect(cuponsAntesDoSaldo, 'o saldo de cashback voltou para o topo do Clube').toBe(true);
+  expect(saldoAntesDosCupons, 'o cashback não apareceu antes dos cupons').toBe(true);
 
   // E o saldo continua ALCANÇÁVEL: o extrato só tem esta porta, e apagar o
   // cartão deixaria aquela tela sem entrada nenhuma.
@@ -399,8 +399,15 @@ test('abrir um cupom para LER não aplica nada e não vai no pedido', async ({ p
 });
 
 test('confirmar o cupom aplica o desconto e o pedido leva o coupon_id', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const couponsForCheckout = {
+    coupons: COUPONS.coupons.map(coupon => coupon.code === 'JP10'
+      ? { ...coupon, state: 'applicable', discount_amount: '2.12', missing_amount: '0.00' }
+      : coupon)
+  };
   const { orderRequests, couponPreviewRequests } = await mockApi(page, {
     orderResponse: pixOrder,
+    onListCoupons: (route) => route.fulfill(json(couponsForCheckout)),
     onPreviewCoupon: (route) =>
       route.fulfill(
         json({
@@ -419,15 +426,33 @@ test('confirmar o cupom aplica o desconto e o pedido leva o coupon_id', async ({
 
   await page.goto(RESTAURANT_URL);
   await addH2OToCart(page, 3);
-  await page.evaluate(() => window.openCouponDetail('JP10'));
+  await expect(page.locator('#cartModal .cart-benefit-card .cart-benefit-copy'))
+    .toHaveText('3 benefícios para você');
+  await page.evaluate(() => window.openModal('cartModal'));
+  await page.locator('#cartModal .cart-benefit-card .cart-benefit-action').click();
+  await expect(page.locator('#mobViewClub')).toHaveClass(/active/);
+  await page.locator('.club-available-coupon-card', { hasText: '10% OFF' }).click();
+  await expect(page.locator('#couponDetailOverlay')).toHaveClass(/active/);
   await page.locator('.coupon-detail-use').click();
   await expect(page.locator('#couponDetailOverlay')).not.toHaveClass(/active/);
+  await expect(page.locator('#cartModal')).toHaveClass(/active/);
+  await expect(page.locator('#couponNotice')).not.toBeVisible();
 
   expect(couponPreviewRequests).toHaveLength(1);
   expect(couponPreviewRequests[0].body).toMatchObject({ subtotal: 21.15, order_type: 'pickup' });
 
-  await page.evaluate(() => window.openModal('cartModal'));
+  const benefit = page.locator('#cartModal .cart-benefit-card .cart-benefit-action');
+  await expect(benefit.locator('.cart-benefit-copy')).toContainText('10% OFF');
+  await expect(benefit.locator('.cart-benefit-code')).toHaveText('JP10');
+  await expect(benefit.locator('.cart-benefit-add')).toHaveText('Trocar');
+  await expect(page.locator('#csDiscountRow')).toContainText('Benefícios');
+  await expect(page.locator('#csDiscount')).toHaveText('- R$ 2,12');
   await expect(page.locator('#csTotal')).toContainText('20,02');
+  const benefitColor = await page.locator('#csDiscount').evaluate(element => getComputedStyle(element).color);
+  const brandColor = await page.locator('html').evaluate(element => getComputedStyle(element).getPropertyValue('--brand-primary-rgb').trim());
+  expect(benefitColor).toBe(`rgb(${brandColor})`);
+  await expect.poll(() => page.locator('.cart-price-summary').evaluate(element => element.getBoundingClientRect().height))
+    .toBeGreaterThan(152);
 
   const cta = page.locator('#cartCtaBtn');
   await cta.click();

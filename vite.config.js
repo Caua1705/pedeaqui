@@ -56,6 +56,10 @@ export default defineConfig({
     // e resolve o cache-busting sozinho.
     viteStaticCopy({
       targets: [
+        // Executados como scripts clássicos e bloqueantes no <head> para que a
+        // cor em cache seja aplicada antes da primeira pintura do loader.
+        { src: 'scripts/utils/restaurant-slug.js', dest: '.' },
+        { src: 'scripts/utils/boot-tint.js', dest: '.' },
         // dest é '.' porque o plugin NÃO corta o diretório-base do src: ele
         // anexa o caminho inteiro sob o dest. Era daí que vinha o /assets/assets.
         // O mascote saiu daqui junto com a reformulação do assistente: no app do

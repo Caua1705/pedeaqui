@@ -16,9 +16,8 @@
 //  A CORREÇÃO TEM DOIS LADOS, e nenhum dos dois inventa cor:
 //
 //  1. PRIMEIRA VISITA — não se sabe a cor da loja, e adivinhar é o erro. O
-//     token `--app-loader-dot` nasce CINZA NEUTRO em tokens.css. Neutro não é
-//     a marca de ninguém; laranja é a marca do Rapidex, e usá-la é anunciar a
-//     plataforma na loja do cliente.
+//     token `--app-loader-dot` nasce transparente e só é pintado quando o
+//     `/menu` entrega a cor real. O primeiro frame VISÍVEL já é da marca.
 //  2. DA SEGUNDA EM DIANTE — a cor daquele slug já foi vista uma vez e está
 //     guardada. Este arquivo a lê e escreve NO TOKEN, antes de qualquer rede.
 //
@@ -79,15 +78,23 @@
     return cor;
   }
 
+  /** Pinta o loader com uma cor já normalizada pela paleta do tenant. */
+  function paintTint(primary) {
+    const cor = String(primary || '').trim().toUpperCase();
+    if (!HEX.test(cor)) return '';
+    document.documentElement.style.setProperty(TOKEN, cor);
+    return cor;
+  }
+
   /** Escreve a cor guardada no token. Sem cor guardada, não escreve nada — e
    *  o padrão neutro de tokens.css continua valendo. */
   function applyTint(slug) {
     const cor = readTint(slug);
-    if (cor) document.documentElement.style.setProperty(TOKEN, cor);
+    if (cor) paintTint(cor);
     return cor;
   }
 
-  window.RapidexBootTint = { TOKEN, readTint, rememberTint, applyTint, storageKey: chave };
+  window.RapidexBootTint = { TOKEN, readTint, rememberTint, paintTint, applyTint, storageKey: chave };
 
   applyTint(window.RapidexTenant?.resolveSlug?.() || '');
 })();

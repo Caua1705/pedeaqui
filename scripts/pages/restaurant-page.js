@@ -1154,10 +1154,12 @@
       restaurant.primary_color || config.PLATFORM_BRAND_PRIMARY,
       restaurant.secondary_color || config.PLATFORM_BRAND_SECONDARY
     );
+    // O loader ainda está na tela neste ponto. A primeira visita não tem cache,
+    // então esta é a escrita que torna os pontos visíveis — já na cor real.
+    window.RapidexBootTint?.paintTint?.(palette['--brand-primary']);
     // A COR DE HOJE PAGA O LOADER DE AMANHÃ. Os três pontinhos do boot pintam
-    // com --app-loader-dot, que nasce cinza neutro; sem isto aqui ele fica
-    // cinza para sempre, e a cor da loja só apareceria depois do /menu — que é
-    // exatamente o instante em que o loader sai. Guardado por slug, como o
+    // com --app-loader-dot, que nasce transparente; sem isto aqui ele nunca
+    // apareceria na primeira visita. Guardado por slug, como o
     // carrinho. Ver scripts/utils/boot-tint.js.
     //
     // Grava o que a PALETA recebeu, não `restaurant.primary_color` cru: um hex
@@ -2093,6 +2095,58 @@
       : 'Confirmar sem benefício';
   }
 
+  let benefitCountSyncPromise = null;
+
+  function benefitAvailabilityLabel() {
+    const count = clubController.availableBenefitCount();
+    if (!Number.isInteger(count)) return 'Benefícios para você';
+    return `${count} ${count === 1 ? 'benefício' : 'benefícios'} para você`;
+  }
+
+  function appliedBenefitTitle() {
+    return selectedCoupon?.title
+      || window.PedeAquiCouponFormat?.couponLabel?.(selectedCoupon)
+      || 'Benefício aplicado';
+  }
+
+  function renderBenefitAction(button) {
+    if (!button) return;
+    const copy = button.querySelector('.cart-benefit-copy');
+    const action = button.querySelector('.cart-benefit-add');
+    if (!copy || !action) return;
+    const applied = Boolean(selectedCoupon && couponDiscountAmount() > 0);
+    button.classList.toggle('has-applied-benefit', applied);
+    copy.replaceChildren();
+    if (!applied) {
+      copy.textContent = benefitAvailabilityLabel();
+      action.textContent = 'Adicionar';
+      return;
+    }
+
+    const title = document.createElement('strong');
+    title.textContent = appliedBenefitTitle();
+    copy.append(title);
+    const code = String(selectedCoupon.code || selectedCoupon.coupon_code || '').trim();
+    if (code) {
+      const badge = document.createElement('small');
+      badge.className = 'cart-benefit-code';
+      badge.textContent = code;
+      copy.append(badge);
+    }
+    action.textContent = 'Trocar';
+  }
+
+  function syncBenefitActions({ loadCount = true } = {}) {
+    document.querySelectorAll('#cartModal .cart-benefit-action').forEach(renderBenefitAction);
+    const applied = Boolean(selectedCoupon && couponDiscountAmount() > 0);
+    const needsCount = clubController.availableBenefitCount() == null;
+    if (!loadCount || applied || !cart.length || !needsCount || !window.PedeAquiCustomerAuth?.getToken?.() || benefitCountSyncPromise) return;
+    benefitCountSyncPromise = clubController.ensureClubLoaded().finally(() => {
+      benefitCountSyncPromise = null;
+      syncBenefitActions({ loadCount: false });
+    });
+  }
+
   function orderConfirmAddressNote(address) {
     return [address?.complement, address?.reference]
       .map(value => String(value || '').trim())
@@ -2133,9 +2187,7 @@
       map.srcset = `${mapStem}@1x.webp 1x, ${mapStem}@2x.webp 2x`;
       map.src = mapSource;
     }
-    const benefit = $('orderConfirmBenefitCopy');
-    const cartBenefit = document.querySelector('#cartModal .cart-benefit-card .cart-benefit-copy');
-    if (benefit && cartBenefit) benefit.textContent = cartBenefit.textContent;
+    syncBenefitActions({ loadCount: false });
 
     // "Pagamento online/na entrega" e não o "Pagar online" do cartão da sacola:
     // aqui o texto titula um dado que está sendo conferido, não um botão que
@@ -2344,6 +2396,7 @@
     if ($('cartFooter')) $('cartFooter').style.display = 'block';
     if ($('cartOrderCard')) $('cartOrderCard').style.display = qty ? '' : 'none';
     syncCartLocationState();
+    syncBenefitActions();
 
     $('cartList').innerHTML = cart.map(item => `
       <div class="cart-item-row">
@@ -5812,7 +5865,6 @@
       armSelectedCoupon,
       restoreSelectedCoupon,
       previewSelectedCoupon,
-      couponDiscountAmount,
       couponImageUrl,
       readyCardImage,
       renderDetailImage,
@@ -5829,7 +5881,6 @@
       // exatamente o caso mais comum do defeito: a pessoa que se identificou
       // para pedir, nunca criou conta, e via "Validando..." antes do login.
       hasAuthSession: () => Boolean(window.PedeAquiCustomerService?.isLoggedIn?.()),
-      showCouponNotice,
       mobNavMenu,
       // O destino do cupom `payment_method_not_allowed`. As DUAS, e nesta
       // ordem: a tela de pagamento volta para a sacola ao confirmar, e é na

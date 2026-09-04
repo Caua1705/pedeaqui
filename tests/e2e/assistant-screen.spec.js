@@ -79,11 +79,11 @@ test('a marca é pintada com a cor do restaurante, sem cor fixa', async ({ page 
   expect(depois[0], 'o degradê virou cor chapada').not.toBe(depois[1]);
 });
 
-test('as duas marcas da tela pintam, e não há mais id global para colidir', async ({ page }) => {
+test('a marca da abertura pinta e o indicador antigo usa o bloco animado', async ({ page }) => {
   await openAssistant(page, { chatDelay: 3000 });
   await waitForIntro(page);
   await page.locator('.assistant-starter-card').first().click();
-  await expect(page.locator('#assistantTypingMessage .assistant-mark')).toBeVisible();
+  await expect(page.locator('#assistantTypingMessage .assistant-thinking--dark')).toBeVisible();
 
   // Este teste nasceu de um defeito de SVG: ids de <defs> são GLOBAIS no
   // documento, então com duas marcas na tela ao mesmo tempo (a da abertura e a
@@ -104,7 +104,7 @@ test('as duas marcas da tela pintam, e não há mais id global para colidir', as
     };
   });
 
-  expect(marcas.fundos.length, 'o teste precisa de duas marcas na tela').toBeGreaterThanOrEqual(2);
+  expect(marcas.fundos.length, 'a marca da abertura desapareceu').toBeGreaterThanOrEqual(1);
   expect(marcas.gradientesDeSvg, 'o degradê voltou para <defs>, e com ele a colisão de id').toBe(0);
   for (const fundo of marcas.fundos) {
     expect(paradasDeMarca(fundo), 'uma das marcas ficou sem a cor do lojista').toHaveLength(2);
@@ -112,6 +112,7 @@ test('as duas marcas da tela pintam, e não há mais id global para colidir', as
   // As duas leem os MESMOS tokens, então pintam igual — e era exatamente isso
   // que a colisão de id quebrava.
   expect(new Set(marcas.fundos.map(f => paradasDeMarca(f).join('|'))).size).toBe(1);
+  await expect(page.locator('#assistantTypingMessage .assistant-thinking-dots--dark span')).toHaveCount(49);
 });
 
 test('é vetor nítido: nenhum desfoque, filtro ou máscara', async ({ page }) => {
@@ -597,17 +598,20 @@ test('a abertura oferece sugestões clicáveis montadas com o cardápio do tenan
   await expect(page.locator('.assistant-chat-user-message')).toContainText(chosen);
 });
 
-test('carregando: só o que toda resposta traz — texto, nunca cartão fantasma', async ({ page }) => {
+test('carregando: recupera "Digitando" e o bloco animado antigo, sem cartão fantasma', async ({ page }) => {
   await openAssistant(page, { chatDelay: 3000 });
   await waitForIntro(page);
   await page.locator('.assistant-starter-card').first().click();
 
   const skeleton = page.locator('#assistantTypingMessage');
   await expect(skeleton).toBeVisible();
-  await expect(skeleton.locator('.assistant-mark--mini')).toHaveClass(/is-thinking/);
-  await expect(skeleton.locator('.assistant-typing-label')).not.toBeEmpty();
-  // As três barras têm a medida das linhas do texto, que TODA resposta traz.
-  await expect(skeleton.locator('.assistant-skeleton-line')).toHaveCount(3);
+  await expect(skeleton.locator('.assistant-typing-label')).toHaveText('Digitando...');
+  await expect(skeleton.locator('.assistant-thinking--dark')).toBeVisible();
+  await expect(skeleton.locator('.assistant-thinking-dots--dark span')).toHaveCount(49);
+  expect(await skeleton.locator('.assistant-thinking-dots--dark span.is-ring-0').evaluate(
+    element => getComputedStyle(element).animationName
+  )).toBe('assistant-polygon-ring-0');
+  await expect(skeleton.locator('.assistant-skeleton-line')).toHaveCount(0);
 
   // Os cartões fantasma saíram: eles prometiam produtos antes de saber se viria
   // algum e, numa resposta só de texto, viravam retângulos que apareciam e

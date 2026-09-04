@@ -333,7 +333,9 @@
       return;
     }
     closeCouponDetail();
-    shell.showCouponNotice(`Cupom aplicado. Desconto de ${fmt(shell.couponDiscountAmount())}.`);
+    // O preview já atualizou a sacola. Volta direto para ela, sem uma camada de
+    // sucesso intermediária e sem reconstruir carrinho/operação/restaurante.
+    shell.openCartModal();
   }
 
   function useCoupon(code) {
@@ -345,7 +347,7 @@
     ({ $, esc, fmt } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['getCouponForDetail', 'judgedCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponDiscountAmount', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'showCouponNotice', 'mobNavMenu', 'openCartModal', 'openPaymentMethodScreen']) {
+    for (const nome of ['getCouponForDetail', 'judgedCouponForDetail', 'armSelectedCoupon', 'restoreSelectedCoupon', 'previewSelectedCoupon', 'couponImageUrl', 'readyCardImage', 'renderDetailImage', 'openLoginScreen', 'hasAuthSession', 'mobNavMenu', 'openCartModal', 'openPaymentMethodScreen']) {
       if (typeof shell[nome] !== 'function') throw new Error(`coupon-detail-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({

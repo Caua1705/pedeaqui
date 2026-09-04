@@ -16,8 +16,8 @@ const BLUE = '#1B4FD8';
 // #F36F21, a paleta padrão de styles/tokens.css — a cor da PLATAFORMA, que é
 // o que --brand-primary vale enquanto applyTheme() não rodou.
 const PLATFORM_ORANGE = 'rgb(243, 111, 33)';
-// --app-loader-dot, o cinza neutro dos pontinhos na primeira visita.
-const NEUTRO = 'rgb(201, 206, 212)';
+// Sem cache, os pontos não recebem uma cor provisória antes do /menu.
+const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 // Superfícies que o lojista reconhece como "a minha marca na tela" — uma de
 // cada área citada no escopo da fase.
@@ -152,7 +152,7 @@ test('trocar a cor do tenant repinta a interface inteira', async ({ page }) => {
 // ============================================================================
 
 /** Boota com o /menu preso, e devolve a função que o solta. */
-async function bootComMenuPreso(page, primaryColor) {
+async function bootComMenuPreso(page, primaryColor, { bundlePreso = false } = {}) {
   await page.setViewportSize({ width: 414, height: 896 });
   await mockApi(page);
   const menu = JSON.parse(JSON.stringify(MENU));
@@ -163,6 +163,7 @@ async function bootComMenuPreso(page, primaryColor) {
     await portao;
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(menu) });
   });
+  if (bundlePreso) await page.route('**/assets/restaurant-*.js', () => { /* pendente de propósito */ });
   await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil: 'commit' });
   await expect(page.locator('body')).toHaveClass(/app-booting/);
   // O `commit` volta assim que a resposta COMEÇA — o bundle ainda pode não ter
@@ -177,14 +178,12 @@ async function bootComMenuPreso(page, primaryColor) {
 const corDosPontinhos = (page) => page.locator('.app-loader-dots span').first()
   .evaluate(dot => getComputedStyle(dot).backgroundColor);
 
-test('PRIMEIRA visita: os pontinhos do loader são neutros, nunca o laranja da plataforma', async ({ page }) => {
+test('PRIMEIRA visita: nenhum ponto fica visível antes de receber a cor real do tenant', async ({ page }) => {
   const soltar = await bootComMenuPreso(page, BLUE);
 
   const cor = await corDosPontinhos(page);
-  // A afirmação que importa é NEGATIVA e é sobre a plataforma: cinza é uma
-  // escolha, laranja é a marca do Rapidex na loja de outra pessoa.
   expect(cor, 'o loader nasceu com a cor da PLATAFORMA').not.toBe(PLATFORM_ORANGE);
-  expect(cor, 'a primeira visita não sabe a cor da loja — neutro é a resposta').toBe(NEUTRO);
+  expect(cor, 'sem a cor real, os pontos não podem pintar uma cor provisória').toBe(TRANSPARENT);
 
   // E as medidas do white label continuam sendo as mesmas.
   const forma = await page.locator('.app-loader-dots').evaluate(element => {
@@ -213,6 +212,10 @@ test('PRIMEIRA visita: os pontinhos do loader são neutros, nunca o laranja da p
   });
 
   soltar();
+  await page.waitForFunction(() => (
+    getComputedStyle(document.querySelector('.app-loader-dots span')).backgroundColor === 'rgb(27, 79, 216)'
+  ));
+  expect(await corDosPontinhos(page), 'o primeiro tom visível não é o do tenant').toBe('rgb(27, 79, 216)');
   await esperarAppPronto(page);
 });
 
@@ -224,11 +227,15 @@ test('SEGUNDA visita: o loader já nasce na cor daquela loja, antes de qualquer 
   expect(await brandPrimary(page)).toBe(BLUE);
 
   // Segunda visita, com o /menu preso: nada de rede respondeu ainda.
-  await bootComMenuPreso(page, BLUE);
+  await bootComMenuPreso(page, BLUE, { bundlePreso: true });
   expect(
     await corDosPontinhos(page),
     'a cor guardada do slug não foi para o loader'
   ).toBe('rgb(27, 79, 216)');
+  expect(
+    await page.evaluate(() => window.PedeAquiRestaurantClub),
+    'o teste deixou o bundle executar antes de medir o prepaint'
+  ).toBeUndefined();
 });
 
 // O contrário do que este teste pedia antes: ele exigia que o loader

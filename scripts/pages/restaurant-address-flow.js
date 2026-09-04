@@ -512,8 +512,6 @@
     const selectedWasDeleted = addressFingerprint(S.operationContext?.address) === addressFingerprint(address);
     if (selectedWasDeleted) setSelectedOperationAddress(null, { forceDelivery: false });
     if (_addrPickerSelected === String(id)) _addrPickerSelected = null;
-    const btn = $('addrPickerConfirmBtn');
-    if (btn) btn.disabled = !_addrPickerSelected;
     if (window.PedeAquiCustomerAuth?.getToken?.()) {
       try {
         const remote = await synchronizeCustomerAddresses({ importLocal: false });
@@ -526,7 +524,17 @@
         console.error('[PedeAqui] Falha ao atualizar endereços após exclusão', error);
       }
     }
+    // Só publica o estado final do botão. Antes ele era desabilitado aqui e a
+    // renderização logo abaixo voltava a selecionar o endereço ativo, gerando
+    // um frame disabled -> enabled no botão fixo.
+    if (!_addrPickerItems.some(item => addrPickerId(item) === _addrPickerSelected)) {
+      const activeAddress = S.operationContext?.address || S.customerAddress;
+      const activeItem = _addrPickerItems.find(item => sameAddress(item, activeAddress));
+      _addrPickerSelected = activeItem ? addrPickerId(activeItem) : null;
+    }
     _renderAddrPickerList();
+    const btn = $('addrPickerConfirmBtn');
+    if (btn) btn.disabled = !_addrPickerSelected;
   }
 
   function selectAddrPickerItem(id) {

@@ -115,16 +115,11 @@
      #eeeeee, #f0eeec, #f1f1f1, #e8e8e8). #f1f1f1 era a maioria. */
   --border-subtle: #f1f1f1;
 
-  /* Os três pontinhos do loader do boot.
-     NEUTRO DE PROPÓSITO, e este é o único lugar onde o valor é decidido.
-     Eles pintavam com --brand-primary, que durante o boot inteiro ainda é a
-     paleta padrão daqui — ou seja, a cor da PLATAFORMA. Num tenant azul, a
-     primeira coisa na tela era laranja do Rapidex, pulsando, por toda a
-     ida-e-volta de rede até applyTheme().
-     Cinza não é a marca de ninguém; o laranja é a nossa. Da SEGUNDA visita em
-     diante quem escreve aqui é scripts/utils/boot-tint.js, com a cor daquele
-     slug já vista uma vez — ler o cabeçalho dele antes de mexer. */
-  --app-loader-dot: #c9ced4;
+  /* Os três pontinhos só podem aparecer com a marca do tenant. O cache é
+     aplicado no <head>; na primeira visita eles ficam transparentes até o
+     /menu entregar a cor real. Assim não existe frame visível com uma cor
+     provisória de plataforma, cinza ou branca. */
+  --app-loader-dot: transparent;
 
   /* Texto */
   --text-main: #1a1a1a;

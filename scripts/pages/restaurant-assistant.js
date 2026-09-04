@@ -679,11 +679,15 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     // registrada: o evento `error` não borbulha, mas o despachante escuta na
     // fase de captura, então a delegação alcança imagens criadas depois do boot.
     return `<img class="assistant-result-image" src="${esc(src)}"${window.RapidexImageCdn?.attrs?.(src, ASSISTANT_FLUID) || ''} alt="${esc(product.name)}" loading="lazy"
-      data-act-error="assistantImagePlaceholder">`;
+      data-act-error='["assistantImagePlaceholder","$this"]'>`;
   }
 
   // Troca a imagem quebrada pelo mesmo placeholder de sempre, montado por DOM.
   function assistantImagePlaceholder(image) {
+    // RECUA ANTES DE DESISTIR: uma derivada que falha nao significa que o
+    // original tambem falhou, e trocar por placeholder no primeiro erro
+    // esconderia uma foto que esta la inteira.
+    if (window.RapidexImageCdn?.retreat?.(image)) return;
     const parent = image?.parentNode;
     if (!parent) return;
     const box = document.createElement('div');
@@ -1041,7 +1045,10 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     if (image && media) {
       media.classList.toggle('has-no-image', !imageSrc);
       image.alt = productName;
-      image.onerror = () => media.classList.add('has-no-image');
+      image.onerror = () => {
+        if (window.RapidexImageCdn?.retreat?.(image)) return;
+        media.classList.add('has-no-image');
+      };
       image.onload = () => media.classList.remove('has-no-image');
       window.RapidexImageCdn?.apply?.(image, imageSrc, ASSISTANT_FLUID);
       image.src = imageSrc;

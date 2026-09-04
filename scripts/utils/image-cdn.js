@@ -143,7 +143,54 @@
     }
   }
 
+  // ==========================================================================
+  //  O RECUO — quando a derivada falha, volta para o ORIGINAL.
+  //
+  //  `srcset` NÃO tem rede de segurança: se o candidato escolhido falhar, o
+  //  browser NÃO cai no `src`. A imagem simplesmente não pinta. E como todo
+  //  `src` daqui aponta para o original de propósito (ver o cabeçalho deste
+  //  arquivo), o retorno existe — só faltava alguém executá-lo.
+  //
+  //  Isso já estava resolvido em DOIS sítios, escrito duas vezes: a foto do
+  //  cardápio (`waitForProductImageReady`) e a do detalhe do produto. O herói,
+  //  o logo, os destaques e o trilho de cupons NÃO tinham — e iriam a BRANCO,
+  //  não a "grande", no dia em que a transformação do Storage saísse do ar.
+  //  Em 05/09/2026 o painel do plano passou a dizer "Storage Image
+  //  Transformations: Unavailable in plan"; medido por `curl`, o endpoint
+  //  continua respondendo 200. Enquanto continuar, ninguém recua; no dia em
+  //  que parar, a tela fica GRANDE em vez de vazia.
+  //
+  //  DEVOLVE `true` quando recuou, e o chamador tem de PARAR ali: o `src` novo
+  //  vai disparar um segundo `error` se o original também falhar, e é NESSE que
+  //  o fallback de cada tela (as iniciais, o placeholder, remover o elemento)
+  //  deve rodar. Por isso o ouvinte de quem chama não pode ser `{ once: true }`.
+  // ==========================================================================
+  function retreat(img) {
+    if (!img || !img.hasAttribute('srcset') || img.dataset.cdnRecuou) return false;
+    const original = img.getAttribute('src') || '';
+    if (!original) return false;
+    // A MARCA impede o laço: se o original também falhar, o segundo `error`
+    // encontra esta bandeira, devolve `false`, e o fallback da tela roda.
+    img.dataset.cdnRecuou = '1';
+    img.removeAttribute('srcset');
+    img.removeAttribute('sizes');
+    // REMOVER E REPOR, e não só reatribuir. MEDIDO, com `/render/image/`
+    // respondendo 403: tirando o `srcset` e escrevendo o MESMO valor em `src`,
+    // o elemento fica em `complete: true` com `naturalWidth: 0` — o pedido do
+    // original chega a sair na rede (200 no log), e mesmo assim o elemento
+    // continua no estado quebrado. Tirando o `src` antes, o mesmo elemento
+    // dispara `load` e pinta (`naturalWidth: 1`).
+    //
+    // Não é teoria de especificação: são duas leituras do mesmo elemento, na
+    // mesma página, com a única diferença sendo estas duas linhas. Se um dia
+    // alguém "simplificar" para uma atribuição só, a imagem volta a não pintar
+    // e nada acusa — `image-retreat.spec.js` existe para acusar.
+    img.removeAttribute('src');
+    img.src = original;
+    return true;
+  }
+
   window.RapidexImageCdn = {
-    isSupabaseObjectUrl, variant, srcsetByDpr, srcsetByWidth, attrs, apply
+    isSupabaseObjectUrl, variant, srcsetByDpr, srcsetByWidth, attrs, apply, retreat
   };
 })();

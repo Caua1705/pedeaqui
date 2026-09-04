@@ -79,6 +79,14 @@
     const firstImage = first.image_url || first.image_path || '';
     img.src = firstImage;
     shell.applyResponsiveImage(img, firstImage, { fluid: HERO_FLUID });
+    // O RECUO DO HERÓI. `srcset` não cai no `src` sozinho: sem esta linha, uma
+    // derivada que falhe deixa a primeira tela do app em BRANCO. Armado uma vez
+    // só — `renderBanners` tem guarda de assinatura, mas ela não protege contra
+    // ouvinte duplicado se um dia sair.
+    if (!img.dataset.recuoArmado) {
+      img.dataset.recuoArmado = '1';
+      img.addEventListener('error', () => window.RapidexImageCdn?.retreat?.(img));
+    }
     img.alt = app.restaurant.name || 'Banner promocional';
     img.loading = 'eager';
     img.decoding = 'async';
@@ -91,7 +99,7 @@
         const image = banner.image_url || banner.image_path || '';
         const alt = app.restaurant.name || 'Banner';
         const responsive = shell.responsiveImageAttrs(image, { fluid: HERO_FLUID });
-        return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })}></div>`;
+        return `<div class="restaurant-hero-slide"><img src="${esc(image)}"${responsive} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'retreatImage', '$this')}></div>`;
       };
       const cloneLast  = mkSlide(visualBanners[visualBanners.length - 1]);
       const cloneFirst = mkSlide(visualBanners[0]);
@@ -284,7 +292,7 @@
       return `
         <article class="coupon-card" ${act('click', 'openCouponDetail', coupon.code, '$this')}>
           <div class="coupon-art${image ? ' coupon-art--has-img' : ''}">
-            ${image ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || 'Cupom')}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed')}>` : ''}
+            ${image ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { box: RAIL_BOX })} alt="${esc(coupon.name || 'Cupom')}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'couponArtImageFailed', '$this')}>` : ''}
             <span>Cupom</span>
             <strong>${esc(discount)}</strong>
           </div>
@@ -317,7 +325,7 @@
       return `
         <article class="highlight-banner">
           ${image
-            ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })}>`
+            ? `<img src="${esc(image)}"${shell.responsiveImageAttrs(image, { fluid: HIGHLIGHT_FLUID })} alt="${esc(alt)}" ${shell.imageAttrs({ lazy: true })} ${act('error', 'retreatImage', '$this')}>`
             : `<div class="highlight-fallback"><strong>Destaque</strong><span>${esc(app.restaurant.name || '')}</span></div>`}
         </article>
       `;
@@ -370,6 +378,10 @@
   }
 
   function couponArtImageFailed(image) {
+    // RECUA ANTES DE DESISTIR. Até 05/09/2026 o primeiro erro já removia a arte
+    // e o cartão caía no degradê — inclusive quando o original estava lá,
+    // inteiro, e só a derivada tinha falhado.
+    if (window.RapidexImageCdn?.retreat?.(image)) return;
     image?.closest('.coupon-art')?.classList.remove('coupon-art--has-img');
     image?.remove();
   }

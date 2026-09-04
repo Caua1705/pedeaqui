@@ -27,7 +27,12 @@ import { mockApi, seedPickupSession, esperarAppPronto, RESTAURANT_URL, ORDERS } 
 //  alguém montar o caminho, acrescente aqui.
 // ============================================================================
 
-const PIXEL = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64');
+// PNG de 1x1 que DECODIFICA — o webp curto que estava aqui deixava
+// `naturalWidth` em zero com `complete` true (ver helpers.js).
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 async function bootarEspionando(page) {
   const pedidos = [];
@@ -37,7 +42,7 @@ async function bootarEspionando(page) {
   // ver as imagens antes de qualquer outra coisa (§4 da skill).
   await page.route(/https:\/\/[^/]+\.supabase\.co\//, route => {
     pedidos.push(route.request().url());
-    return route.fulfill({ status: 200, contentType: 'image/webp', body: PIXEL });
+    return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
   });
   await page.addInitScript(() => localStorage.setItem('rapidex.customer.token', 'e2e-token-login'));
   await seedPickupSession(page);

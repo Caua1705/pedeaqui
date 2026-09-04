@@ -201,7 +201,7 @@ const CLUB_COUPON_FLUID = {
       return `
         <article class='club-available-coupon-card' data-coupon-key='${esc(code)}'>
           ${badge ? `<div class='club-available-coupon-badge'>${esc(badge)}</div>` : ''}
-          ${image ? `<img class='club-available-coupon-image' src='${esc(image)}'${window.RapidexImageCdn?.attrs?.(image, CLUB_COUPON_FLUID) || ''} alt='${esc(title)}' loading='lazy'>` : ''}
+          ${image ? `<img class='club-available-coupon-image' src='${esc(image)}'${window.RapidexImageCdn?.attrs?.(image, CLUB_COUPON_FLUID) || ''} alt='${esc(title)}' loading='lazy' data-act-error='["retreatImage","$this"]'>` : ''}
           <div class='club-available-coupon-content'>
             <strong class='club-available-coupon-discount'>${esc(label)}</strong>
             ${subtitle ? `<h3>${esc(subtitle)}</h3>` : ''}

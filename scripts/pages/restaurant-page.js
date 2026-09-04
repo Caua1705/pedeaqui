@@ -524,6 +524,36 @@
     return `loading="${loading}" decoding="async"${fetchPriority}`;
   }
 
+  // ==========================================================================
+  //  A AÇÃO ÚNICA DE RECUO, para o markup montado por template.
+  //
+  //  Handler inline `on*=` é proibido aqui (inline-handlers.test.js barra), e a
+  //  ponte é o registro de ações:
+  //
+  //      ${act('error', 'retreatImage', '$this')}
+  //
+  //  O `'$this'` NÃO É OPCIONAL, e foi ele que custou esta rodada. A FORMA
+  //  CURTA (`data-act-error="nome"`) chama `fn.apply(elemento)` **sem
+  //  argumento nenhum**: o elemento chega em `this`, não no primeiro parâmetro.
+  //  Uma função escrita como `fn(img)` recebe `undefined`, sai pelo `?.` ou
+  //  pelo early-return, e NÃO FAZ NADA — sem erro, sem log, sem sintoma.
+  //
+  //  Dois handlers deste app estavam assim desde que foram escritos:
+  //  `couponArtImageFailed` (a arte quebrada do cupom nunca foi removida) e
+  //  `assistantImagePlaceholder` (o placeholder do assistente nunca entrou).
+  //  Os dois foram corrigidos junto — o defeito foi encontrado por acidente,
+  //  porque o recuo novo nasceu com o mesmo erro e um teste o cobrou.
+  //
+  //  Ela não tem fallback próprio de propósito. Quem quer um — as iniciais do
+  //  logo, o placeholder do cupom — chama `RapidexImageCdn.retreat()` no
+  //  PRÓPRIO ouvinte e decide o que fazer quando ele devolve `false`. Esta aqui
+  //  serve os sítios cujo desfecho, se o original também falhar, é o de hoje:
+  //  a imagem não pinta e o desenho de baixo aparece.
+  // ==========================================================================
+  function retreatImage(img) {
+    window.RapidexImageCdn?.retreat?.(img);
+  }
+
   function replaceFailedProductImage(img) {
     if (!img?.isConnected) return;
     const placeholder = document.createElement('div');
@@ -1245,7 +1275,12 @@
       image.loading = 'eager';
       image.decoding = 'async';
       image.fetchPriority = 'high';
-      image.addEventListener('error', () => container.replaceChildren(fallbackLogo()), { once: true });
+      // SEM `{ once: true }`: o primeiro erro recua para o original e o
+      // fallback só vale no SEGUNDO, quando nem o original veio.
+      image.addEventListener('error', () => {
+        if (window.RapidexImageCdn?.retreat?.(image)) return;
+        container.replaceChildren(fallbackLogo());
+      });
       container.appendChild(image);
     };
     renderLogo(document.querySelector('.mob-logo'), LOGO_BOX.cabecalho);
@@ -1264,11 +1299,10 @@
       applyResponsiveImage(avatarImage, logoUrl, { box: LOGO_BOX.pix });
       avatarImage.alt = '';
       avatarImage.decoding = 'async';
-      avatarImage.addEventListener(
-        'error',
-        () => { pixAvatar.textContent = initials(restName); },
-        { once: true }
-      );
+      avatarImage.addEventListener('error', () => {
+        if (window.RapidexImageCdn?.retreat?.(avatarImage)) return;
+        pixAvatar.textContent = initials(restName);
+      });
       pixAvatar.replaceChildren(avatarImage);
     }
 
@@ -1422,11 +1456,13 @@
       <div class="help-store-contacts">${linhasDeContato.join('')}</div>` : ''}`;
 
     const logo = card.querySelector('.help-store-logo');
-    logo?.querySelector('img')?.addEventListener('error', () => {
+    const logoImg = logo?.querySelector('img');
+    logoImg?.addEventListener('error', () => {
+      if (window.RapidexImageCdn?.retreat?.(logoImg)) return;
       const fallbackElement = document.createElement('span');
       fallbackElement.textContent = initials(name);
       logo.replaceChildren(fallbackElement);
-    }, { once: true });
+    });
   }
 
   // Coluna "Informações" do rodapé. Era markup fixo com o horário e o couvert de
@@ -5971,6 +6007,9 @@
     // tests/e2e/helpers.js e order-flow.spec.js
     openModal, changeQty, addToCart
   });
+  // O recuo é do APP inteiro, não de uma tela: o registro MESCLA, então o
+  // markup do Clube, do Perfil e da Home alcança a mesma ação.
+  window.RapidexActions.register({ retreatImage });
 
   // A consulta do pagamento não roda com a aba escondida (ver pollPixStatus).
   // Quando ela volta, retomamos na hora em vez de esperar o próximo intervalo:

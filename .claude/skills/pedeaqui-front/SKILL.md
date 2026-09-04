@@ -2768,3 +2768,97 @@ ferramenta. Rodar a suíte E2E de novo não teria informação nenhuma sobre ele
 a prova dele é `62 de 62 telas medidas`, que é a ferramenta abrindo o bundle
 real 62 vezes. Vale dizer isso em vez de rodar por ritual e escrever um número
 que não fala do que mudou.
+
+## 23. O recuo da derivada, e as três armadilhas que ele desenterrou (05/09/2026)
+
+`srcset` **não tem rede de segurança**: quando o candidato escolhido falha, o
+browser NÃO cai no `src`. A imagem não pinta, ponto. E como todo `src` deste app
+aponta para o original de propósito, o retorno existia — só faltava executá-lo.
+
+Dois sítios já faziam isso, escrito duas vezes (a foto do cardápio e a do
+detalhe do produto). O herói, o logo, os destaques e o trilho de cupons não —
+iriam a BRANCO, não a "grande", no dia em que a transformação do Storage saísse
+do ar. Hoje o dono é um só: `RapidexImageCdn.retreat(img)`.
+
+### 23.1 A FORMA CURTA DO `data-act-` NÃO PASSA O ELEMENTO
+
+`data-act-error="nome"` chama `fn.apply(elemento)` **sem argumento nenhum**
+(`utils/actions.js:100`): o elemento chega em `this`, não no primeiro parâmetro.
+Uma função escrita como `fn(img)` recebe `undefined`, sai pelo `?.` ou pelo
+early-return, e **não faz nada** — sem erro, sem log, sem sintoma.
+
+**Dois handlers deste app estavam assim desde que nasceram:**
+`couponArtImageFailed` (a arte quebrada do cupom nunca foi removida) e
+`assistantImagePlaceholder` (o placeholder nunca entrou). Os dois só apareceram
+porque o recuo novo nasceu com o MESMO erro e um teste o cobrou.
+
+A forma certa é explícita: `act('error', 'nome', '$this')`. Vale para todo
+handler que precise do elemento — e a maioria precisa.
+
+### 23.2 TIRAR O `srcset` E REPOR O MESMO `src` NÃO REINICIA O CARREGAMENTO
+
+Medido, com `/render/image/` respondendo 403:
+
+| como | resultado no elemento |
+|---|---|
+| `removeAttribute('srcset')` + `img.src = original` | `complete: true`, **`naturalWidth: 0`** — e o 200 do original CHEGA A SAIR na rede |
+| o mesmo, mas com `removeAttribute('src')` antes | `load` dispara, **`naturalWidth: 1`** |
+
+Duas leituras do mesmo elemento, na mesma página, com duas linhas de diferença.
+Não é teoria de especificação — e quem "simplificar" para uma atribuição só faz
+a imagem parar de pintar sem que nada acuse.
+
+### 23.3 O DUBLÊ DE IMAGEM PRECISA DECODIFICAR
+
+O pixel que entrou no `mockApi()` era um webp de 34 bytes que **não decodifica**.
+O sintoma é traiçoeiro: `complete` fica `true` (a resposta chegou) e
+`naturalWidth` fica ZERO. Tudo o que a suíte pergunta hoje passa — só um teste
+que exija a imagem PINTADA percebe, e foi o `image-retreat` na estreia.
+
+Se você dublar imagem em qualquer lugar, dubles com bytes que decodificam, e
+confira `naturalWidth > 0` uma vez.
+
+### 23.4 COM LAZY-LOAD, "TODAS CARREGADAS" NUNCA FECHA
+
+Três versões do mesmo teste reprovaram o app CERTO, cada uma medindo quem não
+tinha tentado:
+
+1. `clientWidth > 8` pega slide de carrossel e arte de cupom fora da viewport:
+   `loading="lazy"`, nunca carregam, nunca disparam `error`, nunca recuam — e
+   uma imagem que jamais começou tem `complete: false` com o `srcset` intacto,
+   que é **exatamente a assinatura de "falhou e não recuou"**;
+2. casar por NOME DE ARQUIVO junta o herói parado com as duas slides clonadas do
+   mesmo banner: uma tentou, duas não;
+3. esperar `complete: false` chegar a ZERO nunca fecha — o carrossel troca de
+   slide a cada 5 s e sempre há uma entrando. É a mesma armadilha que
+   `image-framing.spec.js` já documentava.
+
+O que funciona: `currentSrc` não-vazio (o browser escolheu e começou), retângulo
+dentro da viewport, e **`complete: true`** — em voo não é prova nem contraprova.
+Mais um piso de amostra, senão "todas em voo" passa por vazio.
+
+E um detalhe do lazy que vale saber antes de estranhar o resultado: uma imagem
+fora da tela que RECUOU não baixa o original na hora — ela espera entrar na
+viewport. O recuo aconteceu; o download é que fica para depois.
+
+### 23.5 O RÓTULO DO PAINEL NÃO É A RESPOSTA — O `curl` É
+
+O painel do Supabase passou a mostrar "Storage Image Transformations:
+Unavailable in plan", e a conclusão natural era que as URLs `/render/image/`
+estavam quebradas e o commit que as espalhou tinha de ser revertido.
+
+Medido, um `curl -I` por família:
+
+| arquivo | `/object/public` | `/render/image?width=` |
+|---|---|---|
+| logo @45 | 22.742 B | **1.241 B** (200) |
+| hero-01 @480 | 104.398 B | **20.063 B** (200) |
+| picanha-suina @110 | 104.074 B | **3.992 B** (200) |
+
+Todas 200, com corpo transformado. **Reverter teria AUMENTADO o egress.** E a
+pista que já estava na mão: as linhas `/render/image/` eram justamente as que
+enchiam o log de egress — se o plano as recusasse, teriam sido 14 GB de erro.
+
+A regra: rótulo de painel é afirmação de terceiro sobre o próprio produto. Uma
+requisição é medida. Quando as duas discordam, a medida vence — e o commit que
+depende disso fica de pé com o `curl` colado nele.

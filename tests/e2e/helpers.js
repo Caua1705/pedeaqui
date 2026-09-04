@@ -242,7 +242,15 @@ function json(body, status = 200) {
 // Um webp de 1x1, opaco, para responder no lugar das imagens do Storage. Ele
 // satisfaz `complete` e `naturalWidth > 0`, que é o que a suíte pergunta —
 // menos `image-framing`, e é por isso que aquele spec pede as reais.
-const PIXEL_DE_1X1 = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64');
+// PNG de 1x1, e não o webp de 34 bytes que estava aqui antes: aquele NÃO
+// DECODIFICA. O sintoma é traiçoeiro — `img.complete` fica `true` (a resposta
+// chegou) e `naturalWidth` fica ZERO (nada foi decodificado), então tudo o que
+// a suíte pergunta hoje passa, e só um teste que exija a imagem PINTADA percebe.
+// Foi `image-retreat.spec.js` que percebeu, na primeira execução.
+const PIXEL_DE_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 export async function mockApi(page, {
   onCreateOrder,
@@ -315,7 +323,7 @@ export async function mockApi(page, {
   if (!imagensReais) {
     await page.route('**/*.supabase.co/**', route => route.fulfill({
       status: 200,
-      contentType: 'image/webp',
+      contentType: 'image/png',
       body: PIXEL_DE_1X1
     }));
   }

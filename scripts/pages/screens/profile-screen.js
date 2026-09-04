@@ -324,7 +324,7 @@
     return `
       <div class="order-details__item">
         ${imageUrl
-          ? `<img class="order-details__item-image" src="${esc(imageUrl)}"${window.RapidexImageCdn?.attrs?.(imageUrl, { box: PEDIDO_BOX }) || ''} alt="${esc(name)}">`
+          ? `<img class="order-details__item-image" src="${esc(imageUrl)}"${window.RapidexImageCdn?.attrs?.(imageUrl, { box: PEDIDO_BOX }) || ''} alt="${esc(name)}" ${act('error', 'retreatImage', '$this')}>`
           : `<div class="order-details__item-image order-details__item-image--fallback"><span>${esc(initials(name))}</span></div>`}
         <div class="order-details__item-copy">
           <div class="order-details__item-title"><strong>${quantity}x</strong><span>${esc(name)}</span></div>
@@ -585,7 +585,7 @@
         <div class="order-details__divider"></div>
         <div class="order-details__restaurant">
           ${restaurantLogo
-            ? `<img class="order-details__restaurant-logo" src="${esc(restaurantLogo)}"${window.RapidexImageCdn?.attrs?.(restaurantLogo, { box: PEDIDO_BOX }) || ''} alt="">`
+            ? `<img class="order-details__restaurant-logo" src="${esc(restaurantLogo)}"${window.RapidexImageCdn?.attrs?.(restaurantLogo, { box: PEDIDO_BOX }) || ''} alt="" ${act('error', 'retreatImage', '$this')}>`
             : `<div class="order-details__restaurant-logo order-details__restaurant-logo--fallback">${esc(initials(restaurantName))}</div>`}
           <div><strong>${esc(restaurantName)}</strong><span>${esc(profOrderRelativeDate(order.created_at))}</span></div>
         </div>

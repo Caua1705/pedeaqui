@@ -140,12 +140,15 @@
     // duas vezes.
     window.RapidexImageCdn?.apply?.(image, url, { box: { w: 95, h: 95 } });
     image.alt = name || 'Restaurante';
+    // Sem `{ once: true }`: o primeiro erro recua para o original, e as
+    // iniciais só entram se nem ele vier.
     image.addEventListener('error', () => {
+      if (window.RapidexImageCdn?.retreat?.(image)) return;
       const fallbackElement = document.createElement('div');
       fallbackElement.className = 'mob-logo-fallback';
       fallbackElement.textContent = initials(name);
       container.replaceChildren(fallbackElement);
-    }, { once: true });
+    });
     container.appendChild(image);
   }
 

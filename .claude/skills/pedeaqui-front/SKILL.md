@@ -2624,12 +2624,19 @@ da comparação:
   essa classe EXISTE (`restaurant-address-flow.js:396`): o que não chega é o
   estado.
 
-As duas registram o erro e a varredura segue; a linha final diz "59 tela(s) com
-diferença" e não diz que duas não puderam ser comparadas. **É o verificador com
-um buraco do tamanho de duas telas, e ele erra calado**: quem lê "Nenhuma
-diferença" não sabe que aquelas duas não foram olhadas. É a mesma família do
-`borderTopColor` sozinho (§5.1) — um verificador que não olha onde o app desenha
-é pior que nenhum, porque com ele você para de conferir à mão.
+As duas registram o erro e a varredura segue. **É o verificador com um buraco do
+tamanho de duas telas, e ele erra calado.** É a mesma família do `borderTopColor`
+sozinho (§5.1) — um verificador que não olha onde o app desenha é pior que
+nenhum, porque com ele você para de conferir à mão.
+
+**CORREÇÃO, escrita depois de ler o código em vez de a saída** (§22): a primeira
+versão desta seção dizia que a linha final "não diz que duas não puderam ser
+comparadas". Isso está errado: o `--diff` SOMAVA a tela que falhou ao contador
+`problemas`, então ela entrava no "N tela(s) com diferença" e o processo saía com
+1. O defeito real é outro e mais fino — **o número misturava "esta mudou" com
+"esta eu não medi"**, que são perguntas diferentes, e a captura não dizia nada no
+fim. Consertado em §22. A lição de método vale mais que o conserto: *afirmação
+sobre ferramenta se confere no código dela, não na memória da saída dela.*
 
 ## 21. Onde uma tela MORA decide para onde o "Voltar" leva (04/09/2026)
 
@@ -2700,3 +2707,64 @@ e a tela nova cobre 390×844 com o corpo em 774 (= 844 − 70 do cabeçalho).
 
 E o `!important` na regra nova não é gosto: a regra de cima o usa, e sem ele a
 de baixo perde — a §5.1 de novo.
+
+## 22. As duas telas que ninguém media (04/09/2026)
+
+`capture-screens.mjs` mediu **60 de 62** telas por meses. As duas que faltavam
+não estavam quebradas no app: os ROTEIROS que as abrem é que descreviam um app
+que não existe mais.
+
+### 22.1 O GESTO ENVELHECE, E O ROTEIRO NÃO AVISA
+
+| tela | o roteiro fazia | o que o app tem hoje |
+|---|---|---|
+| `entregador-acerto` | clicava `#courierHistoryBtn` | esse id **não existe em lugar nenhum** — nem HTML, nem JS, nem CSS. A tela do acerto sai da ABA `#courierTabs [data-aba="acerto"]` |
+| `endereco-apagar-em-uso` | clicava um cartão e esperava `.addr-delete-confirm.is-active-warning` | "em uso" é o endereço do CONTEXTO DE OPERAÇÃO, não o cartão destacado |
+
+A segunda é a mais instrutiva: o roteiro estava CERTO quando foi escrito.
+`requestAddrPickerDelete()` também perguntava `_addrPickerSelected === id`, e
+tocar num cartão bastava para o app achar que ele era o ativo. Esse ramo saiu em
+79ab508 — ele acusava "ativo" sobre um endereço que não era, e com o sentinela
+`__current__` travava a exclusão de TODOS (§14.4). **A correção do app apagou,
+de tabela, a única forma que a captura conhecia de chegar naquela tela**, e a
+captura passou a estourar 15 s ali sem que ninguém lesse.
+
+A regra: um roteiro de captura é código que depende do app **por gesto**, e
+gesto não tem compilador. Quando a suíte de verdade cobre o comportamento
+(`address-delete-guard.spec.js` cobria, e passava), a tela pode ficar anos
+descoberta só do lado do PIXEL.
+
+### 22.2 "NÃO MEDI" NÃO É "MUDOU", E NEM UM NEM OUTRO É "IGUAL"
+
+O `--diff` somava a tela que falhou ao contador de problemas — ou seja, ele não
+mentia um "Nenhuma diferença". O que ele fazia era pior de ler: **um número só
+para duas perguntas diferentes.** "3 tela(s) com diferença" quando duas delas
+não foram medidas manda procurar diferença onde não há medida.
+
+E havia um buraco de verdade: o laço percorre as chaves de A, então **tela que
+só existe em B nunca era mencionada**. Uma tela nova, ou uma renomeada, entrava
+e saía da comparação sem aparecer.
+
+Hoje são duas contas e duas frases; a captura termina com `N de M telas
+medidas`, nomeia as que não abriram, e **sai com 1**. Visto funcionando com o
+gesto quebrado recolocado.
+
+### 22.3 O `--so`, E O BUG QUE ELE TROUXE NA PRIMEIRA LINHA
+
+Consertar uma tela rodando as 62 é caro, então entrou `--so <parte-do-nome>`. A
+primeira versão tirava dos argumentos os índices `i` e `i + 1` — e **sem
+`--so`, `i` é -1 e `i + 1` é 0**, que é o arquivo de saída. Uma captura inteira
+foi parar em `captura.json` na RAIZ do repositório em vez do caminho pedido.
+
+Arquivo de ferramenta na raiz já custou caro aqui: `css-usage.json` entrou no
+próprio corpus e 426 regras mortas viraram 0 (§5.1, armadilha 2). Um `-1` num
+filtro de argumento é a mesma classe do `sort_order` — **o valor sentinela que
+também é um índice válido do outro lado.**
+
+### 22.4 O QUE ESTE COMMIT NÃO PROVOU, E POR QUE
+
+Nada de `scripts/`, `styles/` ou `restaurant.html` mudou: o commit é só a
+ferramenta. Rodar a suíte E2E de novo não teria informação nenhuma sobre ele —
+a prova dele é `62 de 62 telas medidas`, que é a ferramenta abrindo o bundle
+real 62 vezes. Vale dizer isso em vez de rodar por ritual e escrever um número
+que não fala do que mudou.

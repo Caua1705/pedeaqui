@@ -297,6 +297,24 @@ const comOpcoesDeProduto = (page) => page.route(/\/menu(?:\?|$)/, route => {
  * de proposito: e ele que nasce `selected`, e o dialogo de apagar o endereco
  * EM USO e outro desenho (`is-active-warning`).
  */
+/**
+ * O endereço ATIVO da tela de "apagar o que está em uso".
+ *
+ * É o PRIMEIRO da lista de `comEnderecos`, com o mesmo id: `sameAddress` casa
+ * por id, e é isso que faz o backend do picker responder "não dá para apagar o
+ * ativo". Se a lista mudar, este objeto muda junto — são um par.
+ */
+const ENDERECO_ATIVO_DA_CAPTURA = {
+  id: 'end-captura',
+  label: 'Casa',
+  street: 'Rua Silva Paulet',
+  number: '450',
+  neighborhood: 'Aldeota',
+  city: 'Fortaleza',
+  state: 'CE',
+  postal_code: '60120-020'
+};
+
 const comEnderecos = (page) => page.route('**/customers/me/addresses**', route => route.fulfill(json([
   {
     id: 'end-captura',
@@ -1071,21 +1089,40 @@ export const SCREENS = [
   //     (`.addr-delete-confirm.is-active-warning`), diferente do apagar comum.
   {
     name: 'endereco-apagar-em-uso',
-    setup: async (page) => { await logado(page); await comEnderecos(page); },
+    // "EM USO" É O ENDEREÇO DO CONTEXTO DE OPERAÇÃO, e não o cartão destacado.
+    // Este roteiro clicava num cartão e esperava o aviso — e funcionava
+    // enquanto `requestAddrPickerDelete` também perguntava
+    // "`_addrPickerSelected === id`". Esse ramo saiu em 79ab508 (ele acusava
+    // "ativo" sobre um endereço que não era o ativo, e com o sentinela
+    // `__current__` travava a exclusão de TODOS), e desde então esta tela
+    // nunca mais foi medida: a espera estourava 15 s e a varredura seguia.
+    //
+    // O contexto de RETIRADA que `seedPickupSession` deixa não tem endereço
+    // nenhum, então nenhum endereço pode estar em uso. Aqui ele é sobrescrito
+    // por um de ENTREGA cujo endereço é o primeiro da lista de `comEnderecos` —
+    // `sameAddress` casa por id.
+    setup: async (page) => {
+      await logado(page);
+      await comEnderecos(page);
+      await page.addInitScript(({ slug, branchId, endereco }) => {
+        localStorage.setItem('rapidex.customerAddress', JSON.stringify(endereco));
+        localStorage.setItem(
+          `rapidex.operationContext.${slug}`,
+          JSON.stringify({ order_type: 'delivery', branch_id: branchId, branch_label: 'Matriz', confirmed: true, address: endereco })
+        );
+      }, { slug: SLUG, branchId: BRANCH_MATRIZ, endereco: ENDERECO_ATIVO_DA_CAPTURA });
+    },
     async go(page) {
       await boot(page);
       await act(page, 'openAddrPicker');
       await esperar(page, '#addrPickerModal.active .addr-picker-item');
       await page.waitForTimeout(600);
-      // Apagar o endereco EM USO e outro dialogo. Ele so e "em uso" depois de
-      // escolhido — a lista abre sem selecao quando o contexto e de retirada.
-      await page.locator('.addr-picker-item').first().click();
-      await esperar(page, '.addr-picker-item.selected');
       // O lixo fica ESCONDIDO ate as acoes do item abrirem: existe no DOM desde
       // o primeiro render, mas so e clicavel com `actions-open`.
-      await page.locator('.addr-picker-item.selected .addr-picker-dots').click();
-      await esperar(page, '.addr-picker-item.selected.actions-open');
-      await page.locator('.addr-picker-item.selected .addr-picker-delete').click();
+      const emUso = page.locator('.addr-picker-item').first();
+      await emUso.locator('.addr-picker-dots').click();
+      await esperar(page, '.addr-picker-item.actions-open');
+      await emUso.locator('.addr-picker-delete').click();
       await esperar(page, '.addr-delete-confirm.is-active-warning');
       await page.waitForTimeout(400);
     }
@@ -1336,7 +1373,11 @@ export const SCREENS = [
       await page.locator("#courierCodeInput").fill(CODIGO_ENTREGADOR);
       await page.locator("#courierGateSubmit").click();
       await esperar(page, ".cr-card");
-      await page.locator("#courierHistoryBtn").click();
+      // A ABA, e não um botão de cabeçalho: `#courierHistoryBtn` não existe em
+      // lugar nenhum do repositório — nem no HTML, nem no JS, nem no CSS. Esta
+      // tela ficou meses SEM SER MEDIDA por causa disso, e a varredura seguia
+      // em frente dizendo "FALHOU" numa linha que rola para fora da tela.
+      await page.locator('#courierTabs [data-aba="acerto"]').click();
       await esperar(page, ".cr-entrega");
       await page.waitForTimeout(400);
     }
@@ -1517,10 +1558,30 @@ export async function prepararTela(page, screen) {
   if (screen.setup) await screen.setup(page);
 }
 
-async function capture(out) {
+/**
+ * TELA QUE NÃO ABRE TEM DE SER BARULHENTA — e por meses não foi.
+ *
+ * O laço já registrava o erro e imprimia "FALHOU", mas a linha rolava para fora
+ * da tela no meio de outras 61 e o fim da execução dizia só "escrito: x.json".
+ * Duas telas ficaram assim: `entregador-acerto` clicando um id que não existe
+ * mais em lugar nenhum do repositório, e `endereco-apagar-em-uso` esperando um
+ * estado que a correção de 79ab508 tornou inalcançável por aquele gesto.
+ *
+ * Num verificador cujo trabalho é assinar embaixo de "nada mudou", uma tela que
+ * não foi medida é PIOR que uma tela diferente: a diferente aparece. Agora o
+ * resumo nomeia as que falharam e o processo SAI COM 1.
+ */
+async function capture(out, filtro) {
   const browser = await chromium.launch();
   const result = {};
-  for (const screen of SCREENS) {
+  const falhas = [];
+  const alvo = filtro ? SCREENS.filter(t => t.name.includes(filtro)) : SCREENS;
+  if (!alvo.length) {
+    console.log('nenhuma tela casa com "' + filtro + '"');
+    await browser.close();
+    process.exit(1);
+  }
+  for (const screen of alvo) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await prepararTela(page, screen);
@@ -1534,25 +1595,44 @@ async function capture(out) {
       process.stdout.write('  ' + screen.name + ': ' + result[screen.name].length + ' elementos\n');
     } catch (error) {
       result[screen.name] = { erro: String((error && error.message) || error) };
+      falhas.push(screen.name);
       process.stdout.write('  ' + screen.name + ': FALHOU - ' + error.message + '\n');
     }
     await context.close();
   }
   await browser.close();
   writeFileSync(out, JSON.stringify(result, null, 1));
+  const resumo = () => {
+    console.log(alvo.length - falhas.length + ' de ' + alvo.length + ' telas medidas.');
+    if (!falhas.length) return;
+    console.log('');
+    console.log(falhas.length + ' TELA(S) NÃO ABRIRAM — ninguém está conferindo estas:');
+    falhas.forEach(nome => console.log('  ' + nome));
+  };
   console.log('\nescrito: ' + out);
+  resumo();
+  if (falhas.length) process.exit(1);
 }
 
 function diff(a, b) {
   const A = JSON.parse(readFileSync(a, 'utf8'));
   const B = JSON.parse(readFileSync(b, 'utf8'));
   let problemas = 0;
+  const naoComparadas = [];
+  // UMA TELA A MENOS NÃO É UMA TELA IGUAL, e as duas metades são contadas à
+  // parte: um número que soma "esta mudou" com "esta eu não medi" não responde
+  // nenhuma das duas perguntas. O laço percorre as chaves de A, então tela que
+  // só existe em B sumia da conta inteira.
+  for (const name of Object.keys(B)) {
+    if (!(name in A)) naoComparadas.push(name + ' (só existe na captura DEPOIS)');
+  }
   for (const name of Object.keys(A)) {
     const before = A[name];
     const after = B[name];
+    if (!(name in B)) { naoComparadas.push(name + ' (só existe na captura ANTES)'); continue; }
     if (!Array.isArray(before) || !Array.isArray(after)) {
-      console.log(name + ': uma das capturas falhou - ' + JSON.stringify((before && before.erro) || (after && after.erro)));
-      problemas++;
+      console.log(name + ': NÃO PUDE COMPARAR - ' + ((before && before.erro) || (after && after.erro)));
+      naoComparadas.push(name);
       continue;
     }
     /*
@@ -1617,7 +1697,12 @@ function diff(a, b) {
     }
   }
   console.log(problemas ? '\n' + problemas + ' tela(s) com diferenca.' : '\nNenhuma diferenca.');
-  process.exit(problemas ? 1 : 0);
+  if (naoComparadas.length) {
+    console.log('');
+    console.log(naoComparadas.length + ' TELA(S) NÃO PUDERAM SER COMPARADAS — a linha acima NÃO fala delas:');
+    naoComparadas.forEach(nome => console.log('  ' + nome));
+  }
+  process.exit(problemas || naoComparadas.length ? 1 : 0);
 }
 
 // SCREENS e exportado, entao este arquivo tambem e IMPORTADO (por
@@ -1626,5 +1711,20 @@ function diff(a, b) {
 if (process.argv[1] && process.argv[1].endsWith('capture-screens.mjs')) {
   const args = process.argv.slice(2);
   if (args[0] === '--diff') diff(args[1], args[2]);
-  else await capture(args[0] || 'captura.json');
+  else {
+    // `--so <parte-do-nome>` mede um subconjunto. Serve para consertar UMA tela
+    // sem esperar as 62 — e NÃO serve para produzir linha de base: um arquivo
+    // parcial comparado com um inteiro cai em "não pude comparar", que é o
+    // desfecho certo.
+    const i = args.indexOf('--so');
+    const filtro = i >= 0 ? args[i + 1] : null;
+    // SEM `--so`, `i` é -1 e `i + 1` é 0 — e um filtro ingênuo comeria o
+    // primeiro argumento, que é o arquivo de saída. Era assim que uma captura
+    // inteira ia parar em `captura.json` na RAIZ do repositório em vez do
+    // caminho pedido, e arquivo de ferramenta na raiz já custou 426 regras
+    // "vivas" uma vez (armadilha 2 da §5.1).
+    const restante = i >= 0 ? args.filter((a, n) => n !== i && n !== i + 1) : args;
+    const saida = restante[0] || 'captura.json';
+    await capture(saida, filtro);
+  }
 }

@@ -1944,6 +1944,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/whatsapp/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Channels
+         * @description Os numeros conectados, e por qual deles cada loja fala.
+         *
+         *     **`branches` nao e um resumo de `channels`.** Uma filial sem linha propria
+         *     aparece em `channels` como ausencia — e pode estar herdando o numero do
+         *     restaurante e funcionando. `source` diz de onde vem o numero de cada loja
+         *     (`branch`, `restaurant`, `none`) e `can_send` diz se um aviso sairia por
+         *     ela neste minuto.
+         *
+         *     `status` separa os tres motivos de um numero estar fora, e `status_label` /
+         *     `status_action` dizem o que aconteceu e o que fazer — a tela nao monta a
+         *     frase a partir do enum. `disabled` religa aqui; `disconnected_by_meta` exige
+         *     que o lojista reconecte a Cloud API no aplicativo dele antes, e e o unico
+         *     dos tres cujo conserto nao e nosso.
+         *
+         *     **`branch_id` so RESTRINGE, nunca amplia.** Com ele, `channels` traz o canal
+         *     daquela loja **e a linha do restaurante** — sem a queda na lista, a tela
+         *     diria "voce herda um numero" sem ter o numero para mostrar.
+         */
+        get: operations["list_channels_admin_whatsapp_channels_get"];
+        put?: never;
+        /**
+         * Connect Channel
+         * @description Conecta um numero. `branch_id` nulo e a linha do RESTAURANTE.
+         *
+         *     **Conectar o mesmo `phone_number_id` de novo e RECONECTAR**: troca o token,
+         *     religa o canal e limpa a desconexao. E o caminho da rotacao de token e o da
+         *     volta depois de um `DELETE` — sem ele, desconectar seria irreversivel pelo
+         *     painel.
+         *
+         *     **As tres colisoes respondem 409 com FRASE, e nao com erro de banco.** O
+         *     schema ja as impede (`UNIQUE (phone_number_id)`, `UNIQUE (branch_id)` e o
+         *     indice unico parcial da queda), mas as tres pedem coisas diferentes do
+         *     lojista, e um `IntegrityError` nao diz qual e nem o que fazer:
+         *
+         *     - **numero de outro restaurante** — a frase nao diz de quem ele e;
+         *     - **numero que ja e de outra filial SUA** — a frase nomeia a filial;
+         *     - **lugar ocupado** (a filial, ou a queda do restaurante) — a frase diz por
+         *       qual numero aquele lugar fala hoje.
+         */
+        post: operations["connect_channel_admin_whatsapp_channels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/whatsapp/channels/{channel_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Disconnect Channel
+         * @description Desliga o canal. **A linha NAO e apagada**, e por isso devolve 200 com o
+         *     canal — nao 204.
+         *
+         *     E a regra do cardapio, com o motivo mais forte que ela tem neste schema:
+         *     `whatsapp_messages.channel_id` e FK **sem `ON DELETE`**, de proposito.
+         *     Apagar o canal apagaria o registro de que o cliente foi avisado — o unico
+         *     lugar onde isso e visivel depois. O banco recusaria o DELETE de qualquer
+         *     jeito assim que houvesse uma mensagem.
+         *
+         *     **As janelas de 24h ficam**, e vencem sozinhas no expurgo do `limpeza` em
+         *     ate 24h. O prazo delas ja E o mecanismo de exclusao; apaga-las aqui seria
+         *     um segundo mecanismo para a mesma coisa.
+         *
+         *     **O que muda na hora:** `resolve_for_branch` deixa de escolher este canal,
+         *     entao nenhum aviso sai por ele a partir do commit. E a filial que falava
+         *     por um numero PROPRIO desligado **nao cai** no do restaurante — o que se
+         *     espera de um numero desligado e que aquela loja pare de mandar.
+         */
+        delete: operations["disconnect_channel_admin_whatsapp_channels__channel_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -5196,6 +5287,91 @@ export interface components {
             role?: ("owner" | "manager" | "attendant") | null;
         };
         /**
+         * AdminWhatsAppBranchView
+         * @description Por qual numero ESTA filial fala, agora.
+         */
+        AdminWhatsAppBranchView: {
+            /**
+             * Branch Id
+             * Format: uuid
+             */
+            branch_id: string;
+            /** Branch Name */
+            branch_name: string;
+            /** Can Send */
+            can_send: boolean;
+            /** Channel Id */
+            channel_id?: string | null;
+            /** Display Phone Number */
+            display_phone_number?: string | null;
+            source: components["schemas"]["WhatsAppBranchSource"];
+        };
+        /**
+         * AdminWhatsAppChannelCreate
+         * @description Conectar um numero.
+         *
+         *     `branch_id` nulo e deliberado e significa **a linha do restaurante**: o
+         *     numero que toda filial sem o seu proprio herda. Restaurante de uma loja so
+         *     usa essa forma.
+         */
+        AdminWhatsAppChannelCreate: {
+            /** Access Token */
+            access_token: string;
+            /** Branch Id */
+            branch_id?: string | null;
+            /** Display Phone Number */
+            display_phone_number: string;
+            /** Phone Number Id */
+            phone_number_id: string;
+            /** Waba Id */
+            waba_id: string;
+        };
+        /**
+         * AdminWhatsAppChannelView
+         * @description Uma linha de `whatsapp_channels`, sem nada que seja credencial.
+         */
+        AdminWhatsAppChannelView: {
+            /** Branch Id */
+            branch_id?: string | null;
+            /** Branch Name */
+            branch_name?: string | null;
+            /**
+             * Connected At
+             * Format: date-time
+             */
+            connected_at: string;
+            /** Disconnect Reason */
+            disconnect_reason?: string | null;
+            /** Disconnected At */
+            disconnected_at?: string | null;
+            /** Display Phone Number */
+            display_phone_number: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Phone Number Id */
+            phone_number_id: string;
+            status: components["schemas"]["WhatsAppChannelStatus"];
+            /** Status Action */
+            status_action?: string | null;
+            /** Status Label */
+            status_label: string;
+            /** Waba Id Masked */
+            waba_id_masked: string;
+        };
+        /**
+         * AdminWhatsAppChannelsResponse
+         * @description As linhas que existem, e a heranca resolvida loja a loja.
+         */
+        AdminWhatsAppChannelsResponse: {
+            /** Branches */
+            branches: components["schemas"]["AdminWhatsAppBranchView"][];
+            /** Channels */
+            channels: components["schemas"]["AdminWhatsAppChannelView"][];
+        };
+        /**
          * AssignmentErrorCode
          * @description Por que um pedido do lote NAO foi atribuido. Enum para a lista sair
          *     no /openapi.json (armadilha 16): o painel escreve a mensagem por codigo,
@@ -6494,6 +6670,12 @@ export interface components {
             customer_name: string;
             /** Customer Phone */
             customer_phone: string;
+            /** Delivery Due At */
+            delivery_due_at?: string | null;
+            /** Delivery Eta Max */
+            delivery_eta_max?: number | null;
+            /** Delivery Eta Min */
+            delivery_eta_min?: number | null;
             /** Delivery Latitude */
             delivery_latitude?: number | null;
             /** Delivery Longitude */
@@ -9062,6 +9244,35 @@ export interface components {
             /** Reset Token */
             reset_token: string;
         };
+        /**
+         * WhatsAppBranchSource
+         * @description De onde vem o numero desta filial.
+         *
+         *     `NONE` e "esta loja nao fala por numero nenhum" — e nao "nunca conectou".
+         *     A distincao entre nunca-conectou e conectou-e-caiu esta no `status` do
+         *     canal: sem canal nenhum, `channel_id` e nulo e `source` e `NONE`; com canal
+         *     caido, `channel_id` aponta para a linha e o `status` dela diz o que houve.
+         * @enum {string}
+         */
+        WhatsAppBranchSource: "branch" | "restaurant" | "none";
+        /**
+         * WhatsAppChannelStatus
+         * @description Em que estado esta o numero.
+         *
+         *     `str, Enum` e nao literal solto para a LISTA sair no `/openapi.json`
+         *     (armadilha 16): o painel precisa distinguir os tres, e o unico jeito de
+         *     ele saber quais existem e o documento.
+         *
+         *     Os tres pedem acoes diferentes, e e por isso que sao tres:
+         *
+         *         connected             nada a fazer
+         *         disabled              NOS desligamos. Religar e conosco
+         *         disconnected_by_meta  o LOJISTA tirou o acesso pelo aplicativo dele.
+         *                               Religar exige ele reconectar na Meta primeiro —
+         *                               nao ha botao nosso que resolva
+         * @enum {string}
+         */
+        WhatsAppChannelStatus: "connected" | "disabled" | "disconnected_by_meta";
         /**
          * WhatsAppWebhookResponse
          * @description O que a Meta recebe de volta.
@@ -12247,6 +12458,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminUserCreatedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_channels_admin_whatsapp_channels_get: {
+        parameters: {
+            query?: {
+                /** @description Restringe a uma filial. Sem ele vem a rede inteira, que é a forma principal: o dono precisa do mapa, não de uma loja por vez. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWhatsAppChannelsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connect_channel_admin_whatsapp_channels_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWhatsAppChannelCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWhatsAppChannelView"];
+                };
+            };
+            /** @description O número, a filial ou a linha do restaurante já ocupados */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_channel_admin_whatsapp_channels__channel_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWhatsAppChannelView"];
                 };
             };
             /** @description Validation Error */

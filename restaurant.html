@@ -914,31 +914,19 @@
           </button>
         </div>
 
-        <!-- 7.5 Cupom — o CAMPO ÚNICO, e é aqui que o cupom se aplica.
+        <!-- 7.5 O CAMPO DE CÓDIGO DE CUPOM NÃO MORA AQUI.
 
-             A decisão do fluxo: cupom só se aplica quando existe sacola, e o
-             lugar de digitar um código que veio de fora (panfleto, mensagem,
-             embalagem) é o checkout. UM campo — sem escolher entre escanear e
-             digitar.
+             Ele existiu nesta tela entre 02 e 03/09/2026 e saiu por decisão de
+             produto: digitar um código que veio de fora (panfleto, mensagem,
+             embalagem) vai ser outra tela. Enquanto ela não existe, o cupom se
+             aplica pelo Clube — card, folha de detalhe, confirmar —, que passa
+             pelas MESMAS portas (armSelectedCoupon -> previewSelectedCoupon ->
+             restoreSelectedCoupon) e pelo mesmo POST /coupons/preview.
 
-             O código vai para POST /coupons/preview no campo coupon_code, que
-             é a MESMA função que decide o estado de cada card da lista. O front
-             não julga o cupom e não calcula nada: manda o código e exibe o
-             veredito que voltou. -->
-        <div class="cart-coupon" id="cartCouponSection">
-          <div class="cart-section-heading">Cupom</div>
-          <div class="cart-coupon-row">
-            <input class="cart-coupon-input" id="cartCouponInput" type="text"
-                   inputmode="text" autocomplete="off" autocapitalize="characters"
-                   spellcheck="false" maxlength="100"
-                   placeholder="Digite o código do cupom"
-                   aria-label="Código do cupom"
-                   data-act-keydown='["applyTypedCouponOnEnter","$event"]'>
-            <button class="cart-coupon-apply" id="cartCouponApply" type="button"
-                    data-act-click='applyTypedCoupon'>Aplicar</button>
-          </div>
-          <div class="cart-coupon-msg" id="cartCouponMsg" role="status" hidden></div>
-        </div>
+             O contrato do lado do pedido já aceita as duas formas: quando não
+             há `coupon_id`, `buildOrderPayload` manda `coupon_code`
+             (order-payload.js:132) — a tela nova não vai precisar mexer no
+             dinheiro. Guarda: tests/unit/cart-coupon-field.test.js. -->
 
         <!-- 8. Price summary -->
         <div class="cart-price-summary">

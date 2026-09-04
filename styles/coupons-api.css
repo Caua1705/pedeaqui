@@ -64,31 +64,9 @@
 }
 .coupon-notice.is-visible{opacity:1;transform:translate(-50%,0)}
 
-/* O CAMPO DE CUPOM DO CHECKOUT (02/09/2026).
-
-   Mora aqui, e não em utilities.css, pelo motivo escrito no cabeçalho daquele
-   arquivo: das 1.055 regras dele, 1.006 disputam ordem com outra folha, e
-   acrescentar mais uma disputa por conveniência é o que criou aquele problema.
-   Estas são de bloco novo — nenhuma outra folha declara `.cart-coupon*` —,
-   ficam escopadas ao #cartModal e não precisam de !important nenhum.
-
-   As cores saem de token: cor chumbada aqui faria toda loja nova nascer com o
-   campo na cor do piloto (skill §7). */
-#cartModal .cart-coupon{ padding: 0 16px 4px; }
-#cartModal .cart-coupon-row{ display: flex; gap: 8px; align-items: stretch; }
-#cartModal .cart-coupon-input{
-  flex: 1 1 auto; min-width: 0; height: 42px; padding: 0 12px;
-  border: 1px solid var(--bd3); border-radius: 10px;
-  background: var(--surface); color: var(--fg);
-  font-size: 13px; font-weight: 500; letter-spacing: .02em; text-transform: uppercase;
-}
-#cartModal .cart-coupon-input::placeholder{ color: var(--fg2); text-transform: none; letter-spacing: 0; }
-#cartModal .cart-coupon-input:focus{ outline: none; border-color: var(--brand-border); }
-#cartModal .cart-coupon-apply{
-  flex: 0 0 auto; height: 42px; padding: 0 18px; border: 0; border-radius: 10px;
-  background: var(--brand-primary); color: var(--brand-on-primary);
-  font-size: 13px; font-weight: 700; cursor: pointer;
-}
-#cartModal .cart-coupon-apply[disabled]{ opacity: .6; cursor: default; }
-#cartModal .cart-coupon-msg{ margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--fg2); }
-#cartModal .cart-coupon-msg[data-tom="erro"]{ color: var(--fg); font-weight: 600; }
+/* O CAMPO DE CUPOM DO CHECKOUT existiu aqui entre 02 e 03/09/2026 e SAIU com
+   o markup dele (restaurant.html) e a view (restaurant-page.js): o lugar de
+   digitar um código que veio de fora vai ser outra tela. Regra de folha sem
+   markup é regra morta, e morta é como css-usage.mjs a encontraria — mas só
+   pela metade ESTÁTICA, e nesse dia ninguém saberia por que ela existiu.
+   O bloco inteiro sai junto; quem fizer a tela nova escreve o dela. */

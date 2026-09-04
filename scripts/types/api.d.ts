@@ -5305,6 +5305,8 @@ export interface components {
             /** Display Phone Number */
             display_phone_number?: string | null;
             source: components["schemas"]["WhatsAppBranchSource"];
+            /** Source Label */
+            source_label: string;
         };
         /**
          * AdminWhatsAppChannelCreate
@@ -5313,17 +5315,50 @@ export interface components {
          *     `branch_id` nulo e deliberado e significa **a linha do restaurante**: o
          *     numero que toda filial sem o seu proprio herda. Restaurante de uma loja so
          *     usa essa forma.
+         *
+         *     ## As descricoes dizem DE ONDE sai cada valor, e isso e a tela
+         *
+         *     Quem cola os quatro valores e quem conecta o restaurante na mao —
+         *     enquanto nao formos Tech Provider, nao ha Embedded Signup e nao ha de onde
+         *     eles virem sozinhos. Entao o painel da Meta tem que estar escrito onde a
+         *     pessoa esta olhando na hora de colar, e nao num documento que ela vai
+         *     procurar tres meses depois.
+         *
+         *     O lugar certo para isso e o `description` de cada campo: o painel consome
+         *     o `/openapi.json` (armadilha 16), entao o que esta aqui chega ao
+         *     formulario. Escrito no docstring da rota, nao chegaria.
+         *
+         *     **A do `access_token` e a unica que fala do caminho ERRADO**, e ela e a
+         *     linha mais importante das quatro: o token que a tela de Configuracao da
+         *     API oferece primeiro, ja preenchido e com botao de copiar, e temporario.
+         *     Com ele os avisos funcionam na demonstracao e param sozinhos no dia
+         *     seguinte — sem nada errado deste lado para achar.
          */
         AdminWhatsAppChannelCreate: {
-            /** Access Token */
+            /**
+             * Access Token
+             * @description Token PERMANENTE: Configurações do Negócio → Usuários → Usuários do sistema → o usuário com o app e o WABA atribuídos → Gerar novo token, validade “Nunca expira”, com whatsapp_business_messaging e whatsapp_business_management marcadas. NÃO use o token da tela de Configuração da API: ele vence em 24h e os avisos param sozinhos no dia seguinte.
+             */
             access_token: string;
-            /** Branch Id */
+            /**
+             * Branch Id
+             * @description A filial deste número. VAZIO significa o número do restaurante: toda filial que não tiver o seu próprio passa a falar por ele.
+             */
             branch_id?: string | null;
-            /** Display Phone Number */
+            /**
+             * Display Phone Number
+             * @description O número como se lê, na mesma tela: “+55 85 99999-0000”. É só para a tela — quem roteia o webhook é o phone_number_id.
+             */
             display_phone_number: string;
-            /** Phone Number Id */
+            /**
+             * Phone Number Id
+             * @description Mesma tela do waba_id (WhatsApp → Configuração da API): o campo “ID do número de telefone”. Não é o número em si.
+             */
             phone_number_id: string;
-            /** Waba Id */
+            /**
+             * Waba Id
+             * @description Meta → WhatsApp → Configuração da API, com o número escolhido no seletor: o campo “ID da conta do WhatsApp Business”.
+             */
             waba_id: string;
         };
         /**

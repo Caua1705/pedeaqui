@@ -152,7 +152,7 @@ test('trocar a cor do tenant repinta a interface inteira', async ({ page }) => {
 // ============================================================================
 
 /** Boota com o /menu preso, e devolve a função que o solta. */
-async function bootComMenuPreso(page, primaryColor, { bundlePreso = false } = {}) {
+async function bootComMenuPreso(page, primaryColor) {
   await page.setViewportSize({ width: 414, height: 896 });
   await mockApi(page);
   const menu = JSON.parse(JSON.stringify(MENU));
@@ -163,7 +163,6 @@ async function bootComMenuPreso(page, primaryColor, { bundlePreso = false } = {}
     await portao;
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(menu) });
   });
-  if (bundlePreso) await page.route('**/assets/restaurant-*.js', () => { /* pendente de propósito */ });
   await page.goto(`/restaurant.html?slug=${SLUG}`, { waitUntil: 'commit' });
   await expect(page.locator('body')).toHaveClass(/app-booting/);
   // O `commit` volta assim que a resposta COMEÇA — o bundle ainda pode não ter
@@ -172,6 +171,30 @@ async function bootComMenuPreso(page, primaryColor, { bundlePreso = false } = {}
   // dele). `RapidexBootTint` é o último global publicado antes do boot pedir
   // rede, então esperá-lo é esperar "o JS rodou, o /menu não respondeu".
   await page.waitForFunction(() => Boolean(window.RapidexBootTint));
+  // E A FOLHA DE ESTILO DO PONTINHO precisa estar valendo. Não é zelo nem
+  // margem de tempo: `boot-tint.js` escreve `--app-loader-dot` INLINE no <html>,
+  // mas quem manda o pontinho usá-lo é `.app-loader-dots span` (styles/assistant.css),
+  // que vem no CSS empacotado. Antes de essa regra aplicar, o pontinho não tem
+  // fundo nenhum e `backgroundColor` lê `rgba(0, 0, 0, 0)` — que é exatamente o
+  // que a PRIMEIRA visita espera ler. Sem esta espera um dos dois testes falha e
+  // o outro passa pelo motivo errado, os dois pela mesma causa.
+  //
+  // MEDIDO em 04/09/2026, com a suíte em paralelo: 4 de 12 rodadas liam
+  // `rgba(0, 0, 0, 0)` com `--app-loader-dot` já valendo `#1B4FD8` no inline do
+  // <html>. Não era o prepaint que faltava — era a regra que o consome.
+  //
+  // A pergunta é feita na PRÓPRIA regra que está sendo medida, não num sintoma
+  // vizinho: `width: 13.333px !important` mora no mesmo bloco que o
+  // `background-color: var(--app-loader-dot)`. Um <span> sem CSS tem largura
+  // zero, então largura > 0 é "este bloco aplicou". E `--brand-primary` vem de
+  // `tokens.css`, que é outro arquivo e pode chegar noutra hora: ela é a
+  // condição da GUARDA lá embaixo, e vazia faria a guarda acusar a coisa errada.
+  await page.waitForFunction(() => {
+    const ponto = document.querySelector('.app-loader-dots span');
+    if (!ponto) return false;
+    const raiz = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim();
+    return parseFloat(getComputedStyle(ponto).width) > 0 && raiz !== '';
+  });
   return soltar;
 }
 
@@ -219,6 +242,34 @@ test('PRIMEIRA visita: nenhum ponto fica visível antes de receber a cor real do
   await esperarAppPronto(page);
 });
 
+// A GUARDA DESTE TESTE MUDOU EM 04/09/2026, e vale dizer por quê.
+//
+// Ele afirmava "o bundle não tinha executado quando eu medi", e prendia
+// `/assets/restaurant-*.js` numa rota pendurada para garantir isso. MEDIDO: na
+// SEGUNDA visita o handler dessa rota é consultado ZERO vez. O bundle já está
+// no cache do navegador desde a primeira visita (asset com hash no nome é
+// imutável para o `vite preview`), e requisição servida do cache NÃO passa pelo
+// interceptador do Playwright — o evento `request` dispara, o handler não roda.
+// `Network.setCacheDisabled` e `Network.clearBrowserCache` pelo CDP também não
+// devolveram a requisição para a rota. O bloqueio era um no-op, o bundle
+// executava, e a asserção só passava enquanto a máquina fosse rápida o bastante
+// para ler o global antes de ele ser publicado. Não é margem de tempo que
+// conserta isso: a requisição nunca chega à rede.
+//
+// A guarda nova NÃO depende de bloquear nada, porque exclui a única explicação
+// alternativa em vez de perseguir o relógio: se a cor azul do pontinho tivesse
+// vindo do BUNDLE, ela teria vindo de `applyTheme()` — o único outro lugar que
+// escreve `--app-loader-dot` (via `paintTint`, restaurant-page.js) — e
+// `applyTheme()` escreve a paleta INTEIRA. Então `--brand-primary` seria azul
+// junto. Enquanto ela ainda vale a cor da PLATAFORMA, `applyTheme()` não rodou,
+// e o azul do pontinho só pode ter saído do cache do slug lido em
+// `boot-tint.js` — antes de qualquer rede, que é o que o teste existe para
+// provar. E `applyTheme()` não pode ter rodado por construção: ela depende do
+// `/menu`, que está preso no portão.
+//
+// As duas leituras saem do MESMO `waitForFunction`, de propósito: em duas
+// chamadas separadas o mundo pode mudar entre elas, e a asserção passaria a
+// falar de dois instantes diferentes.
 test('SEGUNDA visita: o loader já nasce na cor daquela loja, antes de qualquer rede', async ({ page }) => {
   // Primeira visita completa: é ela que grava a cor do slug.
   const soltar = await bootComMenuPreso(page, BLUE);
@@ -227,15 +278,27 @@ test('SEGUNDA visita: o loader já nasce na cor daquela loja, antes de qualquer 
   expect(await brandPrimary(page)).toBe(BLUE);
 
   // Segunda visita, com o /menu preso: nada de rede respondeu ainda.
-  await bootComMenuPreso(page, BLUE, { bundlePreso: true });
+  await bootComMenuPreso(page, BLUE);
+  const prepaint = await page.waitForFunction(() => {
+    // O pontinho pode ainda não ter sido parseado: `boot-tint.js` é script do
+    // <head> e roda antes do <body>. "Ainda não" responde nulo — nunca estoura
+    // (§17.8 da skill).
+    const ponto = document.querySelector('.app-loader-dots span');
+    if (!ponto) return null;
+    return {
+      ponto: getComputedStyle(ponto).backgroundColor,
+      marca: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim()
+    };
+  }).then(handle => handle.jsonValue());
+
   expect(
-    await corDosPontinhos(page),
+    prepaint.ponto,
     'a cor guardada do slug não foi para o loader'
   ).toBe('rgb(27, 79, 216)');
   expect(
-    await page.evaluate(() => window.PedeAquiRestaurantClub),
-    'o teste deixou o bundle executar antes de medir o prepaint'
-  ).toBeUndefined();
+    prepaint.marca.toLowerCase(),
+    'a paleta do tenant já estava escrita: o azul do pontinho pode ter vindo de applyTheme(), não do prepaint'
+  ).toBe('#f36f21');
 });
 
 // O contrário do que este teste pedia antes: ele exigia que o loader

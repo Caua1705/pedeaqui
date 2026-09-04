@@ -2232,3 +2232,67 @@ corrida que passou anos caindo do lado bom.
 A regra: em predicado de `waitForFunction`, "ainda não existe" tem de responder
 FALSO, nunca lançar. Lançar é para o que a espera precisa denunciar (a tela de
 erro de boot), e a diferença entre os dois é o que o `?.` marca.
+
+### 17.9 `page.route` NÃO VÊ REQUISIÇÃO SERVIDA DO CACHE
+
+O teste de prepaint do loader (`tenant-theme`, SEGUNDA visita) prendia
+`/assets/restaurant-*.js` numa rota pendurada para provar "o bundle não tinha
+executado quando eu medi".
+
+**Medido em 04/09/2026: na segunda visita o handler dessa rota é consultado ZERO
+vez.** O asset tem hash no nome, o `vite preview` o manda como imutável, e o
+Chromium o serve do cache — e requisição servida do cache não passa pelo
+interceptador do Playwright. O evento `request` DISPARA (foi o que enganou), o
+handler não roda. `Network.setCacheDisabled` e `Network.clearBrowserCache` pelo
+CDP também não devolveram a requisição para a rota.
+
+Ou seja: o bloqueio era um no-op, o bundle executava, e a asserção só passava
+enquanto a máquina fosse rápida o bastante para ler o global antes de ele ser
+publicado. **Não há margem de tempo que conserte isso** — a requisição nunca
+chega à rede. Na PRIMEIRA visita a mesma rota pega o bundle normalmente, o que
+faz o bloqueio parecer funcionar quando se testa isolado.
+
+A saída não foi bloquear melhor: foi **excluir a explicação alternativa em vez
+de perseguir o relógio**. Se o pontinho azul tivesse vindo do bundle, teria
+vindo de `applyTheme()` — o único outro lugar que escreve `--app-loader-dot`, via
+`paintTint` — e `applyTheme()` escreve a paleta INTEIRA. Enquanto
+`--brand-primary` ainda vale a cor da plataforma, `applyTheme()` não rodou. A
+guarda passou a ser essa, lida no MESMO `waitForFunction` da cor (duas chamadas
+separadas falam de dois instantes diferentes).
+
+Braço adversário, para não acreditar nela de graça: medindo DEPOIS de soltar o
+`/menu`, o pontinho continua azul — a asserção de cor sozinha passaria — e é a
+guarda que acusa (`Received: "#1b4fd8"`).
+
+### 17.10 `rgba(0, 0, 0, 0)` PODE SER "A FOLHA AINDA NÃO APLICOU"
+
+Mesmo teste, segunda falha, e esta é a mais traiçoeira das duas.
+
+Rodando o arquivo sozinho: verde. Com a suíte inteira em paralelo: **4 de 12
+rodadas** liam `backgroundColor: rgba(0, 0, 0, 0)` no pontinho — com
+`--app-loader-dot` já valendo `#1B4FD8` no `style` inline do `<html>`, lido de
+dentro da própria página. O prepaint tinha acontecido.
+
+O que faltava era a REGRA que o consome. `boot-tint.js` escreve o token inline,
+mas quem manda o pontinho usá-lo é `.app-loader-dots span` (`styles/assistant.css`),
+que vem no CSS empacotado. Antes de essa regra aplicar, o `<span>` não tem fundo
+nenhum — e um elemento sem fundo lê exatamente `rgba(0, 0, 0, 0)`, que é o mesmo
+valor que a PRIMEIRA visita EXIGE ler. **A mesma causa derrubava um teste e fazia
+o outro passar pelo motivo errado.**
+
+A assinatura que denuncia o estado: `--brand-primary` vem **vazia**. Custom
+property vazia significa "nenhuma regra de `tokens.css` existe ainda", não
+"valor estranho".
+
+A espera certa pergunta na PRÓPRIA regra que está sendo medida, não num sintoma
+vizinho: `width: 13.333px !important` mora no mesmo bloco que o
+`background-color: var(--app-loader-dot)`, e um `<span>` sem CSS tem largura
+zero. Largura > 0 é "este bloco aplicou". Esperar por `--brand-primary` não
+bastou — ela vem de `tokens.css`, outro arquivo, que chega noutra hora; ela
+entra na espera só porque é a condição da guarda de §17.9.
+
+Depois: **108/108** com `--repeat-each=12 --workers=4`.
+
+A regra que fica: antes de afirmar sobre cor computada num boot, espere por algo
+que só é verdade quando a folha daquele elemento aplicou. "Transparente" e
+"ainda não estilizado" são o mesmo valor.

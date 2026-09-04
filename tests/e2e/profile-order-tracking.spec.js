@@ -345,10 +345,14 @@ test('Perfil mostra Ajuda e abre o cartao exato com os contatos da unidade', asy
   await expect(stickyCart).not.toBeVisible();
 
   const labels = page.locator('#mobViewProfile .prof-account-row-label');
+  // "Contas conectadas" entrou em 04/09/2026, com o "entrar com Google". A
+  // lista é afirmada INTEIRA de propósito — é o que faz uma linha nova aparecer
+  // aqui em vez de passar despercebida.
   await expect(labels).toHaveText([
     'Gerenciar perfil',
     'Meus pedidos',
     'Meus endereços',
+    'Contas conectadas',
     'Política de privacidade',
     'Ajuda',
     'Sair'

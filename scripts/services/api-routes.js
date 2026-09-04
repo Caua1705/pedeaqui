@@ -138,6 +138,60 @@
     authVerifyResetCode: () => '/auth/verify-reset-code',
     authResetPassword: () => '/auth/reset-password',
 
+    // ---- Entrar com Google ----
+    //
+    // O NONCE VEM PRIMEIRO, e não é cerimônia. `POST /auth/google/nonce` devolve
+    // um par: o `nonce` vai para `google.accounts.id.initialize()` e volta
+    // ASSINADO dentro do `id_token`; o `nonce_token` volta para nós ao lado
+    // dele. Sem o par, um `id_token` legítimo capturado em qualquer lugar seria
+    // aceito aqui como se fosse a pessoa entrando agora — com ele, o token só
+    // vale na sessão que pediu o par. Validade de 10 minutos; vencido, o
+    // `/auth/google` responde 400 e o caminho é pedir outro par, não consertar
+    // nada do lado do app.
+    authGoogleNonce: () => '/auth/google/nonce',
+
+    // TRÊS DESFECHOS NUMA RESPOSTA SÓ, decididos pelo campo `status` — é a
+    // mesma forma que `LoginResponse` já usa nesta API:
+    //
+    //   authenticated               o `sub` já é conhecido. Vem `access_token`,
+    //                               `token_type` e `customer`; a sessão se usa
+    //                               igual à do login por e-mail.
+    //   link_confirmation_required  o `sub` é novo e o e-mail JÁ TEM conta aqui.
+    //                               NINGUÉM foi logado e NADA foi ligado: saiu um
+    //                               código de 6 dígitos por e-mail e veio um
+    //                               `link_ticket`. A sessão sai do
+    //                               `/auth/verify-email-code`, com o ticket.
+    //   profile_required            o `sub` é novo e o e-mail não tem conta. Vêm
+    //                               `signup_ticket`, `email` e `name`; faltam
+    //                               telefone e data de nascimento, que o Google
+    //                               não fornece e `customers` exige.
+    //
+    // E o que ela NÃO faz: não junta contas por e-mail, em hipótese nenhuma.
+    authGoogle: () => '/auth/google',
+
+    // O telefone daqui não aceita enfeite: para cliente logado o pedido copia
+    // `customers.phone` no snapshot, e é esse número que o entregador liga.
+    // 409 aqui significa RECOMEÇAR (chamar `/auth/google` de novo, que cai
+    // sozinho no caso certo), não "tente outros dados".
+    authGoogleCompleteSignup: () => '/auth/google/complete-signup',
+
+    // ---- Contas conectadas ----
+    //
+    // Lista vazia quer dizer "esta conta abre só por e-mail e senha". Junto com
+    // o `password_set` de `GET /customers/me`, ela diz exatamente quando o
+    // botão de desconectar tem de estar DESABILITADO: conta sem senha utilizável
+    // e um único provedor não pode desconectar esse provedor — sem senha e sem
+    // provedor ninguém entra mais, e a pessoa só descobriria isso na próxima vez
+    // que tentasse entrar, sem nenhuma pista.
+    //
+    // A lista NÃO traz o `provider_user_id` (o `sub`), de propósito: ele é
+    // identificador da pessoa dentro do Google e pertence à exportação da LGPD,
+    // que é um pedido explícito — não a uma tela que abre sozinha e cujo corpo
+    // passa por log de proxy, cache de app e captura de tela.
+    customerSocialAccounts: () => '/customers/me/social',
+    customerSocialProvider: provider =>
+      `/customers/me/social/${routeSlug(provider)}`,
+
     // ---- Authenticated customer ----
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',

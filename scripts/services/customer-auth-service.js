@@ -97,8 +97,28 @@
   function registerCustomer(payload) {
     return client().post(routes().authRegister(), payload);
   }
-  function verifyEmailCode({ email, code }) {
-    return client().post(routes().authVerifyEmailCode(), { email, code });
+  // A MESMA ROTA PARA DOIS USOS, e o `google_link_ticket` é quem decide.
+  //
+  // Sem ticket: o cadastro por e-mail, sem nenhuma mudança — marca
+  // `email_verified_at`, responde `{verified, message}` e NÃO devolve token.
+  //
+  // Com ticket: o caso (b) do "entrar com Google" — o `sub` é novo e o e-mail já
+  // tem conta aqui. O código certo LIGA a identidade ao cliente que já existe
+  // (nunca cria outro) e a resposta traz `access_token`, `token_type`,
+  // `customer` e `linked_provider`.
+  //
+  // O ticket sozinho não liga nada: quem autoriza é o CÓDIGO, que só chega na
+  // caixa de entrada. É essa prova a mais que fecha o furo de juntar contas por
+  // e-mail — sem ela, quem tivesse se cadastrado antes com o endereço de outra
+  // pessoa receberia a conta dela pronta quando ela entrasse com o Google.
+  //
+  // O campo só entra no corpo quando existe. `VerifyEmailCodeRequest` não é de
+  // esquema fechado, mas mandar `null` onde o backend espera ausência é a
+  // mesma classe do §12.10 pela porta de trás — e aqui não custa nada evitar.
+  function verifyEmailCode({ email, code, google_link_ticket }) {
+    const body = { email, code };
+    if (google_link_ticket) body.google_link_ticket = google_link_ticket;
+    return client().post(routes().authVerifyEmailCode(), body);
   }
   function resendEmailCode({ email }) {
     return client().post(routes().authResendEmailCode(), { email });
@@ -117,6 +137,50 @@
       reset_token,
       new_password,
       confirm_password
+    });
+  }
+
+  /* ---------- Entrar com Google ---------- */
+
+  // O par que abre um login. `nonce` vai para o Google (que o copia ASSINADO
+  // para dentro do `id_token`) e `nonce_token` volta para nós junto dele — um
+  // sem o outro não serve para nada, e é essa a defesa contra um `id_token`
+  // legítimo capturado em outro lugar. Vale 10 minutos.
+  function createGoogleNonce() {
+    return client().post(routes().authGoogleNonce(), {});
+  }
+
+  // Mande o `id_token` (o campo `credential` do Google Identity Services),
+  // NUNCA o `accessToken` — são coisas diferentes e o backend recusa o segundo.
+  // Leia o `status` da resposta: ver os três desfechos em api-routes.js.
+  function signInWithGoogle({ id_token, nonce_token }) {
+    return client().post(routes().authGoogle(), { id_token, nonce_token });
+  }
+
+  // Conclui o caso `profile_required` e devolve a sessão. `phone` e
+  // `birth_date` são NOT NULL em `customers` e o Google não manda nenhum dos
+  // dois; `marketing_opt_in` e `name` são opcionais — sem `name`, fica o do
+  // Google. A conta nasce com o e-mail já verificado e SEM senha utilizável.
+  function completeGoogleSignup(payload) {
+    return client().post(routes().authGoogleCompleteSignup(), payload);
+  }
+
+  /* ---------- Contas conectadas ---------- */
+
+  function listSocialAccounts() {
+    return authedGet(routes().customerSocialAccounts());
+  }
+
+  // Desconectar mexe em FORMA DE ENTRAR, então pede a senha atual — do mesmo
+  // jeito que conectar. Devolve a lista que sobrou.
+  //
+  // A trava mora no backend e a tela tem de antecipá-la: conta com
+  // `password_set: false` e UM único provedor recebe 400, porque sem senha e sem
+  // provedor a pessoa não entra mais. Ver `renderConnectedAccounts()`.
+  function unlinkSocialAccount(provider, { password } = {}) {
+    return authedRequest(routes().customerSocialProvider(provider), {
+      method: 'DELETE',
+      body: JSON.stringify(password ? { password } : {})
     });
   }
 
@@ -185,6 +249,12 @@
     forgotPassword,
     verifyResetCode,
     resetPassword,
+    // entrar com Google
+    createGoogleNonce,
+    signInWithGoogle,
+    completeGoogleSignup,
+    listSocialAccounts,
+    unlinkSocialAccount,
     // authenticated
     getCurrentCustomer,
     updateCurrentCustomer,

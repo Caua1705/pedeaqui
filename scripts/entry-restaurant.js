@@ -90,6 +90,11 @@ import './services/coupon-reason.js';
 // `msg` e o texto do pydantic, em ingles. Mesma familia do coupon-reason, e
 // tambem puro. Precisa vir antes do restaurant-page (que carrega o auth-flow).
 import './services/validation-message.js';
+// O botao do Google: baixa o gsi/client e pede o par de nonce. Le
+// `PedeAquiCustomerAuth.createGoogleNonce` NA CHAMADA, nao no import, entao a
+// posicao dele aqui so precisa ser antes do restaurant-page (que carrega o
+// auth-flow, quem o chama).
+import './services/google-identity-service.js';
 // Rotulo da bandeira do cartao, lido pela lista de cartoes salvos
 // (payment-card-flow) e pela linha de pagamento da sacola (restaurant-page).
 // Nao depende de nada; so precisa vir antes dos dois.

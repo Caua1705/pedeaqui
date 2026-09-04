@@ -72,7 +72,12 @@ async function abrirCadastro(page) {
 }
 
 async function aceitarPrivacidade(page) {
-  const caixa = page.locator('label.reg-check').filter({ hasText: 'política de privacidade' });
+  // ESCOPADO NO #registerScreen. Este seletor era único até 04/09/2026, quando a
+  // tela de completar o cadastro do Google (`#googleSignupScreen`) ganhou o
+  // mesmo par de caixas — e um `label.reg-check` sem escopo passou a casar dois
+  // elementos. O modo estrito do Playwright acusou na hora, que é o desfecho
+  // bom; um seletor único por acidente é o que fica esperando o segundo.
+  const caixa = page.locator('#registerScreen label.reg-check').filter({ hasText: 'política de privacidade' });
   await caixa.locator('.reg-check-box').click();
   await expect(page.locator('#regPrivacy')).toBeChecked();
 }

@@ -104,6 +104,9 @@
   }
 
   function openLoginScreen(origin = 'profile') {
+    // Rearma a cada abertura: o par de nonce vale 10 minutos (ver
+    // armGoogleSignIn). Sem await — a folha não espera pelo Google para abrir.
+    armGoogleSignIn();
     applyLoginOrigin(origin);
     openModal('loginModal');
   }
@@ -539,23 +542,45 @@
     verifyCtx = {
       email: ctx?.email || '',
       source: ctx?.source || 'register',
-      customer: ctx?.customer || null
+      customer: ctx?.customer || null,
+      // O ticket do caso (b) do Google. Ele acompanha o código no
+      // /auth/verify-email-code e é o que faz aquela rota LIGAR a identidade em
+      // vez de só marcar o e-mail como verificado. Vazio no fluxo de cadastro.
+      googleLinkTicket: ctx?.googleLinkTicket || ''
     };
     const isReset = verifyCtx.source === 'reset';
-    const titleText = isReset ? 'Recuperar senha' : 'Validação de e-mail';
+    const isGoogleLink = verifyCtx.source === 'google-link';
+    const titleText = isReset ? 'Recuperar senha' : (isGoogleLink ? 'Confirmar seu e-mail' : 'Validação de e-mail');
     if ($('vfyHeaderTitle')) $('vfyHeaderTitle').textContent = titleText;
     if ($('vfyText')) {
       $('vfyText').innerHTML = `Nós enviamos um código de 6 dígitos para <strong>${esc(maskEmail(verifyCtx.email))}</strong>. O código expira em alguns minutos, insira o código abaixo:`;
+    }
+    if (isGoogleLink && $('vfyText')) {
+      $('vfyText').innerHTML = `Este e-mail já tem uma conta aqui. Enviamos um código de 6 dígitos para <strong>${esc(maskEmail(verifyCtx.email))}</strong> — ele é o que autoriza ligar o Google a ela.`;
     }
     showVfyMsg('');
     clearVfyInputs();
     $('registerScreen')?.classList.remove('active');
     $('loginScreen')?.classList.remove('active');
+    $('googleSignupScreen')?.classList.remove('active');
     closeModalId('loginModal');
     $('verifyScreen')?.classList.add('active');
     setBottomNavSuppressedForAuth(true);
     lockAuthScreenScroll();
-    startVfyTimer();
+    // NÃO HÁ ROTA DE REENVIO PARA O CÓDIGO DO GOOGLE, e o contrato é explícito:
+    // `/auth/resend-email-code` desiste em silêncio quando o e-mail já está
+    // verificado, que é o caso da maioria das contas existentes — justamente as
+    // que caem aqui. Para outro código, o caminho é tocar no botão do Google de
+    // novo, que traz um ticket novo junto. Um botão "Reenviar" que não reenvia
+    // é pior que nenhum: ele promete e não cumpre, sem dizer por quê.
+    // ESCOPADO NO #verifyScreen: `.vfy-resend-row` existe DUAS vezes no HTML
+    // (a tela de código do cadastro e a da recuperação de senha). Um
+    // `querySelector` global pega a primeira e acerta por acidente — no dia em
+    // que a ordem do markup mudar, esta linha esconde a linha da OUTRA tela.
+    const linhaReenvio = document.querySelector('#verifyScreen .vfy-resend-row');
+    if (linhaReenvio) linhaReenvio.hidden = isGoogleLink;
+    if (isGoogleLink) stopVfyTimer();
+    else startVfyTimer();
     setTimeout(() => vfyDigits()[0]?.focus(), 60);
   }
 
@@ -679,7 +704,11 @@
         $('verifyScreen')?.classList.remove('active');
         openResetPasswordScreen(res?.reset_token, verifyCtx.email);
       } else {
-        const res = await window.PedeAquiCustomerAuth.verifyEmailCode({ email: verifyCtx.email, code });
+        const res = await window.PedeAquiCustomerAuth.verifyEmailCode({
+          email: verifyCtx.email,
+          code,
+          google_link_ticket: verifyCtx.googleLinkTicket
+        });
         // VerifyEmailCodeResponse é {message, verified} — e NADA mais. Este
         // bloco lia oito nomes que nunca existiram (res.customer, res.user,
         // res.access_token...) e nunca lia `verified`: um 200 com
@@ -692,6 +721,18 @@
           return;
         }
         stopVfyTimer();
+        // COM TICKET, A MESMA ROTA DEVOLVE SESSÃO. É a diferença do caso (b):
+        // o código certo ligou a identidade ao cliente que já existia, e vêm
+        // `access_token`, `token_type`, `customer` e `linked_provider`. Sem
+        // ticket a resposta continua sendo `{verified, message}` e o login
+        // continua sendo o passo seguinte — os dois ramos abaixo são isso.
+        if (verifyCtx.googleLinkTicket && res?.access_token) {
+          applyLoggedSession(res.access_token, res.customer);
+          await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
+          $('verifyScreen')?.classList.remove('active');
+          finishLoginNavigation();
+          return;
+        }
         // Não vem token: verificação não loga. A conta local do fluxo de
         // cadastro é o que o cliente digitou (verifyCtx.customer).
         const localCustomer = verifyCtx.customer || { email: verifyCtx.email };
@@ -706,6 +747,301 @@
       _vfySubmitting = false;
       if (btn) btn.textContent = 'Validar código';
       updateVfySubmitState();
+    }
+  }
+
+  /* ---------- Entrar com Google ---------- */
+
+  // ==========================================================================
+  //  TRÊS DESFECHOS, UMA RESPOSTA — e o campo `status` é quem decide.
+  //
+  //    authenticated               entra igual ao login por e-mail.
+  //    link_confirmation_required  o `sub` é novo e o e-mail JÁ TEM conta aqui.
+  //                                NINGUÉM foi logado e NADA foi ligado: saiu um
+  //                                código por e-mail e veio um `link_ticket`.
+  //                                A sessão sai de /auth/verify-email-code.
+  //    profile_required            o e-mail não tem conta. Faltam telefone e
+  //                                data de nascimento, que o Google não manda.
+  //
+  //  POR QUE O CASO (b) NÃO É "JUNTAR CONTAS POR E-MAIL". O ticket sozinho não
+  //  liga nada — quem autoriza é o CÓDIGO, que só chega na caixa de entrada.
+  //  Sem essa prova a mais, quem tivesse se cadastrado antes com o endereço de
+  //  outra pessoa receberia a conta dela pronta ao entrar com o Google.
+  //
+  //  E é a MESMA tela de código do cadastro, com o mesmo markup: o que muda é o
+  //  `source`, e é ele que manda o ticket junto e sabe ler a sessão que volta.
+  //  Uma segunda tela de seis dígitos seria a segunda cópia da mesma coisa.
+  // ==========================================================================
+
+  let _googleArmando = false;
+  let _googleCtx = { signup_ticket: '', email: '', name: '' };
+
+  function showGoogleError(msg) {
+    const el = $('loginGoogleError');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.hidden = !msg;
+  }
+
+  /**
+   * Arma o botão do Google na folha de login.
+   *
+   * Chamada a CADA abertura da folha, de propósito: o par de nonce vale 10
+   * minutos, e uma folha aberta atrás de uma aba passa disso sem esforço. A
+   * rota do nonce não autentica, não toca no banco e não diz nada sobre
+   * ninguém — rearmar é um sorteio e uma assinatura.
+   *
+   * Sem client id no ambiente, o bloco inteiro fica `hidden` e nada é pedido.
+   */
+  async function armGoogleSignIn({ limparErro = true } = {}) {
+    const bloco = $('loginGoogleBlock');
+    const alvo = $('googleSignInButton');
+    const gid = window.PedeAquiGoogleIdentity;
+    if (!bloco || !alvo) return false;
+    if (!gid?.isEnabled()) { bloco.hidden = true; return false; }
+    if (_googleArmando) return false;
+    _googleArmando = true;
+    // `limparErro: false` para quem REARMA depois de uma falha. Limpar aqui
+    // apagava a frase que a falha acabara de escrever, e o cliente voltava para
+    // uma folha sem uma palavra sobre o que tinha acontecido — o pior desfecho
+    // possível para um erro que EXIGE um segundo toque no botão.
+    if (limparErro) showGoogleError('');
+    try {
+      const ok = await gid.armarBotao(alvo, {
+        onCredential: handleGoogleCredential,
+        onError: erro => {
+          // O botão SOME quando o Google não pôde ser armado. Deixá-lo na tela
+          // sem funcionar é a mesma armadilha do client id ausente.
+          bloco.hidden = true;
+          console.error('[PedeAqui] Não foi possível preparar o Entrar com Google.', erro);
+        }
+      });
+      bloco.hidden = !ok;
+      return ok;
+    } finally {
+      _googleArmando = false;
+    }
+  }
+
+  async function handleGoogleCredential({ id_token, nonce_token }) {
+    showGoogleError('');
+    try {
+      const res = await window.PedeAquiCustomerAuth.signInWithGoogle({ id_token, nonce_token });
+      if (res?.status === 'authenticated') {
+        // `access_token` ausente num `authenticated` não é caso do contrato; se
+        // acontecer, entrar sem token deixaria a tela LOGADA e a API 401 em
+        // tudo. Cair na mensagem é a resposta segura.
+        if (!res?.access_token) {
+          showGoogleError('Não foi possível entrar com o Google. Tente de novo.');
+          return;
+        }
+        applyLoggedSession(res.access_token, res.customer);
+        await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
+        finishLoginNavigation();
+        return;
+      }
+      if (res?.status === 'link_confirmation_required') {
+        openVerifyScreen({
+          email: res.email || '',
+          source: 'google-link',
+          googleLinkTicket: res.link_ticket || ''
+        });
+        return;
+      }
+      if (res?.status === 'profile_required') {
+        openGoogleSignupScreen({
+          signup_ticket: res.signup_ticket || '',
+          email: res.email || '',
+          name: res.name || ''
+        });
+        return;
+      }
+      showGoogleError(res?.message || 'Não foi possível entrar com o Google.');
+    } catch (error) {
+      // O 400 daqui costuma ser o par de nonce vencido, e a única saída é pedir
+      // outro par — não há o que consertar do lado do app. Rearmar deixa a
+      // pessoa tocar de novo em vez de fechar e reabrir a folha.
+      await armGoogleSignIn({ limparErro: false });
+      showGoogleError(apiErrorMessage(error, 'Não foi possível entrar com o Google. Toque no botão de novo.'));
+    }
+  }
+
+  /* ---------- Completar o cadastro do Google (profile_required) ---------- */
+
+  // Os dois campos que o Google não manda e `customers` exige. O telefone não
+  // aceita enfeite: para cliente logado o pedido copia `customers.phone` no
+  // snapshot, e é esse número que o ENTREGADOR liga.
+  const GSU_FIELDS = [
+    { id: 'gsuName', err: 'gsuNameErr', validate(v) {
+      if (!(v || '').trim()) return 'Campo obrigatório';
+      return '';
+    } },
+    { id: 'gsuPhone', err: 'gsuPhoneErr', validate(v) {
+      const d = onlyDigits(v);
+      if (!d) return 'Campo obrigatório';
+      if (d.length < 10 || d.length > 11) return 'Informe o telefone completo';
+      return '';
+    } },
+    { id: 'gsuBirth', err: 'gsuBirthErr', validate(v) {
+      if (!onlyDigits(v)) return 'Campo obrigatório';
+      if (!isValidBirthDate(v)) return 'O formato deve ser DD/MM/AAAA';
+      return '';
+    } }
+  ];
+  const gsuTouched = new Set();
+  let _gsuSubmitting = false;
+
+  const gsuDef = id => GSU_FIELDS.find(f => f.id === id);
+
+  function setGsuFieldError(def, msg) {
+    $(def.id)?.closest('.reg-field')?.classList.add('reg-field--error');
+    showRegError(def.err, msg);
+  }
+  function clearGsuFieldError(def) {
+    $(def.id)?.closest('.reg-field')?.classList.remove('reg-field--error');
+    hideRegError(def.err);
+  }
+  function showGsuSummary(message) {
+    const box = $('gsuSummary');
+    if (!box) return;
+    const texto = box.querySelector('span:last-child');
+    if (texto && message) texto.textContent = message;
+    box.classList.add('show');
+  }
+  function hideGsuSummary() {
+    $('gsuSummary')?.classList.remove('show');
+  }
+  function validateGsuField(id) {
+    const def = gsuDef(id);
+    if (!def || !gsuTouched.has(id)) return;
+    const msg = def.validate($(id)?.value);
+    if (msg) setGsuFieldError(def, msg);
+    else clearGsuFieldError(def);
+  }
+  function handleGsuFieldInput(id) {
+    gsuTouched.add(id);
+    validateGsuField(id);
+    hideGsuSummary();
+  }
+  function handleGsuFieldBlur(id) {
+    gsuTouched.add(id);
+    validateGsuField(id);
+  }
+  function handleGsuPrivacyInput() {
+    if ($('gsuPrivacy')?.checked) hideRegError('gsuPrivacyErr');
+    hideGsuSummary();
+  }
+
+  function openGoogleSignupScreen(ctx) {
+    _googleCtx = {
+      signup_ticket: ctx?.signup_ticket || '',
+      email: ctx?.email || '',
+      name: ctx?.name || ''
+    };
+    gsuTouched.clear();
+    GSU_FIELDS.forEach(clearGsuFieldError);
+    hideRegError('gsuPrivacyErr');
+    hideGsuSummary();
+    // O nome do Google pode ser o PRÓPRIO E-MAIL quando o perfil não tem nome —
+    // o contrato avisa. Preencher o campo com um e-mail e chamá-lo de "nome" é
+    // pior que deixá-lo vazio: a pessoa aceita sem ler e fica com isso na conta.
+    const nome = _googleCtx.name && _googleCtx.name !== _googleCtx.email ? _googleCtx.name : '';
+    if ($('gsuName')) $('gsuName').value = nome;
+    if ($('gsuPhone')) $('gsuPhone').value = '';
+    if ($('gsuBirth')) $('gsuBirth').value = '';
+    if ($('gsuPromo')) $('gsuPromo').checked = false;
+    if ($('gsuPrivacy')) $('gsuPrivacy').checked = false;
+    if ($('gsuIntro')) {
+      $('gsuIntro').innerHTML = `Seu e-mail <strong>${esc(_googleCtx.email)}</strong> já está confirmado pelo Google. Falta só o que ele não informa.`;
+    }
+    closeModalId('loginModal');
+    $('loginScreen')?.classList.remove('active');
+    $('registerScreen')?.classList.remove('active');
+    $('googleSignupScreen')?.classList.add('active');
+    setBottomNavSuppressedForAuth(true);
+    lockAuthScreenScroll();
+  }
+
+  function closeGoogleSignupScreen() {
+    $('googleSignupScreen')?.classList.remove('active');
+    syncAuthScreenOpenClass();
+    // Sair daqui NÃO deixa conta pela metade: nada foi criado ainda, o
+    // `signup_ticket` vence sozinho e tocar no botão de novo recomeça do lugar
+    // certo. Por isso a volta é para a folha de login, não para o cadastro.
+    _googleCtx = { signup_ticket: '', email: '', name: '' };
+    reopenLoginSheet();
+  }
+
+  function buildGoogleSignupPayload() {
+    const birth = onlyDigits($('gsuBirth').value); // DDMMYYYY
+    const payload = {
+      signup_ticket: _googleCtx.signup_ticket,
+      phone: onlyDigits($('gsuPhone').value),
+      birth_date: `${birth.slice(4, 8)}-${birth.slice(2, 4)}-${birth.slice(0, 2)}`,
+      privacy_accepted: Boolean($('gsuPrivacy')?.checked),
+      marketing_opt_in: Boolean($('gsuPromo')?.checked)
+    };
+    // `name` é opcional: sem ele, fica o do Google. Mandar string vazia seria
+    // APAGAR o nome que o Google deu.
+    const nome = ($('gsuName')?.value || '').trim();
+    if (nome) payload.name = nome;
+    return payload;
+  }
+
+  async function submitGoogleSignup(event) {
+    if (event) event.preventDefault();
+    let primeiroInvalido = null;
+    GSU_FIELDS.forEach(def => {
+      const input = $(def.id);
+      if (!input) return;
+      gsuTouched.add(def.id);
+      const msg = def.validate(input.value);
+      if (msg) {
+        setGsuFieldError(def, msg);
+        if (!primeiroInvalido) primeiroInvalido = input;
+      } else {
+        clearGsuFieldError(def);
+      }
+    });
+    if (!$('gsuPrivacy')?.checked) {
+      showRegError('gsuPrivacyErr', 'É necessário aceitar a política de privacidade');
+      if (!primeiroInvalido) primeiroInvalido = $('gsuPrivacy');
+    }
+    if (primeiroInvalido) {
+      showGsuSummary('Preencha todos os campos');
+      (primeiroInvalido.closest('.reg-field') || primeiroInvalido).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (_gsuSubmitting) return;
+    _gsuSubmitting = true;
+    const btn = $('gsuSubmitBtn');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
+    try {
+      const res = await window.PedeAquiCustomerAuth.completeGoogleSignup(buildGoogleSignupPayload());
+      if (!res?.access_token) {
+        showGsuSummary(res?.message || 'Não foi possível concluir o cadastro.');
+        return;
+      }
+      applyLoggedSession(res.access_token, res.customer);
+      await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: true });
+      $('googleSignupScreen')?.classList.remove('active');
+      finishLoginNavigation();
+    } catch (error) {
+      // 409 AQUI SIGNIFICA RECOMEÇAR, e não "tente outros dados": entre as duas
+      // telas ou o `sub` foi ligado em outra aba, ou alguém criou conta com esse
+      // e-mail. Chamar /auth/google de novo cai sozinho no caso certo.
+      if (error?.status === 409) {
+        $('googleSignupScreen')?.classList.remove('active');
+        _googleCtx = { signup_ticket: '', email: '', name: '' };
+        reopenLoginSheet();
+        await armGoogleSignIn({ limparErro: false });
+        showGoogleError('Sua conta mudou enquanto você preenchia. Toque em "Entrar com Google" de novo.');
+        return;
+      }
+      showGsuSummary(apiErrorMessage(error, 'Não foi possível concluir o cadastro.'));
+    } finally {
+      _gsuSubmitting = false;
+      if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
     }
   }
 
@@ -1276,6 +1612,11 @@
 
   // As 42 acoes que o markup destas telas chama por data-act-*.
   const ACOES_DO_MODULO = {
+    closeGoogleSignupScreen,
+    handleGsuFieldBlur,
+    handleGsuFieldInput,
+    handleGsuPrivacyInput,
+    submitGoogleSignup,
     closeForgotNotFound,
     closeForgotPasswordScreen,
     closeRecoverCodeScreen,

@@ -2296,3 +2296,134 @@ Depois: **108/108** com `--repeat-each=12 --workers=4`.
 A regra que fica: antes de afirmar sobre cor computada num boot, espere por algo
 que só é verdade quando a folha daquele elemento aplicou. "Transparente" e
 "ainda não estilizado" são o mesmo valor.
+
+## 18. Entrar com Google (04/09/2026)
+
+### 18.1 O BRIEFING DIZIA QUE (c) ESTAVA BLOQUEADO. O CONTRATO DIZIA QUE NÃO
+
+A tarefa chegou com duas pendências de backend e a instrução de deixá-las por
+último: (c) "a rota não recebe telefone" e (d) "ligar o Google exige senha".
+
+Lido o contrato depois de `npm run api:generate` — que é o primeiro passo, não o
+último —, **(c) já estava resolvido**: `GoogleCompleteSignupRequest` declara
+`phone: string` em `required`, ao lado de `signup_ticket`, `birth_date` e
+`privacy_accepted`. O backend tinha publicado o campo entre o pedido e a
+execução.
+
+E não era só "podia construir": **sem o telefone a rota não responde nada**. O
+campo é obrigatório, então adiar o formulário teria deixado o caso (c) inteiro
+travado num 422 — o oposto de adiar com segurança.
+
+É a §17.2 pela terceira vez, com o sinal trocado: lá o nome estava errado no
+briefing, aqui o bloqueio estava vencido. **Contrato é lido, não lembrado —
+inclusive quando quem lembra é quem pediu.**
+
+(d) continua bloqueado, e a varredura confirma: `LinkGoogleAccountRequest` tem
+`id_token`, `nonce_token` e `password`, e **nenhum campo de código**. O aviso do
+`api-contract.test.js` passa a listar `POST /customers/me/social/google` como
+rota que a API oferece e o front não usa — é o registro vivo dessa pendência, e
+ele some sozinho no dia em que a tela for construída.
+
+### 18.2 OS TRÊS DESFECHOS, E POR QUE (b) NÃO É "ENTROU"
+
+`POST /auth/google` devolve UMA forma com `status` decidindo o bloco preenchido:
+
+| status | o que aconteceu | o que a tela faz |
+|---|---|---|
+| `authenticated` | o `sub` já é conhecido | entra, igual ao login por e-mail |
+| `link_confirmation_required` | o `sub` é novo e o e-mail JÁ TEM conta aqui | **ninguém foi logado e nada foi ligado**: código por e-mail + `link_ticket` |
+| `profile_required` | e-mail sem conta | pede telefone e nascimento |
+
+**O caso (b) é o que se erra.** Ele parece login e não é: quem chegou provou ter
+o mesmo endereço de e-mail no Google, não ser o dono da conta. Quem autoriza é o
+CÓDIGO, que só chega na caixa de entrada — o ticket sozinho não liga nada. Sem
+essa prova a mais, quem tivesse se cadastrado antes com o e-mail de outra pessoa
+receberia a conta dela pronta quando ela entrasse com o Google.
+
+E é a MESMA tela de seis dígitos do cadastro: o que muda é o `source`, que manda
+o `google_link_ticket` junto e sabe ler a sessão que volta. `VerifyEmailCodeResponse`
+ganhou `access_token`, `token_type`, `customer` e `linked_provider` — **mas só
+com ticket**; sem ele continua `{verified, message}` e não loga ninguém. Os dois
+ramos existem no mock, de propósito: responder token nos dois faria o ramo do
+cadastro passar por um caminho que produção não tem.
+
+**Não há rota de reenvio para o código do caso (b)**, e o contrato explica:
+`/auth/resend-email-code` desiste em silêncio quando o e-mail já está
+verificado, que é o caso de todas as contas que caem aqui. A linha de reenviar
+some nessa tela — um botão que promete e não cumpre é pior que nenhum. Para
+outro código, o caminho é tocar no botão do Google de novo, que traz ticket novo.
+
+### 18.3 SEM CLIENT ID, O BOTÃO NÃO NASCE
+
+`VITE_GOOGLE_CLIENT_ID` vazio é o padrão, e o bloco inteiro fica `hidden`. Um
+"Entrar com Google" que não pode funcionar é pior que nenhum: o cliente toca,
+nada acontece, e conclui que o app está quebrado em vez de usar o caminho que
+funciona logo ao lado.
+
+O e2e liga o botão ESCREVENDO em `window.APP_CONFIG.GOOGLE_CLIENT_ID` depois do
+boot, e não pelo env do build — um client id de verdade no build faria a suíte
+inteira baixar `accounts.google.com` em todo boot, que é exatamente o que
+"nenhuma requisição escapa" existe para impedir. Funciona porque `isEnabled()`
+lê a configuração NA CHAMADA; se ela fosse copiada no import, não funcionaria —
+e seria a fotografia do boot da §2.1.
+
+**O guarda é DUPLO (auth-flow e google-identity-service), e isso enganou um
+braço adversário**: removendo só o do auth-flow o teste continuou verde, porque
+o do serviço segurou. Um teste que não falha ao remover UMA linha não prova que
+aquela linha é inútil — prova que há duas. Remova as duas antes de concluir.
+
+### 18.4 AS CINCO ARMADILHAS DESTA RODADA
+
+1. **`<script>` morto reencontrado por `querySelector`.** `ensureSdk()` procurava
+   uma tag existente antes de criar a sua. Depois de uma falha de rede a tag
+   ficava no DOM, a tentativa seguinte a REENCONTRAVA e pendurava os ouvintes
+   nela — e um `<script>` que já falhou **não dispara `load` nunca mais**: o
+   botão ficaria carregando para sempre, sem erro. A tag morta agora sai do DOM
+   no `error`. Quem pegou foi o unitário, escrito antes de a correção existir.
+2. **Contar o DOM não distingue "baixou de novo" de "reusou a morta".** Com a
+   remoção, as duas hipóteses deixam o DOM com UMA tag. A asserção só passou a
+   valer contando as tags CRIADAS, à parte — e afirmando que a que ficou no DOM
+   é a NOVA.
+3. **Seletor único por acidente.** `.vfy-resend-row` existe DUAS vezes no HTML
+   (código do cadastro e código da recuperação); um `querySelector` global
+   acertava por ordem de markup. E `label.reg-check` com "política de
+   privacidade" era único no `auth-flow.spec.js` até a tela nova ganhar o mesmo
+   par de caixas — o modo estrito do Playwright acusou na hora, que é o desfecho
+   bom. **Escope por tela; o seletor único por acidente é o que fica esperando o
+   segundo elemento.**
+4. **`aria-hidden` não abre diálogo — `.active` abre.** Em
+   `.addr-delete-confirm` (operation.css) a visibilidade pende da classe. Mexer
+   só no atributo deixava o diálogo montado, acessível e INVISÍVEL, e o clique
+   não fazia nada na tela.
+5. **REARMAR APAGAVA A MENSAGEM.** `armGoogleSignIn()` começava limpando o erro,
+   e os dois caminhos que rearmam depois de uma falha (nonce vencido, 409)
+   chamavam-no DEPOIS de escrever a frase. O cliente voltava para uma folha sem
+   uma palavra sobre o que aconteceu — o pior desfecho para um erro que exige
+   justamente um segundo toque. Hoje é `armGoogleSignIn({ limparErro: false })`.
+
+### 18.5 O `password_set` PEGOU O MOCK, não o app
+
+`CurrentCustomerResponse.password_set` é booleano com **`@default true`**. O
+front foi escrito com `me?.password_set ?? true` desde a primeira linha, com o
+comentário da §3.2 ao lado.
+
+**E o defeito apareceu no DUBLÊ.** A trava do desvincular no `mockApi()` estava
+escrita `!social.passwordSet`, e a opção é ausente por padrão: toda conta comum
+virava "conta sem senha", a trava disparava em todo desvincular, e o teste
+reprovou o app CERTO com a frase "esta é a única forma de entrar na sua conta".
+
+A lição não é sobre o app: é que **a família do `sort_order` alcança o mock
+igual**, e ali ela é mais traiçoeira, porque o vermelho aponta para o código de
+produção. `node tools/falsy-do-contrato.mjs` varre `scripts/` — `tests/` não
+está no corpus dele.
+
+### 18.6 A CSP PRECISOU DE TRÊS DIRETIVAS, NÃO UMA
+
+`accounts.google.com` entrou em `script-src` (o `gsi/client`), **`frame-src`** (o
+botão é um iframe) e **`connect-src`** (o SDK fala com o próprio host). Só o
+`script-src` faria o script carregar e o botão não aparecer, sem uma linha de
+erro nossa — a classe de bug do commit 63ffa5a, agora pelo Google.
+
+O unitário afirma as três contra o `vercel.json`, lendo a URL do próprio
+serviço: um host novo no código sem o par no header vira tela que funciona em
+teste e é bloqueada em produção.

@@ -661,8 +661,164 @@
     return helpPromise;
   }
 
+  // ==========================================================================
+  //  CONTAS CONECTADAS
+  //
+  //  Duas respostas decidem esta tela, e nenhuma delas sozinha basta:
+  //  `GET /customers/me/social` (quais provedores) e o `password_set` de
+  //  `GET /customers/me` (se há senha).
+  //
+  //  A TRAVA: conta SEM senha utilizável e com UM único provedor não pode
+  //  desconectar esse provedor — sem senha e sem provedor ninguém entra mais. O
+  //  backend responde 400, e a tela tem de mostrar isso ANTES do clique: a
+  //  pessoa não descobriria no botão, e sim na próxima vez que tentasse entrar,
+  //  sem nenhuma pista.
+  //
+  //  `password_set` É BOOLEANO COM `@default true` NO CONTRATO, e por isso é
+  //  lido com `??` e não com `||` nem com `!`. Resposta antiga, sem o campo,
+  //  significa "tem senha" — e um `!me.password_set` a trataria como conta sem
+  //  senha, desabilitando o botão de quem podia clicar. É a família do
+  //  `sort_order` (§3.2 da skill).
+  //
+  //  NÃO HÁ BOTÃO DE CONECTAR AQUI, e a ausência é decisão, não esquecimento.
+  //  `POST /customers/me/social/google` exige A SENHA ATUAL, e quem entrou por
+  //  código de e-mail — o fluxo padrão daqui — não tem uma para digitar: o
+  //  botão só funcionaria para parte das contas e ficaria mudo para o resto.
+  //  A ligação a partir do Perfil espera o backend aceitar CÓDIGO no lugar da
+  //  senha, como já foi decidido para excluir a conta. Enquanto isso, quem quer
+  //  ligar sai, toca em "Entrar com Google" e cai no caso (b), que autoriza por
+  //  código — o caminho existe, só é mais longo.
+  // ==========================================================================
+
+  const SOCIAL_PROVIDER_LABELS = { google: 'Google' };
+  let _unlinkProvider = null;
+  let _unlinkSubmitting = false;
+
+  function socialDate(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  }
+
+  function renderConnectedAccountsHtml(contas, temSenha) {
+    const lista = Array.isArray(contas) ? contas : [];
+    if (!lista.length) {
+      return `
+        <div class="prof-placeholder-card">
+          <div class="prof-placeholder-title">Nenhuma conta conectada</div>
+          <div class="prof-placeholder-text">Esta conta abre s&oacute; por e-mail e senha.</div>
+        </div>`;
+    }
+    // A trava é por LISTA, não por linha: o que a impede é ser a última porta.
+    const ultimaPorta = !temSenha && lista.length === 1;
+    const linhas = lista.map(conta => {
+      const provider = String(conta?.provider || '');
+      const nome = SOCIAL_PROVIDER_LABELS[provider] || provider;
+      const desde = socialDate(conta?.linked_at);
+      const ultimo = socialDate(conta?.last_login_at);
+      const detalhe = [
+        desde ? `Conectado em ${desde}` : '',
+        ultimo ? `&Uacute;ltimo acesso em ${ultimo}` : ''
+      ].filter(Boolean).join(' &middot; ');
+      return `
+        <div class="prof-social-row">
+          <div class="prof-social-info">
+            <div class="prof-social-name">${esc(nome)}</div>
+            <div class="prof-social-detail">${detalhe}</div>
+          </div>
+          <button class="prof-social-unlink" type="button"
+            ${ultimaPorta ? 'disabled' : act('click', 'openUnlinkConfirm', provider)}>Desconectar</button>
+        </div>
+        ${ultimaPorta ? '<div class="prof-social-locked">Esta &eacute; a &uacute;nica forma de entrar na sua conta. Defina uma senha em "Esqueci minha senha" para poder desconectar.</div>' : ''}
+      `;
+    }).join('');
+    return `<div class="prof-info-card">${linhas}</div>`;
+  }
+
+  async function renderConnectedAccounts() {
+    const body = $('profSubContasBody');
+    if (!body) return;
+    body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando contas conectadas...</div></div>';
+    try {
+      const auth = window.PedeAquiCustomerAuth;
+      const [contas, me] = await Promise.all([
+        auth.listSocialAccounts(),
+        auth.getCurrentCustomer()
+      ]);
+      body.innerHTML = renderConnectedAccountsHtml(contas, me?.password_set ?? true);
+    } catch (error) {
+      logAppError('Falha ao carregar contas conectadas', error);
+      body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">N&atilde;o foi poss&iacute;vel carregar suas contas conectadas.</div></div>';
+    }
+  }
+
+  function setUnlinkError(msg) {
+    const el = $('unlinkErr');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('show', Boolean(msg));
+  }
+  function clearUnlinkError() { setUnlinkError(''); }
+
+  function openUnlinkConfirm(provider) {
+    _unlinkProvider = String(provider || '');
+    const nome = SOCIAL_PROVIDER_LABELS[_unlinkProvider] || _unlinkProvider || 'a conta';
+    if ($('unlinkConfirmTitle')) $('unlinkConfirmTitle').textContent = `Desconectar o ${nome}?`;
+    if ($('unlinkPassword')) $('unlinkPassword').value = '';
+    setUnlinkError('');
+    // QUEM ABRE ESTE DIÁLOGO É A CLASSE `.active`, não o `aria-hidden`: em
+    // `.addr-delete-confirm` (operation.css) a visibilidade pende dela. Mexer só
+    // no atributo deixava o diálogo montado, acessível e INVISÍVEL — e o clique
+    // no "Desconectar" não fazia nada na tela.
+    const dialogo = $('unlinkConfirm');
+    if (dialogo) {
+      dialogo.inert = false;
+      dialogo.removeAttribute('inert');
+      dialogo.setAttribute('aria-hidden', 'false');
+      dialogo.classList.add('active');
+    }
+    setTimeout(() => $('unlinkPassword')?.focus(), 60);
+  }
+
+  function closeUnlinkConfirm() {
+    const dialogo = $('unlinkConfirm');
+    releaseFocusFrom(dialogo, null);
+    if (dialogo) {
+      dialogo.classList.remove('active');
+      dialogo.inert = true;
+      dialogo.setAttribute('inert', '');
+      dialogo.setAttribute('aria-hidden', 'true');
+    }
+    _unlinkProvider = null;
+  }
+
+  async function confirmUnlinkSocial() {
+    if (!_unlinkProvider || _unlinkSubmitting) return;
+    const senha = $('unlinkPassword')?.value || '';
+    // A senha é conferida pelo BACKEND, e a checagem daqui é só para não gastar
+    // uma ida à rede com o campo vazio — nunca para decidir se ela vale.
+    if (!senha) { setUnlinkError('Informe sua senha'); return; }
+    _unlinkSubmitting = true;
+    const btn = document.querySelector('#unlinkConfirm .addr-delete-yes');
+    if (btn) btn.disabled = true;
+    try {
+      const restantes = await window.PedeAquiCustomerAuth.unlinkSocialAccount(_unlinkProvider, { password: senha });
+      // A rota DEVOLVE a lista que sobrou: redesenhar com ela evita uma segunda
+      // ida à rede e, principalmente, evita a tela discordar do servidor.
+      const me = await window.PedeAquiCustomerAuth.getCurrentCustomer().catch(() => null);
+      const body = $('profSubContasBody');
+      if (body) body.innerHTML = renderConnectedAccountsHtml(restantes, me?.password_set ?? true);
+      closeUnlinkConfirm();
+    } catch (error) {
+      setUnlinkError(window.PedeAquiApiError?.errorMessage?.(error, 'Não foi possível desconectar.') || 'Não foi possível desconectar.');
+    } finally {
+      _unlinkSubmitting = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
   async function openProfSub(subId, { instant = false } = {}) {
-    if (!app.isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos'].includes(subId)) {
+    if (!app.isLogged() && ['cupons', 'meusdados', 'seguranca', 'pedidos', 'contas'].includes(subId)) {
       shell.openLoginScreen();
       return;
     }
@@ -691,6 +847,7 @@
       ]);
       await window.PedeAquiCardFlow?.refreshProfilePaymentMethods?.();
     }
+    if (subId === 'contas') await renderConnectedAccounts();
     if (subId === 'info') {
       const body = document.querySelector('#profSubinfo .prof-sub-body');
       if (body && app.restaurantInfoState.status !== 'success') body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">Carregando informações...</div></div>';
@@ -720,6 +877,10 @@
     window.RapidexActions.register({
       openProfSub,
       closeProfSub,
+      openUnlinkConfirm,
+      closeUnlinkConfirm,
+      confirmUnlinkSocial,
+      clearUnlinkError,
       loadProfPedidos,
       openProfOrderDetails,
       closeProfOrderDetails,

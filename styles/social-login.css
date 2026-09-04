@@ -1,0 +1,199 @@
+/* ============================================================================
+   ENTRAR COM GOOGLE, e as contas conectadas do Perfil.
+
+   FOLHA PRÓPRIA, e o critério é o mesmo que tirou `store-info`, `club` e
+   `policy` de dentro do `utilities.css` em 30/08/2026: TODO nome daqui é novo e
+   nenhuma outra folha o declara, então não há disputa de ordem para inverter.
+   As únicas exceções são as três classes do diálogo de desconectar
+   (`.addr-delete-*`), que nomeiam POSIÇÃO no par de botões e são declaradas em
+   `operation.css` com `!important` — por isso, e só por isso, elas aparecem
+   aqui escopadas por `#unlinkConfirm` e com `!important` próprio. Ver §4.1 da
+   skill.
+
+   SEM `@media`. Este app é de celular e boa parte do CSS dele vive em
+   `@media(max-width:767px)`; uma tela que só se veste abaixo de 768 fica com
+   duas aparências e nenhuma decisão — foi o que aconteceu com o `#logoutConfirm`
+   até 03/09/2026 (§14.2). Estas regras valem em qualquer largura.
+   ============================================================================ */
+
+/* --- O bloco do botão, na folha de login --- */
+
+/* `[hidden]` PERDE PARA SELETOR DE CLASSE, e por isso esta linha anda junto da
+   regra que dá `display` ao bloco. Sem ela o elemento fica com o atributo
+   `hidden` E visível, o DOM dizendo uma coisa e o olho vendo outra — a
+   armadilha da §12.14. */
+.login-google[hidden] { display: none !important; }
+
+.login-google {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.login-google-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 374px);
+  color: var(--text-muted, #8a8a8a);
+  font-size: var(--ref-text-xs, 12px);
+}
+.login-google-divider::before,
+.login-google-divider::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border-subtle, #e6e3e0);
+}
+
+/* A altura mínima existe para o bloco não PULAR quando o iframe do Google
+   termina de montar: sem ela o botão nasce com zero de altura e empurra a folha
+   inteira no instante em que aparece. 44px é a altura do botão `size:large`. */
+.login-google-btn {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 374px);
+  min-height: 44px;
+}
+
+.login-google-error {
+  width: min(100%, 374px);
+  color: var(--state-danger-strong, #b3261e);
+  font-size: var(--ref-text-xs, 12px);
+  text-align: center;
+}
+.login-google-error[hidden] { display: none !important; }
+
+/* --- A tela de completar o cadastro (profile_required) --- */
+
+/* Ela reaproveita as classes `reg-*` inteiras; o único nome novo é a linha de
+   contexto no topo, que diz de quem é o e-mail já confirmado. */
+.reg-intro {
+  margin: 0 0 4px;
+  color: var(--text-muted, #6b6b6b);
+  font-size: var(--ref-text-sm, 14px);
+  line-height: var(--ref-line-md, 20px);
+}
+
+/* --- Contas conectadas (Perfil) --- */
+
+.prof-social-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+.prof-social-info { min-width: 0; }
+.prof-social-name {
+  color: var(--text-strong, #2f2f2f);
+  font-size: var(--ref-text-sm, 14px);
+  font-weight: 600;
+}
+.prof-social-detail {
+  margin-top: 2px;
+  color: var(--text-muted, #8a8a8a);
+  font-size: var(--ref-text-xs, 12px);
+}
+
+/* DESCONECTAR NÃO DESTRÓI NADA — pedidos, endereços, cupons e cashback pendem
+   do cliente, nunca do provedor. Por isso o botão é contornado na marca e não
+   vermelho: cor de estado é para o que destrói (§7 da skill). */
+.prof-social-unlink {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1.5px solid var(--brand-primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--brand-primary);
+  font-size: var(--ref-text-xs, 12px);
+  font-weight: 700;
+  cursor: pointer;
+}
+.prof-social-unlink:disabled {
+  border-color: var(--border-subtle, #d9d5d1);
+  color: var(--text-muted, #a3a3a3);
+  cursor: not-allowed;
+}
+
+/* O MOTIVO APARECE ANTES DO CLIQUE, não depois. Um botão desabilitado sem
+   explicação manda a pessoa procurar o que fez de errado; e o 400 do backend
+   ela só veria na próxima vez que tentasse entrar, sem nenhuma pista. */
+.prof-social-locked {
+  padding: 0 0 10px;
+  color: var(--text-muted, #8a8a8a);
+  font-size: var(--ref-text-xs, 12px);
+  line-height: 16px;
+}
+
+/* --- O diálogo de desconectar --- */
+
+#unlinkConfirm {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 260 !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+}
+#unlinkConfirm.active { background: rgba(0, 0, 0, .58) !important; }
+
+#unlinkConfirm .addr-delete-panel {
+  width: min(100vw, 414px) !important;
+  max-width: 414px !important;
+  height: auto !important;
+  padding: 18px 20px 30px !important;
+  border-radius: 10px 10px 0 0 !important;
+  border-top: 0 !important;
+  background: #fbfaf9 !important;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .08) !important;
+  text-align: left !important;
+}
+#unlinkConfirm .addr-delete-title {
+  margin: 2px 0 8px !important;
+  color: #3d3d3d !important;
+  font-size: var(--ref-text-lg) !important;
+  line-height: var(--ref-line-lg) !important;
+  font-weight: 600 !important;
+}
+#unlinkConfirm .addr-delete-text {
+  display: block !important;
+  margin: 0 0 14px !important;
+  color: var(--text-muted, #6b6b6b) !important;
+  font-size: var(--ref-text-xs, 12px) !important;
+  line-height: 17px !important;
+}
+#unlinkConfirm .reg-input { width: 100% !important; }
+#unlinkConfirm .reg-error { margin-bottom: 6px !important; }
+
+/* A AÇÃO VEM PRIMEIRO e é a preenchida, como nas outras três telas de
+   confirmação do app. E é a MARCA, não o vermelho — ver `.prof-social-unlink`
+   acima. */
+#unlinkConfirm .addr-delete-yes,
+#unlinkConfirm .addr-delete-cancel {
+  width: 100% !important;
+  max-width: 374px !important;
+  height: 45px !important;
+  min-height: 45px !important;
+  /* `flex-shrink:0`: num flex de COLUNA o `height` é só a BASE, e o
+     `flex-shrink:1` do padrão come dela quando o conteúdo passa da tela — um
+     botão de 45px já encolheu para 15px por isso (§14.6). */
+  flex-shrink: 0 !important;
+  border-radius: 10px !important;
+  font-size: var(--ref-text-sm) !important;
+  font-weight: 700 !important;
+}
+#unlinkConfirm .addr-delete-yes {
+  margin: 6px 0 10px !important;
+  border: 0 !important;
+  background: var(--brand-primary) !important;
+  color: var(--brand-on) !important;
+}
+#unlinkConfirm .addr-delete-cancel {
+  margin: 0 !important;
+  border: 1.5px solid var(--brand-primary) !important;
+  background: var(--surface) !important;
+  color: var(--brand-primary) !important;
+}

@@ -5449,7 +5449,8 @@
       pin: '<path d="M18 10c0 4.5-6 10-6 10s-6-5.5-6-10a6 6 0 1 1 12 0Z"/><circle cx="12" cy="10" r="2"/>',
       doc: '<path d="M7 3h7l4 4v14H7Z"/><path d="M14 3v5h5"/><path d="M9.5 12h5"/><path d="M9.5 16h5"/>',
       help: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m6.4 6.4 3.5 3.5M14.1 14.1l3.5 3.5M17.6 6.4l-3.5 3.5M9.9 14.1l-3.5 3.5"/>',
-      exit: '<path d="M9 5H5v14h4"/><path d="M13 16l4-4-4-4"/><path d="M17 12H8"/>'
+      exit: '<path d="M9 5H5v14h4"/><path d="M13 16l4-4-4-4"/><path d="M17 12H8"/>',
+      shield: '<path d="M12 21s7-3.5 7-9V6l-7-3-7 3v6c0 5.5 7 9 7 9Z"/><path d="m9.2 12 2 2 3.6-4"/>'
     };
     return `<svg class="prof-account-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.doc}</svg>`;
   }
@@ -5478,6 +5479,7 @@
           ${row('user', 'Gerenciar perfil', ['openProfSub', 'meusdados'])}
           ${row('receipt', 'Meus pedidos', ['openProfSub', 'pedidos'])}
           ${row('pin', 'Meus endere&ccedil;os', ['openAddrPicker', 'profile'])}
+          ${row('shield', 'Contas conectadas', ['openProfSub', 'contas'])}
           ${row('doc', 'Pol&iacute;tica de privacidade', ['openPolicyScreen', 'privacy'])}
           ${row('help', 'Ajuda', ['openProfSub', 'ajuda'])}
           ${row('exit', 'Sair', ['logout'], 'prof-account-row--logout')}

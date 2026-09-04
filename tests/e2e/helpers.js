@@ -248,7 +248,11 @@ export async function mockApi(page, {
   onPreviewCoupon,
   onLogin,
   onRegister,
-  onForgot
+  onForgot,
+  // As contas conectadas desta conta de teste. O padrão é a LISTA VAZIA, que no
+  // contrato significa "esta conta abre só por e-mail e senha" — e é o estado
+  // de todas as contas que existiam antes do login social.
+  social = { contas: [] }
 } = {}) {
   const orderRequests = [];
   const paymentRequests = [];
@@ -260,7 +264,17 @@ export async function mockApi(page, {
   const forgotRequests = [];
   const resetCodeRequests = [];
   const resetPasswordRequests = [];
+  const verifyCodeRequests = [];
+  const googleRequests = [];
+  const googleNonceRequests = [];
+  const googleSignupRequests = [];
+  const socialListRequests = [];
+  const unlinkRequests = [];
   const rotasDesconhecidas = [];
+  // A lista muda dentro da execução: desconectar DEVOLVE o que sobrou, e um
+  // mock que responde sempre a mesma lista faria o teste do desvincular passar
+  // sem que nada tivesse sido desconectado.
+  let contasConectadas = [...(social.contas || [])];
 
   await page.route('**/api.pederapidex.com/**', async (route) => {
     const request = route.request();
@@ -457,7 +471,96 @@ export async function mockApi(page, {
         }
         return route.fulfill(json({ message: 'Senha alterada com sucesso.' }));
       }
+      // ── /auth/google*: os três desfechos, escolhidos pelo `id_token` ──
+      //
+      // O TESTE ESCOLHE O CASO PELO TOKEN QUE INJETA, e não por uma opção do
+      // mock: é o `id_token` que o backend de verdade lê para decidir, então
+      // deixar o desfecho pendurado nele mantém o dublê com a mesma forma da
+      // coisa imitada. Os três valores estão em GOOGLE_TOKENS.
+      //
+      // As RECUSAS vêm primeiro, como no resto deste arquivo: sem
+      // `nonce_token` é 400 (o par vencido responde igual, e é o caso comum),
+      // e um `id_token` que não é nenhum dos três é 401 — que é o que o
+      // backend responde a assinatura inválida ou `email_verified` falso.
+      if (/\/auth\/google\/nonce(\?|$)/.test(url)) {
+        googleNonceRequests.push({ body: corpo });
+        return route.fulfill(json({
+          nonce: GOOGLE_NONCE.nonce,
+          nonce_token: GOOGLE_NONCE.nonce_token,
+          expires_in_seconds: 600
+        }));
+      }
+      if (/\/auth\/google\/complete-signup(\?|$)/.test(url)) {
+        googleSignupRequests.push({ body: corpo });
+        // 409 SIGNIFICA RECOMEÇAR: entre as duas telas o `sub` foi ligado em
+        // outra aba, ou alguém criou conta com esse e-mail.
+        if (corpo.signup_ticket === GOOGLE_TOKENS.ticketConflitado) {
+          return route.fulfill(json({ detail: 'Esta conta já existe.' }, 409));
+        }
+        if (corpo.signup_ticket !== GOOGLE_TOKENS.signupTicket) {
+          return route.fulfill(json({ detail: 'Cadastro expirado. Comece de novo.' }, 400));
+        }
+        return route.fulfill(json({
+          access_token: AUTH_CONTA.token,
+          token_type: 'bearer',
+          customer: { ...CUSTOMER, name: corpo.name || CUSTOMER.name, phone: corpo.phone }
+        }));
+      }
+      if (/\/auth\/google(\?|$)/.test(url)) {
+        googleRequests.push({ body: corpo });
+        if (!corpo.nonce_token) {
+          return route.fulfill(json({ detail: 'Toque no botão do Google de novo.' }, 400));
+        }
+        if (corpo.id_token === GOOGLE_TOKENS.contaConhecida) {
+          return route.fulfill(json({
+            status: 'authenticated',
+            message: 'Bem-vindo de volta.',
+            access_token: AUTH_CONTA.token,
+            token_type: 'bearer',
+            customer: CUSTOMER
+          }));
+        }
+        if (corpo.id_token === GOOGLE_TOKENS.emailComConta) {
+          return route.fulfill(json({
+            status: 'link_confirmation_required',
+            message: 'Enviamos um código para o seu e-mail.',
+            email: CUSTOMER.email,
+            link_ticket: GOOGLE_TOKENS.linkTicket
+          }));
+        }
+        if (corpo.id_token === GOOGLE_TOKENS.emailNovo) {
+          return route.fulfill(json({
+            status: 'profile_required',
+            message: 'Falta pouco para criar sua conta.',
+            email: GOOGLE_TOKENS.emailDoPerfilNovo,
+            name: 'Cliente do Google',
+            signup_ticket: GOOGLE_TOKENS.signupTicket
+          }));
+        }
+        return route.fulfill(json({ detail: 'Não foi possível validar sua conta do Google.' }, 401));
+      }
       if (/\/auth\/verify-email-code(\?|$)/.test(url)) {
+        // COM TICKET, A MESMA ROTA DEVOLVE SESSÃO — e sem ele continua
+        // devolvendo `{verified, message}` e nada mais. É o mock imitando as
+        // duas metades do contrato; responder token nos dois casos deixaria o
+        // ramo do cadastro passar por um caminho que produção não tem.
+        verifyCodeRequests.push({ body: corpo });
+        if (corpo.code !== AUTH_CONTA.codigo) {
+          return route.fulfill(json({ message: 'O código é inválido ou expirou.', verified: false }));
+        }
+        if (corpo.google_link_ticket) {
+          if (corpo.google_link_ticket !== GOOGLE_TOKENS.linkTicket) {
+            return route.fulfill(json({ detail: 'Ticket inválido ou expirado.' }, 400));
+          }
+          return route.fulfill(json({
+            verified: true,
+            message: 'Google conectado à sua conta.',
+            access_token: AUTH_CONTA.token,
+            token_type: 'bearer',
+            customer: CUSTOMER,
+            linked_provider: 'google'
+          }));
+        }
         return route.fulfill(json({ message: 'E-mail verificado.', verified: true }));
       }
       if (/\/auth\/resend-email-code(\?|$)/.test(url)) {
@@ -502,8 +605,42 @@ export async function mockApi(page, {
       if (method === 'GET' && /\/customers\/me\/cards(\?|$)/.test(url)) {
         return route.fulfill(json([]));
       }
+      // As duas rotas de contas conectadas vêm ANTES do `/customers/me` cru:
+      // a regex dele casa o prefixo, e a ordem aqui é o que impede a lista de
+      // provedores de ser respondida com o cliente inteiro.
+      if (method === 'GET' && /\/customers\/me\/social(\?|$)/.test(url)) {
+        socialListRequests.push({ url });
+        return route.fulfill(json(contasConectadas));
+      }
+      if (method === 'DELETE' && /\/customers\/me\/social\/([^/?]+)/.test(url)) {
+        const provider = url.match(/\/customers\/me\/social\/([^/?]+)/)[1];
+        unlinkRequests.push({ provider, body: corpoDaRequisicao(request) });
+        const senha = corpoDaRequisicao(request).password;
+        // A TRAVA DO BACKEND, imitada: conta sem senha utilizável e UM único
+        // provedor não pode desconectar esse provedor — sem senha e sem
+        // provedor ninguém entra mais. Um mock que só aceita é um teste que só
+        // concorda, e esta é a recusa que a tela existe para antecipar.
+        // `=== false`, e NÃO `!social.passwordSet`. `password_set` é booleano
+        // com `@default true` no contrato, e o padrão desta opção é ausente:
+        // um `!` trataria toda conta comum como conta SEM senha e a trava
+        // dispararia em todo desvincular. Foi o que aconteceu na primeira
+        // escrita deste mock, e é a mesma família do `sort_order` (§3.2) —
+        // dentro do dublê, onde ela é igualmente capaz de reprovar o app certo.
+        if (social.passwordSet === false && contasConectadas.length <= 1) {
+          return route.fulfill(json({ detail: 'Esta é a única forma de entrar na sua conta.' }, 400));
+        }
+        if (!senha) return route.fulfill(json({ detail: 'Informe sua senha.' }, 400));
+        if (senha !== AUTH_CONTA.senha) return route.fulfill(json({ detail: 'Senha incorreta.' }, 401));
+        contasConectadas = contasConectadas.filter(conta => conta.provider !== provider);
+        return route.fulfill(json(contasConectadas));
+      }
       if (method === 'GET' && /\/customers\/me(\?|$)/.test(url)) {
-        return route.fulfill(json(CUSTOMER));
+        // `password_set` é booleano com `@default true` no contrato: ausente
+        // significa "tem senha". O mock só o escreve quando o teste pede o
+        // contrário, para que o caminho do `??` do front seja o exercitado.
+        return route.fulfill(json(
+          social.passwordSet === false ? { ...CUSTOMER, password_set: false } : CUSTOMER
+        ));
       }
       // POST/PATCH/DELETE e subrotas não declaradas: catch-all lá embaixo.
     }
@@ -536,6 +673,8 @@ export async function mockApi(page, {
   return {
     orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests,
     loginRequests, registerRequests, forgotRequests, resetCodeRequests, resetPasswordRequests,
+    verifyCodeRequests, googleRequests, googleNonceRequests, googleSignupRequests,
+    socialListRequests, unlinkRequests,
     rotasDesconhecidas
   };
 }
@@ -547,6 +686,37 @@ export async function mockApi(page, {
  * propósito: entrar por um ou por outro tem de dar na mesma conta, e é isso
  * que o campo único de login promete.
  */
+/** Corpo JSON da requisição, sem estourar quando não há corpo ou ele não parseia. */
+function corpoDaRequisicao(request) {
+  try { return JSON.parse(request.postData() || '{}') || {}; } catch { return {}; }
+}
+
+/**
+ * OS TRÊS DESFECHOS DO "ENTRAR COM GOOGLE", escolhidos pelo `id_token`.
+ *
+ * O teste injeta um destes no SDK falso do Google e o mock responde o caso
+ * correspondente — é o `id_token` que o backend de verdade lê para decidir, e
+ * pendurar o desfecho nele mantém o dublê com a forma da coisa imitada.
+ */
+export const GOOGLE_TOKENS = {
+  /** (a) o `sub` já é conhecido: vem sessão. */
+  contaConhecida: 'gid-conta-conhecida',
+  /** (b) o `sub` é novo e o e-mail JÁ TEM conta: vem código e `link_ticket`. */
+  emailComConta: 'gid-email-com-conta',
+  /** (c) o e-mail não tem conta: vem `signup_ticket` e faltam telefone e nascimento. */
+  emailNovo: 'gid-email-novo',
+  emailDoPerfilNovo: 'novo.cliente@gmail.com',
+  linkTicket: 'lnk_e2e_0000000000000000',
+  signupTicket: 'sgn_e2e_0000000000000000',
+  /** Um ticket que o backend já não aceita: responde 409, "recomece". */
+  ticketConflitado: 'sgn_e2e_conflito'
+};
+
+export const GOOGLE_NONCE = {
+  nonce: 'nonce-do-e2e',
+  nonce_token: 'nonce-token-do-e2e'
+};
+
 export const AUTH_CONTA = {
   login: CUSTOMER.email,
   telefone: CUSTOMER.phone,

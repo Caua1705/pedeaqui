@@ -1806,11 +1806,22 @@
         </div>
       </div>
 
-      <div class="reg-field">
-        <label class="reg-label" for="regCpf">Informe o CPF</label>
-        <input class="reg-input" id="regCpf" type="tel" inputmode="numeric" placeholder="000.000.000-00" data-act-input='[["maskRegCpf","$this"],["handleRegFieldInput","regCpf"]]' data-act-blur='["handleRegFieldBlur","regCpf"]'>
-        <div class="reg-error" id="regCpfErr"></div>
-      </div>
+      <!-- O CPF SAIU DO CADASTRO em 03/09/2026, e a API o tinha tirado em
+           12/08/2026 — a revisão 20260812_0019 do backend anulou a coluna e
+           `RegisterCustomerRequest` deixou de declarar o campo. Nesse intervalo
+           o front continuou EXIGINDO um documento que a API ignorava em
+           silêncio: pedido a todo cliente, validado por módulo 11, barrando o
+           cadastro de quem não o desse, e descartado no servidor.
+
+           O motivo da API vale igual aqui: depois do cadastro o CPF não ia
+           para o gateway, não emitia nota e não entrava em relatório — e-mail e
+           telefone, os dois UNIQUE, já identificavam a conta. Se um dia houver
+           nota fiscal, o CPF volta pedido no CHECKOUT de quem quer nota, não no
+           cadastro de todo mundo. O CPF do titular do cartão
+           (#cardholderCpf) é outro: aquele o gateway exige e usa.
+
+           Guarda: tests/e2e/auth-flow.spec.js, "o cadastro manda o que o
+           contrato declara — e só isso". -->
 
       <div class="reg-field">
         <label class="reg-label" for="regPassword">Senha</label>

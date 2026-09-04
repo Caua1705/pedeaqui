@@ -1753,7 +1753,7 @@ A varredura da classe inteira, com o veredito de cada sítio:
 | `restaurant-page.js` (preview de cupom) | os 13 `reason=` | corrigido (`services/coupon-reason.js`, tabela NOMINAL) |
 | `restaurant-page.js` `orderStatusLabel()` | `String(status)` no fallback | corrigido |
 | `screens/profile-screen.js` | o código enfeitado por `replace(/_/g,' ')`, em inglês | corrigido |
-| `restaurant-auth-flow.js:380` | `item.msg` do 422 do FastAPI (texto do pydantic, em inglês) | ACHADO, aberto |
+| `restaurant-auth-flow.js` (422 do cadastro) | `item.msg` do 422 do FastAPI (texto do pydantic, em inglês) | **fechado em 03/09/2026** (`services/validation-message.js`, §16.5) |
 | `club-service.js` `COUPON_STATES` | conhece 3 dos 5 `CustomerCouponState`; os outros dois somem da lista | ACHADO, aberto |
 | `restaurant-pix-flow.js` | `PaymentErrorCode` ao lado da frase | por decisão (referência para citar ao restaurante) |
 
@@ -1921,3 +1921,148 @@ O filtro exige dígito e nada de letra, com piso de 8 dígitos — que é o
 a fixture era fiel à produção e a suíte não olhava. Hoje um cupom tem prazo de
 verdade (30/06/2027) e dois guardam o sentinela — as duas populações que o
 banco tem —, e o e2e afirma os dois lados.
+
+## 16. A varredura do "campo usado para MONTAR", e a conta (03/09/2026, noite)
+
+### 16.1 EXIBIR não é MONTAR, e a segunda lista é mais curta e mais cara
+
+A §15.3 varreu valor de contrato que chega à tela. A pergunta seguinte é outra:
+que campo é usado para **montar** alguma coisa — um link, um telefone, um
+e-mail, uma rota? Ali um valor errado não fica feio na tela: ele leva a pessoa
+para o lugar errado, e o rótulo continua bonito.
+
+O inventário completo (grep por `href =`, `encodeURIComponent`, `new URL`,
+`window.open`, `navigator.share`), com o veredito de cada sítio:
+
+| sítio | veredito |
+|---|---|
+| `tel:`/`wa.me`/`mailto:` da loja e do cliente | **ERRADOS**, ver 16.2 |
+| `linkDeMapa` (lat/long -> Google Maps) | certo: `!= null`, com o comentário dizendo que latitude 0 é coordenada |
+| `checkout_url` do Pix -> href | certo: só http(s) |
+| `tenant-identity.remoteLogo` -> og:image/ícone | certo: `new URL` em try/catch |
+| `image-cdn.variant` -> miniatura | certo: só reescreve URL reconhecida do Storage e cai para a original |
+| `api-routes.routeSlug` -> rota com id | certo: `__current__` é barrado antes por `isRemoteAddressId` |
+| endereço anonimizado -> texto e mapa | certo: campos FLAT nulos caem por `filter(Boolean)` |
+
+### 16.2 O MESMO NÚMERO, TRÊS RESPOSTAS — e uma delas erra uma cidade inteira
+
+"Telefone -> `wa.me`" estava escrito em SEIS lugares com TRÊS regras:
+
+1. `length <= 11 ? '55'+d : d` — entregador e Perfil>Ajuda. **A única certa.**
+2. `'55'+d` sempre — #infoModal pelo /menu. Quem digitou o país vira `5555...`.
+3. `d.startsWith('55') ? d : '55'+d` — Perfil>Info, #infoModal pelo /info e
+   `store-info-format.formatWhatsappHref`. **DDD 55 é Santa Maria/RS**: um fixo
+   de lá tem 10 dígitos e começa com 55 sem trazer país nenhum. A regra o toma
+   por internacional e monta `wa.me/5532201234`, que o WhatsApp lê como país 55
+   + DDD 32 (Juiz de Fora). Link para o WhatsApp de outra pessoa, por dado
+   perfeitamente válido, numa região inteira.
+
+E o `formatWhatsappHref` — o único com teste unitário — **não era chamado por
+tela nenhuma**: as duas telas de /info reescreviam a regra inline. Módulo certo,
+testado, e ignorado.
+
+Hoje quem responde é `scripts/utils/contact-link.js`, com o país entrando por
+COMPRIMENTO. Os pisos vêm do contrato, não de palpite: `tel:` aceita 8 dígitos
+(o `Field(min_length=8)` do backend, o número local sem DDD) e `wa.me` exige 10,
+porque **abaixo disso não há DDD, e um wa.me sem DDD não é um link incompleto:
+é um link para outra pessoa**. Por isso pode haver "Ligar" sem "WhatsApp".
+
+**E o campo do lojista pode ter mais de um número.** O telefone do piloto é
+`"(85) 3025-3303 / (85) 3025-7808"` — dois, como ele digitou —, e um
+`onlyDigits()` no campo inteiro montava `tel:` com os VINTE dígitos grudados.
+Está na fixture de produção desde sempre; nenhum teste perguntava para onde o
+link ia. A regra que resolve os dois casos é uma só: tudo que não é dígito nem
+máscara SEPARA (letra inclusive), e o primeiro grupo com tamanho plausível é o
+telefone — o sentinela `removido-<hex>` cai fora sozinho, porque as letras
+partem os dígitos em cacos curtos.
+
+### 16.3 O CPF QUE A API TIROU EM 12/08 E O FRONT CONTINUOU EXIGINDO
+
+A revisão `20260812_0019` do backend (`o_cpf_sai_do_cadastro`) anulou a coluna
+e tirou o campo de `RegisterCustomerRequest`, por LGPD: o documento não ia para
+o gateway, não emitia nota, não entrava em relatório, e e-mail e telefone — os
+dois UNIQUE — já identificavam a conta.
+
+**O front não soube.** Por três semanas ele continuou pedindo CPF no cadastro,
+validando por módulo 11, BARRANDO quem não desse, e mandando o campo num
+payload que o Pydantic descarta em silêncio (o esquema não é
+`additionalProperties: false`, então não há nem 422 para acusar).
+
+Duas lições, e a segunda é o método:
+
+1. **Contrato tem dois sentidos, e este é o terceiro.** A §12.13 já cobria
+   "rota que o front chama e não existe" e "rota que existe e o front ignora".
+   Este é campo que o front MANDA e o contrato não declara — e nenhum portão o
+   pega, porque só os 18 esquemas fechados recusam. Quem pega é um E2E que
+   afirma as CHAVES do corpo contra o esquema.
+2. **O que barra um formulário se descobre com uma sonda, não lendo.** O teste
+   falhava com `registerRequests: 0` e nenhuma pista. Uma sonda que imprime os
+   `.reg-error` visíveis deu a resposta em uma execução: `regCpfErr: Campo
+   obrigatório`.
+
+### 16.4 O FLUXO DE CONTA NÃO TINHA E2E, e o formato do buraco importa
+
+Havia TRÊS specs de auth — `auth-screen-nav`, `login-entry-paths`,
+`verify-email-code` — e **nenhuma fazia login**. As duas primeiras afirmam sobre
+navegação e camada (scroll da Home, barra de baixo, z-index do modal) e não
+tocam a rede; a terceira cobre um ramo só.
+
+E `mockApi()` não declarava `/auth/*`: as rotas caíam no catch-all 404, então
+nem por acidente um spec passaria por ali. **Rota que o mock não conhece é
+rota que a suíte não pode exercitar** — o buraco de cobertura estava no dublê,
+não só na falta de testes.
+
+Hoje o mock responde às sete rotas de `/auth`, com as RECUSAS primeiro: 401 na
+senha errada, 404 no e-mail desconhecido do "esqueci a senha", 400 no código de
+recuperação errado e o 422 do FastAPI em array. `tests/e2e/auth-flow.spec.js`
+guarda, em ordem de custo: o token (entrar guarda, falhar NÃO guarda), o
+payload contra o contrato, a cadeia inteira da recuperação (e-mail -> código ->
+`reset_token` -> senha nova) e a sacola atravessando o login.
+
+**Duas armadilhas de escrever esse spec:**
+
+- `openLoginScreen()` NÃO abre o formulário: abre o `#loginModal`, a folha com
+  "Cadastre-se" e "Entrar". O formulário (`#loginScreen`) sai do segundo botão.
+- O checkbox de privacidade é um `<input>` atrás de um quadrado desenhado
+  (`.reg-check-box`) e fora da viewport até a rolagem chegar. `.check()` espera
+  para sempre; `force: true` reclama de viewport. Clique no quadrado, que é o
+  gesto de verdade.
+
+### 16.5 O 422 do FastAPI chegava em INGLÊS (a pendência da §14.5, fechada)
+
+`item.msg` é o texto do pydantic — "value is not a valid email address" — e ia
+cru para debaixo do campo. Estava anotado como "não consertado porque exige
+levantar os `type` que o backend emite, e chutar seria trocar um texto errado
+por outro". Os `type` foram levantados no backend, e a tabela agora existe:
+`scripts/services/validation-message.js`, NOMINAL por (campo, `type`).
+
+**A chave é o `type`, não o `msg`**: `type` é vocabulário fechado do pydantic
+v2 e não muda com a versão do texto; `msg` é prosa. Tipo desconhecido devolve
+'' e cai na frase genérica de quem chamou — nunca no inglês.
+
+E o levantamento mostrou o que NÃO passa por ali: o cadastro responde **400 com
+frase em português** ("Email inválido", "Aceite de privacidade obrigatório") e
+**409** ("Email já cadastrado"). Esses já são texto de cliente e seguem pelo
+`apiErrorMessage`.
+
+### 16.6 Um vermelho que o experimento NÃO explicou
+
+O teste da recuperação de senha caiu UMA vez na suíte completa (4 workers) com
+`element is not enabled` no botão do código — seis dígitos preenchidos e o
+botão sem habilitar. A hipótese óbvia era a armadilha 3 da §11: o
+`setTimeout(() => digito0.focus(), 60)` de `openRecoverCodeScreen()` chegando
+no meio da digitação do teste.
+
+**O experimento de dois braços reprovou a hipótese**: com o temporizador
+esticado para 400 ms, o braço antigo (preencher os seis campos por índice) e o
+novo (esperar o foco e digitar) passaram 3/3 os dois. A causa continua sem
+explicação, e está escrita assim no teste.
+
+O que mudou, então, não é a cura — é o DIAGNÓSTICO: o teste hoje espera o foco
+que o app dá, digita deixando o app andar entre os campos, e afirma que o botão
+HABILITOU antes de clicar. Se faltar dígito de novo, o vermelho aponta a linha
+do botão em vez de um clique que fica 30 s tentando.
+
+É o mesmo desfecho do `pix-payment:116` (§12.5): o mecanismo não foi provado,
+e o teste passou a nomear o fato mais externo em vez de deixar um número sem
+dono.

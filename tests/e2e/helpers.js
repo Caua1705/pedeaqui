@@ -245,13 +245,21 @@ export async function mockApi(page, {
   onTrackOrder,
   orderResponse,
   onListCoupons,
-  onPreviewCoupon
+  onPreviewCoupon,
+  onLogin,
+  onRegister,
+  onForgot
 } = {}) {
   const orderRequests = [];
   const paymentRequests = [];
   const trackRequests = [];
   const couponListRequests = [];
   const couponPreviewRequests = [];
+  const loginRequests = [];
+  const registerRequests = [];
+  const forgotRequests = [];
+  const resetCodeRequests = [];
+  const resetPasswordRequests = [];
   const rotasDesconhecidas = [];
 
   await page.route('**/api.pederapidex.com/**', async (route) => {
@@ -376,6 +384,86 @@ export async function mockApi(page, {
       // O padrão é a lista VAZIA, como era antes: quem quer cards pede.
       return route.fulfill(json({ coupons: [] }));
     }
+    // ── /auth/*: a conta, com as RECUSAS antes dos sucessos ──
+    //
+    // Até 03/09/2026 nenhuma destas rotas existia aqui, e o efeito era o pior
+    // possível: elas caíam no catch-all 404. Um spec que tentasse entrar via
+    // formulário recebia 404 do mock, o front dizia "Dados de login
+    // incorretos" e o teste que quisesse afirmar sobre o caminho feliz não
+    // tinha como. Foi por isso que o fluxo inteiro de conta — entrar,
+    // cadastrar, recuperar senha — ficou sem UM E2E, enquanto três specs
+    // cobriam a navegação entre as telas dele.
+    //
+    // O mock RECUSA como o backend recusa, e é essa metade que importa: senha
+    // errada é 401, e-mail desconhecido no "esqueci a senha" é 404, código de
+    // recuperação errado é 400, e cadastro inválido é o 422 do FastAPI com
+    // `detail: [{ loc, msg, type }]` — o formato de verdade, com o texto do
+    // pydantic em INGLÊS, que é o que o front tem de traduzir. Um mock que só
+    // aceita é um teste que só concorda.
+    //
+    // A CONTA DE TESTE está em AUTH_CONTA. Quem quiser outro desfecho passa
+    // `onLogin`/`onRegister`/`onForgot` — a rota continua no lugar.
+    if (/\/auth\//.test(url) && method === 'POST') {
+      // O parse é DEFENSIVO de propósito: uma exceção dentro de um handler de
+      // `page.route` não vira erro de teste — ela deixa a requisição SEM
+      // resposta, e o sintoma é o app pendurado até o teto de 30 s, longe daqui.
+      let corpo;
+      try { corpo = JSON.parse(request.postData() || '{}') || {}; } catch { corpo = {}; }
+      if (/\/auth\/login(\?|$)/.test(url)) {
+        loginRequests.push({ body: corpo });
+        if (onLogin) return onLogin(route, request, loginRequests.length);
+        if (corpo.login !== AUTH_CONTA.login && corpo.login !== AUTH_CONTA.telefone) {
+          return route.fulfill(json({ detail: 'Credenciais inválidas' }, 401));
+        }
+        if (corpo.password !== AUTH_CONTA.senha) {
+          return route.fulfill(json({ detail: 'Credenciais inválidas' }, 401));
+        }
+        return route.fulfill(json({
+          access_token: AUTH_CONTA.token,
+          token_type: 'bearer',
+          customer: CUSTOMER,
+          requires_email_verification: false
+        }));
+      }
+      if (/\/auth\/register(\?|$)/.test(url)) {
+        registerRequests.push({ body: corpo });
+        if (onRegister) return onRegister(route, request, registerRequests.length);
+        return route.fulfill(json({
+          customer_id: CUSTOMER.id,
+          email: corpo.email,
+          requires_email_verification: true,
+          message: 'Enviamos um código para o seu e-mail.'
+        }));
+      }
+      if (/\/auth\/forgot-password(\?|$)/.test(url)) {
+        forgotRequests.push({ body: corpo });
+        if (onForgot) return onForgot(route, request, forgotRequests.length);
+        if (corpo.email !== AUTH_CONTA.login) {
+          return route.fulfill(json({ detail: 'Cliente não encontrado' }, 404));
+        }
+        return route.fulfill(json({ message: 'Código enviado para o seu e-mail.' }));
+      }
+      if (/\/auth\/verify-reset-code(\?|$)/.test(url)) {
+        resetCodeRequests.push({ body: corpo });
+        if (corpo.code !== AUTH_CONTA.codigo) {
+          return route.fulfill(json({ detail: 'Código inválido ou expirado' }, 400));
+        }
+        return route.fulfill(json({ reset_token: AUTH_CONTA.resetToken }));
+      }
+      if (/\/auth\/reset-password(\?|$)/.test(url)) {
+        resetPasswordRequests.push({ body: corpo });
+        if (corpo.reset_token !== AUTH_CONTA.resetToken) {
+          return route.fulfill(json({ detail: 'Token inválido ou expirado' }, 400));
+        }
+        return route.fulfill(json({ message: 'Senha alterada com sucesso.' }));
+      }
+      if (/\/auth\/verify-email-code(\?|$)/.test(url)) {
+        return route.fulfill(json({ message: 'E-mail verificado.', verified: true }));
+      }
+      if (/\/auth\/resend-email-code(\?|$)/.test(url)) {
+        return route.fulfill(json({ message: 'Código reenviado.' }));
+      }
+    }
     // ── /customers/me*: o mock espelha o BACKEND, não um estado fixo ──
     //
     // Isto era `return route.fulfill(json({}, 401))` para TUDO sob
@@ -445,8 +533,28 @@ export async function mockApi(page, {
     return route.fulfill(json({ detail: 'rota nao declarada no mock' }, 404));
   });
 
-  return { orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests, rotasDesconhecidas };
+  return {
+    orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests,
+    loginRequests, registerRequests, forgotRequests, resetCodeRequests, resetPasswordRequests,
+    rotasDesconhecidas
+  };
 }
+
+/**
+ * A CONTA DE TESTE das rotas de /auth.
+ *
+ * O e-mail e o telefone são os do `CUSTOMER` (a fixture do contrato) de
+ * propósito: entrar por um ou por outro tem de dar na mesma conta, e é isso
+ * que o campo único de login promete.
+ */
+export const AUTH_CONTA = {
+  login: CUSTOMER.email,
+  telefone: CUSTOMER.phone,
+  senha: 'senha-do-e2e-8',
+  token: 'e2e-token-login',
+  codigo: '123456',
+  resetToken: 'rst_e2e_0000000000000000'
+};
 
 export const TRACKING_TOKEN = 'trk_e2e_0000000000000000';
 

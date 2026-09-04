@@ -211,10 +211,6 @@
     applyRegMask(el, '(__) _ ____-____', 11);
   }
 
-  function maskRegCpf(el) {
-    applyRegMask(el, '___.___.___-__', 11);
-  }
-
   function maskRegBirth(el) {
     applyRegMask(el, '__/__/____', 8);
   }
@@ -230,11 +226,6 @@
     btn.innerHTML = show ? EYE_OPEN_SVG : EYE_OFF_SVG;
     btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
   }
-
-  // Digitos verificadores do CPF: implementacao unica em
-  // scripts/utils/validators.js. Havia uma copia aqui e outra identica em
-  // payment-card-flow.js — mesmo algoritmo, nomes de variavel diferentes.
-  const isValidCpf = (digits) => window.PedeAquiValidators.isValidCpf(digits);
 
 
   function isValidBirthDate(value) {
@@ -272,12 +263,11 @@
       if (!isValidBirthDate(v)) return 'O formato deve ser DD/MM/AAAA';
       return '';
     } },
-    { id: 'regCpf', err: 'regCpfErr', validate(v) {
-      const d = onlyDigits(v);
-      if (!d) return 'Campo obrigatório';
-      if (!isValidCpf(d)) return 'CPF inválido';
-      return '';
-    } },
+    // `regCpf` SAIU em 03/09/2026 — ver o comentário no restaurant.html. A API
+    // não recebe CPF no cadastro desde 12/08/2026, e o front exigia um
+    // documento que o servidor descartava. `isValidCpf` continua vivo em
+    // utils/validators.js: quem o usa é o titular do CARTÃO, onde o gateway
+    // exige o documento de verdade.
     { id: 'regPassword', err: 'regPasswordErr', validate(v) {
       if (!v) return 'Campo obrigatório';
       if (v.length < 8) return 'Informe ao menos 8 caracteres';
@@ -414,7 +404,6 @@
       email: ($('regEmail').value || '').trim(),
       phone: onlyDigits($('regPhone').value),
       birth_date,
-      cpf: onlyDigits($('regCpf').value),
       password: $('regPassword').value || '',
       marketing_opt_in: Boolean($('regPromo')?.checked),
       privacy_accepted: Boolean($('regPrivacy')?.checked)
@@ -435,30 +424,30 @@
     const data = error?.data;
     let handled = false;
 
-    // FastAPI-style validation array: [{ loc: ['body','email'], msg }]
+    // O 422 DO FASTAPI: `detail` é um array de { loc, msg, type }.
     //
-    // ANOTADO, NAO CONSERTADO (varredura de 03/09/2026, item 9 da rodada).
+    // `item.msg` é o texto do PYDANTIC, em inglês — "value is not a valid
+    // email address", "String should have at least 8 characters" — e ele ia
+    // CRU para debaixo do campo, para um cliente preenchendo um cadastro em
+    // português. Mesma família do `ineligibility_reason` do cupom: valor do
+    // backend que não foi escrito para o cliente ler chegando à tela.
     //
-    // `item.msg` e o TEXTO DO PYDANTIC, e ele vai cru para debaixo do campo:
-    // "value is not a valid email address", "String should have at least 8
-    // characters", "Input should be a valid date". Em ingles, com vocabulario
-    // de validador, para um cliente preenchendo um cadastro em portugues.
-    //
-    // E a mesma familia do `ineligibility_reason` que virou
-    // `services/coupon-reason.js` em 03/09/2026 — codigo/idioma do backend
-    // chegando a tela —, e a correcao tem a mesma forma: uma tabela NOMINAL
-    // por (campo, tipo de erro), com fallback em portugues para o que nao
-    // estiver nela. Nao foi feita aqui porque exige levantar os `type` que o
-    // backend de fato emite neste endpoint, e chutar a tabela seria trocar um
-    // texto errado por outro.
-    //
-    // O fallback 'Valor invalido' ja cobre o caso de `msg` ausente; o que falta
-    // e cobrir o caso de `msg` PRESENTE e em ingles.
+    // Quem traduz é services/validation-message.js, por tabela NOMINAL de
+    // (campo, `type`) — `type` é vocabulário fechado do pydantic, enquanto
+    // `msg` é prosa e muda de versão. Tipo desconhecido devolve '' e cai na
+    // frase genérica daqui, nunca no texto cru.
     if (Array.isArray(data?.detail)) {
-      const map = { name: 'regFullName', email: 'regEmail', phone: 'regPhone', birth_date: 'regBirth', cpf: 'regCpf', password: 'regPassword' };
+      const map = { name: 'regFullName', email: 'regEmail', phone: 'regPhone', birth_date: 'regBirth', password: 'regPassword' };
+      const traducao = window.PedeAquiValidationMessage;
       data.detail.forEach(item => {
-        const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : '';
-        if (map[field] && showRegFieldApiError(map[field], item.msg || 'Valor inválido')) handled = true;
+        const field = traducao.fieldOfError(item);
+        const frase = traducao.fieldErrorMessage(item) || 'Valor inválido';
+        if (field === 'privacy_accepted') {
+          showRegError('regPrivacyErr', frase);
+          handled = true;
+          return;
+        }
+        if (map[field] && showRegFieldApiError(map[field], frase)) handled = true;
       });
       if (handled) { showRegSummary('Revise os campos destacados'); return; }
     }
@@ -471,10 +460,6 @@
       showRegFieldApiError('regEmail', 'Este e-mail já está cadastrado'); handled = true;
     } else if ((msg.includes('phone') || msg.includes('telefone') || msg.includes('celular')) && dup) {
       showRegFieldApiError('regPhone', 'Este telefone já está cadastrado'); handled = true;
-    } else if (msg.includes('cpf') && dup) {
-      showRegFieldApiError('regCpf', 'Este CPF já está cadastrado'); handled = true;
-    } else if (msg.includes('cpf')) {
-      showRegFieldApiError('regCpf', 'CPF inválido'); handled = true;
     } else if (msg.includes('password') || msg.includes('senha')) {
       showRegFieldApiError('regPassword', raw || 'Senha inválida'); handled = true;
     } else if (msg.includes('privacy') || msg.includes('privacidade')) {
@@ -1313,7 +1298,6 @@
     handleVfyPaste,
     loginForgotPassword,
     maskRegBirth,
-    maskRegCpf,
     maskRegPhone,
     mockLogin,
     openForgotNotFound,

@@ -86,6 +86,10 @@ import './services/coupon-cta.js';
 // codigo interno do backend, e ele chegava cru ao toast do cliente. Puro; nao
 // depende de nada.
 import './services/coupon-reason.js';
+// O 422 do FastAPI em portugues: `detail` e um array de {loc, msg, type} e o
+// `msg` e o texto do pydantic, em ingles. Mesma familia do coupon-reason, e
+// tambem puro. Precisa vir antes do restaurant-page (que carrega o auth-flow).
+import './services/validation-message.js';
 // Rotulo da bandeira do cartao, lido pela lista de cartoes salvos
 // (payment-card-flow) e pela linha de pagamento da sacola (restaurant-page).
 // Nao depende de nada; so precisa vir antes dos dois.

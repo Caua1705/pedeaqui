@@ -47,7 +47,23 @@ async function esperarDerivadasCarregadas(page) {
 }
 
 async function boot(page) {
-  await mockApi(page);
+  // `imagensReais: true` — A EXCEÇÃO, e ela é o motivo de o interruptor existir.
+  //
+  // Desde 05/09/2026 `mockApi()` dubla as imagens do Storage com um pixel de
+  // 1x1: as fixtures apontam para o bucket de produção e a suíte inteira
+  // baixava tudo de verdade, o que estourou a cota de egress do plano.
+  //
+  // ESTE spec é o único que não pode aceitar o dublê, e a razão está no
+  // cabeçalho acima: ele compara a proporção da DERIVADA com a do ORIGINAL.
+  // Com o pixel, as duas viram 1x1, a razão fica 1 contra 1 e ele passa VERDE
+  // sem ter medido nada — nem o `rows.length > 0` pega, porque medir um pixel
+  // ainda é medir algo. Medido, com o `resize=contain` removido de
+  // `image-cdn.js`: com imagens reais ele REPROVA; com o dublê ele PASSA.
+  //
+  // O preço é o download de algumas dezenas de derivadas por execução. É o
+  // preço do único guarda que existe contra um defeito que mora na resposta do
+  // Storage, e não no nosso CSS.
+  await mockApi(page, { imagensReais: true });
   await seedPickupSession(page);
   await page.goto(RESTAURANT_URL);
   await esperarAppPronto(page);

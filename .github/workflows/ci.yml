@@ -62,7 +62,19 @@ jobs:
       # de proposito — com o SDK mockado antes do boot, loadSdk() nunca chega a
       # baixar nada e o atraso e a falha do download passavam batidos. Com
       # PAYMENT_PUBLIC_KEY configurado, mercado-pago-secure-fields.spec.js
-      # tambem fala com o Mercado Pago. Sao os unicos hosts externos da suite.
+      # tambem fala com o Mercado Pago.
+      #
+      # "OS UNICOS HOSTS EXTERNOS DA SUITE" ESTAVA ERRADO, e a frase custou o
+      # plano. O terceiro era o Supabase Storage: as fixtures apontam para o
+      # bucket de PRODUCAO e `mockApi()` so interceptava `api.pederapidex.com`,
+      # entao cada um dos ~433 testes baixava ~7 imagens de verdade, com o cache
+      # vazio de um contexto novo. Vezes um push por vez que alguem toca a main.
+      # Egress medido: 14,19 GB contra 5 GB do plano, com ZERO usuarios.
+      #
+      # Desde 05/09/2026 `mockApi()` dubla o Storage com um pixel de 1x1.
+      # `image-framing.spec.js` pede as imagens REAIS de proposito
+      # (`imagensReais: true`) — ele compara a proporcao da derivada com a do
+      # original, e com o dublê passaria verde sem medir nada.
       # PAYMENT_PUBLIC_KEY liga os 3 testes de mercado-pago-secure-fields.spec.js
       # que rodam o SDK REAL sob a CSP REAL de producao. Sem ela eles se PULAM em
       # silencio — e sao exatamente os que pegam bloqueio de connect-src, a classe

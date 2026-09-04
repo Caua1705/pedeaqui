@@ -239,6 +239,11 @@ function json(body, status = 200) {
  * fazem o mesmo pelo cupom: qual contexto de sacola foi enviado, e quantas
  * vezes — um cupom validado duas vezes é uma requisição a mais por toque.
  */
+// Um webp de 1x1, opaco, para responder no lugar das imagens do Storage. Ele
+// satisfaz `complete` e `naturalWidth > 0`, que é o que a suíte pergunta —
+// menos `image-framing`, e é por isso que aquele spec pede as reais.
+const PIXEL_DE_1X1 = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64');
+
 export async function mockApi(page, {
   onCreateOrder,
   onStartPayment,
@@ -252,7 +257,33 @@ export async function mockApi(page, {
   // As contas conectadas desta conta de teste. O padrão é a LISTA VAZIA, que no
   // contrato significa "esta conta abre só por e-mail e senha" — e é o estado
   // de todas as contas que existiam antes do login social.
-  social = { contas: [] }
+  social = { contas: [] },
+  // ────────────────────────────────────────────────────────────────────────
+  //  AS IMAGENS DO STORAGE SÃO DUBLADAS, e este é o interruptor.
+  //
+  //  As fixtures apontam para o bucket de PRODUÇÃO (`menu.json` tem 134
+  //  arquivos em `mqanpwnrjjqcswzhcplc.supabase.co`), e até 05/09/2026 a
+  //  suíte baixava todos eles DE VERDADE: `mockApi()` só interceptava
+  //  `api.pederapidex.com`, e cada contexto do Playwright nasce com o cache
+  //  vazio. São ~7 imagens por boot, ~433 testes por execução, e o CI roda a
+  //  suíte a cada push na main — foi assim que o egress do plano estourou
+  //  (14,19 GB contra 5 GB) com zero usuários no período.
+  //
+  //  A frase que o `ci.yml` escrevia ("os únicos hosts externos da suíte" =
+  //  Mercado Pago) estava errada havia muito tempo: o Storage era o terceiro,
+  //  e ninguém o contava porque imagem não quebra teste.
+  //
+  //  QUEM PRECISA DOS BYTES DE VERDADE PEDE, e só um precisa hoje:
+  //  `image-framing.spec.js` compara a proporção da DERIVADA com a do
+  //  ORIGINAL — é o único guarda contra o `resize` achatado que já foi para
+  //  produção. Com o pixel dublê as duas viram 1x1, a razão fica 1 contra 1, e
+  //  ele passaria VERDE sem ter medido nada. O `rows.length > 0` dele não pega
+  //  isso: ele confere que mediu ALGO, não que mediu algo real.
+  //
+  //  Por isso o interruptor é EXPLÍCITO e não um default esperto: quem liga
+  //  paga o download, e tem de escrever por quê.
+  // ────────────────────────────────────────────────────────────────────────
+  imagensReais = false
 } = {}) {
   const orderRequests = [];
   const paymentRequests = [];
@@ -276,6 +307,18 @@ export async function mockApi(page, {
   // mock que responde sempre a mesma lista faria o teste do desvincular passar
   // sem que nada tivesse sido desconectado.
   let contasConectadas = [...(social.contas || [])];
+
+  // ANTES da rota da API, e o motivo é a ordem: em `page.route` a ÚLTIMA
+  // registrada vence, então um spec que queira responder outra coisa para uma
+  // imagem (coupon-detail-image, product-detail-image-preview, image-sizes)
+  // continua ganhando desta aqui, que fica por baixo.
+  if (!imagensReais) {
+    await page.route('**/*.supabase.co/**', route => route.fulfill({
+      status: 200,
+      contentType: 'image/webp',
+      body: PIXEL_DE_1X1
+    }));
+  }
 
   await page.route('**/api.pederapidex.com/**', async (route) => {
     const request = route.request();

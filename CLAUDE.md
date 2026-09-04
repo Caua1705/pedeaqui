@@ -76,13 +76,21 @@ ordem** com outra folha, e "levar para a folha certa" inverte quem vence. As
 211 que não disputavam já saíram (`store-info.css`, `club.css`, `policy.css`,
 em 30/08/2026) — esse era o critério, e ele se esgotou.
 
-Três ferramentas respondem por medida o que não dá para responder lendo:
+Quatro ferramentas respondem por medida o que não dá para responder lendo:
 
 | Pergunta | Ferramenta |
 |---|---|
 | Esta regra pode pintar alguma coisa? | `node tools/css-usage.mjs [--runtime]` |
 | Este `!important` está vencendo alguém? | `node tools/css-important.mjs` |
 | Quantos cabeçalhos/botões DIFERENTES existem? | `node tools/ui-inventory.mjs` |
+| Este `var(--x)` tem dono? | `node tools/tokens-fantasma.mjs` |
+
+A última é a mais silenciosa das quatro: `var(--nao-existe, #c0392b)` cai no
+fallback sem reclamar, a tela funciona, e a cor **nunca veio do tema** — num app
+white-label é cor chumbada com nome de variável. Nem a captura de telas pega,
+porque um token fantasma é estável (errado antes, errado depois). Seis sítios
+vivos foram achados assim em 04/09/2026, e `tests/unit/tokens-fantasma.test.js`
+barra o próximo.
 
 E, fora do CSS, duas que respondem por medida o que dá para errar lendo:
 `node tools/fios-do-corte.mjs` (vale a pena extrair este bloco?) e

@@ -618,6 +618,7 @@ e o nome dos arquivos mente. Medido em 30/08/2026, e escrito no cabeçalho de
 | Esta regra pode pintar algo? | `tools/css-usage.mjs` | Metade **estática** (o nome não existe fora do CSS → morto por construção) e metade **runtime** (casa nas 14 telas → termômetro). Só a estática autoriza apagar. |
 | Este `!important` vence alguém? | `tools/css-important.mjs` | Adversário = outra regra declarando a mesma **família** de propriedade no mesmo elemento. Runtime + um **veto estático** grosseiro por token. |
 | Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
+| Este `var(--x)` tem dono? | `tools/tokens-fantasma.mjs` | Cruza todo `var(--x)` com quem DEFINE `--x` (folha, HTML e as chaves de `applyBrandTheme`). Token sem dono cai no fallback em silêncio — §20. Nome montado em runtime sai do veredito. |
 | Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **58 telas**, antes e depois. |
 
 ### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 69 propriedades, nao todas
@@ -2536,3 +2537,96 @@ CONFERÊNCIA antes de aceitar: dois schemas mudados, `AdminWhatsAppBranchView` e
 `AdminWhatsAppChannelCreate`, nenhuma rota nova, nenhuma sumida — `/admin/*` é o
 painel do lojista, outro app. Vendorizar sem essa conferência seria assinar
 embaixo de uma mudança que ninguém leu.
+
+## 20. O token fantasma (04/09/2026) — a quarta pergunta do CSS
+
+### 20.1 A CLASSE, E POR QUE NENHUM DOS QUATRO PORTÕES A VÊ
+
+`var(--nao-existe, #c0392b)` cai no fallback **em silêncio**, e
+`var(--nao-existe)` sem fallback deixa a propriedade no valor inicial. Nos dois
+casos a tela FUNCIONA — só que a cor nunca veio do tema. Num app white-label
+isso é a §7 vestida de token: o valor fica chumbado com nome de variável.
+
+E nenhum portão pega:
+
+| portão | por que não vê |
+|---|---|
+| `lint` | lê JavaScript. Folha de estilo não é árvore que ele monte |
+| `typecheck:cards` | quatro arquivos do cartão contra o `api.d.ts` |
+| `test` (vitest) | não abria folha para perguntar isso — até esta rodada |
+| `test:e2e` | vê a tela funcionando: o fallback pinta |
+| `capture-screens` | **compara ANTES com DEPOIS, e o fantasma é ESTÁVEL.** Estava errado antes, continua errado depois: "Nenhuma diferença", com toda a razão |
+
+A última linha é a importante, e é a mesma lição da §5.1 pelo avesso: uma
+ferramenta de comparação não tem opinião sobre um defeito que não mudou.
+
+O primeiro caso conhecido foi `--brand-on-primary` (o nome certo é
+`--brand-on`), anotado na §15.1 com a frase "nenhuma das três ferramentas de
+folha responde essa pergunta hoje". Agora são **quatro**:
+`node tools/tokens-fantasma.mjs`.
+
+### 20.2 O QUE A VARREDURA ACHOU, e o veredito de cada um
+
+Seis sítios vivos, os seis caindo no fallback desde sempre:
+
+| token | onde | o que estava chumbado |
+|---|---|---|
+| `--danger` (2×) | `#profOrderDetail .order-cancel-*` (utilities.css) | `#c0392b`, um vermelho de ninguém. O vermelho de estado deste app é `--state-danger-strong: #c52020`, **escolhido para alcançar 4,5:1** — o fallback não passou por essa conta |
+| `--text-strong` | `.prof-social-name` (social-login.css) | `#2f2f2f`. O texto principal daqui é `--text-main` |
+| `--pm-scroll-track-top/-height`, `--pm-scroll-thumb-top/-height` | o marcador de rolagem do modal de produto | 250px e 72px. **Ninguém escreve esses tokens**: `product-screen.js` só liga a opacidade por `has-product-scroll`. O nome prometia um polegar que acompanha a rolagem e entregava uma listra parada |
+
+Os quatro `--pm-scroll-*` são a variante mais traiçoeira: o token não é um
+renome errado, é uma **promessa de mecanismo**. Quem lesse aquela linha
+concluiria que existe um JS calculando a posição. Ou alguém escreve os tokens,
+ou os números ficam à vista — foi a segunda.
+
+### 20.3 A PROVA DE QUE SÓ MUDOU O QUE DEVIA
+
+`capture-screens` nos dois braços, 62 telas: **58 elementos diferentes, todos o
+MESMO** — `orderCancelError`, `color: rgb(192,57,43) -> rgb(197,32,32)`, uma vez
+por tela. Nenhuma outra propriedade, nenhum outro elemento; o modal de produto,
+cujas duas linhas foram reescritas à mão, saiu idêntico.
+
+É o uso certo da ferramenta e vale escrever: ela não serve só para provar
+"nada mudou". Serve igualmente para provar **"mudou exatamente isto"** — e a
+segunda afirmação é a que se faz quando a mudança é deliberada.
+
+### 20.4 AS TRÊS ARMADILHAS DA VARREDURA (as três pagas nesta rodada)
+
+1. **Comentário.** `tokens.css` ensina a regra de uso escrevendo
+   `var(--brand-*)` dentro de um comentário, e a primeira versão da sonda
+   relatou um fantasma chamado `--brand-`. Neste repositório o comentário colado
+   é a REGRA (§5.1, armadilha 1) — e a limpeza tem de **preservar as quebras de
+   linha**, senão o arquivo colapsa e o número de linha relatado aponta para
+   outro lugar (§12.1).
+2. **Nome INDIRETO não é nome ausente.** `const TOKEN = '--app-loader-dot'` com
+   `setProperty(TOKEN, cor)` define o token sem que a string encoste num `:`, e
+   `--x-${variante}` não aparece inteiro em lugar nenhum (§14.3). Todo `--nome`
+   que apareça dentro de uma string de JS entra numa lista à parte e SAI do
+   veredito: subnotificar é o lado seguro, porque a saída autoriza mexer em cor.
+3. **Sugestão de renome por PREFIXO não sugere nada.** `--danger` tem raiz
+   vazia, e por prefixo ele "parece" com os 121 tokens do app. A comparação é
+   por PALAVRA: `--danger -> --state-danger, --state-danger-strong, --cr-danger`.
+
+A guarda é `tests/unit/tokens-fantasma.test.js`, vista vermelha com o
+`--brand-on-primary` histórico recolocado — e a mensagem dela **nomeia arquivo e
+linha**, conferido contra o sítio real. Sonda contra vacuidade nas duas listas
+(§12.1): se a varredura parar de casar, ela para de acusar e passa por vazio.
+
+### 20.5 O QUE A RODADA ACHOU E NÃO CONSERTOU (e é o próximo)
+
+`capture-screens.mjs` tem **duas de 62 telas que não abrem**, nas duas pontas
+da comparação:
+
+- `entregador-acerto` espera `#courierHistoryBtn`, e **esse id não existe em
+  lugar nenhum do repositório** — nem no HTML, nem no JS, nem no CSS;
+- `endereco-apagar-em-uso` espera `.addr-delete-confirm.is-active-warning`, e
+  essa classe EXISTE (`restaurant-address-flow.js:396`): o que não chega é o
+  estado.
+
+As duas registram o erro e a varredura segue; a linha final diz "59 tela(s) com
+diferença" e não diz que duas não puderam ser comparadas. **É o verificador com
+um buraco do tamanho de duas telas, e ele erra calado**: quem lê "Nenhuma
+diferença" não sabe que aquelas duas não foram olhadas. É a mesma família do
+`borderTopColor` sozinho (§5.1) — um verificador que não olha onde o app desenha
+é pior que nenhum, porque com ele você para de conferir à mão.

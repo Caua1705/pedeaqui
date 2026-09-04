@@ -3756,8 +3756,15 @@ body.home-tab .mob-rest-name.mob-rest-name--compact{
 @media(max-width:767px){
   #productModal .modal-body{scrollbar-gutter:auto;scrollbar-width:none!important}
   #productModal .modal-body::-webkit-scrollbar{width:0!important;height:0!important;background:transparent!important}
-  #productModal .modal--product::after{content:'';position:absolute;right:0;top:var(--pm-scroll-track-top,250px);width:5px;height:var(--pm-scroll-track-height,calc(100% - 250px));background:#eeeeee;z-index:8;pointer-events:none;opacity:0}
-  #productModal .modal--product::before{content:'';position:absolute;right:0;top:var(--pm-scroll-thumb-top,250px);width:5px;height:var(--pm-scroll-thumb-height,72px);background:var(--brand-primary);border-radius:999px;z-index:9;pointer-events:none;opacity:0}
+  /* MARCADOR FIXO, e não uma barra de rolagem. Estes quatro números moravam em
+     `var(--pm-scroll-track-top,250px)` e três irmãos, e nenhum dos tokens era
+     escrito por lugar nenhum do app (`product-screen.js` só liga a opacidade
+     por `has-product-scroll`). Um `var()` de token que ninguém define cai no
+     fallback em silêncio — o nome prometia um polegar que acompanha a rolagem
+     e entregava uma listra parada. Ou alguém escreve os tokens, ou os números
+     ficam à vista. Ver `tools/tokens-fantasma.mjs`. */
+  #productModal .modal--product::after{content:'';position:absolute;right:0;top:250px;width:5px;height:calc(100% - 250px);background:#eeeeee;z-index:8;pointer-events:none;opacity:0}
+  #productModal .modal--product::before{content:'';position:absolute;right:0;top:250px;width:5px;height:72px;background:var(--brand-primary);border-radius:999px;z-index:9;pointer-events:none;opacity:0}
   #productModal .modal--product.has-product-scroll::after,
   #productModal .modal--product.has-product-scroll::before{opacity:1}
 }
@@ -6848,7 +6855,7 @@ body.menu-tab.menu-search-active .product-card.is-search-hidden{
   border:0;
   border-bottom:1px solid #d8d8d8;
   background:transparent;
-  color:var(--danger, #c0392b);
+  color:var(--state-danger-strong, #c52020);
   font-family:inherit;
   font-size:var(--ref-text-sm);
   line-height:var(--ref-line-md);
@@ -6916,7 +6923,7 @@ body.menu-tab.menu-search-active .product-card.is-search-hidden{
   font-size:var(--ref-text-sm, 13px);
   line-height:18px;
   font-weight:600;
-  color:var(--danger, #c0392b);
+  color:var(--state-danger-strong, #c52020);
 }
 #profOrderDetail .order-cancel-go,
 #profOrderDetail .order-cancel-keep{

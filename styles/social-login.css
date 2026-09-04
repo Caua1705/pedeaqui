@@ -89,7 +89,7 @@
 }
 .prof-social-info { min-width: 0; }
 .prof-social-name {
-  color: var(--text-strong, #2f2f2f);
+  color: var(--text-main, #1a1a1a);
   font-size: var(--ref-text-sm, 14px);
   font-weight: 600;
 }

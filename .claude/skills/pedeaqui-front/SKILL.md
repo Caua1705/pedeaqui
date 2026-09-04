@@ -2066,3 +2066,105 @@ do botão em vez de um clique que fica 30 s tentando.
 É o mesmo desfecho do `pix-payment:116` (§12.5): o mecanismo não foi provado,
 e o teste passou a nomear o fato mais externo em vez de deixar um número sem
 dono.
+
+## 17. O prazo do entregador e a contagem do Perfil (03/09/2026, madrugada)
+
+### 17.1 O CONTRATO PODE ESTAR ATRASADO NO PRÓPRIO BACKEND
+
+Antes de escrever uma linha lendo campo novo, `npm run api:generate` — e ele
+**não trouxe nada**. O motivo: `tools/sync-api-contract.mjs` copia
+`../pedeaqui_back/openapi.json`, e AQUELE arquivo é gerado também. O
+`courier_schema.py` tinha mudado às 21h27; o `openapi.json` do backend era das
+17h32. Quatro horas de defasagem, e o `--check` do próprio backend
+(`python scripts/export_openapi.py --check`) confirmava: desatualizado.
+
+**A cadeia tem TRÊS elos, não dois**: código Python → `openapi.json` do backend
+→ cópia vendida aqui. Um `api:generate` verde só prova o terceiro. Quando o
+campo novo não aparecer, rode o `--check` do backend antes de duvidar do
+gerador daqui.
+
+### 17.2 O QUE O BRIEFING DIZIA E O QUE O CONTRATO DIZ
+
+O pedido chegou assim: "`CourierOrderResponse` ganhou `delivery_estimated_at`
+(o instante prometido)... e `is_delivery`, que estava fixo em true". Lido o
+contrato gerado do código:
+
+| dito | contrato |
+|---|---|
+| `delivery_estimated_at` | **não existe** em `CourierOrderResponse`. O que existe é `delivery_due_at` — o TETO da janela, já somado no backend |
+| `is_delivery` | **não existe em lugar nenhum** da API nem dos dois fronts |
+| `delivery_eta_min`/`_max` | existem, como dito |
+
+E o comentário do backend explica por que a diferença importa:
+`delivery_estimated_at` é o instante do CHECKOUT — "tem nome de instante
+prometido sem ser, e quem o lesse assim mostraria um prazo vencido em TODO
+pedido". A soma mora no backend de propósito (minuto + instante em cada cliente
+é a mesma conta escrita em vários lugares).
+
+**A intenção do briefing estava certa e o nome, não** — e é exatamente a §3.2:
+campo lembrado em vez de lido. Escrever `delivery_estimated_at` teria dado
+`undefined` em 100% das chamadas, sem erro nenhum.
+
+### 17.3 O CHIP DE PRAZO, e as três decisões dele
+
+- **Nulo primeiro.** Cerca de um terço dos entregues não tem prazo gravado.
+  Sem o campo, NENHUM chip — "0 min" seria "chegou a hora" para um pedido que
+  nunca teve hora. O primeiro teste do arquivo é o do nulo.
+- **O arredondamento não lisonjeia**: quanto falta desce (`floor`), quanto
+  passou sobe (`ceil`). A tela nunca promete um minuto que não existe nem
+  esconde um minuto de atraso.
+- **`date-time` que não parseia vira nulo**, e não "NaN min" no cartão de quem
+  está na rua.
+
+O relógio do teste é congelado com `clock.install` + `pauseAt` em instantes
+DIFERENTES (§12.2), e o prazo do fixture sai do mesmo instante — a diferença
+fica exata e o teste não depende da hora da máquina.
+
+### 17.4 A CONTAGEM ESTAVA CERTA; QUEM MENTIA ERA A LISTA
+
+O relato: "Pedidos em andamento (39) conta um conjunto e a lista mostra outro".
+**Medido antes de mexer** (sonda com 40 pedidos nos oito status): cabeçalho 25,
+cartões 25; histórico 15 e 15. A contagem e a lista saem do MESMO array.
+
+O que estava errado era o TEXTO de cada cartão: a frase era escolhida pelo TOM
+(`active`, que é o tom de tudo que não é sucesso nem recusa) em vez do status, e
+os cinco status em andamento — `pending`, `accepted`, `preparing`, `ready`,
+`out_for_delivery` — escreviam todos **"Aguardando pagamento"**. Um pedido que
+já tinha saído para entrega anunciava que esperava dinheiro.
+
+Daí o relato ser verdadeiro do jeito que a pessoa o viu: o cabeçalho contava "em
+andamento" e a lista dizia "aguardando pagamento" — dois conjuntos diferentes na
+mesma tela. **Consertar a contagem teria sido consertar o lado certo pelo motivo
+errado**, e a sonda de dois minutos foi o que separou uma coisa da outra.
+
+E `pending` não é "aguardando pagamento" em lugar nenhum: no contrato ele é o
+pedido criado esperando confirmação (a tela do entregador o traduz como
+"Aguardando o restaurante"), e `CustomerOrderHistoryItem` **não publica
+`payment_status`** — aquela lista não tem como saber do dinheiro.
+
+### 17.5 O ESTOURO DE BOOT QUE NÃO DIZIA NADA
+
+Duas vezes em quatro execuções completas desta madrugada um teste QUALQUER
+estourou os 30 s dentro de `esperarAppPronto` — `assistant-voice` numa,
+`auth-screen-nav` noutra —, com o resto da rodada rápido (nenhum outro teste
+acima de 10 s) e os dois verdes isolados. Não reproduzido e não explicado.
+
+O que a suíte dizia era `Test timeout of 30000ms exceeded` apontando para a
+linha do `waitForFunction` — a MESMA frase para "o app não subiu", "a rede
+pendurou" e "a máquina parou".
+
+Duas coisas mudaram, e nenhuma delas é uma cura:
+
+1. **A espera ganhou teto próprio (25 s), cinco abaixo do teto do teste.** O
+   número não é sobre velocidade: um boot que não termina não termina nunca, e
+   25 ou 30 não muda QUEM falha — muda quem escreve a mensagem. Com o teto do
+   TESTE, quem falha é o Playwright e o `catch` nem chega a rodar, porque a
+   página já foi embora quando ele tentaria ler o estado.
+2. **O estouro passou a nomear o estado**: classes do body, texto do loader e
+   URL. Visto funcionando com a classe `app-booting` recolocada à força:
+   `body.class: home-tab app-booting / loader: Preparando sua experiência.`
+
+E uma coisa que a sonda ensinou de graça: **rota pendurada NÃO produz esse
+estouro**. Com o `/menu` sem resposta, o app cai sozinho na tela de erro em
+segundos e a espera falha com a frase certa ("caiu na tela de erro de boot").
+Seja lá o que trava aquele boot, não é uma requisição sem resposta.

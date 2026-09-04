@@ -670,15 +670,54 @@ export function trackedOrder(overrides = {}) {
  *
  * Esta espera falha na hora, com a frase certa. É a mesma lição do
  * boot-smoke.spec.js: o problema nunca foi cobertura, foi diagnóstico.
+ *
+ * E O ESTOURO TAMBÉM DIZ ALGO. Duas vezes em quatro execuções completas de
+ * 03/09/2026 um teste qualquer estourou os 30 s AQUI, em specs diferentes
+ * (assistant-voice e auth-screen-nav), com o resto da rodada rápido e os dois
+ * verdes isolados. Não reproduzido, não explicado — e o que a suíte dizia era
+ * só "Test timeout of 30000ms exceeded" apontando para esta linha, que é a
+ * mesma frase para "o app não subiu", "a rede pendurou" e "a máquina parou".
+ *
+ * Por isso o `catch`: ele não conserta nada, ele NOMEIA. Na próxima vez a
+ * mensagem traz as classes do body e o texto do loader — que é a diferença
+ * entre saber que o app parou em `app-booting` esperando o cardápio e ficar
+ * olhando para um número de milissegundos.
  */
+// Cinco segundos ABAIXO do teto do teste (30 s), e o número não é sobre
+// velocidade: um boot que não termina não termina nunca, então 25 ou 30 não
+// muda QUEM falha — muda quem escreve a mensagem. Com o teto do teste, quem
+// falha é o Playwright, e o `catch` abaixo nem chega a rodar (a página já foi
+// embora). Com este, sobram 5 s para ler o estado e dizer o que houve.
+const TETO_DO_BOOT = 25_000;
+
 export async function esperarAppPronto(page) {
-  await page.waitForFunction(() => {
-    if (document.body.classList.contains('app-error')) {
-      const motivo = document.getElementById('appLoaderMessage')?.textContent || '';
-      throw new Error(`o app NÃO subiu: caiu na tela de erro de boot (body.app-error). ${motivo}`.trim());
-    }
-    return !document.body.classList.contains('app-booting');
-  });
+  try {
+    await page.waitForFunction(() => {
+      if (document.body.classList.contains('app-error')) {
+        const motivo = document.getElementById('appLoaderMessage')?.textContent || '';
+        throw new Error(`o app NÃO subiu: caiu na tela de erro de boot (body.app-error). ${motivo}`.trim());
+      }
+      return !document.body.classList.contains('app-booting');
+    }, undefined, { timeout: TETO_DO_BOOT });
+  } catch (erro) {
+    // Só o ESTOURO ganha contexto: o lançamento de dentro da página já tem a
+    // frase certa, e embrulhá-lo de novo esconderia a causa que ele nomeou.
+    if (!/Timeout|timeout/.test(String(erro?.message))) throw erro;
+    const estado = await page.evaluate(() => ({
+      classes: document.body.className,
+      loader: document.getElementById('appLoaderMessage')?.textContent?.trim() || '(sem texto)',
+      url: location.href
+    })).catch(() => null);
+    if (!estado) throw erro;
+    throw new Error(
+      `o app não terminou de subir em ${TETO_DO_BOOT / 1000} s.\n`
+      + `  body.class: ${estado.classes}\n`
+      + `  loader:     ${estado.loader}\n`
+      + `  url:        ${estado.url}\n`
+      + `  (original: ${erro.message.split('\n')[0]})`,
+      { cause: erro }
+    );
+  }
 }
 
 // Seed a confirmed pickup context + a guest identity BEFORE the app boots, so

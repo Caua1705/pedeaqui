@@ -186,6 +186,58 @@
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(alvo)}`;
   }
 
+  /**
+   * O PRAZO PROMETIDO AO CLIENTE — quanto falta, ou quanto passou.
+   *
+   * A conta é contra `delivery_due_at`, que é o TETO da janela: o instante da
+   * promessa mais o `delivery_eta_max`. **A soma é do backend**, e isso não é
+   * detalhe de arquitetura — `delivery_estimated_at` (o instante do checkout)
+   * tem nome de "instante prometido" sem ser, e quem o lesse assim mostraria um
+   * prazo vencido em TODO pedido. Aqui não se soma nada; lê-se o teto pronto.
+   *
+   * E nunca contra `created_at`: um pedido que ficou meia hora na cozinha não
+   * está meia hora atrasado.
+   *
+   * NULO É O CASO COMUM, não a exceção — cerca de um terço dos pedidos
+   * entregues não tem prazo gravado (pedido antigo, retirada, estimativa que
+   * nunca existiu). Sem o campo não há chip: um "0 min" seria "chegou a hora"
+   * para um pedido que nunca teve hora.
+   *
+   * O ARREDONDAMENTO NÃO LISONJEIA. Quanto falta desce (`floor`) e quanto
+   * passou sobe (`ceil`): a tela nunca promete um minuto que não existe nem
+   * esconde um minuto de atraso. `date-time` que não parseia vira nulo, em vez
+   * de "NaN min" no cartão de quem está na rua.
+   */
+  function prazoDoPedido(pedido) {
+    const bruto = pedido?.delivery_due_at;
+    if (!bruto) return null;
+    const limite = new Date(bruto).getTime();
+    if (!Number.isFinite(limite)) return null;
+    const restante = limite - Date.now();
+    if (restante >= 0) {
+      return { tom: 'ok', texto: `+${Math.floor(restante / 60000)} min` };
+    }
+    // U+2212 (menos), e não hífen: no tamanho do chip o hífen some.
+    return { tom: 'late', texto: `−${Math.ceil(-restante / 60000)} min` };
+  }
+
+  /**
+   * A janela prometida, em minutos, como o cliente a viu: "40 a 55 min".
+   *
+   * Os dois lados são `int | null` independentes. Com um só, a frase é o que
+   * se sabe — inventar o outro lado seria prometer pelo backend.
+   */
+  function janelaPrometida(pedido) {
+    const min = Number(pedido?.delivery_eta_min);
+    const max = Number(pedido?.delivery_eta_max);
+    const temMin = Number.isFinite(min);
+    const temMax = Number.isFinite(max);
+    if (temMin && temMax) return `${min} a ${max} min`;
+    if (temMax) return `até ${max} min`;
+    if (temMin) return `a partir de ${min} min`;
+    return '';
+  }
+
   // ── O cartão de um pedido ────────────────────────────────────────────────
   function cartao(pedido) {
     const card = el('article', 'cr-card');
@@ -201,6 +253,12 @@
     // para quem não tem por que conhecê-lo. Sem rótulo, o cartão continua
     // dizendo o que importa: o endereço, o valor e o que dá para fazer.
     if (rotulo) topo.append(el('span', 'cr-card__status', rotulo));
+    // O prazo fica no TOPO, ao lado do status: é a informação que decide a
+    // ordem das entregas, e quem está com o celular na mão lê o topo do cartão.
+    const prazo = prazoDoPedido(pedido);
+    if (prazo) {
+      topo.append(el('span', `cr-card__deadline cr-card__deadline--${prazo.tom}`, prazo.texto));
+    }
     card.append(topo);
 
     card.append(el('div', 'cr-card__who', pedido.customer_name));
@@ -420,6 +478,9 @@
     linha('Telefone', telefoneDoCliente(pedido));
     if (pedido.address_complement) linha('Complemento', pedido.address_complement);
     if (pedido.address_reference) linha('Referência', pedido.address_reference);
+    // A janela que o CLIENTE viu no checkout. O chip do topo diz quanto falta;
+    // esta linha diz o que foi prometido — é ela que explica o chip.
+    linha('Prazo prometido', janelaPrometida(pedido));
     if (pedido.payment_method) linha('Forma de pagamento', pedido.payment_method);
     // O `total` DO PEDIDO NÃO ENTRA AQUI, e isso é decisão, não esquecimento.
     //

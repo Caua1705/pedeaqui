@@ -49,6 +49,15 @@
   --cr-paid: #10693C;
   --cr-unpaid: #A4231C;
   --cr-state-ink: #FFFFFF;
+
+  /* ── O PRAZO, que é um TERCEIRO papel de estado ──
+     Os valores repetem os de pago/não pago, e a repetição é deliberada, pela
+     mesma razão escrita acima para `--cr-paid`/`--cr-go`: "no prazo" e "pago"
+     são coisas diferentes que hoje concordam na cor. Um alias esconderia que
+     dá para mudar uma sem a outra — e é bem possível que se queira, porque
+     atraso e dinheiro não são o mesmo tipo de aviso. */
+  --cr-ontime: #10693C;
+  --cr-late: #A4231C;
 }
 
 html, body {
@@ -240,6 +249,22 @@ body.courier-booting > * { display: none !important; }
 }
 .cr-card__chip--paid { background: var(--cr-paid); }
 .cr-card__chip--unpaid { background: var(--cr-unpaid); }
+
+/* O prazo no topo do cartão. `tabular-nums` porque o número muda a cada
+   recarga da lista e a largura não pode dançar junto. */
+.cr-card__deadline {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 18px;
+  letter-spacing: .02em;
+  color: var(--cr-state-ink);
+  font-variant-numeric: tabular-nums;
+}
+.cr-card__deadline--ok { background: var(--cr-ontime); }
+.cr-card__deadline--late { background: var(--cr-late); }
 /* O valor ao lado do chip: o número grande continua sendo o que ele recebe. */
 .cr-card__pay .cr-card__money,
 .cr-card__pay .cr-card__paid { flex: 1 1 auto; margin: 0; }

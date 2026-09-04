@@ -835,3 +835,114 @@ test.describe('a tela do entregador no celular', () => {
     await expect(painel).toContainText('#1043');
   });
 });
+
+// ============================================================================
+//  O PRAZO PROMETIDO AO CLIENTE, no cartão de quem vai entregar.
+//
+//  O contrato ganhou três campos em `CourierOrderResponse` (03/09/2026):
+//  `delivery_due_at` (o TETO da janela — o instante da promessa mais o
+//  `delivery_eta_max`, somado no BACKEND), e `delivery_eta_min`/`_max`, a
+//  janela em minutos como foi prometida.
+//
+//  A conta é contra o `delivery_due_at`, nunca contra o `created_at`: um pedido
+//  que ficou meia hora na cozinha não está meia hora atrasado.
+//
+//  E O NULO É O CASO COMUM, não a exceção — 31,6% dos pedidos entregues não
+//  têm prazo gravado (pedido antigo, retirada, estimativa que não existiu). Por
+//  isso o primeiro teste é o do nulo: sem o campo, NENHUM chip. Um "0 min"
+//  ali seria "chegou a hora" para um pedido que nunca teve hora.
+// ============================================================================
+
+/** Um instante fixo, para o relógio da página e para o prazo do fixture. */
+const AGORA = Date.parse('2026-09-03T20:00:00.000Z');
+const emMinutos = (minutos) => new Date(AGORA + minutos * 60_000).toISOString();
+
+/**
+ * Congela o relógio da PÁGINA no instante `AGORA`.
+ *
+ * `pauseAt` recebe um instante DEPOIS do `install`: entre as duas chamadas o
+ * relógio falso ainda anda (são duas idas ao browser), e com o mesmo valor nos
+ * dois a chamada falha com "Cannot fast-forward to the past" — o flake de
+ * carga da §12.2 da skill. O prazo do fixture é medido a partir do MESMO
+ * `AGORA`, então a diferença é exata.
+ */
+async function comRelogioParado(page) {
+  await page.clock.install({ time: new Date(AGORA - 60_000) });
+  await page.clock.pauseAt(new Date(AGORA));
+}
+
+test.describe('o prazo no cartão', () => {
+  test.use({ viewport: { width: 414, height: 844 } });
+
+  test('SEM prazo não há chip — nulo não é zero nem atrasado', async ({ page }) => {
+    // PEDIDO_PRONTO não tem `delivery_due_at`, que é o caso mais comum.
+    await mockCourier(page);
+    await abrir(page);
+    await entrar(page);
+
+    const card = page.locator('.cr-card[data-order-id="ord-1"]');
+    await expect(card).toBeVisible();
+    await expect(card.locator('.cr-card__deadline')).toHaveCount(0);
+    // E o cartão continua inteiro: sem prazo não é sem pedido.
+    await expect(card).toContainText('#1042');
+    await expect(card).toContainText('Marina Alves');
+  });
+
+  test('dentro do prazo conta para a frente, em verde', async ({ page }) => {
+    await comRelogioParado(page);
+    await mockCourier(page, {
+      pedidos: [{ ...PEDIDO_PRONTO, delivery_due_at: emMinutos(12), delivery_eta_min: 40, delivery_eta_max: 55 }]
+    });
+    await abrir(page);
+    await entrar(page);
+
+    const chip = page.locator('.cr-card[data-order-id="ord-1"] .cr-card__deadline');
+    await expect(chip).toHaveText('+12 min');
+    // Verde de ESTADO — o mesmo `--cr-paid` do "Pago", que esta tela já usa.
+    await expect(chip).toHaveCSS('background-color', 'rgb(16, 105, 60)');
+  });
+
+  test('passou do prazo conta para trás, em vermelho', async ({ page }) => {
+    await comRelogioParado(page);
+    await mockCourier(page, {
+      pedidos: [{ ...PEDIDO_NA_RUA, delivery_due_at: emMinutos(-7), delivery_eta_min: 40, delivery_eta_max: 55 }]
+    });
+    await abrir(page);
+    await entrar(page);
+
+    const chip = page.locator('.cr-card[data-order-id="ord-2"] .cr-card__deadline');
+    await expect(chip).toHaveText('\u22127 min');
+    await expect(chip).toHaveCSS('background-color', 'rgb(164, 35, 28)');
+  });
+
+  test('a janela prometida aparece nos detalhes, e só quando existe', async ({ page }) => {
+    await comRelogioParado(page);
+    await mockCourier(page, {
+      pedidos: [
+        { ...PEDIDO_PRONTO, delivery_due_at: emMinutos(12), delivery_eta_min: 40, delivery_eta_max: 55 },
+        PEDIDO_NA_RUA
+      ]
+    });
+    await abrir(page);
+    await entrar(page);
+
+    const um = await abrirMenu(page, 'ord-1');
+    await um.locator('.cr-card__pop button[data-acao="detalhes"]').click();
+    await expect(um.locator('.cr-card__detalhes')).toContainText('40 a 55 min');
+
+    const dois = await abrirMenu(page, 'ord-2');
+    await dois.locator('.cr-card__pop button[data-acao="detalhes"]').click();
+    await expect(dois.locator('.cr-card__detalhes')).not.toContainText('min');
+  });
+
+  test('prazo que não é data não vira chip', async ({ page }) => {
+    // O contrato diz `date-time`, mas required não é "parseável": um valor
+    // quebrado viraria "NaN min" no cartão de quem está na rua.
+    await mockCourier(page, { pedidos: [{ ...PEDIDO_PRONTO, delivery_due_at: 'quando der' }] });
+    await abrir(page);
+    await entrar(page);
+
+    await expect(page.locator('.cr-card[data-order-id="ord-1"]')).toBeVisible();
+    await expect(page.locator('.cr-card__deadline')).toHaveCount(0);
+  });
+});

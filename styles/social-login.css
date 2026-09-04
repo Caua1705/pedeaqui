@@ -119,6 +119,34 @@
   cursor: not-allowed;
 }
 
+/* A OFERTA DE CONECTAR. Nome PRÓPRIO, e não `.prof-social-row` de novo: as
+   duas linhas são parecidas e dizem coisas opostas ("está conectado" x "pode
+   conectar"), e um spec que conta `.prof-social-row` para dizer que não sobrou
+   provedor nenhum passaria a contar a oferta junto. Classe é nome, não
+   aparência. */
+.prof-social-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+/* CONECTAR É A AÇÃO PRIMÁRIA desta tela, então é o botão preenchido — enquanto
+   `.prof-social-unlink` é contornado. Nenhum dos dois é vermelho: nem conectar
+   nem desconectar destrói coisa alguma (§7 da skill). */
+.prof-social-connect {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand-primary);
+  color: var(--brand-on);
+  font-size: var(--ref-text-xs, 12px);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* O MOTIVO APARECE ANTES DO CLIQUE, não depois. Um botão desabilitado sem
    explicação manda a pessoa procurar o que fez de errado; e o 400 do backend
    ela só veria na próxima vez que tentasse entrar, sem nenhuma pista. */
@@ -129,18 +157,27 @@
   line-height: 16px;
 }
 
-/* --- O diálogo de desconectar --- */
+/* --- OS DOIS DIÁLOGOS: conectar e desconectar ---
 
-#unlinkConfirm {
+   Um vestido só para as duas folhas. Elas são a MESMA coisa vista de dois
+   lados (mexer em forma de entrar, provando com a senha), e duas cópias
+   divergiriam no dia em que alguém ajustasse uma. O que difere está escrito
+   embaixo: o de desconectar tem `.addr-delete-yes` (a ação é nossa), e o de
+   conectar não tem — lá a ação é o botão do Google, num iframe. */
+
+#unlinkConfirm,
+#linkGoogleConfirm {
   position: fixed !important;
   inset: 0 !important;
   z-index: 260 !important;
   align-items: flex-end !important;
   justify-content: center !important;
 }
-#unlinkConfirm.active { background: rgba(0, 0, 0, .58) !important; }
+#unlinkConfirm.active,
+#linkGoogleConfirm.active { background: rgba(0, 0, 0, .58) !important; }
 
-#unlinkConfirm .addr-delete-panel {
+#unlinkConfirm .addr-delete-panel,
+#linkGoogleConfirm .addr-delete-panel {
   width: min(100vw, 414px) !important;
   max-width: 414px !important;
   height: auto !important;
@@ -151,28 +188,37 @@
   box-shadow: 0 -8px 24px rgba(0, 0, 0, .08) !important;
   text-align: left !important;
 }
-#unlinkConfirm .addr-delete-title {
+#unlinkConfirm .addr-delete-title,
+#linkGoogleConfirm .addr-delete-title {
   margin: 2px 0 8px !important;
   color: #3d3d3d !important;
   font-size: var(--ref-text-lg) !important;
   line-height: var(--ref-line-lg) !important;
   font-weight: 600 !important;
 }
-#unlinkConfirm .addr-delete-text {
+#unlinkConfirm .addr-delete-text,
+#linkGoogleConfirm .addr-delete-text {
   display: block !important;
   margin: 0 0 14px !important;
   color: var(--text-muted, #6b6b6b) !important;
   font-size: var(--ref-text-xs, 12px) !important;
   line-height: 17px !important;
 }
-#unlinkConfirm .reg-input { width: 100% !important; }
-#unlinkConfirm .reg-error { margin-bottom: 6px !important; }
+#unlinkConfirm .reg-input,
+#linkGoogleConfirm .reg-input { width: 100% !important; }
+#unlinkConfirm .reg-error,
+#linkGoogleConfirm .reg-error { margin-bottom: 6px !important; }
 
 /* A AÇÃO VEM PRIMEIRO e é a preenchida, como nas outras três telas de
    confirmação do app. E é a MARCA, não o vermelho — ver `.prof-social-unlink`
-   acima. */
+   acima.
+
+   No `#linkGoogleConfirm` só o Cancelar entra nesta regra: lá a ação é o botão
+   do Google, desenhado pelo SDK dentro de um iframe, e ele não aceita o nosso
+   vestido. */
 #unlinkConfirm .addr-delete-yes,
-#unlinkConfirm .addr-delete-cancel {
+#unlinkConfirm .addr-delete-cancel,
+#linkGoogleConfirm .addr-delete-cancel {
   width: 100% !important;
   max-width: 374px !important;
   height: 45px !important;
@@ -191,9 +237,25 @@
   background: var(--brand-primary) !important;
   color: var(--brand-on) !important;
 }
-#unlinkConfirm .addr-delete-cancel {
+#unlinkConfirm .addr-delete-cancel,
+#linkGoogleConfirm .addr-delete-cancel {
   margin: 0 !important;
   border: 1.5px solid var(--brand-primary) !important;
   background: var(--surface) !important;
   color: var(--brand-primary) !important;
 }
+
+/* --- O diálogo de conectar --- */
+
+/* `[hidden]` PERDE PARA SELETOR DE CLASSE (§12.14), e por isso esta linha anda
+   junto da regra que dá `display` ao bloco: sem ela o bloco ficaria com o
+   atributo `hidden` E visível enquanto o Google não fosse armado. */
+.link-google-block[hidden] { display: none !important; }
+
+.link-google-block {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 4px 0 12px;
+}
+#linkGoogleConfirm .login-google-btn { width: min(100%, 374px); }

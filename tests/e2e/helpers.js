@@ -269,6 +269,7 @@ export async function mockApi(page, {
   const googleNonceRequests = [];
   const googleSignupRequests = [];
   const socialListRequests = [];
+  const linkGoogleRequests = [];
   const unlinkRequests = [];
   const rotasDesconhecidas = [];
   // A lista muda dentro da execução: desconectar DEVOLVE o que sobrou, e um
@@ -612,6 +613,45 @@ export async function mockApi(page, {
         socialListRequests.push({ url });
         return route.fulfill(json(contasConectadas));
       }
+      // POST /customers/me/social/google — conectar sem sair da conta.
+      //
+      // A ORDEM DAS RECUSAS É A DO BACKEND, e ela não é decorativa: lá o
+      // `_ensure_password_matches` roda ANTES do `verified_identity`, então com a
+      // senha errada o `id_token` nem chega a ser olhado. Um mock que
+      // conferisse o Google primeiro deixaria passar uma tela que gasta a
+      // credencial de uso único antes de saber que a senha estava errada.
+      if (method === 'POST' && /\/customers\/me\/social\/google(\?|$)/.test(url)) {
+        const corpo = corpoDaRequisicao(request);
+        linkGoogleRequests.push({ body: corpo });
+        // 400 e NÃO 401 para quem não tem senha utilizável: "senha incorreta"
+        // para quem nunca teve senha manda a pessoa procurar um erro que ela
+        // não cometeu. A frase do backend já ensina o caminho, e é ela que a
+        // tela mostra.
+        if (social.passwordSet === false) {
+          return route.fulfill(json({ detail: 'Defina uma senha antes de conectar outra conta. Use "Esqueci minha senha": o código vai para o e-mail desta conta.' }, 400));
+        }
+        if (!corpo.password) return route.fulfill(json({ detail: 'Informe a senha atual.' }, 400));
+        if (corpo.password !== AUTH_CONTA.senha) return route.fulfill(json({ detail: 'Senha incorreta' }, 401));
+        if (!corpo.nonce_token) return route.fulfill(json({ detail: 'Toque no botão do Google de novo.' }, 400));
+        // O sub que já pertence a OUTRA conta: 409, e é a única resposta certa —
+        // o UNIQUE do banco recusaria de qualquer jeito, mas como 500.
+        if (corpo.id_token === GOOGLE_TOKENS.subDeOutraConta) {
+          return route.fulfill(json({ detail: 'Esta conta do Google já está conectada a outra conta.' }, 409));
+        }
+        if (!Object.values(GOOGLE_TOKENS).includes(corpo.id_token)) {
+          return route.fulfill(json({ detail: 'Não foi possível validar sua conta do Google.' }, 401));
+        }
+        // Ligar de novo o MESMO Google é a mesma coisa que ligar uma vez: 200
+        // com a lista igual, e nenhuma linha nova.
+        if (!contasConectadas.some(conta => conta.provider === 'google')) {
+          contasConectadas = [...contasConectadas, {
+            provider: 'google',
+            linked_at: '2026-09-04T10:00:00Z',
+            last_login_at: null
+          }];
+        }
+        return route.fulfill(json(contasConectadas));
+      }
       if (method === 'DELETE' && /\/customers\/me\/social\/([^/?]+)/.test(url)) {
         const provider = url.match(/\/customers\/me\/social\/([^/?]+)/)[1];
         unlinkRequests.push({ provider, body: corpoDaRequisicao(request) });
@@ -674,7 +714,7 @@ export async function mockApi(page, {
     orderRequests, paymentRequests, trackRequests, couponListRequests, couponPreviewRequests,
     loginRequests, registerRequests, forgotRequests, resetCodeRequests, resetPasswordRequests,
     verifyCodeRequests, googleRequests, googleNonceRequests, googleSignupRequests,
-    socialListRequests, unlinkRequests,
+    socialListRequests, linkGoogleRequests, unlinkRequests,
     rotasDesconhecidas
   };
 }
@@ -709,7 +749,9 @@ export const GOOGLE_TOKENS = {
   linkTicket: 'lnk_e2e_0000000000000000',
   signupTicket: 'sgn_e2e_0000000000000000',
   /** Um ticket que o backend já não aceita: responde 409, "recomece". */
-  ticketConflitado: 'sgn_e2e_conflito'
+  ticketConflitado: 'sgn_e2e_conflito',
+  /** Um sub que JÁ pertence a outra conta: conectar responde 409. */
+  subDeOutraConta: 'gid-sub-de-outra-conta'
 };
 
 export const GOOGLE_NONCE = {

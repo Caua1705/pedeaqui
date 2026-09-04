@@ -171,6 +171,23 @@
     return authedGet(routes().customerSocialAccounts());
   }
 
+  // CONECTAR sem sair da conta. Devolve a lista JÁ COM o provedor novo — é ela
+  // que a tela redesenha, e é por isso que não há uma segunda ida à rede aqui.
+  //
+  // Os três campos são os de `LinkGoogleAccountRequest`, e a senha é o que
+  // prova que quem está conectando é o dono da conta e não um token roubado.
+  // NÃO HÁ prova por código nesta rota — o contrato não declara campo nenhum
+  // para ela (§3.2: contrato é lido, não lembrado).
+  //
+  // As três recusas que a tela precisa saber ler: 400 sem senha ou com conta
+  // `password_set: false` (a frase do backend já ensina o caminho), 401 com
+  // senha errada ou `id_token`/nonce inválido, e 409 quando aquele Google já
+  // pertence a OUTRA conta. Ligar de novo o MESMO Google responde 200 com a
+  // lista igual — não é erro.
+  function linkGoogleAccount({ id_token, nonce_token, password }) {
+    return authedPost(routes().customerSocialLinkGoogle(), { id_token, nonce_token, password });
+  }
+
   // Desconectar mexe em FORMA DE ENTRAR, então pede a senha atual — do mesmo
   // jeito que conectar. Devolve a lista que sobrou.
   //
@@ -254,6 +271,7 @@
     signInWithGoogle,
     completeGoogleSignup,
     listSocialAccounts,
+    linkGoogleAccount,
     unlinkSocialAccount,
     // authenticated
     getCurrentCustomer,

@@ -2318,11 +2318,14 @@ travado num 422 — o oposto de adiar com segurança.
 briefing, aqui o bloqueio estava vencido. **Contrato é lido, não lembrado —
 inclusive quando quem lembra é quem pediu.**
 
-(d) continua bloqueado, e a varredura confirma: `LinkGoogleAccountRequest` tem
-`id_token`, `nonce_token` e `password`, e **nenhum campo de código**. O aviso do
-`api-contract.test.js` passa a listar `POST /customers/me/social/google` como
-rota que a API oferece e o front não usa — é o registro vivo dessa pendência, e
-ele some sozinho no dia em que a tela for construída.
+(d) foi dado como bloqueado aqui, e **estava errado — ver §19**. É verdade que
+`LinkGoogleAccountRequest` tem `id_token`, `nonce_token` e `password` e **nenhum
+campo de código** (continua assim em 04/09/2026). O que não era verdade é que
+isso impedisse a tela: a conta sem senha é, por construção do backend, a conta
+que JÁ tem o Google conectado, e ela nunca vê a oferta de conectar. A tela foi
+construída em 04/09/2026 com a senha, e o aviso do `api-contract.test.js` — que
+listava `POST /customers/me/social/google` como rota publicada e não usada —
+sumiu sozinho, que é o comportamento certo (§12.13).
 
 ### 18.2 OS TRÊS DESFECHOS, E POR QUE (b) NÃO É "ENTROU"
 
@@ -2427,3 +2430,109 @@ erro nossa — a classe de bug do commit 63ffa5a, agora pelo Google.
 O unitário afirma as três contra o `vercel.json`, lendo a URL do próprio
 serviço: um host novo no código sem o par no header vira tela que funciona em
 teste e é bloqueada em produção.
+
+## 19. Conectar o Google pelo Perfil (04/09/2026) — e o bloqueio que não existia
+
+### 19.1 O BRIEFING DIZIA QUE O BACKEND TINHA ENTREGADO. OS TRÊS ELOS DIZIAM QUE NÃO
+
+O pedido chegou assim: "o backend passou a aceitar CÓDIGO NO E-MAIL no lugar da
+senha em `POST /customers/me/social/google`. Regenere o contrato e confirme."
+
+Confirmado nos três elos da §17.1, e a resposta foi **não**:
+
+| elo | como se pergunta | resposta |
+|---|---|---|
+| código Python do backend | `LinkGoogleAccountRequest` em `customer_schema.py` | `id_token`, `nonce_token`, `password`. Nada mais |
+| `openapi.json` do backend | `venv/Scripts/python.exe scripts/export_openapi.py --check` | **em dia** — não era defasagem |
+| cópia vendorizada aqui | `npm run api:generate` | **zero diff** |
+
+O que existia de verdade era um commit do backend com "codigo" e "Google" no
+assunto (`fix(auth): o codigo de ligar a conta do Google para de chegar com o
+texto de entrar`) — e ele é sobre o TEXTO do e-mail do caso (b), que já existia.
+Um assunto de commit é o tipo de evidência que confirma o que já se acredita.
+
+É a §17.2 e a §18.1 pela **quarta** vez: contrato é lido, não lembrado, inclusive
+quando quem lembra é quem pediu. E o desfecho aqui foi o inverso da §18.1 — lá o
+bloqueio estava vencido, aqui a entrega não tinha acontecido. A regra que serve
+para os dois casos: **a leitura do contrato é o primeiro passo, não o último, e
+ela decide o desenho da tela.**
+
+### 19.2 O QUE DESTRAVOU NÃO FOI O CONTRATO — FOI A OBJEÇÃO, MEDIDA
+
+A tela existia por escrito, em `profile-screen.js`, como decisão de NÃO fazer:
+
+> NÃO HÁ BOTÃO DE CONECTAR AQUI, e a ausência é decisão, não esquecimento.
+> `POST /customers/me/social/google` exige A SENHA ATUAL, e quem entrou por
+> código de e-mail — o fluxo padrão daqui — não tem uma para digitar: o botão só
+> funcionaria para parte das contas e ficaria mudo para o resto.
+
+**A objeção é falsa, e a prova está no backend, em duas linhas.**
+`password_set` só é falso quando `password_hash` começa com `!`
+(`auth_service.password_is_set`), e o único lugar do sistema que grava esse hash
+é `_create_customer` do cadastro pelo Google — que cria a identidade do Google na
+**MESMA transação**. Logo:
+
+    conta sem senha  ⟹  conta que JÁ TEM o Google conectado
+
+E a oferta de conectar só aparece para quem NÃO tem o provedor. Quem vê o botão
+tem senha, por construção — a "parte das contas" para a qual ele ficaria mudo é
+o conjunto vazio. Não havia o que esperar do backend.
+
+**A lição de método:** uma decisão de não construir tem prazo de validade igual à
+premissa dela. Quando ela ficar no caminho, releia a premissa no CÓDIGO DO OUTRO
+LADO antes de aceitar a espera — aqui custou duas leituras de arquivo, e a espera
+teria custado uma rodada de backend que ninguém precisava.
+
+### 19.3 A ORDEM DOS GESTOS É PARTE DO CONTRATO: A CREDENCIAL É DE USO ÚNICO
+
+O `id_token` do Google serve uma vez e o par de nonce vale 10 minutos. Isso
+decide o desenho do diálogo, e não é estética:
+
+- **a senha vem ANTES do botão do Google.** Se o toque no Google viesse primeiro,
+  um campo em branco gastaria a credencial e a pessoa teria de tocar de novo sem
+  entender por quê;
+- **a checagem do campo vazio é LOCAL**, e não uma ida à rede para ouvir o 400.
+  O teste que guarda isso afirma `linkGoogleRequests` VAZIO — o fato — antes da
+  frase na tela, que é o mecanismo (§13.3);
+- **toda falha REARMA o botão**, com `limparErro: false`. Rearmar limpando o erro
+  devolve a pessoa a um diálogo mudo logo depois de um erro que exige um segundo
+  toque: é a armadilha 5 da §18.4, e ela reapareceu inteira nesta tela.
+
+O recibo de que o app terminou de tratar a credencial é **o rearme** (um nonce
+novo pedido), não o clique. Afirmar "nenhuma requisição saiu" logo depois do
+clique passaria antes de a requisição ter tido tempo de sair — a corrida da §11.
+
+### 19.4 CLASSE É NOME, NÃO APARÊNCIA
+
+A linha de "pode conectar" é parecida com a de "está conectado" e diz o oposto.
+Reusar `.prof-social-row` nas duas teria quebrado, em silêncio, a asserção que
+já existia:
+
+    expect(page.locator('.prof-social-row')).toHaveCount(0)   // "não sobrou provedor"
+
+que passaria a contar a oferta junto. A oferta ganhou nome próprio
+(`.prof-social-offer` / `.prof-social-connect`), e o teste do desvincular ganhou
+a asserção que descreve a tela nova: **desconectar devolve a oferta** — quem
+desconectou por engano refaz sem sair da conta.
+
+### 19.5 O AVISO DE ROTA NÃO USADA FECHOU SOZINHO
+
+`api-contract.test.js` listava cinco rotas de cliente publicadas e não
+consumidas; `POST /customers/me/social/google` era uma delas, e a §18.1 a
+apontava como "o registro vivo dessa pendência". Depois desta rodada a lista tem
+quatro. É o comportamento certo da §12.13: o aviso some porque a capacidade foi
+construída, não porque alguém o silenciou.
+
+### 19.6 O CONTRATO MUDOU NO MEIO DA RODADA, DE NOVO — e desta vez por trabalho ALHEIO
+
+`npm run test` estava verde no começo (405) e ficou vermelho no meio, em
+`api-contract.test.js`, sem que nada do front tivesse tocado o contrato: o
+repositório do backend estava com trabalho NÃO COMMITADO em `/admin/whatsapp` e
+o `openapi.json` de lá foi reexportado no meio da rodada.
+
+O caminho é o da §12.12 e não muda por a mudança ser de outro: `npm run
+api:generate`, os dois arquivos juntos, commit próprio. O que vale registrar é a
+CONFERÊNCIA antes de aceitar: dois schemas mudados, `AdminWhatsAppBranchView` e
+`AdminWhatsAppChannelCreate`, nenhuma rota nova, nenhuma sumida — `/admin/*` é o
+painel do lojista, outro app. Vendorizar sem essa conferência seria assinar
+embaixo de uma mudança que ninguém leu.

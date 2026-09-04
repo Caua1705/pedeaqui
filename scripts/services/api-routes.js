@@ -192,6 +192,28 @@
     customerSocialProvider: provider =>
       `/customers/me/social/${routeSlug(provider)}`,
 
+    // CONECTAR O GOOGLE SEM SAIR DA CONTA. É o caminho de quem já entra por
+    // e-mail e senha e quer passar a entrar pelo Google; sem ele a única forma
+    // seria sair, tocar em "Entrar com Google" e cair no caso (b) — digitar um
+    // código para provar um e-mail que a sessão aberta já provava.
+    //
+    // O CORPO LEVA A SENHA ATUAL, e isso não é burocracia: conectar ACRESCENTA
+    // uma forma de entrar. Sem a senha, um token roubado vira acesso
+    // permanente — o ladrão conecta o Google dele, a vítima troca a senha (o
+    // que mata todos os tokens) e ele volta pelo botão. Trocar a senha
+    // deixaria de ser o que expulsa quem entrou na conta.
+    //
+    // NÃO EXISTE PROVA POR CÓDIGO NESTA ROTA, e quem diz é o contrato:
+    // `LinkGoogleAccountRequest` declara `id_token`, `nonce_token` e
+    // `password`, e nada mais — conferido em 04/09/2026, com o `--check` do
+    // backend em dia. Enquanto for assim, a tela pede a senha.
+    //
+    // Conta com `password_set: false` recebe 400 com o caminho escrito
+    // ("Defina uma senha antes de conectar outra conta"), e não 401: quem nunca
+    // teve senha não errou senha nenhuma. Ver `renderConnectedAccountsHtml()`
+    // para por que essa conta não chega a ver o botão.
+    customerSocialLinkGoogle: () => '/customers/me/social/google',
+
     // ---- Authenticated customer ----
     customerMe: () => '/customers/me',
     customerOrders: () => '/customers/me/orders',

@@ -712,6 +712,30 @@
 
 </div><!-- /mobViewProfile -->
 
+<!-- CONECTAR O GOOGLE a partir do Perfil, sem sair da conta.
+
+     A SENHA VEM ANTES DO BOTÃO DO GOOGLE, e a ordem é a do gesto: o `id_token`
+     é de uso único, então tocar no Google com o campo vazio gastaria a
+     credencial. O botão do Google é um IFRAME desenhado pelo SDK dentro de
+     `#linkGoogleButton` — as regras de marca do Google não admitem um botão
+     nosso pintado de "Google", e é o iframe que a `frame-src` da CSP libera.
+
+     Não há "Conectar" nosso aqui: o botão do Google É a ação, e por isso o
+     único botão de verdade do diálogo é o Cancelar. -->
+<div class="addr-delete-confirm" id="linkGoogleConfirm" aria-hidden="true" data-act-click='closeLinkGoogleConfirm'>
+  <div class="addr-delete-panel" role="dialog" aria-modal="true" aria-labelledby="linkGoogleConfirmTitle" data-act-click='["$stop"]'>
+    <h3 class="addr-delete-title" id="linkGoogleConfirmTitle">Conectar o Google?</h3>
+    <p class="addr-delete-text">Voc&ecirc; continua entrando por e-mail e senha; o Google passa a ser mais uma forma de entrar. Pedimos sua senha porque conectar ACRESCENTA uma forma de entrar na sua conta.</p>
+    <label class="reg-label" for="linkGooglePassword">Sua senha</label>
+    <input class="reg-input" id="linkGooglePassword" type="password" autocomplete="current-password" data-act-input='clearLinkGoogleError'>
+    <div class="reg-error" id="linkGoogleErr"></div>
+    <div class="link-google-block" id="linkGoogleBlock" hidden>
+      <div class="login-google-btn" id="linkGoogleButton"></div>
+    </div>
+    <button class="addr-delete-cancel" type="button" data-act-click='closeLinkGoogleConfirm'>Cancelar</button>
+  </div>
+</div>
+
 <!-- DESCONECTAR UM PROVEDOR pede a senha atual, porque desconectar mexe em
      FORMA DE ENTRAR — o mesmo motivo de conectar. Mesma forma dos outros dois
      diálogos do app, e a AÇÃO vem primeiro (§4.1). -->

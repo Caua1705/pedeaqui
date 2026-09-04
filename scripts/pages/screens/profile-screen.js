@@ -680,14 +680,27 @@
   //  senha, desabilitando o botão de quem podia clicar. É a família do
   //  `sort_order` (§3.2 da skill).
   //
-  //  NÃO HÁ BOTÃO DE CONECTAR AQUI, e a ausência é decisão, não esquecimento.
-  //  `POST /customers/me/social/google` exige A SENHA ATUAL, e quem entrou por
-  //  código de e-mail — o fluxo padrão daqui — não tem uma para digitar: o
-  //  botão só funcionaria para parte das contas e ficaria mudo para o resto.
-  //  A ligação a partir do Perfil espera o backend aceitar CÓDIGO no lugar da
-  //  senha, como já foi decidido para excluir a conta. Enquanto isso, quem quer
-  //  ligar sai, toca em "Entrar com Google" e cai no caso (b), que autoriza por
-  //  código — o caminho existe, só é mais longo.
+  //  O BOTÃO DE CONECTAR EXISTE, e a decisão que o impedia foi REVERTIDA em
+  //  04/09/2026 — não por o contrato ter mudado, mas por a objeção ter sido
+  //  medida e não se sustentar. Ela dizia: "`POST /customers/me/social/google`
+  //  exige A SENHA ATUAL, e quem entrou por código não tem uma para digitar; o
+  //  botão ficaria mudo para parte das contas". Só que `password_set: false`
+  //  tem UMA origem só no backend (`_create_customer` do cadastro pelo Google),
+  //  e ela grava a identidade do Google na MESMA transação: conta sem senha é
+  //  conta que JÁ TEM o Google conectado, e essa não vê oferta de conectar.
+  //  Quem vê a oferta tem senha, por construção.
+  //
+  //  A prova por CÓDIGO continua não existindo nesta rota — `LinkGoogleAccount
+  //  Request` declara `id_token`, `nonce_token` e `password`, e nada mais
+  //  (conferido em 04/09/2026 com o `--check` do backend em dia). Se ela
+  //  aparecer um dia, o que muda é o diálogo; a oferta e o redesenho da lista
+  //  ficam como estão.
+  //
+  //  E se um provedor NOVO nascer (Apple), uma conta pode passar a existir sem
+  //  senha e sem Google. Aí a oferta aparece e o backend responde 400 com a
+  //  frase que ensina o caminho ("Defina uma senha antes de conectar outra
+  //  conta"), que é o que o diálogo mostra. Antecipar esse 400 hoje seria
+  //  markup de um caso que não existe — a §12.6 na direção contrária.
   // ==========================================================================
 
   const SOCIAL_PROVIDER_LABELS = { google: 'Google' };
@@ -700,14 +713,37 @@
     return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
   }
 
-  function renderConnectedAccountsHtml(contas, temSenha) {
+  /**
+   * O corpo da tela de contas conectadas.
+   *
+   * `googleDisponivel` é passado, e não lido aqui de `PedeAquiGoogleIdentity`,
+   * porque este renderizador é chamado por três caminhos (abrir a tela, ligar,
+   * desligar) e um deles não pode divergir do outro em quem responde a
+   * pergunta. Quem lê o global é `ofertaDeConectarGoogle()`, uma vez.
+   */
+  function renderConnectedAccountsHtml(contas, { temSenha = true, googleDisponivel = false } = {}) {
     const lista = Array.isArray(contas) ? contas : [];
+    // A OFERTA SÓ EXISTE PARA QUEM NÃO TEM O PROVEDOR. Ligar de novo o mesmo
+    // Google é inócuo no backend (200 com a lista igual), mas um botão que se
+    // oferece a fazer o que já está feito é a tela mentindo sobre o estado.
+    const jaTemGoogle = lista.some(conta => String(conta?.provider || '') === 'google');
+    const oferta = googleDisponivel && !jaTemGoogle
+      ? `<div class="prof-info-card">
+          <div class="prof-social-offer">
+            <div class="prof-social-info">
+              <div class="prof-social-name">Google</div>
+              <div class="prof-social-detail">Entre com um toque, sem digitar a senha.</div>
+            </div>
+            <button class="prof-social-connect" type="button" ${act('click', 'openLinkGoogleConfirm')}>Conectar</button>
+          </div>
+        </div>`
+      : '';
     if (!lista.length) {
       return `
         <div class="prof-placeholder-card">
           <div class="prof-placeholder-title">Nenhuma conta conectada</div>
           <div class="prof-placeholder-text">Esta conta abre s&oacute; por e-mail e senha.</div>
-        </div>`;
+        </div>${oferta}`;
     }
     // A trava é por LISTA, não por linha: o que a impede é ser a última porta.
     const ultimaPorta = !temSenha && lista.length === 1;
@@ -732,8 +768,11 @@
         ${ultimaPorta ? '<div class="prof-social-locked">Esta &eacute; a &uacute;nica forma de entrar na sua conta. Defina uma senha em "Esqueci minha senha" para poder desconectar.</div>' : ''}
       `;
     }).join('');
-    return `<div class="prof-info-card">${linhas}</div>`;
+    return `<div class="prof-info-card">${linhas}</div>${oferta}`;
   }
+
+  /** O botão do Google só é oferecido onde ele pode funcionar (§18.3). */
+  const googleDisponivel = () => Boolean(window.PedeAquiGoogleIdentity?.isEnabled?.());
 
   async function renderConnectedAccounts() {
     const body = $('profSubContasBody');
@@ -745,10 +784,132 @@
         auth.listSocialAccounts(),
         auth.getCurrentCustomer()
       ]);
-      body.innerHTML = renderConnectedAccountsHtml(contas, me?.password_set ?? true);
+      body.innerHTML = renderConnectedAccountsHtml(contas, {
+        temSenha: me?.password_set ?? true,
+        googleDisponivel: googleDisponivel()
+      });
     } catch (error) {
       logAppError('Falha ao carregar contas conectadas', error);
       body.innerHTML = '<div class="prof-placeholder-card"><div class="prof-placeholder-text">N&atilde;o foi poss&iacute;vel carregar suas contas conectadas.</div></div>';
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  //  CONECTAR O GOOGLE (o diálogo)
+  //
+  //  A ORDEM DOS GESTOS É A SENHA PRIMEIRO, O GOOGLE DEPOIS, e ela não é
+  //  estética: o `id_token` do Google é de uso único e o par de nonce vale 10
+  //  minutos. Se o toque no Google viesse antes, uma senha em branco gastaria a
+  //  credencial e a pessoa teria de tocar de novo sem entender por quê.
+  //
+  //  Quando isso acontece mesmo assim (o campo em branco, ou a senha errada, ou
+  //  o 409), o botão é REARMADO — com `limparErro: false`, senão a frase que
+  //  acabou de ser escrita some no rearme e o cliente volta para um diálogo mudo
+  //  logo depois de um erro que EXIGE um segundo toque. É a armadilha 5 da
+  //  §18.4, e ela vale igual aqui.
+  // ------------------------------------------------------------------------
+
+  let _linkArmando = false;
+  let _linkSubmitting = false;
+
+  function setLinkGoogleError(msg) {
+    const el = $('linkGoogleErr');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('show', Boolean(msg));
+  }
+  function clearLinkGoogleError() { setLinkGoogleError(''); }
+
+  async function armLinkGoogleButton({ limparErro = true } = {}) {
+    const bloco = $('linkGoogleBlock');
+    const alvo = $('linkGoogleButton');
+    const gid = window.PedeAquiGoogleIdentity;
+    if (!bloco || !alvo) return false;
+    if (!gid?.isEnabled()) { bloco.hidden = true; return false; }
+    if (_linkArmando) return false;
+    _linkArmando = true;
+    if (limparErro) setLinkGoogleError('');
+    try {
+      const ok = await gid.armarBotao(alvo, {
+        onCredential: submitLinkGoogle,
+        onError: erro => {
+          // O botão SOME quando o Google não pôde ser armado, pela mesma razão
+          // do client id ausente: um botão que não funciona é pior que nenhum.
+          bloco.hidden = true;
+          setLinkGoogleError('Não foi possível falar com o Google agora. Tente mais tarde.');
+          logAppError('Não foi possível preparar o Conectar Google', erro);
+        }
+      });
+      bloco.hidden = !ok;
+      return ok;
+    } finally {
+      _linkArmando = false;
+    }
+  }
+
+  function openLinkGoogleConfirm() {
+    if ($('linkGooglePassword')) $('linkGooglePassword').value = '';
+    setLinkGoogleError('');
+    // QUEM ABRE ESTE DIÁLOGO É A CLASSE `.active`, não o `aria-hidden` — o
+    // mesmo motivo escrito em `openUnlinkConfirm()`.
+    const dialogo = $('linkGoogleConfirm');
+    if (dialogo) {
+      dialogo.inert = false;
+      dialogo.removeAttribute('inert');
+      dialogo.setAttribute('aria-hidden', 'false');
+      dialogo.classList.add('active');
+    }
+    // Sem await: o diálogo abre na hora e o botão do Google chega por trás — ele
+    // depende de uma ida à rede (o nonce), e prender a abertura nela faria o
+    // toque parecer perdido.
+    armLinkGoogleButton();
+    setTimeout(() => $('linkGooglePassword')?.focus(), 60);
+  }
+
+  function closeLinkGoogleConfirm() {
+    const dialogo = $('linkGoogleConfirm');
+    releaseFocusFrom(dialogo, null);
+    if (dialogo) {
+      dialogo.classList.remove('active');
+      dialogo.inert = true;
+      dialogo.setAttribute('inert', '');
+      dialogo.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  async function submitLinkGoogle({ id_token, nonce_token }) {
+    if (_linkSubmitting) return;
+    const senha = $('linkGooglePassword')?.value || '';
+    // A senha é conferida pelo BACKEND; a checagem daqui só evita gastar uma ida
+    // à rede com o campo vazio — nunca decide se ela vale.
+    if (!senha) {
+      setLinkGoogleError('Informe sua senha');
+      await armLinkGoogleButton({ limparErro: false });
+      return;
+    }
+    _linkSubmitting = true;
+    try {
+      const contas = await window.PedeAquiCustomerAuth.linkGoogleAccount({
+        id_token, nonce_token, password: senha
+      });
+      // A rota DEVOLVE a lista já com o provedor novo: redesenhar com ela evita
+      // uma segunda ida à rede e, principalmente, evita a tela discordar do
+      // servidor.
+      const me = await window.PedeAquiCustomerAuth.getCurrentCustomer().catch(() => null);
+      const body = $('profSubContasBody');
+      if (body) body.innerHTML = renderConnectedAccountsHtml(contas, {
+        temSenha: me?.password_set ?? true,
+        googleDisponivel: googleDisponivel()
+      });
+      closeLinkGoogleConfirm();
+    } catch (error) {
+      // As frases do backend já são texto de cliente: 400 ensina o caminho de
+      // quem não tem senha, 401 é senha errada, 409 é "este Google é de outra
+      // conta". Nenhuma delas é código (§14.5).
+      setLinkGoogleError(window.PedeAquiApiError?.errorMessage?.(error, 'Não foi possível conectar o Google.') || 'Não foi possível conectar o Google.');
+      await armLinkGoogleButton({ limparErro: false });
+    } finally {
+      _linkSubmitting = false;
     }
   }
 
@@ -807,7 +968,10 @@
       // ida à rede e, principalmente, evita a tela discordar do servidor.
       const me = await window.PedeAquiCustomerAuth.getCurrentCustomer().catch(() => null);
       const body = $('profSubContasBody');
-      if (body) body.innerHTML = renderConnectedAccountsHtml(restantes, me?.password_set ?? true);
+      if (body) body.innerHTML = renderConnectedAccountsHtml(restantes, {
+        temSenha: me?.password_set ?? true,
+        googleDisponivel: googleDisponivel()
+      });
       closeUnlinkConfirm();
     } catch (error) {
       setUnlinkError(window.PedeAquiApiError?.errorMessage?.(error, 'Não foi possível desconectar.') || 'Não foi possível desconectar.');
@@ -881,6 +1045,9 @@
       closeUnlinkConfirm,
       confirmUnlinkSocial,
       clearUnlinkError,
+      openLinkGoogleConfirm,
+      closeLinkGoogleConfirm,
+      clearLinkGoogleError,
       loadProfPedidos,
       openProfOrderDetails,
       closeProfOrderDetails,

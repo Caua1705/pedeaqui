@@ -338,6 +338,10 @@ test('a lista mostra o provedor conectado, e desconectar pede a senha', async ({
   await expect(page.locator('#unlinkConfirm')).not.toHaveClass(/active/);
   await expect(page.locator('#profSubContasBody .prof-social-row')).toHaveCount(0);
   await expect(page.locator('#profSubContasBody')).toContainText('só por e-mail e senha');
+  // E A OFERTA DE CONECTAR VOLTA. Desconectar não é uma porta que se fecha: quem
+  // desconectou por engano refaz sem sair da conta, que é exatamente o caminho
+  // que esta tela passou a oferecer em 04/09/2026.
+  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
 });
 
 test('a ÚNICA forma de entrar não pode ser desconectada — e a tela diz antes do clique', async ({ page }) => {
@@ -353,4 +357,180 @@ test('a ÚNICA forma de entrar não pode ser desconectada — e a tela diz antes
   await expect(page.locator('#profSubContasBody .prof-social-locked'))
     .toContainText('única forma de entrar');
   expect(unlinkRequests).toHaveLength(0);
+});
+
+// ---------------------------------------------------------------------------
+//  CONECTAR O GOOGLE A PARTIR DO PERFIL
+//
+//  A conta destes testes entra POR E-MAIL E SENHA, e não pelo botão do Google:
+//  é a conta que este caminho existe para servir. Entrar pelo Google e depois
+//  oferecer "conectar o Google" seria testar um estado que não acontece.
+//
+//  O QUE O CONTRATO PERMITE HOJE, e é preciso dizer porque a tela seria outra:
+//  `LinkGoogleAccountRequest` declara `id_token`, `nonce_token` e `password`, e
+//  NADA MAIS — não há prova por código de e-mail nesta rota (conferido em
+//  04/09/2026, com o `--check` do backend em dia). Se ela nascer, o que muda é
+//  o diálogo; a oferta, o corpo e o redesenho da lista continuam iguais.
+// ---------------------------------------------------------------------------
+
+async function entrarPorSenhaEAbrirContas(page, mockOpcoes = {}) {
+  const mock = await abrirApp(page, { social: { contas: [] }, ...mockOpcoes });
+  await ligarBotaoDoGoogle(page);
+  await entrarPorSenha(page);
+  await abrirContasConectadas(page);
+  return mock;
+}
+
+/**
+ * Entra pelo formulário de e-mail e senha.
+ *
+ * A FOLHA DE LOGIN NÃO É O FORMULÁRIO: `openLoginScreen()` abre o `#loginModal`,
+ * que oferece "Cadastre-se" e "Entrar", e o formulário sai do segundo (§16.4).
+ */
+async function entrarPorSenha(page) {
+  await page.evaluate(() => window.openLoginScreen('profile'));
+  await expect(page.locator('#loginModal')).toHaveClass(/active/);
+  await page.locator('#loginModal .login-secondary').click();
+  await expect(page.locator('#loginScreen')).toHaveClass(/active/);
+  await page.locator('#loginEmail').fill(AUTH_CONTA.login);
+  await page.locator('#loginPassword').fill(AUTH_CONTA.senha);
+  await page.locator('#loginSubmitBtn').click();
+  await expect.poll(() => tokenGuardado(page)).toBe(AUTH_CONTA.token);
+}
+
+async function abrirContasConectadas(page) {
+  await page.evaluate(() => window.RapidexActions.resolve('mobNavProfile')());
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('contas'));
+  await expect(page.locator('#profSubcontas')).toHaveClass(/active/);
+}
+
+/** O botão que o SDK falso desenha DENTRO do diálogo de conectar. */
+const botaoDoGoogleNoDialogo = (page) => page.locator('#linkGoogleButton #e2eGoogleBtn');
+
+async function tocarNoGoogleDoDialogo(page, idToken) {
+  await page.evaluate(token => { window.__idTokenDoE2E = token; }, idToken);
+  await botaoDoGoogleNoDialogo(page).click();
+}
+
+test('conectar o Google pede a senha, e o corpo é exatamente o do contrato', async ({ page }) => {
+  const { linkGoogleRequests, googleNonceRequests, rotasDesconhecidas } =
+    await entrarPorSenhaEAbrirContas(page);
+
+  // A conta abre só por e-mail e senha, e a tela diz as duas coisas: que não há
+  // provedor conectado, e que dá para conectar um.
+  await expect(page.locator('#profSubContasBody')).toContainText('Nenhuma conta conectada');
+  const oferta = page.locator('#profSubContasBody .prof-social-connect');
+  await expect(oferta).toBeVisible();
+
+  await oferta.click();
+  await expect(page.locator('#linkGoogleConfirm')).toHaveClass(/active/);
+  // O NONCE É PEDIDO AO ABRIR O DIÁLOGO, e não no boot: o par vale 10 minutos e
+  // um pedido no boot já teria vencido quando a pessoa chegasse até aqui.
+  await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
+  expect(googleNonceRequests.length).toBeGreaterThanOrEqual(1);
+
+  await page.locator('#linkGooglePassword').fill(AUTH_CONTA.senha);
+  await tocarNoGoogleDoDialogo(page, GOOGLE_TOKENS.contaConhecida);
+
+  await expect.poll(() => linkGoogleRequests.length).toBe(1);
+  // Igualdade ESTRITA: é a §12.10 pelo lado da conta. Um campo a mais aqui é um
+  // campo que o backend descarta em SILÊNCIO (este esquema não é fechado), e um
+  // a menos é 422 — as duas metades do mesmo contrato de saída.
+  expect(linkGoogleRequests[0].body).toEqual({
+    id_token: GOOGLE_TOKENS.contaConhecida,
+    nonce_token: GOOGLE_NONCE.nonce_token,
+    password: AUTH_CONTA.senha
+  });
+
+  // A ROTA DEVOLVE A LISTA JÁ COM O PROVEDOR NOVO, e é ela que a tela redesenha:
+  // sem isso a tela discordaria do servidor até alguém recarregar.
+  await expect(page.locator('#linkGoogleConfirm')).not.toHaveClass(/active/);
+  await expect(page.locator('#profSubContasBody .prof-social-name')).toHaveText('Google');
+  await expect(page.locator('#profSubContasBody .prof-social-unlink')).toBeEnabled();
+  // E a oferta SAI: um botão que se oferece a fazer o que já está feito é a
+  // tela mentindo sobre o estado.
+  await expect(page.locator('#profSubContasBody .prof-social-connect')).toHaveCount(0);
+  expect(rotasDesconhecidas).toEqual([]);
+});
+
+test('a senha errada não conecta, o diálogo diz, e o botão volta ARMADO', async ({ page }) => {
+  const { linkGoogleRequests, googleNonceRequests } = await entrarPorSenhaEAbrirContas(page);
+
+  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
+  const noncesAntes = googleNonceRequests.length;
+
+  await page.locator('#linkGooglePassword').fill('senha-errada-8');
+  await tocarNoGoogleDoDialogo(page, GOOGLE_TOKENS.contaConhecida);
+
+  await expect.poll(() => linkGoogleRequests.length).toBe(1);
+  // A FRASE FICA. Rearmar sem preservar o erro devolvia a pessoa a um diálogo
+  // MUDO logo depois de um erro que EXIGE um segundo toque — a armadilha 5 da
+  // §18.4, e o motivo de `armLinkGoogleButton` ter o parâmetro `limparErro`.
+  await expect(page.locator('#linkGoogleErr')).toHaveClass(/show/);
+  await expect(page.locator('#linkGoogleErr')).toContainText('Senha incorreta');
+  await expect(page.locator('#linkGoogleConfirm')).toHaveClass(/active/);
+  // E o botão volta ARMADO, com par de nonce NOVO: o `id_token` é de uso único e
+  // o par foi gasto. Sem o rearme, o segundo toque não teria como funcionar.
+  await expect.poll(() => googleNonceRequests.length).toBeGreaterThan(noncesAntes);
+  await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
+
+  // E nada foi conectado.
+  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
+});
+
+test('o campo em branco não gasta a credencial: nenhuma requisição sai', async ({ page }) => {
+  // O `id_token` do Google é de USO ÚNICO. Mandar um corpo sem senha só para
+  // ouvir o 400 gastaria a credencial, e a pessoa teria de tocar no Google de
+  // novo sem entender por quê — por isso a checagem do campo vazio é local, e a
+  // tela rearma o botão em vez de falar com a rede.
+  const { linkGoogleRequests, googleNonceRequests } = await entrarPorSenhaEAbrirContas(page);
+
+  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
+  const noncesAntes = googleNonceRequests.length;
+
+  await tocarNoGoogleDoDialogo(page, GOOGLE_TOKENS.contaConhecida);
+
+  // O REARME É O RECIBO de que o app terminou de tratar a credencial — sem ele,
+  // afirmar "nenhuma requisição saiu" logo depois do clique passaria antes de a
+  // requisição ter tido tempo de sair, que é a corrida da §11.
+  await expect.poll(() => googleNonceRequests.length).toBeGreaterThan(noncesAntes);
+  // O FATO vem antes do mecanismo (§13.3): com a guarda local removida, esta
+  // linha reprova com `expected 0, received 1` e nomeia a credencial gasta. A
+  // frase na tela é o PORQUÊ, e ela sozinha acusaria só o texto errado.
+  expect(linkGoogleRequests).toHaveLength(0);
+  await expect(page.locator('#linkGoogleErr')).toContainText('Informe sua senha');
+});
+
+test('o Google de OUTRA conta é recusado com 409, e a lista não muda', async ({ page }) => {
+  // Um `sub` que já pertence a outra conta é alguém tentando servir a duas. O
+  // UNIQUE do banco recusaria de qualquer jeito, mas como 500: o 409 é a recusa
+  // com frase, e a tela tem de mostrá-la em vez de um "não foi possível".
+  const { linkGoogleRequests } = await entrarPorSenhaEAbrirContas(page);
+
+  await page.locator('#profSubContasBody .prof-social-connect').click();
+  await expect(botaoDoGoogleNoDialogo(page)).toBeVisible();
+  await page.locator('#linkGooglePassword').fill(AUTH_CONTA.senha);
+  await tocarNoGoogleDoDialogo(page, GOOGLE_TOKENS.subDeOutraConta);
+
+  await expect.poll(() => linkGoogleRequests.length).toBe(1);
+  await expect(page.locator('#linkGoogleErr')).toContainText('já está conectada a outra conta');
+  await expect(page.locator('#linkGoogleConfirm')).toHaveClass(/active/);
+  await expect(page.locator('#profSubContasBody .prof-social-connect')).toBeVisible();
+});
+
+test('SEM client id não há oferta de conectar — e nenhum nonce é pedido', async ({ page }) => {
+  // A mesma decisão do botão da folha de login (§18.3), na outra tela: um
+  // "Conectar" que não pode funcionar é pior que nenhum. Aqui seria ainda pior,
+  // porque ele abriria um diálogo que pede a senha e não teria o que fazer com
+  // ela. Repare que `ligarBotaoDoGoogle` NÃO é chamado.
+  const { googleNonceRequests, linkGoogleRequests } = await abrirApp(page, { social: { contas: [] } });
+  await entrarPorSenha(page);
+  await abrirContasConectadas(page);
+
+  await expect(page.locator('#profSubContasBody')).toContainText('Nenhuma conta conectada');
+  await expect(page.locator('#profSubContasBody .prof-social-connect')).toHaveCount(0);
+  expect(googleNonceRequests).toHaveLength(0);
+  expect(linkGoogleRequests).toHaveLength(0);
 });

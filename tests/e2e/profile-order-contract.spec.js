@@ -89,3 +89,73 @@ test('o caminho inteiro só chamou rotas declaradas no mock', async ({ page }) =
   await expect(page.locator('.order-details__order-card')).toContainText('Maminha');
   expect(mock.rotasDesconhecidas).toEqual([]);
 });
+
+// ============================================================================
+//  O CARTÃO DIZ O ESTADO DO PEDIDO — e não "Aguardando pagamento" para todos.
+//
+//  O RELATO: "Pedidos em andamento (39)" conta um conjunto e a lista mostra
+//  outro. Medido, o CONTADOR está certo — ele e a lista saem do MESMO array
+//  (25 e 25 numa sonda com 40 pedidos). Quem mentia era a LISTA: todo cartão
+//  em andamento escrevia "Aguardando pagamento", porque o texto era escolhido
+//  pelo TOM (`active`), que é o tom de tudo que não é sucesso nem recusa — e
+//  não pelo status.
+//
+//  Ou seja: o cabeçalho contava "em andamento" e os cartões diziam "aguardando
+//  pagamento". Duas expressões do mesmo conjunto discordando na mesma tela, e
+//  um pedido que já tinha SAÍDO PARA ENTREGA anunciando que esperava dinheiro.
+//
+//  E `pending` não é "aguardando pagamento": no contrato ele é o pedido criado
+//  esperando confirmação (a tela do entregador o traduz como "Aguardando o
+//  restaurante"), e `CustomerOrderHistoryItem` **não traz `payment_status`** —
+//  esta lista não tem como saber do dinheiro. Por isso a frase é sobre o
+//  PEDIDO: "Aguardando confirmação", a mesma do detalhe.
+// ============================================================================
+
+const EM_ANDAMENTO = [
+  ['pending', 'Aguardando confirmação'],
+  ['accepted', 'Aceito'],
+  ['preparing', 'Preparando'],
+  ['ready', 'Pronto'],
+  ['out_for_delivery', 'Saiu para entrega']
+];
+
+test('cada pedido em andamento diz o SEU estado, e o cabeçalho conta o mesmo', async ({ page }) => {
+  await page.setViewportSize({ width: 414, height: 844 });
+  await seedPickupSession(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('rapidex.customer.token', 'e2e-profile-status-token');
+  });
+  await mockApi(page);
+  // Os cinco status ativos do contrato mais um finalizado, para o cabeçalho ter
+  // o que separar.
+  const pedidos = [
+    ...EM_ANDAMENTO.map(([status], i) => ({ ...ORDERS[0], id: `st-${i}`, order_number: 7000 + i, status })),
+    { ...ORDERS[1], id: 'st-fim', order_number: 7100, status: 'completed' }
+  ];
+  await page.route('**/customers/me/orders**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(pedidos) }));
+
+  await page.goto(RESTAURANT_URL);
+  await esperarAppPronto(page);
+  await page.evaluate(() => window.RapidexActions.resolve('closeOperationScreen')());
+  await page.locator('#mobNavProfile').click();
+  await page.locator('#mobViewProfile').getByRole('button', { name: 'Meus pedidos' }).click();
+
+  const emAndamento = page.locator('.prof-orders-current .prof-order-card');
+  await expect(emAndamento).toHaveCount(EM_ANDAMENTO.length);
+
+  for (const [index, [status, frase]] of EM_ANDAMENTO.entries()) {
+    const cartao = emAndamento.nth(index);
+    await expect(cartao.locator('.prof-order-status'), `${status} não diz o próprio estado`)
+      .toContainText(frase);
+  }
+
+  // O que NÃO pode acontecer, e acontecia com os cinco: o pedido que saiu para
+  // entrega anunciando que espera pagamento.
+  await expect(emAndamento.nth(4).locator('.prof-order-status')).not.toContainText('pagamento');
+
+  // E o cabeçalho conta exatamente o que a lista mostra.
+  await expect(page.locator('.prof-orders-current h2')).toContainText(`(${EM_ANDAMENTO.length})`);
+  await expect(page.locator('.prof-orders-history h2')).toContainText('(1)');
+  await expect(page.locator('.prof-orders-history .prof-order-card')).toHaveCount(1);
+});

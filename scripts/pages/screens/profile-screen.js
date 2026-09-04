@@ -19,7 +19,13 @@
     'pending', 'created', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery'
   ]);
   const PROF_ORDER_STATUS_LABELS = {
-    pending: 'Aguardando pagamento',
+    // `pending` é o pedido criado esperando confirmação — NÃO é "aguardando
+    // pagamento". No contrato ele é o primeiro dos oito `ORDER_STATUSES`, e a
+    // tela do entregador o traduz como "Aguardando o restaurante"; o dinheiro
+    // mora noutro campo (`payment_status`), que `CustomerOrderHistoryItem` nem
+    // publica — esta lista não tem como saber dele. A frase é sobre o PEDIDO, e
+    // é a mesma que o detalhe já usa.
+    pending: 'Aguardando confirmação',
     created: 'Criado',
     confirmed: 'Confirmado',
     accepted: 'Aceito',
@@ -81,8 +87,8 @@
           <strong class="prof-order-number">Pedido #${esc(order.order_number ?? '')}</strong>
           <div class="prof-order-status prof-order-status--${status.tone}">
             ${status.tone === 'active' ? '' : `<span class="prof-order-status-icon" aria-hidden="true">${icon}</span>`}
-            <span>${status.tone === 'active'
-              ? 'Aguardando pagamento'
+            <span>${isActive
+              ? esc(status.label)
               : `${esc(status.label)} ${esc(profOrderDate(order.created_at))}`}</span>
           </div>
         </div>

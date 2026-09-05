@@ -5627,7 +5627,10 @@ export interface components {
              * Format: time
              */
             opens_at: string;
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /** BranchPaymentMethodResponse */
@@ -5809,7 +5812,10 @@ export interface components {
             is_closed: boolean;
             /** Periods */
             periods: components["schemas"]["BusinessHourPeriodResponse"][];
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /**
@@ -5837,7 +5843,10 @@ export interface components {
             prep_time_max?: number | null;
             /** Prep Time Min */
             prep_time_min?: number | null;
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /** BusinessHourPeriodResponse */
@@ -5866,7 +5875,10 @@ export interface components {
             prep_time_min?: number | null;
             /** Sort Order */
             sort_order: number;
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /**
@@ -6102,14 +6114,20 @@ export interface components {
         CashbackWeekdayInput: {
             /** Percent */
             percent: number | string;
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /** CashbackWeekdayResponse */
         CashbackWeekdayResponse: {
             /** Percent */
             percent: string;
-            /** Weekday */
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             weekday: number;
         };
         /**
@@ -8770,7 +8788,10 @@ export interface components {
             business_hours: components["schemas"]["BusinessHourDayResponse"][];
             /** Current Day Label */
             current_day_label: string;
-            /** Current Weekday */
+            /**
+             * Current Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
             current_weekday: number;
             payment_methods: components["schemas"]["src__schemas__restaurant_schema__PaymentMethodsResponse"];
             restaurant: components["schemas"]["RestaurantInfoRestaurantResponse"];

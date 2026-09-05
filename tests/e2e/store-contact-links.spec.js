@@ -85,8 +85,50 @@ test('o telefone com DOIS números liga para o primeiro, e não para os vinte d�
 
   // O fixture de produção: "(85) 3025-3303 / (85) 3025-7808".
   await expect(ligar).toHaveAttribute('href', 'tel:8530253303');
-  // E o rótulo continua mostrando os DOIS: quem quiser o segundo número o vê.
-  await expect(ligar).toContainText('3025-7808');
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  DECISÃO INVERTIDA EM 05/09/2026, e a linha antiga fica registrada aqui.
+  //
+  //  Este teste afirmava o CONTRÁRIO: "o rótulo continua mostrando os DOIS —
+  //  quem quiser o segundo número o vê". A correção de 03/09 tinha arrumado só
+  //  o href, e a intenção era não esconder informação do lojista.
+  //
+  //  O que isso produzia, visto na tela: um link só, escrito
+  //  "(85) 3025-3303 / (85) 3025-7808", que disca o primeiro. O cliente lê dois
+  //  números, toca uma vez e liga para um deles sem saber qual. Meia correção
+  //  parece uma correção — e um rótulo que promete dois e cumpre um é pior que
+  //  um rótulo que promete um.
+  //
+  //  A objeção antiga ERA legítima e continua respondida: o segundo número não
+  //  se perde. Perfil > Informações mostra o campo do lojista INTEIRO, e ali
+  //  isso está certo porque a linha não é um link — é informação, não promessa.
+  //  As duas asserções abaixo guardam exatamente essa divisão.
+  //
+  //  §14.8: o teste que protegia a decisão antiga é INVERTIDO, não apagado, e o
+  //  que dela continua valendo vira asserção própria.
+  // ─────────────────────────────────────────────────────────────────────────
+  await expect(ligar).toContainText('(85) 3025-3303');
+  await expect(ligar, 'o rótulo do link nomeia só o número que ele disca')
+    .not.toContainText('3025-7808');
+});
+
+test('o segundo número não se perde: Informações mostra o campo inteiro do lojista', async ({
+  page
+}) => {
+  // A METADE QUE CONTINUA VALENDO da decisão invertida acima. Em Informações a
+  // linha de Telefone NÃO é um link — é o campo do lojista como ele o escreveu.
+  // Nada promete discar, então mostrar os dois números é informação, não engano.
+  await mockApi(page);
+  await seedPickupSession(page);
+  await abrirApp(page);
+
+  // Pelo REGISTRO de ações, não por um global: `openProfSub` não está em
+  // `window` — é o barramento que o resto da suíte usa.
+  await page.evaluate(() => window.RapidexActions.resolve('openProfSub')('info'));
+  const linha = page.locator('#profSubinfo .prof-info-row-val').filter({ hasText: '3025' });
+  await expect(linha).toContainText('(85) 3025-3303');
+  await expect(linha).toContainText('(85) 3025-7808');
+  await expect(linha.locator('a')).toHaveCount(0);
 });
 
 test('numa cidade de DDD 55 o WhatsApp não perde o país, nas três superfícies', async ({ page }) => {

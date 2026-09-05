@@ -89,3 +89,60 @@ describe('e-mail', () => {
     }
   });
 });
+
+// ============================================================================
+//  O ROTULO TEM DE NOMEAR O NUMERO QUE O LINK DISCA (05/09/2026).
+//
+//  A correcao de 03/09 arrumou o HREF e deixou o ROTULO: em Perfil > Ajuda e em
+//  Informacoes o cliente lia "(85) 3025-3303 / (85) 3025-7808" num link so, e
+//  ligava para o primeiro sem saber qual dos dois foi. Meia correcao parece uma
+//  correcao — e esta metade nao tinha teste porque nenhum spec perguntava o que
+//  estava ESCRITO no link, so para onde ele ia.
+// ============================================================================
+const { telLabel, whatsAppLabel } = window.PedeAquiContactLink;
+
+describe('o rótulo do link é o número que o link disca', () => {
+  const DOIS_NUMEROS = '(85) 3025-3303 / (85) 3025-7808';
+
+  it('mostra só o primeiro número, não o campo inteiro', () => {
+    expect(telLabel(DOIS_NUMEROS)).toBe('(85) 3025-3303');
+  });
+
+  it('preserva a máscara do lojista — não remonta os dígitos com máscara nossa', () => {
+    expect(telLabel('85 3025.3303 / 85 3025.7808')).toBe('85 3025.3303');
+    expect(telLabel('+55 (85) 3025-3303')).toBe('+55 (85) 3025-3303');
+  });
+
+  // A INVARIANTE, e é ela que impede a metade de voltar: rótulo e href
+  // percorrem a MESMA divisão, na mesma ordem, com o mesmo piso. Se um dia os
+  // pisos divergirem, o rótulo nomeia um número e o link abre outro — que é
+  // exatamente o defeito que este bloco existe para barrar.
+  it('rótulo e href nomeiam SEMPRE o mesmo número', () => {
+    const campos = [
+      DOIS_NUMEROS,
+      '(85) 3025-3303 ramal 22',
+      'ramal 22 / (85) 3025-3303',
+      '(85) 9 9754-6465',
+      '5532201234 / (85) 99999-0000'
+    ];
+    for (const campo of campos) {
+      const href = telHref(campo);
+      expect(href, campo).not.toBe('');
+      expect(`tel:${telLabel(campo).replace(/\D+/g, '')}`, campo).toBe(href);
+    }
+  });
+
+  it('o mesmo vale para o WhatsApp, com o piso dele (10 dígitos, que é o DDD)', () => {
+    const campo = '3025-3303 / (85) 9 9754-6465';
+    // O primeiro pedaço tem 8 dígitos: disca por `tel:`, mas NÃO vira wa.me —
+    // um wa.me sem DDD é um link para outra pessoa.
+    expect(telLabel(campo)).toBe('3025-3303');
+    expect(whatsAppLabel(campo)).toBe('(85) 9 9754-6465');
+    expect(whatsAppHref(campo)).toBe('https://wa.me/5585997546465');
+  });
+
+  it('campo sem número discável não vira rótulo nenhum', () => {
+    expect(telLabel('falar com a Maria')).toBe('');
+    expect(whatsAppLabel('removido-9f2a1c')).toBe('');
+  });
+});

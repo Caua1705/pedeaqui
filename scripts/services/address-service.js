@@ -7,6 +7,38 @@
     ? store().readWithMigration(key)
     : localStorage.getItem(key);
 
+  // ==========================================================================
+  //  O MONTADOR DA LINHA DE ENDEREÇO, e ele é UM.
+  //
+  //  Havia dois. Este, que soma com `filter(Boolean)`, e um segundo em
+  //  `restaurant-page.js` que interpolava cru:
+  //
+  //      `${a.street}, ${a.number} - ${a.neighborhood}`
+  //
+  //  Interpolação crua não devolve string vazia quando falta o campo: devolve a
+  //  PALAVRA `undefined`. A tela de Unidades e Operação escrevia
+  //  `undefined, 450 - Aldeota` para qualquer endereço gravado sem `street` —
+  //  e `street` falta de verdade, tanto que a linha logo abaixo aceita
+  //  `street_name` como sinônimo. Quem grava por um caminho lia pelo outro.
+  //
+  //  É a §3.1 ("existe UM dono") aplicada a texto em vez de dinheiro, e o
+  //  desfecho foi o mesmo: com dois donos, o errado é o que ganha nos sítios
+  //  que não passam pelo certo.
+  //
+  //  Recebe o endereço CRU (aceita os dois nomes de rua), então serve tanto o
+  //  `normalizeAddress` daqui quanto quem tem um objeto que nunca passou por
+  //  ele. Nunca devolve `undefined`/`null` no meio do texto.
+  // ==========================================================================
+  function formatAddressSummary(address) {
+    if (!address) return '';
+    const street = address.street || address.street_name || '';
+    const number = address.number || '';
+    const neighborhood = address.neighborhood || '';
+    const inicio = [street, number].filter(Boolean).join(', ');
+    if (!inicio) return neighborhood ? String(neighborhood) : '';
+    return inicio + (neighborhood ? ` - ${neighborhood}` : '');
+  }
+
   function normalizeAddress(address = {}) {
     if (!address) return null;
     const street = address.street || address.street_name || '';
@@ -27,7 +59,7 @@
       longitude: address.longitude ?? address.lng ?? null,
       place_id: address.place_id || '',
       is_default: address.is_default === true || address.default === true || address.isDefault === true,
-      summary: address.summary || [street, number].filter(Boolean).join(', ') + (neighborhood ? ` - ${neighborhood}` : '')
+      summary: address.summary || formatAddressSummary(address)
     };
   }
 
@@ -93,6 +125,7 @@
     STORAGE_ADDRESS,
     STORAGE_ADDRESS_LIST,
     normalizeAddress,
+    formatAddressSummary,
     readSelectedAddress,
     saveSelectedAddress,
     readLocalAddressList,

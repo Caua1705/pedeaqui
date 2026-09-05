@@ -1334,7 +1334,11 @@
     };
     document.querySelectorAll('.store-info-phone').forEach(el => esconderLinhaDeContato(el, branch.phone));
     document.querySelectorAll('.store-info-email').forEach(el => esconderLinhaDeContato(el, ''));
-    document.querySelectorAll('.store-info-whatsapp').forEach(el => esconderLinhaDeContato(el, branch.whatsapp));
+    // O ROTULO E O NUMERO QUE O LINK ABRE. Esta linha e um <a>: mostrar o campo
+    // inteiro ("(85) 3025-3303 / (85) 3025-7808") num link que abre so o primeiro
+    // e prometer dois e cumprir um. Quando nao ha numero com DDD o rotulo vem
+    // vazio e a linha se esconde — que e o mesmo desfecho do href logo abaixo.
+    document.querySelectorAll('.store-info-whatsapp').forEach(el => esconderLinhaDeContato(el, window.PedeAquiContactLink.whatsAppLabel(branch.whatsapp || '')));
     document.querySelectorAll('.store-contact-row--wa').forEach(el => {
       // O 55 NÃO se prega sempre: aqui ele era, e quem digitou o país no
       // cadastro virava `wa.me/555541...`. Quem decide é utils/contact-link.js,
@@ -1427,7 +1431,7 @@
       telefoneHref && `
         <a class="help-store-contact" href="${esc(telefoneHref)}">
           <span class="help-store-contact-icon">${HELP_PHONE_ICON}</span>
-          <span>${esc(phone)}</span>
+          <span>${esc(contato.telLabel(phone))}</span>
         </a>`,
       emailHref && `
         <a class="help-store-contact" href="${esc(emailHref)}">
@@ -1437,7 +1441,7 @@
       whatsappHref && `
         <a class="help-store-contact help-store-contact--whatsapp" href="${esc(whatsappHref)}" target="_blank" rel="noopener">
           <span class="help-store-contact-icon">${HELP_WHATSAPP_ICON}</span>
-          <span>${esc(whatsapp)}</span>
+          <span>${esc(contato.whatsAppLabel(whatsapp))}</span>
         </a>`
     ].filter(Boolean);
 
@@ -3930,8 +3934,23 @@
     branchId: () => operationContext?.branch_id || null
   };
 
+  // A LINHA DE ENDEREÇO TEM UM DONO SÓ, e não é aqui.
+  //
+  // Esta função interpolava cru — `${a.street}, ${a.number} - ${a.neighborhood}`
+  // — e interpolação crua não devolve string vazia quando falta o campo:
+  // devolve a PALAVRA `undefined`. A tela de Unidades e Operação escrevia
+  // `undefined, 450 - Aldeota` para todo endereço gravado sem `street`, e
+  // `street` falta de verdade (o normalizador aceita `street_name` como
+  // sinônimo justamente porque os dois nomes circulam).
+  //
+  // A lista de endereços do Perfil nunca mostrou isso porque ela passa pelo
+  // serviço, que soma com `filter(Boolean)`. Eram dois montadores para a mesma
+  // linha, e o errado era o que ganhava nos sítios que não normalizavam.
+  //
+  // O fallback vazio não é decoração: se o serviço não tiver carregado, uma
+  // linha em branco é o desfecho certo — nunca `undefined` na tela.
   function addressSummary(a) {
-    return a ? `${a.street}, ${a.number} - ${a.neighborhood}` : '';
+    return window.PedeAquiAddressService?.formatAddressSummary?.(a) || '';
   }
 
   // Apelidos locais das 16 chamadas. A lista de enderecos guardada tem UM dono,

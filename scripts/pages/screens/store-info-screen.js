@@ -189,7 +189,7 @@
         <div class='prof-info-row'><div><div class='prof-info-row-label'>Endereço</div><div class='prof-info-row-val'>${esc(infoFullAddress(branch) || 'Endereço não informado')}</div></div></div>
         ${branch.phone ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>Telefone</div><div class='prof-info-row-val'>${esc(branch.phone)}</div></div></div>` : ''}
         ${branch.email ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>E-mail</div><div class='prof-info-row-val'>${esc(branch.email)}</div></div></div>` : ''}
-        ${whatsappHref ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div><a class='prof-info-row-link' href='${esc(whatsappHref)}' target='_blank' rel='noopener'>${esc(branch.whatsapp)}</a></div></div>` : ''}
+        ${whatsappHref ? `<div class='prof-info-row'><div><div class='prof-info-row-label'>WhatsApp</div><a class='prof-info-row-link' href='${esc(whatsappHref)}' target='_blank' rel='noopener'>${esc(window.PedeAquiContactLink.whatsAppLabel(branch.whatsapp || ''))}</a></div></div>` : ''}
       </div>
       <div class='prof-info-card'>
         <div class='prof-info-card-header'><span class='prof-info-card-title'>Horário de funcionamento</span></div>
@@ -235,7 +235,8 @@
     document.querySelectorAll('#infoModal .store-info-email')
       .forEach(element => esconderLinha(element, branch.email));
     document.querySelectorAll('#infoModal .store-info-whatsapp')
-      .forEach(element => esconderLinha(element, branch.whatsapp));
+      // O rotulo e o numero que o link abre, nao o campo inteiro do lojista.
+      .forEach(element => esconderLinha(element, window.PedeAquiContactLink.whatsAppLabel(branch.whatsapp || '')));
     document.querySelectorAll('#infoModal .store-contact-row--wa').forEach(element => {
       const href = window.PedeAquiContactLink.whatsAppHref(branch.whatsapp || '');
       if (href) element.href = href;

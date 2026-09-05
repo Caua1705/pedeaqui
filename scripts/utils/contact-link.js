@@ -74,6 +74,43 @@
     return gruposDeDigitos(value).find(d => d.length >= minimo && d.length <= maximo) || '';
   }
 
+  // ==========================================================================
+  //  O RÓTULO TEM DE SER O NÚMERO QUE O LINK DISCA.
+  //
+  //  O href já pegava o primeiro número do campo (é o item 3 acima). O RÓTULO
+  //  continuava mostrando o campo inteiro: em Perfil > Ajuda e em Informações o
+  //  cliente lia "(85) 3025-3303 / (85) 3025-7808" num link só e ligava para o
+  //  primeiro sem saber qual dos dois foi. Meia correção parece uma correção.
+  //
+  //  Devolve o TRECHO ORIGINAL, não os dígitos remontados: a máscara é do
+  //  lojista e ele a escreveu como quer ver. Reformatar aqui seria inventar uma
+  //  máscara nossa para um campo que é texto livre dele.
+  //
+  //  INVARIANTE, e é o que o unitário guarda: `telLabel` e `telHref` percorrem
+  //  a MESMA divisão, na mesma ordem, com o mesmo piso — então nomeiam sempre o
+  //  mesmo número. Se um dia os pisos divergirem, o rótulo passa a mentir de
+  //  novo, e é exatamente esse o teste.
+  // ==========================================================================
+  function primeiroTrecho(value, minimo, maximo) {
+    return String(value ?? '')
+      .split(SEPARADOR)
+      .map(parte => parte.trim())
+      .find(parte => {
+        const digitos = parte.replace(/\D+/g, '');
+        return digitos.length >= minimo && digitos.length <= maximo;
+      }) || '';
+  }
+
+  /** Rótulo do `tel:` — o trecho do campo que o link de fato disca. */
+  function telLabel(value) {
+    return primeiroTrecho(value, 8, 13);
+  }
+
+  /** Rótulo do `wa.me` — o trecho do campo que o link de fato abre. */
+  function whatsAppLabel(value) {
+    return primeiroTrecho(value, 10, 13);
+  }
+
   /** `tel:` do primeiro número do campo. '' quando não há número discável. */
   function telHref(value) {
     const digitos = primeiroTelefone(value, 8, 13);
@@ -100,5 +137,5 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? `mailto:${email}` : '';
   }
 
-  window.PedeAquiContactLink = { telHref, whatsAppHref, mailHref, primeiroTelefone };
+  window.PedeAquiContactLink = { telHref, whatsAppHref, mailHref, primeiroTelefone, telLabel, whatsAppLabel };
 })();

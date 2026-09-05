@@ -5811,7 +5811,8 @@ body.menu-tab .product-card.is-pressing{
      lista de "Configurar conta" e deslizam do mesmo jeito. Uma terceira cópia
      desta geometria divergiria no dia em que alguém ajustasse uma delas. */
   #profSubmeusdados .prof-password-screen,
-  #profSubmeusdados .prof-connected-screen{
+  #profSubmeusdados .prof-connected-screen,
+  #profSubmeusdados .prof-delete-screen{
     box-sizing:border-box;
     position:absolute;
     inset:0;
@@ -5826,14 +5827,16 @@ body.menu-tab .product-card.is-pressing{
     transition:none;
   }
   #profSubmeusdados .prof-password-screen.active,
-  #profSubmeusdados .prof-connected-screen.active{
+  #profSubmeusdados .prof-connected-screen.active,
+  #profSubmeusdados .prof-delete-screen.active{
     transform:translateX(0);
     visibility:visible;
     pointer-events:auto;
     transition:none;
   }
   #profSubmeusdados .prof-password-header,
-  #profSubmeusdados .prof-connected-header{
+  #profSubmeusdados .prof-connected-header,
+  #profSubmeusdados .prof-delete-header{
     box-sizing:border-box;
     width:100%;
     height:70px;
@@ -5845,7 +5848,8 @@ body.menu-tab .product-card.is-pressing{
     background:var(--surface);
   }
   #profSubmeusdados .prof-password-header h1,
-  #profSubmeusdados .prof-connected-header h1{
+  #profSubmeusdados .prof-connected-header h1,
+  #profSubmeusdados .prof-delete-header h1{
     margin:0;
     color:#262626;
     font-size:var(--ref-text-lg);
@@ -5854,7 +5858,8 @@ body.menu-tab .product-card.is-pressing{
     text-align:center;
   }
   #profSubmeusdados .prof-password-back,
-  #profSubmeusdados .prof-connected-back{
+  #profSubmeusdados .prof-connected-back,
+  #profSubmeusdados .prof-delete-back{
     width:32px;
     height:32px;
     display:flex;
@@ -5867,7 +5872,8 @@ body.menu-tab .product-card.is-pressing{
     color:#3f454b;
   }
   #profSubmeusdados .prof-password-back svg,
-  #profSubmeusdados .prof-connected-back svg{
+  #profSubmeusdados .prof-connected-back svg,
+  #profSubmeusdados .prof-delete-back svg{
     width:17px;
     height:17px;
   }
@@ -6036,6 +6042,145 @@ body.menu-tab .product-card.is-pressing{
     border-top-color:#fff;
     border-radius:50%;
     animation:reg-btn-spin .7s linear infinite;
+  }
+  /* ---- EXCLUIR CONTA ----
+     A geometria (deslize, cabecalho, botao de voltar) e a MESMA das duas
+     irmas, compartilhada nos seletores acima. O que e proprio desta tela e o
+     corpo, e ele tem uma regra que as outras nao tem: o botao final destroi,
+     entao ele e --state-danger-strong, e nao a marca. Cor de estado e para o
+     que destroi (skill §7); a marca fica para o que e neutro. */
+  #profSubmeusdados .prof-delete-body{
+    box-sizing:border-box;
+    height:calc(100% - 70px);
+    padding:20px 20px 40px;
+    overflow-y:auto;
+    background:var(--surface);
+  }
+  #profSubmeusdados .prof-delete-loading{
+    margin:0;
+    color:var(--text-muted);
+    font-size:var(--ref-text-sm);
+    line-height:var(--ref-line-md);
+    text-align:center;
+  }
+  #profSubmeusdados .prof-delete-warning{
+    box-sizing:border-box;
+    width:374px;
+    max-width:100%;
+    margin:0 auto 20px;
+    padding:16px;
+    border:1px solid var(--state-danger);
+    border-radius:12px;
+    background:var(--surface-2);
+  }
+  #profSubmeusdados .prof-delete-warning h2{
+    margin:0 0 10px;
+    color:var(--state-danger-strong);
+    font-size:var(--ref-text-md);
+    line-height:var(--ref-line-md);
+    font-weight:700;
+  }
+  #profSubmeusdados .prof-delete-list{
+    margin:0;
+    padding:0 0 0 18px;
+    color:var(--text-main);
+    font-size:var(--ref-text-sm);
+    line-height:var(--ref-line-lg);
+  }
+  #profSubmeusdados .prof-delete-list li + li{
+    margin-top:8px;
+  }
+  #profSubmeusdados .prof-delete-proof{
+    width:374px;
+    max-width:100%;
+    margin:0 auto;
+  }
+  #profSubmeusdados .prof-delete-code-hint{
+    margin:0 0 12px;
+    color:var(--text-muted);
+    font-size:var(--ref-text-sm);
+    line-height:var(--ref-line-md);
+  }
+  #profSubmeusdados .prof-delete-code-btn{
+    width:100%;
+    height:40px;
+    margin:0 0 16px;
+    padding:0;
+    border:1px solid var(--brand-primary);
+    border-radius:10px;
+    background:transparent;
+    color:var(--brand-mark-light);
+    font-family:inherit;
+    font-size:var(--ref-text-sm);
+    font-weight:700;
+  }
+  #profSubmeusdados .prof-delete-label{
+    display:block;
+    margin:0 0 10px;
+    color:var(--text-muted);
+    font-size:var(--ref-text-sm);
+    line-height:16px;
+    font-weight:500;
+  }
+  #profSubmeusdados .prof-delete-input{
+    box-sizing:border-box;
+    width:100%;
+    height:44px;
+    padding:0 14px;
+    border:1px solid #c9c9c9;
+    border-radius:10px;
+    outline:0;
+    background:var(--surface);
+    color:var(--text-main);
+    font-family:inherit;
+    font-size:var(--ref-text-lg);
+  }
+  #profSubmeusdados .prof-delete-input:focus{
+    border-color:#a9a9a9;
+  }
+  #profSubmeusdados .prof-delete-notice,
+  #profSubmeusdados .prof-delete-error{
+    display:none;
+    width:374px;
+    max-width:100%;
+    margin:10px auto 0;
+    font-size:var(--ref-text-sm);
+    line-height:var(--ref-line-md);
+  }
+  #profSubmeusdados .prof-delete-notice.show,
+  #profSubmeusdados .prof-delete-error.show{
+    display:block;
+  }
+  #profSubmeusdados .prof-delete-notice{
+    color:var(--text-muted);
+  }
+  #profSubmeusdados .prof-delete-error{
+    color:var(--state-danger-strong);
+    font-weight:600;
+  }
+  #profSubmeusdados .prof-delete-submit{
+    box-sizing:border-box;
+    width:374px;
+    max-width:100%;
+    height:45px;
+    /* flex-shrink:0 nao e enfeite: este botao vive num container que rola, e
+       height num item flex e a BASE, nao o tamanho (skill §14.6 — um botao
+       de 45px encolheu para 15px assim). */
+    flex-shrink:0;
+    display:block;
+    margin:24px auto 0;
+    padding:0;
+    border:0;
+    border-radius:10px;
+    background:var(--state-danger-strong);
+    color:#fff;
+    font-family:inherit;
+    font-size:var(--ref-text-sm);
+    font-weight:700;
+  }
+  #profSubmeusdados .prof-delete-submit:disabled{
+    opacity:.68;
+    cursor:not-allowed;
   }
   #profSubmeusdados .prof-password-success{
     display:none;

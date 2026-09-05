@@ -571,7 +571,11 @@
           <svg class="prof-manage-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </section>
-      <button class="prof-manage-delete" type="button">Excluir conta</button>
+      <!-- ESTE BOTÃO FICOU SEM AÇÃO desde que nasceu: markup vivo, `data-act-*`
+           nenhum, e portanto um "Excluir conta" que não excluía nada. Enquanto
+           isso a política e os termos mandavam a pessoa pedir por e-mail — LGPD
+           Art. 18, VI cumprida na mão. -->
+      <button class="prof-manage-delete" type="button" data-act-click='openDeleteAccountScreen'>Excluir conta</button>
     </div>
     <div class="prof-data-backdrop" id="profDataBackdrop" aria-hidden="true"></div>
     <section class="prof-data-screen" id="profDataScreen" aria-hidden="true" aria-label="Meus dados">
@@ -630,6 +634,27 @@
         <span aria-hidden="true"></span>
       </header>
       <div class="prof-connected-body" id="profConnectedBody"></div>
+    </section>
+    <!-- EXCLUIR CONTA. Irmã de #profPasswordScreen pelo mesmo motivo dela e da
+         de contas conectadas: sai de "Gerenciar perfil" e o "Voltar" tem de
+         devolver para lá. Uma `.prof-sub` fecharia para o MENU do Perfil, dois
+         níveis acima de onde a pessoa tocou (skill §21.2).
+
+         O CORPO É MONTADO EM JS porque depende de duas respostas que só
+         chegam abertas a tela: o `password_set` de `GET /customers/me` (que
+         decide se a prova é senha ou código no e-mail — e a decisão é DA
+         CONTA, não do app) e o `balance` de `GET /customers/me/cashback` (o
+         dinheiro que se perde, que não dá para escrever no HTML). Linhas
+         estáticas aqui repetiriam o defeito da §12.6. -->
+    <section class="prof-delete-screen" id="profDeleteScreen" aria-hidden="true" aria-label="Excluir conta">
+      <header class="prof-delete-header">
+        <button class="prof-delete-back" type="button" data-act-click='closeDeleteAccountScreen' aria-label="Voltar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        </button>
+        <h1>Excluir conta</h1>
+        <span aria-hidden="true"></span>
+      </header>
+      <div class="prof-delete-body" id="profDeleteBody"></div>
     </section>
     <section class="prof-password-screen" id="profPasswordScreen" aria-hidden="true" aria-label="Alterar senha">
       <header class="prof-password-header">

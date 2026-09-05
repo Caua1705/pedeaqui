@@ -1037,7 +1037,14 @@
     // próprio `.active`: sem esta linha, quem a deixasse aberta e trocasse de
     // aba voltaria direto nela — a subtela reaberta com a sobreposição de
     // antes, sem ter tocado em nada.
-    if (subId === 'meusdados') closeConnectedAccountsScreen();
+    // As DUAS sobreposições desta subtela, e a lista cresce junto com elas: a
+    // de excluir conta guarda o próprio `.active` igual à de contas
+    // conectadas, e sem esta linha quem a deixasse aberta voltaria direto numa
+    // tela de exclusão que ninguém pediu para abrir.
+    if (subId === 'meusdados') {
+      closeConnectedAccountsScreen();
+      window.RapidexActions.resolve('closeDeleteAccountScreen')?.();
+    }
     sub.classList.add('active');
     // O Perfil principal aplica estilos `!important` inline para flutuar a
     // sacola. Remova-os ao entrar numa subpágina; CSS sozinho não os vence.

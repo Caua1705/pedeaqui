@@ -5962,6 +5962,21 @@
     }
   });
 
+  window.PedeAquiAccountDeleteScreen.mount({
+    kit: window.PedeAquiScreenKit,
+    app: window.PedeAquiAppPort,
+    shell: {
+      openLoginScreen,
+      // A saída depois do 204 é local: a conta não existe mais e o token
+      // morreu junto, então nenhuma destas quatro fala com a rede.
+      closeProfSub,
+      renderHomeLoginPrompt,
+      renderProfileView,
+      apiErrorMessage,
+      showAppToast
+    }
+  });
+
   window.PedeAquiStoreInfoScreen.mount({
     kit: window.PedeAquiScreenKit,
     app: window.PedeAquiAppPort,

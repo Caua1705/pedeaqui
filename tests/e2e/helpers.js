@@ -266,6 +266,11 @@ export async function mockApi(page, {
   // contrato significa "esta conta abre só por e-mail e senha" — e é o estado
   // de todas as contas que existiam antes do login social.
   social = { contas: [] },
+  // O ESTADO DA EXCLUSAO DE CONTA. Mutavel dentro da execucao porque o backend
+  // CONTA as tentativas de codigo errado: cinco na mesma linha respondem 429 e
+  // ela nao serve mais. Um mock que respondesse 401 para sempre nao teria
+  // opiniao sobre esse teto, que e justamente o que a tela precisa explicar.
+  exclusao = { codigo: '123456', tentativasDeCodigo: 0, pedidoEmAndamento: false },
   // ────────────────────────────────────────────────────────────────────────
   //  AS IMAGENS DO STORAGE SÃO DUBLADAS, e este é o interruptor.
   //
@@ -310,6 +315,8 @@ export async function mockApi(page, {
   const socialListRequests = [];
   const linkGoogleRequests = [];
   const unlinkRequests = [];
+  const deleteCodeRequests = [];
+  const deleteAccountRequests = [];
   const rotasDesconhecidas = [];
   // A lista muda dentro da execução: desconectar DEVOLVE o que sobrou, e um
   // mock que responde sempre a mesma lista faria o teste do desvincular passar
@@ -725,6 +732,55 @@ export async function mockApi(page, {
         contasConectadas = contasConectadas.filter(conta => conta.provider !== provider);
         return route.fulfill(json(contasConectadas));
       }
+      // ── EXCLUSÃO DE CONTA ──
+      //
+      // As duas rotas vêm ANTES do `/customers/me` cru pelo mesmo motivo das
+      // de social: a regex dele casa o prefixo.
+      //
+      // AS RECUSAS PRIMEIRO, e aqui elas não são detalhe: o contrato diz que
+      // QUAL campo mandar é decisão da CONTA, não de quem chama, e a única
+      // forma de um teste provar que o front respeita isso é o mock recusar o
+      // campo errado — 400, como o backend. Um mock que aceitasse os dois
+      // deixaria passar um front que manda sempre a senha.
+      if (method === 'POST' && /\/customers\/me\/delete-code(\?|$)/.test(url)) {
+        deleteCodeRequests.push({ url });
+        // Conta COM senha recebe 400: ela já tem prova, e um segundo caminho
+        // onde um bastava deixaria quem tem o token e a caixa de entrada
+        // apagar a conta sem saber a senha.
+        if (social.passwordSet !== false) {
+          return route.fulfill(json({ detail: 'Esta conta tem senha: use `password` ao excluir.' }, 400));
+        }
+        return route.fulfill(json({ message: 'Se houver um código a enviar, ele foi enviado.' }));
+      }
+      if (method === 'DELETE' && /\/customers\/me(\?|$)/.test(url)) {
+        const corpo = corpoDaRequisicao(request);
+        deleteAccountRequests.push({ body: corpo });
+        // 409 ANTES da prova, como o backend: pedido em andamento recusa a
+        // exclusão independentemente de a senha estar certa.
+        if (exclusao.pedidoEmAndamento) {
+          return route.fulfill(json({ detail: 'Você tem um pedido em andamento. Conclua ou cancele antes de excluir a conta.' }, 409));
+        }
+        if (social.passwordSet === false) {
+          if (corpo.password) return route.fulfill(json({ detail: 'Esta conta não tem senha: use `email_code`.' }, 400));
+          if (exclusao.tentativasDeCodigo >= 5) {
+            return route.fulfill(json({ detail: 'Muitas tentativas. Peça um código novo.' }, 429));
+          }
+          if (corpo.email_code !== exclusao.codigo) {
+            exclusao.tentativasDeCodigo += 1;
+            return route.fulfill(json({ detail: 'Código inválido.' }, 401));
+          }
+        } else {
+          if (corpo.email_code) return route.fulfill(json({ detail: 'Esta conta tem senha: use `password`.' }, 400));
+          if (corpo.password !== AUTH_CONTA.senha) {
+            return route.fulfill(json({ detail: 'Senha incorreta.' }, 401));
+          }
+        }
+        // 204 SEM CORPO. O contrato explica por que o saldo não volta aqui: um
+        // número entregue depois do fato não evita a perda, e publicar corpo
+        // trocaria o 204 por 200 — mudança de contrato para um app que já
+        // consome a rota.
+        return route.fulfill({ status: 204, body: '' });
+      }
       if (method === 'GET' && /\/customers\/me(\?|$)/.test(url)) {
         // `password_set` é booleano com `@default true` no contrato: ausente
         // significa "tem senha". O mock só o escreve quando o teste pede o
@@ -766,6 +822,7 @@ export async function mockApi(page, {
     loginRequests, registerRequests, forgotRequests, resetCodeRequests, resetPasswordRequests,
     verifyCodeRequests, googleRequests, googleNonceRequests, googleSignupRequests,
     socialListRequests, linkGoogleRequests, unlinkRequests,
+    deleteCodeRequests, deleteAccountRequests,
     rotasDesconhecidas
   };
 }

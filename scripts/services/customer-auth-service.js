@@ -242,6 +242,46 @@
     return authedPatch(routes().customerAddressDefault(addressId), {});
   }
 
+  /* ---------- Exclusão de conta (LGPD, Art. 18, VI) ---------- */
+
+  // Pede o código de seis dígitos que confirma a exclusão. NADA é excluído
+  // aqui. Só serve para conta SEM senha; a que tem senha recebe 400 com a
+  // frase dizendo que use `password`.
+  function requestAccountDeleteCode() {
+    return authedPost(routes().customerDeleteCode(), {});
+  }
+
+  /**
+   * A EXCLUSÃO. Responde 204 e NÃO TEM DESFAZER.
+   *
+   * A conta é ANONIMIZADA, não apagada: o pedido continua existindo para o
+   * restaurante, sem nada da pessoa dentro. E-mail e telefone são liberados
+   * para recadastro — e é justamente a saída deles da tabela que faz o
+   * recadastro nascer com **id novo**, deixando o cashback preso ao id velho.
+   * Por isso a tela mostra o saldo ANTES: quando esta rota responde, a conta
+   * já foi anonimizada.
+   *
+   * **A PROVA É UMA DAS DUAS, E QUEM ESCOLHE É A CONTA**, não quem chama:
+   * `password_set: true` manda `password`; `password_set: false` manda
+   * `email_code`. Mandar o campo errado é 400 com a frase que diz qual mandar
+   * — aceitar o código numa conta que TEM senha rebaixaria a exigência de toda
+   * conta com senha para "quem lê o e-mail".
+   *
+   * Por isso este método manda **exatamente um** dos dois campos, o que quem
+   * chama escolheu, e nunca os dois: um corpo com os dois convidaria o
+   * servidor a decidir uma coisa que o contrato diz ser da conta.
+   *
+   * O corpo num DELETE é incomum mas legal; a alternativa poria a senha na
+   * querystring, ou seja, no log de todo proxy no caminho.
+   */
+  function deleteAccount({ password, email_code } = {}) {
+    const body = password ? { password } : { email_code };
+    return authedRequest(routes().customerMe(), {
+      method: 'DELETE',
+      body: JSON.stringify(body)
+    });
+  }
+
   window.PedeAquiCustomerAuth = {
     // storage
     TOKEN_KEY,
@@ -285,6 +325,9 @@
     importCustomerAddresses,
     updateCustomerAddress,
     deleteCustomerAddress,
-    setDefaultCustomerAddress
+    setDefaultCustomerAddress,
+    // exclusão de conta
+    requestAccountDeleteCode,
+    deleteAccount
   };
 })();

@@ -225,6 +225,21 @@
       return `/customers/me/cashback/transactions?limit=${safeLimit}&offset=${safeOffset}`;
     },
     customerPassword: () => '/customers/me/password',
+
+    // O CÓDIGO QUE CONFIRMA A EXCLUSÃO — e ele NÃO exclui nada.
+    //
+    // É o passo anterior ao `DELETE /customers/me` para quem tem
+    // `password_set: false`: a conta que entrou só pelo Google e nunca definiu
+    // senha. O código vai para o e-mail e vale 10 minutos.
+    //
+    // **Só para conta sem senha.** A que tem senha recebe 400 — um segundo
+    // caminho de exclusão onde um bastava deixaria quem tem o token e a caixa
+    // de entrada apagar a conta sem saber a senha.
+    //
+    // A resposta é a MESMA quando o código não sai (cooldown de 60s, ou três
+    // códigos em 15 minutos): não há nada que a tela faça de diferente, e
+    // variar a resposta só contaria quantos códigos já saíram.
+    customerDeleteCode: () => '/customers/me/delete-code',
     customerAddresses: () => '/customers/me/addresses',
     customerAddressesImport: () => '/customers/me/addresses/import',
     customerAddress: addressId =>

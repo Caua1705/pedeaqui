@@ -556,10 +556,29 @@ a{text-decoration:none;color:inherit}
 .fs-type-card-name{font-size:.88rem;font-weight:700;color:#1a1a1a}
 .fs-type-card-sub{font-size:.74rem;color:#999;margin-top:2px}
 .fs-type-card.active .fs-type-card-name{color:var(--brand-primary)}
-.success-body{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 24px 32px}
-.success-icon-wrap{width:76px;height:76px;border-radius:50%;background:rgba(74,222,128,.1);color:#4ade80;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
-.success-title{font-size:1.35rem;font-weight:800;color:#1a1a1a;margin-bottom:6px}
-.success-subtitle{font-size:.85rem;color:#888;margin-bottom:28px;line-height:1.5}
+.success-body{display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 24px 32px}
+/* A cor era `#4ade80` sobre `rgba(74,222,128,.1)` — verde CHUMBADO, e um verde
+   claro demais para o papel: sobre branco ele dá ~1,7:1. O verde de estado
+   deste app é `--state-success`, que existe justamente para isto (skill §7). */
+.success-icon-wrap{width:76px;height:76px;border-radius:50%;background:rgba(47,125,73,.1);color:var(--state-success);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+/* O ícone segue o TÍTULO. Um check verde por cima de "Pagamento não aprovado"
+   diria o contrário do texto, e esta tela é alcançável nesse estado pelo botão
+   de atualizar (ver orderSuccessHeadline). */
+.success-icon-wrap .success-icon-warn{display:none}
+.success-icon-wrap.is-warning{background:rgba(197,32,32,.1);color:var(--state-danger-strong)}
+.success-icon-wrap.is-warning .success-icon-ok{display:none}
+.success-icon-wrap.is-warning .success-icon-warn{display:block}
+/* A NOTÍCIA era menor que o resumo. O título subiu e a legenda saiu do cinza
+   de rodapé: ela carrega a frase do servidor ("Pagamento confirmado!"), que
+   até aqui era o texto mais apagado da tela mais importante do fluxo. */
+.success-title{font-size:1.5rem;font-weight:800;color:#1a1a1a;line-height:1.25;margin-bottom:8px}
+.success-subtitle{font-size:.9rem;color:#5a5a5a;margin-bottom:20px;line-height:1.5;max-width:300px}
+/* "Chega em 30 a 45 minutos". Fica ENTRE a notícia e o resumo de valores, que
+   é a ordem das perguntas de quem acabou de pagar: o que aconteceu, quando
+   chega, quanto foi. Sem prazo no contrato a linha não existe (`hidden`). */
+.success-eta{display:flex;align-items:center;gap:8px;margin:0 0 22px;padding:10px 16px;border-radius:999px;background:var(--surface-3);color:#333;font-size:.85rem;font-weight:600}
+.success-eta[hidden]{display:none}
+.success-eta svg{width:16px;height:16px;flex:0 0 16px;color:var(--brand-mark-light)}
 .success-card{width:100%;background:#fafafa;border:1px solid #efefef;border-radius:16px;padding:16px;text-align:left;margin-bottom:28px}
 .success-card-row{display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:#666;padding:7px 0;border-bottom:1px solid #f0f0f0}
 /* O display:flex acima vence o [hidden] da folha do browser, então as linhas

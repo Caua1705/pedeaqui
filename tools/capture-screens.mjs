@@ -29,7 +29,7 @@
 // ============================================================================
 import { chromium } from '@playwright/test';
 import { writeFileSync, readFileSync } from 'node:fs';
-import { mockApi, RESTAURANT_URL, PRODUCT_H2O, SLUG, BRANCH_MATRIZ, MENU, COUPONS, ORDERS, CUSTOMER, orderDetail, pixOrder, seedPickupSession, seedOnlineCardBranch } from '../tests/e2e/helpers.js';
+import { mockApi, RESTAURANT_URL, PRODUCT_H2O, SLUG, BRANCH_MATRIZ, MENU, COUPONS, ORDERS, CUSTOMER, orderDetail, pixOrder, trackedOrder, seedPickupSession, seedOnlineCardBranch } from '../tests/e2e/helpers.js';
 
 const BASE = process.env.CAPTURE_BASE_URL || 'http://127.0.0.1:4174';
 
@@ -831,6 +831,44 @@ export const SCREENS = [
       await page.locator('#orderConfirmSheet .order-confirm-cta').click();
       await esperar(page, '#pixPaymentModal.active');
       await page.waitForTimeout(900);
+    }
+  },
+  // --- PAGAMENTO APROVADO: a ULTIMA tela que o cliente ve depois de pagar.
+  //
+  //     Ela ficou fora das 62 por meses, e o buraco tem a forma de sempre: a
+  //     tela do Pix estava aqui, a de sucesso nao — e sucesso e o desfecho
+  //     NORMAL. O verificador media a espera e nao media a chegada.
+  //
+  //     O caminho e o real: cobranca Pix criada, e o `track` respondendo pago
+  //     na primeira consulta. O polling do app reconhece sozinho e troca de
+  //     tela — nenhum atalho por `window.showOrderSuccess`, senao a captura
+  //     mediria uma tela que o app talvez nao saiba mais abrir (§22.1).
+  {
+    name: 'pagamento-aprovado',
+    setup: async (page) => {
+      await entregaConfirmada(page);
+      await page.route(/\/orders(\?|$)/, route =>
+        route.request().method() === 'POST' ? route.fulfill(json(pixOrder(1))) : route.fallback());
+      await page.route(/\/orders\/track\//, route =>
+        route.fulfill(json(trackedOrder({ payment_status: 'paid', status: 'confirmed' }))));
+    },
+    async go(page) {
+      await boot(page);
+      await addToCart(page);
+      await act(page, 'openModal', 'cartModal');
+      await esperar(page, '#cartModal.active');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#paymentMethodModal.active');
+      await page.locator('.payment-method-option[data-payment-key="pix"]').click();
+      await esperar(page, '#paymentMethodFooter');
+      await page.locator('.payment-method-confirm').click();
+      await esperar(page, '#cartModal.active .cart-payment-card.is-pix-payment');
+      await page.locator('#cartCtaBtn').click();
+      await esperar(page, '#orderConfirmSheet.active');
+      await page.locator('#orderConfirmSheet .order-confirm-cta').click();
+      // O primeiro polling leva ate ~5 s; o teto de `esperar` e 15 s.
+      await esperar(page, '#orderSuccessModal.active', 20000);
+      await page.waitForTimeout(600);
     }
   },
   // --- Cartao online: a lista de cartoes salvos e o formulario de campos

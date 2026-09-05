@@ -3509,6 +3509,53 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
+  /**
+   * O TÍTULO DA ÚLTIMA TELA, escolhido pelo estado real do pagamento.
+   *
+   * Ele era fixo no HTML — "Pedido enviado!" — para as QUATRO notícias que
+   * esta tela dá, e a notícia de verdade ficava em 13px cinza embaixo. É a
+   * §17.4 exata: a frase escolhida por uma categoria larga ("deu certo") em
+   * vez do estado, com o agravante de que aqui uma das quatro é RUIM.
+   *
+   * `failed` chega, sim, e por um caminho concreto: `refreshTrackedOrder()`
+   * redesenha esta tela com o que o `track` responder, e um Pix recusado
+   * depois do fato vira `payment_status: failed`. Um check verde por cima
+   * disso é a §4 desenhada — 200 não é sucesso.
+   */
+  function orderSuccessHeadline(order) {
+    if (!isOnlinePaymentFlow(order)) return { texto: 'Pedido enviado!', alerta: false };
+    return ({
+      paid: { texto: 'Pagamento aprovado!', alerta: false },
+      pending: { texto: 'Pedido enviado!', alerta: false },
+      failed: { texto: 'Pagamento não aprovado', alerta: true }
+    })[paymentStatusKind(order?.payment_status)] || { texto: 'Pedido enviado!', alerta: false };
+  }
+
+  /**
+   * "Chega em 30 a 45 minutos" — a pergunta seguinte de quem acabou de pagar.
+   *
+   * Os dois campos são `integer | null` em `OrderDetailResponse` e NÃO existem
+   * em `CreateOrderResponse`: o pedido pago na entrega não passa pelo `track`
+   * e chega aqui sem eles. Por isso a linha SOME quando não há prazo, em vez
+   * de mostrar um travessão — a mesma regra da §3.1 para dinheiro: parcela
+   * zerada é linha fora, nunca um "—" solto.
+   *
+   * `?? null` e não `||`: zero minuto não existe como prazo, mas a regra da
+   * família do `sort_order` vale igual, e escrevê-la certa custa dois
+   * caracteres.
+   */
+  function orderEtaText(order) {
+    const min = Number(order?.delivery_eta_min ?? null);
+    const max = Number(order?.delivery_eta_max ?? null);
+    const temMin = Number.isFinite(min) && min > 0;
+    const temMax = Number.isFinite(max) && max > 0;
+    if (!temMin && !temMax) return '';
+    const retirada = String(order?.order_type || '') === 'pickup';
+    const verbo = retirada ? 'Pronto para retirada em' : 'Chega em';
+    if (temMin && temMax && max > min) return `${verbo} ${min} a ${max} minutos`;
+    return `${verbo} cerca de ${temMax ? max : min} minutos`;
+  }
+
   function showOrderSuccess(response) {
     const order = response || {};
     const setText = (id, value) => { if ($(id)) $(id).textContent = value; };
@@ -3517,8 +3564,25 @@
     // do botão "Atualizar status".
     P.trackedOrder = order.tracking_token ? order : (P.trackedOrder?.id === order.id ? P.trackedOrder : null);
 
+    const headline = orderSuccessHeadline(order);
+    setText('ordSuccessTitle', headline.texto);
+    $('ordSuccessIcon')?.classList.toggle('is-warning', headline.alerta);
+
     setText('ordSuccessMessage', order.message || 'Aguardando confirmação do restaurante.');
     setText('ordSuccessNumber', order.order_number != null ? `#${order.order_number}` : '—');
+
+    // O nome da loja NÃO vem no pedido: `CreateOrderResponse` e
+    // `OrderDetailResponse` trazem `restaurant_id`, não o nome. Quem sabe o
+    // nome é o app, que já o carregou no boot — e é por isso que a linha some
+    // quando ele não está lá, em vez de escrever o slug ou um travessão.
+    const nomeDaLoja = String(restaurant?.name || '').trim();
+    if ($('ordSuccessStoreRow')) $('ordSuccessStoreRow').hidden = !nomeDaLoja;
+    if (nomeDaLoja) setText('ordSuccessStore', nomeDaLoja);
+
+    const eta = orderEtaText(order);
+    if ($('ordSuccessEtaRow')) $('ordSuccessEtaRow').hidden = !eta;
+    if (eta) setText('ordSuccessEta', eta);
+
     setText('ordSuccessStatus', orderStatusLabel(order.status));
     setText('ordSuccessSubtotal', fmt(orderAmount(order.subtotal)));
 
@@ -3530,9 +3594,23 @@
     setText('ordSuccessDelivery', fmt(deliveryFeeValue));
     if ($('ordSuccessDeliveryRow')) $('ordSuccessDeliveryRow').style.display = deliveryFeeValue > 0 ? '' : 'none';
 
-    const discount = orderAmount(order.discount_total ?? order.coupon_discount_amount);
-    if ($('ordSuccessDiscountRow')) $('ordSuccessDiscountRow').hidden = !(discount > 0);
-    setText('ordSuccessDiscount', `- ${fmt(discount)}`);
+    // DESCONTO E CASHBACK SÃO DUAS LINHAS, e a conta do backend é a razão:
+    // `discount_total = coupon_discount + cashback_redeemed`. Lendo só o total
+    // — que era o que esta linha fazia — o saldo que o CLIENTE gastou entrava
+    // escondido dentro de "Desconto", como se fosse desconto da loja. As duas
+    // linhas somam exatamente o `discount_total`; nenhuma conta é feita aqui,
+    // os dois números vêm do contrato.
+    const cashbackUsado = orderAmount(order.cashback_redeemed_amount);
+    const desconto = orderAmount(order.coupon_discount_amount);
+    // Fallback para o pedido que só traz o agregado: sem `coupon_discount_amount`
+    // e sem cashback, `discount_total` É o desconto do cupom.
+    const descontoDoCupom = desconto > 0 || cashbackUsado > 0
+      ? desconto
+      : orderAmount(order.discount_total);
+    if ($('ordSuccessDiscountRow')) $('ordSuccessDiscountRow').hidden = !(descontoDoCupom > 0);
+    setText('ordSuccessDiscount', `- ${fmt(descontoDoCupom)}`);
+    if ($('ordSuccessCashbackRow')) $('ordSuccessCashbackRow').hidden = !(cashbackUsado > 0);
+    setText('ordSuccessCashback', `- ${fmt(cashbackUsado)}`);
 
     setText('ordSuccessTotal', fmt(orderAmount(order.total)));
     renderTotalMismatch(order, 'ordSuccessMismatchRow', 'ordSuccessMismatch');

@@ -1144,18 +1144,47 @@
 <div class="overlay" id="orderSuccessModal">
   <div class="modal modal--service-fee">
     <div class="success-body">
-      <div class="success-icon-wrap">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <!-- O ícone acompanha o TÍTULO, e o título vem do estado real (ver
+           orderSuccessHeadline). Um check verde por cima de "Pagamento não
+           aprovado" seria a §4 desenhada: 200 não é sucesso. -->
+      <div class="success-icon-wrap" id="ordSuccessIcon">
+        <svg class="success-icon-ok" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg class="success-icon-warn" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.4v.01"/></svg>
       </div>
-      <div class="success-title">Pedido enviado!</div>
+      <!-- ESTE TÍTULO ERA FIXO NO HTML, e dizia "Pedido enviado!" para as
+           QUATRO notícias que esta tela dá: pago na entrega, Pix aprovado,
+           cartão em análise e (pelo botão de atualizar) pagamento recusado.
+           A notícia que importava — "seu pagamento foi aprovado" — ficava em
+           13px cinza logo abaixo, e o título repetia o óbvio. É a §17.4: a
+           frase escolhida por uma categoria larga em vez do estado. -->
+      <div class="success-title" id="ordSuccessTitle">Pedido enviado!</div>
       <div class="success-subtitle" id="ordSuccessMessage"></div>
+
+      <!-- QUANDO. A pergunta seguinte de quem acabou de pagar não é "quanto
+           foi", é "quando chega". Só aparece com `delivery_eta_min/_max` do
+           contrato — sem os campos, a linha SAI, e nunca é um "—" solto. -->
+      <div class="success-eta" id="ordSuccessEtaRow" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>
+        <span id="ordSuccessEta"></span>
+      </div>
+
       <div class="success-card">
         <div class="success-card-row"><span>Pedido</span><strong id="ordSuccessNumber">—</strong></div>
+        <!-- ONDE. Num app white-label o nome da loja não é decoração: a mesma
+             conta do Rapidex pede em várias, e esta é a tela que a pessoa
+             mostra ao suporte. -->
+        <div class="success-card-row" id="ordSuccessStoreRow" hidden><span>Restaurante</span><strong id="ordSuccessStore">—</strong></div>
         <div class="success-card-row"><span>Status</span><strong id="ordSuccessStatus">—</strong></div>
         <div class="success-card-row"><span>Subtotal</span><strong id="ordSuccessSubtotal">—</strong></div>
         <div class="success-card-row" id="ordSuccessSvcRow"><span>Taxa de serviço</span><strong id="ordSuccessSvc">—</strong></div>
         <div class="success-card-row" id="ordSuccessDeliveryRow"><span>Taxa de entrega</span><strong id="ordSuccessDelivery">—</strong></div>
         <div class="success-card-row" id="ordSuccessDiscountRow" hidden><span>Desconto</span><strong id="ordSuccessDiscount">—</strong></div>
+        <!-- CASHBACK USADO tem linha PRÓPRIA, e não é detalhe: `discount_total`
+             do contrato é `coupon_discount + cashback_redeemed`, então sem esta
+             linha o saldo que a pessoa gastou entra escondido dentro de
+             "Desconto". Dinheiro dela somado ao desconto da loja, sem
+             distinção. É a regra do CLAUDE.md — toda parcela tem linha. -->
+        <div class="success-card-row" id="ordSuccessCashbackRow" hidden><span>Cashback usado</span><strong id="ordSuccessCashback">—</strong></div>
         <div class="success-card-row" id="ordSuccessPaymentRow" hidden><span>Pagamento</span><strong id="ordSuccessPayment">—</strong></div>
         <div class="success-card-row"><span>Total</span><strong id="ordSuccessTotal">—</strong></div>
       </div>

@@ -1037,13 +1037,30 @@
     // próprio `.active`: sem esta linha, quem a deixasse aberta e trocasse de
     // aba voltaria direto nela — a subtela reaberta com a sobreposição de
     // antes, sem ter tocado em nada.
-    // As DUAS sobreposições desta subtela, e a lista cresce junto com elas: a
-    // de excluir conta guarda o próprio `.active` igual à de contas
-    // conectadas, e sem esta linha quem a deixasse aberta voltaria direto numa
-    // tela de exclusão que ninguém pediu para abrir.
+    // ENTRAR EM "Gerenciar perfil" MOSTRA A LISTA DE OPÇÕES, SEMPRE.
+    //
+    // As QUATRO sobreposições desta subtela guardam o próprio `.active`, e a
+    // `.prof-sub` some sem apagá-lo: quem deixasse uma aberta e trocasse de aba
+    // voltaria DIRETO nela, sem ter tocado em nada. Pior, elas ACUMULAM — medido
+    // em 05/09/2026: com "Meus dados" e "Alterar senha" abertas em sequência, as
+    // duas voltavam ativas, uma por cima da outra.
+    //
+    // Até aqui só a de contas conectadas era fechada. Isso estava escrito como
+    // escape conhecido ("`#profPasswordScreen` tem o mesmo buraco e NÃO foi
+    // tocado"), e a sonda mostrou que o escape contava UMA e eram DUAS: o
+    // `#profDataScreen` vaza junto com o `.prof-data-backdrop` dele.
+    //
+    // Cada uma fecha pela porta DELA, e não por uma varredura de `.active`
+    // daqui: `closeCustomerPasswordScreen` recusa fechar no meio de um envio, e
+    // as outras devolvem o foco. Uma varredura genérica pularia essas duas
+    // coisas. Quem guarda a lista contra a QUINTA sobreposição é o teste, que é
+    // genérico de propósito.
     if (subId === 'meusdados') {
       closeConnectedAccountsScreen();
-      window.RapidexActions.resolve('closeDeleteAccountScreen')?.();
+      const fechar = nome => window.RapidexActions.resolve(nome)?.();
+      fechar('closeDeleteAccountScreen');
+      fechar('closeCustomerPasswordScreen');
+      fechar('closeCustomerDataScreen');
     }
     sub.classList.add('active');
     // O Perfil principal aplica estilos `!important` inline para flutuar a

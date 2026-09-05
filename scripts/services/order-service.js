@@ -13,8 +13,12 @@
    * @param {object} [options]
    * @param {string} [options.idempotencyKey] mesma chave em toda retentativa do
    *        MESMO pedido, para que um retry após timeout não crie duplicata.
-   *        ATENÇÃO: o header ainda não consta no OpenAPI da API — enquanto o
-   *        backend não honrar, a proteção é só client-side.
+   *        O header CONSTA no OpenAPI (parâmetro de `POST
+   *        /restaurants/{slug}/orders`, `Vale por 24h`) e o backend o honra:
+   *        mesma chave + mesmo corpo devolve a resposta gravada; mesma chave +
+   *        corpo diferente é **422**. Quem trata esse 422 é
+   *        `isRecycledIdempotencyKey()` em `restaurant-page.js` — leia o
+   *        comentário de lá antes de mexer na chave.
    * @param {number} [options.timeout]  ms; criar pedido é mais lento que os
    *        demais endpoints, então usa um limite maior que o padrão de 8s.
    */

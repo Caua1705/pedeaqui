@@ -252,6 +252,71 @@ test('a retry after a network failure reuses the same Idempotency-Key', async ({
   expect(orderRequests[0].idempotencyKey).toBeTruthy();
   expect(orderRequests[1].idempotencyKey).toBe(orderRequests[0].idempotencyKey);
 });
+
+test('a chave que o servidor recusa por corpo diferente e trocada, e a tela nao manda "revisar"', async ({ page }) => {
+  // O DEPLOY DO CASHBACK É O GATILHO. `use_cashback` entra em
+  // `CreateOrderRequest` e o fingerprint do servidor sai de `model_dump()` do
+  // corpo inteiro — então toda chave reservada ANTES do deploy e retentada
+  // DEPOIS recebe 422 por um pedido IDÊNTICO, durante as 24h de vida dela.
+  //
+  // O que o app fazia: tratava esse 422 como dado inválido ("Revise e tente
+  // novamente") e PRESERVAVA a chave. Tocar de novo mandava a mesma chave e
+  // recebia o mesmo 422 — laço fechado, o cliente nunca pedia.
+  //
+  // Os três fatos que este teste prende, nesta ordem:
+  //   1. a chave ainda é REUSADA na falha de rede (a garantia antiga, intacta);
+  //   2. a frase muda: o 422 de chave reciclada não manda revisar dado nenhum,
+  //      manda CONFERIR antes de reenviar — porque a reserva da chave vive na
+  //      transação do INSERT, então linha que sobreviveu é pedido que commitou;
+  //   3. o toque seguinte sai com chave NOVA.
+  const { orderRequests } = await mockApi(page, {
+    onCreateOrder: async (route, _request, attempt) => {
+      if (attempt === 1) return route.abort('connectionfailed');
+      if (attempt === 2) {
+        return route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          // `detail` STRING, que é a assinatura estrutural deste 422 — o de
+          // validação do FastAPI vem como array de {loc,msg,type}.
+          body: JSON.stringify({
+            detail: 'Idempotency-Key já utilizada com um corpo diferente. Gere uma nova chave para uma nova requisição.'
+          })
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(pixOrder(3))
+      });
+    }
+  });
+  await seedPickupSession(page);
+  await selectPixAndReturnToCart(page);
+
+  await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
+  await expect(page.locator('#cartOrderError')).toBeVisible();
+
+  // Segunda tentativa: mesma chave, e é ela que o servidor recusa.
+  await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
+  const erro = page.locator('#cartOrderError');
+  await expect(erro).toBeVisible();
+  await expect(erro).toContainText('tentativa anterior pode ter sido concluída');
+  await expect(erro).not.toContainText('Revise');
+  // Nenhum pedido nasceu: a tela de Pix não pode ter aberto.
+  await expect(page.locator('#pixPaymentModal')).not.toHaveClass(/active/);
+
+  // Terceira: o cliente decide reenviar, e agora a chave é OUTRA.
+  await page.locator('#cartCtaBtn').click();
+  await confirmOrderSheet(page);
+  await expect(page.locator('#pixPaymentModal')).toHaveClass(/active/);
+
+  expect(orderRequests).toHaveLength(3);
+  expect(orderRequests[1].idempotencyKey).toBe(orderRequests[0].idempotencyKey);
+  expect(orderRequests[2].idempotencyKey).toBeTruthy();
+  expect(orderRequests[2].idempotencyKey).not.toBe(orderRequests[1].idempotencyKey);
+});
 // A criação do pedido é o outro ponto que renderiza `detail`. Vale a mesma
 // regra da cobrança: o formato do `detail` muda (string, array de 422, objeto),
 // a garantia não — o cliente lê português, nunca "[object Object]", e o

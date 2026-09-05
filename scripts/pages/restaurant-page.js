@@ -3181,6 +3181,47 @@
     orderIdempotencySignature = '';
   }
 
+  // ---- A CHAVE QUE O SERVIDOR RECUSA: 422 de corpo diferente ----
+  //
+  // `POST /orders` responde 422 quando a chave já foi usada com OUTRO corpo
+  // (`IdempotencyService.begin`). Isso NÃO é dado inválido, e tratá-lo como
+  // dado inválido — que era o que acontecia até aqui — produz os dois piores
+  // desfechos possíveis:
+  //
+  //   1. a chave era preservada no `catch`, então tocar de novo mandava a MESMA
+  //      chave e recebia o MESMO 422: laço fechado, o cliente nunca pede;
+  //   2. quem recarregasse a página escaparia do laço com uma chave nova — e
+  //      criaria um SEGUNDO pedido, que é exatamente o que a chave existe para
+  //      impedir.
+  //
+  // QUANDO ISSO ACONTECE. O fingerprint do servidor sai de `model_dump()` do
+  // corpo inteiro, então **qualquer campo novo no `CreateOrderRequest` muda o
+  // hash de todo corpo**. `use_cashback` é o campo que entra agora (ele muda o
+  // total, então conflito é a resposta certa), e o preço é 24h de 422 para
+  // chave reservada ANTES do deploy e retentada DEPOIS. É a armadilha 37 do
+  // backend, e é isto que este bloco existe para tolerar.
+  //
+  // O QUE ELE DIZ SOBRE O PEDIDO, e é a parte que decide a frase na tela: a
+  // reserva da chave vive na MESMA transação do INSERT do pedido
+  // (`OrderService.create`, comentário do `idempotency_service.begin`), então
+  // um erro adiante a solta junto com o rollback. Linha que sobreviveu =
+  // pedido que COMMITOU. Ou seja: quem recebe este 422 quase certamente JÁ TEM
+  // o pedido gravado, e só não viu a resposta (timeout, queda de rede).
+  // Reenviar sozinho seria duplicar o pedido de alguém — por isso aqui a chave
+  // é rotacionada mas NÃO há retentativa automática: quem decide é o cliente,
+  // com a informação na mão.
+  //
+  // COMO SE RECONHECE, e por que não pelo texto. O backend avisa que só a
+  // frase separa este 422 dos outros, mas há um sinal ESTRUTURAL melhor: o 422
+  // de validação do FastAPI traz `detail` como ARRAY de `{loc,msg,type}`; este
+  // traz uma STRING. Conferido no spec: em `POST /restaurants/{slug}/orders`
+  // esta é a única fonte de 422 com `detail` string. Casar a prosa quebraria
+  // no dia em que alguém corrigir um acento nela.
+  function isRecycledIdempotencyKey(error) {
+    if (Number(error?.status) !== 422) return false;
+    return typeof error?.data?.detail === 'string';
+  }
+
   let orderSubmitInFlight = false;
 
   function setOrderSubmitting(active) {
@@ -3205,6 +3246,16 @@
     }
     if (Number(error?.status) >= 500) {
       return 'O servidor não conseguiu processar o pedido agora. Tente novamente em instantes.';
+    }
+    if (isRecycledIdempotencyKey(error)) {
+      // A frase NÃO pode ser "revise e tente novamente": os dados estão certos,
+      // e o pedido provavelmente já existe (ver `isRecycledIdempotencyKey`).
+      // Mandar conferir antes de reenviar é a única instrução que não arrisca
+      // um pedido duplicado — e ela muda conforme haja onde conferir: sem
+      // conta, a lista de pedidos não existe nesta tela.
+      return isLogged()
+        ? 'Sua tentativa anterior pode ter sido concluída. Confira em Meus pedidos antes de enviar de novo — se o pedido não estiver lá, toque em Efetuar pagamento novamente.'
+        : 'Sua tentativa anterior pode ter sido concluída. Confira com o restaurante antes de enviar de novo — se o pedido não tiver chegado, toque em Efetuar pagamento novamente.';
     }
     if (error?.status === 422) {
       const detail = error.data?.detail;
@@ -3269,6 +3320,14 @@
       // Falha REAL da requisição: o carrinho não é tocado e a Idempotency-Key é
       // preservada de propósito — a retentativa precisa ser reconhecida como a
       // mesma tentativa, não como um pedido novo.
+      //
+      // A ÚNICA EXCEÇÃO é a chave que o servidor já recusou por corpo
+      // diferente: ela está morta, e repeti-la só pode produzir o mesmo 422.
+      // Preservá-la aqui é o laço fechado descrito em
+      // `isRecycledIdempotencyKey`. Rotacionar é o "gere uma nova chave" que a
+      // própria resposta pede — e note que rotacionar NÃO reenvia nada: o
+      // próximo toque é do cliente, depois de ler que o pedido pode já existir.
+      if (isRecycledIdempotencyKey(error)) resetOrderIdempotencyKey();
       checkoutTrace('7/11 PAROU: POST /orders falhou — nenhum pedido criado', errorTrace(error));
       logAppError('Falha ao criar pedido', error);
       setOrderSubmitting(false); // reabilita para retry

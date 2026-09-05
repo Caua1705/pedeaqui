@@ -1390,6 +1390,29 @@
 .addr-delete-confirm.is-active-warning .addr-delete-cancel{
   display:none!important;
 }
+/* O "Ok" DE UM AVISO NÃO É UM BOTÃO DE DESTRUIÇÃO.
+
+   Este modo (`is-active-warning`) é o app RECUSANDO apagar: "Não é possível
+   excluir o endereço que está ativo neste momento", com um botão só, que
+   fecha o diálogo e mais nada. Ele herdava o `--state-danger-strong` da regra
+   genérica de `.addr-delete-yes` logo abaixo — porque essa classe nomeia
+   POSIÇÃO, não papel (skill §4.1), e quem dá o papel é a folha de cada tela.
+
+   O resultado era o único vermelho do app que não significava "isto destrói":
+   o mesmo tom do botão que apaga um endereço, num diálogo onde nada é apagado.
+
+   A cor é a MARCA, pelo mesmo raciocínio que a regra de `#logoutConfirm` já
+   segue e que o comentário do bloco abaixo escreve: sair da conta não apaga
+   nada, e cor de estado é para o que destrói. `--brand-on` (e não `#fff`)
+   porque o rótulo sobre a marca passa pela guarda de contraste do tema — num
+   app white-label a marca pode ser clara, e aí o branco some.
+
+   A especificidade (0,3,0 contra 0,1,0) resolve sem depender de ordem entre
+   folhas, que é o que o §5.1 avisa ser o risco de mover regra aqui. */
+.addr-delete-confirm.is-active-warning .addr-delete-yes{
+  background:var(--brand-primary)!important;
+  color:var(--brand-on)!important;
+}
 .addr-delete-title{
   margin:0 0 8px!important;
   font-size:var(--ref-text-lg)!important;

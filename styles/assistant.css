@@ -379,6 +379,41 @@ body.app-error .app-loader-message {
   display: block !important;
 }
 
+/* A CAIXA DOS PONTINHOS NÃO É A CAIXA DO ERRO — e eram a mesma.
+
+   A regra acima (`.app-loader-box`, ~40 linhas atrás) trava a caixa em
+   60 x 13,333 px porque, DURANTE O BOOT, ela segura só os três pontinhos que
+   pulsam. Isso está certo para o boot.
+
+   O estado de ERRO reusa o MESMO elemento: as duas linhas logo acima devolvem
+   `display:block` ao título e à mensagem, e eles voltavam DENTRO de uma caixa
+   de 60 px. O que o cliente via, nas duas telas de erro do app:
+
+     "Não foi possível carregar"   -> título quebrando a cada duas palavras, e
+                                      o "Tentar novamente" com o rótulo em duas
+                                      linhas vazando da pílula
+     "Restaurante não encontrado"  -> oito linhas numa coluna estreita no meio
+                                      de uma tela vazia
+
+   São as duas telas que ninguém abre de propósito e que todo cliente com rede
+   ruim vê. Nenhum portão pegou: os três rápidos não executam o app, o e2e
+   afirma o TEXTO (que estava lá, só ilegível), e a captura compara ANTES com
+   DEPOIS — um layout que sempre esteve errado não aparece nela (§20.1).
+
+   Os valores restaurados são os de `restaurant.css` (`.app-loader-box`), não
+   números novos: `min(280px, calc(100vw - 48px))` e o `gap:10px`. `height` e
+   `min-height` voltam a `auto`/`0` porque aqui o conteúdo é que manda — é a
+   mesma família do §14.6 (altura fixa sobre conteúdo que varia).
+
+   Especificidade 0,2,1 contra 0,1,0: vence sem depender da ordem entre folhas. */
+body.app-error .app-loader-box {
+  width: min(280px, calc(100vw - 48px)) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  gap: 10px !important;
+}
+
 @keyframes appLoaderDotPulse {
   0%, 80%, 100% {
     transform: scale(0.375);

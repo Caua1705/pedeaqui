@@ -96,6 +96,31 @@ describe('paymentErrorInfo', () => {
     expect(info).toMatchObject({ code: 'GATEWAY_TIMEOUT', retryable: true, structured: true });
   });
 
+  it('le o provider_error_code, que e do catalogo do GATEWAY e nao do nosso', () => {
+    // SÃO DOIS CÓDIGOS. `code` é `PaymentErrorCode`, nosso, sete valores;
+    // `provider_error_code` é "2062"/"bad_request", do Mercado Pago — e é esse
+    // que o atendimento DELES pede num chamado. Estava publicado no contrato e
+    // ninguém o lia; a tela de recusa mostrava só o nosso, que não abre chamado
+    // lá nenhum.
+    const info = apiError.paymentErrorInfo(
+      paymentError({ code: 'CARD_DECLINED', retryable: false, provider_error_code: '2062' })
+    );
+    expect(info).toMatchObject({ code: 'CARD_DECLINED', providerCode: '2062' });
+  });
+
+  it('sem provider_error_code o campo e string VAZIA, nunca undefined', () => {
+    // O contrato o declara `string | null`, e a tela junta os dois códigos com
+    // `filter(Boolean)`: um `undefined` viraria "undefined" na linha de
+    // referência do erro, que é exatamente o texto de dev na tela do cliente
+    // que a §14.5 existe para impedir.
+    const semProvedor = apiError.paymentErrorInfo(paymentError({ code: 'CARD_DECLINED' }));
+    const comNulo = apiError.paymentErrorInfo(paymentError({ code: 'CARD_DECLINED', provider_error_code: null }));
+    expect(semProvedor.providerCode).toBe('');
+    expect(comNulo.providerCode).toBe('');
+    // E o detail em string (formato antigo) também não pode produzir undefined.
+    expect(apiError.paymentErrorInfo(paymentError('texto solto', 502)).providerCode).toBe('');
+  });
+
   it('respeita retryable=false mesmo em erro 5xx', () => {
     // A flag do backend manda: ela sabe mais sobre a recusa do que o status.
     const info = apiError.paymentErrorInfo(paymentError({ code: 'CARD_DECLINED', retryable: false }, 500));

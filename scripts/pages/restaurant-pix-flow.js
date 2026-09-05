@@ -273,8 +273,18 @@
    */
   function pixChargeErrorOutcome(error, { card = false } = {}) {
     const info = window.PedeAquiApiError?.paymentErrorInfo?.(error)
-      || { code: '', retryable: false, text: '', structured: false };
-    const code = info.code;
+      || { code: '', providerCode: '', retryable: false, text: '', structured: false };
+    // SÃO DOIS CÓDIGOS, e o de suporte é o segundo. `code` é do NOSSO catálogo
+    // (`PaymentErrorCode`, sete valores); `provider_error_code` é do catálogo
+    // do GATEWAY ("2062", "bad_request"), e é esse que o atendimento do Mercado
+    // Pago pede. Ele estava publicado no contrato e ninguém o lia — a tela de
+    // recusa mostrava só o nosso, que não serve para abrir chamado lá.
+    //
+    // Vão JUNTOS numa linha só, separados por ponto médio: são a mesma
+    // informação (a referência técnica desta falha) e duas linhas discretas
+    // pesariam mais que a mensagem que importa.
+    const code = [info.code, info.providerCode ? `ref. ${info.providerCode}` : '']
+      .filter(Boolean).join(' · ');
 
     if (card && info.text) {
       return {

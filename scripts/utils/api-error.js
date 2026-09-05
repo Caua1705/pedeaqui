@@ -92,10 +92,17 @@
    * `retryable`; o `code` só é exibido como referência para ele citar ao
    * restaurante.
    *
-   * `provider_error_code` existe no contrato e ninguém o lê — é a referência do
-   * gateway para um chamado de suporte, e cabe numa melhoria da tela de recusa.
+   * `provider_error_code` É LIDO desde 05/09/2026, e a distinção entre ele e o
+   * `code` importa: `code` é do NOSSO catálogo (`PaymentErrorCode`, sete
+   * valores), e `provider_error_code` é do catálogo do GATEWAY ("bad_request",
+   * "2062"). Quem atende um chamado do Mercado Pago pede o segundo, e ele era o
+   * único que a tela não tinha.
    *
-   * @returns {{code: string, retryable: boolean, text: string, structured: boolean}}
+   * O contrato é explícito sobre o que ele NÃO é: "nunca a mensagem crua — essa
+   * pode ecoar o e-mail de quem pagou e fica só no log". É referência curta, e
+   * por isso pode ir para a tela ao lado do nosso código.
+   *
+   * @returns {{code: string, providerCode: string, retryable: boolean, text: string, structured: boolean}}
    */
   function paymentErrorInfo(error) {
     const detail = error?.detail ?? error?.data?.detail;
@@ -104,6 +111,7 @@
 
     return {
       code,
+      providerCode: structured ? String(detail.provider_error_code ?? '').trim() : '',
       retryable: resolveRetryable(structured ? detail.retryable : undefined, error),
       text: detailText(detail),
       structured

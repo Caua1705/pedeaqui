@@ -615,22 +615,61 @@ test('falha do gateway vira mensagem clara, sem sugerir refazer o pedido', async
 // ---------------------------------------------------------------------------
 // `detail` como OBJETO (PaymentErrorDetail: code + retryable).
 //
-// ⚠️ Este schema NÃO está no OpenAPI publicado — `POST .../payment` declara só
-// 200 e 422. Os testes abaixo fixam o comportamento pelos campos que o backend
-// informou (`code`, `retryable`) e, principalmente, fixam o que vale para
-// QUALQUER formato: o cliente nunca lê "[object Object]" e nunca é levado a
-// refazer um pedido que já existe.
+// O SCHEMA ESTÁ PUBLICADO, e este aviso dizia o contrário — conferido no
+// contrato em 05/09/2026. `POST .../payment` declara `PaymentErrorResponse` em
+// QUATRO status:
+//
+//   400  cobrança de cartão que não pode ser criada como pedida
+//   401  cartão exige cliente autenticado
+//   502  cobrança RECUSADA pelo provedor
+//   503  pagamento indisponível no momento
+//
+// O aviso antigo ("declara só 200 e 422") é a §3.2 dentro de um comentário:
+// contrato lembrado em vez de lido, mentindo para quem viesse depois.
+//
+// E o STATUS PADRÃO daqui era 402, que não está entre os quatro. Fixture com
+// status que o contrato não declara é a §14.7 — ela confirma para sempre uma
+// leitura que produção nunca produz. Passou a ser 502, que é o da recusa pelo
+// provedor; quem precisa de outro passa o segundo argumento.
+//
+// O que os testes fixam continua valendo para QUALQUER formato: o cliente nunca
+// lê "[object Object]" e nunca é levado a refazer um pedido que já existe.
 // ---------------------------------------------------------------------------
 
 /** Responde a criação da cobrança com um detail em objeto. */
 const paymentErrorRoute =
-  (detail, status = 402) =>
+  (detail, status = 502) =>
   (route) =>
     route.fulfill({
       status,
       contentType: 'application/json',
       body: JSON.stringify({ detail })
     });
+
+test('a referencia do GATEWAY entra na linha do erro, ao lado do nosso codigo', async ({ page }) => {
+  // SÃO DOIS CÓDIGOS, e o de suporte é o segundo. `code` é `PaymentErrorCode`,
+  // nosso, sete valores; `provider_error_code` é "2062"/"bad_request", do
+  // Mercado Pago — e é esse que o atendimento DELES pede num chamado.
+  //
+  // Estava publicado no contrato e ninguém o lia: era escape conhecido, com o
+  // motivo escrito em `api-error.js` ("cabe numa melhoria da tela de recusa").
+  // Sem ele, o cliente que liga para o gateway cita um código do nosso
+  // vocabulário, que não abre chamado lá nenhum.
+  await mockApi(page, {
+    orderResponse: pixOrder,
+    onStartPayment: paymentErrorRoute({
+      code: 'CARD_DECLINED',
+      retryable: false,
+      provider_error_code: '2062'
+    })
+  });
+
+  await submitPixOrder(page);
+  await expect(page.locator('[data-pix-state=error]')).toBeVisible();
+  await expect(page.locator('#pixErrorCode')).toHaveText('Código do erro: CARD_DECLINED · ref. 2062');
+  // E o pedido continua nomeado: a falha da cobrança não desfez o pedido.
+  await expect(page.locator('#pixErrorOrder')).toContainText(`#${pixOrder(1).order_number}`);
+});
 
 test('erro RETENTÁVEL em objeto: mensagem em português e botão de tentar de novo', async ({
   page
@@ -658,6 +697,9 @@ test('erro RETENTÁVEL em objeto: mensagem em português e botão de tentar de n
   await expect(page.locator('#pixErrorOrder')).toContainText(`#${pixOrder(1).order_number}`);
   // O código do gateway fica à mão para o cliente citar ao suporte.
   await expect(page.locator('#pixErrorCode')).toHaveText('Código do erro: GATEWAY_TIMEOUT');
+  // Sem `provider_error_code` na resposta, a linha traz SÓ o nosso — nada de
+  // um "ref. undefined" pendurado, que seria texto de dev na tela.
+  await expect(page.locator('#pixErrorCode')).not.toContainText('ref.');
 
   // Retentável => o botão existe e funciona, sem tocar no pedido.
   const retry = page.locator('#pixRetryBtn');

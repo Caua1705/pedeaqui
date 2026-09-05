@@ -1642,6 +1642,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/reports/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customers Report
+         * @description Quem comprou no periodo — novos, recorrentes — e o cashback dos dois lados.
+         *
+         *     **Identidade do cliente: o telefone do pedido**
+         *     (`customer_phone_snapshot`), a mesma de `/admin/customers`. Agrupar por
+         *     `customer_id` descartaria o pedido de visitante, que nao tem conta, e
+         *     "12 clientes" aqui contaria menos gente que a tela de Clientes.
+         *
+         *     **"Novo" e pelo PERIODO DESTE RELATORIO**, e nao o `segment` de
+         *     `/admin/customers`: o primeiro pedido faturado da vida do cliente cai
+         *     dentro de `[start_date, end_date]`. O segmento usa a janela RFV em dias
+         *     corridos, e num recorte de 7 dias ele chamaria de "novo" quem estreou ha
+         *     tres semanas.
+         *
+         *     **Com `branch_id`, "primeiro pedido" continua sendo NO RESTAURANTE**, e
+         *     nao na filial. Duas razoes: quem pediu na Aldeota depois de dois anos no
+         *     Centro nao e um cliente novo do negocio, e com a leitura por filial a
+         *     soma das lojas teria mais clientes novos que o restaurante inteiro. O
+         *     recorte de filial restringe QUAIS PEDIDOS entram no periodo, nunca de
+         *     onde vem a estreia.
+         *
+         *     **O cashback tem dois numeros que nao fecham entre si, de proposito:**
+         *
+         *     - `earned_total` e o credito GERADO no periodo (linhas `earned` do
+         *       razao), qualquer que seja o destino delas depois. Sem filtro de
+         *       `status`: filtrar por `available` faria o numero de um mes encolher
+         *       sozinho conforme os clientes gastassem o saldo;
+         *     - `redeemed_total` e o saldo que entrou nos pedidos faturados do
+         *       periodo. O credito nasce na conclusao de um pedido e o resgate
+         *       acontece na criacao de outro, meses depois — nao ha razao para os dois
+         *       baterem.
+         *
+         *     **`cashback_transactions` nao tem filial**, entao com `branch_id` o
+         *     credito e atribuido pelo PEDIDO que o gerou. Consequencia: credito sem
+         *     pedido — hoje so ajuste manual por SQL — nao entra em recorte de filial
+         *     nenhum, porque nao ha como dizer de qual loja ele e. Sem `branch_id`
+         *     ele entra.
+         *
+         *     `configured` diz se ha campanha VALENDO no recorte, e existe porque
+         *     "R$ 0,00 resgatados" sozinho nao distingue "ninguem usa" de "ninguem
+         *     ligou" — e a segunda e o estado de fabrica: `cashback_rules.enabled`
+         *     nasce falso em todo restaurante. Sem `branch_id`, a pergunta e do
+         *     restaurante e so a regra dele responde.
+         *
+         *     Quem nao e dono precisa mandar `branch_id`.
+         */
+        get: operations["customers_report_admin_reports_customers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/neighborhoods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Neighborhoods Report
+         * @description Faturamento por bairro, para decidir onde estender ou encolher a area.
+         *
+         *     **SO PEDIDO DE ENTREGA.** Retirada nao tem bairro, e joga-la num balde
+         *     "sem bairro" faria a maior regiao da tela ser o balcao. Por isso
+         *     `orders_count` daqui NAO bate com o de `/reports/summary`, e a diferenca
+         *     vem publicada em `non_delivery_orders_count` — `non_delivery` e nao
+         *     `pickup` porque hoje o que sobra e so retirada, e um tipo de pedido novo
+         *     cairia ali dentro.
+         *
+         *     O bairro sai do SNAPSHOT do pedido (`address_neighborhood`), como veio
+         *     no endereco naquele dia, sem normalizar — o endereco cadastrado do
+         *     cliente muda depois, e o relatorio precisa dizer para onde a comida foi.
+         *     **Cidade entra no agrupamento junto com o bairro**: "Centro" de
+         *     Fortaleza e "Centro" de Maracanau sao dois lugares.
+         *
+         *     Pedido de entrega SEM bairro registrado vem com `neighborhood: null`, e
+         *     nao num balde "outro" — o pedido existe, o dinheiro entrou, e ninguem
+         *     anotou onde. Mesma regra do `payment_method` nulo de
+         *     `/reports/payment-methods`.
+         *
+         *     Ordenado por faturamento, do maior para o menor. Sem `limit`: a lista de
+         *     bairros de um restaurante cabe numa resposta, e paginar um ranking de
+         *     cinco linhas seria contrato a mais sem pergunta a menos.
+         *
+         *     Quem nao e dono precisa mandar `branch_id`.
+         */
+        get: operations["neighborhoods_report_admin_reports_neighborhoods_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Operations Report
+         * @description Os tempos entre os carimbos do pedido: aceite, preparo e entrega.
+         *
+         *     Sai de `order_status_history`, e o marco de cada estagio e o PRIMEIRO
+         *     carimbo daquele status. Um pedido que volta a `preparing` depois de
+         *     `ready` nao reabre o relogio: a promessa foi cumprida, ou nao, na
+         *     primeira vez que a loja disse "pronto".
+         *
+         *     - `accept_minutes` — da criacao do pedido ate o aceite;
+         *     - `prep_minutes` — do aceite ate `ready`;
+         *     - `delivery_minutes` — de `out_for_delivery` ate `completed`, **so em
+         *       pedido de entrega**.
+         *
+         *     Cada bloco traz o proprio `orders_count` porque nem todo pedido passa
+         *     por todos os estagios: retirada nao tem entrega, e pedido aceito e
+         *     cancelado nao tem preparo. Sem ele, "mediana de 12 min" nao diz se saiu
+         *     de 3 pedidos ou de 300.
+         *
+         *     **Mediana e p90 vem antes da media**, e nao por estilo: um pedido
+         *     esquecido tres horas puxa a media para "preparo de 40 min" e nao move a
+         *     mediana. Nulo quando nenhum pedido teve aquele estagio — e nao zero, que
+         *     afirmaria um aceite instantaneo que nao aconteceu.
+         *
+         *     `late_orders_count` compara com o `delivery_prep_time_max` do PROPRIO
+         *     pedido, congelado na criacao, e nao com a configuracao atual da filial:
+         *     o cliente leu aquele prazo na vitrine, e julgar a loja pela promessa que
+         *     ela nao fez seria mudar a nota dela ao mexer numa tela de configuracao.
+         *
+         *     O denominador de `late_orders_percent` vem publicado em
+         *     `late_orders_base_count`, e ele NAO e `prep_minutes.orders_count`:
+         *     pedido com preparo medido mas SEM prazo prometido nao pode ser julgado
+         *     atrasado, e conta-lo embaixo faria a tela subestimar o atraso. Nulo
+         *     quando nao ha denominador.
+         *
+         *     GERENCIA sem recorte obrigatorio: e a unica rota de Desempenho que nao
+         *     publica uma linha de dinheiro, e quem toca o balcao precisa ler o
+         *     proprio tempo de preparo.
+         */
+        get: operations["operations_report_admin_reports_operations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/reports/payment-methods": {
         parameters: {
             query?: never;
@@ -1722,6 +1884,44 @@ export interface paths {
          *     Quem nao e dono precisa mandar `branch_id`.
          */
         get: operations["sales_by_day_admin_reports_sales_by_day_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/sales-by-hour": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sales By Hour
+         * @description A que horas a loja vende, somando todos os dias do periodo.
+         *
+         *     Devolve as 24 HORAS SEMPRE, inclusive as sem venda, com zero — a mesma
+         *     regra dos dias de `/reports/sales-by-day`. A hora e a hora LOCAL da
+         *     operacao (America/Fortaleza): um pedido das 22h de sexta e hora 22, e
+         *     nao 1h do sabado em UTC.
+         *
+         *     `weekday_hours` e o mapa dia x hora, com `weekday` 0 = SEGUNDA e
+         *     6 = domingo (o `datetime.weekday()` do Python, NAO o `getDay()` do
+         *     JavaScript). Ele NAO vem preenchido com zeros, e a assimetria com
+         *     `hours` e deliberada: as 24 horas existem em todo dia, mas um dia da
+         *     semana pode simplesmente nao estar no periodo pedido — emitir
+         *     "segunda: 0" num recorte sem nenhuma segunda seria afirmar que a loja
+         *     nao vendeu num dia sobre o qual ninguem perguntou.
+         *
+         *     Mesmo criterio de "faturado" do resumo: cancelados, recusados e
+         *     estornados ficam de fora.
+         *
+         *     Quem nao e dono precisa mandar `branch_id`.
+         */
+        get: operations["sales_by_hour_admin_reports_sales_by_hour_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6049,6 +6249,27 @@ export interface components {
              */
             currency: "BRL";
         };
+        /**
+         * CashbackReportBlock
+         * @description O cashback do periodo, dos dois lados.
+         *
+         *     `earned_total` e credito GERADO no periodo (linhas `earned` de
+         *     `cashback_transactions`), qualquer que seja o destino delas depois —
+         *     saldo usado, vencido ou cancelado continua tendo sido gerado.
+         *
+         *     `redeemed_total` e o que saiu do saldo DENTRO de pedidos faturados do
+         *     periodo (`orders.cashback_redeemed_amount`). Os dois nao se cancelam e
+         *     nao tem por que fechar entre si: o crédito nasce na conclusao de um
+         *     pedido e o resgate acontece na criacao de outro, meses depois.
+         */
+        CashbackReportBlock: {
+            /** Configured */
+            configured: boolean;
+            earned_total: components["schemas"]["MetricComparison"];
+            /** Orders With Redeem Count */
+            orders_with_redeem_count: number;
+            redeemed_total: components["schemas"]["MetricComparison"];
+        };
         /** CashbackTransactionResponse */
         CashbackTransactionResponse: {
             /** Amount */
@@ -7290,6 +7511,26 @@ export interface components {
             /** Provider User Id */
             provider_user_id: string;
         };
+        /** CustomersReportResponse */
+        CustomersReportResponse: {
+            /** Branch Id */
+            branch_id?: string | null;
+            cashback: components["schemas"]["CashbackReportBlock"];
+            customers_count: components["schemas"]["MetricComparison"];
+            new_customers_count: components["schemas"]["MetricComparison"];
+            /** New Revenue Total */
+            new_revenue_total: string;
+            period: components["schemas"]["ReportPeriod"];
+            previous_period: components["schemas"]["ReportPeriod"];
+            /**
+             * Restaurant Id
+             * Format: uuid
+             */
+            restaurant_id: string;
+            returning_customers_count: components["schemas"]["MetricComparison"];
+            /** Returning Revenue Total */
+            returning_revenue_total: string;
+        };
         /**
          * DeleteCustomerAccountRequest
          * @description A prova de que quem pede e o dono da conta. UMA das duas.
@@ -7424,6 +7665,29 @@ export interface components {
         DeliveryTimeBandsReplaceRequest: {
             /** Bands */
             bands?: components["schemas"]["DeliveryTimeBandInput"][];
+        };
+        /**
+         * DurationStats
+         * @description Um tempo em minutos, com uma casa decimal.
+         *
+         *     Mediana e p90 ANTES da media, e nao por estilo: um pedido esquecido tres
+         *     horas puxa a media para "preparo de 40 min" e nao move a mediana. Quem
+         *     le a tela precisa ver primeiro o numero que descreve o pedido tipico.
+         *
+         *     `orders_count` e por bloco porque nem todo pedido passa por todos os
+         *     estagios: retirada nao tem entrega, e pedido aceito e cancelado nao tem
+         *     preparo. Sem ele, "mediana de 12 min" nao diz se saiu de 3 pedidos ou
+         *     de 300.
+         */
+        DurationStats: {
+            /** Average */
+            average?: string | null;
+            /** Median */
+            median?: string | null;
+            /** Orders Count */
+            orders_count: number;
+            /** P90 */
+            p90?: string | null;
         };
         /**
          * ErrorReportResponse
@@ -7713,6 +7977,62 @@ export interface components {
             current: string;
             /** Previous */
             previous: string;
+        };
+        /** NeighborhoodSalesItem */
+        NeighborhoodSalesItem: {
+            /** Average Ticket */
+            average_ticket: string;
+            /** City */
+            city?: string | null;
+            /** Neighborhood */
+            neighborhood?: string | null;
+            /** Orders Count */
+            orders_count: number;
+            /** Revenue Share Percent */
+            revenue_share_percent?: string | null;
+            /** Revenue Total */
+            revenue_total: string;
+        };
+        /** NeighborhoodSalesResponse */
+        NeighborhoodSalesResponse: {
+            /** Branch Id */
+            branch_id?: string | null;
+            /** Neighborhoods */
+            neighborhoods: components["schemas"]["NeighborhoodSalesItem"][];
+            /** Non Delivery Orders Count */
+            non_delivery_orders_count: number;
+            /** Orders Count */
+            orders_count: number;
+            period: components["schemas"]["ReportPeriod"];
+            /**
+             * Restaurant Id
+             * Format: uuid
+             */
+            restaurant_id: string;
+            /** Revenue Total */
+            revenue_total: string;
+        };
+        /** OperationsReportResponse */
+        OperationsReportResponse: {
+            accept_minutes: components["schemas"]["DurationStats"];
+            /** Branch Id */
+            branch_id?: string | null;
+            delivery_minutes: components["schemas"]["DurationStats"];
+            /** Late Orders Base Count */
+            late_orders_base_count: number;
+            /** Late Orders Count */
+            late_orders_count: number;
+            /** Late Orders Percent */
+            late_orders_percent?: string | null;
+            /** Orders Count */
+            orders_count: number;
+            period: components["schemas"]["ReportPeriod"];
+            prep_minutes: components["schemas"]["DurationStats"];
+            /**
+             * Restaurant Id
+             * Format: uuid
+             */
+            restaurant_id: string;
         };
         /** OrderDetailResponse */
         OrderDetailResponse: {
@@ -8993,6 +9313,51 @@ export interface components {
             restaurant_id: string;
             /** Revenue Total */
             revenue_total: string;
+        };
+        /** SalesByHourItem */
+        SalesByHourItem: {
+            /** Hour */
+            hour: number;
+            /** Orders Count */
+            orders_count: number;
+            /** Revenue Total */
+            revenue_total: string;
+        };
+        /** SalesByHourResponse */
+        SalesByHourResponse: {
+            /** Branch Id */
+            branch_id?: string | null;
+            /** Hours */
+            hours: components["schemas"]["SalesByHourItem"][];
+            /** Orders Count */
+            orders_count: number;
+            period: components["schemas"]["ReportPeriod"];
+            /**
+             * Restaurant Id
+             * Format: uuid
+             */
+            restaurant_id: string;
+            /** Revenue Total */
+            revenue_total: string;
+            /** Weekday Hours */
+            weekday_hours: components["schemas"]["SalesByWeekdayHourItem"][];
+        };
+        /**
+         * SalesByWeekdayHourItem
+         * @description Uma celula do mapa dia x hora.
+         */
+        SalesByWeekdayHourItem: {
+            /** Hour */
+            hour: number;
+            /** Orders Count */
+            orders_count: number;
+            /** Revenue Total */
+            revenue_total: string;
+            /**
+             * Weekday
+             * @description Dia da semana com 0 = SEGUNDA e 6 = domingo (`datetime.weekday()` do Python). NAO e o `getDay()` do JavaScript, que usa 0 = domingo: converter e obrigatorio dos dois lados.
+             */
+            weekday: number;
         };
         /** SalesSummaryResponse */
         SalesSummaryResponse: {
@@ -12118,6 +12483,114 @@ export interface operations {
             };
         };
     };
+    customers_report_admin_reports_customers_get: {
+        parameters: {
+            query: {
+                /** @description Primeiro dia do periodo (inclusive) */
+                start_date: string;
+                /** @description Ultimo dia do periodo (inclusive) */
+                end_date: string;
+                /** @description Recorte por filial. Omitido, soma o restaurante inteiro. So restringe. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomersReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    neighborhoods_report_admin_reports_neighborhoods_get: {
+        parameters: {
+            query: {
+                /** @description Primeiro dia do periodo (inclusive) */
+                start_date: string;
+                /** @description Ultimo dia do periodo (inclusive) */
+                end_date: string;
+                /** @description Recorte por filial. Omitido, soma o restaurante inteiro. So restringe. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NeighborhoodSalesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    operations_report_admin_reports_operations_get: {
+        parameters: {
+            query: {
+                /** @description Primeiro dia do periodo (inclusive) */
+                start_date: string;
+                /** @description Ultimo dia do periodo (inclusive) */
+                end_date: string;
+                /** @description Recorte por filial. Omitido, soma o restaurante inteiro. So restringe. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationsReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     payment_methods_report_admin_reports_payment_methods_get: {
         parameters: {
             query: {
@@ -12215,6 +12688,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SalesByDayResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sales_by_hour_admin_reports_sales_by_hour_get: {
+        parameters: {
+            query: {
+                /** @description Primeiro dia do periodo (inclusive) */
+                start_date: string;
+                /** @description Ultimo dia do periodo (inclusive) */
+                end_date: string;
+                /** @description Recorte por filial. Omitido, soma o restaurante inteiro. So restringe. */
+                branch_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesByHourResponse"];
                 };
             };
             /** @description Validation Error */

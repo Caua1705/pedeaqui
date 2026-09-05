@@ -2885,11 +2885,16 @@ body:has(#mobViewAssistant.active) .assistant-toast{
 #mobViewAssistant .assistant-bottom-dock{
   background:none!important;
 }
+/* UM recurso de moldura, não dois. A barra tinha borda de 1px E sombra
+   projetada, e as duas fazem o mesmo trabalho: separar a barra do fundo. Numa
+   tela cujo pedido é menos moldura, a borda basta — ela é a linha do sistema,
+   a mesma do cartão de produto e do filete do cabeçalho, e a sombra era o
+   único elemento flutuante de uma superfície que é plana em todo o resto. */
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar,
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
   border:1px solid var(--border)!important;
   background:var(--surface)!important;
-  box-shadow:0 4px 16px var(--shadow-card)!important;
+  box-shadow:none!important;
 }
 #mobViewAssistant .assistant-bottom-dock .assistant-ai-input-bar:focus-within{
   border-color:var(--border-strong)!important;
@@ -3071,8 +3076,13 @@ body:has(#mobViewAssistant.active) .assistant-toast{
     radial-gradient(circle at 33% 27%, rgba(255,255,255,.70) 0%, rgba(255,255,255,0) 44%),
     radial-gradient(circle at 72% 80%, rgba(0,0,0,.26) 0%, rgba(0,0,0,0) 58%),
     linear-gradient(148deg, var(--brand-mark-light) 4%, var(--brand-mark-deep) 96%);
+  /* ERAM DOIS BRILHOS DE MARCA em volta de uma esfera de 64px. O sopro
+     (`.assistant-mark__halo`) é o documentado e fica; a sombra projetada
+     `0 6px 16px rgba(--brand-primary-rgb,.24)` era um SEGUNDO, e caía fora da
+     esfera — ou seja, marca pintada na superfície da tela, que é o quarto
+     lugar de cor numa tela cuja regra são três. As duas `inset` ficam: elas
+     dão o volume da esfera e são neutras, não têm matiz nenhum. */
   box-shadow:
-    0 6px 16px rgba(var(--brand-primary-rgb),.24),
     inset 0 -4px 10px rgba(0,0,0,.16),
     inset 0 4px 8px rgba(255,255,255,.20);
   animation:assistant-mark-idle 4.4s ease-in-out infinite;
@@ -3205,12 +3215,27 @@ body:has(#mobViewAssistant.active) .assistant-toast{
   color:#6b7280!important;
   opacity:1!important;
 }
+/* ESTE AVISO EXISTIA E NUNCA FOI VISTO — ele nascia DEBAIXO da barra de baixo.
+   Medido: o `.assistant-bottom-dock` tem altura ZERO (y=768, `bottom:76px`) e a
+   barra de digitação dentro dele é ABSOLUTA (`top:-72px`, y=696..754). O aviso
+   é irmão dela e ficava em FLUXO, ou seja, na origem do dock — y=774..789 —, e
+   a `.mob-bottom-nav` ocupa 759..844. Resultado: `display:flex`, retângulo de
+   382×15, e `document.elementFromPoint()` no centro dele devolvendo
+   `mobNavAssistantTab`. Um `toBeVisible()` do Playwright passaria.
+
+   Por isso ele é ABSOLUTO agora, ancorado ACIMA da barra de digitação: 72px é
+   a altura que a própria barra reserva (o `top:-72px` dela), mais 6px de
+   respiro. Alinhado à direita porque é o botão da direita que ele explica. */
 #mobViewAssistant .assistant-voice-login-hint{
+  position:absolute;
+  right:16px;
+  bottom:78px;
+  left:16px;
   display:flex;
   align-items:center;
   justify-content:flex-end;
   gap:5px;
-  margin:6px 8px 0 0;
+  margin:0;
   color:#6b7280;
   font:600 11px/15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }

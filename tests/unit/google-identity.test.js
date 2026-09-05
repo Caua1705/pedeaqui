@@ -98,6 +98,19 @@ describe('google-identity-service', () => {
     // duas, o script carrega e o botão não aparece — sem erro nosso na tela.
     expect(csp.match(/frame-src[^;]*/)[0]).toContain(host);
     expect(csp.match(/connect-src[^;]*/)[0]).toContain(host);
+    // E A QUARTA, que faltava — achada em PRODUÇÃO em 05/09/2026, não aqui.
+    // O `gsi/client` injeta `<link rel="stylesheet" href=".../gsi/style">`, e o
+    // `style-src` o recusava em todo carregamento da tela de login:
+    //
+    //   Loading the stylesheet 'https://accounts.google.com/gsi/style'
+    //   violates the following Content Security Policy directive: "style-src ..."
+    //
+    // O botão continuava aparecendo porque o iframe leva o estilo dele dentro,
+    // e foi por isso que passou: as três diretivas anteriores foram escolhidas
+    // olhando para "o botão apareceu?", e este bloqueio não muda essa resposta.
+    // Uma diretiva que o navegador recusa em silêncio a cada visita não fica em
+    // pé só porque o sintoma visível não apareceu ainda.
+    expect(csp.match(/style-src[^;]*/)[0], `style-src não libera ${host} — o gsi/style é bloqueado`).toContain(host);
 
     const p1 = servico.ensureSdk();
     const p2 = servico.ensureSdk();

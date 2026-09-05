@@ -491,10 +491,20 @@
     try {
       const reg = buildRegisterPayload();
       const res = await window.PedeAquiCustomerService.registerCustomer(reg);
-      // Do not auto-login. Move the user to e-mail verification.
       const email = res?.email || reg.email;
       restore();
-      openVerifyScreen({ email, source: 'register', customer: { name: reg.name, email: reg.email, phone: reg.phone } });
+      // A SENHA VIAJA ATÉ A VERIFICAÇÃO, e só até lá. `RegisterCustomerResponse`
+      // não traz `access_token` (o contrato é `customer_id, email, message,
+      // requires_email_verification`), então a sessão de quem acabou de se
+      // cadastrar tem de ser pedida por nós, com as credenciais que a pessoa
+      // acabou de digitar. Ela fica NUMA VARIÁVEL, nunca em storage, e é
+      // apagada assim que serve (ver `entrarAposCadastro`).
+      openVerifyScreen({
+        email,
+        source: 'register',
+        customer: { name: reg.name, email: reg.email, phone: reg.phone },
+        senha: reg.password
+      });
     } catch (error) {
       applyRegisterApiError(error);
       restore();
@@ -546,7 +556,10 @@
       // O ticket do caso (b) do Google. Ele acompanha o código no
       // /auth/verify-email-code e é o que faz aquela rota LIGAR a identidade em
       // vez de só marcar o e-mail como verificado. Vazio no fluxo de cadastro.
-      googleLinkTicket: ctx?.googleLinkTicket || ''
+      googleLinkTicket: ctx?.googleLinkTicket || '',
+      // Só o fluxo de cadastro a manda. Em memória, nunca em storage, e zerada
+      // em `entrarAposCadastro()` assim que o login acontece (ou falha).
+      senha: ctx?.senha || ''
     };
     const isReset = verifyCtx.source === 'reset';
     const isGoogleLink = verifyCtx.source === 'google-link';
@@ -733,10 +746,27 @@
           finishLoginNavigation();
           return;
         }
-        // Não vem token: verificação não loga. A conta local do fluxo de
-        // cadastro é o que o cliente digitou (verifyCtx.customer).
-        const localCustomer = verifyCtx.customer || { email: verifyCtx.email };
-        if (localCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(localCustomer);
+        // CADASTRAR LOGA — e até 05/09/2026 não logava.
+        //
+        // A rota não devolve sessão sem ticket do Google, então quem se
+        // cadastrava saía com um cliente LOCAL: nome na tela, nenhum token. Pelo
+        // Pix isso passava despercebido (o visitante paga, e o `tracking_token`
+        // é a porta dele para o pedido, §6); pelo CARTÃO não, porque cartão
+        // salvo pertence a uma conta e a cobrança exige Bearer do cliente. Duas
+        // regras de conta em dois caminhos de pagamento, e nenhuma escrita.
+        //
+        // A sessão é pedida com as credenciais que a pessoa ACABOU de digitar,
+        // pela mesma rota do login normal. Não é atalho: é o login que ela
+        // faria em seguida, feito por ela.
+        const entrou = await entrarAposCadastro();
+        if (!entrou) {
+          // DEGRADA PARA O COMPORTAMENTO ANTIGO em vez de barrar. A conta EXISTE
+          // e o e-mail está verificado: prender a pessoa numa tela de erro por
+          // causa do login seria pior que deixá-la seguir como seguia ontem — e
+          // pelo Pix ela paga do mesmo jeito.
+          const localCustomer = verifyCtx.customer || { email: verifyCtx.email };
+          if (localCustomer?.name || verifyCtx.source === 'register') applyLocalCustomer(localCustomer);
+        }
         $('verifyScreen')?.classList.remove('active');
         goToInitialScreenAfterAuth();
       }
@@ -1447,6 +1477,42 @@
     });
     syncCartLocationState();
     loadCashbackForHome();
+  }
+
+  // ==========================================================================
+  //  A SESSÃO DE QUEM ACABOU DE SE CADASTRAR.
+  //
+  //  Devolve `true` quando entrou. O chamador só cai para o cliente LOCAL
+  //  quando isto devolve `false` — degradar é melhor que barrar, porque a conta
+  //  já existe e o e-mail já está verificado.
+  //
+  //  A SENHA É ZERADA NO `finally`, sempre. Ela existe em memória entre o
+  //  cadastro e a verificação porque `RegisterCustomerResponse` não traz
+  //  `access_token`, e some no instante em que serve — nem no sucesso nem no
+  //  erro ela sobrevive à função. Nunca vai para storage.
+  //
+  //  `requires_email_verification` de volta aqui seria o backend dizendo que o
+  //  código não valeu, o que contradiz o `verified` que acabamos de ler. Nesse
+  //  caso não insistimos: devolve `false` e a pessoa segue como cliente local.
+  // ==========================================================================
+  async function entrarAposCadastro() {
+    const email = verifyCtx.email;
+    const senha = verifyCtx.senha;
+    if (verifyCtx.source !== 'register' || !email || !senha) return false;
+    try {
+      const res = await window.PedeAquiCustomerService.loginCustomer({ login: email, password: senha });
+      if (res?.requires_email_verification || !res?.access_token) return false;
+      applyLoggedSession(res.access_token, res.customer);
+      // Os endereços que a pessoa cadastrou ANTES de ter conta sobem junto —
+      // é o mesmo passo do login normal, e sem ele quem montou o endereço no
+      // checkout e só depois criou a conta perderia o endereço da conta.
+      await synchronizeCustomerAddresses({ importLocal: true, notifyErrors: false });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      verifyCtx.senha = '';
+    }
   }
 
   function applyLocalCustomer(apiCustomer) {

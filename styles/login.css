@@ -9,7 +9,14 @@
   inset: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 270;
+  /* ACIMA DA PILHA DE PAGAMENTO. Era 270, e a tela de forma de
+     pagamento (#paymentMethodModal) e 280 — entao esta tela abria POR BAIXO
+     dela. Quem a chama a partir do checkout via a tela NAO MUDAR: o elemento
+     recebia a classe .active, com display:flex e opacity:1, e nenhum toque o
+     alcancava. A pilha de pagamento vai de 280 a 302 (#savedCardCvvModal);
+     a de conta fica logo acima, e abaixo do .vfy-alert-overlay (320), que
+     precisa continuar por cima desta. Ver docs/issues/acabamento-05-09-2026.md. */
+  z-index: 306;
   width: 100%;
   max-width: 414px;
   height: 100dvh;
@@ -214,4 +221,32 @@ label[for="loginPassword"].lgn-label { top: -11px; }
 #lgnSummary {
   margin-top: -6px;
   border-radius: 9px;
+}
+
+/* ==========================================================================
+   A FOLHA DE LOGIN TAMBÉM SOBE, e ela é a que o cliente vê primeiro.
+
+   `#loginModal` não tinha regra de z-index nenhuma: herdava o
+   `.overlay{z-index:200}` de restaurant.css. Como `#paymentMethodModal` é 280,
+   tocar em "Cadastrar novo cartão" sem sessão abria esta folha DEBAIXO da tela
+   de pagamento — e o cliente via a tela não mudar. Medido em 390x844, com o
+   botão "Entrar" em x=18 y=417 354x45:
+
+       document.elementFromPoint(centro do botão) -> DIV.payment-method-content
+
+   Ou seja: a folha desenhada, o DOM dizendo `active`, e nenhum toque a
+   alcançando. Uma asserção `toHaveClass(/active/)` PASSA nesse estado — classe
+   não é visibilidade quando há z-index no meio. Quem pega é `elementFromPoint`,
+   que é a única pergunta que o dedo do cliente faz.
+
+   305 fica acima de toda a pilha de pagamento (280 -> 302) e abaixo de
+   `.lgn-screen`/`.reg-screen` (306) e `.vfy-screen` (307), que abrem por cima
+   desta folha. Um seletor de ID vence o `.overlay` por especificidade, sem
+   depender da ordem entre folhas — que é o risco que o §5.1 avisa.
+
+   Guarda: tests/e2e/percurso-completo.spec.js, "a folha de login do cartão
+   abre por cima da tela de pagamento, e o toque a alcança".
+   ========================================================================== */
+#loginModal {
+  z-index: 305;
 }

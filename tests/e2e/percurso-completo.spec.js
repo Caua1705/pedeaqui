@@ -119,14 +119,9 @@ async function cadastrarPelaTela(page) {
   await expect(page.locator('#regPrivacy')).toBeChecked();
   await page.locator('#regSubmitBtn').click();
 
-  // CADASTRAR NAO LOGA, e o percurso so descobre isso aqui.
-  // `RegisterCustomerResponse` nao tem `access_token` — o contrato diz
-  // `customer_id, email, message, requires_email_verification` e mais nada. O
-  // que vem depois e a tela de seis digitos, e o proprio auth-flow escreve o
-  // desfecho: "Nao vem token: verificacao nao loga. A conta local do fluxo de
-  // cadastro e o que o cliente digitou". Ou seja, quem acaba de se cadastrar
-  // seque para o checkout com um cliente LOCAL, sem sessao — e e assim que ele
-  // pede. O `tracking_token` e a porta dele para o proprio pedido (§6).
+  // `RegisterCustomerResponse` nao traz `access_token` — o contrato e
+  // `customer_id, email, message, requires_email_verification` e mais nada.
+  // O que vem depois e a tela de seis digitos.
   await expect(page.locator('#verifyScreen')).toHaveClass(/active/);
 
   // ESPERAR O FOCO QUE O APP DA, em vez de tomar o foco por um clique:
@@ -138,6 +133,19 @@ async function cadastrarPelaTela(page) {
   await expect(page.locator('#vfySubmitBtn')).toBeEnabled();
   await page.locator('#vfySubmitBtn').click();
   await expect(page.locator('#verifyScreen')).not.toHaveClass(/active/);
+
+  // E AQUI A PESSOA ESTA LOGADA. `entrarAposCadastro()` pede a sessao com as
+  // credenciais que ela acabou de digitar, porque a rota de verificacao nao
+  // devolve token sem ticket do Google. Ate 05/09/2026 ela saia daqui com um
+  // cliente LOCAL, e o cartao — o unico caminho que exige conta — batia num
+  // pedido de login que o Pix nao fazia.
+  //
+  // O TOKEN e a assercao certa, nao o nome na tela: `applyLocalCustomer` grava
+  // o perfil sem sessao nenhuma, entao "aparece o nome" passava nos dois
+  // mundos. E o token que separa um do outro.
+  await expect.poll(() => page.evaluate(
+    () => !!localStorage.getItem('rapidex.customer.token')
+  ), { message: 'cadastrar tem de deixar a pessoa LOGADA, não só com perfil local' }).toBe(true);
 }
 
 /**
@@ -266,20 +274,14 @@ for (const conta of ['existente', 'nova']) {
 
       await escolherCartaoOnline(page);
 
-      if (conta === 'nova') {
-        // QUEM ACABOU DE SE CADASTRAR AINDA PRECISA ENTRAR — e so o CARTAO
-        // cobra isso. Com cliente LOCAL e sem token, tocar em "Cadastrar novo
-        // cartao" abre o `#loginModal`. A DECISAO esta certa (cartao salvo
-        // pertence a uma conta, e a cobranca no cartao exige Bearer do cliente
-        // — sem ele o backend responde 401 `login_required`).
-        //
-        // O QUE NAO ESTA CERTO E ONDE ESSA FOLHA ABRE, e o percurso para aqui
-        // de proposito: ver o teste `test.fail` logo abaixo. Pelo Pix o mesmo
-        // cliente recem-cadastrado paga sem entrar; o cartao e o unico caminho
-        // que exige a conta, e e justamente onde a folha nao aparece.
-        await expect(page.locator('#loginModal')).toHaveClass(/active/);
-        return;
-      }
+      // NAO HA DESVIO POR LOGIN AQUI, e ate 05/09/2026 havia.
+      //
+      // Cadastrar nao logava: quem acabava de criar a conta seguia com um
+      // cliente LOCAL, sem token. Pelo Pix pagava do mesmo jeito; pelo cartao
+      // batia num pedido de login — duas regras de conta em dois caminhos de
+      // pagamento. Hoje `entrarAposCadastro()` pede a sessao com as credenciais
+      // que a pessoa acabou de digitar, e as duas colunas desta tabela chegam
+      // ao cartao pelo MESMO caminho. Se o desvio voltar, este teste acusa.
 
       // SAO DUAS TELAS, nao uma. `.payment-add-card` abre o `#addCardTypeModal`
       // (credito ou debito) e so a escolha do TIPO leva ao formulario
@@ -300,46 +302,49 @@ for (const conta of ['existente', 'nova']) {
   }
 }
 
+
 // ────────────────────────────────────────────────────────────────────────────
-//  DEFEITO ABERTO, ACHADO POR ESTE PERCURSO EM 05/09/2026.
+//  A FOLHA DE LOGIN DO CARTAO ABRIA POR BAIXO DA TELA DE PAGAMENTO.
 //
-//  Quem acabou de se cadastrar (cliente LOCAL, sem token) toca em "Cadastrar
-//  novo cartao" e a TELA NAO MUDA. Nada. Sem toast, sem erro, sem navegacao —
-//  a foto da sonda mostra a mesma "Formas de pagamento" de antes do toque.
+//  O cliente tocava em "Cadastrar novo cartao" e A TELA NAO MUDAVA. Nada: sem
+//  toast, sem erro, sem navegacao — a foto depois do toque era identica a de
+//  antes. O app fazia a coisa certa e ela nao chegava a ele.
 //
-//  O app fez a coisa certa e ela nao chegou ao cliente: `#loginModal` RECEBE
-//  `active`, com `display:flex` e `opacity:1`. Ele so abre DEBAIXO da tela de
-//  pagamento. Medido em 390x844:
+//  Medido em 390x844, ANTES da correcao:
 //
-//      #paymentMethodModal   z-index 280   (por cima)
-//      #loginModal           z-index 200   (a folha que o app quis mostrar)
-//      #cartModal            z-index 200
+//      #paymentMethodModal   z-index 280      <- por cima
+//      #loginModal           z-index 200      <- a folha que o app quis mostrar
+//      botao "Entrar":  x=18 y=417 354x45     (meio da tela)
+//      document.elementFromPoint(centro) -> DIV.payment-method-content
 //
-//      botao "Entrar" da folha:      x=18 y=417 354x45  — meio da tela
-//      document.elementFromPoint(centro do botao)  ->  DIV.payment-method-content
+//  E nao era so a primeira folha: a pilha de conta INTEIRA ficava no nivel do
+//  pagamento ou abaixo — `.lgn-screen` e `.reg-screen` em 270, `.vfy-screen`
+//  em 280 (empate com o pagamento, decidido pela ordem no DOM). Hoje: 305 para
+//  a folha, 306 para os formularios, 307 para a verificacao, todos acima dos
+//  302 do topo da pilha de pagamento e abaixo dos 320 do `.vfy-alert-overlay`.
 //
-//  Ou seja: a folha esta desenhada, o DOM diz que esta ativa, e NENHUM toque a
-//  alcanca. E a familia da §12.14 (`[hidden]` perdendo para o CSS) com o sinal
-//  trocado — la o DOM dizia escondido e o olho via; aqui o DOM diz aberto e o
-//  olho nao ve.
+//  POR QUE ESTE TESTE NAO AFIRMA `toHaveClass(/active/)`:
+//  porque essa assercao PASSAVA com a folha embaixo. O `#loginModal` recebia
+//  `active`, com `display:flex` e `opacity:1` — classe nao e visibilidade
+//  quando ha z-index no meio, e nenhum portao pegou por isso. E a familia da
+//  §12.14 com o sinal trocado: la o DOM dizia escondido e o olho via; aqui o
+//  DOM dizia aberto e o olho nao via.
 //
-//  POR QUE NENHUM PORTAO PEGOU: a asserção natural é `toHaveClass(/active/)`, e
-//  ela PASSA. Classe nao e visibilidade quando ha z-index no meio. Quem pega e
-//  `elementFromPoint`, que e a unica pergunta que o dedo do cliente faz.
+//  As DUAS assercoes abaixo sao de propriedades diferentes, e as duas importam:
 //
-//  NAO FOI CONSERTADO NESTA RODADA por instrucao ("so LISTE nesta primeira
-//  passada"). O teste abaixo esta marcado `test.fail()`: ele afirma o
-//  comportamento CERTO e hoje falha de proposito. **No dia em que alguem
-//  corrigir a camada, ele fica VERMELHO dizendo "passou mas era esperado que
-//  falhasse" — e esse e o sinal para tirar o `test.fail()` daqui.**
+//   1. `elementFromPoint` — a unica pergunta que o dedo do cliente faz. Ela
+//      NOMEIA quem esta por cima quando falha, que e o diagnostico.
+//   2. o CLIQUE de verdade, seguido do efeito. Um clique interceptado faz o
+//      Playwright esperar ate o teto e dizer "subtree intercepts pointer
+//      events" — e o efeito (`#loginScreen` ativo) prova que o toque chegou ao
+//      destino, nao so que havia um alvo no ponto.
+//
+//  Vista vermelha com os quatro z-index revertidos: a (1) falha em ~1 s
+//  nomeando `DIV.payment-method-content`, e sem ela a (2) gastaria 30 s ate o
+//  teto do teste. Por isso a mais barata vem primeiro (§13.3: afirme o
+//  observavel antes do mecanismo, e o mais externo antes do mais interno).
 // ────────────────────────────────────────────────────────────────────────────
 test('a folha de login do cartão abre por cima da tela de pagamento, e o toque a alcança', async ({ page }) => {
-  // DENTRO do corpo, nunca no topo do arquivo. Um `test.fail()` solto no
-  // escopo do modulo marca TODOS os testes do arquivo como esperados-para-
-  // falhar: os oito percursos verdes viraram oito vermelhos dizendo
-  // "Expected to fail, but passed", e o unico vermelho de verdade sumiu no
-  // meio deles. Custou uma execucao.
-  test.fail();
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await seedOnlineCardBranch(page);
@@ -348,8 +353,11 @@ test('a folha de login do cartão abre por cima da tela de pagamento, e o toque 
     contentType: 'application/json',
     body: JSON.stringify({ provider: 'mercadopago', public_key: 'APP_USR-e2e-public-key', card_enabled: true })
   }));
-  // O estado EXATO de quem acabou de se cadastrar e verificar: perfil local,
-  // nenhum token. E o mesmo que `cadastrarPelaTela()` deixa.
+  // PERFIL LOCAL SEM TOKEN. Desde que cadastrar passou a logar, este estado
+  // deixou de ser a saida normal do cadastro — mas continua existindo: e o
+  // ramo de degradacao de `entrarAposCadastro()` (a conta foi criada, o
+  // e-mail verificado, e o login seguinte falhou), e e o de quem se cadastrou
+  // ANTES desta mudanca e voltou ao app com o perfil guardado.
   await page.addInitScript(({ slug, branchId }) => {
     localStorage.setItem('rapidex.customer.profile', JSON.stringify({
       name: 'Cliente Novo', phone: '85999998888', email: 'novo@exemplo.com'
@@ -364,20 +372,46 @@ test('a folha de login do cartão abre por cima da tela de pagamento, e o toque 
   await addH2OToCart(page, 3);
   await escolherCartaoOnline(page);
 
-  // A folha ABRE — isto ja passa hoje, e e o que torna o defeito invisivel.
   await expect(page.locator('#loginModal')).toHaveClass(/active/);
 
-  // E O TOQUE A ALCANCA — isto e o que falha. A pergunta e feita como o dedo a
-  // faz: quem esta no ponto onde o cliente encosta?
-  const alcancavel = await page.evaluate(() => {
-    const botao = document.querySelector('#loginModal .login-secondary');
-    if (!botao) return { erro: 'botao Entrar nao existe' };
+  const entrar = page.locator('#loginModal .login-secondary');
+
+  // ESPERAR A FOLHA ASSENTAR ANTES DE PERGUNTAR QUEM RECEBE O TOQUE.
+  //
+  // Ela entra deslizando, e `elementFromPoint` responde sobre um INSTANTE.
+  // Medido nesta tela: aos 200 ms o botão está em x=155 (a meio caminho), e
+  // antes disso o centro dele cai FORA da viewport — onde `elementFromPoint`
+  // devolve `null`, não o elemento de cima. A primeira versão deste teste caiu
+  // assim, com `quem recebe o toque: null`, e o defeito JÁ ESTAVA CORRIGIDO:
+  // eu estava medindo a animação, não a camada (§11, armadilha 1).
+  //
+  // A espera é por CONDIÇÃO — três quadros com o mesmo retângulo —, não por um
+  // prazo chutado: máquina lenta só aumenta o número de quadros, que é o lado
+  // seguro. É o mesmo `esperarAssentar` de pix-payment.spec.js.
+  await entrar.evaluate(elemento => new Promise(resolve => {
+    let anterior = '';
+    let iguais = 0;
+    const olhar = () => {
+      const r = elemento.getBoundingClientRect();
+      const agora = `${r.x}|${r.y}|${r.width}|${r.height}`;
+      iguais = agora === anterior ? iguais + 1 : 0;
+      anterior = agora;
+      if (iguais >= 3) return resolve();
+      requestAnimationFrame(olhar);
+    };
+    requestAnimationFrame(olhar);
+  }));
+
+  const noPonto = await entrar.evaluate(botao => {
     const r = botao.getBoundingClientRect();
-    const noPonto = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    const alvo = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
     return {
-      alcanca: noPonto === botao || botao.contains(noPonto),
-      quemRecebe: noPonto ? `${noPonto.tagName}.${noPonto.className}`.slice(0, 80) : null
+      alcanca: alvo === botao || botao.contains(alvo),
+      quemRecebe: alvo ? `${alvo.tagName}.${alvo.className}`.slice(0, 80) : null
     };
   });
-  expect(alcancavel.alcanca, `quem recebe o toque no botão "Entrar": ${alcancavel.quemRecebe}`).toBe(true);
+  expect(noPonto.alcanca, `quem recebe o toque no botão "Entrar": ${noPonto.quemRecebe}`).toBe(true);
+
+  await entrar.click();
+  await expect(page.locator('#loginScreen')).toHaveClass(/active/);
 });

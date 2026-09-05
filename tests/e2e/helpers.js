@@ -309,6 +309,9 @@ export async function mockApi(page, {
   const resetCodeRequests = [];
   const resetPasswordRequests = [];
   const verifyCodeRequests = [];
+  // As contas criadas por POST /auth/register NESTA execucao. O login as aceita
+  // dali em diante, como o backend aceita — ver o ramo de /auth/login.
+  const contasCadastradas = [];
   const googleRequests = [];
   const googleNonceRequests = [];
   const googleSignupRequests = [];
@@ -485,6 +488,27 @@ export async function mockApi(page, {
       if (/\/auth\/login(\?|$)/.test(url)) {
         loginRequests.push({ body: corpo });
         if (onLogin) return onLogin(route, request, loginRequests.length);
+        // UMA CONTA CADASTRADA NESTA EXECUÇÃO TAMBÉM ENTRA — e até 05/09/2026
+        // não entrava. O mock só conhecia AUTH_CONTA, então a conta que um
+        // spec acabava de criar por `POST /auth/register` levava 401 no login
+        // seguinte. O backend aceitaria: a conta EXISTE.
+        //
+        // Isso não era detalhe de dublê. Quando "cadastrar loga" foi
+        // construído, o mock reprovou o app CERTO — o token não vinha, e o
+        // vermelho apontava para o código de produção. É a §18.5 outra vez: a
+        // divergência mora no dublê e a acusação cai no lugar errado.
+        const cadastrada = contasCadastradas.find(conta => conta.email === corpo.login);
+        if (cadastrada) {
+          if (corpo.password !== cadastrada.password) {
+            return route.fulfill(json({ detail: 'Credenciais inválidas' }, 401));
+          }
+          return route.fulfill(json({
+            access_token: `token-${cadastrada.email}`,
+            token_type: 'bearer',
+            customer: { ...CUSTOMER, name: cadastrada.name, email: cadastrada.email, phone: cadastrada.phone },
+            requires_email_verification: false
+          }));
+        }
         if (corpo.login !== AUTH_CONTA.login && corpo.login !== AUTH_CONTA.telefone) {
           return route.fulfill(json({ detail: 'Credenciais inválidas' }, 401));
         }
@@ -500,6 +524,18 @@ export async function mockApi(page, {
       }
       if (/\/auth\/register(\?|$)/.test(url)) {
         registerRequests.push({ body: corpo });
+        // A conta passa a EXISTIR para o resto da execução (ver o login acima).
+        // A senha é guardada porque o backend a guarda: sem ela o mock não teria
+        // como recusar a senha errada, e um mock que só aceita é um teste que
+        // só concorda (§4).
+        if (corpo.email) {
+          contasCadastradas.push({
+            email: corpo.email,
+            password: corpo.password,
+            name: corpo.name || '',
+            phone: corpo.phone || ''
+          });
+        }
         if (onRegister) return onRegister(route, request, registerRequests.length);
         return route.fulfill(json({
           customer_id: CUSTOMER.id,

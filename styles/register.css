@@ -9,7 +9,14 @@
   inset: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 270;
+  /* ACIMA DA PILHA DE PAGAMENTO. Era 270, e a tela de forma de
+     pagamento (#paymentMethodModal) e 280 — entao esta tela abria POR BAIXO
+     dela. Quem a chama a partir do checkout via a tela NAO MUDAR: o elemento
+     recebia a classe .active, com display:flex e opacity:1, e nenhum toque o
+     alcancava. A pilha de pagamento vai de 280 a 302 (#savedCardCvvModal);
+     a de conta fica logo acima, e abaixo do .vfy-alert-overlay (320), que
+     precisa continuar por cima desta. Ver docs/issues/acabamento-05-09-2026.md. */
+  z-index: 306;
   width: 100%;
   max-width: 414px;
   height: 100dvh;

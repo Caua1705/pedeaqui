@@ -840,12 +840,12 @@
 </div>
 
 <!-- MODAL: PRODUTO -->
-<div class="overlay" id="productModal" data-act-click='["closeModal","$event","productModal"]'>
+<div class="overlay" id="productModal" data-act-click='["closeProductScreen","$event"]'>
   <div class="modal modal--product">
     <div class="product-hero" id="pmHero"></div>
     <div class="modal-header">
       <h2 class="modal-title">Detalhes</h2>
-      <button class="modal-close" data-act-click='["closeModalId","productModal"]'>✕</button>
+      <button class="modal-close" data-act-click='closeProductScreen'>✕</button>
     </div>
     <div class="modal-body">
       <h3 class="pm-name" id="pmName"></h3>

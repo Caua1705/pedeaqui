@@ -14,6 +14,10 @@
       "destination": "/entregador.html"
     },
     {
+      "source": "/:slug([a-z0-9]+(?:-[a-z0-9]+)*)/produto/:produto",
+      "destination": "/restaurant.html?slug=:slug&produto=:produto"
+    },
+    {
       "source": "/restaurantes/:slug",
       "destination": "/restaurant.html?slug=:slug"
     },

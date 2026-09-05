@@ -55,6 +55,23 @@ describe('as rotas reais da vercel.json', () => {
     expect(go('/restaurantes/fuji')).toBe('/restaurant.html?slug=fuji');
   });
 
+  it('/<slug>/produto/<id> abre a loja com o produto na query', () => {
+    // O ENDEREÇO DE UM PRATO. Até 05/09/2026 o app tinha uma url por LOJA:
+    // abrir um produto não mudava a barra, então quem quisesse mandar um prato
+    // para alguém mandava a home. Este rewrite é a metade que funciona para
+    // todo mundo — a outra (o cartão de compartilhamento com a foto) só chega
+    // a quem executa JS, porque o app é estático e o crawler não executa.
+    expect(go('/junior-da-picanha/produto/abc-123'))
+      .toBe('/restaurant.html?slug=junior-da-picanha&produto=abc-123');
+  });
+
+  it('a rota de produto NAO engole /<slug>/manifest.webmanifest', () => {
+    // As duas têm dois segmentos e a ordem no arquivo é o que as separa. Se
+    // alguém mover a de produto para cima da do manifest, o app instalado
+    // perde o manifest — e isso não aparece em nenhuma tela.
+    expect(go('/junior-da-picanha/manifest.webmanifest')).toBe('/manifest.webmanifest');
+  });
+
   it('a query original sobrevive ao rewrite', () => {
     expect(go('/fuji?utm_source=insta')).toBe('/restaurant.html?slug=fuji&utm_source=insta');
   });

@@ -17,6 +17,81 @@
   let editingCartItemUid = null;
   let productScrollIndicatorReady = false;
 
+  // ------------------------------------------------------------------------
+  //  ENDEREÇO E CARTÃO DE COMPARTILHAMENTO DO PRODUTO
+  //
+  //  Até aqui o app tinha UMA url por loja: abrir um produto não mudava o
+  //  endereço, e o cartão de compartilhamento continuava sendo a logo. Quem
+  //  quisesse mandar um prato para alguém mandava a home.
+  //
+  //  Duas metades, e as duas são necessárias — uma sem a outra é pior que
+  //  nenhuma. Só o cartão: a foto do prato abrindo a home. Só a url: um link
+  //  que abre o prato e se anuncia com a logo.
+  //
+  //  O QUE ISTO NÃO ALCANÇA, e está escrito também em `tenant-identity.js`: o
+  //  crawler do WhatsApp/Facebook/Telegram NÃO executa JavaScript, e este app é
+  //  servido estático (`vercel.json` não tem função nenhuma). O cartão escrito
+  //  aqui chega a quem EXECUTA — o navegador embutido do Instagram e do
+  //  WhatsApp ao ABRIR o link, o Web Share da aba, extensões. O preview do
+  //  crawler exige render no servidor, e isso é outra frente.
+  //
+  //  A URL, essa, funciona para todo mundo: `/{slug}/produto/{id}` é rewrite
+  //  na Vercel e o boot a lê.
+  // ------------------------------------------------------------------------
+
+  /** A url pública deste produto, ou '' quando não dá para montá-la. */
+  function productUrl(product) {
+    const slug = String(window.RapidexTenant?.resolveSlug?.() || '').trim();
+    const id = String(product?.id || '').trim();
+    if (!slug || !id) return '';
+    return `${window.location.origin}/${encodeURIComponent(slug)}/produto/${encodeURIComponent(id)}`;
+  }
+
+  /**
+   * Troca o endereço da barra SEM navegar, e escreve o cartão do produto.
+   *
+   * `replaceState` e não `pushState`: o "voltar" do aparelho tem de sair da
+   * loja, não desempilhar um modal. Um `pushState` por produto aberto encheria
+   * o histórico de estados que a tela nem sabe restaurar.
+   */
+  function marcarProdutoNaUrl(product) {
+    const url = productUrl(product);
+    if (!url) return;
+    try { window.history.replaceState(window.history.state, '', url); } catch { /* about:blank, iframe sem permissão */ }
+    window.RapidexTenantIdentity?.applyProductMeta?.({
+      name: product?.name,
+      description: product?.description,
+      price: product?.price,
+      imageUrl: product?.image_url || product?.image_path,
+      url,
+      storeName: app.restaurant?.name
+    });
+  }
+
+  /** Devolve a url e o cartão da LOJA. Chamado ao fechar o modal. */
+  function desmarcarProdutoDaUrl() {
+    const slug = String(window.RapidexTenant?.resolveSlug?.() || '').trim();
+    if (slug) {
+      try { window.history.replaceState(window.history.state, '', `${window.location.origin}/${encodeURIComponent(slug)}`); } catch { /* idem */ }
+    }
+    window.RapidexTenantIdentity?.restoreTenantMeta?.();
+  }
+
+  /**
+   * O fechar DESTA tela. Ele existe porque o modal precisa desfazer duas coisas
+   * que só ele fez — a url e o cartão —, e o `closeModal` genérico do app não
+   * pode saber disso.
+   *
+   * O `event` é opcional e reproduz a guarda do genérico: clique no fundo só
+   * fecha quando o alvo É o overlay, senão qualquer toque dentro do painel
+   * fecharia a tela.
+   */
+  function closeProductScreen(event) {
+    if (event && event.target && event.target.id !== 'productModal') return;
+    desmarcarProdutoDaUrl();
+    shell.closeModalId('productModal');
+  }
+
   const productOptionGroups = (product) => Array.isArray(product?.option_groups) ? product.option_groups : [];
   const optionGroupSelections = (group) => pmSelectedOptions[String(group.id)] || [];
   const optionAdditionalPrice = (option) => Number(option?.additional_price || 0);
@@ -69,6 +144,7 @@
     $('pmFooter').style.display = Number.isFinite(currentProd.price) ? 'flex' : 'none';
     renderProductOptions();
     updatePmUI();
+    marcarProdutoNaUrl(currentProd);
     shell.openModal('productModal');
     initProductScrollIndicator();
     const body = $('productModal')?.querySelector('.modal-body');
@@ -280,11 +356,12 @@
     ({ $, esc, fmt, act, initials, showEl, fallback } = ctx.kit);
     app = ctx.app;
     shell = ctx.shell;
-    for (const nome of ['addDraftToCart', 'productImage', 'readyCardImage', 'renderDetailImage', 'openModal', 'menuBranchId']) {
+    for (const nome of ['addDraftToCart', 'productImage', 'readyCardImage', 'renderDetailImage', 'openModal', 'closeModalId', 'menuBranchId']) {
       if (typeof shell[nome] !== 'function') throw new Error(`product-screen: shell.${nome} ausente`);
     }
     window.RapidexActions.register({
       openProduct,
+      closeProductScreen,
       toggleProductOption,
       changeQty,
       addToCart,

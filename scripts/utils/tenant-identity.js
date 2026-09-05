@@ -278,9 +278,15 @@
    * passar a ser renderizado no servidor, o dado a injetar já está decidido
    * aqui, num lugar só.
    */
+  // O último cartão da LOJA, para o produto poder devolvê-lo ao fechar. Sem
+  // isto o `restoreTenantMeta()` teria de refazer a busca dos dados da loja, e
+  // a fonte da verdade viraria duas.
+  let ultimoTenant = null;
+
   function applyTenantMeta({ name, description, logoUrl, primaryColor } = {}) {
     const restaurantName = String(name || '').trim();
     if (!restaurantName) return null;
+    ultimoTenant = { name, description, logoUrl, primaryColor };
 
     const title = document.title || restaurantName;
     const text = String(description || '').trim() || `Peça online no ${restaurantName}.`;
@@ -308,6 +314,69 @@
     return tags;
   }
 
+  /**
+   * O cartão de compartilhamento de UM PRODUTO.
+   *
+   * A LIMITAÇÃO É A MESMA DE `applyTenantMeta`, e ela é grande: o crawler do
+   * WhatsApp, do Facebook e do Telegram NÃO executa JavaScript. Este app é
+   * servido estático (nenhuma função serverless em `vercel.json`), então o que
+   * se escreve aqui não chega àqueles previews. Chega a quem EXECUTA: o
+   * navegador embutido do Instagram e do WhatsApp ao ABRIR o link, o Web Share
+   * da aba no Chrome, extensões e leitores.
+   *
+   * O QUE MUDA EM RELAÇÃO À LOJA:
+   * - `og:image` é a FOTO do produto, não a logo. É a razão desta função
+   *   existir: uma foto de comida é o que faz alguém tocar num link;
+   * - `twitter:card` vira `summary_large_image`. O `summary` da loja é o
+   *   quadrado pequeno, certo para uma logo e errado para uma fotografia;
+   * - `og:type` vira `product`;
+   * - `og:url` é a URL DO PRODUTO, e isso não é detalhe: um cartão que mostra
+   *   um prato e abre a home é pior que um cartão genérico.
+   *
+   * Sem foto NÃO se escreve nada e a função devolve `null` — o cartão da loja
+   * fica de pé. Um produto sem foto anunciado com a logo da loja seria a logo
+   * prometendo um prato, e a marca gerada com as iniciais seria pior ainda.
+   */
+  function applyProductMeta({ name, description, price, imageUrl, url, storeName } = {}) {
+    const productName = String(name || '').trim();
+    const image = remoteLogo(imageUrl);
+    if (!productName || !image) return null;
+
+    const loja = String(storeName || '').trim();
+    const title = loja ? `${productName} — ${loja}` : productName;
+    // O preço na descrição é o que diferencia este cartão de um genérico, e ele
+    // só entra quando existe: produto sem preço no contrato é produto
+    // indisponível, e inventar "R$ 0,00" seria anunciar de graça.
+    const preco = Number(price);
+    const linha = String(description || '').trim();
+    const text = [Number.isFinite(preco) && preco > 0 ? window.PedeAquiCurrency?.formatCurrency?.(preco) : '', linha]
+      .filter(Boolean).join(' · ') || `Peça no ${loja || 'app'}.`;
+
+    const tags = {
+      'og:type': 'product',
+      'og:site_name': loja || productName,
+      'og:title': title,
+      'og:description': text,
+      'og:image': image,
+      'og:url': url || window.location.href,
+      'twitter:card': 'summary_large_image',
+      'twitter:title': title,
+      'twitter:description': text,
+      'twitter:image': image
+    };
+    for (const [key, value] of Object.entries(tags)) {
+      const attribute = key.startsWith('og:') ? 'property' : 'name';
+      ownedTag('meta', `meta[${attribute}="${key}"]`, { [attribute]: key, content: value });
+    }
+    ownedTag('meta', 'meta[name="description"]', { name: 'description', content: text });
+    return tags;
+  }
+
+  /** Devolve o cartão da LOJA. Sem tenant aplicado ainda, não faz nada. */
+  function restoreTenantMeta() {
+    return ultimoTenant ? applyTenantMeta(ultimoTenant) : null;
+  }
+
   window.RapidexTenantIdentity = {
     MARK_SIZE,
     APPLE_TOUCH_SIZE,
@@ -318,6 +387,8 @@
     remoteLogo,
     tenantIcons,
     applyTenantIcons,
-    applyTenantMeta
+    applyTenantMeta,
+    applyProductMeta,
+    restoreTenantMeta
   };
 })();

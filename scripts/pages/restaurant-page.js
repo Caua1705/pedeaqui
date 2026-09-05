@@ -5879,6 +5879,18 @@
     showHomeTab();
     requestDeliveryEstimate();
     loadCashbackForHome();
+    // O LINK DE PRODUTO, aberto no fim do boot e não antes.
+    //
+    // `/{slug}/produto/{id}` é rewrite na Vercel para `?produto=<id>`. Ele só
+    // pode ser honrado AQUI: `openProduct()` procura o id em `products`, que
+    // só existe depois do `/menu` — e depois de `ensureMenuMatchesSelectedBranch()`,
+    // porque ids não se repetem entre filiais e um link aberto contra o
+    // cardápio errado cairia no aviso de "fora do cardápio desta unidade".
+    //
+    // Falha em silêncio de propósito quando o id não existe: quem chegou por
+    // um link velho vê a loja, que é o destino certo — e `openProduct()` já
+    // avisa por toast quando o item não está nesta unidade.
+    abrirProdutoDoLink();
     appState.homeLoaded = true;
     appState.menuLoaded = false;
     restaurantStore()?.set?.({ homeLoaded: true, menuLoaded: false });
@@ -5890,6 +5902,28 @@
     syncCustomerSession();
     })();
     return bootPromise;
+  }
+
+  /**
+   * Lê `?produto=<id>` e abre aquele produto. Devolve o id lido, ou ''.
+   *
+   * O parâmetro é APAGADO da barra antes de abrir, e não é enfeite: quem abre
+   * o produto reescreve a url para `/{slug}/produto/{id}` de qualquer jeito
+   * (marcarProdutoNaUrl), e deixar o `?produto=` para trás deixaria a loja com
+   * duas grafias do mesmo endereço — a bonita e a de rewrite — competindo em
+   * histórico, compartilhamento e cache.
+   */
+  function abrirProdutoDoLink() {
+    const id = (() => {
+      try { return String(new URLSearchParams(window.location.search).get('produto') || '').trim(); } catch { return ''; }
+    })();
+    if (!id) return '';
+    const slug = getRestaurantSlug();
+    if (slug) {
+      try { window.history.replaceState(window.history.state, '', `${window.location.origin}/${encodeURIComponent(slug)}`); } catch { /* idem */ }
+    }
+    window.RapidexActions.resolve('openProduct')?.(id);
+    return id;
   }
 
   function retryRestaurantBoot() {
@@ -6113,6 +6147,7 @@
     app: window.PedeAquiAppPort,
     shell: {
       addDraftToCart,
+      closeModalId,
       productImage,
       readyCardImage,
       renderDetailImage,

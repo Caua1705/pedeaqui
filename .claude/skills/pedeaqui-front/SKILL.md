@@ -239,6 +239,41 @@ cupom, forma de pagamento) — valores nem existem no schema.
   reais em `Number` erra na 15ª casa). Ele avisa, não bloqueia; e a comparação
   é amarrada ao **id do pedido**, senão vaza para o pedido seguinte.
 
+### 3.1.1 A Idempotency-Key MORRE, e repeti-la é um laço fechado (05/09/2026)
+
+`POST /orders` responde **422 com `detail` STRING** quando a chave já foi usada
+com outro corpo. Não é dado inválido, e tratá-lo como dado inválido produzia os
+dois piores desfechos ao mesmo tempo:
+
+1. o `catch` do `submitOrder` **preserva a chave** de propósito (uma retentativa
+   tem de ser reconhecida como a mesma tentativa). Com a chave preservada,
+   tocar de novo mandava a MESMA chave e recebia o MESMO 422: o cliente não
+   pedia nunca;
+2. quem escapasse recarregando a página escaparia com chave NOVA — criando um
+   SEGUNDO pedido, que é exatamente o que a chave existe para impedir.
+
+**Quando isso acontece:** o fingerprint do servidor sai de `model_dump()` do
+corpo inteiro, então **campo novo em `CreateOrderRequest` muda o hash de TODO
+corpo**. `use_cashback` foi o caso, e o preço são 24h de 422 para chave
+reservada antes do deploy e retentada depois (armadilha 37 do backend).
+
+**O que o 422 diz sobre o pedido**, e é o que decide a frase na tela: a reserva
+da chave vive na MESMA transação do INSERT (`idempotency_repository.reserve` não
+commita sozinho), então um erro adiante a solta junto com o rollback. **Linha
+que sobreviveu = pedido que COMMITOU.** Quem recebe este 422 quase certamente já
+tem o pedido gravado e só não viu a resposta. Por isso a chave é rotacionada mas
+**não há retentativa automática** — reenviar sozinho duplicaria o pedido de
+alguém.
+
+**Como se reconhece, e por que não pelo texto:** o 422 de validação do FastAPI
+traz `detail` como ARRAY de `{loc,msg,type}`; este traz uma STRING. Conferido no
+spec — em `POST /restaurants/{slug}/orders` é a única fonte de 422 com detail
+string. Casar a prosa quebraria no dia em que alguém corrigir um acento.
+
+De brinde: até essa data o cliente lia, em cima do botão de pagar, a frase crua
+`"Idempotency-Key já utilizada com um corpo diferente. Gere uma nova chave..."`.
+É a §14.5 com o agravante de mandar o CLIENTE gerar uma chave.
+
 ### 3.2 Contrato é lido, não lembrado
 
 `api.d.ts` e `openapi.json` são gerados por `npm run api:generate` e conferidos
@@ -2421,16 +2456,34 @@ igual**, e ali ela é mais traiçoeira, porque o vermelho aponta para o código 
 produção. `node tools/falsy-do-contrato.mjs` varre `scripts/` — `tests/` não
 está no corpus dele.
 
-### 18.6 A CSP PRECISOU DE TRÊS DIRETIVAS, NÃO UMA
+### 18.6 A CSP PRECISOU DE QUATRO DIRETIVAS — e a quarta só apareceu em PRODUÇÃO
 
 `accounts.google.com` entrou em `script-src` (o `gsi/client`), **`frame-src`** (o
 botão é um iframe) e **`connect-src`** (o SDK fala com o próprio host). Só o
 `script-src` faria o script carregar e o botão não aparecer, sem uma linha de
 erro nossa — a classe de bug do commit 63ffa5a, agora pelo Google.
 
-O unitário afirma as três contra o `vercel.json`, lendo a URL do próprio
-serviço: um host novo no código sem o par no header vira tela que funciona em
-teste e é bloqueada em produção.
+**ERAM QUATRO, e esta seção dizia três até 05/09/2026.** A quarta é
+**`style-src`**: o `gsi/client` injeta
+`<link rel="stylesheet" href="https://accounts.google.com/gsi/style">`, e ele
+era recusado em TODA abertura da tela de login, desde que o login social subiu.
+
+Por que passou pelas outras três: elas foram escolhidas olhando para UMA
+pergunta — *"o botão apareceu?"* — e este bloqueio não muda essa resposta,
+porque o botão é um iframe e leva o estilo dele dentro. **Uma diretiva que o
+navegador recusa em silêncio a cada visita não está de pé só porque o pixel não
+mudou.**
+
+E o achado não veio de teste nenhum daqui: veio de abrir a produção com o
+console à vista. O unitário passou a exigir as quatro; escrevê-lo antes exigiria
+adivinhar a quarta, e o que se adivinha é justamente o que se esquece.
+
+Da mesma varredura, e **não é nosso**:
+`static.cloudflareinsights.com/beacon.min.js` também é bloqueado por
+`script-src` em toda visita — o beacon do proxy do domínio, que nenhum código
+nosso pede. Efeito: o Web Analytics não coleta nada. Liberar `script-src` para
+analytics de terceiro é decisão de quem cuida do domínio, não consequência de
+um commit de front.
 
 ## 19. Conectar o Google pelo Perfil (04/09/2026) — e o bloqueio que não existia
 
@@ -2688,10 +2741,25 @@ Não era hipótese: com a limpeza removida, o e2e lê
 `openProfSub('meusdados')` fecha a de contas conectadas ao entrar — **entrar numa
 subtela mostra a lista de opções, sempre**.
 
-**`#profPasswordScreen` tem o mesmo buraco e NÃO foi tocado**, de propósito: é de
-outro módulo (`customer-data-screen.js`) e mexer nele sem teste é trocar um
-defeito conhecido por um desconhecido. Fica nomeado aqui, que é o que se faz com
-o que se acha e não se conserta.
+**FECHADO EM 05/09/2026, e o escape contava MENOS do que havia.** Ele estava
+escrito como uma tela (`#profPasswordScreen`); a sonda achou **duas** — o
+`#profDataScreen` vaza junto com o `.prof-data-backdrop` dele. E elas
+**ACUMULAM**: abrindo "Meus dados" e depois "Alterar senha", cada uma com um
+sair-e-voltar, as duas voltam ativas, uma por cima da outra. O escape dizia
+"volta direto nela"; o que acontece é uma pilha. É a §12.1 pela enésima vez —
+a família é maior que o sítio, inclusive quando o sítio já está escrito.
+
+Duas decisões da correção, e as duas valem para a próxima sobreposição:
+
+1. **Cada uma fecha pela porta DELA**, e não por uma varredura de `.active` em
+   `openProfSub`. `closeCustomerPasswordScreen` recusa fechar no meio de um
+   envio, e as outras devolvem o foco — uma varredura genérica pularia as duas
+   coisas.
+2. **O TESTE é que é genérico**, ao contrário do código. Ele varre por FORMA
+   (`#profSubmeusdados > section`), não por nome, com sonda contra vacuidade
+   (≥ 4 sobreposições, senão o seletor mudou e a varredura passaria por vazio).
+   A quinta sobreposição que alguém acrescentar entra sozinha.
+   `tests/e2e/profile-overlay-reset.spec.js`.
 
 ### 21.4 A REGRA QUE SERVIA PARA UM ITEM NÃO É A QUE SERVE PARA DOIS
 

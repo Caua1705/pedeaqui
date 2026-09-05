@@ -5,7 +5,9 @@ a padrão do Playwright é 1280 e esconde metade do CSS — §14.2). As 63 telas
 roteiro de `capture-screens.mjs` foram **fotografadas** e olhadas uma a uma, e o
 que não deu para ver com o olho foi medido por sonda.
 
-**Nada foi consertado** — esta passada é lista, por instrução.
+A primeira passada foi só LISTA, por instrução. Os seis achados foram
+**consertados em seguida**, na ordem escolhida pelo dono (A, C, B, D, E, F) —
+cada um com o teste visto vermelho antes.
 
 ---
 
@@ -46,9 +48,101 @@ plano ou tirar o teto de gasto. Enquanto isso, as duas falhas de
 `image-framing.spec.js` na suíte são consequência, não regressão — são os dois
 únicos testes que pedem bytes de verdade.
 
+### O alcance, medido — é COTA, não configuração
+
+Três perguntas, três medidas.
+
+**1. Quantas URLs o app pede numa visita de cardápio, e quantas transformam?**
+
+Sonda numa visita típica (abrir o cardápio e rolar até o fim, soltando o
+lazy-load), com o Storage respondendo 402 como responde agora:
+
+| | |
+|---|---|
+| requisições ao Storage | **76** |
+| URLs **distintas** | **72** |
+| passando por transformação (`/render/image/`) | **61** (85%) |
+| pedindo o original (`/object/public/`) | **11** |
+
+Exemplo do que é pedido:
+`.../render/image/public/.../brand/logo.webp?width=45&resize=contain&quality=72`.
+
+Ou seja: a esmagadora maioria já pede a largura da caixa, que é o que os commits
+`2ff2d85` e `230ea3f` construíram para conter o egress. **A contenção está no
+lugar; a cota é que já tinha estourado antes dela.** Não é configuração errada —
+`exceed_cached_egress_quota` é o plano, e o próprio corpo da resposta diz o
+remédio ("upgrade their plan or remove spend caps").
+
+**2. A suíte ainda bate no bucket de produção?**
+
+O laço foi fechado em `230ea3f` e **não voltou**. Conferido nos quatro lugares
+onde poderia ter escapado:
+
+- **todo** spec chama `mockApi()` — zero exceções (`for f in tests/e2e/*.spec.js`);
+- o dublê é `page.route('**/*.supabase.co/**')`, que casa original E derivada;
+- só **`image-framing.spec.js`** pede bytes reais (`imagensReais: true`), e é a
+  exceção documentada — é o único guarda contra o `resize` achatado, e com o
+  pixel dublê ele passaria verde sem ter medido nada;
+- as **quatro ferramentas** que abrem browser (`capture-screens`, `css-usage`,
+  `css-important`, `ui-inventory`) passam todas por `prepararTela()`, que chama
+  `mockApi()` com o dublê ligado.
+
+`coupon-detail-image`, `image-retreat` e `image-sizes` registram rotas próprias
+de Supabase — e vencem por serem registradas depois, então também não escapam.
+
+**3. O recuo tem um segundo nível?**
+
+Tem — e ele **quase não chega**. Medido com o Storage em 402:
+
+| | |
+|---|---|
+| `<img>` de Supabase no DOM | 140 |
+| quebradas (`complete && naturalWidth === 0`) | **54** |
+| placeholders de produto que apareceram | **5** |
+
+O que o cliente vê no cardápio é o **ícone de imagem quebrada do navegador com
+o `alt` cru ao lado** ("🖼 Picanha black angus"), em cada prato — não as
+iniciais.
+
+A causa é que o cardápio tem uma **cópia própria** do recuo
+(`restaurant-page.js:593`, `handleError`) em vez de chamar
+`RapidexImageCdn.retreat()`. E essa cópia faz `img.src = originalSrc` **sem
+remover o `src` antes** — que é exatamente o que a §23.2 mediu como *não
+recarregando*: o elemento fica `complete: true` com `naturalWidth: 0`, e o
+`error` seguinte (o que chamaria `replaceFailedProductImage`) não vem.
+
+Os LOGOS, que chamam o dono único, degradam certo: caem para as iniciais.
+
+**Portanto o conserto que a instrução pedia existe pela metade**: não falta um
+placeholder — falta o cardápio usar o recuo do dono único para chegar até ele.
+Não foi feito nesta rodada (não estava na lista ordenada); é o candidato G.
+
 ---
 
 ## Os seis achados, com tamanho
+
+**TODOS OS SEIS FORAM CONSERTADOS em 05/09/2026**, na ordem pedida (A, C, B, D,
+E, F). O que segue é o registro do que cada um era.
+
+A prova de que nada MAIS mudou é uma captura das 63 telas nos dois lados. Toda
+diferença é um conserto, e cada conserto tem uma assinatura própria:
+
+| mudança | quantas | qual |
+|---|---|---|
+| `zIndex` na pilha de conta (login, cadastro, verificação, recuperação) | 337 | **A** |
+| `width` do rótulo de telefone, 194,9px -> 92,5px | 7 | **D** |
+| `width` da caixa do loader (60 -> 280px) e do título/mensagem/botão | 7 | **B** |
+| `backgroundColor` `rgb(197,32,32)` -> `rgb(217,92,4)` | 1 | **E** |
+| `width` do `pixCountdownBar`, ±0,04px | 2 | ruído: a barra anima (§5.1-8) |
+
+Nenhuma outra propriedade, em nenhum outro elemento. É o uso da ferramenta que a
+§20.3 registra: ela não serve só para provar "nada mudou" — serve para provar
+"mudou exatamente isto", que é a afirmação que se faz quando a mudança é
+deliberada.
+
+O **C** não aparece nessa lista de propósito: a captura lê estilo computado, não
+texto. Ele foi conferido por foto — `undefined, 450 - Aldeota` virou
+`Rua Silva Paulet, 450 - Aldeota` — e por unitário visto vermelho.
 
 | # | o que | quem vê | tamanho |
 |---|---|---|---|

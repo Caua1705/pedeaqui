@@ -203,6 +203,28 @@ test('o rodapé traz a ação principal no padrão dos CTAs e na cor da marca', 
   // ficou com 989,19 px); o POR QUE ele ficou continua aberto. Se o vermelho
   // voltar, a largura é o que se procura.
   //
+  // 05/09/2026 — DUAS HIPÓTESES NOVAS, AS DUAS REPROVADAS. Ficam escritas
+  // porque hipótese reprovada é o que impede a próxima pessoa de gastar a
+  // mesma tarde (§12.3):
+  //
+  //   1. "A FOLHA NÃO TINHA APLICADO AINDA." É a família da §17.10, e neste
+  //      repositório ela é real. Aqui NÃO se sustenta: `.overlay{display:flex}`
+  //      e `#pixPaymentModal .modal{max-width:414px}` estão no MESMO arquivo do
+  //      bundle (`dist/assets/restaurant-*.css`, 485 kB). Não há janela em que
+  //      uma valha e a outra não — elas chegam juntas ou não chegam.
+  //
+  //   2. "O PAINEL MEDIU PELO CONTEÚDO." O `.modal` é flex item, então sem
+  //      `width`/`max-width` ele encolheria para o conteúdo — e o conteúdo tem
+  //      o código Pix, que é longo. Medido: com `max-width:none;width:auto` o
+  //      painel dá **414** (o conteúdo mede isso); com só `max-width:none`,
+  //      mantendo `width:100%`, dá **1280**, ou seja offset 453 — o número que
+  //      a §11 já conhecia. Nenhum dos dois é 989,19.
+  //
+  // E NÃO REPRODUZIU DE NOVO: 6 execuções isoladas a 4 workers e mais 207 numa
+  // corrida de 5 arquivos com `--repeat-each=3` a 4 workers (2 testes acima de
+  // 10 s, ou seja execução limpa pela régua da §11). Com as 20 de 02/09, são
+  // 233 execuções sem uma recorrência desde que a instrumentação entrou.
+  //
   // Por isso este teste NÃO foi para quarentena: ele passou 20 de 20 isoladas
   // sob contenção de 4 workers (durações de 7 a 17 s, ou seja com a máquina de
   // fato ocupada) e duas suítes completas. Quarentena aqui trocaria uma dúvida

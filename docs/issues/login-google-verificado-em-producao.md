@@ -26,8 +26,27 @@ injeta essa folha para o botão, e o navegador a negava em silêncio.
 
 Passou pelas três diretivas da skill §18.6 porque elas foram escolhidas
 olhando para *"o botão apareceu?"*, e este bloqueio não muda essa resposta: o
-botão é um iframe e leva o estilo dele dentro. Corrigido, e o
-`google-identity.test.js` passou a exigir a quarta diretiva.
+botão é um iframe e leva o estilo dele dentro.
+
+**"Corrigido" aqui era falso, e ficou falso por um dia inteiro — 06/09/2026.**
+A diretiva entrou na `vercel.json`, o `google-identity.test.js` passou a
+exigi-la, o `npm test` ficou verde e esta linha foi escrita. **A produção
+continuou servindo o header antigo**, recusando o `gsi/style` em toda visita,
+porque o commit nunca tinha sido empurrado — a `main` local estava 22 commits à
+frente da `origin/main`, e a `main` não publica sozinha (`deploy-gate.test.js`:
+quem publica é o CI).
+
+Nenhum teste daqui podia ter pego: **todos leem a `vercel.json` do disco, e o
+arquivo do disco não é o header que o navegador recebe.** Entre um e outro há um
+push, um CI, um `vercel deploy` e um alias de domínio. Quem fecha esse vão agora
+é `tools/csp-em-producao.mjs`, chamado pelo `ci.yml` **depois** de publicar
+(`npm run csp:prod` para rodar à mão) — ele pede o header à produção e compara
+diretiva por diretiva. Escrever "corrigido" a partir de um teste verde continua
+sendo o erro; a prova é o header servido.
+
+**E o que a correção NÃO promete:** este bloqueio é silencioso — o botão
+renderiza mesmo com ele. Se a trava na tela de escolha de conta persistir depois
+do deploy, ela é outro defeito, e a correção do `style-src` não é candidata.
 
 Registrado e **não** corrigido, porque não é nosso:
 `static.cloudflareinsights.com/beacon.min.js` também é bloqueado por

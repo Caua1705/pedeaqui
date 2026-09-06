@@ -275,3 +275,23 @@ jobs:
           cat .vercel/project.json
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
           npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      # O DEPLOY SO ESTA FEITO QUANDO O HEADER MUDA — 06/09/2026.
+      #
+      # Em 05/09 a correcao do `style-src` (o `gsi/style` do botao do Google era
+      # recusado em TODA visita) entrou na vercel.json, o unitario passou a
+      # exigi-la e o documento escreveu "Corrigido". A producao serviu o header
+      # ANTIGO por um dia: o commit nunca foi empurrado, e nenhum teste daqui
+      # podia ter visto, porque todos leem o ARQUIVO e o arquivo nao e o que o
+      # navegador recebe.
+      #
+      # Este passo pede o header a producao DEPOIS de publicar e compara com a
+      # vercel.json deste commit, diretiva por diretiva. Ele nao pode subir para
+      # o `verify`: la ele leria o deploy ANTERIOR, toda mudanca de CSP
+      # reprovaria antes de publicar e a correcao nunca chegaria ao ar.
+      #
+      # O `--esperar` e para o alias do dominio propagar, nao para "tentar de
+      # novo ate dar certo": esgotado o prazo, o passo FALHA com o header
+      # servido no log.
+      - name: Conferir a CSP no header SERVIDO pela producao
+        run: node tools/csp-em-producao.mjs --esperar 180

@@ -1029,7 +1029,8 @@ export function trackedOrder(overrides = {}) {
  *
  * E O ESTOURO TAMBÉM DIZ ALGO. Duas vezes em quatro execuções completas de
  * 03/09/2026 um teste qualquer estourou os 30 s AQUI, em specs diferentes
- * (assistant-voice e auth-screen-nav), com o resto da rodada rápido e os dois
+ * (assistant-voice — spec que saiu junto com o modo voz em 06/09/2026 — e
+ * auth-screen-nav), com o resto da rodada rápido e os dois
  * verdes isolados. Não reproduzido, não explicado — e o que a suíte dizia era
  * só "Test timeout of 30000ms exceeded" apontando para esta linha, que é a
  * mesma frase para "o app não subiu", "a rede pendurou" e "a máquina parou".

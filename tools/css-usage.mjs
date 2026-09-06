@@ -29,7 +29,8 @@
 //
 //  1. Classe montada em pedacos. `classList.toggle('is-' + name)` e
 //     `assistant-mark--' + size` nao aparecem inteiras em lugar nenhum. Um scan
-//     ingenuo declara `.is-listening` morta e apaga a tela de voz. Por isso os
+//     ingenuo declarava `.is-listening` morta e apagava a tela de voz (que saiu
+//     do produto em 06/09/2026; a armadilha nao saiu). Por isso os
 //     prefixos dinamicos entram numa lista, e tudo que casa com eles sai da
 //     conta como NAO PROVADO — nunca como morto.
 //  2. Classe que so o CSS usa. Uma classe aparece no CSS por definicao; se o

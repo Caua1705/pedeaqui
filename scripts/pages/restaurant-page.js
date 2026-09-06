@@ -3985,9 +3985,10 @@
   }
 
   /* ── A filial escolhida, para quem está fora deste arquivo ──
-     Desde 20/08/2026 o cardápio é da FILIAL, e `/chat`, `/voice/session` e
-     `/voice/search` exigem `branch_id` (backend `docs/cardapio-por-filial.md`,
-     §3.5). O assistente mora em outro arquivo e precisa mandar a MESMA filial
+     Desde 20/08/2026 o cardápio é da FILIAL, e `/chat` exige `branch_id`
+     (backend `docs/cardapio-por-filial.md`, §3.5 — as duas rotas de voz que
+     exigiam o mesmo campo saíram com o modo voz, em 06/09/2026).
+     O assistente mora em outro arquivo e precisa mandar a MESMA filial
      que monta o cardápio, o carrinho e o pedido — não uma cópia dela.
 
      Só leitura, e SEM queda para `branches[0]`: um default aqui devolveria o
@@ -5079,7 +5080,7 @@
     // Estáveis.
     $, apiErrorMessage, appState, closeCouponDetail, closeModalId, closeProfSub,
     clubController, currentScrollY, esc, fallback, loadCashbackForHome, lockBodyScroll,
-    mobNavAssistant, mobNavClub, onTeardown, onlyDigits, openModal,
+    mobNavClub, onTeardown, onlyDigits, openModal,
     openModalImmediately, persistCustomer, renderHomeLoginPrompt, renderProfileView, renderSharedCashbackState, requestDeliveryEstimate,
     setBottomNavSuppressedForAuth, showHomeTab, syncAuthScreenOpenClass, syncCartLocationState, synchronizeCustomerAddresses, unlockBodyScrollIfClear,
     updateCartUI

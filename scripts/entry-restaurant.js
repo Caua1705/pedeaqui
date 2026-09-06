@@ -113,10 +113,6 @@ import './stores/cart-store.js';
 import './pages/restaurant-ui.js';
 import './pages/restaurant-club.js';
 import './pages/restaurant-assistant.js';
-// Depende da ponte publicada por restaurant-assistant.js (RapidexAssistantChat).
-import './pages/restaurant-assistant-voice.js';
-// O transporte se registra na tela por setDriver(), então vem DEPOIS dela.
-import './pages/restaurant-assistant-voice-session.js';
 // Fluxo de endereco (escolha, lista, Google Maps, formulario). Veio de dentro do
 // restaurant-page.js. Precisa carregar ANTES dele: e quem publica
 // window.PedeAquiAddressFlow, que o restaurant-page consome no proprio corpo do

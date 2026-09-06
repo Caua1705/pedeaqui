@@ -21,8 +21,9 @@ const regra = (seletor) => {
 
 // A marca do assistente era um balão de conversa com uma CLOCHE dentro. Em
 // 54px, um domo com a linha embaixo e dois riscos de vapor em cima lia como
-// SINO — notificação, não assistente. Virou a esfera do modo voz, na medida da
-// marca. Estes testes guardam as três coisas que a troca não pode perder: a cor
+// SINO — notificação, não assistente. Virou uma esfera, que era também a do
+// modo voz até ele sair do produto em 06/09/2026 — hoje é a única esfera do
+// app. Estes testes guardam as três coisas que a troca não pode perder: a cor
 // é do lojista, o ritmo diz o estado, e quem pediu movimento reduzido não vê
 // movimento nenhum.
 describe('marca conversacional white-label', () => {

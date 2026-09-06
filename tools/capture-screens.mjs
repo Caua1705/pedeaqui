@@ -1031,23 +1031,11 @@ export const SCREENS = [
       await page.waitForTimeout(700);
     }
   },
-  {
-    // O modo voz e faturado por minuto, entao o transporte e trocado pelo
-    // mesmo `setDriver` que os E2E usam: a tela abre, o microfone nao.
-    name: 'assistente-voz',
-    setup: logado,
-    async go(page) {
-      await boot(page);
-      await page.evaluate(() => window.RapidexAssistantVoice.setDriver({
-        start: () => {}, stop: () => {}, setMuted: () => {}
-      }));
-      await act(page, 'mobNavAssistant');
-      await esperar(page, '#assistantStarter.is-ready');
-      await page.locator('#mobViewAssistant .assistant-ai-send').click();
-      await esperar(page, '#assistantVoice.is-open');
-      await page.waitForTimeout(900);
-    }
-  },
+  // Havia aqui uma tela `assistente-voz`. O modo voz era faturado por minuto,
+  // entao o transporte era trocado pelo mesmo `setDriver` dos E2E: a tela
+  // abria, o microfone nao. Ele saiu do produto em 06/09/2026 e a tela foi
+  // junto — sem ela a captura pararia em `window.RapidexAssistantVoice` nulo,
+  // que e como esta ferramenta acusa uma tela que deixou de existir.
 
   // --- A tela de erro do boot. Ela tem folha propria (`body.app-error`) e
   //     nunca foi aberta por medida nenhuma: a captura so sabia subir o app.

@@ -181,7 +181,7 @@ unitários — nenhum deles executa o bundle.
    move dentro do mesmo arquivo — senão o módulo do Pix viraria dono do toast de
    tudo.
 
-**A prova de cada corte** é `node tools/capture-screens.mjs`: 58 telas, 69
+**A prova de cada corte** é `node tools/capture-screens.mjs`: 62 telas, 69
 propriedades computadas de todos os ~1.500 elementos, antes e depois. Foi ela que
 pegou a armadilha 1 — e só porque ela **lança** quando uma tela não abre, em vez
 de registrar vazio.
@@ -190,6 +190,7 @@ Eram 14 telas até 30/08/2026, e por isso 1.628 declarações `!important` e 229
 cores nunca tinham produzido evidência nenhuma: o Pix, o cartão, o Clube com
 cupom desenhado, o extrato, a política, as subpáginas do perfil, o chat
 respondido, o modo voz, as duas telas de erro e a landing estavam TODOS fora.
+(A tela do modo voz saiu da ferramenta em 06/09/2026, junto com o modo voz.)
 Cada tela declara um `setup(page)` opcional (token, rota sobreposta, outro
 contexto de operação), e as quatro ferramentas que abrem telas chamam o mesmo
 `prepararTela()` — repetir o preparo em cada laço vira divergência assim que
@@ -654,7 +655,7 @@ e o nome dos arquivos mente. Medido em 30/08/2026, e escrito no cabeçalho de
 | Este `!important` vence alguém? | `tools/css-important.mjs` | Adversário = outra regra declarando a mesma **família** de propriedade no mesmo elemento. Runtime + um **veto estático** grosseiro por token. |
 | Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
 | Este `var(--x)` tem dono? | `tools/tokens-fantasma.mjs` | Cruza todo `var(--x)` com quem DEFINE `--x` (folha, HTML e as chaves de `applyBrandTheme`). Token sem dono cai no fallback em silêncio — §20. Nome montado em runtime sai do veredito. |
-| Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **58 telas**, antes e depois. |
+| Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **62 telas**, antes e depois. |
 
 ### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 69 propriedades, nao todas
 

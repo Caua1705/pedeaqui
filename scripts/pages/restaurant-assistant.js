@@ -68,10 +68,13 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
    * e dois risquinhos de vapor em cima le como SINO. Sino e notificacao, nao
    * assistente — o cliente lia "voce tem um aviso" onde devia ler "fale comigo".
    *
-   * A esfera e a convencao que ele ja conhece de outros assistentes de voz, e e
-   * o MESMO objeto do modo voz desta tela (.assistant-voice-orb): quem toca no
-   * microfone ve a marca virar a esfera grande, em vez de trocar de simbolo no
-   * meio do caminho.
+   * A esfera e a convencao que ele ja conhece de outros assistentes.
+   *
+   * Ela tinha um segundo motivo ate 06/09/2026: era o MESMO objeto do modo voz
+   * desta tela (.assistant-voice-orb), e quem tocava no microfone via a marca
+   * virar a esfera grande em vez de trocar de simbolo no meio do caminho. O modo
+   * voz saiu do produto; a esfera fica, pelo primeiro motivo, que sempre foi o
+   * que decidiu contra o sino.
    *
    * Nenhuma cor entra aqui: o desenho inteiro mora no CSS, sobre
    * --brand-mark-light/--brand-mark-deep (markInkColors, brand-theme.js — a
@@ -103,8 +106,8 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
   //
   // Respondendo e o ritmo mais RAPIDO, pensando e o mais lento: e a diferenca
   // entre "estou procurando" e "estou te respondendo agora". Nenhum dos dois
-  // reage ao volume de audio porque nesta tela nao existe audio nenhum — quem
-  // reage de verdade e a esfera do modo voz, por --voice-level.
+  // reage a volume de audio: nesta tela nao existe audio nenhum, e desde
+  // 06/09/2026 nao existe em tela nenhuma do app.
   function setAssistantMarkState(state) {
     const mark = document.getElementById('assistantIntroMark');
     if (!mark) return;
@@ -230,34 +233,31 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     if (inputEl) inputEl.disabled = Boolean(disabled);
   }
 
-  /* ── O botão que troca com o campo ──
-     Campo vazio → ondas de áudio (entra no modo voz). Campo com texto → seta de
-     enviar. Volta a ondas quando o campo esvazia.
+  /* ── O botão do campo ──
+     Campo vazio → seta cinza, desabilitada. Campo com texto → seta na cor do
+     lojista. Volta ao cinza quando o campo esvazia.
 
-     ONDAS, NÃO MICROFONE: microfone é o símbolo de DITADO — falar e virar texto
-     no campo. O que este botão abre é uma conversa em tempo real, que não devolve
-     nada para o campo. O ícone errado promete a coisa errada.
+     ATÉ 06/09/2026 ele tinha um terceiro estado: campo vazio mostrava ONDAS DE
+     ÁUDIO e abria o modo voz, e por isso "campo vazio" tinha deixado de
+     significar "nada a fazer". A voz saiu do produto e o significado voltou —
+     junto com `is-inactive`/`:disabled`, cujas regras continuam na folha
+     (assistant.css) porque nunca foram apagadas.
 
-     A troca é IMEDIATA e sem animação, e é por isso que o innerHTML só é
-     reescrito quando o MODO muda (ver _assistantSendMode): reescrever o conteúdo
-     a cada tecla faz o ícone piscar, e é no piscar que o dedo acerta o botão
-     errado — abrindo por engano uma sessão de voz, que é faturada por minuto. */
+     O `_assistantSendMode` fica, com dois modos em vez de quatro: ele existe
+     para não reescrever o innerHTML a cada tecla, e isso continua valendo. O
+     motivo antigo era mais caro (o ícone piscando fazia o dedo abrir uma sessão
+     de voz faturada por minuto); o de hoje é só não piscar. */
   const ASSISTANT_SEND_ICON =
     '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
-  const ASSISTANT_VOICE_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 10.5v3"/><path d="M8.5 6.5v11"/><path d="M13 3.5v17"/><path d="M17.5 7.5v9"/><path d="M22 11v2"/></svg>';
   const ASSISTANT_STOP_ICON = '<span class="assistant-stop-icon" aria-hidden="true"></span>';
 
-  // 'send' | 'voice' | 'voice-locked' | 'stop'. Guardado só para evitar o
-  // rewrite por tecla.
+  // 'send' | 'stop'. Guardado só para evitar o rewrite por tecla.
   let _assistantSendMode = null;
 
   function paintAssistantSendButton(sendBtn, mode, label) {
     if (_assistantSendMode === mode) return;
     _assistantSendMode = mode;
-    sendBtn.innerHTML = mode === 'stop' ? ASSISTANT_STOP_ICON
-      : mode === 'send' ? ASSISTANT_SEND_ICON
-        : ASSISTANT_VOICE_ICON;
+    sendBtn.innerHTML = mode === 'stop' ? ASSISTANT_STOP_ICON : ASSISTANT_SEND_ICON;
     sendBtn.setAttribute('aria-label', label);
     sendBtn.setAttribute('title', label);
   }
@@ -267,26 +267,19 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     const sendBtn = document.querySelector('.assistant-ai-send');
     if (!sendBtn || _assistantSending) return;
     const hasText = Boolean(inputEl?.value?.trim());
-    const voiceNeedsLogin = !hasText && !window.PedeAquiCustomerAuth?.isLoggedIn?.();
-    // Nunca desabilitado: campo vazio deixou de ser "nada a fazer" e passou a
-    // ser o modo voz. Para visitante ele continua clicável para abrir o login,
-    // mas o bloqueio fica explícito antes do toque.
-    sendBtn.disabled = false;
+    // Campo vazio não tem para onde ir: sem texto não há o que enviar, e mandar
+    // texto nunca exigiu conta. O botão não abre login nenhum.
+    sendBtn.disabled = !hasText;
     sendBtn.classList.toggle('is-ready', hasText);
-    sendBtn.classList.toggle('is-voice', !hasText);
-    sendBtn.classList.toggle('is-login-required', voiceNeedsLogin);
-    sendBtn.classList.remove('is-inactive');
-    const hint = document.getElementById('assistantVoiceLoginHint');
-    if (hint) hint.hidden = !voiceNeedsLogin;
-    paintAssistantSendButton(sendBtn, hasText ? 'send' : (voiceNeedsLogin ? 'voice-locked' : 'voice'),
-      hasText ? 'Enviar' : (voiceNeedsLogin ? 'Entre para usar a voz' : 'Conversar por voz'));
+    sendBtn.classList.toggle('is-inactive', !hasText);
+    paintAssistantSendButton(sendBtn, 'send', 'Enviar');
   }
 
   function setAssistantGenerating(generating) {
     const sendBtn = document.querySelector('.assistant-ai-send');
     if (!sendBtn) return;
     sendBtn.classList.toggle('is-stopping', Boolean(generating));
-    sendBtn.classList.remove('is-ready', 'is-inactive', 'is-voice');
+    sendBtn.classList.remove('is-ready', 'is-inactive');
     sendBtn.disabled = false;
     if (generating) {
       paintAssistantSendButton(sendBtn, 'stop', 'Parar resposta');
@@ -960,19 +953,16 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
             placeholder="Pergunte qualquer coisa..."
             ${act('input', 'assistantUpdateSendButton')}
             ${act('keydown', 'assistantInputKeydown', '$event')}>
-          <!-- Nasce em ondas porque nasce com o campo vazio. O conteúdo aqui e o
-               de ASSISTANT_VOICE_ICON precisam continuar iguais: é este markup
-               que a tela mostra no primeiro quadro, antes de qualquer digitação. -->
-          <button class="assistant-ai-send is-voice" ${act('click', 'assistantSendMessage')} type="button" aria-label="Conversar por voz" title="Conversar por voz">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-              <path d="M4 10.5v3"/><path d="M8.5 6.5v11"/><path d="M13 3.5v17"/><path d="M17.5 7.5v9"/><path d="M22 11v2"/>
+          <!-- Nasce cinza e desabilitado porque nasce com o campo vazio. O
+               conteúdo aqui e o de ASSISTANT_SEND_ICON precisam continuar
+               iguais: é este markup que a tela mostra no primeiro quadro, antes
+               de qualquer digitação. -->
+          <button class="assistant-ai-send is-inactive" ${act('click', 'assistantSendMessage')} type="button" disabled aria-label="Enviar" title="Enviar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
             </svg>
           </button>
         </div>
-        <p class="assistant-voice-login-hint" id="assistantVoiceLoginHint" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-          Entre para usar a voz
-        </p>
 
       </div>
 
@@ -1262,13 +1252,10 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     }
     const inputEl = document.getElementById('assistantInput');
     const msg = (inputEl?.value || '').trim();
-    // Quem decide o que este toque faz é o CAMPO, não a classe do botão. Se o
-    // ícone atrasar um quadro, o comportamento continua certo — ninguém abre uma
-    // sessão de voz (paga) por ter apertado no meio da troca.
-    if (!msg) {
-      window.RapidexAssistantVoice?.request();
-      return;
-    }
+    // Quem decide o que este toque faz é o CAMPO, não a classe do botão nem o
+    // atributo `disabled`: um clique sintético ou uma tecla que escape ao
+    // desabilitado não pode virar um envio vazio.
+    if (!msg) return;
     if (inputEl) inputEl.value = '';
     assistantSearch(msg);
   };
@@ -1410,9 +1397,9 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
 
     if (!_assistantLoaded || !view.querySelector('.assistant-page')) {
       view.innerHTML = buildAssistantView();
-      // O markup do botão nasce em ondas; o estado guardado tem de nascer junto,
-      // ou o primeiro update reescreveria o mesmo ícone à toa.
-      _assistantSendMode = 'voice';
+      // O markup do botão nasce com a seta; o estado guardado tem de nascer
+      // junto, ou o primeiro update reescreveria o mesmo ícone à toa.
+      _assistantSendMode = 'send';
       _assistantLoaded = true;
       ensureAssistantSessionId();
     } else {
@@ -1544,22 +1531,22 @@ const ASSISTANT_FLUID = { widths: [390, 480, 768, 1080], sizes: '100vw' };
     setAssistantHeaderMenuOpen(false);
   }, { capture: true, signal: window.RapidexLifecycle?.signal });
 
-  /* ── Ponte para o modo voz ──
-     O modo voz mora em restaurant-assistant-voice.js, mas os cartões que ele
-     mostra são OS MESMOS do chat: mesma marcação, mesmo cache de detalhe, mesma
-     folha que abre no toque. Um segundo cartão de produto escrito lá dentro
-     sairia de sincronia com este no primeiro ajuste de layout — e o cache do
-     detalhe é estado PRIVADO deste módulo, então quem monta o cartão tem de ser
-     quem guarda o produto.
+  /* ── Ponte para fora deste módulo ──
+     Ela nasceu para o MODO VOZ, e a nota antiga dizia "só o que a voz precisa,
+     nada além": `productRailMarkup` (os cartões da voz eram os mesmos do chat),
+     `restaurantId`, `branchId` e `stopGeneration`. A voz saiu do produto em
+     06/09/2026 e os quatro ficaram sem consumidor — saíram com ela.
 
-     A superfície é estreita de propósito: só o que a voz precisa, nada além. */
+     A ponte NÃO some junto, e é por isso que ela ainda está aqui: `toast` tem um
+     consumidor que nunca teve nada a ver com voz — `screens/product-screen.js`,
+     que avisa "esse item não está no cardápio desta unidade". Apagar o objeto
+     inteiro levaria esse aviso junto.
+
+     Continua estreita pelo mesmo motivo de sempre: um membro aqui é superfície
+     pública deste módulo, e superfície pública sem consumidor é peso morto que
+     o próximo leitor confunde com contrato. */
   window.RapidexAssistantChat = {
-    productRailMarkup: products =>
-      (Array.isArray(products) ? products : []).map((p, i) => renderResultCard(p, i)).join(''),
-    restaurantId: getAssistantRestaurantId,
-    branchId: getAssistantBranchId,
-    toast: showAssistantToast,
-    stopGeneration: stopAssistantGeneration
+    toast: showAssistantToast
   };
 
   // assistantImagePlaceholder é a única ação deste módulo que NÃO existe em window —

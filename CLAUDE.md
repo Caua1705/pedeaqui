@@ -116,7 +116,7 @@ Playwright é 1280 e este app é de celular: a varredura de cor chumbada achou
 **0** elementos em 1280 e **8** em 414, na mesma build.
 
 E a prova de que nada mudou continua sendo `node tools/capture-screens.mjs`
-(antes, depois, `--diff`), hoje com **58 telas** e **69 propriedades** — não
+(antes, depois, `--diff`), hoje com **62 telas** e **69 propriedades** — não
 todas. Antes de citar um "Nenhuma diferença" como prova, confira se a
 propriedade que você mexeu está em `PROPS`: ela já leu `borderTopColor` sem as
 outras três e assinou embaixo de uma troca de divisória em 239 elementos, e em

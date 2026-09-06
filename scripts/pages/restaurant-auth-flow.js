@@ -50,7 +50,6 @@
     esc,
     loadCashbackForHome,
     lockBodyScroll,
-    mobNavAssistant,
     mobNavClub,
     onTeardown,
     onlyDigits,
@@ -99,8 +98,6 @@
     $('loginModal')?.classList.toggle('from-add-address', origin === 'address');
     $('loginModal')?.classList.toggle('from-coupon', origin === 'coupon');
     $('loginModal')?.classList.toggle('from-bottom-nav', ['profile', 'club'].includes(origin));
-    const voiceReason = $('loginVoiceReason');
-    if (voiceReason) voiceReason.hidden = origin !== 'assistant-voice';
   }
 
   function openLoginScreen(origin = 'profile') {
@@ -1527,7 +1524,6 @@
   }
 
   function goToInitialScreenAfterAuth() {
-    if (resumeAssistantVoiceAfterAuth()) return;
     document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
       el.classList.remove('active');
     });
@@ -1541,26 +1537,15 @@
     unlockBodyScrollIfClear();
   }
 
-  function resumeAssistantVoiceAfterAuth() {
-    if (_loginOrigin !== 'assistant-voice' || !window.PedeAquiCustomerAuth?.isLoggedIn?.()) return false;
-    _loginOrigin = 'profile';
-    document.querySelectorAll('.overlay.active,.mob-view.active,.lgn-screen.active,.reg-screen.active,.vfy-screen.active').forEach(el => {
-      el.classList.remove('active');
-    });
-    $('loginModal')?.classList.remove('signin-open');
-    if ($('loginVoiceReason')) $('loginVoiceReason').hidden = true;
-    closeProfSub();
-    renderHomeLoginPrompt();
-    renderProfileView();
-    updateCartUI();
-    setBottomNavSuppressedForAuth(false);
-    unlockBodyScrollIfClear();
-
-    Promise.resolve(mobNavAssistant()).then(() => {
-      requestAnimationFrame(() => window.RapidexAssistantVoice?.request?.());
-    }).catch(error => console.error('[Assistente] Não foi possível retomar a voz após o login.', error));
-    return true;
-  }
+  // Havia aqui um `resumeAssistantVoiceAfterAuth()`: o modo voz era a ÚNICA
+  // parte do assistente que exigia conta, então quem apertava o botão de voz
+  // sem estar logado ia para a folha de login e precisava ser devolvido à
+  // conversa depois de entrar. Ele era chamado antes de tudo em
+  // `goToInitialScreenAfterAuth` e em `finishLoginNavigation`.
+  //
+  // A voz saiu do produto em 06/09/2026 e com ela a única origem de login que
+  // não terminava numa das telas normais. O assistente por TEXTO nunca exigiu
+  // conta — não há o que retomar.
 
   function finishLoginNavigation() {
     $('loginScreen')?.classList.remove('active');
@@ -1568,7 +1553,6 @@
     setBottomNavSuppressedForAuth(false);
     renderHomeLoginPrompt();
     updateCartUI();
-    if (resumeAssistantVoiceAfterAuth()) return;
     if (_loginOrigin === 'coupon') {
       closeModalId('loginModal');
       closeCouponDetail();
@@ -1759,7 +1743,6 @@
       esc,
       loadCashbackForHome,
       lockBodyScroll,
-      mobNavAssistant,
       mobNavClub,
       onTeardown,
       onlyDigits,

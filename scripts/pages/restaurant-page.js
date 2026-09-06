@@ -564,6 +564,48 @@
     img.replaceWith(placeholder);
   }
 
+  // ==========================================================================
+  //  A FOTO DE PRATO QUE FALHA: RECUA UMA VEZ, E DEPOIS VIRA AS INICIAIS.
+  //
+  //  Esta ação é o ouvinte de TODA foto do cardápio — as duas linhas que ela
+  //  tem substituem duas coisas que estavam erradas ao mesmo tempo:
+  //
+  //  1. A COBERTURA ERA DE OITO IMAGENS. `waitForProductImageReady` só se
+  //     ligava ao que `menuImagesNearViewport()` devolve, que é `.slice(0, 8)`
+  //     das que estão perto da viewport, e só durante `waitForMenuCriticalMedia`
+  //     (o instante do boot na aba do cardápio). Toda foto que entrasse depois
+  //     — rolando a lista, trocando de categoria, trocando de filial — não
+  //     tinha ouvinte de `error` NENHUM.
+  //
+  //     Medido com o Storage de produção respondendo 402: 140 imagens no DOM,
+  //     54 QUEBRADAS, e 5 placeholders. O cliente via o ícone de imagem
+  //     quebrada do navegador com o `alt` cru ao lado, em cada prato.
+  //
+  //  2. O RECUO ERA UMA CÓPIA, E A CÓPIA NÃO RECARREGAVA. `handleError` fazia
+  //     `img.src = originalSrc` sem `removeAttribute('src')` antes. Medido na
+  //     §23.2, com a derivada em 403: escrevendo o MESMO valor em `src` o
+  //     elemento fica `complete: true` com `naturalWidth: 0` e não dispara nem
+  //     `load` nem `error` — então o segundo `error`, o que chamaria o
+  //     placeholder, nunca vinha. Tirando o `src` antes, o mesmo elemento
+  //     dispara `load` e pinta.
+  //
+  //     Os LOGOS nunca tiveram esse problema porque chamam
+  //     `RapidexImageCdn.retreat()`, o dono único, que já remove e repõe. Era a
+  //     §3.1 de novo: duas implementações da mesma coisa, e a errada é a que
+  //     ganha onde a certa não passa.
+  //
+  //  O `retreat()` devolve `true` quando recuou, e aí PARAMOS: o `src` novo vai
+  //  disparar um segundo `error` se o original também falhar, e é NESSE que o
+  //  placeholder entra. Por isso o ouvinte não pode ser `{ once: true }` — e
+  //  por isso `data-act-error` precisa da forma explícita com `'$this'` (§23.1:
+  //  a forma curta chama `fn.apply(elemento)` SEM argumento, o parâmetro chega
+  //  `undefined`, e a função não faz nada — sem erro, sem log, sem sintoma).
+  // ==========================================================================
+  function productImageFailed(img) {
+    if (window.RapidexImageCdn?.retreat?.(img)) return;
+    replaceFailedProductImage(img);
+  }
+
   // O srcset usa a variante redimensionada do Storage. Se essa variante falhar,
   // tentamos a URL original antes de assumir que a foto está indisponível.
   // Assim uma falha pontual do transformador não deixa o quadrado cinza.
@@ -572,8 +614,6 @@
     img.loading = 'eager';
 
     return new Promise(resolve => {
-      const originalSrc = img.getAttribute('src') || img.src;
-      let retriedOriginal = false;
       let settled = false;
 
       const cleanup = () => {
@@ -590,23 +630,38 @@
         const decoded = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
         decoded.finally(finish);
       };
+      // ESTA FUNÇÃO OBSERVA; QUEM DECIDE É `productImageFailed`, a ação do
+      // template. E a ordem entre as duas não é escolha: `error` é delegado em
+      // CAPTURA (`utils/actions.js:33`), então a ação corre SEMPRE antes deste
+      // ouvinte, que está no alvo.
+      //
+      // Ter as duas decidindo custou uma regressão, medida antes de sair daqui:
+      // no mesmo `error`, a ação recuava e marcava `data-cdn-recuou`; este
+      // ouvinte chamava `retreat()` logo depois, recebia `false` — a marca já
+      // estava lá — e trocava a foto pelo placeholder SEM dar chance ao
+      // original. Com a derivada fora e o original de pé, 5 fotos viravam
+      // iniciais à toa (as ≤8 do boot, que são as únicas que passam por aqui).
+      //
+      // Por isso aqui não há mais nem recuo nem placeholder: só a leitura do
+      // que a ação já fez. Elemento fora do DOM = ela trocou pelo placeholder,
+      // e acabou. Elemento no DOM = ela recuou, e o `load`/`error` do original
+      // é que dirá o desfecho.
       const handleError = () => {
-        if (!retriedOriginal && img.hasAttribute('srcset')) {
-          retriedOriginal = true;
-          img.removeAttribute('srcset');
-          img.removeAttribute('sizes');
-          img.src = originalSrc;
-          return;
-        }
-        replaceFailedProductImage(img);
-        finish();
+        if (!img.isConnected) finish();
       };
 
       img.addEventListener('load', handleLoad);
       img.addEventListener('error', handleError);
       if (img.complete) {
-        if (img.naturalWidth > 0) handleLoad();
-        else handleError();
+        if (img.naturalWidth > 0) {
+          handleLoad();
+        } else {
+          // O CAMINHO SÍNCRONO É O ÚNICO EM QUE A DECISÃO É NOSSA: a imagem já
+          // tinha falhado antes de chegarmos aqui, então nenhum evento será
+          // despachado e a ação delegada nunca vai correr para esta falha.
+          productImageFailed(img);
+          if (!img.isConnected) finish();
+        }
       }
     });
   }
@@ -738,7 +793,16 @@
   function productImage(product, className = 'product-image', options = {}) {
     const image = product.image_url || product.image_path;
     if (image) {
-      return `<img class="${className}" src="${esc(image)}"${responsiveImageAttrs(image, options)} alt="${esc(product.name)}" ${imageAttrs(options)}>`;
+      // O OUVINTE DE `error` VAI NO TEMPLATE, e não num laço que escolhe oito.
+      // Antes, quem se ligava às fotos era `waitForMenuCriticalMedia()`, que
+      // pega `menuImagesNearViewport().slice(0, 8)` no instante do boot — toda
+      // foto que entrasse depois (rolando, trocando de categoria, trocando de
+      // filial) ficava sem ouvinte nenhum. Com o Storage fora do ar isso deu
+      // 54 imagens quebradas para 5 placeholders.
+      //
+      // `'$this'` NÃO é opcional: a forma curta chama `fn.apply(elemento)` sem
+      // argumento, e a função receberia `undefined` (§23.1).
+      return `<img class="${className}" src="${esc(image)}"${responsiveImageAttrs(image, options)} alt="${esc(product.name)}" ${imageAttrs(options)} ${act('error', 'productImageFailed', '$this')}>`;
     }
     // initials() recorta a 1ª letra de cada palavra do nome vindo da API — e um
     // nome como "<img src=x>" faz esse recorte devolver "<I". Não dá para montar
@@ -6215,7 +6279,7 @@
   });
   // O recuo é do APP inteiro, não de uma tela: o registro MESCLA, então o
   // markup do Clube, do Perfil e da Home alcança a mesma ação.
-  window.RapidexActions.register({ retreatImage });
+  window.RapidexActions.register({ retreatImage, productImageFailed });
 
   // A consulta do pagamento não roda com a aba escondida (ver pollPixStatus).
   // Quando ela volta, retomamos na hora em vez de esperar o próximo intervalo:

@@ -113,9 +113,58 @@ recarregando*: o elemento fica `complete: true` com `naturalWidth: 0`, e o
 
 Os LOGOS, que chamam o dono único, degradam certo: caem para as iniciais.
 
-**Portanto o conserto que a instrução pedia existe pela metade**: não falta um
-placeholder — falta o cardápio usar o recuo do dono único para chegar até ele.
-Não foi feito nesta rodada (não estava na lista ordenada); é o candidato G.
+**Portanto o conserto que a instrução pedia existia pela metade**: não faltava um
+placeholder — faltava o cardápio usar o recuo do dono único para chegar até ele.
+
+### G — CONSERTADO, depois que o Pro entrou
+
+Feito mesmo com o Storage de volta, e a razão é a que o dono deu: um dia ele
+oscila de novo, e o cardápio não pode virar 54 ícones de imagem quebrada.
+
+Eram **duas** coisas, não uma:
+
+1. **A cobertura era de OITO fotos.** Quem ligava o ouvinte de `error` era
+   `waitForMenuCriticalMedia()`, com `menuImagesNearViewport().slice(0, 8)`, e
+   só no instante do boot na aba do cardápio. Toda foto que entrasse depois —
+   rolando a lista, trocando de categoria, trocando de filial — não tinha
+   ouvinte nenhum. Agora o ouvinte vai no TEMPLATE
+   (`act('error', 'productImageFailed', '$this')`), como nos outros sítios.
+
+2. **O recuo era uma cópia que não recarregava** (`img.src = originalSrc` sem
+   limpar o `src`, §23.2). Hoje chama `RapidexImageCdn.retreat()`.
+
+**E o conserto quase introduziu uma regressão**, que só apareceu porque o teste
+foi escrito para procurá-la. `error` é delegado em **captura**
+(`utils/actions.js:33`), então a ação do template corre SEMPRE antes do ouvinte
+direto de `waitForProductImageReady`. Com os dois decidindo, no mesmo `error` a
+ação recuava e marcava `data-cdn-recuou`, e o ouvinte chamava `retreat()` em
+seguida, recebia `false` e trocava a foto pelo placeholder **sem dar chance ao
+original**. Medido: com a derivada fora e o original de pé, **5 fotos viravam
+iniciais à toa** — as ≤8 do boot, as únicas que passam por ali.
+
+O primeiro teste não pegava isso: uma foto substituída deixa de ser `<img>` e
+some da varredura, então as que sobravam pintavam e o piso de amostra era
+atingido do mesmo jeito. **Passava pelo motivo errado.** A asserção que faltava
+é "nenhum placeholder quando o ORIGINAL está de pé", e foi vista vermelha com
+`Received: 5`.
+
+A separação que ficou: **a ação DECIDE, o esperador OBSERVA.** O único ponto em
+que a decisão volta a ser do esperador é o caminho síncrono (a imagem já falhou
+antes de o ouvinte ser ligado, e nenhum evento vai ser despachado).
+
+**Qual teste guarda qual metade** — medido, e não é o que se supõe:
+
+| metade | quem guarda |
+|---|---|
+| toda foto tem ouvinte (cobertura) | os dois testes novos do cardápio |
+| o `removeAttribute('src')` do recuo | o teste do **herói**, que já existia |
+
+Tirando aquela linha de `image-cdn.js`, quem fica vermelho é
+"transformação fora do ar: o herói, o logo e os destaques ainda pintam"; os dois
+do cardápio passam. As fotos de prato voltam a pintar mesmo sem ela; as do herói
+não. O arquivo cobre as duas metades — por testes diferentes.
+
+Guardas: `tests/e2e/image-retreat.spec.js`, os dois testes de cardápio.
 
 ---
 

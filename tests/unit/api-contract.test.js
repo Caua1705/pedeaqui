@@ -120,33 +120,27 @@ describe('toda rota que o front chama existe na API', () => {
   }
 
   /**
-   * Rotas que EXISTEM na API mas não aparecem no spec.
+   * NÃO HÁ MAIS EXCEÇÃO, e isso é o estado desejado.
    *
-   * O router de voz é montado condicionalmente no backend (quando a voz está
-   * desligada na plataforma as quatro somem, e é por isso que api-routes.js diz
-   * que elas "deixam de existir"). O dump de openapi.json saiu com a voz
-   * desligada, então o spec não as descreve — mas em produção elas respondem:
-   * `POST /voice/session` devolve 401 (falta token) e `POST /voice/search`
-   * devolve 422 (falta corpo), e as duas coisas só acontecem em rota
-   * registrada. Verificado em 29/08/2026.
+   * Existia aqui um `ABSENT_FROM_SPEC` com as quatro rotas `/voice/*`: o router
+   * de voz era montado condicionalmente no backend, o dump de `openapi.json`
+   * saiu com a voz desligada, e por isso o spec não as descrevia embora elas
+   * respondessem em produção. Era uma lista curta, nomeada de propósito, para
+   * que a exceção precisasse ser editada à mão em vez de silenciada por filtro.
    *
-   * Ficam aqui NOMEADAS, e não silenciadas por um filtro genérico: uma lista
-   * curta que alguém precisa editar de propósito é a única forma de exceção que
-   * não vira desculpa para a próxima rota morta passar batida.
+   * A voz saiu do produto em 06/09/2026 e o backend removeu as rotas. A lista
+   * ficou VAZIA — e uma lista vazia com um teste que a percorre é um teste que
+   * passa sem afirmar nada. Por isso as duas saíram juntas, e não só o conteúdo:
+   * hoje TODA rota do front é conferida contra o spec, sem exceção. Se um dia
+   * outra capacidade condicional aparecer, o mecanismo está no histórico —
+   * ressuscitá-lo é deliberado, que era o ponto dele.
    */
-  const ABSENT_FROM_SPEC = new Set([
-    'voiceSession',
-    'voiceSessionConnected',
-    'voiceSessionEnded',
-    'voiceSearch'
-  ]);
 
   it('nenhuma rota do front aponta para caminho inexistente no spec', () => {
     const spec = JSON.parse(readFileSync(VENDORED_SPEC, 'utf8'));
     const specPaths = new Set(Object.keys(spec.paths));
 
     const missing = frontRoutes()
-      .filter(({ name }) => !ABSENT_FROM_SPEC.has(name))
       .filter(({ path }) => !specPaths.has(toSpecShape(path, specPaths)))
       .map(({ name, path }) => `${name} -> ${path}`);
 
@@ -159,21 +153,15 @@ describe('toda rota que o front chama existe na API', () => {
     ).toEqual([]);
   });
 
-  it('a lista de exceções não apodrece: nenhuma delas entrou no spec', () => {
-    // O dia em que o backend documentar a voz, esta lista precisa encolher —
-    // senão ela vira um buraco permanente com cara de decisão.
-    const spec = JSON.parse(readFileSync(VENDORED_SPEC, 'utf8'));
-    const specPaths = new Set(Object.keys(spec.paths));
-
-    const nowDocumented = frontRoutes()
-      .filter(({ name }) => ABSENT_FROM_SPEC.has(name))
-      .filter(({ path }) => specPaths.has(toSpecShape(path, specPaths)))
-      .map(({ name }) => name);
-
-    expect(
-      nowDocumented,
-      `Estas rotas já estão no spec e devem sair de ABSENT_FROM_SPEC: ${nowDocumented.join(', ')}`
-    ).toEqual([]);
+  it('nenhuma rota de voz sobrou no front', () => {
+    // O backend removeu `/voice/*`. Uma sobra aqui não quebraria nenhum teste
+    // acima — ela apareceria como rota ausente do spec, com a mesma cara de
+    // "spec desatualizado" que a exceção antiga tinha. Esta afirmação diz o
+    // nome do que não pode voltar, como a do `/coupons/available` abaixo.
+    const routes = window.PedeAquiApiRoutes;
+    for (const nome of ['voiceSession', 'voiceSessionConnected', 'voiceSessionEnded', 'voiceSearch']) {
+      expect(routes[nome], `${nome} voltou: a voz saiu do produto em 06/09/2026`).toBeUndefined();
+    }
   });
 
   it('a rota de cupons do cliente é a nova, e a antiga não voltou', () => {

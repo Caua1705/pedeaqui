@@ -119,15 +119,9 @@
     chat: () => '/chat',
     chatFeedback: () => '/chat/feedback',
 
-    // ---- Atendimento por voz ----
-    // Só a emissão exige Bearer; as outras três são abertas. Quando a voz está
-    // desligada na plataforma, TODAS respondem 404 — a rota deixa de existir.
-    voiceSession: () => '/voice/session',
-    voiceSessionConnected: sessionId =>
-      `/voice/session/${routeSlug(sessionId)}/connected`,
-    voiceSessionEnded: sessionId =>
-      `/voice/session/${routeSlug(sessionId)}/ended`,
-    voiceSearch: () => '/voice/search',
+    // O atendimento por VOZ morava aqui, com quatro rotas `/voice/*`. Ele saiu
+    // do produto em 06/09/2026, e o backend removeu o lado dele. O assistente
+    // por TEXTO — estas duas rotas — não foi tocado.
 
     // ---- Customer authentication ----
     authRegister: () => '/auth/register',

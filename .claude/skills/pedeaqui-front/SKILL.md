@@ -181,7 +181,7 @@ unitários — nenhum deles executa o bundle.
    move dentro do mesmo arquivo — senão o módulo do Pix viraria dono do toast de
    tudo.
 
-**A prova de cada corte** é `node tools/capture-screens.mjs`: 58 telas, 69
+**A prova de cada corte** é `node tools/capture-screens.mjs`: 62 telas, 69
 propriedades computadas de todos os ~1.500 elementos, antes e depois. Foi ela que
 pegou a armadilha 1 — e só porque ela **lança** quando uma tela não abre, em vez
 de registrar vazio.
@@ -190,6 +190,7 @@ Eram 14 telas até 30/08/2026, e por isso 1.628 declarações `!important` e 229
 cores nunca tinham produzido evidência nenhuma: o Pix, o cartão, o Clube com
 cupom desenhado, o extrato, a política, as subpáginas do perfil, o chat
 respondido, o modo voz, as duas telas de erro e a landing estavam TODOS fora.
+(A tela do modo voz saiu da ferramenta em 06/09/2026, junto com o modo voz.)
 Cada tela declara um `setup(page)` opcional (token, rota sobreposta, outro
 contexto de operação), e as quatro ferramentas que abrem telas chamam o mesmo
 `prepararTela()` — repetir o preparo em cada laço vira divergência assim que
@@ -654,7 +655,7 @@ e o nome dos arquivos mente. Medido em 30/08/2026, e escrito no cabeçalho de
 | Este `!important` vence alguém? | `tools/css-important.mjs` | Adversário = outra regra declarando a mesma **família** de propriedade no mesmo elemento. Runtime + um **veto estático** grosseiro por token. |
 | Quantos componentes DIFERENTES existem? | `tools/ui-inventory.mjs` | Agrupa por **valor computado**, não por classe. 18 classes de cabeçalho de 70px = 12 formas; 3 de 85px = 1 forma. |
 | Este `var(--x)` tem dono? | `tools/tokens-fantasma.mjs` | Cruza todo `var(--x)` com quem DEFINE `--x` (folha, HTML e as chaves de `applyBrandTheme`). Token sem dono cai no fallback em silêncio — §20. Nome montado em runtime sai do veredito. |
-| Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **58 telas**, antes e depois. |
+| Nada mudou? | `tools/capture-screens.mjs` | 69 propriedades de ~1.500 elementos em **62 telas**, antes e depois. |
 
 ### ANTES DE CONFIAR NUM "Nenhuma diferenca": ela le 69 propriedades, nao todas
 
@@ -759,7 +760,7 @@ sem ter olhado para nenhum deles. O que ainda NAO esta la:
    elementos: havia uma terceira regra no meio que vencia a de cima e perdeu
    para a de baixo. A repetição É o mecanismo de ordem.
 
-### Header da Vercel: blocos SOMAM (medido), chave repetida continua em aberto
+### Header da Vercel: chave DISTINTA soma, chave REPETIDA substitui (as duas medidas)
 
 A `vercel.json` tem mais de um bloco em `headers`, e mais de um casa a mesma
 URL. O que acontece foi **medido na produção** em 02/09/2026, com
@@ -768,25 +769,33 @@ URL. O que acontece foi **medido na produção** em 02/09/2026, com
 e o `X-Frame-Options` do bloco global `/(.*)`. Ou seja, **blocos que casam se
 somam** — não é o primeiro que ganha nem o último que substitui.
 
-Isso vale para chaves DISTINTAS. Para a **mesma chave** declarada em dois blocos
-não há medida: até a tela do entregador não existia chave repetida neste
-arquivo, e a documentação de `project-configuration` não diz. **A pergunta está
-aberta**, e fecha com uma linha assim que `/entregador` estiver publicado:
+Isso vale para chaves DISTINTAS. Para a **mesma chave** a pergunta ficou aberta
+até `/entregador` subir, e **foi medida em 06/09/2026**:
 
 ```
 curl -sI https://www.pederapidex.com/entregador/x | grep -ci content-security-policy
+→ 1
 ```
 
-`2` = soma (o browser aplica a interseção das duas políticas, por especificação).
-`1` = substitui. **Escreva o resultado aqui quando souber.**
+**Vem UM header só, e é o do bloco mais específico: para a mesma chave, o bloco
+específico SUBSTITUI.** Não soma, e o navegador não aplica interseção nenhuma —
+`/entregador` recebe a política dele e **não** recebe a global.
 
-A tela do entregador foi desenhada para não depender da resposta: a política
-dela é COMPLETA e é subconjunto da global em toda diretiva, então interseção e
-substituição dão o mesmo resultado. Quem mantém isso verdadeiro é o teste
-"a política do entregador é subconjunto da global em toda diretiva"
-(`csp.spec.js`) — no dia em que alguém liberar ali um host que a global não tem,
-somadas as duas o host passa a ser BLOQUEADO, e a página quebraria só em
-produção.
+A consequência prática inverte o sinal do risco: a política do entregador não
+ganha as diretivas da global de brinde. Se alguém apagar uma diretiva de lá
+achando que a global cobre, ela simplesmente deixa de existir naquela tela. É
+por isso que o teste "a política do entregador é completa" (`csp.spec.js`) vale
+mais do que o do subconjunto — o subconjunto agora é higiene, a completude é a
+única coisa que segura a tela.
+
+A tela foi desenhada para não depender da resposta — política COMPLETA e
+subconjunto da global em toda diretiva —, e por isso a medida não mudou nada no
+comportamento dela. Mas mudou **o que o teste do subconjunto prova**: a
+justificativa antiga ("somadas as duas, um host só do entregador passaria a ser
+BLOQUEADO") caiu junto com a soma. Elas não somam. Hoje esse teste guarda
+menor privilégio — que ninguém devolva ao entregador os terceiros do app do
+cliente —, e não mais um risco de bloqueio. Vale mantê-lo; não vale citá-lo
+pelo motivo velho.
 
 E `csp.spec.js` lê a política global por `vercel.headers[0]`. Bloco novo entra
 DEPOIS do índice 0, ou o guarda mais antigo do arquivo passa a medir a política

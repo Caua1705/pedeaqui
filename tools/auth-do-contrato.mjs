@@ -162,8 +162,10 @@ for (const r of rotasDoCodigo) {
   // A auth vai junto DE PROPÓSITO. Uma rota que existe em produção e não tem
   // linha nenhuma no contrato é o caso extremo desta varredura: ali o spec não
   // diz a auth errada, ele não diz nada — e quem escreve mock ou cliente a
-  // partir dele nem sabe que a rota existe. As de voz são exatamente isso: o
-  // router é montado só com `VOICE_ENABLED`, e o dump saiu com ela desligada.
+  // partir dele nem sabe que a rota existe. As de voz eram exatamente isso: o
+  // router era montado só com `VOICE_ENABLED` e o dump saía com ela desligada.
+  // Elas saíram do produto em 06/09/2026 — o caso extremo perdeu o exemplo,
+  // não a razão de ser.
   if (!s) { semParNoSpec.push(`${chave}   [${r.auth}]   (${r.arquivo})`); continue; }
   casadas.push({ ...r, ...s });
   doSpec.delete(chave);

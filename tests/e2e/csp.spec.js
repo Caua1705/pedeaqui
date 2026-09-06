@@ -132,26 +132,30 @@ test('a política existe e é restritiva onde importa', () => {
   expect(CSP).toContain("base-uri 'none'");
 });
 
-test('a produção deixa o modo voz existir', () => {
-  // Estes dois headers matam a voz SÓ EM PRODUÇÃO: em dev o Vite não os aplica,
-  // então a conversa funciona na máquina de quem programou e responde com um
-  // NotAllowedError na Vercel. Foi por isso que viraram teste.
+test('a saída do modo voz devolveu a permissão e os hosts que só ele usava', () => {
+  // O INVERSO do teste que morava aqui. Ele exigia `https://api.openai.com` no
+  // connect-src, `mediastream:` no media-src e `microphone=(self)` — os três
+  // existiam SÓ para a conversa por voz, que saiu do produto em 06/09/2026.
+  //
+  // Uma permissão que sobra depois que o motivo dela sai não quebra nada, e é
+  // exatamente por isso que ela fica para sempre: `microphone=(self)` deixava o
+  // documento inteiro poder abrir getUserMedia sem nenhuma linha de código para
+  // pedir. Este teste é o que faz alguém ter de justificar o retorno.
   const connect = CSP.split(';').map(s => s.trim()).find(s => s.startsWith('connect-src'));
-  expect(connect, 'a chamada de SDP à OpenAI seria bloqueada pela CSP')
-    .toContain('https://api.openai.com');
+  expect(connect, 'a OpenAI voltou ao connect-src, e nenhum código do front a chama')
+    .not.toContain('openai.com');
   expect(connect, 'connect-src continua sem curinga').not.toMatch(/\s\*/);
 
-  // O áudio remoto entra por srcObject (MediaStream), que não é uma busca e não
-  // passa por diretiva nenhuma — mas o elemento existe, e default-src 'self'
-  // seria o fallback se algum dia ele virar URL.
-  expect(CSP).toContain('media-src');
+  const media = CSP.split(';').map(s => s.trim()).find(s => s.startsWith('media-src'));
+  expect(media, 'media-src continua declarado').toBeTruthy();
+  expect(media, 'mediastream: era do microfone e não tem mais quem o use')
+    .not.toContain('mediastream:');
 
   const permissoes = headerValue('Permissions-Policy');
   // `microphone=()` desliga getUserMedia no documento inteiro, antes de qualquer
   // diálogo de permissão aparecer.
-  expect(permissoes, 'o microfone está desligado por Permissions-Policy')
-    .toContain('microphone=(self)');
-  // E a câmera continua desligada: a voz não é desculpa para abrir o resto.
+  expect(permissoes, 'o microfone precisa estar DESLIGADO: nada no app o usa')
+    .toContain('microphone=()');
   expect(permissoes).toContain('camera=()');
 });
 
@@ -259,10 +263,11 @@ test('os demais headers de segurança estão presentes', () => {
 // ============================================================================
 //  A CSP DA TELA DO ENTREGADOR — menor privilégio, e a dúvida que ela resolve.
 //
-//  `/entregador` só fala com a nossa API. Mercado Pago, OpenAI, Google Maps e
-//  as fontes do Google são do app do CLIENTE e não têm uso nenhum ali; herdar
-//  a política global significava carregar a superfície de ataque de três
-//  terceiros numa página que roda com uma credencial no caminho da URL.
+//  `/entregador` só fala com a nossa API. Mercado Pago, Google Maps e as fontes
+//  do Google são do app do CLIENTE e não têm uso nenhum ali; herdar a política
+//  global significava carregar a superfície de ataque de terceiros numa página
+//  que roda com uma credencial no caminho da URL. (A OpenAI estava nesta lista
+//  até 06/09/2026, quando o modo voz saiu e ela deixou a política global.)
 //
 //  A DÚVIDA: dois blocos de header da vercel.json casam com /entregador, e os
 //  dois declaram Content-Security-Policy. A Vercel soma ou substitui?

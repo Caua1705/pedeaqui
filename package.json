@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "csp:prod": "node tools/csp-em-producao.mjs",
     "typecheck:cards": "tsc -p jsconfig.cards.json"
   },
   "devDependencies": {
